@@ -15,7 +15,6 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _isInAnsiMode(true),
-    _intermediates{},
     _parameters{},
     _oscString{},
     _cachedSequence{ std::nullopt },
@@ -95,6 +94,21 @@ static constexpr bool _isC1ControlCharacter(const wchar_t wch) noexcept
 static constexpr wchar_t _c1To7Bit(const wchar_t wch) noexcept
 {
     return wch - L'\x40';
+}
+
+// Routine Description:
+// - Determines if a character is a C1 DCS (Device Control Strings)
+//   This is a single-character way to start a control sequence, as opposed to "ESC P".
+//
+//   See the comment above _isC1Csi for more information on how this is impacted by codepages.
+//
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isC1Dcs(const wchar_t wch) noexcept
+{
+    return wch == L'\x90';
 }
 
 // Routine Description:
@@ -268,7 +282,7 @@ static constexpr bool _isOscDelimiter(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character should be initiate the end of an OSC sequence.
+// - Determines if a character should initiate the end of an OSC sequence.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -426,7 +440,7 @@ void StateMachine::_ActionEscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"EscDispatch");
 
-    const bool success = _engine->ActionEscDispatch(wch, { _intermediates.data(), _intermediates.size() });
+    const bool success = _engine->ActionEscDispatch(_identifier.Finalize(wch));
 
     // Trace the result.
     _trace.DispatchSequenceTrace(success);
@@ -449,8 +463,7 @@ void StateMachine::_ActionVt52EscDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Vt52EscDispatch");
 
-    const bool success = _engine->ActionVt52EscDispatch(wch,
-                                                        { _intermediates.data(), _intermediates.size() },
+    const bool success = _engine->ActionVt52EscDispatch(_identifier.Finalize(wch),
                                                         { _parameters.data(), _parameters.size() });
 
     // Trace the result.
@@ -474,8 +487,7 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 {
     _trace.TraceOnAction(L"CsiDispatch");
 
-    const bool success = _engine->ActionCsiDispatch(wch,
-                                                    { _intermediates.data(), _intermediates.size() },
+    const bool success = _engine->ActionCsiDispatch(_identifier.Finalize(wch),
                                                     { _parameters.data(), _parameters.size() });
 
     // Trace the result.
@@ -494,12 +506,12 @@ void StateMachine::_ActionCsiDispatch(const wchar_t wch)
 // - wch - Character to dispatch.
 // Return Value:
 // - <none>
-void StateMachine::_ActionCollect(const wchar_t wch)
+void StateMachine::_ActionCollect(const wchar_t wch) noexcept
 {
     _trace.TraceOnAction(L"Collect");
 
     // store collect data
-    _intermediates.push_back(wch);
+    _identifier.AddIntermediate(wch);
 }
 
 // Routine Description:
@@ -545,7 +557,7 @@ void StateMachine::_ActionClear()
     _trace.TraceOnAction(L"Clear");
 
     // clear all internal stored state.
-    _intermediates.clear();
+    _identifier.Clear();
 
     _parameters.clear();
 
@@ -649,7 +661,7 @@ void StateMachine::_ActionDcsPassThrough(const wchar_t wch)
 {
     _trace.TraceOnAction(L"DcsPassThrough");
     _trace.TraceOnExecute(wch);
-    // TODO: actually do something
+    // TODO:GH#7316: Send the DCS passthrough sequence to the engine
 }
 
 // Routine Description:
@@ -965,8 +977,7 @@ void StateMachine::_EnterVariableLengthStringTermination() noexcept
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
 //   1. Execute C0 control characters
-//   2. Handle a C1 Control Sequence Introducer
-//   3. Print all other characters
+//   2. Print all other characters
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1480,7 +1491,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
 //   4. Store parameter data
 //   5. Collect Intermediate characters
 //   6. Pass through everything else
-//  DCS sequences are structurally almost the same as CSI sequences, just with a
+//  DCS sequences are structurally almost the same as CSI sequences, just with an
 //      extra data string. It's safe to reuse CSI functions for
 //      determining if a character is a parameter, delimiter, or invalid.
 // Arguments:
@@ -1528,10 +1539,17 @@ void StateMachine::_EventDcsEntry(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventDcsIgnore() noexcept
+void StateMachine::_EventDcsIgnore(const wchar_t wch) noexcept
 {
     _trace.TraceOnEvent(L"DcsIgnore");
-    _ActionIgnore();
+    if (_isStringTerminator(wch))
+    {
+        _EnterGround();
+    }
+    else
+    {
+        _ActionIgnore();
+    }
 }
 
 // Routine Description:
@@ -1717,7 +1735,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         if (_IsVariableLengthStringState())
         {
             _EnterVariableLengthStringTermination();
-            _EventVariableLengthStringTermination(_c1To7Bit(wch));  
+            _EventVariableLengthStringTermination(_c1To7Bit(wch));
         }
         else
         {
@@ -1763,7 +1781,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::DcsEntry:
             return _EventDcsEntry(wch);
         case VTStates::DcsIgnore:
-            return _EventDcsIgnore();
+            return _EventDcsIgnore(wch);
         case VTStates::DcsIntermediate:
             return _EventDcsIntermediate(wch);
         case VTStates::DcsParam:
@@ -1771,9 +1789,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         case VTStates::DcsPassThrough:
             return _EventDcsPassThrough(wch);
         case VTStates::DcsTermination:
-            return _EventVariableLengthStringTermination(wch);
-        case VTStates::SosPmApcString:
-            return _EventSosPmApcString(wch);
+            return _EventDcsTermination(wch);
         default:
             return;
         }

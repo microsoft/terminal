@@ -55,7 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _ActionPrint(const wchar_t wch);
         void _ActionEscDispatch(const wchar_t wch);
         void _ActionVt52EscDispatch(const wchar_t wch);
-        void _ActionCollect(const wchar_t wch);
+        void _ActionCollect(const wchar_t wch) noexcept;
         void _ActionParam(const wchar_t wch);
         void _ActionCsiDispatch(const wchar_t wch);
         void _ActionOscParam(const wchar_t wch) noexcept;
@@ -88,7 +88,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsTermination() noexcept;
         void _EnterSosPmApcString() noexcept;
         void _EnterVariableLengthStringTermination() noexcept;
-        
+
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
         void _EventEscapeIntermediate(const wchar_t wch);
@@ -146,7 +146,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         std::wstring_view _run;
 
-        std::vector<wchar_t> _intermediates;
+        VTIDBuilder _identifier;
         std::vector<size_t> _parameters;
 
         std::wstring _oscString;

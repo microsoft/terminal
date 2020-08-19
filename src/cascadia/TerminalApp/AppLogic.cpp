@@ -15,7 +15,6 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace ::TerminalApp;
 
@@ -39,7 +38,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
     USES_RESOURCE(L"TooManyKeysForChord"),
     USES_RESOURCE(L"MissingRequiredParameter"),
-    USES_RESOURCE(L"LegacyGlobalsProperty")
+    USES_RESOURCE(L"LegacyGlobalsProperty"),
+    USES_RESOURCE(L"FailedToParseCommandJson")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -633,6 +633,12 @@ namespace winrt::TerminalApp::implementation
             hr = E_INVALIDARG;
             _settingsLoadExceptionText = _GetErrorText(ex.Error());
         }
+        catch (const ::TerminalApp::SettingsTypedDeserializationException& e)
+        {
+            hr = E_INVALIDARG;
+            std::string_view what{ e.what() };
+            _settingsLoadExceptionText = til::u8u16(what);
+        }
         catch (...)
         {
             hr = wil::ResultFromCaughtException();
@@ -911,7 +917,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler (per GH#6421)
     // Return value:
     // - whether the key was handled
-    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         if (_root)
         {
@@ -922,7 +928,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (keyListener.OnDirectKeyEvent(vkey, down))
+                    if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
                     {
                         return true;
                     }

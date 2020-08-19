@@ -12,10 +12,13 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
+// Keep in sync with TerminalTheme.cs
 typedef struct _TerminalTheme
 {
     COLORREF DefaultBackground;
     COLORREF DefaultForeground;
+    COLORREF DefaultSelectionBackground;
+    float SelectionBackgroundAlpha;
     DispatchTypes::CursorStyle CursorStyle;
     COLORREF ColorTable[16];
 } TerminalTheme, *LPTerminalTheme;
@@ -34,8 +37,8 @@ __declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
 __declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
-__declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown);
-__declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode);
+__declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
+__declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD flags, WORD scanCode);
 __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 __declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
@@ -51,9 +54,10 @@ public:
     HwndTerminal(HwndTerminal&&) = default;
     HwndTerminal& operator=(const HwndTerminal&) = default;
     HwndTerminal& operator=(HwndTerminal&&) = default;
-    ~HwndTerminal() = default;
+    ~HwndTerminal();
 
     HRESULT Initialize();
+    void Teardown() noexcept;
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
@@ -92,8 +96,8 @@ private:
     friend void _stdcall TerminalClearSelection(void* terminal);
     friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
-    friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, bool keyDown);
-    friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode);
+    friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
+    friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags);
     friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     friend void _stdcall TerminalBlinkCursor(void* terminal);
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
@@ -112,11 +116,13 @@ private:
     HRESULT _MoveSelection(LPARAM lParam) noexcept;
     IRawElementProviderSimple* _GetUiaProvider() noexcept;
 
+    void _ClearSelection() noexcept;
+
     bool _CanSendVTMouseInput() const noexcept;
     bool _SendMouseEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept;
 
-    void _SendKeyEvent(WORD vkey, WORD scanCode, bool keyDown) noexcept;
-    void _SendCharEvent(wchar_t ch, WORD scanCode) noexcept;
+    void _SendKeyEvent(WORD vkey, WORD scanCode, WORD flags, bool keyDown) noexcept;
+    void _SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept;
 
     // Inherited via IControlAccessibilityInfo
     COORD GetFontSize() const override;

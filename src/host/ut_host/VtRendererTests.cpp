@@ -661,14 +661,18 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
     // Run this test for each and every possible combination of states.
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:underlined", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:doublyUnderlined", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
-    bool faint, italics, blink, invisible, crossedOut;
+    bool faint, underlined, doublyUnderlined, italics, blink, invisible, crossedOut;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"underlined", underlined));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"doublyUnderlined", doublyUnderlined));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
@@ -683,6 +687,23 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
         desiredAttrs.SetFaint(true);
         onSequences.push_back("\x1b[2m");
         offSequences.push_back("\x1b[22m");
+    }
+    if (underlined)
+    {
+        desiredAttrs.SetUnderlined(true);
+        onSequences.push_back("\x1b[4m");
+        offSequences.push_back("\x1b[24m");
+    }
+    if (doublyUnderlined)
+    {
+        desiredAttrs.SetDoublyUnderlined(true);
+        onSequences.push_back("\x1b[21m");
+        // The two underlines share the same off sequence, so we
+        // only add it here if that hasn't already been done.
+        if (!underlined)
+        {
+            offSequences.push_back("\x1b[24m");
+        }
     }
     if (italics)
     {
@@ -754,7 +775,7 @@ void VtRendererTest::Xterm256TestExtendedAttributes()
 void VtRendererTest::Xterm256TestAttributesAcrossReset()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:renditionAttribute", L"{1, 2, 3, 4, 5, 7, 8, 9, 53}")
+        TEST_METHOD_PROPERTY(L"Data:renditionAttribute", L"{1, 2, 3, 4, 5, 7, 8, 9, 21, 53}")
     END_TEST_METHOD_PROPERTIES()
 
     int renditionAttribute;
@@ -793,6 +814,10 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     case GraphicsOptions::Underline:
         Log::Comment(L"----Set Underline Attribute----");
         textAttributes.SetUnderlined(true);
+        break;
+    case GraphicsOptions::DoublyUnderlined:
+        Log::Comment(L"----Set Doubly Underlined Attribute----");
+        textAttributes.SetDoublyUnderlined(true);
         break;
     case GraphicsOptions::Overline:
         Log::Comment(L"----Set Overline Attribute----");

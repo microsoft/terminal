@@ -6,6 +6,6 @@ namespace TerminalApp
     [default_interface] runtimeclass Tab : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Title { get; };
-        String IconPath { get; };
+        Windows.UI.Xaml.Controls.IconSource IconSource { get; };
     }
 }

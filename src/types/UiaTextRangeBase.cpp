@@ -145,7 +145,9 @@ const COORD UiaTextRangeBase::GetEndpoint(TextPatternRangeEndpoint endpoint) con
 // - true if range is degenerate, false otherwise.
 bool UiaTextRangeBase::SetEndpoint(TextPatternRangeEndpoint endpoint, const COORD val) noexcept
 {
-    const auto bufferSize = _getBufferSize();
+    // GH#6402: Get the actual buffer size here, instead of the one
+    //          constrained by the virtual bottom.
+    const auto bufferSize = _pData->GetTextBuffer().GetSize();
     switch (endpoint)
     {
     case TextPatternRangeEndpoint_End:
@@ -284,6 +286,8 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
         }
         else
         {
+            // TODO GH#6986: properly handle "end of buffer" as last character
+            // instead of last cell
             // expand to document
             _start = bufferSize.Origin();
             _end = bufferSize.EndExclusive();
@@ -393,7 +397,9 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         // set of coords.
         std::vector<double> coords;
 
-        const auto bufferSize = _getBufferSize();
+        // GH#6402: Get the actual buffer size here, instead of the one
+        //          constrained by the virtual bottom.
+        const auto bufferSize = _pData->GetTextBuffer().GetSize();
 
         // these viewport vars are converted to the buffer coordinate space
         const auto viewport = bufferSize.ConvertToOrigin(_pData->GetViewport());

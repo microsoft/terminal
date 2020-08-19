@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass ColorScheme {
+        ColorScheme();
+        ColorScheme(String name, Windows.UI.Color defaultFg, Windows.UI.Color defaultBg, Windows.UI.Color cursorColor);
+
+        void ApplyScheme(Microsoft.Terminal.TerminalControl.IControlSettings terminalSettings);
+
+        String Name { get; };
+
+        Windows.UI.Color Foreground { get; };
+        Windows.UI.Color Background { get; };
+        Windows.UI.Color SelectionBackground { get; };
+        Windows.UI.Color CursorColor { get; };
+
+        Windows.UI.Color[] Table { get; };
+    }
+}

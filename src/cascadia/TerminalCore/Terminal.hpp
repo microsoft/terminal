@@ -19,7 +19,7 @@
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
 //      headers that include Terminal.hpp
-namespace winrt::Microsoft::Terminal::Settings
+namespace winrt::Microsoft::Terminal::TerminalControl
 {
     struct ICoreSettings;
 }
@@ -58,10 +58,10 @@ public:
                 SHORT scrollbackLines,
                 Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
+    void CreateFromSettings(winrt::Microsoft::Terminal::TerminalControl::ICoreSettings settings,
                             Microsoft::Console::Render::IRenderTarget& renderTarget);
 
-    void UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings);
+    void UpdateSettings(winrt::Microsoft::Terminal::TerminalControl::ICoreSettings settings);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);
@@ -93,6 +93,7 @@ public:
     bool SetWindowTitle(std::wstring_view title) noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
+    bool SetCursorColor(const COLORREF color) noexcept override;
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
 
@@ -115,7 +116,7 @@ public:
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
     bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states, const bool keyDown) override;
-    bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta) override;
+    bool SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state) override;
     bool SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states) override;
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
@@ -167,6 +168,7 @@ public:
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
+    void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
@@ -174,6 +176,8 @@ public:
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
+
+    const std::optional<til::color> GetTabColor() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -198,12 +202,14 @@ private:
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
+    std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
 
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
+    std::optional<til::color> _tabColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;

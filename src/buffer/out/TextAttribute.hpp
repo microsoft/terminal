@@ -95,6 +95,7 @@ public:
     bool IsInvisible() const noexcept;
     bool IsCrossedOut() const noexcept;
     bool IsUnderlined() const noexcept;
+    bool IsDoublyUnderlined() const noexcept;
     bool IsOverlined() const noexcept;
     bool IsReverseVideo() const noexcept;
 
@@ -105,6 +106,7 @@ public:
     void SetInvisible(bool isInvisible) noexcept;
     void SetCrossedOut(bool isCrossedOut) noexcept;
     void SetUnderlined(bool isUnderlined) noexcept;
+    void SetDoublyUnderlined(bool isDoublyUnderlined) noexcept;
     void SetOverlined(bool isOverlined) noexcept;
     void SetReverseVideo(bool isReversed) noexcept;
 

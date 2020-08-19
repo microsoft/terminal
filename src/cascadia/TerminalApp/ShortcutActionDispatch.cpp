@@ -113,11 +113,23 @@ namespace winrt::TerminalApp::implementation
             break;
         }
 
+        case ShortcutAction::SendInput:
+        {
+            _SendInputHandlers(*this, *eventArgs);
+            break;
+        }
+
         case ShortcutAction::SplitVertical:
         case ShortcutAction::SplitHorizontal:
         case ShortcutAction::SplitPane:
         {
             _SplitPaneHandlers(*this, *eventArgs);
+            break;
+        }
+
+        case ShortcutAction::TogglePaneZoom:
+        {
+            _TogglePaneZoomHandlers(*this, *eventArgs);
             break;
         }
 
@@ -179,6 +191,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleCommandPaletteHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::SetColorScheme:
+        {
+            _SetColorSchemeHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::SetTabColor:
         {
             _SetTabColorHandlers(*this, *eventArgs);
@@ -197,6 +214,22 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::ExecuteCommandline:
         {
             _ExecuteCommandlineHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::CloseOtherTabs:
+        {
+            _CloseOtherTabsHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::CloseTabsAfter:
+        {
+            _CloseTabsAfterHandlers(*this, *eventArgs);
+            break;
+        }
+        case ShortcutAction::ToggleTabSwitcher:
+        {
+            _ToggleTabSwitcherHandlers(*this, *eventArgs);
+            break;
         }
         default:
             return false;

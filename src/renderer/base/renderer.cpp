@@ -860,6 +860,21 @@ IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttri
     {
         lines |= IRenderEngine::GridLines::Right;
     }
+
+    if (textAttribute.IsCrossedOut())
+    {
+        lines |= IRenderEngine::GridLines::Strikethrough;
+    }
+
+    if (textAttribute.IsUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::Underline;
+    }
+
+    if (textAttribute.IsDoublyUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::DoubleUnderline;
+    }
     return lines;
 }
 

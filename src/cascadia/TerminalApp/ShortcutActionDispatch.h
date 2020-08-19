@@ -35,7 +35,9 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SwitchToTab,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(NextTab,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(PrevTab,              TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(SendInput,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(SplitPane,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(TogglePaneZoom,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(AdjustFontSize,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ResetFontSize,        TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ScrollUp,             TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
@@ -51,10 +53,14 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ToggleFullscreen,     TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ToggleAlwaysOnTop,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ToggleCommandPalette, TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(SetColorScheme,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(SetTabColor,          TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(OpenTabColorPicker,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(RenameTab,            TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         TYPED_EVENT(ExecuteCommandline,   TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(CloseOtherTabs,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(CloseTabsAfter,       TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ToggleTabSwitcher,    TerminalApp::ShortcutActionDispatch, TerminalApp::ActionEventArgs);
         // clang-format on
 
     private:
