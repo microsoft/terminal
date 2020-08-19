@@ -462,8 +462,8 @@ namespace winrt::TerminalApp::implementation
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
-            // add the keyboard shortcuts for the first 9 profiles
-            if (profileIndex < 9)
+            // add the keyboard shortcuts based on the number of profiles defined
+            if (profileIndex < profileCount)
             {
                 // Look for a keychord that is bound to the equivalent
                 // NewTab(ProfileIndex=N) action
