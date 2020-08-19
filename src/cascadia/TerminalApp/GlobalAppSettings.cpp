@@ -118,7 +118,6 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
     settings.SoftwareRendering(_SoftwareRendering);
     settings.ForceVTInput(_ForceVTInput);
-    settings.UseTabSwitcher(_UseTabSwitcher);
 }
 
 // Method Description:
