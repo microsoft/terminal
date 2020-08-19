@@ -576,6 +576,12 @@
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
     <value>Select color scheme...</value>
   </data>
+  <data name="NewTabParentCommandName" xml:space="preserve">
+    <value>New Tab...</value>
+  </data>
+  <data name="SplitPaneParentCommandName" xml:space="preserve">
+    <value>Split Pane...</value>
+  </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>Tab Switcher</value>
   </data>
