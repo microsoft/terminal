@@ -179,10 +179,10 @@ Are there other allocation policies we need to consider?
         - This is not a new problem, but it digs the hole a little deeper.
     - requires standardization outside of Microsoft because the PE format is a dependency of the UEFI specification\[3\]
     - requires coordination between tooling teams both within and without Microsoft
-        - `link`
-        - `ld`
-        - `llvm-ld` (`lld`)
-        - Any number of binary analyzers and malware scanners
+        - VC's `link`
+        - binutils' `ld`
+        - LLVM's `llvm-ld` (`lld`)
+        - Any number of binary analysis toolkits
 
 - An exported symbol that shells can check for to determine whether to wait for the attached process to exit
     - relies on shells to update and check for this
