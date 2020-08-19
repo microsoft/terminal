@@ -56,7 +56,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
     TEST_METHOD(TestEscapePath)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiTest", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}") // one value for each type of state test below.
+            TEST_METHOD_PROPERTY(L"Data:uiTest", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}") // one value for each type of state test below.
         END_TEST_METHOD_PROPERTIES()
 
         size_t uiTest;
@@ -66,7 +66,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         StateMachine mach(std::move(engine));
 
         // The OscString state shouldn't escape out after an ESC.
-        // Same for DcsPassThrough state.
+        // Same for DcsPassThrough and SosPmApcString state.
         bool shouldEscapeOut = true;
 
         switch (uiTest)
@@ -181,12 +181,25 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             mach._state = StateMachine::VTStates::DcsTermination;
             break;
         }
+        case 18:
+        {
+            Log::Comment(L"Escape from SosPmApcString");
+            shouldEscapeOut = false;
+            mach._state = StateMachine::VTStates::SosPmApcString;
+            break;
+        }
+        case 19:
+        {
+            Log::Comment(L"Escape from SosPmApcTermination");
+            mach._state = StateMachine::VTStates::SosPmApcTermination;
+            break;
         }
 
         mach.ProcessCharacter(AsciiChars::ESC);
         if (shouldEscapeOut)
         {
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        }
         }
     }
 
@@ -749,6 +762,53 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
         mach.ProcessCharacter(AsciiChars::ESC);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
+        mach.ProcessCharacter(L'\\');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
+    TEST_METHOD(TestSosPcApcString)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'X');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(L'1');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(L'2');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcTermination);
+        mach.ProcessCharacter(L'\\');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'^');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(L'3');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(L'4');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcTermination);
+        mach.ProcessCharacter(L'\\');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'_');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(L'5');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(L'6');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcTermination);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }

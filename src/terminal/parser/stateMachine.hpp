@@ -87,6 +87,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsPassThrough() noexcept;
         void _EnterDcsTermination() noexcept;
         void _EnterSosPmApcString() noexcept;
+        void _EnterSosPmApcTermination() noexcept;
         void _EnterVariableLengthStringTermination() noexcept;
 
         void _EventGround(const wchar_t wch);
@@ -133,7 +134,8 @@ namespace Microsoft::Console::VirtualTerminal
             DcsParam,
             DcsPassThrough,
             DcsTermination,
-            SosPmApcString
+            SosPmApcString,
+            SosPmApcTermination
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;

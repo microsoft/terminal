@@ -184,12 +184,6 @@ bool OutputStateMachineEngine::ActionPassThroughString(const std::wstring_view s
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 {
-    if (wch == L'\\')
-    {
-        // This is presumably the 7-bit string terminator, which is essentially a no-op.
-        return true;
-    }
-
     bool success = false;
 
     switch (id)
