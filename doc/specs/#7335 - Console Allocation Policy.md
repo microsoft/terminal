@@ -74,11 +74,11 @@ It would look (roughly) like this:
 
 This field will apply consistent behavior across different image subsystems, with differing end user results:
 
-|               | `SUBSYSTEM_CUI` (console)                                             | `SUBSYSTEM_GUI` (windows)     |
-| -             | -                                                                     | -                             |
-| _no entry_    | _default behavior_                                                    | _default behavior_            |
-| `inheritOnly` | No console window unless application was started from console session | _default behavior_            |
-| `always`      | _default behavior_                                                    | Always opens a console window |
+| policy        | `SUBSYSTEM_CUI` (console)                                             | `SUBSYSTEM_GUI` (windows)              |
+| -             | -                                                                     | -                                      |
+| _no value_    | _default behavior_                                                    | _default behavior_                     |
+| `inheritOnly` | No console window unless application was started from console session | No console window (_default behavior_) |
+| `always`      | Always opens a console window (_default behavior_)                    | Always opens a console window          |
 
 An application that is in the *console* subsystem with a `consoleAllocationPolicy` of **inheritOnly** will not present a
 console when launched from Explorer.
