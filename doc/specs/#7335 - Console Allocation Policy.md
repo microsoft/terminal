@@ -178,12 +178,17 @@ Are there other allocation policies we need to consider?
     - checking a subsystem doesn't work right with app execution aliases\[2\]
         - This is not a new problem, but it digs the hole a little deeper.
     - requires standardization outside of Microsoft because the PE format is a dependency of the UEFI specification\[3\]
+    - requires coordination between tooling teams both within and without Microsoft
+        - `link`
+        - `ld`
+        - `llvm-ld` (`lld`)
+        - Any number of binary analyzers and malware scanners
 
 - An exported symbol that shells can check for to determine whether to wait for the attached process to exit
     - relies on shells to update and check for this
     - cracking an executable to look for symbols is probably the last thing shells want to do
         - we could provide an API to determine whether to wait or return?
-    - fragile, somewhat silly, exporting symbols from EXEs is obnoxious and uncommon
+    - fragile, somewhat silly, exporting symbols from EXEs is annoying and uncommon
 
 ### Links
 
