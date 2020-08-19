@@ -2,7 +2,7 @@
 author: Dustin Howett @DHowett <duhowett@microsoft.com>
 created on: 2020-08-16
 last updated: 2020-08-18
-issue id: \#7335
+issue id: "#7335"
 ---
 
 # Console Allocation Policy
