@@ -2046,6 +2046,14 @@ namespace winrt::TerminalApp::implementation
         _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareSchemeNames(const winrt::TerminalApp::ColorScheme& lhs, const winrt::TerminalApp::ColorScheme& rhs)
+    {
+        std::wstring leftName{ lhs.Name() };
+        std::wstring rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
     // Method Description:
     // - Takes a mapping of names->commands and expands them
     // Arguments:
@@ -2053,9 +2061,22 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                    gsl::span<const ::TerminalApp::Profile> profiles)
+                                                                                    gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                                    const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+
+        std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
+        sortedSchemes.reserve(schemes.size());
+
+        for (const auto& nameAndScheme : schemes)
+        {
+            sortedSchemes.push_back(nameAndScheme.second);
+        }
+        std::sort(sortedSchemes.begin(),
+                  sortedSchemes.end(),
+                  _compareSchemeNames);
+
         IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
         for (const auto& nameAndCommand : commandsToExpand)
         {
@@ -2064,6 +2085,7 @@ namespace winrt::TerminalApp::implementation
 
         Command::ExpandCommands(copyOfCommands,
                                 profiles,
+                                sortedSchemes,
                                 warnings);
 
         return copyOfCommands;
@@ -2079,7 +2101,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateCommandsForPalette()
     {
         IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
-                                                                                           _settings->GetProfiles());
+                                                                                           _settings->GetProfiles(),
+                                                                                           _settings->GlobalSettings().GetColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
         _recursiveUpdateCommandIcons(copyOfCommands.GetView());

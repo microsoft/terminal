@@ -340,6 +340,17 @@
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
-        { "command": "resetFontSize", "keys": "ctrl+0" }
+        { "command": "resetFontSize", "keys": "ctrl+0" },
+
+        {
+            "name": { "key": "SetColorSchemeParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "schemes",
+                    "name": "${scheme.name}",
+                    "command": { "action": "setColorScheme", "colorScheme": "${scheme.name}" }
+                }
+            ]
+        },
     ]
 }
