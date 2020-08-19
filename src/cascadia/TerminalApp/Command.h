@@ -22,6 +22,7 @@ Author(s):
 #include "TerminalWarnings.h"
 #include "Profile.h"
 #include "..\inc\cppwinrt_utils.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -32,13 +33,6 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    enum class ExpandCommandType : uint32_t
-    {
-        None = 0,
-        Profiles,
-        ColorSchemes
-    };
-
     struct Command : CommandT<Command>
     {
         Command();
@@ -64,7 +58,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
 
-        GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+        GETSET_PROPERTY(::TerminalApp::ExpandCommandType, IterateOn, ::TerminalApp::ExpandCommandType::None);
 
     private:
         Json::Value _originalJson;

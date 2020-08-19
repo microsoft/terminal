@@ -9,6 +9,7 @@
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include <LibraryResources.h>
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Foundation;
@@ -20,9 +21,6 @@ static constexpr std::string_view ActionKey{ "command" };
 static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
-
-static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
-static constexpr std::string_view IterateOnSchemesValue{ "schemes" };
 
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
@@ -123,18 +121,7 @@ namespace winrt::TerminalApp::implementation
         auto result = winrt::make_self<Command>();
 
         bool nested = false;
-        if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
-        {
-            auto s = iterateOnJson.asString();
-            if (s == IterateOnProfilesValue)
-            {
-                result->_IterateOn = ExpandCommandType::Profiles;
-            }
-            if (s == IterateOnSchemesValue)
-            {
-                result->_IterateOn = ExpandCommandType::ColorSchemes;
-            }
-        }
+        JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands

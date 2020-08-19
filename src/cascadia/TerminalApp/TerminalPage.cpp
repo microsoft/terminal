@@ -2085,7 +2085,7 @@ namespace winrt::TerminalApp::implementation
 
         Command::ExpandCommands(copyOfCommands,
                                 profiles,
-                                { &sortedSchemes[0], sortedSchemes.size() },
+                                sortedSchemes,
                                 warnings);
 
         return copyOfCommands;
