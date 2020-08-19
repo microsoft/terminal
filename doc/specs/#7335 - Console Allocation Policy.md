@@ -86,6 +86,27 @@ console when launched from Explorer.
 An application that is in the *windows* subsystem with a `consoleAllocationPolicy` of **always** *will always* be
 allocated a new conhost on startup.
 
+This proposal pertains only to applications spawned in their default state (i.e. either in an existing console session
+with no flags or without a console session or flags.)
+
+### Interaction with existing APIs
+
+[`CreateProcess`] supports a number of [process creation flags] that dictate how a spawned application will behave with
+regards to console allocation:
+
+* `DETACHED_PROCESS`: No console inheritance, no console host spawned for the new process.
+* `CREATE_NEW_CONSOLE`: No console inheritance, new console host **is** spawned for the new process.
+* `CREATE_NO_WINDOW`: No console inheritance, new console host **is** spawned for the new process.
+    * this is the same as `CREATE_NEW_CONSOLE`, except that the first connection packet specifies that the window should
+      be invisible
+
+Because this proposal pertains only to applications spawned in their default state, `CreateProcess`' flags will override
+the manifested allocation policy just as they would have overridden the image's subsystem-based default.
+
+As an example, `CreateProcess(...CREATE_NEW_CONSOLE...)` on an **inheritOnly**-manifested application will force the
+allocation of a console host. `CreateProcess(...DETACHED_PROCESS...)` on an **always**-manifested application will
+suppress the allocation of a console host.
+
 ## Inspiration
 
 Fusion manifest entries are used to make application-scoped decisions like this all the time, like `longPathAware` and
@@ -117,9 +138,6 @@ This should have no impact on reliability.
 
 ### Compatibility
 
-On downlevel versions of Windows that do not understand (or expect) this manifest field, applications will allocate
-consoles as specified by their image subsystem (described in the [abstract](#abstract) above).
-
 An existing application opting into **inheritOnly** may constitute a breaking change, but the scope of the breakage is
 restricted to that application and is expected to be managed by the application.
 
@@ -130,6 +148,11 @@ All behavioral changes are opt-in.
 > console-based python applications will no longer spawn a console window when double-clicked from the graphical shell.
 
 Python could work around this by calling [`AllocConsole`] if it can be detected that console I/O is required.
+
+#### Downlevel
+
+On downlevel versions of Windows that do not understand (or expect) this manifest field, applications will allocate
+consoles as specified by their image subsystem (described in the [abstract](#abstract) above).
 
 ### Performance, Power, and Efficiency
 
@@ -178,11 +201,8 @@ Are there other allocation policies we need to consider?
     - checking a subsystem doesn't work right with app execution aliases\[2\]
         - This is not a new problem, but it digs the hole a little deeper.
     - requires standardization outside of Microsoft because the PE format is a dependency of the UEFI specification\[3\]
-    - requires coordination between tooling teams both within and without Microsoft
-        - VC's `link`
-        - binutils' `ld`
-        - LLVM's `llvm-ld` (`lld`)
-        - Any number of binary analysis toolkits
+    - requires coordination between tooling teams both within and without Microsoft (regarding any tool that operates on
+      or produces PE files)
 
 - An exported symbol that shells can check for to determine whether to wait for the attached process to exit
     - relies on shells to update and check for this
@@ -200,3 +220,5 @@ Are there other allocation policies we need to consider?
 [PowerShell: Windows Store applications incorrectly assumed to be console applications]: https://github.com/PowerShell/PowerShell/issues/9970
 [UEFI spec 2.6 appendix Q.1]: https://www.uefi.org/sites/default/files/resources/UEFI%20Spec%202_6.pdf
 [`AllocConsole`]: https://docs.microsoft.com/windows/console/allocconsole
+[`CreateProcess`]: https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessw
+[process creation flags]: https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags
