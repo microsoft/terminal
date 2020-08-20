@@ -317,39 +317,16 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void Profile::LayerJson(const Json::Value& json)
 {
-    std::optional<GUID> guid = std::nullopt;
-    std::optional<til::color> color = std::nullopt;
-
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
-    if (JsonUtils::GetValueForKey(json, GuidKey, guid))
-    {
-        _Guid = guid.has_value() ? IReference<winrt::guid>{ guid.value() } : nullptr;
-        guid.reset();
-    }
+    JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
 
     // Core Settings
-    if (JsonUtils::GetValueForKey(json, ForegroundKey, color))
-    {
-        _Foreground = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
-        color.reset();
-    }
-    if (JsonUtils::GetValueForKey(json, BackgroundKey, color))
-    {
-        _Background = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
-        color.reset();
-    }
-    if (JsonUtils::GetValueForKey(json, SelectionBackgroundKey, color))
-    {
-        _SelectionBackground = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
-        color.reset();
-    }
-    if (JsonUtils::GetValueForKey(json, CursorColorKey, color))
-    {
-        _CursorColor = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
-        color.reset();
-    }
+    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -362,11 +339,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     // Control Settings
     JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
-    if (JsonUtils::GetValueForKey(json, ConnectionTypeKey, guid))
-    {
-        _ConnectionType = guid.has_value() ? IReference<winrt::guid>{ guid.value() } : nullptr;
-        guid.reset();
-    }
+    JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
     JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
     JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
@@ -389,11 +362,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    if (JsonUtils::GetValueForKey(json, TabColorKey, color))
-    {
-        _TabColor = color.has_value() ? IReference<Color>{ color.value() } : nullptr;
-        color.reset();
-    }
+    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 }
 
 // Method Description:

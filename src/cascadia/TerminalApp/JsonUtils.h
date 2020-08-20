@@ -29,6 +29,8 @@ namespace winrt
         template<typename T>
         struct IReference;
     }
+
+    struct Windows::UI::Color;
 }
 
 namespace TerminalApp::JsonUtils
@@ -269,10 +271,20 @@ namespace TerminalApp::JsonUtils
         }
     };
 
-    // (GUID and winrt::guid are mutually convertible!)
+    // GUID and winrt::guid are mutually convertible,
+    // but IReference<winrt::guid> throws some of this off
     template<>
     struct ConversionTrait<winrt::guid> : public ConversionTrait<GUID>
     {
+        winrt::guid FromJson(const Json::Value& json) const
+        {
+            return static_cast<winrt::guid>(ConversionTrait<GUID>{}.FromJson(json));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<GUID>{}.CanConvert(json);
+        }
     };
 
     template<>
@@ -297,6 +309,20 @@ namespace TerminalApp::JsonUtils
         std::string TypeDescription() const
         {
             return "color (#rrggbb, #rgb)";
+        }
+    };
+
+    template<>
+    struct ConversionTrait<winrt::Windows::UI::Color> : public ConversionTrait<til::color>
+    {
+        winrt::Windows::UI::Color FromJson(const Json::Value& json) const
+        {
+            return static_cast<winrt::Windows::UI::Color>(ConversionTrait<til::color>{}.FromJson(json));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<til::color>{}.CanConvert(json);
         }
     };
 
