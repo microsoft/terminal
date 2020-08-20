@@ -1177,6 +1177,21 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _lastActive = false;
 
+    
+    winrt::Windows::UI::Xaml::Media::Animation::DoubleAnimation d{};
+    d.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 3000 } });
+    d.From(0.0);
+    d.To(400.0);
+    d.EnableDependentAnimation(true);
+    winrt::Windows::UI::Xaml::Media::Animation::Storyboard s;
+    s.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 3000 } });
+    s.Children().Append(d);
+    s.SetTarget(d, control);
+    s.SetTargetProperty(d, L"Width");
+    _root.Resources().Insert(winrt::box_value(L"paneAnimation"), s);
+    s.Begin();
+    control.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Left);
+
     return { _firstChild, _secondChild };
 }
 

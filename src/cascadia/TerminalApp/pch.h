@@ -37,6 +37,7 @@
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.UI.Xaml.Media.Animation.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"
