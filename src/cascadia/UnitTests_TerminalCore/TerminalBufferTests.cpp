@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../renderer/inc/DummyRenderTarget.hpp"
@@ -10,7 +10,7 @@
 #include "consoletaeftemplates.hpp"
 #include "TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Core;
 
 using namespace WEX::Common;
@@ -38,6 +38,8 @@ class TerminalCoreUnitTests::TerminalBufferTests final
 
     TEST_METHOD(TestWrappingCharByChar);
     TEST_METHOD(TestWrappingALongString);
+
+    TEST_METHOD(DontSnapToOutputTest);
 
     TEST_METHOD_SETUP(MethodSetup)
     {
@@ -148,4 +150,86 @@ void TerminalBufferTests::TestWrappingALongString()
     VERIFY_IS_FALSE(row1.GetCharRow().WasWrapForced());
 
     TestUtils::VerifyExpectedString(termTb, TestUtils::Test100CharsString, { 0, 0 });
+}
+
+void TerminalBufferTests::DontSnapToOutputTest()
+{
+    auto& termTb = *term->_buffer;
+    auto& termSm = *term->_stateMachine;
+    const auto initialView = term->GetViewport();
+
+    VERIFY_ARE_EQUAL(0, initialView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight, initialView.BottomExclusive());
+    VERIFY_ARE_EQUAL(0, term->_scrollOffset);
+
+    // -1 so that we don't print the last \n
+    for (int i = 0; i < TerminalViewHeight + 8 - 1; i++)
+    {
+        termSm.ProcessString(L"x\n");
+    }
+
+    const auto secondView = term->GetViewport();
+
+    VERIFY_ARE_EQUAL(8, secondView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight + 8, secondView.BottomExclusive());
+    VERIFY_ARE_EQUAL(0, term->_scrollOffset);
+
+    Log::Comment(L"Scroll up one line");
+    term->_scrollOffset = 1;
+
+    const auto thirdView = term->GetViewport();
+    VERIFY_ARE_EQUAL(7, thirdView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight + 7, thirdView.BottomExclusive());
+    VERIFY_ARE_EQUAL(1, term->_scrollOffset);
+
+    Log::Comment(L"Print a few lines, to see that the viewport stays where it was");
+    for (int i = 0; i < 8; i++)
+    {
+        termSm.ProcessString(L"x\n");
+    }
+
+    const auto fourthView = term->GetViewport();
+    VERIFY_ARE_EQUAL(7, fourthView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight + 7, fourthView.BottomExclusive());
+    VERIFY_ARE_EQUAL(1 + 8, term->_scrollOffset);
+
+    Log::Comment(L"Print enough lines to get the buffer just about ready to "
+                 L"circle (on the next newline)");
+    auto viewBottom = term->_mutableViewport.BottomInclusive();
+    do
+    {
+        termSm.ProcessString(L"x\n");
+        viewBottom = term->_mutableViewport.BottomInclusive();
+    } while (viewBottom < termTb.GetSize().BottomInclusive());
+
+    const auto fifthView = term->GetViewport();
+    VERIFY_ARE_EQUAL(7, fifthView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight + 7, fifthView.BottomExclusive());
+    VERIFY_ARE_EQUAL(TerminalHistoryLength - 7, term->_scrollOffset);
+
+    Log::Comment(L"Print 3 more lines, and see that we stick to where the old "
+                 L"rows now are in the buffer (after circling)");
+    for (int i = 0; i < 3; i++)
+    {
+        termSm.ProcessString(L"x\n");
+        Log::Comment(NoThrowString().Format(
+            L"_scrollOffset: %d", term->_scrollOffset));
+    }
+    const auto sixthView = term->GetViewport();
+    VERIFY_ARE_EQUAL(4, sixthView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight + 4, sixthView.BottomExclusive());
+    VERIFY_ARE_EQUAL(TerminalHistoryLength - 4, term->_scrollOffset);
+
+    Log::Comment(L"Print 8 more lines, and see that we're now just stuck at the"
+                 L"top of the buffer");
+    for (int i = 0; i < 8; i++)
+    {
+        termSm.ProcessString(L"x\n");
+        Log::Comment(NoThrowString().Format(
+            L"_scrollOffset: %d", term->_scrollOffset));
+    }
+    const auto seventhView = term->GetViewport();
+    VERIFY_ARE_EQUAL(0, seventhView.Top());
+    VERIFY_ARE_EQUAL(TerminalViewHeight, seventhView.BottomExclusive());
+    VERIFY_ARE_EQUAL(TerminalHistoryLength, term->_scrollOffset);
 }

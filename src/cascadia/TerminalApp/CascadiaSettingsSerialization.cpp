@@ -19,7 +19,6 @@
 // "Generated Files" directory.
 
 using namespace ::TerminalApp;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace ::Microsoft::Console;
 
@@ -42,6 +41,54 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
+static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
+{
+    size_t line = 1, column = position + 1;
+    auto lastNL = string.find_last_of('\n', position);
+    if (lastNL != std::string::npos)
+    {
+        column = (position - lastNL);
+        line = std::count(string.cbegin(), string.cbegin() + lastNL + 1, '\n') + 1;
+    }
+
+    return { line, column };
+}
+
+static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view settingsString)
+{
+    std::string msg;
+
+    try
+    {
+        throw;
+    }
+    catch (const JsonUtils::DeserializationError& e)
+    {
+        static constexpr std::string_view basicHeader{ "* Line {line}, Column {column}\n{message}" };
+        static constexpr std::string_view keyedHeader{ "* Line {line}, Column {column} ({key})\n{message}" };
+
+        std::string jsonValueAsString{ "array or object" };
+        try
+        {
+            jsonValueAsString = e.jsonValue.asString();
+        }
+        catch (...)
+        {
+            // discard: we're in the middle of error handling
+        }
+
+        msg = fmt::format("  Have: \"{}\"\n  Expected: {}", jsonValueAsString, e.expectedType);
+
+        auto [l, c] = _LineAndColumnFromPosition(settingsString, e.jsonValue.getOffsetStart());
+        msg = fmt::format((e.key ? keyedHeader : basicHeader),
+                          fmt::arg("line", l),
+                          fmt::arg("column", c),
+                          fmt::arg("key", e.key.value_or("")),
+                          fmt::arg("message", msg));
+        throw SettingsTypedDeserializationException{ msg };
+    }
+}
+
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
@@ -61,7 +108,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // GH 3588, we need this below to know if the user chose something that wasn't our default.
     // Collect it up here in case it gets modified by any of the other layers between now and when
     // the user's preferences are loaded and layered.
-    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().UnparsedDefaultProfile();
+    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().DefaultProfile();
 
     std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
@@ -90,16 +137,23 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         needToWriteFile = true;
     }
 
-    // See microsoft/terminal#2325: find the defaultSettings from the user's
-    // settings. Layer those settings upon all the existing profiles we have
-    // (defaults and dynamic profiles). We'll also set
-    // _userDefaultProfileSettings here. When we LayerJson below to apply the
-    // user settings, we'll make sure to use these defaultSettings _before_ any
-    // profiles the user might have.
-    resultPtr->_ApplyDefaultsFromUserSettings();
+    try
+    {
+        // See microsoft/terminal#2325: find the defaultSettings from the user's
+        // settings. Layer those settings upon all the existing profiles we have
+        // (defaults and dynamic profiles). We'll also set
+        // _userDefaultProfileSettings here. When we LayerJson below to apply the
+        // user settings, we'll make sure to use these defaultSettings _before_ any
+        // profiles the user might have.
+        resultPtr->_ApplyDefaultsFromUserSettings();
 
-    // Apply the user's settings
-    resultPtr->LayerJson(resultPtr->_userSettings);
+        // Apply the user's settings
+        resultPtr->LayerJson(resultPtr->_userSettings);
+    }
+    catch (...)
+    {
+        _CatchRethrowSerializationExceptionWithLocationInfo(resultPtr->_userSettingsString);
+    }
 
     // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.
@@ -141,12 +195,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // is a lot of computation we can skip if no one cares.
     if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
-        const auto hardcodedDefaultGuidAsGuid = Utils::GuidFromString(hardcodedDefaultGuid);
         const auto guid = resultPtr->GlobalSettings().DefaultProfile();
 
         // Compare to the defaults.json one that we set on install.
         // If it's different, log what the user chose.
-        if (hardcodedDefaultGuidAsGuid != guid)
+        if (hardcodedDefaultGuid != guid)
         {
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -229,6 +282,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     // them from a file (and the potential that could fail)
     resultPtr->_ParseJsonString(DefaultJson, true);
     resultPtr->LayerJson(resultPtr->_defaultSettings);
+    resultPtr->_ResolveDefaultProfile();
 
     return resultPtr;
 }
@@ -654,7 +708,8 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
     else
     {
-        _globals.AddColorScheme(ColorScheme::FromJson(schemeJson));
+        const auto scheme = implementation::ColorScheme::FromJson(schemeJson);
+        _globals.AddColorScheme(*scheme);
     }
 }
 
@@ -669,19 +724,15 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 // Return Value:
 // - a ColorScheme that can be layered with the given json object, iff such a
 //   color scheme exists.
-ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
+winrt::com_ptr<implementation::ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
-    if (auto schemeName = ColorScheme::GetNameFromJson(schemeJson))
+    if (auto schemeName = implementation::ColorScheme::GetNameFromJson(schemeJson))
     {
         auto& schemes = _globals.GetColorSchemes();
         auto iterator = schemes.find(*schemeName);
         if (iterator != schemes.end())
         {
-            // HERE BE DRAGONS: Returning a pointer to a type in the vector is
-            // maybe not the _safest_ thing, but we have a mind to make Profile
-            // and ColorScheme winrt types in the future, so this will be safer
-            // then.
-            return &iterator->second;
+            return winrt::get_self<implementation::ColorScheme>(iterator->second)->get_strong();
         }
     }
     return nullptr;

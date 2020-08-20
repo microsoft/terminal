@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -30,6 +30,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(AltShiftKey);
         TEST_METHOD(AltSpace);
+        TEST_METHOD(InvalidKeyEvent);
 
         void _VerifyExpectedInput(std::wstring& actualInput)
         {
@@ -64,5 +65,15 @@ namespace TerminalCoreUnitTests
         VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed, true));
         VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed, false));
         VERIFY_IS_FALSE(term.SendCharEvent(L' ', 0, ControlKeyStates::LeftAltPressed));
+    }
+
+    void InputTest::InvalidKeyEvent()
+    {
+        // Certain applications like AutoHotKey and its keyboard remapping feature,
+        // send us key events using SendInput() whose values are outside of the valid range.
+        // We don't want to handle those events as we're probably going to get a proper followup character event.
+        VERIFY_IS_FALSE(term.SendKeyEvent(0, 123, {}, true));
+        VERIFY_IS_FALSE(term.SendKeyEvent(255, 123, {}, true));
+        VERIFY_IS_FALSE(term.SendKeyEvent(123, 0, {}, true));
     }
 }

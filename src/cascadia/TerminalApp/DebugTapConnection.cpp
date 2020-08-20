@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "DebugTapConnection.h"
+#include "Utils.h"
 
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
@@ -91,36 +92,15 @@ namespace winrt::Microsoft::TerminalApp::implementation
         return ConnectionState::Failed;
     }
 
-    static std::wstring _sanitizeString(const std::wstring_view str)
-    {
-        std::wstring newString{ str.begin(), str.end() };
-        for (auto& ch : newString)
-        {
-            if (ch < 0x20)
-            {
-                ch += 0x2400;
-            }
-            else if (ch == 0x20)
-            {
-                ch = 0x2423; // replace space with ␣
-            }
-            else if (ch == 0x7f)
-            {
-                ch = 0x2421; // replace del with ␡
-            }
-        }
-        return newString;
-    }
-
     void DebugTapConnection::_OutputHandler(const hstring str)
     {
-        _TerminalOutputHandlers(_sanitizeString(str));
+        _TerminalOutputHandlers(VisualizeControlCodes(str));
     }
 
     // Called by the DebugInputTapConnection to print user input
     void DebugTapConnection::_PrintInput(const hstring& str)
     {
-        auto clean{ _sanitizeString(str) };
+        auto clean{ VisualizeControlCodes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
         _TerminalOutputHandlers(formatted);
     }

@@ -25,6 +25,7 @@ Kourosh
 kowalczyk
 leonmsft
 Lepilleur
+lukesampson
 Manandhar
 mbadolato
 Mehrain

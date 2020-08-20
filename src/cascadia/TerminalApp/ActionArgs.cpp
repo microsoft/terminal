@@ -13,13 +13,20 @@
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
+#include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
+#include "ToggleTabSwitcherArgs.g.h"
+
+#include "Utils.h"
 
 #include <LibraryResources.h>
+
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -62,11 +69,47 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CopyTextArgs::GenerateName() const
     {
+        std::wstringstream ss;
+
         if (_SingleLine)
         {
-            return RS_(L"CopyTextAsSingleLineCommandKey");
+            ss << RS_(L"CopyTextAsSingleLineCommandKey").c_str();
         }
-        return RS_(L"CopyTextCommandKey");
+        else
+        {
+            ss << RS_(L"CopyTextCommandKey").c_str();
+        }
+
+        if (_CopyFormatting != nullptr)
+        {
+            ss << L", copyFormatting: ";
+            if (_CopyFormatting.Value() == CopyFormat::All)
+            {
+                ss << L"all, ";
+            }
+            else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
+            {
+                ss << L"none, ";
+            }
+            else
+            {
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
+                {
+                    ss << L"html, ";
+                }
+
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
+                {
+                    ss << L"rtf, ";
+                }
+            }
+
+            // Chop off the last ","
+            auto result = ss.str();
+            return winrt::hstring{ result.substr(0, result.size() - 2) };
+        }
+
+        return winrt::hstring{ ss.str() };
     }
 
     winrt::hstring NewTabArgs::GenerateName() const
@@ -165,6 +208,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::hstring SendInputArgs::GenerateName() const
+    {
+        // The string will be similar to the following:
+        // * "Send Input: ...input..."
+
+        auto escapedInput = VisualizeControlCodes(_Input);
+        auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
+        return winrt::hstring{ name };
+    }
+
     winrt::hstring SplitPaneArgs::GenerateName() const
     {
         // The string will be similar to the following:
@@ -229,6 +282,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::hstring SetColorSchemeArgs::GenerateName() const
+    {
+        // "Set color scheme to "{_SchemeName}""
+        if (!_SchemeName.empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"SetColorSchemeCommandKey")),
+                            _SchemeName.c_str())
+            };
+        }
+        return L"";
+    }
+
     winrt::hstring SetTabColorArgs::GenerateName() const
     {
         // "Set tab color to #RRGGBB"
@@ -270,6 +336,41 @@ namespace winrt::TerminalApp::implementation
             };
         }
         return L"";
+    }
+
+    winrt::hstring CloseOtherTabsArgs::GenerateName() const
+    {
+        // "Close tabs other than index {0}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
+                        _Index)
+        };
+    }
+
+    winrt::hstring CloseTabsAfterArgs::GenerateName() const
+    {
+        // "Close tabs after index {0}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
+                        _Index)
+        };
+    }
+
+    winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
+    {
+        // If there's an anchor key set, don't generate a name so that
+        // it won't show up in the command palette. Only an unanchored
+        // tab switcher should be able to be toggled from the palette.
+        // TODO: GH#7179 - once this goes in, make sure to hide the
+        // anchor mode command that was given a name in settings.
+        if (_AnchorKey != Windows::System::VirtualKey::None)
+        {
+            return L"";
+        }
+        else
+        {
+            return RS_(L"ToggleTabSwitcherCommandKey");
+        }
     }
 
 }

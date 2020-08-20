@@ -146,6 +146,13 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::SetCursorColor(const DWORD color) noexcept
+try
+{
+    return _terminalApi.SetCursorColor(color);
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool TerminalDispatch::SetClipboard(std::wstring_view content) noexcept
 try
 {
