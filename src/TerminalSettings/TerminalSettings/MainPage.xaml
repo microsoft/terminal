@@ -49,7 +49,7 @@
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xEA86;" />
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Launch_Page">Launch</TextBlock>
+                            <TextBlock Tag="Launch_Page">Startup</TextBlock>
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem Tag="Interaction_Nav" >
@@ -91,7 +91,7 @@
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;" />
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Global_Page">Color Schemes</TextBlock>
+                            <TextBlock Tag="Global_Page">Color schemes</TextBlock>
                         </muxc:NavigationViewItem>
                     </muxc:NavigationViewItem.MenuItems>
 

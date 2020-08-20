@@ -13,11 +13,11 @@ namespace winrt::SettingsControl::implementation
         m_homeViewModel = winrt::make<SettingsControl::implementation::SettingsControlViewModel>();
         InitializeComponent();
 
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Launch", L"Launch_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Startup", L"Launch_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Interaction", L"Interaction_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Rendering", L"Rendering_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Global appearance", L"GlobalAppearance_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Color Schemes", L"ColorSchemes_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Color schemes", L"ColorSchemes_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Global profile settings", L"GlobalProfile_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Keyboard", L"Keyboard_Nav"));
     }
