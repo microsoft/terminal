@@ -61,10 +61,16 @@ namespace winrt::TerminalApp::implementation
         void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
+        bool HasGuid() const;
+        winrt::guid Guid() const;
+        void Guid(winrt::guid guid);
+
+        bool HasConnectionType() const;
+        winrt::guid ConnectionType() const;
+        void ConnectionType(winrt::guid conType);
+
         GETSET_PROPERTY(hstring, Name, L"Default");
-        GETSET_PROPERTY(Windows::Foundation::IReference<guid>, Guid, nullptr);
         GETSET_PROPERTY(hstring, Source);
-        GETSET_PROPERTY(Windows::Foundation::IReference<guid>, ConnectionType, nullptr);
         GETSET_PROPERTY(bool, Hidden, false);
 
         GETSET_PROPERTY(hstring, IconPath);
@@ -119,6 +125,9 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
     private:
+        Windows::Foundation::IReference<winrt::guid> _Guid = nullptr;
+        Windows::Foundation::IReference<winrt::guid> _ConnectionType = nullptr;
+
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const Windows::Foundation::IReference<hstring>& source) noexcept;

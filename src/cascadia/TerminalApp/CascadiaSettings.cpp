@@ -77,7 +77,7 @@ const Profile CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
     {
         try
         {
-            if (profile.Guid() != nullptr && profile.Guid().Value() == guid)
+            if (profile.HasGuid() && profile.Guid() == guid)
             {
                 return profile;
             }
@@ -249,7 +249,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
     {
-        if (profile.Guid() != nullptr && profile.Guid().Value() == defaultProfileGuid)
+        if (profile.HasGuid() && profile.Guid() == defaultProfileGuid)
         {
             defaultProfileNotInProfiles = false;
             break;
@@ -263,7 +263,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(GUID(_profiles[0].Guid().Value()));
+        GlobalSettings().DefaultProfile(GUID(_profiles[0].Guid()));
     }
 }
 
@@ -285,7 +285,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
     // already in the set, then we need to delete that profile.
     for (size_t i = 0; i < _profiles.size(); i++)
     {
-        if (!uniqueGuids.insert(_profiles.at(i).Guid().Value()).second)
+        if (!uniqueGuids.insert(_profiles.at(i).Guid()).second)
         {
             foundDupe = true;
             indicesToDelete.push_back(i);
@@ -350,7 +350,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
         for (size_t pIndex = gIndex; pIndex < _profiles.size(); pIndex++)
         {
             auto profileGuid = _profiles.at(pIndex).Guid();
-            if (equals(profileGuid.Value(), guid))
+            if (equals(profileGuid, guid))
             {
                 std::iter_swap(_profiles.begin() + pIndex, _profiles.begin() + gIndex);
                 break;
@@ -612,7 +612,7 @@ try
 
         if (profileIterator != _profiles.cend())
         {
-            return std::optional<GUID>{ profileIterator->Guid().Value() };
+            return std::optional<GUID>{ profileIterator->Guid() };
         }
     }
 
@@ -644,7 +644,7 @@ std::optional<GUID> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> 
             realIndex < gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
             const auto& selectedProfile = _profiles.at(realIndex);
-            return std::optional<GUID>{ selectedProfile.Guid().Value() };
+            return std::optional<GUID>{ selectedProfile.Guid() };
         }
     }
     return std::nullopt;

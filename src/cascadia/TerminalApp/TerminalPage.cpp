@@ -492,7 +492,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
-            if (profile.Guid().Value() == winrt::guid{ defaultProfileGuid })
+            if (profile.Guid() == winrt::guid{ defaultProfileGuid })
             {
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
@@ -771,10 +771,10 @@ namespace winrt::TerminalApp::implementation
         GUID connectionType{ 0 };
         GUID sessionGuid{ 0 };
 
-        const auto hasConnectionType = profile.ConnectionType() != nullptr;
+        const auto hasConnectionType = profile.HasConnectionType();
         if (hasConnectionType)
         {
-            connectionType = profile.ConnectionType().Value();
+            connectionType = profile.ConnectionType();
         }
 
         if (hasConnectionType &&
@@ -2004,7 +2004,7 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings->GetProfiles();
         for (auto& profile : profiles)
         {
-            const GUID profileGuid = GUID(profile.Guid().Value());
+            const GUID profileGuid = GUID(profile.Guid());
 
             try
             {

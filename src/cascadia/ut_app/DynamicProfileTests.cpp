@@ -73,7 +73,7 @@ namespace TerminalAppUnitTests
         std::vector<Profile> profiles = gen.GenerateProfiles();
         VERIFY_ARE_EQUAL(1u, profiles.size());
         VERIFY_ARE_EQUAL(L"profile0", profiles.at(0).Name());
-        VERIFY_IS_NULL(profiles.at(0).Guid());
+        VERIFY_IS_FALSE(profiles.at(0).HasGuid());
     }
 
     void DynamicProfileTests::TestSimpleGenerateMultipleGenerators()
@@ -103,10 +103,10 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
-        VERIFY_IS_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_FALSE(settings._profiles.at(0).HasGuid());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).Name());
-        VERIFY_IS_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_FALSE(settings._profiles.at(1).HasGuid());
     }
 
     void DynamicProfileTests::TestGenGuidsForProfiles()
@@ -149,45 +149,45 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
-        VERIFY_IS_NULL(settings._profiles.at(0).Guid());
+        VERIFY_IS_TRUE(settings._profiles.at(0).HasGuid());
         VERIFY_IS_TRUE(settings._profiles.at(0).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).Name());
-        VERIFY_IS_NULL(settings._profiles.at(1).Guid());
+        VERIFY_IS_FALSE(settings._profiles.at(1).HasGuid());
         VERIFY_IS_TRUE(settings._profiles.at(1).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(2).Name());
-        VERIFY_IS_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_FALSE(settings._profiles.at(2).HasGuid());
         VERIFY_IS_FALSE(settings._profiles.at(2).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(3).Name());
-        VERIFY_IS_NULL(settings._profiles.at(3).Guid());
+        VERIFY_IS_FALSE(settings._profiles.at(3).HasGuid());
         VERIFY_IS_FALSE(settings._profiles.at(3).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(4).Name());
-        VERIFY_IS_NULL(settings._profiles.at(4).Guid());
+        VERIFY_IS_FALSE(settings._profiles.at(4).HasGuid());
         VERIFY_IS_FALSE(settings._profiles.at(4).Source().empty());
 
         settings._ValidateProfilesHaveGuid();
 
-        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
+        VERIFY_IS_TRUE(settings._profiles.at(0).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(1).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(2).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(3).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(4).HasGuid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(),
-                             settings._profiles.at(1).Guid().Value());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(),
-                             settings._profiles.at(2).Guid().Value());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid().Value(),
-                             settings._profiles.at(3).Guid().Value());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(),
+                             settings._profiles.at(1).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(),
+                             settings._profiles.at(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).Guid(),
+                             settings._profiles.at(3).Guid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid().Value(),
-                             settings._profiles.at(4).Guid().Value());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).Guid(),
+                             settings._profiles.at(4).Guid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).Guid().Value(),
-                             settings._profiles.at(4).Guid().Value());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).Guid(),
+                             settings._profiles.at(4).Guid());
     }
 
     void DynamicProfileTests::DontLayerUserProfilesOnDynamicProfiles()
@@ -255,17 +255,17 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1).Source());
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2).Source());
 
-        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(3).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(4).Guid());
+        VERIFY_IS_TRUE(settings._profiles.at(0).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(1).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(2).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(3).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(4).HasGuid());
 
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0).Guid().Value());
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1).Guid().Value());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid().Value());
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(3).Guid().Value());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(4).Guid().Value());
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0).Guid());
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid());
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(3).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(4).Guid());
     }
 
     void DynamicProfileTests::DoLayerUserProfilesOnDynamicsWhenSourceMatches()
@@ -333,13 +333,13 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1).Source());
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2).Source());
 
-        VERIFY_IS_NOT_NULL(settings._profiles.at(0).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(1).Guid());
-        VERIFY_IS_NOT_NULL(settings._profiles.at(2).Guid());
+        VERIFY_IS_TRUE(settings._profiles.at(0).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(1).HasGuid());
+        VERIFY_IS_TRUE(settings._profiles.at(2).HasGuid());
 
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0).Guid().Value());
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1).Guid().Value());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid().Value());
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0).Guid());
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2).Guid());
 
         VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0).Name());
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1).Name());

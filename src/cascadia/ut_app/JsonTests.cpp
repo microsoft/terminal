@@ -158,13 +158,13 @@ namespace TerminalAppUnitTests
         const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
         const winrt::guid nullGuid{};
 
-        VERIFY_IS_FALSE(profile0->Guid() != nullptr);
-        VERIFY_IS_FALSE(profile1->Guid() != nullptr);
-        VERIFY_IS_FALSE(profile2->Guid() != nullptr);
-        VERIFY_IS_TRUE(profile3->Guid() != nullptr);
-        VERIFY_IS_TRUE(profile4->Guid() != nullptr);
+        VERIFY_IS_FALSE(profile0->HasGuid());
+        VERIFY_IS_FALSE(profile1->HasGuid());
+        VERIFY_IS_FALSE(profile2->HasGuid());
+        VERIFY_IS_TRUE(profile3->HasGuid());
+        VERIFY_IS_TRUE(profile4->HasGuid());
 
-        VERIFY_ARE_EQUAL(profile3->Guid().Value(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4->Guid().Value(), cmdGuid);
+        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
     }
 }

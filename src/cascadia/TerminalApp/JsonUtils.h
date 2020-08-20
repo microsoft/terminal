@@ -312,12 +312,13 @@ namespace TerminalApp::JsonUtils
         }
     };
 
+#ifdef WINRT_Windows_UI_H
     template<>
     struct ConversionTrait<winrt::Windows::UI::Color> : public ConversionTrait<til::color>
     {
         winrt::Windows::UI::Color FromJson(const Json::Value& json) const
         {
-            return static_cast<winrt::Windows::UI::Color>(ConversionTrait<til::color>{}.FromJson(json));
+            return static_cast<winrt::Windows::UI::Color>(ConversionTrait<til::color>{}.FromJson(json))
         }
 
         bool CanConvert(const Json::Value& json) const
@@ -325,6 +326,7 @@ namespace TerminalApp::JsonUtils
             return ConversionTrait<til::color>{}.CanConvert(json);
         }
     };
+#endif
 
     template<typename T, typename TBase>
     struct EnumMapper

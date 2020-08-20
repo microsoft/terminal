@@ -481,7 +481,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
     for (const auto& profile : _profiles)
     {
-        if (profile.Guid() == nullptr)
+        if (!profile.HasGuid())
         {
             // If the profile doesn't have a guid, it's a name-only profile.
             // During validation, we'll generate a GUID for the profile, but

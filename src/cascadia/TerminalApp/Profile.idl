@@ -15,9 +15,11 @@ namespace TerminalApp
         Profile(Windows.Foundation.IReference<Guid> guid);
 
         String Name;
-        Windows.Foundation.IReference<Guid> Guid;
+        Boolean HasGuid();
+        Guid Guid;
         String Source;
-        Windows.Foundation.IReference<Guid> ConnectionType;
+        Boolean HasConnectionType();
+        Guid ConnectionType;
         Boolean Hidden;
 
         String IconPath;
