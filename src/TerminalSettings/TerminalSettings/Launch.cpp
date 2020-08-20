@@ -22,4 +22,5 @@ namespace winrt::SettingsControl::implementation
     void Launch::ClickHandler(IInspectable const&, RoutedEventArgs const&)
     {
     }
+
 }
