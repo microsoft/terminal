@@ -68,14 +68,15 @@ static constexpr bool _isC0Code(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a C1 CSI (Control Sequence Introducer)
-//   This is a single-character way to start a control sequence, as opposed to "ESC[".
+// - Determines if a character is a C1 control characters.
+//   This is a single-character way to start a control sequence, as opposed to using ESC
+//   and their 7-bit equivalent.
 //
 //   Not all single-byte codepages support C1 control codes--in some, the range that would
 //   be used for C1 codes are instead used for additional graphic characters.
 //
-//   However, we do not need to worry about confusion whether a single byte \x9b in a
-//   single-byte stream represents a C1 CSI or some other glyph, because by the time we
+//   However, we do not need to worry about confusion whether a single byte, for example,
+//   \x9b in a single-byte stream represents a C1 CSI or some other glyph, because by the time we
 //   get here, everything is Unicode. Knowing whether a single-byte \x9b represents a
 //   single-character C1 CSI or some other glyph is handled by MultiByteToWideChar before
 //   we get here (if the stream was not already UTF-16). For instance, in CP_ACP, if a
@@ -91,6 +92,13 @@ static constexpr bool _isC1ControlCharacter(const wchar_t wch) noexcept
     return (wch >= L'\x80' && wch <= L'\x8F') || (wch >= L'\x90' && wch <= L'\x9F');
 }
 
+// Routine Description:
+// - Convert a C1 control characters to their 7-bit equivalent.
+//
+// Arguments:
+// - wch - Character to convert.
+// Return Value:
+// - The 7-bit equivalent of the 8-bit control characters.
 static constexpr wchar_t _c1To7Bit(const wchar_t wch) noexcept
 {
     return wch - L'\x40';
@@ -134,7 +142,7 @@ static constexpr bool _isEscape(const wchar_t wch) noexcept
 }
 
 // Routine Description:
-// - Determines if a character is a delimiter between two parameters in a "control sequence".
+// - Determines if a character is a delimiter between two parameters in an escape sequence.
 // Arguments:
 // - wch - Character to check.
 // Return Value:
@@ -264,17 +272,6 @@ static constexpr bool _isOscIndicator(const wchar_t wch) noexcept
 static constexpr bool _isOscDelimiter(const wchar_t wch) noexcept
 {
     return wch == L';'; // 0x3B
-}
-
-// Routine Description:
-// - Determines if a character should initiate the end of an OSC sequence.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isOscTerminationInitiator(const wchar_t wch) noexcept
-{
-    return wch == AsciiChars::ESC;
 }
 
 // Routine Description:
@@ -1634,10 +1631,9 @@ void StateMachine::_EventDcsParam(const wchar_t wch)
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the DcsPassThrough state.
 //   Events in this state will:
-//   1. Enter ground on a String terminator
-//   2. Pass through if character is valid.
-//   3. If we see a ESC, enter the DcsTermination state.
-//   4. Ignore everything else.
+//   1. Pass through if character is valid.
+//   2. If we see a ESC, enter the DcsTermination state.
+//   3. Ignore everything else.
 // Arguments:
 // - wch - Character that triggered the event
 // Return Value:
@@ -1668,7 +1664,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 // - wch - Character that triggered the event
 // Return Value:
 // - <none>
-void StateMachine::_EventSosPmApcString(const wchar_t wch)
+void StateMachine::_EventSosPmApcString(const wchar_t wch) noexcept
 {
     _trace.TraceOnEvent(L"SosPmApcString");
     if (_isEscape(wch))
@@ -1728,21 +1724,26 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
         _ActionExecute(wch);
         _EnterGround();
     }
+    // Preprocess C1 control characters and treat them as ESC + their 7-bit equivalent.
     else if (_isC1ControlCharacter(wch))
     {
-        // Don't go to escape from the variable length string state - ESC can be used to
-        //      terminate variable length control string.
+        // When we are in "Variable Length String" state, a C1 control character
+        // should effectively acts as an ESC and move us into state corresponding
+        // termination states
         if (_IsVariableLengthStringState())
         {
             _EnterVariableLengthStringTermination();
             _EventVariableLengthStringTermination(_c1To7Bit(wch));
         }
+        // Enter Escape state and pass the converted 7-bit character.
         else
         {
             _EnterEscape();
             _EventEscape(_c1To7Bit(wch));
         }
     }
+    // Don't go to escape from the variable length string state - ESC (and C1 String Terminator)
+    // can be used to terminate variable length control string.
     else if (_isEscape(wch) && !_IsVariableLengthStringState())
     {
         _EnterEscape();
@@ -2016,6 +2017,14 @@ void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value) noexcept
     }
 }
 
+// Routine Description:
+// - Determines if the engine is in "Variable Length String" state, which is a combination
+//   of all states that are expecting a string that has a undetermined length.
+//
+// Arguments:
+// - <none>
+// Return Value:
+// - True if it is. False if it isn't.
 const bool StateMachine::_IsVariableLengthStringState() const noexcept
 {
     return _state == VTStates::OscString || _state == VTStates::DcsPassThrough || _state == VTStates::SosPmApcString;
