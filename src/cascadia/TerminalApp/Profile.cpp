@@ -541,13 +541,13 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
 
 bool Profile::HasGuid() const
 {
-    // This can throw if we never had our guid set to a legitimate value.
-    THROW_HR_IF_MSG(E_FAIL, _Guid == nullptr, "Profile._guid always expected to have a value");
     return _Guid != nullptr;
 }
 
 winrt::guid Profile::Guid() const
 {
+    // This can throw if we never had our guid set to a legitimate value.
+    THROW_HR_IF_MSG(E_FAIL, _Guid == nullptr, "Profile._guid always expected to have a value");
     return _Guid.Value();
 }
 
