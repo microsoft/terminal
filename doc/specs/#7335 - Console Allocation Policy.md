@@ -205,7 +205,7 @@ Are there other allocation policies we need to consider?
         - we could provide an API to determine whether to wait or return?
     - fragile, somewhat silly, exporting symbols from EXEs is annoying and uncommon
 
-An earler version of this specification offered the **always** allocation policy, with the following behaviors:
+An earlier version of this specification offered the **always** allocation policy, with the following behaviors:
 
 * A GUI subsystem application would always get a console window.
 * A command-line shell would not wait for it to exit before returning a prompt.
