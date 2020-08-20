@@ -42,6 +42,8 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         _SetupResources();
     }
 
+    _root.Background(s_unfocusedBorderBrush);
+
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
 
@@ -1177,33 +1179,57 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _lastActive = false;
 
-    const auto firstPercent = _desiredSplitPosition;
-    const auto secondPercent = 1.0f - firstPercent;
-    auto secondWidth = secondPercent * _root.ActualWidth();
+    // const auto firstPercent = _desiredSplitPosition;
+    // const auto secondPercent = 1.0f - firstPercent;
+    // auto secondWidth = secondPercent * _root.ActualWidth();
+    const bool splitWidth = _splitState == SplitState::Vertical;
+    auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(splitWidth ? _root.ActualWidth() : _root.ActualHeight()));
+
     auto childGrid = _secondChild->_root;
-    winrt::Windows::UI::Xaml::Media::Animation::DoubleAnimation d{};
-    d.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 300 } });
-    d.From(0.0);
-    d.To(400.0);
+    Duration duration{ std::chrono::milliseconds{ 166 } };
+    Duration d2 = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(300)));
+    Media::Animation::DoubleAnimation animation{};
+    animation.Duration(d2);
+    animation.From(0.0);
+    animation.To(secondSize);
     // d.EasingFunction(Media::Animation::SineEase{});
-    // d.EasingFunction(Media::Animation::QuadraticEase{});
-    d.EasingFunction(Media::Animation::CubicEase{});
-    d.EnableDependentAnimation(true);
-    winrt::Windows::UI::Xaml::Media::Animation::Storyboard s;
-    s.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 300 } });
-    s.Children().Append(d);
-    s.SetTarget(d, childGrid);
-    s.SetTargetProperty(d, L"Width");
+    animation.EasingFunction(Media::Animation::QuadraticEase{});
+    // animation.EasingFunction(Media::Animation::CubicEase{});
+    animation.EnableDependentAnimation(true);
+    Media::Animation::Storyboard s;
+    s.Duration(d2);
+    s.Children().Append(animation);
+    s.SetTarget(animation, childGrid);
+    s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
     _root.Resources().Insert(winrt::box_value(L"paneAnimation"), s);
     s.Begin();
-    childGrid.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Right);
-    control.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Left);
-    control.Width(secondWidth);
-    d.Completed([control, childGrid](auto&&, auto&&) {
-        control.Width(NAN);
-        childGrid.Width(NAN);
-        childGrid.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Stretch);
-        control.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Stretch);
+    if (splitWidth)
+    {
+        childGrid.HorizontalAlignment(HorizontalAlignment::Right);
+        control.HorizontalAlignment(HorizontalAlignment::Left);
+        control.Width(secondSize);
+    }
+    else
+    {
+        childGrid.VerticalAlignment(VerticalAlignment::Bottom);
+        control.VerticalAlignment(VerticalAlignment::Top);
+        control.Height(secondSize);
+    }
+    animation.Completed([control, childGrid, splitWidth](auto&&, auto&&) {
+        if (splitWidth)
+        {
+            control.Width(NAN);
+            childGrid.Width(NAN);
+            childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+            control.HorizontalAlignment(HorizontalAlignment::Stretch);
+        }
+        else
+        {
+            control.Height(NAN);
+            childGrid.Height(NAN);
+            childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+            control.VerticalAlignment(VerticalAlignment::Stretch);
+        }
     });
 
     return { _firstChild, _secondChild };
