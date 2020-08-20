@@ -1177,20 +1177,34 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _lastActive = false;
 
-    
+    const auto firstPercent = _desiredSplitPosition;
+    const auto secondPercent = 1.0f - firstPercent;
+    auto secondWidth = secondPercent * _root.ActualWidth();
+    auto childGrid = _secondChild->_root;
     winrt::Windows::UI::Xaml::Media::Animation::DoubleAnimation d{};
-    d.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 3000 } });
+    d.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 300 } });
     d.From(0.0);
     d.To(400.0);
+    // d.EasingFunction(Media::Animation::SineEase{});
+    // d.EasingFunction(Media::Animation::QuadraticEase{});
+    d.EasingFunction(Media::Animation::CubicEase{});
     d.EnableDependentAnimation(true);
     winrt::Windows::UI::Xaml::Media::Animation::Storyboard s;
-    s.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 3000 } });
+    s.Duration(winrt::Windows::UI::Xaml::Duration{ std::chrono::milliseconds{ 300 } });
     s.Children().Append(d);
-    s.SetTarget(d, control);
+    s.SetTarget(d, childGrid);
     s.SetTargetProperty(d, L"Width");
     _root.Resources().Insert(winrt::box_value(L"paneAnimation"), s);
     s.Begin();
+    childGrid.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Right);
     control.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Left);
+    control.Width(secondWidth);
+    d.Completed([control, childGrid](auto&&, auto&&) {
+        control.Width(NAN);
+        childGrid.Width(NAN);
+        childGrid.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Stretch);
+        control.HorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment::Stretch);
+    });
 
     return { _firstChild, _secondChild };
 }
