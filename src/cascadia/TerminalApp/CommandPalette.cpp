@@ -7,7 +7,6 @@
 #include "ActionArgs.h"
 #include "Command.h"
 
-#include <WinUser.h>
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"

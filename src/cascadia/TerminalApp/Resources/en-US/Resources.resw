@@ -577,7 +577,7 @@
     <value>Select color scheme...</value>
   </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
-    <value>Tab Search</value>
+    <value>Search for tab...</value>
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>Tab Switcher</value>

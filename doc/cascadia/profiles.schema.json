@@ -613,6 +613,11 @@
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
           "type": "boolean"
+        },
+        "useTabSwitcher": {
+          "default": true,
+          "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
+          "type": "boolean"
         }
       },
       "required": [

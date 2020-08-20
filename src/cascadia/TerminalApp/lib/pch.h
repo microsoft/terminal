@@ -54,6 +54,8 @@
 
 #include <winrt/Windows.System.h>
 
+#include <WinUser.h>
+
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
