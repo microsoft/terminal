@@ -905,6 +905,101 @@ void Pane::_ApplySplitDefinitions()
     }
 }
 
+void Pane::_SetupEntranceAnimation()
+{
+    const bool splitWidth = _splitState == SplitState::Vertical;
+    const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
+    if (totalSize <= 0)
+    {
+        return;
+    }
+
+    const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
+
+    auto childGrid = _secondChild->_root;
+    auto control = _secondChild->_control;
+    // WARNING: Don't do this! This won't work
+    // Duration duration{ std::chrono::milliseconds{ 166 } };
+    // Instead, make a duration from a timespan from the time in millis
+    //
+    // 300ms was chosen because it's quick enough that it doesn't break your
+    // flow, but not too quick to see
+    Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(200)));
+
+    // Build up our animation:
+    // * it'll take as long as our duration (300ms)
+    // * it'll change the value of our property from 0 to secondSize
+    // * it'll animate that value using a quadratic function (like f(t) = t^2)
+    // * IMPORTANT! We'll manually tell the animation that "yes we know what
+    //   we're doing, we want an animation here."
+    Media::Animation::DoubleAnimation animation{};
+    animation.Duration(duration);
+    animation.From(0.0);
+    animation.To(secondSize);
+    animation.EasingFunction(Media::Animation::QuadraticEase{});
+    animation.EnableDependentAnimation(true);
+
+    // Now we're going to set up the Storyboard. This is a unit that uses the
+    // Animation from above, and actually applies it to a property.
+    // * we'll set it up for the same duration as the animation we have
+    // * Apply the animation to the grid of the new pane we're adding to the tree.
+    // * apply the animation to the Width or Height property.
+    // * add the storyboard to our resources. TODO: I don't know if this is necessary.
+    Media::Animation::Storyboard s;
+    s.Duration(duration);
+    s.Children().Append(animation);
+    s.SetTarget(animation, childGrid);
+    s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+    _root.Resources().Insert(winrt::box_value(L"paneAnimation"), s);
+
+    // BE TRICKY:
+    // We're animating the width or height of our child pane's grid.
+    //
+    // We DON'T want to change the size of the control itself, because the
+    // terminal has to reflow the buffer every time the control changes size. So
+    // what we're going to do there is manually set the control's size to how
+    // big we _actually know_ the control will be.
+    //
+    // We're also going to be changing alignment of our child pane and the
+    // control. This way, we'll be able to have the control stick to the inside
+    // of the child pane's grid (the side that's moving), while we also have the
+    // pane's grid stick to "outside" of the grid (the side that's not moving)
+    if (splitWidth)
+    {
+        childGrid.HorizontalAlignment(HorizontalAlignment::Right);
+        control.HorizontalAlignment(HorizontalAlignment::Left);
+        control.Width(secondSize);
+    }
+    else
+    {
+        childGrid.VerticalAlignment(VerticalAlignment::Bottom);
+        control.VerticalAlignment(VerticalAlignment::Top);
+        control.Height(secondSize);
+    }
+
+    // Start the animation.
+    s.Begin();
+
+    // When the animation is completed, undo the trickiness from before, to
+    // restore the controls to the behavior they'd usually have.
+    animation.Completed([control, childGrid, splitWidth](auto&&, auto&&) {
+        if (splitWidth)
+        {
+            control.Width(NAN);
+            childGrid.Width(NAN);
+            childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+            control.HorizontalAlignment(HorizontalAlignment::Stretch);
+        }
+        else
+        {
+            control.Height(NAN);
+            childGrid.Height(NAN);
+            childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+            control.VerticalAlignment(VerticalAlignment::Stretch);
+        }
+    });
+}
+
 // Method Description:
 // - Determines whether the pane can be split
 // Arguments:
@@ -1179,58 +1274,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _lastActive = false;
 
-    // const auto firstPercent = _desiredSplitPosition;
-    // const auto secondPercent = 1.0f - firstPercent;
-    // auto secondWidth = secondPercent * _root.ActualWidth();
-    const bool splitWidth = _splitState == SplitState::Vertical;
-    auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(splitWidth ? _root.ActualWidth() : _root.ActualHeight()));
-
-    auto childGrid = _secondChild->_root;
-    Duration duration{ std::chrono::milliseconds{ 166 } };
-    Duration d2 = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(300)));
-    Media::Animation::DoubleAnimation animation{};
-    animation.Duration(d2);
-    animation.From(0.0);
-    animation.To(secondSize);
-    // d.EasingFunction(Media::Animation::SineEase{});
-    animation.EasingFunction(Media::Animation::QuadraticEase{});
-    // animation.EasingFunction(Media::Animation::CubicEase{});
-    animation.EnableDependentAnimation(true);
-    Media::Animation::Storyboard s;
-    s.Duration(d2);
-    s.Children().Append(animation);
-    s.SetTarget(animation, childGrid);
-    s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
-    _root.Resources().Insert(winrt::box_value(L"paneAnimation"), s);
-    s.Begin();
-    if (splitWidth)
-    {
-        childGrid.HorizontalAlignment(HorizontalAlignment::Right);
-        control.HorizontalAlignment(HorizontalAlignment::Left);
-        control.Width(secondSize);
-    }
-    else
-    {
-        childGrid.VerticalAlignment(VerticalAlignment::Bottom);
-        control.VerticalAlignment(VerticalAlignment::Top);
-        control.Height(secondSize);
-    }
-    animation.Completed([control, childGrid, splitWidth](auto&&, auto&&) {
-        if (splitWidth)
-        {
-            control.Width(NAN);
-            childGrid.Width(NAN);
-            childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-            control.HorizontalAlignment(HorizontalAlignment::Stretch);
-        }
-        else
-        {
-            control.Height(NAN);
-            childGrid.Height(NAN);
-            childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-            control.VerticalAlignment(VerticalAlignment::Stretch);
-        }
-    });
+    _SetupEntranceAnimation();
 
     return { _firstChild, _secondChild };
 }
