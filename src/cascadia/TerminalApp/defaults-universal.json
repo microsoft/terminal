@@ -72,7 +72,7 @@
             "brightWhite": "#FFFFFF"
         }
     ],
-    "keybindings":
+    "actions":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },

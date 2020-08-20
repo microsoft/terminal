@@ -2354,7 +2354,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 { "keys": "ctrl+a",                   "command": { "action": "splitPane", "split": "vertical" } },
                 {                   "name": "ctrl+b", "command": { "action": "splitPane", "split": "vertical" } },
                 { "keys": "ctrl+c", "name": "ctrl+c", "command": { "action": "splitPane", "split": "vertical" } },
@@ -2528,5 +2528,4 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
     }
-
 }
