@@ -54,10 +54,9 @@ C:\> Usage: [OPTIONS] ...
 
 ## Solution Design
 
-I propose that we introduce a fusion manifest field, **consoleAllocationPolicy**, with the following values:
+I propose that we introduce a fusion manifest field, **consoleAllocationPolicy**, with the following value:
 
 * `inheritOnly`
-* `always`
 
 It would look (roughly) like this:
 
@@ -78,13 +77,9 @@ This field will apply consistent behavior across different image subsystems, wit
 | -             | -                                                                     | -                                      |
 | _no value_    | _default behavior_                                                    | _default behavior_                     |
 | `inheritOnly` | No console window unless application was started from console session | No console window (_default behavior_) |
-| `always`      | Always opens a console window (_default behavior_)                    | Always opens a console window          |
 
 An application that is in the *console* subsystem with a `consoleAllocationPolicy` of **inheritOnly** will not present a
 console when launched from Explorer.
-
-An application that is in the *windows* subsystem with a `consoleAllocationPolicy` of **always** *will always* be
-allocated a new conhost on startup.
 
 This proposal pertains only to applications spawned in their default state (i.e. either in an existing console session
 with no flags or without a console session or flags.)
@@ -104,8 +99,8 @@ Because this proposal pertains only to applications spawned in their default sta
 the manifested allocation policy just as they would have overridden the image's subsystem-based default.
 
 As an example, `CreateProcess(...CREATE_NEW_CONSOLE...)` on an **inheritOnly**-manifested application will force the
-allocation of a console host. `CreateProcess(...DETACHED_PROCESS...)` on an **always**-manifested application will
-suppress the allocation of a console host.
+allocation of a console host. `CreateProcess(...DETACHED_PROCESS...)` on such an application will, of course, detach it
+from its erstwhile-owning console.
 
 ## Inspiration
 
@@ -209,6 +204,15 @@ Are there other allocation policies we need to consider?
     - cracking an executable to look for symbols is probably the last thing shells want to do
         - we could provide an API to determine whether to wait or return?
     - fragile, somewhat silly, exporting symbols from EXEs is annoying and uncommon
+
+An earler version of this specification offered the **always** allocation policy, with the following behaviors:
+
+* A GUI subsystem application would always get a console window.
+* A command-line shell would not wait for it to exit before returning a prompt.
+
+It was cut because a GUI application that wants a console window can simply attach to an existing console session or
+allocate a new one. We found no compelling use case that would require the forced allocation of a console session
+outside of the application's code.
 
 ### Links
 
