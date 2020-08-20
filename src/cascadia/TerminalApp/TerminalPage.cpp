@@ -462,25 +462,22 @@ namespace winrt::TerminalApp::implementation
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
-            // add the keyboard shortcuts for the first 9 profiles
-            if (profileIndex < 9)
-            {
-                // Look for a keychord that is bound to the equivalent
-                // NewTab(ProfileIndex=N) action
-                auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
-                actionAndArgs->Action(ShortcutAction::NewTab);
-                auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
-                newTerminalArgs->ProfileIndex(profileIndex);
-                newTabArgs->TerminalArgs(*newTerminalArgs);
-                actionAndArgs->Args(*newTabArgs);
-                auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
+            // Add the keyboard shortcuts based on the number of profiles defined
+            // Look for a keychord that is bound to the equivalent
+            // NewTab(ProfileIndex=N) action
+            auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+            actionAndArgs->Action(ShortcutAction::NewTab);
+            auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+            auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+            newTerminalArgs->ProfileIndex(profileIndex);
+            newTabArgs->TerminalArgs(*newTerminalArgs);
+            actionAndArgs->Args(*newTabArgs);
+            auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
 
-                // make sure we find one to display
-                if (profileKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
-                }
+            // make sure we find one to display
+            if (profileKeyChord)
+            {
+                _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
             }
 
             auto profileName = profile.GetName();
