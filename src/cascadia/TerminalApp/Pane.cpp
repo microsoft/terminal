@@ -927,7 +927,7 @@ void Pane::_SetupEntranceAnimation()
 
     // WARNING: Don't do this! This won't work
     // Duration duration{ std::chrono::milliseconds{ 200 } };
-    // Instead, make a duration from a timespan from the time in millis
+    // Instead, make a duration from a TimeSpan from the time in millis
     //
     // 100ms was chosen because it's quick enough that it doesn't break your
     // flow, but not too quick to see
@@ -1038,7 +1038,7 @@ void Pane::_SetupEntranceAnimation()
         });
     };
 
-    // TODO: GH#TODO - animating the first child right now doesn't _really_ do
+    // TODO: GH#7365 - animating the first child right now doesn't _really_ do
     // anything. We could do better though.
     setupAnimation(firstSize, true);
     setupAnimation(secondSize, false);
