@@ -22,6 +22,7 @@ Author(s):
 #include "TerminalWarnings.h"
 #include "Profile.h"
 #include "..\inc\cppwinrt_utils.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -32,12 +33,6 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    enum class ExpandCommandType : uint32_t
-    {
-        None = 0,
-        Profiles
-    };
-
     struct Command : CommandT<Command>
     {
         Command();
@@ -47,6 +42,7 @@ namespace winrt::TerminalApp::implementation
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                    gsl::span<const ::TerminalApp::Profile> profiles,
+                                   gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
@@ -62,7 +58,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
 
-        GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
+        GETSET_PROPERTY(::TerminalApp::ExpandCommandType, IterateOn, ::TerminalApp::ExpandCommandType::None);
 
     private:
         Json::Value _originalJson;
@@ -70,6 +66,7 @@ namespace winrt::TerminalApp::implementation
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                       gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;

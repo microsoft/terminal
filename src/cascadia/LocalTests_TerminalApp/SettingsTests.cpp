@@ -97,6 +97,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestUnbindNestedCommand);
         TEST_METHOD(TestRebindNestedCommand);
 
+        TEST_METHOD(TestIterableColorSchemeCommands);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2436,7 +2438,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 { "keys": "ctrl+a",                   "command": { "action": "splitPane", "split": "vertical" } },
                 {                   "name": "ctrl+b", "command": { "action": "splitPane", "split": "vertical" } },
                 { "keys": "ctrl+c", "name": "ctrl+c", "command": { "action": "splitPane", "split": "vertical" } },
@@ -2638,7 +2640,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "iterable command ${profile.name}",
                     "iterateOn": "profiles",
@@ -2681,7 +2683,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -2769,7 +2771,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "iterateOn": "profiles",
                     "command": { "action": "splitPane", "profile": "${profile.name}" }
@@ -2811,7 +2813,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -2900,7 +2902,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "iterable command ${profile.name}",
                     "iterateOn": "profiles",
@@ -2944,7 +2946,7 @@ namespace TerminalAppLocalTests
         }
 
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3037,7 +3039,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "Connect to ssh...",
                     "commands": [
@@ -3065,7 +3067,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3140,7 +3142,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "grandparent",
                     "commands": [
@@ -3173,7 +3175,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3288,7 +3290,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "iterateOn": "profiles",
                     "name": "${profile.name}...",
@@ -3312,7 +3314,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3441,7 +3443,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "New Tab With Profile...",
                     "commands": [
@@ -3465,7 +3467,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3549,7 +3551,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "New Pane...",
                     "commands": [
@@ -3578,7 +3580,7 @@ namespace TerminalAppLocalTests
 
         auto& commands = settings._globals.GetCommands();
         settings._ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
         _logCommandNames(expandedCommands);
 
         VERIFY_ARE_EQUAL(0u, settings._warnings.size());
@@ -3712,7 +3714,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "commands": [
                         {
@@ -3775,7 +3777,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "commands": [
@@ -3796,7 +3798,7 @@ namespace TerminalAppLocalTests
         const std::string settings1Json{ R"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "commands": null
@@ -3858,7 +3860,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "commands": [
@@ -3879,7 +3881,7 @@ namespace TerminalAppLocalTests
         const std::string settings1Json{ R"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "bindings": [
+            "actions": [
                 {
                     "name": "parent",
                     "command": "newTab"
@@ -3939,6 +3941,143 @@ namespace TerminalAppLocalTests
             commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
 
             VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
+        }
+    }
+
+    void SettingsTests::TestIterableColorSchemeCommands()
+    {
+        // For this test, put an iterable command with a given `name`,
+        // containing a ${profile.name} to replace. When we expand it, it should
+        // have created one command for each profile.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "schemes": [
+                { "name": "scheme_0" },
+                { "name": "scheme_1" },
+                { "name": "scheme_2" },
+            ],
+            "bindings": [
+                {
+                    "name": "iterable command ${scheme.name}",
+                    "iterateOn": "schemes",
+                    "command": { "action": "splitPane", "profile": "${scheme.name}" }
+                },
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            auto command = commands.Lookup(L"iterable command ${scheme.name}");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
+        }
+
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        // Yes, this test is testing splitPane with profiles named after each
+        // color scheme. These would obviously not work in real life, they're
+        // just easy tests to write.
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_0");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_0", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_1");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_1", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_2");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_2", realArgs.TerminalArgs().Profile());
         }
     }
 

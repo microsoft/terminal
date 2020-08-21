@@ -9,6 +9,7 @@
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include <LibraryResources.h>
+#include "TerminalSettingsSerializationHelpers.h"
 
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Foundation;
@@ -21,9 +22,8 @@ static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
 
-static constexpr std::string_view IterateOnProfilesValue{ "profiles" };
-
-static constexpr std::string_view ProfileName{ "${profile.name}" };
+static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
+static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
 
 namespace winrt::TerminalApp::implementation
 {
@@ -121,14 +121,7 @@ namespace winrt::TerminalApp::implementation
         auto result = winrt::make_self<Command>();
 
         bool nested = false;
-        if (const auto iterateOnJson{ json[JsonKey(IterateOnKey)] })
-        {
-            auto s = iterateOnJson.asString();
-            if (s == IterateOnProfilesValue)
-            {
-                result->_IterateOn = ExpandCommandType::Profiles;
-            }
-        }
+        JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
 
         // For iterable commands, we'll make another pass at parsing them once
         // the json is patched. So ignore parsing sub-commands for now. Commands
@@ -290,6 +283,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Command::ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                  gsl::span<const ::TerminalApp::Profile> profiles,
+                                 gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                  std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         std::vector<winrt::hstring> commandsToRemove;
@@ -300,7 +294,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto cmd{ get_self<implementation::Command>(nameAndCmd.Value()) };
 
-            auto newCommands = _expandCommand(cmd, profiles, warnings);
+            auto newCommands = _expandCommand(cmd, profiles, schemes, warnings);
             if (newCommands.size() > 0)
             {
                 commandsToRemove.push_back(nameAndCmd.Key());
@@ -345,13 +339,14 @@ namespace winrt::TerminalApp::implementation
     //   the newly-created commands.
     std::vector<winrt::TerminalApp::Command> Command::_expandCommand(Command* const expandable,
                                                                      gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                     gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
 
         if (expandable->HasNestedCommands())
         {
-            ExpandCommands(expandable->_subcommands, profiles, warnings);
+            ExpandCommands(expandable->_subcommands, profiles, schemes, warnings);
         }
 
         if (expandable->_IterateOn == ExpandCommandType::None)
@@ -364,6 +359,26 @@ namespace winrt::TerminalApp::implementation
 
         // First, get a string for the original Json::Value
         auto oldJsonString = expandable->_originalJson.toStyledString();
+
+        auto reParseJson = [&](const auto& newJsonString) -> bool {
+            // - Now, re-parse the modified value.
+            Json::Value newJsonValue;
+            const auto actualDataStart = newJsonString.data();
+            const auto actualDataEnd = newJsonString.data() + newJsonString.size();
+            if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
+            {
+                warnings.push_back(::TerminalApp::SettingsLoadWarnings::FailedToParseCommandJson);
+                // If we encounter a re-parsing error, just stop processing the rest of the commands.
+                return false;
+            }
+
+            // Pass the new json back though FromJson, to get the new expanded value.
+            if (auto newCmd{ Command::FromJson(newJsonValue, warnings) })
+            {
+                newCommands.push_back(*newCmd);
+            }
+            return true;
+        };
 
         if (expandable->_IterateOn == ExpandCommandType::Profiles)
         {
@@ -382,24 +397,35 @@ namespace winrt::TerminalApp::implementation
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.GetName()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
-                                                                     ProfileName,
+                                                                     ProfileNameToken,
                                                                      escapedProfileName);
 
-                // - Now, re-parse the modified value.
-                Json::Value newJsonValue;
-                const auto actualDataStart = newJsonString.data();
-                const auto actualDataEnd = newJsonString.data() + newJsonString.size();
-                if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
+                // If we encounter a re-parsing error, just stop processing the rest of the commands.
+                if (!reParseJson(newJsonString))
                 {
-                    warnings.push_back(::TerminalApp::SettingsLoadWarnings::FailedToParseCommandJson);
-                    // If we encounter a re-parsing error, just stop processing the rest of the commands.
                     break;
                 }
+            }
+        }
+        else if (expandable->_IterateOn == ExpandCommandType::ColorSchemes)
+        {
+            for (const auto& s : schemes)
+            {
+                // For each scheme, create a new command. We'll take the
+                // original json, replace any instances of "${scheme.name}" with
+                // the scheme's name, then re-attempt to parse the action and
+                // args.
 
-                // Pass the new json back though FromJson, to get the new expanded value.
-                if (auto newCmd{ Command::FromJson(newJsonValue, warnings) })
+                // - Escape the profile name for JSON appropriately
+                auto escapedSchemeName = _escapeForJson(til::u16u8(s.Name()));
+                auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
+                                                                     SchemeNameToken,
+                                                                     escapedSchemeName);
+
+                // If we encounter a re-parsing error, just stop processing the rest of the commands.
+                if (!reParseJson(newJsonString))
                 {
-                    newCommands.push_back(*newCmd);
+                    break;
                 }
             }
         }

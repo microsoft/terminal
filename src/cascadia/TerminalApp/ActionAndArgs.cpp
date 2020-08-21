@@ -7,45 +7,44 @@
 
 #include <LibraryResources.h>
 
+static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
+static constexpr std::string_view CloseOtherTabsKey{ "closeOtherTabs" };
+static constexpr std::string_view ClosePaneKey{ "closePane" };
+static constexpr std::string_view CloseTabKey{ "closeTab" };
+static constexpr std::string_view CloseTabsAfterKey{ "closeTabsAfter" };
+static constexpr std::string_view CloseWindowKey{ "closeWindow" };
 static constexpr std::string_view CopyTextKey{ "copy" };
-static constexpr std::string_view PasteTextKey{ "paste" };
-static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
+static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
+static constexpr std::string_view FindKey{ "find" };
+static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view NewTabKey{ "newTab" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
-static constexpr std::string_view CloseWindowKey{ "closeWindow" };
-static constexpr std::string_view CloseTabKey{ "closeTab" };
-static constexpr std::string_view ClosePaneKey{ "closePane" };
-static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
-static constexpr std::string_view PrevTabKey{ "prevTab" };
-static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
-static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
-static constexpr std::string_view ScrollupKey{ "scrollUp" };
-static constexpr std::string_view ScrolldownKey{ "scrollDown" };
-static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
-static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
-static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
+static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
-static constexpr std::string_view SendInputKey{ "sendInput" };
-static constexpr std::string_view SplitPaneKey{ "splitPane" };
-static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
+static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
+static constexpr std::string_view PasteTextKey{ "paste" };
+static constexpr std::string_view PrevTabKey{ "prevTab" };
+static constexpr std::string_view RenameTabKey{ "renameTab" };
+static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
-static constexpr std::string_view MoveFocusKey{ "moveFocus" };
-static constexpr std::string_view FindKey{ "find" };
-static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
-static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
-static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
-static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
+static constexpr std::string_view ScrolldownKey{ "scrollDown" };
+static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
+static constexpr std::string_view ScrollupKey{ "scrollUp" };
+static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
+static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
-static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
-static constexpr std::string_view RenameTabKey{ "renameTab" };
-static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
+static constexpr std::string_view SplitPaneKey{ "splitPane" };
+static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
+static constexpr std::string_view TabSearchKey{ "tabSearch" };
+static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
-static constexpr std::string_view CloseOtherTabsKey{ "closeOtherTabs" };
-static constexpr std::string_view CloseTabsAfterKey{ "closeTabsAfter" };
-static constexpr std::string_view ToggleTabSwitcherKey{ "tabSwitcher" };
+static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
+static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
+static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -65,45 +64,45 @@ namespace winrt::TerminalApp::implementation
     // the map are all const for the lifetime of the app, we have nothing to worry
     // about here.
     const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
+        { AdjustFontSizeKey, ShortcutAction::AdjustFontSize },
+        { CloseOtherTabsKey, ShortcutAction::CloseOtherTabs },
+        { ClosePaneKey, ShortcutAction::ClosePane },
+        { CloseTabKey, ShortcutAction::CloseTab },
+        { CloseTabsAfterKey, ShortcutAction::CloseTabsAfter },
+        { CloseWindowKey, ShortcutAction::CloseWindow },
         { CopyTextKey, ShortcutAction::CopyText },
-        { PasteTextKey, ShortcutAction::PasteText },
-        { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
         { DuplicateTabKey, ShortcutAction::DuplicateTab },
+        { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
+        { FindKey, ShortcutAction::Find },
+        { MoveFocusKey, ShortcutAction::MoveFocus },
         { NewTabKey, ShortcutAction::NewTab },
         { NewWindowKey, ShortcutAction::NewWindow },
-        { CloseWindowKey, ShortcutAction::CloseWindow },
-        { CloseTabKey, ShortcutAction::CloseTab },
-        { ClosePaneKey, ShortcutAction::ClosePane },
         { NextTabKey, ShortcutAction::NextTab },
-        { PrevTabKey, ShortcutAction::PrevTab },
-        { AdjustFontSizeKey, ShortcutAction::AdjustFontSize },
-        { ResetFontSizeKey, ShortcutAction::ResetFontSize },
-        { ScrollupKey, ShortcutAction::ScrollUp },
-        { ScrolldownKey, ShortcutAction::ScrollDown },
-        { ScrolluppageKey, ShortcutAction::ScrollUpPage },
-        { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
-        { SwitchToTabKey, ShortcutAction::SwitchToTab },
-        { ResizePaneKey, ShortcutAction::ResizePane },
-        { MoveFocusKey, ShortcutAction::MoveFocus },
+        { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
+        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
+        { PasteTextKey, ShortcutAction::PasteText },
+        { PrevTabKey, ShortcutAction::PrevTab },
+        { RenameTabKey, ShortcutAction::RenameTab },
+        { ResetFontSizeKey, ShortcutAction::ResetFontSize },
+        { ResizePaneKey, ShortcutAction::ResizePane },
+        { ScrolldownKey, ShortcutAction::ScrollDown },
+        { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
+        { ScrollupKey, ShortcutAction::ScrollUp },
+        { ScrolluppageKey, ShortcutAction::ScrollUpPage },
+        { SendInputKey, ShortcutAction::SendInput },
         { SetColorSchemeKey, ShortcutAction::SetColorScheme },
-        { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
+        { SetTabColorKey, ShortcutAction::SetTabColor },
+        { SplitPaneKey, ShortcutAction::SplitPane },
+        { SwitchToTabKey, ShortcutAction::SwitchToTab },
+        { TabSearchKey, ShortcutAction::TabSearch },
+        { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
+        { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
-        { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
-        { SendInputKey, ShortcutAction::SendInput },
-        { SplitPaneKey, ShortcutAction::SplitPane },
         { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
-        { SetTabColorKey, ShortcutAction::SetTabColor },
-        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
+        { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { UnboundKey, ShortcutAction::Invalid },
-        { FindKey, ShortcutAction::Find },
-        { RenameTabKey, ShortcutAction::RenameTab },
-        { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
-        { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
-        { CloseOtherTabsKey, ShortcutAction::CloseOtherTabs },
-        { CloseTabsAfterKey, ShortcutAction::CloseTabsAfter },
-        { ToggleTabSwitcherKey, ShortcutAction::ToggleTabSwitcher },
     };
 
     using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
@@ -115,37 +114,21 @@ namespace winrt::TerminalApp::implementation
     // placed into this map, with the corresponding deserializer function as the
     // value.
     static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParsers{
-        { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
-
-        { ShortcutAction::NewTab, winrt::TerminalApp::implementation::NewTabArgs::FromJson },
-
-        { ShortcutAction::SwitchToTab, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
-
-        { ShortcutAction::ResizePane, winrt::TerminalApp::implementation::ResizePaneArgs::FromJson },
-
-        { ShortcutAction::MoveFocus, winrt::TerminalApp::implementation::MoveFocusArgs::FromJson },
-
-        { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
-
-        { ShortcutAction::SendInput, winrt::TerminalApp::implementation::SendInputArgs::FromJson },
-
-        { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
-
-        { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
-
-        { ShortcutAction::SetColorScheme, winrt::TerminalApp::implementation::SetColorSchemeArgs::FromJson },
-
-        { ShortcutAction::SetTabColor, winrt::TerminalApp::implementation::SetTabColorArgs::FromJson },
-
-        { ShortcutAction::RenameTab, winrt::TerminalApp::implementation::RenameTabArgs::FromJson },
-
-        { ShortcutAction::ExecuteCommandline, winrt::TerminalApp::implementation::ExecuteCommandlineArgs::FromJson },
-
-        { ShortcutAction::CloseOtherTabs, winrt::TerminalApp::implementation::CloseOtherTabsArgs::FromJson },
-
-        { ShortcutAction::CloseTabsAfter, winrt::TerminalApp::implementation::CloseTabsAfterArgs::FromJson },
-
-        { ShortcutAction::ToggleTabSwitcher, winrt::TerminalApp::implementation::ToggleTabSwitcherArgs::FromJson },
+        { ShortcutAction::AdjustFontSize, AdjustFontSizeArgs::FromJson },
+        { ShortcutAction::CloseOtherTabs, CloseOtherTabsArgs::FromJson },
+        { ShortcutAction::CloseTabsAfter, CloseTabsAfterArgs::FromJson },
+        { ShortcutAction::CopyText, CopyTextArgs::FromJson },
+        { ShortcutAction::ExecuteCommandline, ExecuteCommandlineArgs::FromJson },
+        { ShortcutAction::MoveFocus, MoveFocusArgs::FromJson },
+        { ShortcutAction::NewTab, NewTabArgs::FromJson },
+        { ShortcutAction::OpenSettings, OpenSettingsArgs::FromJson },
+        { ShortcutAction::RenameTab, RenameTabArgs::FromJson },
+        { ShortcutAction::ResizePane, ResizePaneArgs::FromJson },
+        { ShortcutAction::SendInput, SendInputArgs::FromJson },
+        { ShortcutAction::SetColorScheme, SetColorSchemeArgs::FromJson },
+        { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
+        { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
+        { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -263,44 +246,45 @@ namespace winrt::TerminalApp::implementation
         // to load the resources at _init_, only at runtime.
         static const auto GeneratedActionNames = []() {
             return std::unordered_map<ShortcutAction, winrt::hstring>{
+                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
+                { ShortcutAction::CloseOtherTabs, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
+                { ShortcutAction::CloseTab, RS_(L"CloseTabCommandKey") },
+                { ShortcutAction::CloseTabsAfter, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
                 { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
-                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
-                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
                 { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
+                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
+                { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::Invalid, L"" },
+                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
                 { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
                 { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
-                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
-                { ShortcutAction::CloseTab, RS_(L"CloseTabCommandKey") },
-                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
                 { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
-                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
-                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
-                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
-                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
-                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
-                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
-                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
-                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
-                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
-                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
+                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
                 { ShortcutAction::OpenSettings, RS_(L"OpenSettingsCommandKey") },
-                { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
-                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
-                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
-                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
+                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
+                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
+                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
+                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
+                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
+                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
+                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
                 { ShortcutAction::SendInput, L"" },
-                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
-                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
-                { ShortcutAction::Invalid, L"" },
-                { ShortcutAction::Find, RS_(L"FindCommandKey") },
                 { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
-                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
-                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
-                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
+                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
+                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
-                { ShortcutAction::CloseOtherTabs, L"" }, // Intentionally omitted, must be generated by GenerateName
-                { ShortcutAction::CloseTabsAfter, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
+                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
+                { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
             };
         }();
 

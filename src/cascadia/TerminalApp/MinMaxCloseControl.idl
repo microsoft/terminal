@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "..\TitlebarControl.idl";
+import "TitlebarControl.idl";
 
 namespace TerminalApp
 {

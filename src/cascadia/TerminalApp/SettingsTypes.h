@@ -25,4 +25,11 @@ namespace TerminalApp
         std::optional<int> x;
         std::optional<int> y;
     };
+
+    enum class ExpandCommandType : uint32_t
+    {
+        None = 0,
+        Profiles,
+        ColorSchemes
+    };
 };

@@ -456,27 +456,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleToggleTabSwitcher(const IInspectable& /*sender*/,
-                                                const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
+                                            const TerminalApp::ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
-        {
-            auto anchorKey = realArgs.AnchorKey();
+        auto opt = _GetFocusedTabIndex();
+        uint32_t startIdx = opt.value_or(0);
 
-            auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = opt ? *opt : 0;
+        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().Visibility(Visibility::Visible);
 
-            if (anchorKey != VirtualKey::None)
-            {
-                // TODO: GH#7178 - delta should also have the option of being -1, in the case when
-                // a user decides to open the tab switcher going to the prev tab.
-                int delta = 1;
-                startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
-            }
-
-            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
-            CommandPalette().Visibility(Visibility::Visible);
-        }
         args.Handled(true);
     }
 }
