@@ -120,7 +120,7 @@ allocation of a new console host.
 
 ### Why two values?
 
-**hidden** is intended to be used by console applications that want finer-grained control over the visiblity of their
+**hidden** is intended to be used by console applications that want finer-grained control over the visibility of their
 console windows, but that still need a console host to service console APIs. This includes most scripting language
 interpreters.
 
