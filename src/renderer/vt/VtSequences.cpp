@@ -463,7 +463,7 @@ using namespace Microsoft::Console::Render;
 // - The hyperlink URI
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring& uri, const std::wstring& customId) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId) noexcept
 {
     // Opening OSC8 sequence
     // We use the BEL character to terminate because \x9c gets mangled in std::string

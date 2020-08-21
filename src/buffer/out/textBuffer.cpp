@@ -1195,7 +1195,7 @@ void TextBuffer::_PruneHyperlinks()
     // If there are any, search the entire buffer for the same reference
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
     // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
-    std::unordered_set<USHORT> refs;
+    std::unordered_set<uint16_t> refs;
     const auto firstAttrRow = _storage.at(_firstRow).GetAttrRow();
     // Get all the hyperlink references in the row we're erasing
     for (auto it = firstAttrRow.begin(); it != firstAttrRow.end(); ++it)
@@ -1208,7 +1208,10 @@ void TextBuffer::_PruneHyperlinks()
     if (!refs.empty())
     {
         const auto total = TotalRowCount();
-        // Loop through all the rows in the buffer
+        // Loop through all the rows in the buffer except the first row -
+        // we have found all hyperlink references in the first row and put them in refs,
+        // now we need to search the rest of the buffer (i.e. all the rows except the first)
+        // to see if those references are anywhere else
         for (size_t i = 1; i != total; ++i)
         {
             const auto attrRow = GetRowByOffset(i).GetAttrRow();
@@ -2261,7 +2264,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 // - Adds or updates a hyperlink in our hyperlink table
 // Arguments:
 // - The hyperlink URI, the hyperlink id (could be new or old)
-void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, USHORT id)
+void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, uint16_t id)
 {
     _hyperlinkMap[id] = uri;
 }
@@ -2272,7 +2275,7 @@ void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, USHORT id)
 // - The hyperlink ID
 // Return Value:
 // - The URI
-std::wstring TextBuffer::GetHyperlinkUriFromId(USHORT id) const
+std::wstring TextBuffer::GetHyperlinkUriFromId(uint16_t id) const
 {
     return _hyperlinkMap.at(id);
 }
@@ -2283,9 +2286,9 @@ std::wstring TextBuffer::GetHyperlinkUriFromId(USHORT id) const
 // - The user-defined id
 // Return value:
 // - The internal hyperlink ID
-USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
+uint16_t TextBuffer::GetHyperlinkId(std::wstring_view params)
 {
-    USHORT id = 0;
+    uint16_t id = 0;
     if (params.empty())
     {
         // no custom id specified, return our internal count
@@ -2295,7 +2298,7 @@ USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
     else
     {
         // assign _currentHyperlinkId if the custom id does not already exist
-        const auto result = _customIdMap.emplace(params, _currentHyperlinkId);
+        const auto result = _hyperlinkCustomIdMap.emplace(params, _currentHyperlinkId);
         if (result.second)
         {
             // the custom id did not already exist
@@ -2311,14 +2314,14 @@ USHORT TextBuffer::GetHyperlinkId(std::wstring_view params)
 //   user defined id from the custom id map (if there is one)
 // Arguments:
 // - The ID of the hyperlink to be removed
-void TextBuffer::RemoveHyperlinkFromMap(USHORT id)
+void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
 {
     _hyperlinkMap.erase(id);
-    for (auto customIdPair : _customIdMap)
+    for (auto customIdPair : _hyperlinkCustomIdMap)
     {
         if (customIdPair.second == id)
         {
-            _customIdMap.erase(customIdPair.first);
+            _hyperlinkCustomIdMap.erase(customIdPair.first);
             break;
         }
     }
@@ -2326,14 +2329,14 @@ void TextBuffer::RemoveHyperlinkFromMap(USHORT id)
 
 // Method Description:
 // - Obtains the custom ID, if there was one, associated with the
-//   USHORT id of a hyperlink
+//   uint16_t id of a hyperlink
 // Arguments:
-// - The USHORT id of the hyperlink
+// - The uint16_t id of the hyperlink
 // Return Value:
 // - The custom ID if there was one, empty string otherwise
-std::wstring TextBuffer::GetCustomIdFromId(USHORT id) const
+std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
 {
-    for (auto customIdPair : _customIdMap)
+    for (auto customIdPair : _hyperlinkCustomIdMap)
     {
         if (customIdPair.second == id)
         {

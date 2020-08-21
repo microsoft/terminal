@@ -330,7 +330,7 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The URI
-const std::wstring RenderData::GetHyperlinkUri(USHORT id) const noexcept
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
@@ -342,7 +342,7 @@ const std::wstring RenderData::GetHyperlinkUri(USHORT id) const noexcept
 // - The hyperlink ID
 // Return Value:
 // - The custom ID if there was one, empty string otherwise
-const std::wstring RenderData::GetCustomId(USHORT id) const noexcept
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);

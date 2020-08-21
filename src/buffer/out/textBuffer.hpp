@@ -141,11 +141,11 @@ public:
 
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
-    void AddHyperlinkToMap(std::wstring_view uri, USHORT id);
-    std::wstring GetHyperlinkUriFromId(USHORT id) const;
-    USHORT GetHyperlinkId(std::wstring_view params);
-    void RemoveHyperlinkFromMap(USHORT id);
-    std::wstring GetCustomIdFromId(USHORT id) const;
+    void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
+    std::wstring GetHyperlinkUriFromId(uint16_t id) const;
+    uint16_t GetHyperlinkId(std::wstring_view params);
+    void RemoveHyperlinkFromMap(uint16_t id);
+    std::wstring GetCustomIdFromId(uint16_t id) const;
 
     class TextAndColor
     {
@@ -194,9 +194,9 @@ private:
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
-    std::unordered_map<USHORT, std::wstring> _hyperlinkMap;
-    std::unordered_map<std::wstring, USHORT> _customIdMap;
-    USHORT _currentHyperlinkId;
+    std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
+    std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
+    uint16_t _currentHyperlinkId;
 
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
 

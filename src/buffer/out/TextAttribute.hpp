@@ -119,7 +119,7 @@ public:
 
     TextColor GetForeground() const noexcept;
     TextColor GetBackground() const noexcept;
-    USHORT GetHyperlinkId() const noexcept;
+    uint16_t GetHyperlinkId() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
@@ -129,7 +129,7 @@ public:
     void SetIndexedForeground256(const BYTE fgIndex) noexcept;
     void SetIndexedBackground256(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
-    void SetHyperlinkId(USHORT id) noexcept;
+    void SetHyperlinkId(uint16_t id) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
@@ -176,7 +176,7 @@ private:
     TextColor _background;
     ExtendedAttributes _extendedAttrs;
 
-    USHORT _hyperlinkId;
+    uint16_t _hyperlinkId;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

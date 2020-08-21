@@ -1131,7 +1131,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (ctrlEnabled && multiClickMapper == 1)
                 {
                     // Control+Click: if the text selected is a hyperlink, open the link
-                    const auto uri = _terminal->GetHyperlink(terminalPosition);
+                    const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
                     if (!uri.empty())
                     {
                         _HyperlinkHandler(uri);
@@ -2851,7 +2851,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Checks if the uri is valid and sends an event if so
     // Arguments:
     // - The uri
-    void TermControl::_HyperlinkHandler(std::wstring uri)
+    void TermControl::_HyperlinkHandler(const std::wstring_view uri)
     {
         auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
         _openHyperlinkHandlers(*this, *hyperlinkArgs);

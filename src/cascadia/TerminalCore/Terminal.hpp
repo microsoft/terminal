@@ -129,7 +129,7 @@ public:
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
 
-    std::wstring GetHyperlink(const COORD position);
+    std::wstring GetHyperlinkAtPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -157,8 +157,8 @@ public:
     bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
-    const std::wstring GetHyperlinkUri(USHORT id) const noexcept override;
-    const std::wstring GetCustomId(USHORT id) const noexcept override;
+    const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
+    const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
