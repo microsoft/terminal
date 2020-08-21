@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void BackgroundHexValue(winrt::hstring);
         void Background(Windows::UI::Xaml::Media::Brush const& brush);
         void Background(Windows::UI::Color const& color);
-        
+
         //Foreground
         Windows::UI::Color Foreground();
         Windows::UI::Xaml::Media::Brush ForegroundBrush();

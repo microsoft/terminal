@@ -120,7 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return true;
     }
 
-    void MainPage::AutoSuggestBox_TextChanged(IInspectable const &sender, const Controls::AutoSuggestBoxTextChangedEventArgs args)
+    void MainPage::AutoSuggestBox_TextChanged(IInspectable const& sender, const Controls::AutoSuggestBoxTextChangedEventArgs args)
     {
         Controls::AutoSuggestBox autoBox = sender.as<Controls::AutoSuggestBox>();
         auto query = autoBox.Text();
@@ -140,7 +140,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Navigate(contentFrame(), SearchList.at(args.SelectedItem()));
     }
 
-    void MainPage::SearchSettings(hstring query, Controls::AutoSuggestBox &autoBox)
+    void MainPage::SearchSettings(hstring query, Controls::AutoSuggestBox& autoBox)
     {
         Windows::Foundation::Collections::IVector<IInspectable> suggestions = single_threaded_vector<IInspectable>();
         std::vector<IInspectable> rawSuggestions;
@@ -234,5 +234,3 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 }
-
-

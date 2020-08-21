@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     }
 
-    void ColorSchemes::Background_ColorChanged(ColorPicker const& , ColorChangedEventArgs const& event)
+    void ColorSchemes::Background_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
     {
         m_colorSchemeModel.ColorScheme().Background(event.NewColor());
     }

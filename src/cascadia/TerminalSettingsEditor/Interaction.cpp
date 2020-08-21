@@ -15,7 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         m_globalSettingsModel = winrt::make<Model::implementation::GlobalSettingsModel>();
         InitializeComponent();
-
     }
 
     Model::GlobalSettingsModel Interaction::GlobalSettingsModel()

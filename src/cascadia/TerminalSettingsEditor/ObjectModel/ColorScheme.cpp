@@ -786,7 +786,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // helpers
 
     Color ColorScheme::hexToColor(winrt::hstring hex)
-    { 
+    {
         std::string string = winrt::to_string(hex);
         Color newColor = Color();
         newColor.A = std::stoi(string.substr(1, 2), nullptr, 16);

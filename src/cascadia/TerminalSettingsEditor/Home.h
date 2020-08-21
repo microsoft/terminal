@@ -17,8 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void HomeGridItemClickHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::ItemClickEventArgs const& args);
 
-        private:
-            Editor::SettingsEditorViewModel m_homeViewModel{ nullptr };
+    private:
+        Editor::SettingsEditorViewModel m_homeViewModel{ nullptr };
     };
 }
 

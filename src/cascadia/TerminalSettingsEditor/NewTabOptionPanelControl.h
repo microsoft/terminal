@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         hstring Argument();
         hstring InputValue();
 
-        private:
+    private:
         const hstring c_argumentComboBoxName = L"newTabArgumentComboBox";
         const hstring c_textBoxName = L"newTabTextBox";
 

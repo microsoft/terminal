@@ -3,7 +3,6 @@
 #include "Microsoft.Terminal.Settings.Model.ColorSchemeModel.g.cpp"
 #include "ColorSchemeModel.h"
 
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     ColorSchemeModel::ColorSchemeModel()

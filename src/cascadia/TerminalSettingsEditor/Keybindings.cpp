@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (!popup.IsOpen())
         {
             popup.IsOpen(true);
-        }   
+        }
     }
 
     void Keybindings::AddNewButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
