@@ -3,11 +3,11 @@
 
 import "ObjectModel/GlobalSettingsModel.idl";
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
     {
         Rendering();
-        ObjectModel.GlobalSettingsModel GlobalSettingsModel { get; };
+        Microsoft.Terminal.Settings.Model.GlobalSettingsModel GlobalSettingsModel { get; };
     }
 }

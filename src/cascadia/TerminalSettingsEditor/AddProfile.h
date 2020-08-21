@@ -6,7 +6,7 @@
 #include "AddProfile.g.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct AddProfile : AddProfileT<AddProfile>
     {
@@ -14,7 +14,7 @@ namespace winrt::SettingsControl::implementation
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(AddProfile);
 }

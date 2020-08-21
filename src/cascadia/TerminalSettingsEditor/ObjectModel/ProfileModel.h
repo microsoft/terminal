@@ -1,16 +1,16 @@
 #pragma once
-#include "ObjectModel.ProfileModel.g.h"
+#include "Microsoft.Terminal.Settings.Model.ProfileModel.g.h"
 #include "ObjectModel/Profile.h"
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ProfileModel : ProfileModelT<ProfileModel>
     {
         ProfileModel();
 
-        ObjectModel::Profile Profile();
+        Model::Profile Profile();
 
     private:
-        ObjectModel::Profile m_Profile{ nullptr };
+        Model::Profile m_Profile{ nullptr };
     };
 }

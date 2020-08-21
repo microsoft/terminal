@@ -9,16 +9,16 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Interaction::Interaction()
     {
-        m_globalSettingsModel = winrt::make<ObjectModel::implementation::GlobalSettingsModel>();
+        m_globalSettingsModel = winrt::make<Model::implementation::GlobalSettingsModel>();
         InitializeComponent();
 
     }
 
-    ObjectModel::GlobalSettingsModel Interaction::GlobalSettingsModel()
+    Model::GlobalSettingsModel Interaction::GlobalSettingsModel()
     {
         return m_globalSettingsModel;
     }

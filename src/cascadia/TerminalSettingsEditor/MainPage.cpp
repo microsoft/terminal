@@ -22,9 +22,9 @@ namespace winrt
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::ObjectModel::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     MainPage::MainPage()
     {
@@ -88,7 +88,7 @@ namespace winrt::SettingsControl::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<SettingsControl::Home>());
+        contentFrame().Navigate(xaml_typename<Editor::Home>());
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
@@ -198,39 +198,39 @@ namespace winrt::SettingsControl::implementation
 
         if (clickedItemTag == homePage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::Home>());
+            contentFrame.Navigate(xaml_typename<Editor::Home>());
         }
         else if (clickedItemTag == launchSubpage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::Launch>());
+            contentFrame.Navigate(xaml_typename<Editor::Launch>());
         }
         else if (clickedItemTag == interactionSubpage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::Interaction>());
+            contentFrame.Navigate(xaml_typename<Editor::Interaction>());
         }
         else if (clickedItemTag == renderingSubpage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::Rendering>());
+            contentFrame.Navigate(xaml_typename<Editor::Rendering>());
         }
         else if (clickedItemTag == globalprofileSubpage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::Profiles>());
+            contentFrame.Navigate(xaml_typename<Editor::Profiles>());
         }
         else if (clickedItemTag == addnewSubpage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::AddProfile>());
+            contentFrame.Navigate(xaml_typename<Editor::AddProfile>());
         }
         else if (clickedItemTag == colorSchemesPage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::ColorSchemes>());
+            contentFrame.Navigate(xaml_typename<Editor::ColorSchemes>());
         }
         else if (clickedItemTag == globalAppearancePage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::GlobalAppearance>());
+            contentFrame.Navigate(xaml_typename<Editor::GlobalAppearance>());
         }
         else if (clickedItemTag == keybindingsPage)
         {
-            contentFrame.Navigate(xaml_typename<SettingsControl::Keybindings>());
+            contentFrame.Navigate(xaml_typename<Editor::Keybindings>());
         }
     }
 }

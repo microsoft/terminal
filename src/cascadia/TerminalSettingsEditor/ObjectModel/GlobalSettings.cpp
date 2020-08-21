@@ -1,3 +1,3 @@
 #include "pch.h"
 #include "GlobalSettings.h"
-#include "ObjectModel.GlobalSettings.g.cpp"
+#include "Microsoft.Terminal.Settings.Model.GlobalSettings.g.cpp"

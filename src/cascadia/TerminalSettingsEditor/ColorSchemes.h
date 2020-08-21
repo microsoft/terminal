@@ -7,12 +7,12 @@
 #include "ObjectModel/ColorSchemeModel.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
-        ObjectModel::ColorSchemeModel ColorSchemeModel();
+        Model::ColorSchemeModel ColorSchemeModel();
 
         void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void Background_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const&, Windows::UI::Xaml::Controls::ColorChangedEventArgs const&);
@@ -35,11 +35,11 @@ namespace winrt::SettingsControl::implementation
         void BrightYellow_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const&, Windows::UI::Xaml::Controls::ColorChangedEventArgs const&);
 
     private:
-        ObjectModel::ColorSchemeModel m_colorSchemeModel{ nullptr };
+        Model::ColorSchemeModel m_colorSchemeModel{ nullptr };
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(ColorSchemes);
 }

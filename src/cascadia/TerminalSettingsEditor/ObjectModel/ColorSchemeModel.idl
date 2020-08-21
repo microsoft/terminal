@@ -1,6 +1,6 @@
 import "ObjectModel/ColorScheme.idl";
 
-namespace ObjectModel
+namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass ColorSchemeModel
     {

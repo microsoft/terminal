@@ -7,19 +7,19 @@
 #include "ObjectModel/GlobalSettingsModel.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Launch : LaunchT<Launch>
     {
         Launch();
-        ObjectModel::GlobalSettingsModel GlobalSettingsModel();
+        Model::GlobalSettingsModel GlobalSettingsModel();
 
     private:
-        ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+        Model::GlobalSettingsModel m_globalSettingsModel{ nullptr };
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Launch);
 }

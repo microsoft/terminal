@@ -1,4 +1,4 @@
-namespace ObjectModel
+namespace Microsoft.Terminal.Settings.Model
 {
     runtimeclass ColorScheme : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {

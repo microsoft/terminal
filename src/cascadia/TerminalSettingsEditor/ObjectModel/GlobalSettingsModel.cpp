@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "GlobalSettings.h"
-#include "ObjectModel.GlobalSettingsModel.g.cpp"
+#include "Microsoft.Terminal.Settings.Model.GlobalSettingsModel.g.cpp"
 #include "GlobalSettingsModel.h"
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     GlobalSettingsModel::GlobalSettingsModel()
     {
         m_globalSettings = nullptr;
-        m_globalSettings = winrt::make<ObjectModel::implementation::GlobalSettings>();
+        m_globalSettings = winrt::make<implementation::GlobalSettings>();
     }
-    ObjectModel::GlobalSettings GlobalSettingsModel::GlobalSettings()
+    Model::GlobalSettings GlobalSettingsModel::GlobalSettings()
     {
         return m_globalSettings;
     }

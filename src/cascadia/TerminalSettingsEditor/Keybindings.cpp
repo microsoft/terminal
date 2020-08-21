@@ -22,7 +22,7 @@ using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Controls::Primitives;
 using namespace Windows::System;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Keybindings::Keybindings()
     {
@@ -213,11 +213,11 @@ namespace winrt::SettingsControl::implementation
             {
                 fullInfo = fullInfo + childTextBox.Name() + L":" + childTextBox.Text();
             }
-            else if (SettingsControl::NewTabOptionPanelControl optionPanel = panelChild.try_as<SettingsControl::NewTabOptionPanelControl>())
+            else if (Editor::NewTabOptionPanelControl optionPanel = panelChild.try_as<Editor::NewTabOptionPanelControl>())
             {
                 fullInfo = fullInfo + optionPanel.Argument() + L":" + optionPanel.InputValue();
             }
-            else if (SettingsControl::SplitPaneOptionPanelControl optionPanel = panelChild.try_as<SettingsControl::SplitPaneOptionPanelControl>())
+            else if (Editor::SplitPaneOptionPanelControl optionPanel = panelChild.try_as<Editor::SplitPaneOptionPanelControl>())
             {
                 fullInfo = fullInfo + optionPanel.Argument() + L":" + optionPanel.InputValue();
             }

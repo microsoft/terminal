@@ -9,21 +9,21 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles::Profiles()
     {
-        m_profileModel = winrt::make<ObjectModel::implementation::ProfileModel>();
+        m_profileModel = winrt::make<Model::implementation::ProfileModel>();
         InitializeComponent();
     }
 
-    Profiles::Profiles(ObjectModel::ProfileModel profile) :
+    Profiles::Profiles(Model::ProfileModel profile) :
         m_profileModel{ profile }
     {
         InitializeComponent();
     }
 
-    ObjectModel::ProfileModel Profiles::ProfileModel()
+    Model::ProfileModel Profiles::ProfileModel()
     {
         return m_profileModel;
     }

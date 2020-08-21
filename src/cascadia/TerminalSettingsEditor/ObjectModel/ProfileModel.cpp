@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "ObjectModel/Profile.h"
-#include "ObjectModel.ProfileModel.g.cpp"
+#include "Microsoft.Terminal.Settings.Model.ProfileModel.g.cpp"
 #include "ProfileModel.h"
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     ProfileModel::ProfileModel()
     {
-        m_Profile = winrt::make<ObjectModel::implementation::Profile>();
+        m_Profile = winrt::make<implementation::Profile>();
     }
 
-    ObjectModel::Profile ProfileModel::Profile()
+    Model::Profile ProfileModel::Profile()
     {
         return m_Profile;
     }

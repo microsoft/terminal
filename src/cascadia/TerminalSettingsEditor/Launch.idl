@@ -3,12 +3,12 @@
 
 import "ObjectModel/GlobalSettingsModel.idl";
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass Launch : Windows.UI.Xaml.Controls.Page
     {
         Launch();
 
-        ObjectModel.GlobalSettingsModel GlobalSettingsModel { get; };
+        Microsoft.Terminal.Settings.Model.GlobalSettingsModel GlobalSettingsModel { get; };
     }
 }

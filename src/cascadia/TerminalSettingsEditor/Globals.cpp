@@ -8,7 +8,7 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Globals::Globals()
     {

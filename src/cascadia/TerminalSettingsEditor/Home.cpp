@@ -9,20 +9,20 @@
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Home::Home()
     {
-        m_homeViewModel = winrt::make<SettingsControl::implementation::SettingsControlViewModel>();
+        m_homeViewModel = winrt::make<SettingsEditorViewModel>();
         InitializeComponent();
 
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Startup", L"Launch_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Interaction", L"Interaction_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Rendering", L"Rendering_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Global appearance", L"GlobalAppearance_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Color schemes", L"ColorSchemes_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Global profile settings", L"GlobalProfile_Nav"));
-        HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Keyboard", L"Keyboard_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Startup", L"Launch_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Interaction", L"Interaction_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Rendering", L"Rendering_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Global appearance", L"GlobalAppearance_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Color schemes", L"ColorSchemes_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Global profile settings", L"GlobalProfile_Nav"));
+        HomeViewModel().HomeGridItems().Append(winrt::make<HomeGridItem>(L"Keyboard", L"Keyboard_Nav"));
     }
 
     void Home::HomeGridItemClickHandler(IInspectable const&, Controls::ItemClickEventArgs const& args)
@@ -33,7 +33,7 @@ namespace winrt::SettingsControl::implementation
         mainPage.Navigate(frame(), tag);
     }
 
-    SettingsControl::SettingsControlViewModel Home::HomeViewModel()
+    Editor::SettingsEditorViewModel Home::HomeViewModel()
     {
         return m_homeViewModel;
     }

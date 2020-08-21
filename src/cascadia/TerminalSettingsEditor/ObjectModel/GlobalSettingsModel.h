@@ -1,16 +1,16 @@
 #pragma once
-#include "ObjectModel.GlobalSettingsModel.g.h"
+#include "Microsoft.Terminal.Settings.Model.GlobalSettingsModel.g.h"
 #include "GlobalSettings.h"
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct GlobalSettingsModel : GlobalSettingsModelT<GlobalSettingsModel>
     {
         GlobalSettingsModel();
 
-        ObjectModel::GlobalSettings GlobalSettings();
+        Model::GlobalSettings GlobalSettings();
 
     private:
-        ObjectModel::GlobalSettings m_globalSettings{ nullptr };
+        Model::GlobalSettings m_globalSettings{ nullptr };
     };
 }

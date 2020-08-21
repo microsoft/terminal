@@ -7,7 +7,7 @@
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 #include "ObjectModel/AppSettings.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct MainPage : MainPageT<MainPage>
     {
@@ -31,12 +31,12 @@ namespace winrt::SettingsControl::implementation
     private:
         // XAML should data-bind to the _settingsClone
         // When "save" is pressed, _settingsSource = _settingsClone
-        winrt::ObjectModel::implementation::AppSettings _settingsSource;
-        winrt::ObjectModel::implementation::AppSettings _settingsClone;
+        Model::implementation::AppSettings _settingsSource;
+        Model::implementation::AppSettings _settingsClone;
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(MainPage);
 }

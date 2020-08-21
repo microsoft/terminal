@@ -4,25 +4,25 @@
 #pragma once
 
 #include "Home.g.h"
-#include "SettingsControlViewModel.h"
+#include "SettingsEditorViewModel.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Home : HomeT<Home>
     {
         Home();
 
-        SettingsControl::SettingsControlViewModel HomeViewModel();
+        Editor::SettingsEditorViewModel HomeViewModel();
 
         void HomeGridItemClickHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::ItemClickEventArgs const& args);
 
         private:
-            SettingsControl::SettingsControlViewModel m_homeViewModel{ nullptr };
+            Editor::SettingsEditorViewModel m_homeViewModel{ nullptr };
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Home);
 }

@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "SettingsControlViewModel.idl";
+import "SettingsEditorViewModel.idl";
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass Home : Windows.UI.Xaml.Controls.Page
     {
         Home();
-        SettingsControlViewModel HomeViewModel{ get; };
+        SettingsEditorViewModel HomeViewModel{ get; };
     }
 }

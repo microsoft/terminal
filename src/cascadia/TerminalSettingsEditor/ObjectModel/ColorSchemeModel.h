@@ -1,16 +1,16 @@
 #pragma once
-#include "ObjectModel.ColorSchemeModel.g.h"
+#include "Microsoft.Terminal.Settings.Model.ColorSchemeModel.g.h"
 #include "ColorScheme.h"
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ColorSchemeModel : ColorSchemeModelT<ColorSchemeModel>
     {
         ColorSchemeModel();
 
-        ObjectModel::ColorScheme ColorScheme();
+        Model::ColorScheme ColorScheme();
 
     private:
-        ObjectModel::ColorScheme m_colorScheme{ nullptr };
+        Model::ColorScheme m_colorScheme{ nullptr };
     };
 }

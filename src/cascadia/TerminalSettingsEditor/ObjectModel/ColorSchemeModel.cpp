@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "ColorScheme.h"
-#include "ObjectModel.ColorSchemeModel.g.cpp"
+#include "Microsoft.Terminal.Settings.Model.ColorSchemeModel.g.cpp"
 #include "ColorSchemeModel.h"
 
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     ColorSchemeModel::ColorSchemeModel()
     {
-        m_colorScheme = winrt::make<ObjectModel::implementation::ColorScheme>();
+        m_colorScheme = winrt::make<implementation::ColorScheme>();
     }
-    ObjectModel::ColorScheme ColorSchemeModel::ColorScheme()
+    Model::ColorScheme ColorSchemeModel::ColorScheme()
     {
         return m_colorScheme;
     }

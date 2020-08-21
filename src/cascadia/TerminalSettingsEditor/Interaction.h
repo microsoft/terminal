@@ -6,20 +6,20 @@
 #include "Interaction.g.h"
 #include "ObjectModel/GlobalSettingsModel.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Interaction : InteractionT<Interaction>
     {
         Interaction();
 
-        ObjectModel::GlobalSettingsModel GlobalSettingsModel();
+        Model::GlobalSettingsModel GlobalSettingsModel();
 
     private:
-        ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+        Model::GlobalSettingsModel m_globalSettingsModel{ nullptr };
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Interaction);
 }

@@ -1,9 +1,9 @@
 #pragma once
 #include <winrt/Windows.UI.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
-#include "ObjectModel.ColorScheme.g.h"
+#include "Microsoft.Terminal.Settings.Model.ColorScheme.g.h"
 
-namespace winrt::ObjectModel::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ColorScheme : ColorSchemeT<ColorScheme>
     {

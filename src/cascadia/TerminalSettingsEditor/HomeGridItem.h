@@ -5,7 +5,7 @@
 #include "HomeGridItem.g.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct HomeGridItem : HomeGridItemT<HomeGridItem>
     {

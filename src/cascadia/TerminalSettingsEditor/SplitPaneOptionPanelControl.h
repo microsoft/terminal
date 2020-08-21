@@ -6,7 +6,7 @@
 #include "SplitPaneOptionPanelControl.g.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct SplitPaneOptionPanelControl : SplitPaneOptionPanelControlT<SplitPaneOptionPanelControl>
     {
@@ -28,7 +28,7 @@ namespace winrt::SettingsControl::implementation
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(SplitPaneOptionPanelControl);
 }

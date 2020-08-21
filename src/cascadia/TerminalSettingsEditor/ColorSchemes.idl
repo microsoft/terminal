@@ -3,11 +3,11 @@
 
 import "ObjectModel/ColorSchemeModel.idl";
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
     {
         ColorSchemes();
-        ObjectModel.ColorSchemeModel ColorSchemeModel { get; };
+        Microsoft.Terminal.Settings.Model.ColorSchemeModel ColorSchemeModel { get; };
     }
 }

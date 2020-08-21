@@ -8,8 +8,8 @@
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{CA5CAD1A-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
-    <ProjectName>SettingsControl</ProjectName>
-    <RootNamespace>SettingsControl</RootNamespace>
+    <ProjectName>TerminalSettingsEditor</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Settings.Editor</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
@@ -163,8 +163,8 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Utils.h" />
-    <ClInclude Include="SettingsControlViewModel.h">
-      <DependentUpon>SettingsControlViewModel.idl</DependentUpon>
+    <ClInclude Include="SettingsEditorViewModel.h">
+      <DependentUpon>SettingsEditorViewModel.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -280,8 +280,8 @@
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="SettingsControlViewModel.cpp">
-      <DependentUpon>SettingsControlViewModel.idl</DependentUpon>
+    <ClCompile Include="SettingsEditorViewModel.cpp">
+      <DependentUpon>SettingsEditorViewModel.idl</DependentUpon>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -346,7 +346,7 @@
       <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="SettingsControlViewModel.idl" />
+    <Midl Include="SettingsEditorViewModel.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

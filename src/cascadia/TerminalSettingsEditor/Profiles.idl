@@ -3,11 +3,11 @@
 
 import "ObjectModel/ProfileModel.idl";
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
     {
         Profiles();
-        ObjectModel.ProfileModel ProfileModel { get; };
+        Microsoft.Terminal.Settings.Model.ProfileModel ProfileModel { get; };
     }
 }

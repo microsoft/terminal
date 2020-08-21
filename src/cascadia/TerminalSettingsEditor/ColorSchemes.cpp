@@ -14,15 +14,15 @@ using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Media;
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     ColorSchemes::ColorSchemes()
     {
-        m_colorSchemeModel = winrt::make<ObjectModel::implementation::ColorSchemeModel>();
+        m_colorSchemeModel = winrt::make<Model::implementation::ColorSchemeModel>();
         InitializeComponent();
     }
 
-    ObjectModel::ColorSchemeModel ColorSchemes::ColorSchemeModel()
+    Model::ColorSchemeModel ColorSchemes::ColorSchemeModel()
     {
         return m_colorSchemeModel;
     }

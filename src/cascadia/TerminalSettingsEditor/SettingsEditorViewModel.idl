@@ -3,9 +3,9 @@
 
 import "HomeGridItem.idl";
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass SettingsControlViewModel
+    runtimeclass SettingsEditorViewModel
     {
         HomeGridItem HomeGridItem { get; };
         Windows.Foundation.Collections.IObservableVector<HomeGridItem> HomeGridItems { get; };

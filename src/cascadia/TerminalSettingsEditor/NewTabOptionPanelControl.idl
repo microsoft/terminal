@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass NewTabOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
     {

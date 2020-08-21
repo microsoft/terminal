@@ -6,17 +6,17 @@
 #include "Profiles.g.h"
 #include "ObjectModel/ProfileModel.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Profiles : ProfilesT<Profiles>
     {
         Profiles();
-        Profiles(ObjectModel::ProfileModel profile);
+        Profiles(Model::ProfileModel profile);
 
-        ObjectModel::ProfileModel ProfileModel();
+        Model::ProfileModel ProfileModel();
 
     private:
-        ObjectModel::ProfileModel m_profileModel{ nullptr };
+        Model::ProfileModel m_profileModel{ nullptr };
 
     public:
         fire_and_forget BackgroundImage_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -27,7 +27,7 @@ namespace winrt::SettingsControl::implementation
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(Profiles);
 }

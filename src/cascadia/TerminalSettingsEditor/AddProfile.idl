@@ -1,4 +1,4 @@
-namespace SettingsControl
+namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass AddProfile : Windows.UI.Xaml.Controls.Page
     {

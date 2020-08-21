@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "AppSettings.h"
 
-using namespace winrt::ObjectModel::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 //AppSettings::AppSettings()
 //{

@@ -6,7 +6,7 @@
 #include "NewTabOptionPanelControl.g.h"
 #include "Utils.h"
 
-namespace winrt::SettingsControl::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct NewTabOptionPanelControl : NewTabOptionPanelControlT<NewTabOptionPanelControl>
     {
@@ -24,7 +24,7 @@ namespace winrt::SettingsControl::implementation
     };
 }
 
-namespace winrt::SettingsControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
     BASIC_FACTORY(NewTabOptionPanelControl);
 }
