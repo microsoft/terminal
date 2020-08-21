@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "Launch.h"
 #include "Launch.g.cpp"
 #include <ObjectModel\GlobalSettings.h>
@@ -17,10 +20,6 @@ namespace winrt::SettingsControl::implementation
     ObjectModel::GlobalSettingsModel Launch::GlobalSettingsModel()
     {
         return m_globalSettingsModel;
-    }
-
-    void Launch::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
     }
 
 }

@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "Interaction.h"
 #include "Interaction.g.cpp"
 #include <ObjectModel\GlobalSettings.h>
@@ -18,9 +21,5 @@ namespace winrt::SettingsControl::implementation
     ObjectModel::GlobalSettingsModel Interaction::GlobalSettingsModel()
     {
         return m_globalSettingsModel;
-    }
-
-    void Interaction::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
     }
 }

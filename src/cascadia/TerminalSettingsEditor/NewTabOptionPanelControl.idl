@@ -1,10 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 namespace SettingsControl
 {
-    [default_interface]
-    runtimeclass NewTabOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass NewTabOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
     {
         NewTabOptionPanelControl();
-        Int32 MyProperty;
 
         String Argument { get; };
         String InputValue { get; };

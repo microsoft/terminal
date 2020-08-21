@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import "ObjectModel/GlobalSettingsModel.idl";
 
 namespace SettingsControl
@@ -6,6 +9,5 @@ namespace SettingsControl
     {
         GlobalAppearance();
         ObjectModel.GlobalSettingsModel GlobalSettingsModel { get; };
-
     }
 }

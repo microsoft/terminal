@@ -1,5 +1,9 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 #include "HomeGridItem.g.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -8,16 +12,8 @@ namespace winrt::SettingsControl::implementation
         HomeGridItem() = delete;
         HomeGridItem(hstring const& title, hstring const& pageTag);
 
-        hstring Title();
-        hstring PageTag();
-        void Title(hstring const& value);
-        void PageTag(hstring const& value);
-        winrt::event_token PropertyChanged(Windows::UI::Xaml::Data::PropertyChangedEventHandler const& value);
-        void PropertyChanged(winrt::event_token const& token);
-
-        private:
-        hstring m_title;
-        hstring m_pagetag;
-        event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged; 
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(hstring, Title, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(hstring, PageTag, _PropertyChangedHandlers);
     };
 }

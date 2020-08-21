@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
 #include <ObjectModel\GlobalSettings.h>
@@ -14,12 +17,8 @@ namespace winrt::SettingsControl::implementation
         InitializeComponent();
     }
 
-     ObjectModel::GlobalSettingsModel GlobalAppearance::GlobalSettingsModel()
+    ObjectModel::GlobalSettingsModel GlobalAppearance::GlobalSettingsModel()
     {
         return m_globalSettingsModel;
-    }
-
-    void GlobalAppearance::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
     }
 }

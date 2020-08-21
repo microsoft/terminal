@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "Interaction.g.h"
 #include "ObjectModel/GlobalSettingsModel.h"
@@ -11,8 +14,6 @@ namespace winrt::SettingsControl::implementation
 
         ObjectModel::GlobalSettingsModel GlobalSettingsModel();
 
-        void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-
     private:
         ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
     };
@@ -20,7 +21,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct Interaction : InteractionT<Interaction, implementation::Interaction>
-    {
-    };
+    BASIC_FACTORY(Interaction);
 }

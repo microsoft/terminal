@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "Rendering.h"
 #include "Rendering.g.cpp"
 #include <ObjectModel\GlobalSettings.h>
@@ -10,7 +13,6 @@ namespace winrt::SettingsControl::implementation
 {
     Rendering::Rendering()
     {
-
         m_globalSettingsModel = winrt::make<ObjectModel::implementation::GlobalSettingsModel>();
         InitializeComponent();
     }
@@ -18,9 +20,5 @@ namespace winrt::SettingsControl::implementation
     ObjectModel::GlobalSettingsModel Rendering::GlobalSettingsModel()
     {
         return m_globalSettingsModel;
-    }
-
-    void Rendering::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
     }
 }

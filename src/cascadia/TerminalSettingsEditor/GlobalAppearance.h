@@ -1,7 +1,11 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "GlobalAppearance.g.h"
 #include "ObjectModel/GlobalSettingsModel.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -9,18 +13,14 @@ namespace winrt::SettingsControl::implementation
     {
         GlobalAppearance();
 
-        void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-
         ObjectModel::GlobalSettingsModel GlobalSettingsModel();
 
-        private:
-            ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
-        };
+    private:
+        ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+    };
 }
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance, implementation::GlobalAppearance>
-    {
-    };
+    BASIC_FACTORY(GlobalAppearance);
 }

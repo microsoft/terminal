@@ -1,7 +1,11 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "Keybindings.g.h"
 #include <set>
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -9,10 +13,6 @@ namespace winrt::SettingsControl::implementation
     {
         Keybindings();
 
-        int32_t MyProperty();
-        void MyProperty(int32_t value);
-
-        void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void Button_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void AddNewButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void KeyDown(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
@@ -20,7 +20,7 @@ namespace winrt::SettingsControl::implementation
         void CommandComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
         void SaveButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        private:
+    private:
         hstring GetKeyListString();
         void ShowOptionsButtonIfRequired(hstring tag);
         hstring CollectInputData();
@@ -46,7 +46,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct Keybindings : KeybindingsT<Keybindings, implementation::Keybindings>
-    {
-    };
+    BASIC_FACTORY(Keybindings);
 }

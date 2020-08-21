@@ -1,7 +1,11 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "Home.g.h"
 #include "SettingsControlViewModel.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -11,7 +15,6 @@ namespace winrt::SettingsControl::implementation
 
         SettingsControl::SettingsControlViewModel HomeViewModel();
 
-        void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void HomeGridItemClickHandler(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::Controls::ItemClickEventArgs const& args);
 
         private:
@@ -21,7 +24,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct Home : HomeT<Home, implementation::Home>
-    {
-    };
+    BASIC_FACTORY(Home);
 }

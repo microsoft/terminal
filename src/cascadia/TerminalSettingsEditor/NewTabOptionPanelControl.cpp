@@ -1,7 +1,5 @@
-﻿//
-// MyUserControl.cpp
-// Implementation of the MyUserControl class
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #include "pch.h"
 #include "NewTabOptionPanelControl.h"
@@ -33,16 +31,6 @@ namespace winrt::SettingsControl::implementation
 
         argumentComboBox = FindName(c_argumentComboBoxName).as<Controls::ComboBox>();
         argumentInputTextBox = FindName(c_textBoxName).as<Controls::TextBox>();
-    }
-
-    int32_t NewTabOptionPanelControl::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void NewTabOptionPanelControl::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
     }
 
     hstring NewTabOptionPanelControl::Argument()

@@ -1,11 +1,10 @@
-﻿//
-// MyUserControl.xaml.h
-// Declaration of the MyUserControl class
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
 #include "SplitPaneOptionPanelControl.g.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -13,14 +12,12 @@ namespace winrt::SettingsControl::implementation
     {
         SplitPaneOptionPanelControl();
 
-        int32_t MyProperty();
-        void MyProperty(int32_t value);
         void ComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
 
         hstring Argument();
         hstring InputValue();
 
-        private:
+    private:
         const hstring c_argumentComboBoxName = L"argumentComboBox";
         const hstring c_textBoxName = L"splitPaneTextBox";
         const hstring c_comboBoxName = L"splitPaneComboBox";
@@ -33,7 +30,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct SplitPaneOptionPanelControl : SplitPaneOptionPanelControlT<SplitPaneOptionPanelControl, implementation::SplitPaneOptionPanelControl>
-    {
-    };
+    BASIC_FACTORY(SplitPaneOptionPanelControl);
 }

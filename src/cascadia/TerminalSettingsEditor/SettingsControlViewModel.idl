@@ -1,10 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import "HomeGridItem.idl";
 
 namespace SettingsControl
 {
     runtimeclass SettingsControlViewModel
     {
-        HomeGridItem HomeGridItem{ get; };
-        Windows.Foundation.Collections.IObservableVector<HomeGridItem> HomeGridItems{ get; };
+        HomeGridItem HomeGridItem { get; };
+        Windows.Foundation.Collections.IObservableVector<HomeGridItem> HomeGridItems { get; };
     }
 }

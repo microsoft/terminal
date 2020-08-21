@@ -1,7 +1,5 @@
-﻿//
-// MyUserControl.cpp
-// Implementation of the MyUserControl class
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #include "pch.h"
 #include "SplitPaneOptionPanelControl.h"
@@ -34,16 +32,6 @@ namespace winrt::SettingsControl::implementation
         argumentComboBox = FindName(c_argumentComboBoxName).as<Controls::ComboBox>();
         argumentInputTextBox = FindName(c_textBoxName).as<Controls::TextBox>();
         splitModeComboBox = FindName(c_comboBoxName).as<Controls::ComboBox>();
-    }
-
-    int32_t SplitPaneOptionPanelControl::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void SplitPaneOptionPanelControl::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
     }
 
     void SplitPaneOptionPanelControl::ComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e)

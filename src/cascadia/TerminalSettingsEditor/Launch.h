@@ -1,7 +1,11 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "Launch.g.h"
 #include "ObjectModel/GlobalSettingsModel.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -10,18 +14,12 @@ namespace winrt::SettingsControl::implementation
         Launch();
         ObjectModel::GlobalSettingsModel GlobalSettingsModel();
 
-        void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-
-        private:
-            ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+    private:
+        ObjectModel::GlobalSettingsModel m_globalSettingsModel{ nullptr };
     };
-
-;
 }
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct Launch : LaunchT<Launch, implementation::Launch>
-    {
-    };
+    BASIC_FACTORY(Launch);
 }

@@ -1,9 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 import "ObjectModel/ProfileModel.idl";
 
 namespace SettingsControl
 {
-    [default_interface]
-    runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
     {
         Profiles();
         ObjectModel.ProfileModel ProfileModel { get; };

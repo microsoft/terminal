@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "Keybindings.h"
 #if __has_include("Keybindings.g.cpp")
 #include "Keybindings.g.cpp"
@@ -32,21 +35,6 @@ namespace winrt::SettingsControl::implementation
         tb.KeyDown({ this, &Keybindings::KeyDown });
 
         // tb.BeforeTextChanging({this, &Keybindings::asdf_BeforeTextChanging})
-    }
-
-    int32_t Keybindings::MyProperty()
-    {
-        throw hresult_not_implemented();
-    }
-
-    void Keybindings::MyProperty(int32_t /* value */)
-    {
-        throw hresult_not_implemented();
-    }
-
-    void Keybindings::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
-        //Button().Content(box_value(L"Clicked"));
     }
 
     void Keybindings::Button_Click(IInspectable const& sender, RoutedEventArgs const& e)

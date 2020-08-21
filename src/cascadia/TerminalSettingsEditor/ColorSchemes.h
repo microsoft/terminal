@@ -1,7 +1,11 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "ColorSchemes.g.h"
 #include "ObjectModel/ColorSchemeModel.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
@@ -37,7 +41,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct ColorSchemes : ColorSchemesT<ColorSchemes, implementation::ColorSchemes>
-    {
-    };
+    BASIC_FACTORY(ColorSchemes);
 }

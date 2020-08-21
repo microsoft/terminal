@@ -28,50 +28,6 @@ namespace winrt::SettingsControl::implementation
         return m_profileModel;
     }
 
-    void Profiles::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
-    }
-
-    void Profiles::cursorColorPickerConfirmColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //cursorColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::cursorColorPickerCancelColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //cursorColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::foregroundColorPickerConfirmColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //foregroundColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::foregroundColorPickerCancelColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //foregroundColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::backgroundColorPickerConfirmColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //backgroundColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::backgroundColorPickerCancelColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //backgroundColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::selectionBackgroundColorPickerConfirmColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //selectionBackgroundColorPickerButton.Flyout.Hide();
-    }
-
-    void Profiles::selectionBackgroundColorPickerCancelColor_Click(IInspectable const&, RoutedEventArgs const&)
-    {
-        //selectionBackgroundColorPickerButton.Flyout.Hide();
-    }
-
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
@@ -106,10 +62,11 @@ namespace winrt::SettingsControl::implementation
         }
     }
 
+    // TODO GH#1564: Settings UI
+    // This crashes on click, for some reason
     /*
     fire_and_forget Profiles::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
     {
-        // This crashes on click, for some reason
         auto lifetime = get_strong();
 
         FolderPicker picker;

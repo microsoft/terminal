@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "MainPage.g.h"
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
@@ -35,7 +38,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct MainPage : MainPageT<MainPage, implementation::MainPage>
-    {
-    };
+    BASIC_FACTORY(MainPage);
 }

@@ -1,13 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 namespace SettingsControl
 {
-    [default_interface]
-    runtimeclass SplitPaneOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass SplitPaneOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
     {
         SplitPaneOptionPanelControl();
-        Int32 MyProperty;
 
         String Argument();
         String InputValue();
-        
     }
 }

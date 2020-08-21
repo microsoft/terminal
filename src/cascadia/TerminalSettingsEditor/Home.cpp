@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "Home.h"
 #include "Home.g.cpp"
 #include "MainPage.h"
@@ -20,11 +23,6 @@ namespace winrt::SettingsControl::implementation
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Color schemes", L"ColorSchemes_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Global profile settings", L"GlobalProfile_Nav"));
         HomeViewModel().HomeGridItems().Append(winrt::make<SettingsControl::implementation::HomeGridItem>(L"Keyboard", L"Keyboard_Nav"));
-    }
-
-    void Home::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
-        
     }
 
     void Home::HomeGridItemClickHandler(IInspectable const&, Controls::ItemClickEventArgs const& args)

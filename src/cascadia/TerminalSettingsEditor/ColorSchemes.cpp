@@ -1,5 +1,7 @@
-﻿#include "pch.h"
-#include <winrt/Windows.UI.Xaml.Media.h>
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "ColorSchemes.h"
 #if __has_include("ColorSchemes.g.cpp")
 #include "ColorSchemes.g.cpp"

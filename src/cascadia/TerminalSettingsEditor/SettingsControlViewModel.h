@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 #include "SettingsControlViewModel.g.h"
 #include "HomeGridItem.h"
@@ -12,8 +15,8 @@ namespace winrt::SettingsControl::implementation
 
         Windows::Foundation::Collections::IObservableVector<SettingsControl::HomeGridItem> HomeGridItems();
 
-        private:
-            SettingsControl::HomeGridItem m_homegriditem{ nullptr };
-            Windows::Foundation::Collections::IObservableVector<SettingsControl::HomeGridItem> m_homegriditems;
+    private:
+        SettingsControl::HomeGridItem m_homegriditem{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<SettingsControl::HomeGridItem> m_homegriditems;
     };
 }

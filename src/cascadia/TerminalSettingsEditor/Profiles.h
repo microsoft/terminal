@@ -1,4 +1,7 @@
-﻿#pragma once
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
 
 #include "Profiles.g.h"
 #include "ObjectModel/ProfileModel.h"
@@ -12,29 +15,19 @@ namespace winrt::SettingsControl::implementation
 
         ObjectModel::ProfileModel ProfileModel();
 
-        void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void cursorColorPickerConfirmColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void cursorColorPickerCancelColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void foregroundColorPickerConfirmColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void foregroundColorPickerCancelColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void backgroundColorPickerConfirmColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void backgroundColorPickerCancelColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void selectionBackgroundColorPickerConfirmColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-        void selectionBackgroundColorPickerCancelColor_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
-
     private:
         ObjectModel::ProfileModel m_profileModel{ nullptr };
 
     public:
         fire_and_forget BackgroundImage_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        // TODO GH#1564: Settings UI
+        // This crashes on click, for some reason
         //fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
     };
 }
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct Profiles : ProfilesT<Profiles, implementation::Profiles>
-    {
-    };
+    BASIC_FACTORY(Profiles);
 }

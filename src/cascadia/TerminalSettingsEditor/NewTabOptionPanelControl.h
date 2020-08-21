@@ -1,20 +1,16 @@
-﻿//
-// MyUserControl.xaml.h
-// Declaration of the MyUserControl class
-//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #pragma once
 
 #include "NewTabOptionPanelControl.g.h"
+#include "Utils.h"
 
 namespace winrt::SettingsControl::implementation
 {
     struct NewTabOptionPanelControl : NewTabOptionPanelControlT<NewTabOptionPanelControl>
     {
         NewTabOptionPanelControl();
-
-        int32_t MyProperty();
-        void MyProperty(int32_t value);
 
         hstring Argument();
         hstring InputValue();
@@ -30,7 +26,5 @@ namespace winrt::SettingsControl::implementation
 
 namespace winrt::SettingsControl::factory_implementation
 {
-    struct NewTabOptionPanelControl : NewTabOptionPanelControlT<NewTabOptionPanelControl, implementation::NewTabOptionPanelControl>
-    {
-    };
+    BASIC_FACTORY(NewTabOptionPanelControl);
 }

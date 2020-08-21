@@ -1,4 +1,6 @@
-﻿<Page
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
     x:Class="SettingsControl.AddProfile"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -23,9 +25,9 @@
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="OK" Click="cursorColorPickerConfirmColor_Click"
+                    <Button Content="OK"
                         Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
-                    <Button Content="Cancel" Click="cursorColorPickerCancelColor_Click"
+                    <Button Content="Cancel"
                         Margin="2,12,0,0" HorizontalAlignment="Stretch"
                         Grid.Column="1"/>
                 </Grid>
@@ -44,9 +46,9 @@
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="OK" Click="foregroundColorPickerConfirmColor_Click"
+                    <Button Content="OK"
                         Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
-                    <Button Content="Cancel" Click="foregroundColorPickerCancelColor_Click"
+                    <Button Content="Cancel"
                         Margin="2,12,0,0" HorizontalAlignment="Stretch"
                         Grid.Column="1"/>
                 </Grid>
@@ -65,9 +67,9 @@
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="OK" Click="backgroundColorPickerConfirmColor_Click"
+                    <Button Content="OK"
                         Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
-                    <Button Content="Cancel" Click="backgroundColorPickerCancelColor_Click"
+                    <Button Content="Cancel"
                         Margin="2,12,0,0" HorizontalAlignment="Stretch"
                         Grid.Column="1"/>
                 </Grid>
@@ -86,9 +88,9 @@
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="OK" Click="selectionBackgroundColorPickerConfirmColor_Click"
+                    <Button Content="OK"
                         Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
-                    <Button Content="Cancel" Click="selectionBackgroundColorPickerCancelColor_Click"
+                    <Button Content="Cancel"
                         Margin="2,12,0,0" HorizontalAlignment="Stretch"
                         Grid.Column="1"/>
                 </Grid>

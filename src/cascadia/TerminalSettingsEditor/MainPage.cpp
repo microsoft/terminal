@@ -1,4 +1,7 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
 #include "Home.h"
@@ -27,7 +30,7 @@ namespace winrt::SettingsControl::implementation
     {
         InitializeComponent();
 
-        // TODO: When we actually connect this to Windows Terminal,
+        // TODO GH#1564: When we actually connect this to Windows Terminal,
         //       this section will clone the active AppSettings
         _settingsSource = AppSettings();
         _settingsClone = _settingsSource.Clone();
