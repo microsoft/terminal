@@ -50,6 +50,8 @@ namespace winrt::TerminalApp::implementation
         bool HasNestedCommands();
         Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
 
+        void RefreshIcon();
+
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -63,6 +65,8 @@ namespace winrt::TerminalApp::implementation
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _subcommands{ nullptr };
+
+        winrt::hstring _lastIconPath{};
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        gsl::span<const ::TerminalApp::Profile> profiles,
