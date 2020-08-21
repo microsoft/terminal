@@ -149,7 +149,7 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(5u, settings._profiles.size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
-        VERIFY_IS_TRUE(settings._profiles.at(0).HasGuid());
+        VERIFY_IS_FALSE(settings._profiles.at(0).HasGuid());
         VERIFY_IS_TRUE(settings._profiles.at(0).Source().empty());
 
         VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).Name());
