@@ -2483,11 +2483,11 @@ void TextBufferTests::HyperlinkTrim()
     // The hyperlink reference that was only in the first row should be deleted from the map
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
     // Since there was a custom id, that should be deleted as well
-    VERIFY_ARE_EQUAL(_buffer->_customIdMap.find(customId), _buffer->_customIdMap.end());
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(customId), _buffer->_hyperlinkCustomIdMap.end());
 
     // The other hyperlink reference should not be deleted
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap[otherId], otherUrl);
-    VERIFY_ARE_EQUAL(_buffer->_customIdMap[otherCustomId], otherId);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[otherCustomId], otherId);
 }
 
 // This tests that when we increment the circular buffer, non-obsolete hyperlink references
@@ -2520,5 +2520,5 @@ void TextBufferTests::NoHyperlinkTrim()
 
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
-    VERIFY_ARE_EQUAL(_buffer->_customIdMap[customId], id);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[customId], id);
 }

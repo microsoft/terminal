@@ -397,7 +397,7 @@ public:
         return {};
     }
 
-    const std::wstring GetCustomId(uint16_t /*id*/) const noexcept
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
     {
         return {};
     }

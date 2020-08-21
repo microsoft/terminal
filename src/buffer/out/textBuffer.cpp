@@ -56,6 +56,8 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
 void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 {
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
+    _hyperlinkMap = OtherBuffer._hyperlinkMap;
+    _hyperlinkCustomIdMap = OtherBuffer._hyperlinkCustomIdMap;
 }
 
 // Routine Description:
