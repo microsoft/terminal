@@ -343,7 +343,9 @@
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
 
+        // Other commands
         {
+            // Select color scheme...
             "name": { "key": "SetColorSchemeParentCommandName" },
             "commands": [
                 {
@@ -353,5 +355,39 @@
                 }
             ]
         },
+        {
+            // New tab...
+            "name": { "key": "NewTabParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}",
+                    "command": { "action": "newTab", "profile": "${profile.name}" }
+                }
+            ]
+        },
+        {
+            // Split pane...
+            "name": { "key": "SplitPaneParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}...",
+                    "commands": [
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                        }
+                    ]
+                }
+            ]
+        }
     ]
 }
