@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: The settings who's keybindings we should use to look up the key chords from
     // - commands: The list of commands to label.
     static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
-                                                        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+                                                        IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
         {
@@ -83,20 +83,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    static void _recursiveUpdateCommandIcons(IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
         {
             const auto& command = nameAndCmd.Value();
-            // Set the default IconSource to a BitmapIconSource with a null source
-            // (instead of just nullptr) because there's a really weird crash when swapping
-            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-            // Swapping between nullptr IconSources and non-null IconSources causes a crash
-            // to occur, but swapping between IconSources with a null source and non-null IconSources
-            // work perfectly fine :shrug:.
-            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-            icon.UriSource(nullptr);
-            command.IconSource(icon);
+
+            // !!! LOAD-BEARING !!! If this is never called, then Commands will
+            // have a nullptr icon. If they do, a really weird crash can occur.
+            // MAKE SURE this is called once after a settings load.
+            command.RefreshIcon();
 
             if (command.HasNestedCommands())
             {
