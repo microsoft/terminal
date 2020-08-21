@@ -69,8 +69,8 @@ I propose that we introduce a fusion manifest field, **consoleWindowPolicy**, wi
 * `hidden`
 * `detached`
 
-These flags provide a way for an application to specify a default value for the console-related [`CreateProcess()`]
-[process creation flags] which will take effect when none are provided and there is no existing console session.
+These flags provide a way for an application to specify a default value for the console-related [process creation flags]
+supported by [`CreateProcess`] which will take effect when none are provided and there is no existing console session.
 
 It would look (roughly) like this:
 
@@ -95,7 +95,7 @@ inheritance, CUI applications will still be able to run inside an existing conso
 | -          | -                                                                                                                   |
 | _absent_   | _default behavior_                                                                                                  |
 | `hidden`   | The new process is attached to a headless console session (similar to `CREATE_NO_WINDOW`) unless one was inherited. |
-| `detached` | The new process is not attached to a console session (similar to `DETACHED_PROCESS`) unless one was inherited       |
+| `detached` | The new process is not attached to a console session (similar to `DETACHED_PROCESS`) unless one was inherited.      |
 
 An application that uses either of these manifest values will _not_ present a console window when launched by Explorer,
 Task Scheduler, etc. The only difference between the two is whether there is a hidden console host that can service
