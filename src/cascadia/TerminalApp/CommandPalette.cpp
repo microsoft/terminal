@@ -217,7 +217,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     // Clear out the current input. We'll leave a ">" in the
                     // input (to stay in commandline mode), and a leading space
-                    // (if they currenly had one).
+                    // (if they currently had one).
                     const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
                     _searchBox().Text(hasLeadingSpace ? L"> " : L">");
 
@@ -554,7 +554,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
-        if (_currentMode != CommandPaletteMode::TabSwitcherMode)
+        if (_currentMode == CommandPaletteMode::CommandlineMode || _currentMode == CommandPaletteMode::ActionMode)
         {
             _evaluatePrefix();
         }
