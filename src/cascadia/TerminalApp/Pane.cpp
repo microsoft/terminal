@@ -42,6 +42,8 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         _SetupResources();
     }
 
+    // Use the unfocused border color as the pane background, so an actual color
+    // appears behind panes as we animate them sliding in.
     _root.Background(s_unfocusedBorderBrush);
 
     // Register an event with the control to have it inform us when it gains focus.
@@ -905,10 +907,17 @@ void Pane::_ApplySplitDefinitions()
     }
 }
 
+// Method Description:
+// - Create a pair of animations when a new control enters this pane. This
+//   should _ONLY_ be called in _Split, AFTER the first and second child panes
+//   have been set up.
 void Pane::_SetupEntranceAnimation()
 {
     const bool splitWidth = _splitState == SplitState::Vertical;
     const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
+    // If we don't have a size yet, it's likely that we're in startup, or we're
+    // being executed as a sequence of actions. In that case, just skip the
+    // animation.
     if (totalSize <= 0)
     {
         return;
@@ -916,22 +925,22 @@ void Pane::_SetupEntranceAnimation()
 
     const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
-    // auto childGrid = _secondChild->_root;
-    // auto control = _secondChild->_control;
-
     // WARNING: Don't do this! This won't work
-    // Duration duration{ std::chrono::milliseconds{ 166 } };
+    // Duration duration{ std::chrono::milliseconds{ 200 } };
     // Instead, make a duration from a timespan from the time in millis
     //
-    // 300ms was chosen because it's quick enough that it doesn't break your
+    // 100ms was chosen because it's quick enough that it doesn't break your
     // flow, but not too quick to see
     Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(200)));
 
-    auto setupAnimation = [&duration, &totalSize, &splitWidth](auto child, const auto& size, const bool isFirstChild) {
+    // This is safe to capture this, because it's only being called in the
+    // context of this method (not on another thread)
+    auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
+        auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
         auto control = child->_control;
         // Build up our animation:
-        // * it'll take as long as our duration (300ms)
+        // * it'll take as long as our duration (200ms)
         // * it'll change the value of our property from 0 to secondSize
         // * it'll animate that value using a quadratic function (like f(t) = t^2)
         // * IMPORTANT! We'll manually tell the animation that "yes we know what
@@ -940,11 +949,15 @@ void Pane::_SetupEntranceAnimation()
         animation.Duration(duration);
         if (isFirstChild)
         {
+            // If we're animating the first pane, the size should decrease, form the
+            // full size down to the given size.
             animation.From(totalSize);
             animation.To(size);
         }
         else
         {
+            // Otherwise, we want to show the pane getting larger, so animate
+            // from 0 to the requested size.
             animation.From(0.0);
             animation.To(size);
         }
@@ -956,13 +969,11 @@ void Pane::_SetupEntranceAnimation()
         // * we'll set it up for the same duration as the animation we have
         // * Apply the animation to the grid of the new pane we're adding to the tree.
         // * apply the animation to the Width or Height property.
-        // * add the storyboard to our resources. TODO: I don't know if this is necessary.
         Media::Animation::Storyboard s;
         s.Duration(duration);
         s.Children().Append(animation);
         s.SetTarget(animation, childGrid);
         s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
-        // _root.Resources().Insert(winrt::box_value(L"paneAnimation"), s);
 
         // BE TRICKY:
         // We're animating the width or height of our child pane's grid.
@@ -978,12 +989,18 @@ void Pane::_SetupEntranceAnimation()
         // pane's grid stick to "outside" of the grid (the side that's not moving)
         if (splitWidth)
         {
+            // If we're animating the first child, then stick to the top/left of
+            // the parent pane, otherwise use the bottom/right. This is always
+            // the "outside" of the parent pane.
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
             control.HorizontalAlignment(HorizontalAlignment::Left);
             control.Width(isFirstChild ? totalSize : size);
         }
         else
         {
+            // If we're animating the first child, then stick to the top/left of
+            // the parent pane, otherwise use the bottom/right. This is always
+            // the "outside" of the parent pane.
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
             control.VerticalAlignment(VerticalAlignment::Top);
             control.Height(isFirstChild ? totalSize : size);
@@ -992,28 +1009,38 @@ void Pane::_SetupEntranceAnimation()
         // Start the animation.
         s.Begin();
 
+        std::weak_ptr<Pane> weakThis{ shared_from_this() };
         // When the animation is completed, undo the trickiness from before, to
         // restore the controls to the behavior they'd usually have.
-        animation.Completed([control, childGrid, splitWidth](auto&&, auto&&) {
-            if (splitWidth)
+        animation.Completed([weakThis, isFirstChild, splitWidth](auto&&, auto&&) {
+            if (auto pane{ weakThis.lock() })
             {
-                control.Width(NAN);
-                childGrid.Width(NAN);
-                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                control.HorizontalAlignment(HorizontalAlignment::Stretch);
-            }
-            else
-            {
-                control.Height(NAN);
-                childGrid.Height(NAN);
-                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                control.VerticalAlignment(VerticalAlignment::Stretch);
+                auto child = isFirstChild ? pane->_firstChild : pane->_secondChild;
+                auto childGrid = child->_root;
+                auto control = child->_control;
+
+                if (splitWidth)
+                {
+                    control.Width(NAN);
+                    childGrid.Width(NAN);
+                    childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                }
+                else
+                {
+                    control.Height(NAN);
+                    childGrid.Height(NAN);
+                    childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                    control.VerticalAlignment(VerticalAlignment::Stretch);
+                }
             }
         });
     };
 
-    // setupAnimation(_firstChild, firstSize, true);
-    setupAnimation(_secondChild, secondSize, false);
+    // TODO: GH#TODO - animating the first child right now doesn't _really_ do
+    // anything. We could do better though.
+    setupAnimation(firstSize, true);
+    setupAnimation(secondSize, false);
 }
 
 // Method Description:
