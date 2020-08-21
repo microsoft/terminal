@@ -69,6 +69,12 @@ namespace winrt::TerminalApp::implementation
         winrt::guid ConnectionType() const;
         void ConnectionType(winrt::guid conType);
 
+        // BackgroundImageAlignment is 1 setting saved as 2 separate values
+        Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
+        void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
+        Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
+        void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
+
         GETSET_PROPERTY(hstring, Name, L"Default");
         GETSET_PROPERTY(hstring, Source);
         GETSET_PROPERTY(bool, Hidden, false);
@@ -78,11 +84,11 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         GETSET_PROPERTY(hstring, TabTitle);
         GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor);
-        GETSET_PROPERTY(bool, SuppressApplicationTitle);
+        GETSET_PROPERTY(bool, SuppressApplicationTitle, false);
 
         GETSET_PROPERTY(bool, UseAcrylic, false);
         GETSET_PROPERTY(double, AcrylicOpacity, 0.5);
-        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState);
+        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 
         GETSET_PROPERTY(hstring, FontFace, DEFAULT_FONT_FACE);
         GETSET_PROPERTY(int32_t, FontSize, DEFAULT_FONT_SIZE);
@@ -96,20 +102,10 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(Windows::Foundation::IReference<double>, BackgroundImageOpacity);
         GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Xaml::Media::Stretch>, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
 
-    public:
-        // BackgroundImageAlignment is 1 setting saved as 2 separate values
-        Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
-        void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
-        Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
-        void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
-
-    private:
-        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment;
-
         GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
-        GETSET_PROPERTY(bool, RetroTerminalEffect);
-        GETSET_PROPERTY(bool, ForceFullRepaintRendering);
-        GETSET_PROPERTY(bool, SoftwareRendering);
+        GETSET_PROPERTY(bool, RetroTerminalEffect, false);
+        GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
+        GETSET_PROPERTY(bool, SoftwareRendering, false);
 
         GETSET_PROPERTY(hstring, ColorSchemeName, L"Campbell");
         GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, Foreground);
@@ -125,8 +121,9 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
     private:
-        Windows::Foundation::IReference<winrt::guid> _Guid = nullptr;
-        Windows::Foundation::IReference<winrt::guid> _ConnectionType = nullptr;
+        std::optional<winrt::guid> _Guid = std::nullopt;
+        std::optional<winrt::guid> _ConnectionType = std::nullopt;
+        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 

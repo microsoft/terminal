@@ -65,7 +65,7 @@ Profile::Profile() :
 }
 
 Profile::Profile(IReference<guid> guid) :
-    _Guid(guid)
+    _Guid(guid ? static_cast<decltype(_Guid)>(guid.Value()) : std::nullopt)
 {
     /* FontWeight is initialized here because the structure won't accept a uint16_t directly */
     winrt::Windows::UI::Text::FontWeight weight;
@@ -205,9 +205,9 @@ Json::Value Profile::GenerateStub() const
     Json::Value stub;
 
     ///// Profile-specific settings /////
-    if (_Guid != nullptr)
+    if (_Guid.has_value())
     {
-        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_Guid.Value()));
+        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(*_Guid));
     }
 
     stub[JsonKey(NameKey)] = winrt::to_string(_Name);
@@ -245,7 +245,7 @@ winrt::com_ptr<Profile> Profile::FromJson(const Json::Value& json)
 // - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
-    if (_Guid == nullptr)
+    if (!_Guid.has_value())
     {
         return false;
     }
@@ -254,7 +254,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     // should _definitely_ not layer.
     if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) })
     {
-        if (otherGuid.value() != _Guid.Value())
+        if (otherGuid.value() != *_Guid)
         {
             return false;
         }
@@ -433,7 +433,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 //   will _not_ change the profile's GUID.
 void Profile::GenerateGuidIfNecessary() noexcept
 {
-    if (_Guid == nullptr)
+    if (!_Guid.has_value())
     {
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
@@ -541,14 +541,14 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
 
 bool Profile::HasGuid() const
 {
-    return _Guid != nullptr;
+    return _Guid.has_value();
 }
 
 winrt::guid Profile::Guid() const
 {
     // This can throw if we never had our guid set to a legitimate value.
-    THROW_HR_IF_MSG(E_FAIL, _Guid == nullptr, "Profile._guid always expected to have a value");
-    return _Guid.Value();
+    THROW_HR_IF_MSG(E_FAIL, !_Guid.has_value(), "Profile._guid always expected to have a value");
+    return *_Guid;
 }
 
 void Profile::Guid(winrt::guid guid)
@@ -558,12 +558,12 @@ void Profile::Guid(winrt::guid guid)
 
 bool Profile::HasConnectionType() const
 {
-    return _ConnectionType != nullptr;
+    return _ConnectionType.has_value();
 }
 
 winrt::guid Profile::ConnectionType() const
 {
-    return _ConnectionType.Value();
+    return *_ConnectionType;
 }
 
 void Profile::ConnectionType(winrt::guid conType)
