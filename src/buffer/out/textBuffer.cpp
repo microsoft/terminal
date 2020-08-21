@@ -56,8 +56,6 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
 void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 {
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
-    _hyperlinkMap = OtherBuffer._hyperlinkMap;
-    _hyperlinkCustomIdMap = OtherBuffer._hyperlinkCustomIdMap;
 }
 
 // Routine Description:
@@ -2196,6 +2194,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     {
         // Finish copying remaining parameters from the old text buffer to the new one
         newBuffer.CopyProperties(oldBuffer);
+        newBuffer.CopyHyperlinkMaps(oldBuffer);
 
         // If we found where to put the cursor while placing characters into the buffer,
         //   just put the cursor there. Otherwise we have to advance manually.
@@ -2346,4 +2345,14 @@ std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
         }
     }
     return {};
+}
+
+// Method Description:
+// - Copies the hyperlink/customID maps of the old buffer into this one
+// Arguments:
+// - The other buffer
+void TextBuffer::CopyHyperlinkMaps(const TextBuffer& OtherBuffer) noexcept
+{
+    _hyperlinkMap = OtherBuffer._hyperlinkMap;
+    _hyperlinkCustomIdMap = OtherBuffer._hyperlinkCustomIdMap;
 }

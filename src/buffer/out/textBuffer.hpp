@@ -146,6 +146,7 @@ public:
     uint16_t GetHyperlinkId(std::wstring_view params);
     void RemoveHyperlinkFromMap(uint16_t id);
     std::wstring GetCustomIdFromId(uint16_t id) const;
+    void CopyHyperlinkMaps(const TextBuffer& OtherBuffer) noexcept;
 
     class TextAndColor
     {
