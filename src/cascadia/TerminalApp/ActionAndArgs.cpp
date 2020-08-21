@@ -37,9 +37,8 @@ static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
-static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
-static constexpr std::string_view TabSwitcherKey{ "tabSwitcher" };
+static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
@@ -96,7 +95,7 @@ namespace winrt::TerminalApp::implementation
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { SwitchToTabKey, ShortcutAction::SwitchToTab },
-        { TabSwitcherKey, ShortcutAction::ToggleTabSwitcher },
+        { TabSearchKey, ShortcutAction::TabSearch },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
@@ -130,7 +129,6 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
         { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
         { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
-        { ShortcutAction::ToggleTabSwitcher, ToggleTabSwitcherArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -280,6 +278,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },

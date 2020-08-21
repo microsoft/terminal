@@ -938,6 +938,13 @@ namespace winrt::TerminalApp::implementation
                 if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
                 {
                     focusedObject = focusedElement.Parent();
+
+                    // Parent() seems to return null when the focusedElement is created from an ItemTemplate.
+                    // Use the VisualTreeHelper's GetParent as a fallback.
+                    if (!focusedObject)
+                    {
+                        focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
+                    }
                 }
                 else
                 {

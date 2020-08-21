@@ -20,7 +20,6 @@
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
-#include "ToggleTabSwitcherArgs.g.h"
 
 #include "Utils.h"
 
@@ -355,22 +354,4 @@ namespace winrt::TerminalApp::implementation
                         _Index)
         };
     }
-
-    winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
-    {
-        // If there's an anchor key set, don't generate a name so that
-        // it won't show up in the command palette. Only an unanchored
-        // tab switcher should be able to be toggled from the palette.
-        // TODO: GH#7179 - once this goes in, make sure to hide the
-        // anchor mode command that was given a name in settings.
-        if (_AnchorKey != Windows::System::VirtualKey::None)
-        {
-            return L"";
-        }
-        else
-        {
-            return RS_(L"ToggleTabSwitcherCommandKey");
-        }
-    }
-
 }

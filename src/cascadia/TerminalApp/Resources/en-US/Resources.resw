@@ -576,6 +576,9 @@
   <data name="SetColorSchemeParentCommandName" xml:space="preserve">
     <value>Select color scheme...</value>
   </data>
+  <data name="TabSearchCommandKey" xml:space="preserve">
+    <value>Search for tab...</value>
+  </data>
   <data name="NewTabParentCommandName" xml:space="preserve">
     <value>New Tab...</value>
   </data>
@@ -584,9 +587,6 @@
   </data>
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>Tab Switcher</value>
-  </data>
-  <data name="ToggleTabSwitcherCommandKey" xml:space="preserve">
-    <value>Toggle tab switcher</value>
   </data>
   <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
     <value>Type a tab name...</value>
