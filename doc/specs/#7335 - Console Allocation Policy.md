@@ -259,6 +259,13 @@ It was cut because a GUI application that wants a console window can simply atta
 allocate a new one. We found no compelling use case that would require the forced allocation of a console session
 outside of the application's code.
 
+An earlier version of this specification offered the **inheritOnly** allocation policy, instead of the finer-grained
+**hidden** and **detached** policies. We deemed it insufficient for PowerShell's use case because any application
+launched by an **inheritOnly** PowerShell would immediately force the uncontrolled allocation of a console window.
+
+The move to **hidden** allows PowerShell to offer a fully-fledged console connection that can be itself inherited by a
+downstream application.
+
 ### Links
 
 1. [Powershell -WindowStyle Hidden still shows a window briefly]
