@@ -7,7 +7,7 @@
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <CppWinRTGenerateWindowsMetadata>true</CppWinRTGenerateWindowsMetadata>
     <MinimalCoreWin>true</MinimalCoreWin>
-    <ProjectGuid>{35989071-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
+    <ProjectGuid>{CA5CAD1A-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
     <ProjectName>SettingsControl</ProjectName>
     <RootNamespace>SettingsControl</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -213,27 +213,6 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Assets\AllTerminalColorSchemes (2).png" />
-    <Image Include="Assets\AllTerminalColorSchemes (3).png" />
-    <Image Include="Assets\AllTerminalColorSchemes (4).png" />
-    <Image Include="Assets\AllTerminalColorSchemes (5).png" />
-    <Image Include="Assets\AllTerminalColorSchemes (6).png" />
-    <Image Include="Assets\AllTerminalColorSchemes (7).png" />
-    <Image Include="Assets\AllTerminalProfiles (2).png" />
-    <Image Include="Assets\AllTerminalProfiles (3).png" />
-    <Image Include="Assets\AllTerminalProfiles (4).png" />
-    <Image Include="Assets\AllTerminalProfiles (5).png" />
-    <Image Include="Assets\AllTerminalProfiles (6).png" />
-    <Image Include="Assets\AllTerminalProfiles (7).png" />
-    <Image Include="Assets\LockScreenLogo.scale-200.png" />
-    <Image Include="Assets\SplashScreen.scale-200.png" />
-    <Image Include="Assets\Square150x150Logo.scale-200.png" />
-    <Image Include="Assets\Square44x44Logo.scale-200.png" />
-    <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Image Include="Assets\StoreLogo.png" />
-    <Image Include="Assets\Wide310x150Logo.scale-200.png" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
@@ -364,9 +343,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
-    <Text Include="readme.txt">
-      <DeploymentContent>false</DeploymentContent>
-    </Text>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

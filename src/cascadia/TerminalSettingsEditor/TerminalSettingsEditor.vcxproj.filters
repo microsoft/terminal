@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="HomeGridItem.cpp" />
+    <ClCompile Include="ObjectModel\AppSettings.cpp" />
+    <ClCompile Include="ObjectModel\ColorScheme.cpp" />
+    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
+    <ClCompile Include="ObjectModel\Profile.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="SettingsControlViewModel.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HomeGridItem.h" />
+    <ClInclude Include="ObjectModel\AppSettings.h" />
+    <ClInclude Include="ObjectModel\ColorScheme.h" />
+    <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
+    <ClInclude Include="ObjectModel\GlobalSettings.h" />
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
+    <ClInclude Include="ObjectModel\Profile.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="SettingsControlViewModel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="ObjectModel\ColorScheme.idl" />
+    <Midl Include="HomeGridItem.idl" />
+    <Midl Include="ObjectModel\ColorSchemeModel.idl" />
+    <Midl Include="ObjectModel\GlobalSettings.idl" />
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
+    <Midl Include="ObjectModel\Profile.idl" />
+    <Midl Include="ObjectModel\ProfileModel.idl" />
+    <Midl Include="SettingsControlViewModel.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="PropertySheet.props" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="AddProfile.xaml" />
+    <Page Include="GlobalAppearance.xaml" />
+    <Page Include="ColorSchemes.xaml" />
+    <Page Include="Globals.xaml" />
+    <Page Include="Home.xaml" />
+    <Page Include="Interaction.xaml" />
+    <Page Include="Keybindings.xaml" />
+    <Page Include="Launch.xaml" />
+    <Page Include="MainPage.xaml" />
+    <Page Include="SplitPaneOptionPanelControl.xaml" />
+    <Page Include="NewTabOptionPanelControl.xaml" />
+    <Page Include="Profiles.xaml" />
+    <Page Include="Rendering.xaml" />
+  </ItemGroup>
+</Project>
