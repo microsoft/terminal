@@ -582,9 +582,6 @@
   <data name="TabSwitcherControlName" xml:space="preserve">
     <value>Tab Switcher</value>
   </data>
-  <data name="ToggleTabSwitcherCommandKey" xml:space="preserve">
-    <value>Toggle tab switcher</value>
-  </data>
   <data name="TabSwitcher_SearchBoxText" xml:space="preserve">
     <value>Type a tab name...</value>
   </data>

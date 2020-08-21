@@ -1,4 +1,5 @@
 parameters:
+  condition: 'succeededOrFailed()'
   dependsOn: ''
   rerunPassesRequiredToAvoidFailure: 5
   minimumExpectedTestsExecutedCount: 10
@@ -7,7 +8,7 @@ parameters:
 
 jobs:
 - job: ProcessTestResults
-  condition: succeededOrFailed()
+  condition: ${{ parameters.condition }}
   dependsOn: ${{ parameters.dependsOn }}
   pool:
     vmImage: 'windows-2019'
