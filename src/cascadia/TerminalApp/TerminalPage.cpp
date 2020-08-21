@@ -2044,6 +2044,11 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+
+        // Settings AllowDependentAnimations will affect whether animations are
+        // enabled application-wide, so we don't need to check it each time we
+        // want to create an animation.
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings->GlobalSettings().DisableAnimations());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

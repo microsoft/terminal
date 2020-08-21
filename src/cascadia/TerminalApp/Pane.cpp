@@ -1017,21 +1017,22 @@ void Pane::_SetupEntranceAnimation()
             {
                 auto child = isFirstChild ? pane->_firstChild : pane->_secondChild;
                 auto childGrid = child->_root;
-                auto control = child->_control;
-
-                if (splitWidth)
+                if (auto control = child->_control)
                 {
-                    control.Width(NAN);
-                    childGrid.Width(NAN);
-                    childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                }
-                else
-                {
-                    control.Height(NAN);
-                    childGrid.Height(NAN);
-                    childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                    control.VerticalAlignment(VerticalAlignment::Stretch);
+                    if (splitWidth)
+                    {
+                        control.Width(NAN);
+                        childGrid.Width(NAN);
+                        childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                        control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                    }
+                    else
+                    {
+                        control.Height(NAN);
+                        childGrid.Height(NAN);
+                        childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                        control.VerticalAlignment(VerticalAlignment::Stretch);
+                    }
                 }
             }
         });
