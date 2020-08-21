@@ -1191,21 +1191,13 @@ const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::w
 
 void TextBuffer::_PruneHyperlinks()
 {
-    // First, check the old first row for hyperlink references
+    // Check the old first row for hyperlink references
     // If there are any, search the entire buffer for the same reference
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
     // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
-    std::unordered_set<uint16_t> refs;
-    const auto firstAttrRow = _storage.at(_firstRow).GetAttrRow();
     // Get all the hyperlink references in the row we're erasing
-    for (auto it = firstAttrRow.begin(); it != firstAttrRow.end(); ++it)
-    {
-        if (it->IsHyperlink())
-        {
-            refs.emplace(it->GetHyperlinkId());
-        }
-    }
-    if (!refs.empty())
+    auto firstRowRefs = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
+    if (!firstRowRefs.empty())
     {
         const auto total = TotalRowCount();
         // Loop through all the rows in the buffer except the first row -
@@ -1214,15 +1206,15 @@ void TextBuffer::_PruneHyperlinks()
         // to see if those references are anywhere else
         for (size_t i = 1; i != total; ++i)
         {
-            const auto attrRow = GetRowByOffset(i).GetAttrRow();
-            for (auto it = attrRow.begin(); it != attrRow.end(); ++it)
+            const auto nextRowRefs = GetRowByOffset(i).GetAttrRow().GetHyperlinks();
+            for (auto id : nextRowRefs)
             {
-                if (it->IsHyperlink() && (refs.find(it->GetHyperlinkId()) != refs.end()))
+                if (firstRowRefs.find(id) != firstRowRefs.end())
                 {
-                    refs.erase(it->GetHyperlinkId());
+                    firstRowRefs.erase(id);
                 }
             }
-            if (refs.empty())
+            if (firstRowRefs.empty())
             {
                 // No more hyperlink references left to search for, terminate early
                 break;
@@ -1231,7 +1223,7 @@ void TextBuffer::_PruneHyperlinks()
     }
 
     // Now delete obsolete references from our map
-    for (auto hyperlinkReference : refs)
+    for (auto hyperlinkReference : firstRowRefs)
     {
         RemoveHyperlinkFromMap(hyperlinkReference);
     }
