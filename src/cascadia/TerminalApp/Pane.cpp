@@ -5,9 +5,12 @@
 #include "Pane.h"
 #include "Profile.h"
 #include "CascadiaSettings.h"
+#include <LibraryResources.h>
+#include "ColorHelper.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
+using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -29,8 +32,6 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _lastActive{ lastFocused },
     _profile{ profile }
 {
-    _root.Children().Append(_border);
-    _border.Child(_control);
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
 
@@ -45,6 +46,8 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
 
+    _CreateTitlebar();
+
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
@@ -53,6 +56,283 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         _FocusFirstChild();
         e.Handled(true);
     });
+}
+
+// Method Description:
+// - Creates the pane titlebar. If pane titlebar is disabled, we just collapse it.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_CreateTitlebar()
+{
+    _titlebarDef.MinHeight(_paneTitlebarMinHeight); // Fixes an issue on initial pane render
+    _titlebarDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Auto));
+    _paneTitlebarGrid.RowDefinitions().Append(_titlebarDef);
+
+    // Add Pane Content Definiation
+    _paneContentDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
+    _paneTitlebarGrid.RowDefinitions().Append(_paneContentDef);
+
+    // Set pane title text properties
+    _paneTitlebarTitle.HorizontalAlignment(HorizontalAlignment::Center);
+    _paneTitlebarTitle.VerticalAlignment(VerticalAlignment::Stretch);
+    _paneTitlebarTitle.Margin(ThicknessHelper::FromUniformLength(1));
+
+    // Make sure the user has some room to double-click on smaller titles
+    _paneTitlebarTitle.MinWidth(65);
+
+    // Hook double-click event to edit pane title
+    _paneTitlebarTitle.DoubleTapped([this](auto&& /*s*/, auto&& /*e*/) {
+        _paneTitlebarTextInRename = true;
+        _UpdatePaneTitlebar();
+    });
+
+    _paneTitlebarBorder.Child(_paneTitlebarTitle);
+
+    // Set Grid Row properties
+    Controls::Grid::SetRow(_paneTitlebarBorder, 0);
+    _paneTitlebarGrid.Children().Append(_paneTitlebarBorder);
+
+    Controls::Grid::SetRow(_control, 1);
+    _paneTitlebarGrid.Children().Append(_control);
+
+    // Append Custom Grid to the root
+    _border.Child(_paneTitlebarGrid);
+
+    _UpdatePaneTitle();
+    _CreateContextMenu();
+
+    _root.Children().Append(_border);
+
+    // Update the pane title to reflect the term title
+    _control.TitleChanged([this](winrt::hstring newTitle) {
+        _UpdatePaneTitle();
+    });
+
+    // Update the pane background brush to reflect the tab's color
+    // When the tab's color is changed at runtime, this does not fire
+    _control.TabColorChanged([this](auto&&, auto&&) {
+        _UpdatePaneTitle();
+    });
+
+    _ApplySettings();
+}
+
+// Method Description:
+// - Constructs a textbox used for renaming a pane titlebar
+// Arguments:
+// - paneText: The text to be used as the initial value of the textbox
+// Return Value:
+// - <none>
+void Pane::_ConstructPaneTitleRenameBox(const winrt::hstring& paneText)
+{
+    if (_paneTitlebarTitle.Child().try_as<Controls::TextBox>())
+    {
+        return;
+    }
+
+    Controls::TextBox paneTextBox;
+    paneTextBox.MinHeight(0);
+    paneTextBox.Padding(ThicknessHelper::FromUniformLength(0));
+    paneTextBox.Margin(ThicknessHelper::FromUniformLength(0));
+    paneTextBox.HorizontalAlignment(HorizontalAlignment::Stretch);
+    paneTextBox.VerticalAlignment(VerticalAlignment::Stretch);
+    paneTextBox.TextAlignment(TextAlignment::Center);
+    paneTextBox.Height(_paneTitlebarTitle.ActualHeight());
+
+    // Setup events
+    auto weakThis{ shared_from_this() };
+    paneTextBox.LostFocus([weakThis](const winrt::Windows::Foundation::IInspectable& sender, auto&&) {
+        auto pane {weakThis.get()};
+        auto textBox { sender.try_as<Controls::TextBox>() };
+        if (pane && textBox)
+        {
+            pane->_paneTitlebarText = textBox.Text();
+            pane->_paneTitlebarTextInRename = false;
+            pane->_UpdatePaneTitle();
+        }
+    });
+
+    paneTextBox.KeyUp([weakThis](const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e) {
+        auto pane{ weakThis.get() };
+        auto textBox{ sender.try_as<Controls::TextBox>() };
+        if (pane && textBox)
+        {
+            switch (e.OriginalKey())
+            {
+            case VirtualKey::Enter:
+                pane->_paneTitlebarText = textBox.Text();
+                [[fallthrough]];
+            case VirtualKey::Escape:
+                e.Handled(true);
+                textBox.Text(pane->_paneTitlebarText);
+                pane->_paneTitlebarTextInRename = false;
+                pane->_UpdatePaneTitle();
+                break;
+            }
+        }
+    });
+
+    _paneTitlebarRenameBoxLayoutUpdatedRevoker = paneTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
+        auto textBox{ _paneTitlebarTitle.Child().try_as<Controls::TextBox>() };
+        if (textBox)
+        {
+            textBox.SelectAll();
+            textBox.Focus(FocusState::Programmatic);
+        }
+        _paneTitlebarRenameBoxLayoutUpdatedRevoker.revoke();
+    });
+
+    paneTextBox.Text(paneText);
+
+    // Add the textbox to the titlebar control
+    _paneTitlebarTitle.Child(paneTextBox);
+}
+
+// Method Description:
+// - Creates a context menu attached to the pane titlebar.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_CreateContextMenu()
+{
+    // Rename Title MenuItem
+    Controls::FontIcon renamePaneTitleSymbol;
+    renamePaneTitleSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+    renamePaneTitleSymbol.Glyph(L"\xE932"); // Label
+
+    Controls::MenuFlyoutItem renamePaneTitleMenuItem;
+    {
+        renamePaneTitleMenuItem.Text(RS_(L"RenamePaneTitle"));
+        renamePaneTitleMenuItem.Icon(renamePaneTitleSymbol);
+        renamePaneTitleMenuItem.Click([this](auto&&, auto&&) {
+            _paneTitlebarTextInRename = true;
+            _UpdatePaneTitlebar();
+        });
+    }
+
+    // Build the Menu
+    Controls::MenuFlyout newTabFlyout;
+    newTabFlyout.Items().Append(renamePaneTitleMenuItem);
+    _paneTitlebarBorder.ContextFlyout(newTabFlyout);
+}
+
+// Method Description:
+// - Gets the title string of the current control
+// Arguments:
+// - <none>
+// Return Value:
+// - Returns the pane titlebar text or the control's title
+winrt::hstring Pane::Title() const
+{
+    if (!_paneTitlebarText.empty())
+    {
+        return _paneTitlebarText;
+    }
+    return (_IsLeaf()) ? _control.Title() : L"";
+}
+
+// Method Description:
+// - Updates the pane titlebar
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_UpdatePaneTitlebar()
+{
+    winrt::hstring titlebarText{ Title() };
+
+    if (!_paneTitlebarTextInRename)
+    {
+        Controls::TextBlock textBlock;
+        textBlock.VerticalAlignment(VerticalAlignment::Center);
+        textBlock.HorizontalAlignment(HorizontalAlignment::Center);
+        textBlock.TextAlignment(TextAlignment::Center);
+        textBlock.TextWrapping(TextWrapping::NoWrap);
+        textBlock.TextTrimming(TextTrimming::CharacterEllipsis);
+        textBlock.Text(titlebarText);
+
+        _paneTitlebarTitle.Child(textBlock);
+        _TitleChangedHandlers(titlebarText);
+    }
+    else
+    {
+        // We need to create our edit textbox
+        _ConstructPaneTitleRenameBox(titlebarText);
+    }
+}
+
+// Method Description:
+// - Applies new settings to the Pane. Adds/Removes the Pane titlebar.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+winrt::fire_and_forget Pane::_ApplySettings()
+{
+    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+    co_await winrt::resume_foreground(_paneTitlebarGrid.Dispatcher());
+
+    if (settings.ShowPaneTitlebar())
+    {
+        _titlebarDef.MinHeight(_paneTitlebarMinHeight);
+        _paneTitlebarBorder.Visibility(Visibility::Visible);
+    }
+    else
+    {
+        // Collapse titlebar and forget any manually set titles
+        _titlebarDef.MinHeight(0);
+        _paneTitlebarBorder.Visibility(Visibility::Collapsed);
+        _paneTitlebarText = L"";
+        _UpdatePaneTitlebar();
+    }
+}
+
+// Method Description:
+// - Updates the text of the pane title
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+winrt::fire_and_forget Pane::_UpdatePaneTitle()
+{
+    if (!_IsLeaf())
+    {
+        co_return;
+    }
+
+    co_await winrt::resume_foreground(_paneTitlebarTitle.Dispatcher());
+    _UpdatePaneTitlebar();
+
+    // Use the control's tabColor for the titlebar background
+    // _paneTitlebarTitle is needed to HitTest a larger area (MinWidth)
+    const auto res = Application::Current().Resources();
+    const auto colorKey = winrt::box_value(L"ChromeDisabledHigh");
+    Color color;
+    if (res.HasKey(colorKey))
+    {
+        const auto colorFromResources = res.Lookup(colorKey);
+        auto actualColor = winrt::unbox_value_or<Color>(colorFromResources, s_unfocusedBorderBrush.Color());
+        color = actualColor;
+    }
+
+    color = winrt::unbox_value_or<Color>(_control.TabColor(), color);
+
+    // Set the foreground based on the color of the background
+    const auto textBox = _paneTitlebarTitle.Child().try_as<Controls::TextBlock>();
+    if (textBox)
+    {
+        textBox.Foreground((winrt::TerminalApp::ColorHelper::IsBrightColor(color)) ? SolidColorBrush{ Colors::Black() } : SolidColorBrush{ Colors::White() });
+    }
+
+    // Set Background
+    _paneTitlebarBorder.Background(SolidColorBrush{ color });
+
+    // Set Alpha to 0 (transparent but still HitTestable)
+    color.A = 0;
+    _paneTitlebarTitle.Background(SolidColorBrush{ color });
 }
 
 // Method Description:
@@ -566,6 +846,7 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
         {
             _control.UpdateSettings(settings);
         }
+        _ApplySettings();
     }
 }
 
@@ -610,6 +891,20 @@ void Pane::_CloseChild(const bool closeFirst)
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
 
+        _paneTitlebarGrid = remainingChild->_paneTitlebarGrid;
+        _titlebarDef = remainingChild->_titlebarDef;
+        _paneContentDef = remainingChild->_paneContentDef;
+        _paneTitlebarBorder = remainingChild->_paneTitlebarBorder;
+        _paneTitlebarTitle = remainingChild->_paneTitlebarTitle;
+
+        ///////////////////////////////////////////////////////////////////////
+        // BUG: When function returns, _paneTitlebarText becomes corrupted
+        //      and attempting to edit the title results in a crash! This has
+        //      something do do with releasing our children = nullptr.
+        //////////////////////////////////////////////////////////////////////
+        _paneTitlebarText = remainingChild->_paneTitlebarText;
+
+
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
 
@@ -640,8 +935,8 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.RowDefinitions().Clear();
 
         // Reattach the TermControl to our grid.
+        _border.Child(_paneTitlebarGrid);
         _root.Children().Append(_border);
-        _border.Child(_control);
 
         // Make sure to set our _splitState before focusing the control. If you
         // fail to do this, when the tab handles the GotFocus event and asks us
@@ -758,7 +1053,6 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
     auto weakThis{ shared_from_this() };
 
     co_await winrt::resume_foreground(_root.Dispatcher());
-
     if (auto pane{ weakThis.get() })
     {
         _CloseChild(closeFirst);
@@ -1155,12 +1449,18 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
     _root.Children().Clear();
+    _paneTitlebarGrid.Children().Clear();
     _border.Child(nullptr);
 
     // Create two new Panes
     //   Move our control, guid into the first one.
     //   Move the new guid, control into the second.
     _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+
+    // I don't really like this. Maybe there's a better way.
+    // Restore the Pane Title when we create a new one
+    _firstChild->_paneTitlebarText = _paneTitlebarText;
+
     _profile = std::nullopt;
     _control = { nullptr };
     _secondChild = std::make_shared<Pane>(profile, control);
@@ -1751,3 +2051,4 @@ std::optional<winrt::TerminalApp::SplitState> Pane::PreCalculateAutoSplit(const 
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, TitleChanged, _TitleChangedHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);

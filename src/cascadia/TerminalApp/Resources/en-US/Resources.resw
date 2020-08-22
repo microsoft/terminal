@@ -633,4 +633,7 @@
   <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Dark Gray</value>
   </data>
+  <data name="RenamePaneTitle" xml:space="preserve">
+    <value>Rename Title</value>
+  </data>
 </root>

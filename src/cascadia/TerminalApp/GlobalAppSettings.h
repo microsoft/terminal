@@ -82,6 +82,9 @@ public:
     GETSET_PROPERTY(bool, StartOnUserLogin, false);
     GETSET_PROPERTY(bool, AlwaysOnTop, false);
 
+    // PaneTitlebar Settings
+    GETSET_PROPERTY(bool, ShowPaneTitlebar, true);
+
 private:
     std::optional<std::wstring> _unparsedDefaultProfile;
     GUID _defaultProfile;

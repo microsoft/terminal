@@ -233,20 +233,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets the title string of the last focused terminal control in our tree.
+    // - Gets the title string of the active pane.
     //   Returns the empty string if there is no such control.
     // Arguments:
     // - <none>
     // Return Value:
-    // - the title string of the last focused terminal control in our tree.
+    // - the title string of the active pane.
     winrt::hstring Tab::GetActiveTitle() const
     {
         if (!_runtimeTabText.empty())
         {
             return _runtimeTabText;
         }
-        const auto lastFocusedControl = GetActiveTerminalControl();
-        return lastFocusedControl ? lastFocusedControl.Title() : L"";
+
+        const auto activePane = _activePane->GetActivePane();
+        return activePane ? activePane->Title() : L"";
     }
 
     // Method Description:
@@ -411,9 +412,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
-    //   of Panes in this tab. We'll add events too:
-    //   * notify us when the control's title changed, so we can update our own
-    //     title (if necessary)
+    //   of Panes in this tab.
     // Arguments:
     // - control: the TermControl to add events to.
     // Return Value:
@@ -421,16 +420,6 @@ namespace winrt::TerminalApp::implementation
     void Tab::_AttachEventHandlersToControl(const TermControl& control)
     {
         auto weakThis{ get_weak() };
-
-        control.TitleChanged([weakThis](auto newTitle) {
-            // Check if Tab's lifetime has expired
-            if (auto tab{ weakThis.get() })
-            {
-                // The title of the control changed, but not necessarily the title of the tab.
-                // Set the tab's text to the active panes' text.
-                tab->_UpdateTitle();
-            }
-        });
 
         // This is called when the terminal changes its font size or sets it for the first
         // time (because when we just create terminal via its ctor it has invalid font size).
@@ -483,7 +472,8 @@ namespace winrt::TerminalApp::implementation
     // - Add an event handler to this pane's GotFocus event. When that pane gains
     //   focus, we'll mark it as the new active pane. We'll also query the title of
     //   that pane when it's focused to set our own text, and finally, we'll trigger
-    //   our own ActivePaneChanged event.
+    //   our own ActivePaneChanged event. A;sp. Notify us when the pane's title changed,
+    //   so we can update our own title (if necessary)
     // Arguments:
     // - <none>
     // Return Value:
@@ -491,6 +481,15 @@ namespace winrt::TerminalApp::implementation
     void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
     {
         auto weakThis{ get_weak() };
+        pane->TitleChanged([weakThis](auto newTitle) {
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
+            {
+                // The title of the pane changed, but not necessarily the title of the tab.
+                // Set the tab's text to the active panes' text.
+                tab->_UpdateTitle();
+            }
+        });
 
         pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
             // Do nothing if the Tab's lifetime is expired or pane isn't new.

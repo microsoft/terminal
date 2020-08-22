@@ -108,6 +108,11 @@ AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
     return _globals.GetKeybindings();
 }
 
+bool CascadiaSettings::ShowPaneTitlebar() const noexcept
+{
+    return _globals.ShowPaneTitlebar();
+}
+
 // Method Description:
 // - Get a reference to our global settings
 // Arguments:

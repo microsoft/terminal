@@ -492,6 +492,11 @@
           },
           "type": "array"
         },
+        "showPaneTitlebar": {
+          "default": true,
+          "description": "When set to false, the pane titlebars are hidden and if set to true, the pane titlebars are visible.",
+          "type": "boolean"
+        },
         "experimental.rendering.forceFullRepaint": {
           "description": "When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames.",
           "type": "boolean"

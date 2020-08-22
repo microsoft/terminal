@@ -75,8 +75,11 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
+    winrt::hstring Title() const;
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+    DECLARE_EVENT(TitleChanged, _TitleChangedHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
 
 private:
     struct SnapSizeResult;
@@ -85,6 +88,18 @@ private:
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _border{};
+
+    // PaneTitlebar Properties
+    int _paneTitlebarMinHeight = 25;
+    winrt::Windows::UI::Xaml::Controls::Grid _paneTitlebarGrid{};
+    winrt::Windows::UI::Xaml::Controls::RowDefinition _titlebarDef{};
+    winrt::Windows::UI::Xaml::Controls::RowDefinition _paneContentDef{};
+    winrt::Windows::UI::Xaml::Controls::Border _paneTitlebarBorder{};
+    winrt::Windows::UI::Xaml::Controls::Border _paneTitlebarTitle{};
+    winrt::hstring _paneTitlebarText{ L"" };
+    bool _paneTitlebarTextInRename{ false };
+    winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _paneTitlebarRenameBoxLayoutUpdatedRevoker;
+
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
@@ -107,6 +122,14 @@ private:
     Borders _borders{ Borders::None };
 
     bool _zoomed{ false };
+
+    void _CreateTitlebar();
+    winrt::fire_and_forget _ApplySettings();
+    void _UpdatePaneTitlebar();
+    winrt::fire_and_forget _UpdatePaneTitle();
+    void _CreateContextMenu();
+    void _ConstructPaneTitleRenameBox(const winrt::hstring& paneText);
+
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;

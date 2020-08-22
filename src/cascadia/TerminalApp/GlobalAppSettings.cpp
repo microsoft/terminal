@@ -43,6 +43,8 @@ static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.re
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
+static constexpr std::string_view ShowPaneTitlebarKey{ "showPaneTitlebar" };
+
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
 #else
@@ -179,6 +181,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
+
+    JsonUtils::GetValueForKey(json, ShowPaneTitlebarKey, _ShowPaneTitlebar);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy

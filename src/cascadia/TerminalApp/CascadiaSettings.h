@@ -71,6 +71,8 @@ public:
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
+    bool ShowPaneTitlebar() const noexcept;
+
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 
