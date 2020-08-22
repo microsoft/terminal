@@ -70,7 +70,7 @@ void Pane::_CreateTitlebar()
     _titlebarDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Auto));
     _paneTitlebarGrid.RowDefinitions().Append(_titlebarDef);
 
-    // Add Pane Content Definiation
+    // Add Pane Content Definition
     _paneContentDef.Height(GridLengthHelper::FromValueAndType(1, GridUnitType::Star));
     _paneTitlebarGrid.RowDefinitions().Append(_paneContentDef);
 
