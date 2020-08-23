@@ -89,7 +89,7 @@ static constexpr bool _isC0Code(const wchar_t wch) noexcept
 // - True if it is. False if it isn't.
 static constexpr bool _isC1ControlCharacter(const wchar_t wch) noexcept
 {
-    return (wch >= L'\x80' && wch <= L'\x8F') || (wch >= L'\x90' && wch <= L'\x9F');
+    return (wch >= L'\x80' && wch <= L'\x9F');
 }
 
 // Routine Description:
@@ -958,22 +958,6 @@ void StateMachine::_EnterSosPmApcTermination() noexcept
     _trace.TraceStateChange(L"SosPmApcStringTermination");
 }
 
-void StateMachine::_EnterVariableLengthStringTermination() noexcept
-{
-    if (_state == VTStates::OscString)
-    {
-        _EnterOscTermination();
-    }
-    else if (_state == VTStates::DcsPassThrough)
-    {
-        _EnterDcsTermination();
-    }
-    else if (_state == VTStates::SosPmApcString)
-    {
-        _EnterSosPmApcTermination();
-    }
-}
-
 // Routine Description:
 // - Processes a character event into an Action that occurs while in the Ground state.
 //   Events in this state will:
@@ -1656,7 +1640,7 @@ void StateMachine::_EventDcsPassThrough(const wchar_t wch)
 }
 
 // Routine Description:
-// - Handle SOS/PM/APC string
+// - Handle SOS/PM/APC string.
 //   Events in this state will:
 //   1. If we see a ESC, enter the SosPmApcTermination state.
 //   2. Ignore everything else.
@@ -1677,6 +1661,15 @@ void StateMachine::_EventSosPmApcString(const wchar_t wch) noexcept
     }
 }
 
+// Routine Description:
+// - Handle "Variable Length String" termination.
+//   Events in this state will:
+//   1. Trigger the corresponding action and enter ground if we see a string terminator, 
+//   2. Otherwise treat this as a normal escape character event.
+// Arguments:
+// - wch - Character that triggered the event
+// Return Value:
+// - <none>
 void StateMachine::_EventVariableLengthStringTermination(const wchar_t wch)
 {
     if (_isStringTerminatorIndicator(wch))
@@ -1728,11 +1721,23 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     else if (_isC1ControlCharacter(wch))
     {
         // When we are in "Variable Length String" state, a C1 control character
-        // should effectively acts as an ESC and move us into state corresponding
-        // termination states
+        // should effectively acts as an ESC and move us into the corresponding
+        // termination state.
         if (_IsVariableLengthStringState())
         {
-            _EnterVariableLengthStringTermination();
+            if (_state == VTStates::OscString)
+            {
+                _EnterOscTermination();
+            }
+            else if (_state == VTStates::DcsPassThrough)
+            {
+                _EnterDcsTermination();
+            }
+            else if (_state == VTStates::SosPmApcString)
+            {
+                _EnterSosPmApcTermination();
+            }
+
             _EventVariableLengthStringTermination(_c1To7Bit(wch));
         }
         // Enter Escape state and pass the converted 7-bit character.
@@ -1742,7 +1747,7 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
             _EventEscape(_c1To7Bit(wch));
         }
     }
-    // Don't go to escape from the variable length string state - ESC (and C1 String Terminator)
+    // Don't go to escape from the "Variable Length String" state - ESC (and C1 String Terminator)
     // can be used to terminate variable length control string.
     else if (_isEscape(wch) && !_IsVariableLengthStringState())
     {

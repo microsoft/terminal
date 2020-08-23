@@ -88,7 +88,6 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsTermination() noexcept;
         void _EnterSosPmApcString() noexcept;
         void _EnterSosPmApcTermination() noexcept;
-        void _EnterVariableLengthStringTermination() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
