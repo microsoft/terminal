@@ -1664,7 +1664,7 @@ void StateMachine::_EventSosPmApcString(const wchar_t wch) noexcept
 // Routine Description:
 // - Handle "Variable Length String" termination.
 //   Events in this state will:
-//   1. Trigger the corresponding action and enter ground if we see a string terminator, 
+//   1. Trigger the corresponding action and enter ground if we see a string terminator,
 //   2. Otherwise treat this as a normal escape character event.
 // Arguments:
 // - wch - Character that triggered the event
