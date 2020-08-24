@@ -466,7 +466,7 @@ namespace winrt::TerminalApp::implementation
                 // Replace all the keywords in the original json, and try and parse that
 
                 // - Escape the profile name for JSON appropriately
-                auto escapedProfileName = _escapeForJson(til::u16u8(p.GetName()));
+                auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
                 auto escapedProfileIcon = _escapeForJson(til::u16u8(p.GetExpandedIconPath()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
