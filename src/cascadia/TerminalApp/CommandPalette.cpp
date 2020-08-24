@@ -172,15 +172,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Enter)
         {
-            // Action Mode: Dispatch the action of the selected command.
-
-            if (_currentMode == CommandPaletteMode::ActionMode)
+            // Action, TabSwitch or TabSearchMode Mode: Dispatch the action of the selected command.
+            if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
                 if (const auto selectedItem = _filteredActionsView().SelectedItem())
                 {
                     _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
                 }
             }
+            // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
             else if (_currentMode == CommandPaletteMode::CommandlineMode)
             {
                 _dispatchCommandline();
@@ -190,10 +190,10 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            if (_currentMode == CommandPaletteMode::ActionMode)
+            // Action, TabSearch, TabSwitch Mode: Dismiss the palette if the
+            // text is empty, otherwise clear the search string.
+            if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                // Action Mode: Dismiss the palette if the text is empty,
-                // otherwise clear the search string.
                 if (_searchBox().Text().empty())
                 {
                     _dismissPalette();
@@ -504,7 +504,7 @@ namespace winrt::TerminalApp::implementation
         }
         winrt::hstring cmdline{ input };
 
-        // Build the NewTab action from the values we've parsed on the commandline.
+        // Build the ExecuteCommandline action from the values we've parsed on the commandline.
         auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
         executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
         auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
