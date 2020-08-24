@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // tb.BeforeTextChanging({this, &Keybindings::asdf_BeforeTextChanging})
     }
 
-    void Keybindings::Button_Click(IInspectable const& sender, RoutedEventArgs const& e)
+    void Keybindings::Button_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         Popup popup = FindName(L"StandardPopup").as<Popup>();
 
@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Keybindings::AddNewButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void Keybindings::AddNewButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         hstring setting = GetSelectedItemTag(FindName(L"CommandComboBox"));
 
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         e.Handled(true);
     }
 
-    void Keybindings::KeyBindTextBox_TextChanging(winrt::Windows::UI::Xaml::Controls::TextBox const& sender, winrt::Windows::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& args)
+    void Keybindings::KeyBindTextBox_TextChanging(winrt::Windows::UI::Xaml::Controls::TextBox const& sender, winrt::Windows::UI::Xaml::Controls::TextBoxTextChangingEventArgs const& /*args*/)
     {
         hstring currText = sender.Text();
         hstring newText = hstring(currText.data(), currText.size());
@@ -186,13 +186,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void Keybindings::CommandComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e)
+    void Keybindings::CommandComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& /*e*/)
     {
         hstring selectedItemTag = GetSelectedItemTag(sender);
         ShowOptionsButtonIfRequired(selectedItemTag);
     }
 
-    void Keybindings::SaveButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void Keybindings::SaveButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         // Collect the information here
         winrt::Windows::UI::Popups::MessageDialog msg{ CollectInputData() };
@@ -213,13 +213,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 fullInfo = fullInfo + childTextBox.Name() + L":" + childTextBox.Text();
             }
-            else if (Editor::NewTabOptionPanelControl optionPanel = panelChild.try_as<Editor::NewTabOptionPanelControl>())
+            else if (Editor::NewTabOptionPanelControl ntOptionPanel = panelChild.try_as<Editor::NewTabOptionPanelControl>())
             {
-                fullInfo = fullInfo + optionPanel.Argument() + L":" + optionPanel.InputValue();
+                fullInfo = fullInfo + ntOptionPanel.Argument() + L":" + ntOptionPanel.InputValue();
             }
-            else if (Editor::SplitPaneOptionPanelControl optionPanel = panelChild.try_as<Editor::SplitPaneOptionPanelControl>())
+            else if (Editor::SplitPaneOptionPanelControl spOptionPanel = panelChild.try_as<Editor::SplitPaneOptionPanelControl>())
             {
-                fullInfo = fullInfo + optionPanel.Argument() + L":" + optionPanel.InputValue();
+                fullInfo = fullInfo + spOptionPanel.Argument() + L":" + spOptionPanel.InputValue();
             }
             else if (Controls::Grid grid = panelChild.try_as<Controls::Grid>())
             {

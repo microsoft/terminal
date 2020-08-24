@@ -789,10 +789,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::string string = winrt::to_string(hex);
         Color newColor = Color();
-        newColor.A = std::stoi(string.substr(1, 2), nullptr, 16);
-        newColor.R = std::stoi(string.substr(3, 2), nullptr, 16);
-        newColor.G = std::stoi(string.substr(5, 2), nullptr, 16);
-        newColor.B = std::stoi(string.substr(7, 2), nullptr, 16);
+        newColor.A = std::stoi(string.substr(1, 2), nullptr, static_cast<uint8_t>(16));
+        newColor.R = std::stoi(string.substr(3, 2), nullptr, static_cast<uint8_t>(16));
+        newColor.G = std::stoi(string.substr(5, 2), nullptr, static_cast<uint8_t>(16));
+        newColor.B = std::stoi(string.substr(7, 2), nullptr, static_cast<uint8_t>(16));
         return newColor;
     }
 
