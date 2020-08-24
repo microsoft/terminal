@@ -594,6 +594,10 @@
   <data name="TabSwitcher_NoMatchesText" xml:space="preserve">
     <value>No matching tab name</value>
   </data>
+  <data name="CmdPalCommandlinePrompt" xml:space="preserve">
+    <value>Enter a wt commandline to run</value>
+    <comment>{Locked="wt"} </comment>
+  </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>
   </data>
