@@ -1122,12 +1122,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 // Update the selection appropriately
-                if (shiftEnabled && _terminal->IsSelectionActive())
-                {
-                    // Shift+Click: only set expand on the "end" selection point
-                    _terminal->SetSelectionEnd(terminalPosition, mode);
-                    _selectionNeedsToBeCopied = true;
-                }
                 if (ctrlEnabled && multiClickMapper == 1)
                 {
                     // Control+Click: if the text selected is a hyperlink, open the link
@@ -1136,6 +1130,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     {
                         _HyperlinkHandler(uri);
                     }
+                }
+                else if (shiftEnabled && _terminal->IsSelectionActive())
+                {
+                    // Shift+Click: only set expand on the "end" selection point
+                    _terminal->SetSelectionEnd(terminalPosition, mode);
+                    _selectionNeedsToBeCopied = true;
                 }
                 else if (mode == ::Terminal::SelectionExpansionMode::Cell)
                 {
