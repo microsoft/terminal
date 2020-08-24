@@ -81,6 +81,7 @@
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

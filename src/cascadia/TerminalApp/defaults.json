@@ -286,6 +286,7 @@
         { "command": "find", "keys": "ctrl+shift+f" },
         { "command": "toggleRetroEffect" },
         { "command": "openTabColorPicker" },
+        { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
