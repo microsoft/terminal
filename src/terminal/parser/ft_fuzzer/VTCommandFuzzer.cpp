@@ -63,7 +63,8 @@ const std::function<std::string()> g_tokenGenerators[] = {
     GenerateSoftResetToken,
     GenerateOscColorTableToken,
     GenerateVt52Token,
-    GenerateVt52CursorAddressToken
+    GenerateVt52CursorAddressToken,
+    GenerateOscHyperlinkToken
 };
 
 std::string GenerateTokenLowProbability()
@@ -600,7 +601,6 @@ std::string GenerateOscHyperlinkToken()
 
     return GenerateFuzzedOscToken(FUZZ_MAP(map), tokens, ARRAYSIZE(tokens));
 }
-
 
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
