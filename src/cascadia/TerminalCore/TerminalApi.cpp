@@ -426,6 +426,18 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     return true;
 }
 
+bool Terminal::RestoreCursorStyleToUserDefault() noexcept
+{
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(_defaultCursorHeight,
+                                      _defaultCursorColor,
+                                      _defaultCursorShape);
+    }
+
+    return true;
+}
+
 // Method Description:
 // - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
 // Arguments:

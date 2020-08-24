@@ -105,6 +105,7 @@ public:
 
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) noexcept override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*color*/) noexcept override { return false; } // OSCSetCursorColor, OSCResetCursorColor
+    bool RestoreCursorStyleToUserDefault() noexcept override { return false; } // DECSCUSR "0"
 
     bool SetClipboard(std::wstring_view /*content*/) noexcept override { return false; } // OscSetClipboard
 

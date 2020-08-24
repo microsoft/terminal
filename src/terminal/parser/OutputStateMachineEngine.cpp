@@ -662,7 +662,17 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
             break;
         case CsiActionCodes::DECSCUSR_SetCursorStyle:
-            success = _dispatch->SetCursorStyle(cursorStyle);
+            if (cursorStyle == DispatchTypes::CursorStyle::BlinkingBlock)
+            {
+                // Treat DECSCUSR "0" as "restore cursor to user default".
+                // See:GH:#1604
+                success = _dispatch->RestoreCursorStyleToUserDefault();
+            }
+            else
+            {
+                success = _dispatch->SetCursorStyle(cursorStyle);
+            }
+
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
             break;
         case CsiActionCodes::DECSTR_SoftReset:

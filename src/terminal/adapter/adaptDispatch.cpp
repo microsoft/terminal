@@ -2222,6 +2222,11 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
     return _pConApi->SetCursorColor(cursorColor);
 }
 
+bool AdaptDispatch::RestoreCursorStyleToUserDefault() noexcept
+{
+    return true;
+}
+
 // Routine Description:
 // - OSC Copy to Clipboard
 // Arguments:

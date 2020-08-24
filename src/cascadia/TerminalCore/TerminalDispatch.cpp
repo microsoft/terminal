@@ -153,6 +153,13 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::RestoreCursorStyleToUserDefault() noexcept
+try
+{
+    return _terminalApi.RestoreCursorStyleToUserDefault();
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool TerminalDispatch::SetClipboard(std::wstring_view content) noexcept
 try
 {

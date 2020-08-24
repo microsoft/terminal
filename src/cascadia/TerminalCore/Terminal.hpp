@@ -94,6 +94,7 @@ public:
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
     bool SetCursorColor(const COLORREF color) noexcept override;
+    bool RestoreCursorStyleToUserDefault() noexcept override;
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
 
@@ -214,6 +215,9 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    ULONG _defaultCursorHeight;
+    COLORREF _defaultCursorColor;
+    CursorType _defaultCursorShape;
     bool _screenReversed;
 
     bool _snapOnInput;

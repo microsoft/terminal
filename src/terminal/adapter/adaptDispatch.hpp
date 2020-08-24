@@ -107,6 +107,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableAlternateScroll(const bool enabled) override; // ?1007
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
+        bool RestoreCursorStyleToUserDefault() noexcept override; // DECSCUSR "0"
 
         bool SetClipboard(const std::wstring_view content) noexcept override; // OSCSetClipboard
 
