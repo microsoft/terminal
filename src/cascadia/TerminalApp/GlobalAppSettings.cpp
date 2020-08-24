@@ -142,7 +142,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, InitialColsKey, _InitialCols);
 
-    JsonUtils::GetValueForKey(json, InitialPositionKey, _initialPosition);
+    JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
 
     JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
@@ -233,24 +233,4 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> GlobalAppSettings::GetCommands() noexcept
 {
     return _commands.GetView();
-}
-
-bool GlobalAppSettings::HasInitialPositionX() const
-{
-    return _initialPosition.x.has_value();
-}
-
-bool GlobalAppSettings::HasInitialPositionY() const
-{
-    return _initialPosition.y.has_value();
-}
-
-int32_t GlobalAppSettings::InitialPositionX() const
-{
-    return _initialPosition.x.value();
-}
-
-int32_t GlobalAppSettings::InitialPositionY() const
-{
-    return _initialPosition.y.value();
 }

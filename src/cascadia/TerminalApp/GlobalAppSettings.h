@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 
 #include "GlobalAppSettings.g.h"
-#include "SettingsTypes.h"
 
 #include "AppKeyBindings.h"
 #include "Command.h"
@@ -57,11 +56,6 @@ namespace winrt::TerminalApp::implementation
         guid DefaultProfile() const;
         hstring UnparsedDefaultProfile() const;
 
-        bool HasInitialPositionX() const;
-        bool HasInitialPositionY() const;
-        int32_t InitialPositionX() const;
-        int32_t InitialPositionY() const;
-
         GETSET_PROPERTY(int32_t, InitialRows); // default value set in constructor
         GETSET_PROPERTY(int32_t, InitialCols); // default value set in constructor
         GETSET_PROPERTY(bool, AlwaysShowTabs, true);
@@ -75,6 +69,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
         GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
         GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
+        GETSET_PROPERTY(winrt::TerminalApp::LaunchPosition, InitialPosition, nullptr, nullptr);
         GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
         GETSET_PROPERTY(bool, SnapToGridOnResize, true);
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
@@ -88,7 +83,6 @@ namespace winrt::TerminalApp::implementation
     private:
         hstring _unparsedDefaultProfile;
         guid _defaultProfile;
-        LaunchPosition _initialPosition;
 
         com_ptr<AppKeyBindings> _keybindings;
         std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;

@@ -244,15 +244,15 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::TerminalApp::LaunchPos
         {
             try
             {
-                int32_t position = std::stoi(token);
+                int64_t position = std::stol(token);
                 if (initialPosIndex == 0)
                 {
-                    ret.x.emplace(position);
+                    ret.X = position;
                 }
 
                 if (initialPosIndex == 1)
                 {
-                    ret.y.emplace(position);
+                    ret.Y = position;
                 }
             }
             catch (...)

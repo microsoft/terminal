@@ -9,6 +9,12 @@ import "TerminalSettings.idl";
 
 namespace TerminalApp
 {
+    struct LaunchPosition
+    {
+        Windows.Foundation.IReference<Int64> X;
+        Windows.Foundation.IReference<Int64> Y;
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         GlobalAppSettings();
 
@@ -28,6 +34,7 @@ namespace TerminalApp
         Microsoft.Terminal.TerminalControl.CopyFormat CopyFormatting;
         Boolean WarnAboutLargePaste;
         Boolean WarnAboutMultiLinePaste;
+        LaunchPosition InitialPosition;
         LaunchMode LaunchMode;
         Boolean SnapToGridOnResize;
         Boolean ForceFullRepaintRendering;
@@ -37,12 +44,6 @@ namespace TerminalApp
         Boolean StartOnUserLogin;
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
-
-        Boolean HasInitialPositionX();
-        Boolean HasInitialPositionY();
-        Int32 InitialPositionX { get; };
-        Int32 InitialPositionY { get; };
-
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> GetColorSchemes();
         void AddColorScheme(ColorScheme scheme);

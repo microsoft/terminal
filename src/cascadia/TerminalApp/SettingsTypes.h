@@ -13,12 +13,6 @@ Abstract:
 
 namespace winrt::TerminalApp
 {
-    struct LaunchPosition
-    {
-        std::optional<int> x;
-        std::optional<int> y;
-    };
-
     enum class ExpandCommandType : uint32_t
     {
         None = 0,
