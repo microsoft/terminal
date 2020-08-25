@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Keybindings.g.h"
-#include <set>
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation

@@ -3,23 +3,20 @@
 
 #include "pch.h"
 #include "SplitPaneOptionPanelControl.h"
-#if __has_include("SplitPaneOptionPanelControl.g.cpp")
 #include "SplitPaneOptionPanelControl.g.cpp"
-#endif
 
-#include <winrt/Windows.Foundation.h>
 #include "Utils.h"
 
 using namespace winrt;
-using namespace Windows::Foundation;
-using namespace Windows::Foundation::Collections;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Controls;
-using namespace Windows::UI::Xaml::Controls::Primitives;
-using namespace Windows::UI::Xaml::Data;
-using namespace Windows::UI::Xaml::Input;
-using namespace Windows::UI::Xaml::Media;
-using namespace Windows::UI::Xaml::Navigation;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Controls::Primitives;
+using namespace winrt::Windows::UI::Xaml::Data;
+using namespace winrt::Windows::UI::Xaml::Input;
+using namespace winrt::Windows::UI::Xaml::Media;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
@@ -34,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         splitModeComboBox = FindName(c_comboBoxName).as<Controls::ComboBox>();
     }
 
-    void SplitPaneOptionPanelControl::ComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e)
+    void SplitPaneOptionPanelControl::ComboBox_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& /*e*/)
     {
         bool isSplitMode = (GetSelectedItemTag(sender) == L"splitMode");
         splitModeComboBox.Visibility(isSplitMode ? Visibility::Visible : Visibility::Collapsed);

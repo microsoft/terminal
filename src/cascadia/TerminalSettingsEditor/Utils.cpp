@@ -7,11 +7,11 @@
 #include "Utils.h"
 
 using namespace winrt;
-using namespace Windows::System;
-using namespace Windows::Foundation;
-using namespace Windows::UI::Xaml;
+using namespace winrt::Windows::System;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::UI::Xaml;
 
-hstring GetSelectedItemTag(IInspectable const& comboBoxAsInspectable)
+hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable)
 {
     Controls::ComboBox comboBox = comboBoxAsInspectable.as<Controls::ComboBox>();
     Controls::ComboBoxItem selectedOption = comboBox.SelectedItem().as<Controls::ComboBoxItem>();

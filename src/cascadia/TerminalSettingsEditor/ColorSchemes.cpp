@@ -3,16 +3,14 @@
 
 #include "pch.h"
 #include "ColorSchemes.h"
-#if __has_include("ColorSchemes.g.cpp")
 #include "ColorSchemes.g.cpp"
-#endif
 #include <ObjectModel\ColorScheme.h>
 
 using namespace winrt;
-using namespace Windows::UI;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Controls;
-using namespace Windows::UI::Xaml::Media;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Media;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -25,10 +23,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Model::ColorSchemeModel ColorSchemes::ColorSchemeModel()
     {
         return m_colorSchemeModel;
-    }
-
-    void ColorSchemes::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
     }
 
     void ColorSchemes::Background_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)

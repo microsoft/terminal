@@ -1,14 +1,12 @@
 #include "pch.h"
 #include "ColorScheme.h"
 #include "Microsoft.Terminal.Settings.Model.ColorScheme.g.cpp"
-#include <sstream>
-#include <string>
 
 using namespace winrt;
-using namespace Windows::UI;
-using namespace Windows::UI::Core;
-using namespace Windows::UI::Xaml::Data;
-using namespace Windows::UI::Xaml::Media;
+using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Xaml::Data;
+using namespace winrt::Windows::UI::Xaml::Media;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -789,10 +787,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::string string = winrt::to_string(hex);
         Color newColor = Color();
-        newColor.A = std::stoi(string.substr(1, 2), nullptr, static_cast<uint8_t>(16));
-        newColor.R = std::stoi(string.substr(3, 2), nullptr, static_cast<uint8_t>(16));
-        newColor.G = std::stoi(string.substr(5, 2), nullptr, static_cast<uint8_t>(16));
-        newColor.B = std::stoi(string.substr(7, 2), nullptr, static_cast<uint8_t>(16));
+        newColor.A = base::checked_cast<uint8_t>(std::stoi(string.substr(1, 2), nullptr, 16));
+        newColor.R = base::checked_cast<uint8_t>(std::stoi(string.substr(3, 2), nullptr, 16));
+        newColor.G = base::checked_cast<uint8_t>(std::stoi(string.substr(5, 2), nullptr, 16));
+        newColor.B = base::checked_cast<uint8_t>(std::stoi(string.substr(7, 2), nullptr, 16));
         return newColor;
     }
 

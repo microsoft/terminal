@@ -22,7 +22,6 @@ the MIT License. See LICENSE in the project root for license information. -->
         <muxc:NavigationView x:Name="SettingsNav"
                         IsSettingsVisible="False"
                         Loaded="SettingsNav_Loaded"
-                        SelectionChanged="SettingsNav_SelectionChanged"
                         ItemInvoked="SettingsNav_ItemInvoked"
                         IsBackButtonVisible="Auto"
                         IsBackEnabled="True"

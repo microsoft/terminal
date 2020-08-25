@@ -64,14 +64,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Word delimeters"), L"Interaction_Nav"));
     }
 
-    void MainPage::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
-    }
-
-    void MainPage::SettingsNav_SelectionChanged(const MUX::Controls::NavigationView, const MUX::Controls::NavigationViewSelectionChangedEventArgs)
-    {
-    }
-
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
         //// set the initial selectedItem
@@ -109,12 +101,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool MainPage::On_BackRequested()
     {
         if (!contentFrame().CanGoBack())
+        {
             return false;
+        }
 
         if (SettingsNav().IsPaneOpen() &&
             (SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(1) ||
              SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(0)))
+        {
             return false;
+        }
 
         contentFrame().GoBack();
         return true;
@@ -145,17 +141,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IVector<IInspectable> suggestions = single_threaded_vector<IInspectable>();
         std::vector<IInspectable> rawSuggestions;
 
-        for (auto& it = SearchList.begin(); it != SearchList.end(); ++it)
+        for (auto it = SearchList.begin(); it != SearchList.end(); ++it)
         {
             auto value = it->first;
             hstring item = value.as<Windows::Foundation::IPropertyValue>().GetString();
 
             std::string tmp = winrt::to_string(item);
-            std::transform(tmp.begin(), tmp.end(), tmp.begin(), std::tolower);
+            std::transform(tmp.begin(), tmp.end(), tmp.begin(), [](auto c) { return static_cast<char>(std::tolower(c)); });
             item = winrt::to_hstring(tmp);
 
             std::string tmp2 = winrt::to_string(query);
-            std::transform(tmp2.begin(), tmp2.end(), tmp2.begin(), std::tolower);
+            std::transform(tmp2.begin(), tmp2.end(), tmp2.begin(), [](auto c) { return static_cast<char>(std::tolower(c)); });
             query = winrt::to_hstring(tmp2);
 
             if (std::wcsstr(item.c_str(), query.c_str()))

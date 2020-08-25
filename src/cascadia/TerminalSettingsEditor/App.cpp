@@ -16,13 +16,13 @@
 #include "Keybindings.h"
 
 using namespace winrt;
-using namespace Windows::ApplicationModel;
-using namespace Windows::ApplicationModel::Activation;
-using namespace Windows::Foundation;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Controls;
-using namespace Windows::UI::Xaml::Navigation;
-using namespace Microsoft::Terminal::Settings::Editor::implementation;
+using namespace winrt::Windows::ApplicationModel;
+using namespace winrt::Windows::ApplicationModel::Activation;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Navigation;
+using namespace winrt::Microsoft::Terminal::Settings::Editor::implementation;
 
 /// <summary>
 /// Initializes the singleton application object.  This is the first line of authored code

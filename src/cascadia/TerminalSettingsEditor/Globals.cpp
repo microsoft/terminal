@@ -6,7 +6,7 @@
 #include "Globals.g.cpp"
 
 using namespace winrt;
-using namespace Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

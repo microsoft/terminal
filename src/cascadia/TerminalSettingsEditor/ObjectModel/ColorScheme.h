@@ -1,6 +1,5 @@
 #pragma once
-#include <winrt/Windows.UI.h>
-#include <winrt/Windows.UI.Xaml.Media.h>
+
 #include "Microsoft.Terminal.Settings.Model.ColorScheme.g.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation

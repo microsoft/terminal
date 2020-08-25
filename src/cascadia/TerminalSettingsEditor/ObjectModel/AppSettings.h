@@ -58,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         AppSettings Clone() { return AppSettings(); }
 
+        // Uncomment these to test some data binding
         // GlobalSettings Globals;
         // std::vector<Profile> Profiles;
         // std::map<hstring, ColorScheme> Schemes;

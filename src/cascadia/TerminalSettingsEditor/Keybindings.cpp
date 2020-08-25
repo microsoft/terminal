@@ -3,24 +3,16 @@
 
 #include "pch.h"
 #include "Keybindings.h"
-#if __has_include("Keybindings.g.cpp")
 #include "Keybindings.g.cpp"
-#endif
 
 #include "Utils.h"
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.UI.Xaml.h>
-#include <winrt/Windows.UI.Xaml.Controls.h>
-#include <winrt/Windows.UI.Xaml.Input.h>
-#include <winrt/Windows.UI.Input.h>
-#include <winrt/Windows.UI.Popups.h>
 
 using namespace winrt;
-using namespace Windows::Foundation;
-using namespace Windows::UI::Xaml;
-using namespace Windows::UI::Xaml::Input;
-using namespace Windows::UI::Xaml::Controls::Primitives;
-using namespace Windows::System;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Input;
+using namespace winrt::Windows::UI::Xaml::Controls::Primitives;
+using namespace winrt::Windows::System;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -33,8 +25,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Controls::TextBox tb = FindName(L"KeyBindTextBox").as<Controls::TextBox>();
         tb.KeyDown({ this, &Keybindings::KeyDown });
-
-        // tb.BeforeTextChanging({this, &Keybindings::asdf_BeforeTextChanging})
     }
 
     void Keybindings::Button_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
@@ -192,7 +182,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ShowOptionsButtonIfRequired(selectedItemTag);
     }
 
-    void Keybindings::SaveButton_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    void Keybindings::SaveButton_Click(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         // Collect the information here
         winrt::Windows::UI::Popups::MessageDialog msg{ CollectInputData() };
@@ -201,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring Keybindings::TraversePanel(const Controls::Panel& panel)
     {
-        hstring fullInfo = L"";
+        hstring fullInfo;
 
         for (const auto panelChild : panel.Children())
         {
@@ -233,7 +223,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     hstring Keybindings::CollectInputData()
     {
-        hstring fullInfo = L"";
+        hstring fullInfo;
 
         Controls::ComboBox comboBox = FindName(L"CommandComboBox").as<Controls::ComboBox>();
         fullInfo = fullInfo + comboBox.Name() + L":" + GetSelectedItemTag(comboBox) + L"\n";

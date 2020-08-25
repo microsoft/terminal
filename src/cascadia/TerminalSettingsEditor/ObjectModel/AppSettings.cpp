@@ -3,6 +3,8 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
+// uncomment and edit these to test data binding
+
 //AppSettings::AppSettings()
 //{
 //// Global Settings

@@ -36,7 +36,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean WarnAboutLargePaste;
         Boolean WarnAboutMultiLinePaste;
         String LaunchPosition;
-        // TODO CARLOS: fix JsonConverters for these unique types
+        // fix JsonConverters for these unique types
         //LaunchPosition InitialPosition;
         //AppLaunchMode LaunchMode;
         Boolean SnapToGridOnResize;
