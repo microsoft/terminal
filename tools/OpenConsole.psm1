@@ -323,7 +323,10 @@ function Invoke-ClangFormat {
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
-        [string[]]$Path
+        [string[]]$Path,
+
+        [Parameter(Mandatory=$false)]
+        [string]$ClangFormatPath = "clang-format" # (whichever one is in $PATH)
     )
 
     Begin {
@@ -340,7 +343,7 @@ function Invoke-ClangFormat {
     End {
         For($i = [int]0; $i -Lt $Paths.Length; $i += $BatchSize) {
             Try {
-                & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $Paths[$i .. ($i + $BatchSize - 1)]
+                & $ClangFormatPath -i $Paths[$i .. ($i + $BatchSize - 1)]
             } Catch {
                 Write-Error $_
             }
@@ -351,9 +354,12 @@ function Invoke-ClangFormat {
 #.SYNOPSIS
 # runs code formatting on all c++ files
 function Invoke-CodeFormat() {
+    & "$env:OpenConsoleRoot\dep\nuget\nuget.exe" restore "$env:OpenConsoleRoot\tools\packages.config"
+    $clangPackage = ([xml](Get-Content "$env:OpenConsoleRoot\tools\packages.config")).packages.package | Where-Object id -like "clang-format*"
+    $clangFormatPath = "$env:OpenConsoleRoot\packages\$($clangPackage.id).$($clangPackage.version)\tools\clang-format.exe"
     Get-ChildItem -Recurse "$env:OpenConsoleRoot/src" -Include *.cpp, *.hpp, *.h |
       Where FullName -NotLike "*Generated Files*" |
-      Invoke-ClangFormat
+      Invoke-ClangFormat -ClangFormatPath $clangFormatPath
 }
 
 Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat
