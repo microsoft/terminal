@@ -389,8 +389,11 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
 
     switch (cursorStyle)
     {
-    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
-        [[fallthrough]];
+    case DispatchTypes::CursorStyle::RestoreUserDefault:
+        _buffer->GetCursor().SetStyle(_defaultCursorHeight,
+                                      _defaultCursorColor,
+                                      _defaultCursorShape);
+        return true;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         finalCursorType = CursorType::FullBox;
         shouldBlink = true;
@@ -422,18 +425,6 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
 
     _buffer->GetCursor().SetType(finalCursorType);
     _buffer->GetCursor().SetBlinkingAllowed(shouldBlink);
-
-    return true;
-}
-
-bool Terminal::RestoreCursorStyleToUserDefault() noexcept
-{
-    if (_buffer)
-    {
-        _buffer->GetCursor().SetStyle(_defaultCursorHeight,
-                                      _defaultCursorColor,
-                                      _defaultCursorShape);
-    }
 
     return true;
 }

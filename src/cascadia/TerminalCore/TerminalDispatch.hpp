@@ -36,7 +36,6 @@ public:
     bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
     bool SetCursorColor(const DWORD color) noexcept override;
-    bool RestoreCursorStyleToUserDefault() noexcept override;
 
     bool SetClipboard(std::wstring_view content) noexcept override;
 
