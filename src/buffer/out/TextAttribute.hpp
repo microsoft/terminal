@@ -154,7 +154,8 @@ public:
                (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||
                 (!checkForeground && _background == other._background)) &&
-               _extendedAttrs == other._extendedAttrs;
+               _extendedAttrs == other._extendedAttrs &&
+               IsHyperlink() == other.IsHyperlink();
     }
 
     constexpr bool IsAnyGridLineEnabled() const noexcept

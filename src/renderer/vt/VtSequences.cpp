@@ -466,17 +466,16 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId) noexcept
 {
     // Opening OSC8 sequence
-    // We use the BEL character to terminate because \x9c gets mangled in std::string
     if (customId.empty())
     {
-        const std::string fmt{ "\x1b]8;;{}\x7" };
+        const std::string fmt{ "\x1b]8;;{}\x1b\\" };
         const std::string uri_str{ til::u16u8(uri) };
         auto s = fmt::format(fmt, uri_str);
         return _Write(s);
     }
     else
     {
-        const std::string fmt{ "\x1b]8;id={};{}\x7" };
+        const std::string fmt{ "\x1b]8;id={};{}\x1b\\" };
         const std::string uri_str{ til::u16u8(uri) };
         const std::string customId_str{ til::u16u8(customId) };
         auto s = fmt::format(fmt, customId_str, uri_str);
@@ -491,6 +490,5 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_EndHyperlink() noexcept
 {
     // Closing OSC8 sequence
-    // We use the BEL character to terminate because \x9c gets mangled in std::string
-    return _Write("\x1b]8;;\x7");
+    return _Write("\x1b]8;;\x1b\\");
 }
