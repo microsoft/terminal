@@ -134,8 +134,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
                                       cursorShape);
     }
 
-    _defaultCursorHeight = settings.CursorHeight();
-    _defaultCursorColor = settings.CursorColor();
     _defaultCursorShape = cursorShape;
 
     for (int i = 0; i < 16; i++)

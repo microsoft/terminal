@@ -214,8 +214,6 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
-    ULONG _defaultCursorHeight;
-    COLORREF _defaultCursorColor;
     CursorType _defaultCursorShape;
     bool _screenReversed;
 
