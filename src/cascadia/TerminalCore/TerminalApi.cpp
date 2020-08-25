@@ -391,6 +391,7 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     {
     case DispatchTypes::CursorStyle::UserDefault:
         finalCursorType = _defaultCursorShape;
+        shouldBlink = true;
         return true;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         finalCursorType = CursorType::FullBox;
