@@ -415,7 +415,21 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseOtherTabsArgs>())
         {
-            uint32_t index = realArgs.Index();
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                // Do nothing
+                actionArgs.Handled(false);
+                return;
+            }
 
             // Remove tabs after the current one
             while (_tabs.Size() > index + 1)
@@ -438,7 +452,21 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseTabsAfterArgs>())
         {
-            uint32_t index = realArgs.Index();
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                // Do nothing
+                actionArgs.Handled(false);
+                return;
+            }
 
             // Remove tabs after the current one
             while (_tabs.Size() > index + 1)
