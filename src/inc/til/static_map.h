@@ -70,5 +70,5 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // 1. static_map's member types are all the same
     // 2. static_map's fourth template argument (otherwise undeduced) is how many pairs it contains
     template<typename First, typename... Rest>
-    static_map(First, Rest...)->static_map<std::conditional_t<std::conjunction_v<std::is_same<First, Rest>...>, typename First::first_type, void>, typename First::second_type, std::less<typename First::first_type>, 1 + sizeof...(Rest)>;
+    static_map(First, Rest...) -> static_map<std::conditional_t<std::conjunction_v<std::is_same<First, Rest>...>, typename First::first_type, void>, typename First::second_type, std::less<typename First::first_type>, 1 + sizeof...(Rest)>;
 }
