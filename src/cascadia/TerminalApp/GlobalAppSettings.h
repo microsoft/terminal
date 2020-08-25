@@ -83,7 +83,7 @@ public:
     GETSET_PROPERTY(bool, AlwaysOnTop, false);
 
     // PaneTitlebar Settings
-    GETSET_PROPERTY(bool, ShowPaneTitlebar, true);
+    GETSET_PROPERTY(bool, ShowPaneTitlebar, false);
 
 private:
     std::optional<std::wstring> _unparsedDefaultProfile;

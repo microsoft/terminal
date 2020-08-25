@@ -142,9 +142,9 @@ void Pane::_ConstructPaneTitleRenameBox(const winrt::hstring& paneText)
     paneTextBox.Height(_paneTitlebarTitle.ActualHeight());
 
     // Setup events
-    auto weakThis{ shared_from_this() };
+    std::weak_ptr<Pane> weakThis{ shared_from_this() };
     paneTextBox.LostFocus([weakThis](const winrt::Windows::Foundation::IInspectable& sender, auto&&) {
-        auto pane {weakThis.get()};
+        auto pane {weakThis.lock()};
         auto textBox { sender.try_as<Controls::TextBox>() };
         if (pane && textBox)
         {
@@ -155,7 +155,7 @@ void Pane::_ConstructPaneTitleRenameBox(const winrt::hstring& paneText)
     });
 
     paneTextBox.KeyUp([weakThis](const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e) {
-        auto pane{ weakThis.get() };
+        auto pane{ weakThis.lock() };
         auto textBox{ sender.try_as<Controls::TextBox>() };
         if (pane && textBox)
         {
