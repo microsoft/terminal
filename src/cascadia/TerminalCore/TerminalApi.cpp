@@ -390,9 +390,7 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     switch (cursorStyle)
     {
     case DispatchTypes::CursorStyle::UserDefault:
-        _buffer->GetCursor().SetStyle(_defaultCursorHeight,
-                                      _defaultCursorColor,
-                                      _defaultCursorShape);
+        finalCursorType = _defaultCursorShape;
         return true;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         finalCursorType = CursorType::FullBox;
