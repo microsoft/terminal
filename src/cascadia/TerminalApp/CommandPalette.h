@@ -12,7 +12,8 @@ namespace winrt::TerminalApp::implementation
     {
         ActionMode = 0,
         TabSearchMode,
-        TabSwitchMode
+        TabSwitchMode,
+        CommandlineMode
     };
 
     struct CommandPalette : CommandPaletteT<CommandPalette>
@@ -80,6 +81,9 @@ namespace winrt::TerminalApp::implementation
         CommandPaletteMode _currentMode;
         void _switchToMode(CommandPaletteMode mode);
 
+        void _evaluatePrefix();
+        std::wstring _getPostPrefixInput();
+
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
@@ -92,7 +96,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
         void _dispatchCommand(const TerminalApp::Command& command);
-
+        void _dispatchCommandline();
         void _dismissPalette();
     };
 }

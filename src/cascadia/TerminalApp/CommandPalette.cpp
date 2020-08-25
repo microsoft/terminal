@@ -172,25 +172,59 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Enter)
         {
-            // Action Mode: Dispatch the action of the selected command.
-
-            if (const auto selectedItem = _filteredActionsView().SelectedItem())
+            // Action, TabSwitch or TabSearchMode Mode: Dispatch the action of the selected command.
+            if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                {
+                    _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                }
+            }
+            // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
+            else if (_currentMode == CommandPaletteMode::CommandlineMode)
+            {
+                _dispatchCommandline();
             }
 
             e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
         {
-            // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
-            if (_searchBox().Text().empty())
+            // Action, TabSearch, TabSwitch Mode: Dismiss the palette if the
+            // text is empty, otherwise clear the search string.
+            if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                _dismissPalette();
+                if (_searchBox().Text().empty())
+                {
+                    _dismissPalette();
+                }
+                else
+                {
+                    _searchBox().Text(L"");
+                }
             }
-            else
+            else if (_currentMode == CommandPaletteMode::CommandlineMode)
             {
-                _searchBox().Text(L"");
+                const auto currentInput = _getPostPrefixInput();
+                if (currentInput.empty())
+                {
+                    // The user's only input "> " so far. We should just dismiss
+                    // the palette. This is like dismissing the Action mode with
+                    // empty input.
+                    _dismissPalette();
+                }
+                else
+                {
+                    // Clear out the current input. We'll leave a ">" in the
+                    // input (to stay in commandline mode), and a leading space
+                    // (if they currently had one).
+                    const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
+                    _searchBox().Text(hasLeadingSpace ? L"> " : L">");
+
+                    // This will conveniently move the cursor to the end of the
+                    // text input for us.
+                    _searchBox().Select(_searchBox().Text().size(), 0);
+                }
             }
 
             e.Handled(true);
@@ -362,6 +396,8 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSearchMode:
         case CommandPaletteMode::TabSwitchMode:
             return _allTabActions;
+        case CommandPaletteMode::CommandlineMode:
+            return winrt::single_threaded_vector<TerminalApp::Command>();
         default:
             return _allCommands;
         }
@@ -423,6 +459,72 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get all the input text in _searchBox that follows the prefix character
+    //   and any whitespace following that prefix character. This can be used in
+    //   commandline mode to get all the useful input that the user input after
+    //   the leading ">" prefix.
+    // - Note that this will behave unexpectedly in Action Mode.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the string of input following the prefix character.
+    std::wstring CommandPalette::_getPostPrefixInput()
+    {
+        const std::wstring input{ _searchBox().Text() };
+        if (input.empty())
+        {
+            return input;
+        }
+
+        const auto rawCmdline{ input.substr(1) };
+
+        // Trim leading whitespace
+        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
+        if (firstNonSpace == std::wstring::npos)
+        {
+            // All the following characters are whitespace.
+            return L"";
+        }
+
+        return rawCmdline.substr(firstNonSpace);
+    }
+
+    // Method Description:
+    // - Dispatch the current search text as a ExecuteCommandline action.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_dispatchCommandline()
+    {
+        const auto input = _getPostPrefixInput();
+        if (input.empty())
+        {
+            return;
+        }
+        winrt::hstring cmdline{ input };
+
+        // Build the ExecuteCommandline action from the values we've parsed on the commandline.
+        auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+        executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        args->Commandline(cmdline);
+        executeActionAndArgs->Args(*args);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "CommandPaletteDispatchedCommandline",
+            TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        if (_dispatch.DoAction(*executeActionAndArgs))
+        {
+            _close();
+        }
+    }
+
+    // Method Description:
     // - Helper method for closing the command palette, when the user has _not_
     //   selected an action. Also fires a tracelogging event indicating that the
     //   user closed the palette without running a command.
@@ -452,10 +554,34 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
+        if (_currentMode == CommandPaletteMode::CommandlineMode || _currentMode == CommandPaletteMode::ActionMode)
+        {
+            _evaluatePrefix();
+        }
+
         _updateFilteredActions();
         _filteredActionsView().SelectedIndex(0);
 
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
+    }
+
+    void CommandPalette::_evaluatePrefix()
+    {
+        auto newMode = CommandPaletteMode::ActionMode;
+
+        auto inputText = _searchBox().Text();
+        if (inputText.size() > 0)
+        {
+            if (inputText[0] == L'>')
+            {
+                newMode = CommandPaletteMode::CommandlineMode;
+            }
+        }
+
+        if (newMode != _currentMode)
+        {
+            _switchToMode(newMode);
+        }
     }
 
     Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
@@ -511,6 +637,10 @@ namespace winrt::TerminalApp::implementation
             ControlName(RS_(L"TabSwitcherControlName"));
             break;
         }
+        case CommandPaletteMode::CommandlineMode:
+            NoMatchesText(RS_(L"CmdPalCommandlinePrompt"));
+            ControlName(RS_(L"CommandPaletteControlName"));
+            break;
         case CommandPaletteMode::ActionMode:
         default:
             SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
@@ -666,6 +796,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_updateFilteredActions()
     {
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            _filteredActions.Clear();
+            return;
+        }
+
         auto actions = _collectFilteredActions();
 
         // Make _filteredActions look identical to actions, using only Insert and Remove.
