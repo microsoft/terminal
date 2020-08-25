@@ -216,7 +216,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class CursorStyle : unsigned int
     {
-        RestoreUserDefault = 0, // Implemented as "restore cursor to user default".
+        UserDefault = 0, // Implemented as "restore cursor to user default".
         BlinkingBlock = 1,
         SteadyBlock = 2,
         BlinkingUnderline = 3,
