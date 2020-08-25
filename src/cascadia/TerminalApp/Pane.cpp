@@ -213,9 +213,41 @@ void Pane::_CreateContextMenu()
         });
     }
 
+    // Toggle Pane Zoom
+    //Controls::FontIcon zoomPaneSymbol;
+    //zoomPaneSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+    //zoomPaneSymbol.Glyph(L"\xE71E"); // Zoom
+
+    //Controls::MenuFlyoutItem toggleZoomPaneMenuItem;
+    //{
+    //    toggleZoomPaneMenuItem.Text(RS_(L"TogglePaneZoom"));
+    //    toggleZoomPaneMenuItem.Icon(zoomPaneSymbol);
+    //    toggleZoomPaneMenuItem.Click([this](auto&&, auto&&) {
+    //        // Toggle Zoom here
+    //    });
+    //}
+
+    // Close Pane
+    Controls::FontIcon closePaneSymbol;
+    closePaneSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+    closePaneSymbol.Glyph(L"\xE8BB"); // ChromeClose
+
+    Controls::MenuFlyoutItem closePaneMenuItem;
+    {
+        closePaneMenuItem.Text(RS_(L"ClosePane"));
+        closePaneMenuItem.Icon(closePaneSymbol);
+        closePaneMenuItem.Click([this](auto&&, auto&&) {
+            Close();
+        });
+    }
+
     // Build the Menu
     Controls::MenuFlyout newTabFlyout;
+    Controls::MenuFlyoutSeparator menuSeparator;
     newTabFlyout.Items().Append(renamePaneTitleMenuItem);
+    //newTabFlyout.Items().Append(toggleZoomPaneMenuItem);
+    newTabFlyout.Items().Append(menuSeparator);
+    newTabFlyout.Items().Append(closePaneMenuItem);
     _paneTitlebarBorder.ContextFlyout(newTabFlyout);
 }
 

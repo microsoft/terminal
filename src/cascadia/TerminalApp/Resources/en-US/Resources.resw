@@ -636,4 +636,10 @@
   <data name="RenamePaneTitle" xml:space="preserve">
     <value>Rename Title</value>
   </data>
+  <data name="ClosePane" xml:space="preserve">
+    <value>Close Pane</value>
+  </data>
+  <data name="TogglePaneZoom" xml:space="preserve">
+    <value>Toggle Zoom</value>
+  </data>
 </root>
