@@ -426,7 +426,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                actionArgs.Handled(true);
+                // Do nothing
+                actionArgs.Handled(false);
                 return;
             }
 
@@ -462,7 +463,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                actionArgs.Handled(true);
+                // Do nothing
+                actionArgs.Handled(false);
                 return;
             }
 

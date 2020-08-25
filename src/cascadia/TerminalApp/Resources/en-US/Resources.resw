@@ -650,6 +650,6 @@
     <value>Close all other tabs</value>
   </data>
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
-    <value>Close all tabs after</value>
+    <value>Close all tabs after the current tab</value>
   </data>
 </root>
