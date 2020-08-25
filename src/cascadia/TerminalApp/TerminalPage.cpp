@@ -1304,9 +1304,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the index in our list of tabs of the currently focused tab. If
-    //      no tab is currently selected, returns -1.
+    //      no tab is currently selected, returns nullopt.
     // Return Value:
-    // - the index of the currently focused tab if there is one, else -1
+    // - the index of the currently focused tab if there is one, else nullopt
     std::optional<uint32_t> TerminalPage::_GetFocusedTabIndex() const noexcept
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex()

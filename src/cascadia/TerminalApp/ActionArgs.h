@@ -495,7 +495,7 @@ namespace winrt::TerminalApp::implementation
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
     {
         CloseOtherTabsArgs() = default;
-        GETSET_PROPERTY(uint32_t, Index, 0);
+        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 
@@ -523,7 +523,7 @@ namespace winrt::TerminalApp::implementation
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
     {
         CloseTabsAfterArgs() = default;
-        GETSET_PROPERTY(uint32_t, Index, 0);
+        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 

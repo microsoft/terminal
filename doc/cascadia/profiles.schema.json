@@ -397,14 +397,16 @@
           "properties": {
             "action": { "type": "string", "pattern": "closeOtherTabs" },
             "index": {
-              "type": "integer",
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
               "default": "",
-              "description": "Close the tabs other than the one at this index."
+              "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
-      ],
-      "required": [ "index" ]
+      ]
     },
     "CloseTabsAfterAction": {
       "description": "Arguments for a closeTabsAfter action",
@@ -414,14 +416,16 @@
           "properties": {
             "action": { "type": "string", "pattern": "closeTabsAfter" },
             "index": {
-              "type": "integer",
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
               "default": "",
-              "description": "Close the tabs following the tab at this index."
+              "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
-      ],
-      "required": [ "index" ]
+      ]
     },
     "Keybinding": {
       "additionalProperties": false,

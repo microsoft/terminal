@@ -646,4 +646,10 @@
   <data name="DarkGrayColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Dark Gray</value>
   </data>
+  <data name="CloseOtherTabsDefaultCommandKey" xml:space="preserve">
+    <value>Close all other tabs</value>
+  </data>
+  <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
+    <value>Close all tabs after the current tab</value>
+  </data>
 </root>
