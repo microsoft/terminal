@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         bool HasGuid() const noexcept;
-        winrt::guid Guid() const noexcept;
+        winrt::guid Guid() const;
         void Guid(winrt::guid guid) noexcept;
 
         bool HasConnectionType() const noexcept;
@@ -72,6 +72,16 @@ namespace winrt::TerminalApp::implementation
         void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
+
+        // HERE BE DRAGONS:
+        // StartingDirectory is nullable. A null starting directory inherits that
+        //  one of its parent process. However, MIDL does not allow us to have an
+        //  IReference<String>. So we're storing it as an optional in the backend,
+        //  and evaluating its true value when exporting it to a TerminalSettings
+        //  object via EvaluateStartingDirectory().
+        bool HasStartingDirectory() const noexcept;
+        hstring StartingDirectory() const noexcept;
+        void StartingDirectory(const hstring& value) noexcept;
 
         GETSET_PROPERTY(hstring, Name, L"Default");
         GETSET_PROPERTY(hstring, Source);
@@ -94,7 +104,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, Padding, DEFAULT_PADDING);
 
         GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
-        GETSET_PROPERTY(hstring, StartingDirectory);
 
         GETSET_PROPERTY(hstring, BackgroundImagePath);
         GETSET_PROPERTY(Windows::Foundation::IReference<double>, BackgroundImageOpacity);
@@ -121,6 +130,7 @@ namespace winrt::TerminalApp::implementation
     private:
         std::optional<winrt::guid> _Guid = std::nullopt;
         std::optional<winrt::guid> _ConnectionType = std::nullopt;
+        std::optional<winrt::hstring> _StartingDirectory = std::nullopt;
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment;
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

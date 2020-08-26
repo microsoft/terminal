@@ -98,9 +98,9 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
 
     terminalSettings.Commandline(_Commandline);
 
-    if (!_StartingDirectory.empty())
+    if (_StartingDirectory)
     {
-        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_StartingDirectory.c_str());
+        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_StartingDirectory.value().c_str());
         terminalSettings.StartingDirectory(evaluatedDirectory);
     }
 
@@ -540,7 +540,7 @@ bool Profile::HasGuid() const noexcept
     return _Guid.has_value();
 }
 
-winrt::guid Profile::Guid() const noexcept
+winrt::guid Profile::Guid() const
 {
     // This can throw if we never had our guid set to a legitimate value.
     THROW_HR_IF_MSG(E_FAIL, !_Guid.has_value(), "Profile._guid always expected to have a value");
@@ -565,4 +565,23 @@ winrt::guid Profile::ConnectionType() const noexcept
 void Profile::ConnectionType(winrt::guid conType) noexcept
 {
     _ConnectionType = conType;
+}
+
+bool Profile::HasStartingDirectory() const noexcept
+{
+    return _StartingDirectory.has_value();
+}
+
+winrt::hstring Profile::StartingDirectory() const noexcept
+{
+    // This can throw if we never had our _StartingDirectory set to a formal value.
+    // A null value can only be detected via HasStartingDirectory().
+    // For more details, read the StartingDirectory note in Profile.h
+    THROW_HR_IF_MSG(E_FAIL, !_StartingDirectory.has_value(), "Profile._StartingDirectory is null");
+    return *_StartingDirectory;
+}
+
+void Profile::StartingDirectory(const winrt::hstring& value) noexcept
+{
+    _StartingDirectory = std::move(value);
 }
