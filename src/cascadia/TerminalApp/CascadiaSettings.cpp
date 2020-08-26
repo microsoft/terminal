@@ -70,14 +70,14 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 // Return Value:
 // - a non-ownership pointer to the profile matching the given guid, or nullptr
 //      if there is no match.
-const Profile CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
+const Profile CascadiaSettings::FindProfile(winrt::guid profileGuid) const noexcept
 {
-    auto guid = winrt::guid(profileGuid);
+    const winrt::guid guid{ profileGuid };
     for (auto& profile : _profiles)
     {
         try
         {
-            if (profile.HasGuid() && profile.Guid() == guid)
+            if (profile.Guid() == guid)
             {
                 return profile;
             }
@@ -230,7 +230,7 @@ void CascadiaSettings::_ResolveDefaultProfile()
     if (unparsedDefaultProfile)
     {
         auto maybeParsedDefaultProfile{ _GetProfileGuidByName(*unparsedDefaultProfile) };
-        auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, GUID{}) };
+        auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, winrt::guid{}) };
         GlobalSettings().DefaultProfile(defaultProfileGuid);
     }
 }
@@ -244,12 +244,12 @@ void CascadiaSettings::_ResolveDefaultProfile()
 //   warnings if we failed to find the default.
 void CascadiaSettings::_ValidateDefaultProfileExists()
 {
-    const auto defaultProfileGuid = winrt::guid(GlobalSettings().DefaultProfile());
+    const winrt::guid defaultProfileGuid{ GlobalSettings().DefaultProfile() };
     const bool nullDefaultProfile = defaultProfileGuid == winrt::guid{};
     bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
     {
-        if (profile.HasGuid() && profile.Guid() == defaultProfileGuid)
+        if (profile.Guid() == defaultProfileGuid)
         {
             defaultProfileNotInProfiles = false;
             break;
@@ -263,7 +263,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(GUID(_profiles[0].Guid()));
+        GlobalSettings().DefaultProfile(_profiles[0].Guid());
     }
 }
 
@@ -497,9 +497,9 @@ void CascadiaSettings::_ValidateMediaResources()
 //     the profile.
 // Return Value:
 // - the GUID of the created profile, and a fully initialized TerminalSettings object
-std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
+std::tuple<winrt::guid, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
 {
-    const GUID profileGuid = _GetProfileForArgs(newTerminalArgs);
+    const winrt::guid profileGuid = _GetProfileForArgs(newTerminalArgs);
     auto settings = BuildSettings(profileGuid);
 
     if (newTerminalArgs)
@@ -530,7 +530,7 @@ std::tuple<GUID, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerm
 // - profileGuid: The GUID of a profile to use to create a settings object for.
 // Return Value:
 // - a fully initialized TerminalSettings object
-TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
+TerminalSettings CascadiaSettings::BuildSettings(winrt::guid profileGuid) const
 {
     const auto profile = FindProfile(profileGuid);
     THROW_HR_IF_NULL(E_INVALIDARG, profile);
@@ -560,9 +560,9 @@ TerminalSettings CascadiaSettings::BuildSettings(GUID profileGuid) const
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
+winrt::guid CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
 {
-    std::optional<GUID> profileByIndex, profileByName;
+    std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)
     {
         if (newTerminalArgs.ProfileIndex() != nullptr)
@@ -582,7 +582,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
 // - name: a guid string _or_ the name of a profile
 // Return Value:
 // - the GUID of the profile corresponding to this name
-std::optional<GUID> CascadiaSettings::_GetProfileGuidByName(const std::wstring_view name) const
+std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByName(const std::wstring_view name) const
 try
 {
     // First, try and parse the "name" as a GUID. If it's a
@@ -607,12 +607,12 @@ try
         // lookup a profile. Instead, try using the string to look the
         // Profile up by name.
         const auto profileIterator{ std::find_if(_profiles.cbegin(), _profiles.cend(), [&](auto&& profile) {
-            return profile.Name().c_str() == name;
+            return profile.Name() == name;
         }) };
 
         if (profileIterator != _profiles.cend())
         {
-            return std::optional<GUID>{ profileIterator->Guid() };
+            return profileIterator->Guid();
         }
     }
 
@@ -634,7 +634,7 @@ catch (...)
 //   If omitted, instead return the default profile's GUID
 // Return Value:
 // - the Nth profile's GUID, or the default profile's GUID
-std::optional<GUID> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> index) const
+std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> index) const
 {
     if (index)
     {
@@ -644,7 +644,7 @@ std::optional<GUID> CascadiaSettings::_GetProfileGuidByIndex(std::optional<int> 
             realIndex < gsl::narrow_cast<decltype(realIndex)>(_profiles.size()))
         {
             const auto& selectedProfile = _profiles.at(realIndex);
-            return std::optional<GUID>{ selectedProfile.Guid() };
+            return selectedProfile.Guid();
         }
     }
     return std::nullopt;
@@ -739,15 +739,15 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - profileGuid: the GUID of the profile to find the scheme for.
 // Return Value:
 // - a non-owning pointer to the scheme.
-const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
+const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const winrt::guid profileGuid) const
 {
     auto profile = FindProfile(profileGuid);
-    if (profile == nullptr)
+    if (!profile)
     {
         return nullptr;
     }
-    auto schemeName = !profile.ColorSchemeName().empty() ? profile.ColorSchemeName() : L"\0";
-    auto scheme = _globals.GetColorSchemes().find(schemeName.c_str());
+    const std::wstring schemeName{ profile.ColorSchemeName() };
+    auto scheme = _globals.GetColorSchemes().find(schemeName);
     if (scheme != _globals.GetColorSchemes().end())
     {
         return scheme->second;

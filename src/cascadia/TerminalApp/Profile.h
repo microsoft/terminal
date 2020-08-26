@@ -44,9 +44,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         Profile();
-        Profile(Windows::Foundation::IReference<guid> guid);
-
-        ~Profile();
+        Profile(guid guid);
 
         TerminalApp::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes) const;
 
@@ -61,18 +59,18 @@ namespace winrt::TerminalApp::implementation
         void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
-        bool HasGuid() const;
-        winrt::guid Guid() const;
-        void Guid(winrt::guid guid);
+        bool HasGuid() const noexcept;
+        winrt::guid Guid() const noexcept;
+        void Guid(winrt::guid guid) noexcept;
 
-        bool HasConnectionType() const;
-        winrt::guid ConnectionType() const;
-        void ConnectionType(winrt::guid conType);
+        bool HasConnectionType() const noexcept;
+        winrt::guid ConnectionType() const noexcept;
+        void ConnectionType(winrt::guid conType) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
-        Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
+        const Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
         void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
-        Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
+        const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
         GETSET_PROPERTY(hstring, Name, L"Default");
@@ -127,7 +125,7 @@ namespace winrt::TerminalApp::implementation
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-        static guid _GenerateGuidForProfile(const hstring& name, const Windows::Foundation::IReference<hstring>& source) noexcept;
+        static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::ProfileTests;

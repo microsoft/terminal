@@ -135,7 +135,7 @@ namespace
     };
 }
 
-using namespace TerminalApp;
+using namespace ::TerminalApp;
 using namespace winrt::TerminalApp;
 
 // Function Description:
@@ -287,7 +287,7 @@ static std::vector<PowerShellInstance> _collectPowerShellInstances()
 
 // Legacy GUIDs:
 //   - PowerShell Core       574e775e-4f2a-5b96-ac1e-a2962a402336
-static constexpr GUID PowershellCoreGuid{ 0x574e775e, 0x4f2a, 0x5b96, { 0xac, 0x1e, 0xa2, 0x96, 0x2a, 0x40, 0x23, 0x36 } };
+static constexpr winrt::guid PowershellCoreGuid{ 0x574e775e, 0x4f2a, 0x5b96, { 0xac, 0x1e, 0xa2, 0x96, 0x2a, 0x40, 0x23, 0x36 } };
 
 std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
 {
@@ -311,7 +311,7 @@ std::vector<Profile> PowershellCoreProfileGenerator::GenerateProfiles()
         auto profile{ CreateDefaultProfile(name) };
         profile.Commandline(psI.executablePath.wstring());
         profile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        profile.ColorSchemeName({ L"Campbell" });
+        profile.ColorSchemeName(L"Campbell");
 
         profile.IconPath(WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON);
         profiles.emplace_back(std::move(profile));
@@ -323,7 +323,7 @@ std::vector<Profile> PowershellCoreProfileGenerator::GenerateProfiles()
         // This will turn the anchored default profile into "PowerShell Core Latest for Native Architecture through Store"
         // (or the closest approximation thereof). It may choose a preview instance as the "best" if it is a higher version.
         auto firstProfile = profiles.begin();
-        firstProfile->Guid(winrt::guid{ PowershellCoreGuid });
+        firstProfile->Guid(PowershellCoreGuid);
         firstProfile->Name(POWERSHELL_PREFERRED_PROFILE_NAME);
     }
 

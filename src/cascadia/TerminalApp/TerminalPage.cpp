@@ -768,8 +768,8 @@ namespace winrt::TerminalApp::implementation
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
-        GUID connectionType{ 0 };
-        GUID sessionGuid{ 0 };
+        winrt::guid connectionType{};
+        winrt::guid sessionGuid{};
 
         const auto hasConnectionType = profile.HasConnectionType();
         if (hasConnectionType)
@@ -2004,7 +2004,7 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings->GetProfiles();
         for (auto& profile : profiles)
         {
-            const GUID profileGuid = GUID(profile.Guid());
+            const auto profileGuid = profile.Guid();
 
             try
             {

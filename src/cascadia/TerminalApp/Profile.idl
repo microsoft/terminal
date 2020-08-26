@@ -12,7 +12,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass Profile {
         Profile();
-        Profile(Windows.Foundation.IReference<Guid> guid);
+        Profile(Guid guid);
 
         String Name;
         Boolean HasGuid();

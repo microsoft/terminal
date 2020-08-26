@@ -619,7 +619,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             }
 
             profile->LayerJson(profileJson);
-            _profiles.emplace_back(profile.as<Profile>());
+            _profiles.emplace_back(*profile);
         }
     }
 }

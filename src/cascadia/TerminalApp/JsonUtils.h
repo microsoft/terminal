@@ -29,8 +29,6 @@ namespace winrt
         template<typename T>
         struct IReference;
     }
-
-    struct Windows::UI::Color;
 }
 
 namespace TerminalApp::JsonUtils
@@ -288,7 +286,7 @@ namespace TerminalApp::JsonUtils
 
         std::string TypeDescription() const
         {
-            return "guid";
+            return ConversionTrait<GUID>{}.TypeDescription();
         }
     };
 
@@ -333,7 +331,7 @@ namespace TerminalApp::JsonUtils
 
         std::string TypeDescription() const
         {
-            return "color (#rrggbb, #rgb)";
+            return ConversionTrait<til::color>{}.TypeDescription();
         }
     };
 #endif

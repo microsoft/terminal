@@ -64,8 +64,8 @@ public:
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
-    std::tuple<GUID, winrt::TerminalApp::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
-    winrt::TerminalApp::TerminalSettings BuildSettings(GUID profileGuid) const;
+    std::tuple<winrt::guid, winrt::TerminalApp::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+    winrt::TerminalApp::TerminalSettings BuildSettings(winrt::guid profileGuid) const;
 
     GlobalAppSettings& GlobalSettings();
 
@@ -79,8 +79,8 @@ public:
     static std::filesystem::path GetSettingsPath();
     static std::filesystem::path GetDefaultSettingsPath();
 
-    const winrt::TerminalApp::Profile FindProfile(GUID profileGuid) const noexcept;
-    const winrt::TerminalApp::ColorScheme GetColorSchemeForProfile(const GUID profileGuid) const;
+    const winrt::TerminalApp::Profile FindProfile(winrt::guid profileGuid) const noexcept;
+    const winrt::TerminalApp::ColorScheme GetColorSchemeForProfile(const winrt::guid profileGuid) const;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
@@ -118,9 +118,9 @@ private:
     static std::optional<std::string> _ReadUserSettings();
     static std::optional<std::string> _ReadFile(HANDLE hFile);
 
-    std::optional<GUID> _GetProfileGuidByName(const std::wstring_view) const;
-    std::optional<GUID> _GetProfileGuidByIndex(std::optional<int> index) const;
-    GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+    std::optional<winrt::guid> _GetProfileGuidByName(const std::wstring_view) const;
+    std::optional<winrt::guid> _GetProfileGuidByIndex(std::optional<int> index) const;
+    winrt::guid _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
     void _ValidateProfilesExist();

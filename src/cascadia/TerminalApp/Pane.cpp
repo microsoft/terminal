@@ -320,7 +320,7 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
     }
 
     const auto& settings = CascadiaSettings::GetCurrentAppSettings();
-    auto& paneProfile = settings.FindProfile(_profile.value());
+    auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
         auto mode = paneProfile.CloseOnExit();

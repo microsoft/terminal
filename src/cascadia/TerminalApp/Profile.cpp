@@ -59,21 +59,12 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 
-Profile::Profile() :
-    Profile(nullptr)
+Profile::Profile()
 {
 }
 
-Profile::Profile(IReference<guid> guid) :
-    _Guid(guid ? static_cast<decltype(_Guid)>(guid.Value()) : std::nullopt)
-{
-    /* FontWeight is initialized here because the structure won't accept a uint16_t directly */
-    winrt::Windows::UI::Text::FontWeight weight;
-    weight.Weight = DEFAULT_FONT_WEIGHT;
-    _FontWeight = weight;
-}
-
-Profile::~Profile()
+Profile::Profile(guid guid) :
+    _Guid(guid)
 {
 }
 
@@ -132,22 +123,22 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
     }
     if (_Foreground)
     {
-        til::color colorRef{ _Foreground.Value() };
+        const til::color colorRef{ _Foreground.Value() };
         terminalSettings.DefaultForeground(static_cast<uint32_t>(colorRef));
     }
     if (_Background)
     {
-        til::color colorRef{ _Background.Value() };
+        const til::color colorRef{ _Background.Value() };
         terminalSettings.DefaultBackground(static_cast<uint32_t>(colorRef));
     }
     if (_SelectionBackground)
     {
-        til::color colorRef{ _SelectionBackground.Value() };
+        const til::color colorRef{ _SelectionBackground.Value() };
         terminalSettings.SelectionBackground(static_cast<uint32_t>(colorRef));
     }
     if (_CursorColor)
     {
-        til::color colorRef{ _CursorColor.Value() };
+        const til::color colorRef{ _CursorColor.Value() };
         terminalSettings.CursorColor(static_cast<uint32_t>(colorRef));
     }
 
@@ -182,7 +173,7 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
 
     if (_TabColor)
     {
-        til::color colorRef{ _TabColor.Value() };
+        const til::color colorRef{ _TabColor.Value() };
         terminalSettings.TabColor(static_cast<uint32_t>(colorRef));
     }
 
@@ -228,7 +219,7 @@ Json::Value Profile::GenerateStub() const
 // - json: an object which should be a serialization of a Profile object.
 // Return Value:
 // - a new Profile instance created from the values in `json`
-winrt::com_ptr<Profile> Profile::FromJson(const Json::Value& json)
+winrt::com_ptr<winrt::TerminalApp::implementation::Profile> Profile::FromJson(const Json::Value& json)
 {
     auto result = winrt::make_self<Profile>();
     result->LayerJson(json);
@@ -375,7 +366,7 @@ winrt::hstring Profile::GetExpandedIconPath() const
 {
     if (_IconPath.empty())
     {
-        return { L"" };
+        return _IconPath;
     }
     winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_IconPath.c_str()) };
     return envExpandedPath;
@@ -390,10 +381,9 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 {
     if (_BackgroundImagePath.empty())
     {
-        return { L"" };
+        return _BackgroundImagePath;
     }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
-    return envExpandedPath;
+    return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
 }
 
 // Method Description:
@@ -468,13 +458,13 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 // - name: The name to generate a unique GUID from
 // Return Value:
 // - a uuidv5 GUID generated from the given name.
-winrt::guid Profile::_GenerateGuidForProfile(const hstring& name, const IReference<hstring>& source) noexcept
+winrt::guid Profile::_GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept
 {
     // If we have a _source, then we can from a dynamic profile generator. Use
     // our source to build the namespace guid, instead of using the default GUID.
 
-    const GUID namespaceGuid = source != nullptr ?
-                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.Value()))) :
+    const GUID namespaceGuid = !source.empty() ?
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source))) :
                                    RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
 
     // Always use the name to generate the temporary GUID. That way, across
@@ -498,12 +488,12 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     }
 
     const auto name{ JsonUtils::GetValueForKey<hstring>(json, NameKey) };
-    const auto source{ JsonUtils::GetValueForKey<IReference<hstring>>(json, SourceKey) };
+    const auto source{ JsonUtils::GetValueForKey<hstring>(json, SourceKey) };
 
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
-HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
+const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
 {
     if (_BackgroundImageAlignment.has_value())
     {
@@ -516,12 +506,15 @@ void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& valu
 {
     if (!_BackgroundImageAlignment.has_value())
     {
-        std::get<VerticalAlignment>(_BackgroundImageAlignment.value()) = VerticalAlignment::Center;
+        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
     }
-    std::get<HorizontalAlignment>(_BackgroundImageAlignment.value()) = value;
+    else
+    {
+        std::get<HorizontalAlignment>(_BackgroundImageAlignment.value()) = value;
+    }
 }
 
-VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
+const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
 {
     if (_BackgroundImageAlignment.has_value())
     {
@@ -534,39 +527,42 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
 {
     if (!_BackgroundImageAlignment.has_value())
     {
-        std::get<HorizontalAlignment>(_BackgroundImageAlignment.value()) = HorizontalAlignment::Center;
+        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
     }
-    std::get<VerticalAlignment>(_BackgroundImageAlignment.value()) = value;
+    else
+    {
+        std::get<VerticalAlignment>(_BackgroundImageAlignment.value()) = value;
+    }
 }
 
-bool Profile::HasGuid() const
+bool Profile::HasGuid() const noexcept
 {
     return _Guid.has_value();
 }
 
-winrt::guid Profile::Guid() const
+winrt::guid Profile::Guid() const noexcept
 {
     // This can throw if we never had our guid set to a legitimate value.
     THROW_HR_IF_MSG(E_FAIL, !_Guid.has_value(), "Profile._guid always expected to have a value");
     return *_Guid;
 }
 
-void Profile::Guid(winrt::guid guid)
+void Profile::Guid(winrt::guid guid) noexcept
 {
     _Guid = guid;
 }
 
-bool Profile::HasConnectionType() const
+bool Profile::HasConnectionType() const noexcept
 {
     return _ConnectionType.has_value();
 }
 
-winrt::guid Profile::ConnectionType() const
+winrt::guid Profile::ConnectionType() const noexcept
 {
     return *_ConnectionType;
 }
 
-void Profile::ConnectionType(winrt::guid conType)
+void Profile::ConnectionType(winrt::guid conType) noexcept
 {
     _ConnectionType = conType;
 }
