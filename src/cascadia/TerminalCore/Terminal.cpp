@@ -457,7 +457,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     }
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
-    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed();
 
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximize, size, move, close.
@@ -477,6 +476,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // as TerminalInput::HandleKey will then fall back to using the vkey which
     // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
     // See GH#5525/GH#6211 for more details
+    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed() && !states.IsAltGrPressed();
     const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
 
     // Delegate it to the character event handler if this key event can be

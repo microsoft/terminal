@@ -20,7 +20,6 @@
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
-#include "ToggleTabSwitcherArgs.g.h"
 
 #include "Utils.h"
 
@@ -340,37 +339,27 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CloseOtherTabsArgs::GenerateName() const
     {
-        // "Close tabs other than index {0}"
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
-                        _Index)
-        };
+        if (_Index)
+        {
+            // "Close tabs other than index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
+                            _Index.Value())
+            };
+        }
+        return RS_(L"CloseOtherTabsDefaultCommandKey");
     }
 
     winrt::hstring CloseTabsAfterArgs::GenerateName() const
     {
-        // "Close tabs after index {0}"
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
-                        _Index)
-        };
-    }
-
-    winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
-    {
-        // If there's an anchor key set, don't generate a name so that
-        // it won't show up in the command palette. Only an unanchored
-        // tab switcher should be able to be toggled from the palette.
-        // TODO: GH#7179 - once this goes in, make sure to hide the
-        // anchor mode command that was given a name in settings.
-        if (_AnchorKey != Windows::System::VirtualKey::None)
+        if (_Index)
         {
-            return L"";
+            // "Close tabs after index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
+                            _Index.Value())
+            };
         }
-        else
-        {
-            return RS_(L"ToggleTabSwitcherCommandKey");
-        }
+        return RS_(L"CloseTabsAfterDefaultCommandKey");
     }
-
 }

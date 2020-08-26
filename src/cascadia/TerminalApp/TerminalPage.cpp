@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: The settings who's keybindings we should use to look up the key chords from
     // - commands: The list of commands to label.
     static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
-                                                        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+                                                        IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
         {
@@ -83,20 +83,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    static void _recursiveUpdateCommandIcons(IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
         {
             const auto& command = nameAndCmd.Value();
-            // Set the default IconSource to a BitmapIconSource with a null source
-            // (instead of just nullptr) because there's a really weird crash when swapping
-            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-            // Swapping between nullptr IconSources and non-null IconSources causes a crash
-            // to occur, but swapping between IconSources with a null source and non-null IconSources
-            // work perfectly fine :shrug:.
-            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-            icon.UriSource(nullptr);
-            command.IconSource(icon);
+
+            // !!! LOAD-BEARING !!! If this is never called, then Commands will
+            // have a nullptr icon. If they do, a really weird crash can occur.
+            // MAKE SURE this is called once after a settings load.
+            command.RefreshIcon();
 
             if (command.HasNestedCommands())
             {
@@ -119,6 +115,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
+            CommandPalette().SetKeyBindings(_settings->GetKeybindings());
         }
     }
 
@@ -938,7 +935,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
-        _actionDispatch->ToggleTabSwitcher({ this, &TerminalPage::_HandleToggleTabSwitcher });
+        _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
     }
 
     // Method Description:
@@ -1199,7 +1196,21 @@ namespace winrt::TerminalApp::implementation
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
             const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            _SelectTab(newTabIndex);
+
+            if (_settings->GlobalSettings().UseTabSwitcher())
+            {
+                if (CommandPalette().Visibility() == Visibility::Visible)
+                {
+                    CommandPalette().SelectNextItem(bMoveRight);
+                }
+
+                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
+            else
+            {
+                _SelectTab(newTabIndex);
+            }
         }
     }
 
@@ -1293,9 +1304,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the index in our list of tabs of the currently focused tab. If
-    //      no tab is currently selected, returns -1.
+    //      no tab is currently selected, returns nullopt.
     // Return Value:
-    // - the index of the currently focused tab if there is one, else -1
+    // - the index of the currently focused tab if there is one, else nullopt
     std::optional<uint32_t> TerminalPage::_GetFocusedTabIndex() const noexcept
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex()
