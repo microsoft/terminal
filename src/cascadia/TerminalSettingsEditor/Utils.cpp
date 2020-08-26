@@ -19,7 +19,7 @@ hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& combo
     return unbox_value<hstring>(selectedOption.Tag());
 }
 
-// This can be used to populate a map<VirtualKey, hstring> to perform conversions from key lists to hstring and viceversa
+// This can be used to populate a map<VirtualKey, hstring> to perform conversions from key lists to hstring and vice-versa
 hstring KeyToString(VirtualKey key)
 {
     hstring generatedString;

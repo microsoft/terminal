@@ -9,16 +9,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     SettingsEditorViewModel::SettingsEditorViewModel()
     {
-        m_homegriditems = winrt::single_threaded_observable_vector<Editor::HomeGridItem>();
+        _HomeGridItems = winrt::single_threaded_observable_vector<Editor::HomeGridItem>();
     }
 
     Editor::HomeGridItem SettingsEditorViewModel::HomeGridItem()
     {
-        return m_homegriditem;
+        return _HomeGridItem;
     }
 
     Windows::Foundation::Collections::IObservableVector<Editor::HomeGridItem> SettingsEditorViewModel::HomeGridItems()
     {
-        return m_homegriditems;
+        return _HomeGridItems;
     }
 }

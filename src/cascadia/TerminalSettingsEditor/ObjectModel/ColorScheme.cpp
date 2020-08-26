@@ -12,30 +12,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     ColorScheme::ColorScheme()
     {
-        m_background = Colors::Black();
-        m_foreground = Colors::White();
-        m_black = Colors::Black();
-        m_brightblack = Colors::DimGray();
-        m_blue = Colors::Blue();
-        m_brightblue = Colors::LightBlue();
-        m_cyan = Colors::Cyan();
-        m_brightcyan = Colors::LightCyan();
-        m_green = Colors::Green();
-        m_brightgreen = Colors::LightGreen();
-        m_purple = Colors::Purple();
-        m_brightpurple = Colors::MediumPurple();
-        m_red = Colors::Red();
-        m_brightred = Colors::IndianRed();
-        m_white = Colors::WhiteSmoke();
-        m_brightwhite = Colors::White();
-        m_yellow = Colors::Yellow();
-        m_brightyellow = Colors::LightYellow();
+        _Background = Colors::Black();
+        _Foreground = Colors::White();
+        _Black = Colors::Black();
+        _BrightBlack = Colors::DimGray();
+        _Blue = Colors::Blue();
+        _BrightBlue = Colors::LightBlue();
+        _Cyan = Colors::Cyan();
+        _BrightCyan = Colors::LightCyan();
+        _Green = Colors::Green();
+        _BrightGreen = Colors::LightGreen();
+        _Purple = Colors::Purple();
+        _BrightPurple = Colors::MediumPurple();
+        _Red = Colors::Red();
+        _BrightRed = Colors::IndianRed();
+        _White = Colors::WhiteSmoke();
+        _BrightWhite = Colors::White();
+        _Yellow = Colors::Yellow();
+        _BrightYellow = Colors::LightYellow();
     }
 
     // Background Handlers
     Color ColorScheme::Background()
     {
-        return m_background;
+        return _Background;
     }
 
     void ColorScheme::Background(Brush const& brush)
@@ -45,23 +45,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Background(Color const& color)
     {
-        if (cmpColor(color, m_background))
+        if (cmpColor(color, _Background))
         {
-            m_background = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BackgroundBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BackgroundHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Background" });
+            _Background = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BackgroundBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BackgroundHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Background" });
         }
     }
 
     Brush ColorScheme::BackgroundBrush()
     {
-        return ColorScheme::colorToBrush(m_background);
+        return ColorScheme::colorToBrush(_Background);
     }
 
     winrt::hstring ColorScheme::BackgroundHexValue()
     {
-        return colorToHex(m_background);
+        return colorToHex(_Background);
     }
 
     void ColorScheme::BackgroundHexValue(winrt::hstring hex)
@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Foreground Handlers
     Color ColorScheme::Foreground()
     {
-        return m_foreground;
+        return _Foreground;
     }
 
     void ColorScheme::Foreground(Brush const& brush)
@@ -86,23 +86,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Foreground(Color const& color)
     {
-        if (cmpColor(color, m_foreground))
+        if (cmpColor(color, _Foreground))
         {
-            m_foreground = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"ForegroundBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"ForegroundHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Foreground" });
+            _Foreground = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"ForegroundBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"ForegroundHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Foreground" });
         }
     }
 
     Brush ColorScheme::ForegroundBrush()
     {
-        return ColorScheme::colorToBrush(m_foreground);
+        return ColorScheme::colorToBrush(_Foreground);
     }
 
     winrt::hstring ColorScheme::ForegroundHexValue()
     {
-        return colorToHex(m_foreground);
+        return colorToHex(_Foreground);
     }
 
     void ColorScheme::ForegroundHexValue(winrt::hstring hex)
@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Black Handlers
     Color ColorScheme::Black()
     {
-        return m_black;
+        return _Black;
     }
 
     void ColorScheme::Black(Brush const& brush)
@@ -127,23 +127,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Black(Color const& color)
     {
-        if (cmpColor(color, m_black))
+        if (cmpColor(color, _Black))
         {
-            m_black = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BlackBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BlackHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Black" });
+            _Black = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BlackBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BlackHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Black" });
         }
     }
 
     Brush ColorScheme::BlackBrush()
     {
-        return ColorScheme::colorToBrush(m_black);
+        return ColorScheme::colorToBrush(_Black);
     }
 
     winrt::hstring ColorScheme::BlackHexValue()
     {
-        return colorToHex(m_black);
+        return colorToHex(_Black);
     }
 
     void ColorScheme::BlackHexValue(winrt::hstring hex)
@@ -158,7 +158,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightBlack Handlers
     Color ColorScheme::BrightBlack()
     {
-        return m_brightblack;
+        return _BrightBlack;
     }
 
     void ColorScheme::BrightBlack(Brush const& brush)
@@ -168,23 +168,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightBlack(Color const& color)
     {
-        if (cmpColor(color, m_brightblack))
+        if (cmpColor(color, _BrightBlack))
         {
-            m_brightblack = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlackBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlackHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlack" });
+            _BrightBlack = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlackBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlackHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlack" });
         }
     }
 
     Brush ColorScheme::BrightBlackBrush()
     {
-        return ColorScheme::colorToBrush(m_brightblack);
+        return ColorScheme::colorToBrush(_BrightBlack);
     }
 
     winrt::hstring ColorScheme::BrightBlackHexValue()
     {
-        return colorToHex(m_brightblack);
+        return colorToHex(_BrightBlack);
     }
 
     void ColorScheme::BrightBlackHexValue(winrt::hstring hex)
@@ -199,7 +199,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Blue Handlers
     Color ColorScheme::Blue()
     {
-        return m_blue;
+        return _Blue;
     }
 
     void ColorScheme::Blue(Brush const& brush)
@@ -209,23 +209,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Blue(Color const& color)
     {
-        if (cmpColor(color, m_blue))
+        if (cmpColor(color, _Blue))
         {
-            m_blue = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BlueBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BlueHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Blue" });
+            _Blue = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BlueBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BlueHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Blue" });
         }
     }
 
     Brush ColorScheme::BlueBrush()
     {
-        return ColorScheme::colorToBrush(m_blue);
+        return ColorScheme::colorToBrush(_Blue);
     }
 
     winrt::hstring ColorScheme::BlueHexValue()
     {
-        return colorToHex(m_blue);
+        return colorToHex(_Blue);
     }
 
     void ColorScheme::BlueHexValue(winrt::hstring hex)
@@ -240,7 +240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightBlue Handlers
     Color ColorScheme::BrightBlue()
     {
-        return m_brightblue;
+        return _BrightBlue;
     }
 
     void ColorScheme::BrightBlue(Brush const& brush)
@@ -250,23 +250,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightBlue(Color const& color)
     {
-        if (cmpColor(color, m_brightblue))
+        if (cmpColor(color, _BrightBlue))
         {
-            m_brightblue = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlueBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlueHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlue" });
+            _BrightBlue = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlueBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlueHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightBlue" });
         }
     }
 
     Brush ColorScheme::BrightBlueBrush()
     {
-        return ColorScheme::colorToBrush(m_brightblue);
+        return ColorScheme::colorToBrush(_BrightBlue);
     }
 
     winrt::hstring ColorScheme::BrightBlueHexValue()
     {
-        return colorToHex(m_brightblue);
+        return colorToHex(_BrightBlue);
     }
 
     void ColorScheme::BrightBlueHexValue(winrt::hstring hex)
@@ -281,7 +281,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Cyan Handlers
     Color ColorScheme::Cyan()
     {
-        return m_cyan;
+        return _Cyan;
     }
 
     void ColorScheme::Cyan(Brush const& brush)
@@ -291,23 +291,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Cyan(Color const& color)
     {
-        if (cmpColor(color, m_cyan))
+        if (cmpColor(color, _Cyan))
         {
-            m_cyan = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"CyanBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"CyanHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Cyan" });
+            _Cyan = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"CyanBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"CyanHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Cyan" });
         }
     }
 
     Brush ColorScheme::CyanBrush()
     {
-        return ColorScheme::colorToBrush(m_cyan);
+        return ColorScheme::colorToBrush(_Cyan);
     }
 
     winrt::hstring ColorScheme::CyanHexValue()
     {
-        return colorToHex(m_cyan);
+        return colorToHex(_Cyan);
     }
 
     void ColorScheme::CyanHexValue(winrt::hstring hex)
@@ -322,7 +322,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightCyan Handlers
     Color ColorScheme::BrightCyan()
     {
-        return m_brightcyan;
+        return _BrightCyan;
     }
 
     void ColorScheme::BrightCyan(Brush const& brush)
@@ -332,23 +332,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightCyan(Color const& color)
     {
-        if (cmpColor(color, m_brightcyan))
+        if (cmpColor(color, _BrightCyan))
         {
-            m_brightcyan = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightCyanBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightCyanHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightCyan" });
+            _BrightCyan = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightCyanBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightCyanHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightCyan" });
         }
     }
 
     Brush ColorScheme::BrightCyanBrush()
     {
-        return ColorScheme::colorToBrush(m_brightcyan);
+        return ColorScheme::colorToBrush(_BrightCyan);
     }
 
     winrt::hstring ColorScheme::BrightCyanHexValue()
     {
-        return colorToHex(m_brightcyan);
+        return colorToHex(_BrightCyan);
     }
 
     void ColorScheme::BrightCyanHexValue(winrt::hstring hex)
@@ -363,7 +363,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Green Handlers
     Color ColorScheme::Green()
     {
-        return m_green;
+        return _Green;
     }
 
     void ColorScheme::Green(Brush const& brush)
@@ -373,23 +373,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Green(Color const& color)
     {
-        if (cmpColor(color, m_green))
+        if (cmpColor(color, _Green))
         {
-            m_green = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"GreenBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"GreenHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Green" });
+            _Green = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"GreenBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"GreenHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Green" });
         }
     }
 
     Brush ColorScheme::GreenBrush()
     {
-        return ColorScheme::colorToBrush(m_green);
+        return ColorScheme::colorToBrush(_Green);
     }
 
     winrt::hstring ColorScheme::GreenHexValue()
     {
-        return colorToHex(m_green);
+        return colorToHex(_Green);
     }
 
     void ColorScheme::GreenHexValue(winrt::hstring hex)
@@ -404,7 +404,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightGreen Handlers
     Color ColorScheme::BrightGreen()
     {
-        return m_brightgreen;
+        return _BrightGreen;
     }
 
     void ColorScheme::BrightGreen(Brush const& brush)
@@ -414,23 +414,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightGreen(Color const& color)
     {
-        if (cmpColor(color, m_brightgreen))
+        if (cmpColor(color, _BrightGreen))
         {
-            m_brightgreen = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightGreenBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightGreenHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightGreen" });
+            _BrightGreen = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightGreenBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightGreenHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightGreen" });
         }
     }
 
     Brush ColorScheme::BrightGreenBrush()
     {
-        return ColorScheme::colorToBrush(m_brightgreen);
+        return ColorScheme::colorToBrush(_BrightGreen);
     }
 
     winrt::hstring ColorScheme::BrightGreenHexValue()
     {
-        return colorToHex(m_brightgreen);
+        return colorToHex(_BrightGreen);
     }
 
     void ColorScheme::BrightGreenHexValue(winrt::hstring hex)
@@ -445,7 +445,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Purple Handlers
     Color ColorScheme::Purple()
     {
-        return m_purple;
+        return _Purple;
     }
 
     void ColorScheme::Purple(Brush const& brush)
@@ -455,23 +455,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Purple(Color const& color)
     {
-        if (cmpColor(color, m_purple))
+        if (cmpColor(color, _Purple))
         {
-            m_purple = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"PurpleBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"PurpleHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Purple" });
+            _Purple = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"PurpleBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"PurpleHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Purple" });
         }
     }
 
     Brush ColorScheme::PurpleBrush()
     {
-        return ColorScheme::colorToBrush(m_purple);
+        return ColorScheme::colorToBrush(_Purple);
     }
 
     winrt::hstring ColorScheme::PurpleHexValue()
     {
-        return colorToHex(m_purple);
+        return colorToHex(_Purple);
     }
 
     void ColorScheme::PurpleHexValue(winrt::hstring hex)
@@ -486,7 +486,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightPurple Handlers
     Color ColorScheme::BrightPurple()
     {
-        return m_brightpurple;
+        return _BrightPurple;
     }
 
     void ColorScheme::BrightPurple(Brush const& brush)
@@ -496,23 +496,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightPurple(Color const& color)
     {
-        if (cmpColor(color, m_brightpurple))
+        if (cmpColor(color, _BrightPurple))
         {
-            m_brightpurple = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightPurpleBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightPurpleHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightPurple" });
+            _BrightPurple = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightPurpleBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightPurpleHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightPurple" });
         }
     }
 
     Brush ColorScheme::BrightPurpleBrush()
     {
-        return ColorScheme::colorToBrush(m_brightpurple);
+        return ColorScheme::colorToBrush(_BrightPurple);
     }
 
     winrt::hstring ColorScheme::BrightPurpleHexValue()
     {
-        return colorToHex(m_brightpurple);
+        return colorToHex(_BrightPurple);
     }
 
     void ColorScheme::BrightPurpleHexValue(winrt::hstring hex)
@@ -527,7 +527,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Red Handlers
     Color ColorScheme::Red()
     {
-        return m_red;
+        return _Red;
     }
 
     void ColorScheme::Red(Brush const& brush)
@@ -537,23 +537,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Red(Color const& color)
     {
-        if (cmpColor(color, m_red))
+        if (cmpColor(color, _Red))
         {
-            m_red = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"RedBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"RedHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Red" });
+            _Red = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"RedBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"RedHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Red" });
         }
     }
 
     Brush ColorScheme::RedBrush()
     {
-        return ColorScheme::colorToBrush(m_red);
+        return ColorScheme::colorToBrush(_Red);
     }
 
     winrt::hstring ColorScheme::RedHexValue()
     {
-        return colorToHex(m_red);
+        return colorToHex(_Red);
     }
 
     void ColorScheme::RedHexValue(winrt::hstring hex)
@@ -568,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightRed Handlers
     Color ColorScheme::BrightRed()
     {
-        return m_brightred;
+        return _BrightRed;
     }
 
     void ColorScheme::BrightRed(Brush const& brush)
@@ -578,23 +578,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightRed(Color const& color)
     {
-        if (cmpColor(color, m_brightred))
+        if (cmpColor(color, _BrightRed))
         {
-            m_brightred = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightRedBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightRedHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightRed" });
+            _BrightRed = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightRedBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightRedHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightRed" });
         }
     }
 
     Brush ColorScheme::BrightRedBrush()
     {
-        return ColorScheme::colorToBrush(m_brightred);
+        return ColorScheme::colorToBrush(_BrightRed);
     }
 
     winrt::hstring ColorScheme::BrightRedHexValue()
     {
-        return colorToHex(m_brightred);
+        return colorToHex(_BrightRed);
     }
 
     void ColorScheme::BrightRedHexValue(winrt::hstring hex)
@@ -609,7 +609,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // White Handlers
     Color ColorScheme::White()
     {
-        return m_white;
+        return _White;
     }
 
     void ColorScheme::White(Brush const& brush)
@@ -619,23 +619,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::White(Color const& color)
     {
-        if (cmpColor(color, m_white))
+        if (cmpColor(color, _White))
         {
-            m_white = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"WhiteBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"WhiteHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"White" });
+            _White = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"WhiteBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"WhiteHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"White" });
         }
     }
 
     Brush ColorScheme::WhiteBrush()
     {
-        return ColorScheme::colorToBrush(m_white);
+        return ColorScheme::colorToBrush(_White);
     }
 
     winrt::hstring ColorScheme::WhiteHexValue()
     {
-        return colorToHex(m_white);
+        return colorToHex(_White);
     }
 
     void ColorScheme::WhiteHexValue(winrt::hstring hex)
@@ -650,7 +650,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightWhite Handlers
     Color ColorScheme::BrightWhite()
     {
-        return m_brightwhite;
+        return _BrightWhite;
     }
 
     void ColorScheme::BrightWhite(Brush const& brush)
@@ -660,23 +660,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightWhite(Color const& color)
     {
-        if (cmpColor(color, m_brightwhite))
+        if (cmpColor(color, _BrightWhite))
         {
-            m_brightwhite = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightWhiteBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightWhiteHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightWhite" });
+            _BrightWhite = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightWhiteBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightWhiteHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightWhite" });
         }
     }
 
     Brush ColorScheme::BrightWhiteBrush()
     {
-        return ColorScheme::colorToBrush(m_brightwhite);
+        return ColorScheme::colorToBrush(_BrightWhite);
     }
 
     winrt::hstring ColorScheme::BrightWhiteHexValue()
     {
-        return colorToHex(m_brightwhite);
+        return colorToHex(_BrightWhite);
     }
 
     void ColorScheme::BrightWhiteHexValue(winrt::hstring hex)
@@ -691,7 +691,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Yellow Handlers
     Color ColorScheme::Yellow()
     {
-        return m_yellow;
+        return _Yellow;
     }
 
     void ColorScheme::Yellow(Brush const& brush)
@@ -701,23 +701,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::Yellow(Color const& color)
     {
-        if (cmpColor(color, m_yellow))
+        if (cmpColor(color, _Yellow))
         {
-            m_yellow = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"YellowBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"YellowHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"Yellow" });
+            _Yellow = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"YellowBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"YellowHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"Yellow" });
         }
     }
 
     Brush ColorScheme::YellowBrush()
     {
-        return ColorScheme::colorToBrush(m_yellow);
+        return ColorScheme::colorToBrush(_Yellow);
     }
 
     winrt::hstring ColorScheme::YellowHexValue()
     {
-        return colorToHex(m_yellow);
+        return colorToHex(_Yellow);
     }
 
     void ColorScheme::YellowHexValue(winrt::hstring hex)
@@ -732,7 +732,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // BrightYellow Handlers
     Color ColorScheme::BrightYellow()
     {
-        return m_brightyellow;
+        return _BrightYellow;
     }
 
     void ColorScheme::BrightYellow(Brush const& brush)
@@ -742,23 +742,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ColorScheme::BrightYellow(Color const& color)
     {
-        if (cmpColor(color, m_brightyellow))
+        if (cmpColor(color, _BrightYellow))
         {
-            m_brightyellow = color;
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightYellowBrush" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightYellowHexValue" });
-            m_propertyChanged(*this, PropertyChangedEventArgs{ L"BrightYellow" });
+            _BrightYellow = color;
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightYellowBrush" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightYellowHexValue" });
+            _PropertyChanged(*this, PropertyChangedEventArgs{ L"BrightYellow" });
         }
     }
 
     Brush ColorScheme::BrightYellowBrush()
     {
-        return ColorScheme::colorToBrush(m_brightyellow);
+        return ColorScheme::colorToBrush(_BrightYellow);
     }
 
     winrt::hstring ColorScheme::BrightYellowHexValue()
     {
-        return colorToHex(m_brightyellow);
+        return colorToHex(_BrightYellow);
     }
 
     void ColorScheme::BrightYellowHexValue(winrt::hstring hex)
@@ -773,12 +773,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // event handlers
     event_token ColorScheme::PropertyChanged(PropertyChangedEventHandler const& handler)
     {
-        return m_propertyChanged.add(handler);
+        return _PropertyChanged.add(handler);
     }
 
     void ColorScheme::PropertyChanged(event_token const& token)
     {
-        m_propertyChanged.remove(token);
+        _PropertyChanged.remove(token);
     }
 
     // helpers

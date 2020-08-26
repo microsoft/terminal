@@ -66,7 +66,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <TextBlock Text="Interaction"
                    Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,10" />
             <TextBox Header="Default profile" Margin="0,0,0,10" />
-            <TextBox Header="Word delimeters" Margin="0,0,0,10" />
+            <TextBox Header="Word delimiters" Margin="0,0,0,10" />
             <CheckBox Content="Confirm close all tabs" />
             <CheckBox Content="Copy on select" />
             <CheckBox Content="Snap to grid on resize" Margin="0,0,0,10" />

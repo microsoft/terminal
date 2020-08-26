@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IObservableVector<Editor::HomeGridItem> HomeGridItems();
 
     private:
-        Editor::HomeGridItem m_homegriditem{ nullptr };
-        Windows::Foundation::Collections::IObservableVector<Editor::HomeGridItem> m_homegriditems;
+        Editor::HomeGridItem _HomeGridItem{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Editor::HomeGridItem> _HomeGridItems;
     };
 }

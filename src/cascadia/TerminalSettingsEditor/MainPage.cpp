@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Tab width mode"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Theme"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Window resize behavior"), L"Rendering_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Word delimeters"), L"Interaction_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Word delimiters"), L"Interaction_Nav"));
     }
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
@@ -183,8 +183,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring renderingSubpage = L"Rendering_Nav";
 
         const hstring profilesPage = L"Profiles_Nav";
-        const hstring globalprofileSubpage = L"GlobalProfile_Nav";
-        const hstring addnewSubpage = L"AddNew_Nav";
+        const hstring globalProfileSubpage = L"GlobalProfile_Nav";
+        const hstring addNewSubpage = L"AddNew_Nav";
 
         const hstring appearancePage = L"Appearance_Nav";
         const hstring colorSchemesPage = L"ColorSchemes_Nav";
@@ -208,11 +208,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame.Navigate(xaml_typename<Editor::Rendering>());
         }
-        else if (clickedItemTag == globalprofileSubpage)
+        else if (clickedItemTag == globalProfileSubpage)
         {
             contentFrame.Navigate(xaml_typename<Editor::Profiles>());
         }
-        else if (clickedItemTag == addnewSubpage)
+        else if (clickedItemTag == addNewSubpage)
         {
             contentFrame.Navigate(xaml_typename<Editor::AddProfile>());
         }

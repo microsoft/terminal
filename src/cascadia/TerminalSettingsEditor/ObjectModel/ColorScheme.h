@@ -162,25 +162,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Windows::UI::Xaml::Media::Brush colorToBrush(Windows::UI::Color);
         static Windows::UI::Color brushToColor(Windows::UI::Xaml::Media::Brush);
 
-        Windows::UI::Color m_background;
-        Windows::UI::Color m_foreground;
-        Windows::UI::Color m_black;
-        Windows::UI::Color m_brightblack;
-        Windows::UI::Color m_blue;
-        Windows::UI::Color m_brightblue;
-        Windows::UI::Color m_cyan;
-        Windows::UI::Color m_brightcyan;
-        Windows::UI::Color m_green;
-        Windows::UI::Color m_brightgreen;
-        Windows::UI::Color m_purple;
-        Windows::UI::Color m_brightpurple;
-        Windows::UI::Color m_red;
-        Windows::UI::Color m_brightred;
-        Windows::UI::Color m_white;
-        Windows::UI::Color m_brightwhite;
-        Windows::UI::Color m_yellow;
-        Windows::UI::Color m_brightyellow;
+        Windows::UI::Color _Background;
+        Windows::UI::Color _Foreground;
+        Windows::UI::Color _Black;
+        Windows::UI::Color _BrightBlack;
+        Windows::UI::Color _Blue;
+        Windows::UI::Color _BrightBlue;
+        Windows::UI::Color _Cyan;
+        Windows::UI::Color _BrightCyan;
+        Windows::UI::Color _Green;
+        Windows::UI::Color _BrightGreen;
+        Windows::UI::Color _Purple;
+        Windows::UI::Color _BrightPurple;
+        Windows::UI::Color _Red;
+        Windows::UI::Color _BrightRed;
+        Windows::UI::Color _White;
+        Windows::UI::Color _BrightWhite;
+        Windows::UI::Color _Yellow;
+        Windows::UI::Color _BrightYellow;
 
-        winrt::event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> m_propertyChanged;
+        winrt::event<Windows::UI::Xaml::Data::PropertyChangedEventHandler> _PropertyChanged;
     };
 }

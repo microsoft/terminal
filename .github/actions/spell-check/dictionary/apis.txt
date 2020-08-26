@@ -44,11 +44,14 @@ RSHIFT
 rx
 serializer
 SIZENS
+snprintf
 spsc
 STDCPP
 syscall
 tmp
+tolower
 tx
 userenv
+wcsstr
 XDocument
 XElement
