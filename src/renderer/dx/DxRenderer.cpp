@@ -629,6 +629,17 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
 
+        const D2D1_STROKE_STYLE_PROPERTIES dashStrokeStyleProperties{
+            D2D1_CAP_STYLE_SQUARE, // startCap
+            D2D1_CAP_STYLE_SQUARE, // endCap
+            D2D1_CAP_STYLE_SQUARE, // dashCap
+            D2D1_LINE_JOIN_MITER, // lineJoin
+            0.f, // miterLimit
+            D2D1_DASH_STYLE_DASH, // dashStyle
+            0.f, // dashOffset
+        };
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
         {
@@ -1493,6 +1504,11 @@ try
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
+    const auto DrawDashLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
+    {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
+    };
+
     // NOTE: Line coordinates are centered within the line, so they need to be
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
@@ -1544,14 +1560,22 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline))
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::DashedUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + _lineMetrics.underlineOffset;
 
-        DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        if (lines & GridLines::Underline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::DashedUnderline)
+        {
+            DrawDashLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
 
         if (lines & GridLines::DoubleUnderline)
         {
