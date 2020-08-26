@@ -75,7 +75,7 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Termina
     return _colorSchemes.GetView();
 }
 
-void GlobalAppSettings::DefaultProfile(const winrt::guid defaultProfile) noexcept
+void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
 {
     _unparsedDefaultProfile.clear();
     _defaultProfile = defaultProfile;
@@ -104,7 +104,7 @@ winrt::TerminalApp::AppKeyBindings GlobalAppSettings::GetKeybindings() const noe
 // - settings: a TerminalSettings object to add global property values to.
 // Return Value:
 // - <none>
-void GlobalAppSettings::ApplyToSettings(TerminalApp::TerminalSettings settings) const noexcept
+void GlobalAppSettings::ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept
 {
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_InitialRows);
@@ -211,7 +211,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - scheme: the color scheme to add
 // Return Value:
 // - <none>
-void GlobalAppSettings::AddColorScheme(winrt::TerminalApp::ColorScheme scheme)
+void GlobalAppSettings::AddColorScheme(const winrt::TerminalApp::ColorScheme& scheme)
 {
     _colorSchemes.Insert(scheme.Name(), scheme);
 }

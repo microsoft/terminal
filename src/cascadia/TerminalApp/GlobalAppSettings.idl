@@ -9,6 +9,10 @@ import "TerminalSettings.idl";
 
 namespace TerminalApp
 {
+    // MIDL 3 allows for structs to hold nullable types
+    // Though IReference is a WinRT object, MIDL 3
+    // handles all of the ownership logic for us.
+    // Docs: https://docs.microsoft.com/en-us/uwp/midl-3/intro#types
     struct LaunchPosition
     {
         Windows.Foundation.IReference<Int64> X;

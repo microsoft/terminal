@@ -37,14 +37,14 @@ namespace winrt::TerminalApp::implementation
         ~GlobalAppSettings();
 
         Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme> GetColorSchemes() noexcept;
-        void AddColorScheme(TerminalApp::ColorScheme scheme);
+        void AddColorScheme(const TerminalApp::ColorScheme& scheme);
 
         TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
-        void ApplyToSettings(TerminalApp::TerminalSettings settings) const noexcept;
+        void ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept;
 
         std::vector<::TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
 
         // These are implemented manually to handle the string/GUID exchange
         // by higher layers in the app.
-        void DefaultProfile(const guid defaultProfile) noexcept;
+        void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
         hstring UnparsedDefaultProfile() const;
 

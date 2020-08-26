@@ -60,12 +60,12 @@ namespace winrt::TerminalApp::implementation
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         bool HasGuid() const noexcept;
-        winrt::guid Guid() const;
-        void Guid(winrt::guid guid) noexcept;
+        winrt::guid Guid() const noexcept;
+        void Guid(const winrt::guid& guid) noexcept;
 
         bool HasConnectionType() const noexcept;
         winrt::guid ConnectionType() const noexcept;
-        void ConnectionType(winrt::guid conType) noexcept;
+        void ConnectionType(const winrt::guid& conType) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
         const Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
