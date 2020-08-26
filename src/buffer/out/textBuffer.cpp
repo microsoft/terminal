@@ -2310,7 +2310,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view params)
 void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
 {
     _hyperlinkMap.erase(id);
-    for (auto customIdPair : _hyperlinkCustomIdMap)
+    for (const auto& customIdPair : _hyperlinkCustomIdMap)
     {
         if (customIdPair.second == id)
         {

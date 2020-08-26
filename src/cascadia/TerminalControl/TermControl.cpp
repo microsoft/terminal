@@ -1122,14 +1122,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 // Update the selection appropriately
-                if (ctrlEnabled && multiClickMapper == 1)
+                if (ctrlEnabled && multiClickMapper == 1 &&
+                    !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
                 {
-                    // Control+Click: if the text selected is a hyperlink, open the link
-                    const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
-                    if (!uri.empty())
-                    {
-                        _HyperlinkHandler(uri);
-                    }
+                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
                 }
                 else if (shiftEnabled && _terminal->IsSelectionActive())
                 {
