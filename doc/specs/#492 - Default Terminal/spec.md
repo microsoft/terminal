@@ -1,7 +1,7 @@
 ---
 author: Michael Niksa @miniksa
 created on: 2020-08-14
-last updated: 2020-08-24
+last updated: 2020-08-26
 issue id: #492
 ---
 
@@ -46,17 +46,142 @@ The goal is to offer the ultimate in choice here where any of the components can
 
 The inbox console will be updated to support delegation of the incoming console client application connection to another console API server if one is registered and available.
 
+We leave the inbox console in-place and always available on the operating system for these reasons:
+
+1. A last chance fall-back should any of the delegation operations fail
+1. An ongoing host for applications that aren't going to need a window at all
+1. Continued support of our legacy `conhostv1.dll` environment, if chosen
+
+The general operation is as follows:
+
+- A command-line client application is started (from the start menu, run box, or any other `CreateProcess` or `ShellExecute` route) without an existing console server attached
+- The inbox console is launched from `C:\windows\system32\conhost.exe` as always by the initialization routines inside `kernelbase.dll`.
+- The inbox console accepts the incoming initial connection and looks for the `ShowWindow` information on the connection packet, as received from the kernel's process creation routines based on the parameters given to the `CreateProcess` call. (See [CREATE_NO_WINDOW](https://docs.microsoft.com/en-us/windows/win32/procthread/process-creation-flags) flag for details.)
+- If the session is about to create a window, check for registration of a delegated/updated console and hand-off to it if it exists.
+- Otherwise, start normally.
+
+This workflow affords us several benefits:
+
+- The only inbox component we have to change is `conhost.exe`, the one we already regularly update from open source on a regular basis. There is no change to the `kernelbase.dll` console initialization routines, `conclnt.lib` communication protocol, nor the `condrv.sys` driver.
+- We should be able to make this change quickly, relatively easily, and the code delta should be relatively small
+    - This makes it easy to squeeze in early in the development of the solution and get it into the Windows OS product as soon as possible for self-hosting, validation, and potentially shipping in the OS before the remainder of the solution has shaken out
+    - This also makes it potentially possible to backport this portion of the code change to popular in-market versions of Windows 10. For instance, WSL2 has just backported to 1903 and 1909. The less churn and risk, the easier it is to sell backporting.
+
+**To be decided:**
+- If no updated console exists, potentially check for registration of a terminal UX that is willing to use the inbox ConPTY bits, start it, and transition to being a PTY instead.
+
+The registration would operate as follows:
+- A registry key in `HKCU\Console` (format `REG_SZ`, name `DelegationConsole`) would specify the path to the replacement console that would be used to service the remainder of the connection process.
+    - Alternatively or additionally, this same `REG_SZ` could list a COM server ID that could be looked up in the classes root and invoked
+        - Packaged applications and classic applications can easily register a COM server
+        - **To be confirmed:** WinRT libraries should be able to be easily registered as the COM server as well (given WinRT is COM underneath)
+
+The delegation process would operate as follows:
+- A method contract is established between the existing inbox console and any updated console (an interface). 
+    - `HRESULT ConsoleEstablishHandoff(HANDLE server, HANDLE driverInputEvent, const PortableArguments* const args, const PortableConnectMessage* const msg)`
+        - `HANDLE server`: This is the server side handle to the console driver, used with `DeviceIoControl` to receive/send messages with the client command-line application
+        - `HANDLE driverInputEvent`: The input event is created and assigned to the driver immediately on first connection, before any messages are read from the driver, to ensure that it can track a blocking state should first message be an input request that we do not yet have data to fill. As such, the inbox console will have created this and assigned it to the driver before pulling off the connection packet and determining that it wants to delegate. Therefore, we will transfer ownership of this event to the updated console.
+        - `const PortableArguments* const args`: This contains the startup argument information that was passed in when the process was started including the original command line and the in/out handles.
+            - The `ConsoleArguments` structure could technically change between versions, so we will make a version agnostic portable structure that just carries the communication from the old one to the new one.
+        - `const PortableConnectMessage* const msg`:
+            - The `CONSOLE_API_MSG` structure contains both the actual packet data from the driver as well as some overhead/administration data related to the packet state, ordering, completion, errors, and buffers. It's a broad scope structure for every type of message we process and it can change over time as we improve the way the `conserver.lib` handles packets.
+            - This represents a version agnostic variant for ONLY the connect message that can pass along the initial connect information structure, the packet sequencing information, and other relevant payload only to that one message type. It will purposefully discard references to things like a specific set of API servicing routines because the point of handing off is to get updated routines, if necessary.
+            
+        - *Return* `HRESULT`: This is one of the older style methods in the initialization. We moved them from mostly `NTSTATUS` to mostly `HRESULT` a while ago to take advantage of `wil`. This one will continue to follow the pattern and not move to exceptions. A return of `S_OK` will symbolize that the handoff worked and the inbox console can clean itself up and stop handling the session.
+- When the connection packet is parsed for visibility information (see `srvinit.cpp`), we will attempt to resolve the registered handoff and call it.
+    - In the initial revision here, I have this as a `LoadLibrary`/`GetProcAddress` to the above exported contract method from the updated console. This maintains the server session in the same process space and avoids:
+        1. The issue of passing the server, event, and other handles into another process space. We're not entirely sure if the console driver will happily accept these things moving to a different process. It probably should, but unconfirmed.
+        1. Some command-line client applications rely on spelunking the process tree to figure out who is their servicing application. Maintaining the delegated/updated console inside the same process space maintains some level of continuity for these sorts of applications.
+    - **Alternative:** We may make this just be a COM server/client contract. An in-proc COM server should operate in much the same fashion here (loading the DLL into the process and running particular method) while being significantly more formal and customizable (version revisions, moving to out-of-proc, not really needing to know the binary path because the catalog knows).
+    - **Not considering:** WinRT. `conhost.exe` has no WinRT. Adding WinRT to it would significantly increase the complexity of compilation in the inbox and out of box code base. It would also significantly increase the compilation time, binary size, library link list, etc... unless we use just the ABI to access it. But I don't see an advantage to that over just using classic COM at that point. This is only one handoff method and a rather simplistic one at that. Every benefit WinRT provides is outweighed by the extra effort that would be required over just a classic COM server in this case.
+- After delegation is complete, the inbox console will have to clean up any threads, handles, and state related to the session. We do a fairly good job with this normally, but some portions of the `conhost.exe` codebase are reliant on the process exiting for final cleanup. There may be a bit of extra effort to do some explicit cleanup here.
+
 #### Updated console
 
 The updated replacement console will have the same console API server capabilities as the inbox console, but will be a later, updated, or customized-to-the-scenario version of the API server generally revolving around improving ConPTY support for a Terminal application.
+
+On receiving the handoff from the method signature listed above, the updated console will:
+- Establish its own set of IO threading, device communication infrastructure, and API messaging routines while storing the handles given
+- Re-parse the command line arguments, if necessary, and store them for guiding the remainder of launch
+- Dispatch the attach message as if it were received normally
+- Continue execution from there
+
+There will then either be a registration for a Terminal UX to take over the session by using ConPTY, or the updated console will choose to launch its potentially updated version of the `conhost` UX.
+
+For registration, we repeat the dance above with another key:
+- A registry key in `HKCU\Console` (format `REG_SZ`, name `DelegationTerminal`) would specify the path to the replacement console that would be used to service the remainder of the connection process.
+    - Alternatively or additionally, this same `REG_SZ` could list a COM server ID that could be looked up in the classes root and invoked
+        - Packaged applications and classic applications can easily register a COM server
+        - **To be confirmed:** WinRT libraries should be able to be easily registered as the COM server as well (given WinRT is COM underneath)
+
+The delegation repeats the same dance as above as well:
+- A contract (interface) is established between the updated console and the terminal
+    - **METHOD SIGNATURE NOT DETERMINED**
+        - `HANDLE hSignal`: The signal handle for the ConPTY for out-of-band communication between PTY server and Terminal application
+        - `HANDLE hOut`: The handle to write user input from the Terminal to the ConPTY
+        - `HANDLE hIn`: The handle to read client application output from the ConPTY and display on the Terminal
+        - **To be confirmed:** `COORD size`: The initial window size from the starting application, as it can be a preference in the connection structure. (A resize message may get sent back downward almost immediately from the Terminal as its dimensions could be different.)
+    - **Alternative:** This should likely just be a COM server/client contract as well. This would be consistent with the above and wouldn't require argument parsing or wink/nudge understanding of standard handle passing. It also conveys the same COM flexibility as described in the inbox console section.
+- The contract is called and on success, responsibility of the UX is given over to the Terminal. The console sits in PTY mode. 
+    - On failure, the console launches interactive.
 
 #### Terminal UX
 
 The terminal will be its own complete presentation and input solution on top of a ConPTY connection, separating the concerns between API servicing and the user experience.
 
+Today the Terminal knows how to start and then launches a ConPTY under it. The Terminal will need to be updated to accept a pre-existing ConPTY connection on launch (or when the multi-process model arrives, as an inbound connection), and connect that to a new tab/pane instead of using the `winconpty.lib` libraries to make its own.
+
+For now, I'm considering only the fresh-start scenario.
+- The Terminal will have to detect the inbound connection through its argument parsing (or through a new entrypoint in the COM alternative) and store the PTY in/out/signal handles for that connection in the startup arguments information
+- When the control is instantiated on a new tab, that initial creation where normally the "default profile" is launched will instead have to place the PTY in/out/signal handles already received into the `ConPtyConnection` object and use that as if it was already created.
+- The Terminal can then let things run normally and the connection will come through and be hosted inside the session.
+
+There are several issues/concerns:
+- Which profile/settings get loaded? We don't really know anything about the client that is coming in already-established. That makes it difficult to know what user preferences to apply to the inbound tab. We could:
+    - Use only the defaults for the incoming connection. Do not apply any profile-specific settings.
+    - Use the profile information from the default profile to some degree. This could cause some weird scenarios/mismatches if that profile has a particular icon or a color scheme that makes it recognizable to the user.
+    - Create some sort of "inbound profile" profile that is used for incoming connections
+    - Add a heuristic that attempts to match the name/path of the connecting client binary to a profile that exists and use those settings, falling back if one is not found.
+    - **Proposal:** Do the first one immediately for bootstrapping, then investigate the others as a revision going forward.
+- The handles that are coming in are "raw" and "unpacked", not in the nice opaque `HPCON` structure that is usually provided to the `ConPtyConnection` object by the `winconpty.lib`.
+    - Add methods to `winconpty.lib` that allow for the packing of incoming raw handles into the `HPCON` structure so the rest of the lifetime can be treated the same
+    - Put the entrypoint for the COM server (or delegate the entrypoint for an argument) directly into this library so it can pack them up right away and hand of a ready-made `HPCON`.
+
 ## UI/UX Design
 
-[comment]: # What will this fix/feature look like? How will it affect the end user?
+The user experience for this feature overall should be:
+
+1. The user launches a command-line client application through the Start Menu, Win+X menu, the Windows Explorer, the Run Dialog box (WinKey+R), or through another existing Windows application.
+1. Using the established settings, the console system transparently starts, delegates itself to the updated console, switches itself into ConPTY mode, and a copy of Windows Terminal launches with the first tab open to host the command-line client application.
+    - **NOTE:** I'm not precluding 3rd party registrations of either the delegation updated console nor the delegation terminal. It is our intention to allow either or both of these pieces to be replaced to the user's desires. The example is for brevity of our golden path and motivation for this scenario.
+1. The user is able to interact with the command-line client application as they would with the original console host.
+    - The user receives the additional benefit that short-running executions of a command-line application may not "blink in and disappear" as they do today when a user runs something like `ipconfig` from the runbox. The Terminal's default states tend to leave the tab open and say that the client has exited. This would allow a Run Dialog `ipconfig` user an improved experience over the default console host state of disappearing quickly.
+1. If any portion of the delegation fails, we will progressively degrade back to a `conhost` style Win32+GDI UX and nothing will be different from before.
+
+The settings experience includes:
+- Configuration of the delegation operations:
+    - Locations:
+        - With the registry
+            - This is what's going to be available first and will remain available. We will progress to some or all of the below after.
+            - We will need to potentially add specifications to this to both the default profile (for new installations of Windows) or to upgrade/migration profiles (for users coming from previous editions of Windows) to enable the delegation process, especially if we put a copy of Windows Terminal directly into the box.
+        - Inside Windows Terminal
+            - Inside the new Settings UI, we will likely need a page that configures the delegation keys in `HKCU\Console` or a link out to the Windows Settings panel, should we manage to get the settings configurable there.
+        - Inside the console property sheet
+            - Same as for Terminal but with `comctl` controlsover XAML +/- a link to the Windows Settings panel
+        - Inside the Settings panel for Windows (probably on the developer settings page)
+            - The ultimate location for this is likely a panel directly inside Windows. This is the hardest one to accomplish because of the timelines of the Windows product. We may not get this in an initial revision, but it should likely be our ultimate goal.
+    - Operation:
+        - Specify paths/server IDs - This is the initial revision
+        - Offer a list of registered servers or discovered manifests from the app catalog - This is the ideal scenario where we search the installed app catalog +/- the COM catalog and offer a list of apps that conform to the contract in a drop-down.
+    
+- Configuration of the legacy console state:
+    - Since we could end up in an experience where the default launch experience gets you directly into Windows Terminal, we believe that the Terminal will likely need an additional setting or settings in the new Settings UI that will allow the toggling of some of the `HKCU\Console` values to do things like set/remove the legacy console state.
+
+Concerns:
+- State separation policy for Windows. I believe `HKCU\Console` is already specified as a part of the "user state" that should be mutable and carried forward on OS Swap, especially as we have been improving the OS swap experience.
+- Ability for MSIs/elevated scripts to stomp the Delegation keys
+    - This was a long time problem for default app registrations and was limited in our OS. Are we about to run down the same path?
+    - What is the alternative here? To use a protocol handler? To store this configuration state data with other protected state in a registry area that is mutable, but only ACL'd to the `SYSTEM` user like some other things in the Settings control panel?
 
 ## Capabilities
 
