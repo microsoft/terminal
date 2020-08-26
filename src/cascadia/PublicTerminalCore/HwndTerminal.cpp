@@ -79,6 +79,8 @@ try
                 case WM_RBUTTONUP:
                     ReleaseCapture();
                     break;
+                default:
+                    break;
                 }
 
                 // Suppress all mouse events that made it into the terminal.
@@ -132,6 +134,8 @@ try
             terminal->_hwnd.release();
             terminal->Teardown();
             return 0;
+        default:
+            break;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -238,7 +242,7 @@ HRESULT HwndTerminal::Initialize()
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
     _terminal->SetDefaultBackground(RGB(12, 12, 12));
     _terminal->SetDefaultForeground(RGB(204, 204, 204));
-    _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -731,6 +735,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 
         publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
         publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+        publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)

@@ -16,7 +16,7 @@ using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
 
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
-static constexpr std::string_view BindingsKey{ "bindings" };
+static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
@@ -36,6 +36,7 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
+static constexpr std::string_view UseTabSwitcherKey{ "useTabSwitcher" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -60,6 +61,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
+    _commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
 }
 
 GlobalAppSettings::~GlobalAppSettings()
@@ -179,6 +181,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
+    JsonUtils::GetValueForKey(json, UseTabSwitcherKey, _UseTabSwitcher);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
@@ -201,7 +205,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
         }
     };
     parseBindings(LegacyKeybindingsKey);
-    parseBindings(BindingsKey);
+    parseBindings(ActionsKey);
 }
 
 // Method Description:
@@ -212,7 +216,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - <none>
 void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
 {
-    std::wstring name{ scheme.GetName() };
+    std::wstring name{ scheme.Name() };
     _colorSchemes[name] = std::move(scheme);
 }
 
@@ -230,7 +234,12 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
     return _keybindingsWarnings;
 }
 
-const std::unordered_map<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+{
+    return _commands;
+}
+
+winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
 {
     return _commands;
 }

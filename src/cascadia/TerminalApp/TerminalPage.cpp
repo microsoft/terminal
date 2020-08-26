@@ -51,6 +51,56 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    // Function Description:
+    // - Recursively check our commands to see if there's a keybinding for
+    //   exactly their action. If there is, label that command with the text
+    //   corresponding to that key chord.
+    // - Will recurse into nested commands as well.
+    // Arguments:
+    // - settings: The settings who's keybindings we should use to look up the key chords from
+    // - commands: The list of commands to label.
+    static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+                                                        IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    {
+        for (const auto& nameAndCmd : commands)
+        {
+            const auto& command = nameAndCmd.Value();
+            // If there's a keybinding that's bound to exactly this command,
+            // then get the string for that keychord and display it as a
+            // part of the command in the UI. Each Command's KeyChordText is
+            // unset by default, so we don't need to worry about clearing it
+            // if there isn't a key associated with it.
+            auto keyChord{ settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+
+            if (keyChord)
+            {
+                command.KeyChordText(KeyChordSerialization::ToString(keyChord));
+            }
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
+            }
+        }
+    }
+
+    static void _recursiveUpdateCommandIcons(IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    {
+        for (const auto& nameAndCmd : commands)
+        {
+            const auto& command = nameAndCmd.Value();
+
+            // !!! LOAD-BEARING !!! If this is never called, then Commands will
+            // have a nullptr icon. If they do, a really weird crash can occur.
+            // MAKE SURE this is called once after a settings load.
+            command.RefreshIcon();
+
+            if (command.HasNestedCommands())
+            {
+                _recursiveUpdateCommandIcons(command.NestedCommands());
+            }
+        }
+    }
+
     winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
                                                      bool needRefreshUI)
     {
@@ -64,36 +114,8 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
         {
-            // Update the command palette when settings reload
-            auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-            for (auto& nameAndCommand : _settings->GlobalSettings().GetCommands())
-            {
-                auto command = nameAndCommand.second;
-
-                // If there's a keybinding that's bound to exactly this command,
-                // then get the string for that keychord and display it as a
-                // part of the command in the UI. Each Command's KeyChordText is
-                // unset by default, so we don't need to worry about clearing it
-                // if there isn't a key associated with it.
-                auto keyChord{ _settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
-                if (keyChord)
-                {
-                    command.KeyChordText(KeyChordSerialization::ToString(keyChord));
-                }
-
-                // Set the default IconSource to a BitmapIconSource with a null source
-                // (instead of just nullptr) because there's a really weird crash when swapping
-                // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-                // Swapping between nullptr IconSources and non-null IconSources causes a crash
-                // to occur, but swapping between IconSources with a null source and non-null IconSources
-                // work perfectly fine :shrug:.
-                winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-                icon.UriSource(nullptr);
-                command.IconSource(icon);
-
-                commandsCollection.Append(command);
-            }
-            CommandPalette().SetCommands(commandsCollection);
+            _UpdateCommandsForPalette();
+            CommandPalette().SetKeyBindings(_settings->GetKeybindings());
         }
     }
 
@@ -437,25 +459,22 @@ namespace winrt::TerminalApp::implementation
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
-            // add the keyboard shortcuts for the first 9 profiles
-            if (profileIndex < 9)
-            {
-                // Look for a keychord that is bound to the equivalent
-                // NewTab(ProfileIndex=N) action
-                auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
-                actionAndArgs->Action(ShortcutAction::NewTab);
-                auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
-                newTerminalArgs->ProfileIndex(profileIndex);
-                newTabArgs->TerminalArgs(*newTerminalArgs);
-                actionAndArgs->Args(*newTabArgs);
-                auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
+            // Add the keyboard shortcuts based on the number of profiles defined
+            // Look for a keychord that is bound to the equivalent
+            // NewTab(ProfileIndex=N) action
+            auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+            actionAndArgs->Action(ShortcutAction::NewTab);
+            auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+            auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+            newTerminalArgs->ProfileIndex(profileIndex);
+            newTabArgs->TerminalArgs(*newTerminalArgs);
+            actionAndArgs->Args(*newTabArgs);
+            auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
 
-                // make sure we find one to display
-                if (profileKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
-                }
+            // make sure we find one to display
+            if (profileKeyChord)
+            {
+                _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
             }
 
             auto profileName = profile.GetName();
@@ -609,10 +628,10 @@ namespace winrt::TerminalApp::implementation
                                         newTerminalArgs.Profile().empty());
 
         // Lookup the name of the color scheme used by this profile.
-        const auto* scheme = _settings->GetColorSchemeForProfile(profileGuid);
+        const auto scheme = _settings->GetColorSchemeForProfile(profileGuid);
         // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
         // that as the empty string.
-        const auto schemeName = scheme ? scheme->GetName() : L"\0";
+        const auto schemeName = scheme ? scheme.Name() : L"\0";
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -916,7 +935,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
-        _actionDispatch->ToggleTabSwitcher({ this, &TerminalPage::_HandleToggleTabSwitcher });
+        _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
     }
 
     // Method Description:
@@ -1177,7 +1196,21 @@ namespace winrt::TerminalApp::implementation
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
             const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            _SelectTab(newTabIndex);
+
+            if (_settings->GlobalSettings().UseTabSwitcher())
+            {
+                if (CommandPalette().Visibility() == Visibility::Visible)
+                {
+                    CommandPalette().SelectNextItem(bMoveRight);
+                }
+
+                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
+            else
+            {
+                _SelectTab(newTabIndex);
+            }
         }
     }
 
@@ -1271,9 +1304,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the index in our list of tabs of the currently focused tab. If
-    //      no tab is currently selected, returns -1.
+    //      no tab is currently selected, returns nullopt.
     // Return Value:
-    // - the index of the currently focused tab if there is one, else -1
+    // - the index of the currently focused tab if there is one, else nullopt
     std::optional<uint32_t> TerminalPage::_GetFocusedTabIndex() const noexcept
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex()
@@ -1651,10 +1684,17 @@ namespace winrt::TerminalApp::implementation
         DataPackage dataPack = DataPackage();
         dataPack.RequestedOperation(DataPackageOperation::Copy);
 
+        // The EventArgs.Formats() is an override for the global setting "copyFormatting"
+        //   iff it is set
+        bool useGlobal = copiedData.Formats() == nullptr;
+        auto copyFormats = useGlobal ?
+                               _settings->GlobalSettings().CopyFormatting() :
+                               copiedData.Formats().Value();
+
         // copy text to dataPack
         dataPack.SetText(copiedData.Text());
 
-        if (_settings->GlobalSettings().CopyFormatting())
+        if (WI_IsFlagSet(copyFormats, CopyFormat::HTML))
         {
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
@@ -1662,7 +1702,10 @@ namespace winrt::TerminalApp::implementation
             {
                 dataPack.SetHtmlFormat(htmlData);
             }
+        }
 
+        if (WI_IsFlagSet(copyFormats, CopyFormat::RTF))
+        {
             // copy rtf data to dataPack
             const auto rtfData = copiedData.Rtf();
             if (!rtfData.empty())
@@ -1755,12 +1798,13 @@ namespace winrt::TerminalApp::implementation
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
     // - singleLine: if enabled, copy contents as a single line of text
+    // - formats: dictate which formats need to be copied
     // Return Value:
     // - true iff we we able to copy text (if a selection was active)
-    bool TerminalPage::_CopyText(const bool singleLine)
+    bool TerminalPage::_CopyText(const bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         const auto control = _GetActiveControl();
-        return control.CopySelectionToClipboard(singleLine);
+        return control.CopySelectionToClipboard(singleLine, formats);
     }
 
     // Method Description:
@@ -1807,10 +1851,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Responds to changes in the TabView's item list by changing the tabview's
-    //      visibility.  This method is also invoked when tabs are dragged / dropped as part of tab reordering
-    //      and this method hands that case as well in concert with TabDragStarting and TabDragCompleted handlers
-    //      that are set up in TerminalPage::Create()
+    // - Responds to changes in the TabView's item list by changing the
+    //   tabview's visibility.
+    // - This method is also invoked when tabs are dragged / dropped as part of
+    //   tab reordering and this method hands that case as well in concert with
+    //   TabDragStarting and TabDragCompleted handlers that are set up in
+    //   TerminalPage::Create()
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
@@ -1827,6 +1873,10 @@ namespace winrt::TerminalApp::implementation
             {
                 _rearrangeTo = eventArgs.Index();
             }
+        }
+        else
+        {
+            _UpdateCommandsForPalette();
         }
 
         _UpdateTabView();
@@ -2002,6 +2052,77 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+    }
+
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareSchemeNames(const winrt::TerminalApp::ColorScheme& lhs, const winrt::TerminalApp::ColorScheme& rhs)
+    {
+        std::wstring leftName{ lhs.Name() };
+        std::wstring rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
+    // Method Description:
+    // - Takes a mapping of names->commands and expands them
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
+                                                                                    gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                                    const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes)
+    {
+        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+
+        std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
+        sortedSchemes.reserve(schemes.size());
+
+        for (const auto& nameAndScheme : schemes)
+        {
+            sortedSchemes.push_back(nameAndScheme.second);
+        }
+        std::sort(sortedSchemes.begin(),
+                  sortedSchemes.end(),
+                  _compareSchemeNames);
+
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        for (const auto& nameAndCommand : commandsToExpand)
+        {
+            copyOfCommands.Insert(nameAndCommand.Key(), nameAndCommand.Value());
+        }
+
+        Command::ExpandCommands(copyOfCommands,
+                                profiles,
+                                sortedSchemes,
+                                warnings);
+
+        return copyOfCommands;
+    }
+    // Method Description:
+    // - Repopulates the list of commands in the command palette with the
+    //   current commands in the settings. Also updates the keybinding labels to
+    //   reflect any matching keybindings.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateCommandsForPalette()
+    {
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
+                                                                                           _settings->GetProfiles(),
+                                                                                           _settings->GlobalSettings().GetColorSchemes());
+
+        _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
+        _recursiveUpdateCommandIcons(copyOfCommands.GetView());
+
+        // Update the command palette when settings reload
+        auto commandsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        for (const auto& nameAndCommand : copyOfCommands)
+        {
+            commandsCollection.Append(nameAndCommand.Value());
+        }
+
+        CommandPalette().SetCommands(commandsCollection);
     }
 
     // Method Description:

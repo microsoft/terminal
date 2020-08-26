@@ -20,11 +20,12 @@
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
-#include "ToggleTabSwitcherArgs.g.h"
 
 #include "Utils.h"
 
 #include <LibraryResources.h>
+
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -67,11 +68,47 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CopyTextArgs::GenerateName() const
     {
+        std::wstringstream ss;
+
         if (_SingleLine)
         {
-            return RS_(L"CopyTextAsSingleLineCommandKey");
+            ss << RS_(L"CopyTextAsSingleLineCommandKey").c_str();
         }
-        return RS_(L"CopyTextCommandKey");
+        else
+        {
+            ss << RS_(L"CopyTextCommandKey").c_str();
+        }
+
+        if (_CopyFormatting != nullptr)
+        {
+            ss << L", copyFormatting: ";
+            if (_CopyFormatting.Value() == CopyFormat::All)
+            {
+                ss << L"all, ";
+            }
+            else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
+            {
+                ss << L"none, ";
+            }
+            else
+            {
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
+                {
+                    ss << L"html, ";
+                }
+
+                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
+                {
+                    ss << L"rtf, ";
+                }
+            }
+
+            // Chop off the last ","
+            auto result = ss.str();
+            return winrt::hstring{ result.substr(0, result.size() - 2) };
+        }
+
+        return winrt::hstring{ ss.str() };
     }
 
     winrt::hstring NewTabArgs::GenerateName() const
@@ -302,37 +339,27 @@ namespace winrt::TerminalApp::implementation
 
     winrt::hstring CloseOtherTabsArgs::GenerateName() const
     {
-        // "Close tabs other than index {0}"
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
-                        _Index)
-        };
+        if (_Index)
+        {
+            // "Close tabs other than index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
+                            _Index.Value())
+            };
+        }
+        return RS_(L"CloseOtherTabsDefaultCommandKey");
     }
 
     winrt::hstring CloseTabsAfterArgs::GenerateName() const
     {
-        // "Close tabs after index {0}"
-        return winrt::hstring{
-            fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
-                        _Index)
-        };
-    }
-
-    winrt::hstring ToggleTabSwitcherArgs::GenerateName() const
-    {
-        // If there's an anchor key set, don't generate a name so that
-        // it won't show up in the command palette. Only an unanchored
-        // tab switcher should be able to be toggled from the palette.
-        // TODO: GH#7179 - once this goes in, make sure to hide the
-        // anchor mode command that was given a name in settings.
-        if (_AnchorKey != Windows::System::VirtualKey::None)
+        if (_Index)
         {
-            return L"";
+            // "Close tabs after index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
+                            _Index.Value())
+            };
         }
-        else
-        {
-            return RS_(L"ToggleTabSwitcherCommandKey");
-        }
+        return RS_(L"CloseTabsAfterDefaultCommandKey");
     }
-
 }

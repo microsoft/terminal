@@ -18,6 +18,7 @@
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
+    "useTabSwitcher": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
@@ -271,7 +272,7 @@
             "brightWhite": "#EEEEEC"
         }
     ],
-    "bindings":
+    "actions":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
@@ -285,10 +286,13 @@
         { "command": "find", "keys": "ctrl+shift+f" },
         { "command": "toggleRetroEffect" },
         { "command": "openTabColorPicker" },
+        { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
         //   The closeTab command closes a tab without confirmation, even if it has multiple panes.
+        { "command": "closeOtherTabs" },
+        { "command": "closeTabsAfter" },
         { "command": "newTab", "keys": "ctrl+shift+t" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
@@ -324,6 +328,7 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
+        { "command": "togglePaneZoom" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -340,6 +345,53 @@
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
-        { "command": "resetFontSize", "keys": "ctrl+0" }
+        { "command": "resetFontSize", "keys": "ctrl+0" },
+
+        // Other commands
+        {
+            // Select color scheme...
+            "name": { "key": "SetColorSchemeParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "schemes",
+                    "name": "${scheme.name}",
+                    "command": { "action": "setColorScheme", "colorScheme": "${scheme.name}" }
+                }
+            ]
+        },
+        {
+            // New tab...
+            "name": { "key": "NewTabParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}",
+                    "command": { "action": "newTab", "profile": "${profile.name}" }
+                }
+            ]
+        },
+        {
+            // Split pane...
+            "name": { "key": "SplitPaneParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}...",
+                    "commands": [
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                        }
+                    ]
+                }
+            ]
+        }
     ]
 }

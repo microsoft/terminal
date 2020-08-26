@@ -1417,7 +1417,7 @@ try
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
         _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
-        for (const auto rect : _invalidMap.runs())
+        for (const auto& rect : _invalidMap.runs())
         {
             // Use aliased.
             // For graphics reasons, it'll look better because it will ensure that
@@ -1488,8 +1488,7 @@ try
     const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
-    {
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
@@ -2354,12 +2353,12 @@ CATCH_RETURN();
 // - color - GDI Color
 // Return Value:
 // - N/A
-void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+void DxEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
     _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
-                                        0.5f);
+                                        alpha);
 }
 
 // Routine Description:

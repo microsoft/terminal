@@ -22,7 +22,6 @@
 #include "ExecuteCommandlineArgs.g.h"
 #include "CloseOtherTabsArgs.g.h"
 #include "CloseTabsAfterArgs.g.h"
-#include "ToggleTabSwitcherArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "Utils.h"
@@ -95,8 +94,10 @@ namespace winrt::TerminalApp::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, SingleLine, false);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>, CopyFormatting, nullptr);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
+        static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 
     public:
         hstring GenerateName() const;
@@ -106,7 +107,8 @@ namespace winrt::TerminalApp::implementation
             auto otherAsUs = other.try_as<CopyTextArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_SingleLine == _SingleLine;
+                return otherAsUs->_SingleLine == _SingleLine &&
+                       otherAsUs->_CopyFormatting == _CopyFormatting;
             }
             return false;
         };
@@ -115,6 +117,7 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
             JsonUtils::GetValueForKey(json, SingleLineKey, args->_SingleLine);
+            JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
             return { *args, {} };
         }
     };
@@ -492,7 +495,7 @@ namespace winrt::TerminalApp::implementation
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
     {
         CloseOtherTabsArgs() = default;
-        GETSET_PROPERTY(uint32_t, Index, 0);
+        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 
@@ -520,7 +523,7 @@ namespace winrt::TerminalApp::implementation
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
     {
         CloseTabsAfterArgs() = default;
-        GETSET_PROPERTY(uint32_t, Index, 0);
+        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 
@@ -541,34 +544,6 @@ namespace winrt::TerminalApp::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CloseTabsAfterArgs>();
             JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
-            return { *args, {} };
-        }
-    };
-
-    struct ToggleTabSwitcherArgs : public ToggleTabSwitcherArgsT<ToggleTabSwitcherArgs>
-    {
-        ToggleTabSwitcherArgs() = default;
-        GETSET_PROPERTY(Windows::System::VirtualKey, AnchorKey, Windows::System::VirtualKey::None);
-
-        static constexpr std::string_view AnchorJsonKey{ "anchorKey" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ToggleTabSwitcherArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_AnchorKey == _AnchorKey;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ToggleTabSwitcherArgs>();
-            JsonUtils::GetValueForKey(json, AnchorJsonKey, args->_AnchorKey);
             return { *args, {} };
         }
     };

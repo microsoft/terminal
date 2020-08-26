@@ -4,9 +4,9 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|app|menu|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
       "type": "string",
-      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\napp, menu\tMENU key\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
     },
     "Color": {
       "default": "#",
@@ -34,18 +34,24 @@
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
+        "closeOtherTabs",
         "closePane",
         "closeTab",
+        "closeTabsAfter",
         "closeWindow",
+        "commandPalette",
         "copy",
         "duplicateTab",
+        "find",
         "moveFocus",
         "newTab",
         "nextTab",
         "openNewTabDropdown",
         "openSettings",
+        "openTabColorPicker",
         "paste",
         "prevTab",
+        "renameTab",
         "resetFontSize",
         "resizePane",
         "scrollDown",
@@ -53,22 +59,17 @@
         "scrollUp",
         "scrollUpPage",
         "sendInput",
-        "splitPane",
-        "switchToTab",
-        "toggleFocusMode",
-        "toggleFullscreen",
-        "toggleAlwaysOnTop",
-        "toggleRetroEffect",
-        "find",
         "setColorScheme",
         "setTabColor",
-        "openTabColorPicker",
-        "renameTab",
-        "commandPalette",
+        "splitPane",
+        "switchToTab",
+        "tabSearch",
+        "toggleAlwaysOnTop",
+        "toggleFocusMode",
+        "toggleFullscreen",
+        "togglePaneZoom",
+        "toggleRetroEffect",
         "wt",
-        "closeOtherTabs",
-        "closeTabsAfter",
-        "tabSwitcher",
         "unbound"
       ],
       "type": "string"
@@ -89,6 +90,32 @@
         "auto"
       ],
       "type": "string"
+    },
+    "CopyFormat": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "html",
+              "rtf"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "html",
+            "rtf",
+            "all",
+            "none"
+          ]
+        }
+      ]
     },
     "AnchorKey": {
       "enum": [
@@ -163,6 +190,18 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "copyFormatting": {
+              "default": null,
+              "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting.",
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/CopyFormat"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         }
@@ -358,14 +397,16 @@
           "properties": {
             "action": { "type": "string", "pattern": "closeOtherTabs" },
             "index": {
-              "type": "integer",
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
               "default": "",
-              "description": "close the tabs following the tab at this index"
+              "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
-      ],
-      "required": [ "index" ]
+      ]
     },
     "CloseTabsAfterAction": {
       "description": "Arguments for a closeTabsAfter action",
@@ -375,26 +416,12 @@
           "properties": {
             "action": { "type": "string", "pattern": "closeTabsAfter" },
             "index": {
-              "type": "integer",
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
               "default": "",
-              "description": "close the tabs other than the one at this index"
-            }
-          }
-        }
-      ],
-      "required": [ "index" ]
-    },
-    "TabSwitcherAction": {
-      "description": "Arguments corresponding to a Tab Switcher Action",
-      "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        {
-          "properties": {
-            "action": { "type": "string", "pattern": "tabSwitcher" },
-            "anchorKey": {
-              "$ref": "#/definitions/AnchorKey",
-              "default": null,
-              "description": "If provided, the tab switcher will stay open as long as the anchor key is held down. The anchor key should be part of the keybinding that opens the switcher."
+              "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
@@ -421,7 +448,6 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
-              { "$ref": "#/definitions/TabSwitcherAction" },
               { "type": "null" }
             ]
         },
@@ -468,8 +494,8 @@
         },
         "copyFormatting": {
           "default": true,
-          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
-          "type": "boolean"
+          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
+          "$ref": "#/definitions/CopyFormat"
         },
         "largePasteWarning": {
           "default": true,
@@ -518,10 +544,16 @@
           "minimum": 1,
           "type": "integer"
         },
+        "startOnUserLogin": {
+          "default": false,
+          "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
+          "type": "boolean"
+        },
         "launchMode": {
           "default": "default",
-          "description": "Defines whether the Terminal will launch as maximized or not.",
+          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window.",
           "enum": [
+            "fullscreen",
             "maximized",
             "default"
           ],
@@ -585,6 +617,11 @@
         "confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
+          "type": "boolean"
+        },
+        "useTabSwitcher": {
+          "default": true,
+          "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
           "type": "boolean"
         }
       },

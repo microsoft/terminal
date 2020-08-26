@@ -122,7 +122,9 @@ namespace winrt::TerminalApp::implementation
                                              const TerminalApp::ActionEventArgs& args)
     {
         auto activeTab = _GetFocusedTab();
-        if (activeTab)
+
+        // Don't do anything if there's only one pane. It's already zoomed.
+        if (activeTab && activeTab->GetLeafPaneCount() > 1)
         {
             // First thing's first, remove the current content from the UI
             // tree. This is important, because we might be leaving zoom, and if
@@ -235,7 +237,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.SingleLine());
+            const auto handled = _CopyText(realArgs.SingleLine(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }
@@ -413,7 +415,21 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseOtherTabsArgs>())
         {
-            uint32_t index = realArgs.Index();
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                // Do nothing
+                actionArgs.Handled(false);
+                return;
+            }
 
             // Remove tabs after the current one
             while (_tabs.Size() > index + 1)
@@ -436,7 +452,21 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseTabsAfterArgs>())
         {
-            uint32_t index = realArgs.Index();
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                // Do nothing
+                actionArgs.Handled(false);
+                return;
+            }
 
             // Remove tabs after the current one
             while (_tabs.Size() > index + 1)
@@ -454,27 +484,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleToggleTabSwitcher(const IInspectable& /*sender*/,
-                                                const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
+                                            const TerminalApp::ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ToggleTabSwitcherArgs>())
-        {
-            auto anchorKey = realArgs.AnchorKey();
+        auto opt = _GetFocusedTabIndex();
+        uint32_t startIdx = opt.value_or(0);
 
-            auto opt = _GetFocusedTabIndex();
-            uint32_t startIdx = opt ? *opt : 0;
+        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().Visibility(Visibility::Visible);
 
-            if (anchorKey != VirtualKey::None)
-            {
-                // TODO: GH#7178 - delta should also have the option of being -1, in the case when
-                // a user decides to open the tab switcher going to the prev tab.
-                int delta = 1;
-                startIdx = (startIdx + _tabs.Size() + delta) % _tabs.Size();
-            }
-
-            CommandPalette().EnableTabSwitcherMode(anchorKey, startIdx);
-            CommandPalette().Visibility(Visibility::Visible);
-        }
         args.Handled(true);
     }
 }

@@ -1,9 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../TerminalPage.idl";
-import "../ShortcutActionDispatch.idl";
-import "../IDirectKeyListener.idl";
+import "TerminalPage.idl";
+import "ShortcutActionDispatch.idl";
+import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {

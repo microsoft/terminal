@@ -38,7 +38,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
     USES_RESOURCE(L"TooManyKeysForChord"),
     USES_RESOURCE(L"MissingRequiredParameter"),
-    USES_RESOURCE(L"LegacyGlobalsProperty")
+    USES_RESOURCE(L"LegacyGlobalsProperty"),
+    USES_RESOURCE(L"FailedToParseCommandJson")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -916,7 +917,7 @@ namespace winrt::TerminalApp::implementation
     // - Implements the Alt handler (per GH#6421)
     // Return value:
     // - whether the key was handled
-    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    bool AppLogic::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         if (_root)
         {
@@ -927,7 +928,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto keyListener{ focusedObject.try_as<IDirectKeyListener>() })
                 {
-                    if (keyListener.OnDirectKeyEvent(vkey, down))
+                    if (keyListener.OnDirectKeyEvent(vkey, scanCode, down))
                     {
                         return true;
                     }
@@ -937,6 +938,13 @@ namespace winrt::TerminalApp::implementation
                 if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
                 {
                     focusedObject = focusedElement.Parent();
+
+                    // Parent() seems to return null when the focusedElement is created from an ItemTemplate.
+                    // Use the VisualTreeHelper's GetParent as a fallback.
+                    if (!focusedObject)
+                    {
+                        focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
+                    }
                 }
                 else
                 {

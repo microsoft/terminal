@@ -1,13 +1,13 @@
 #pragma once
 
-#include "CommandKeyChordVisibilityConverter.g.h"
+#include "EmptyStringVisibilityConverter.g.h"
 #include "..\inc\cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct CommandKeyChordVisibilityConverter : CommandKeyChordVisibilityConverterT<CommandKeyChordVisibilityConverter>
+    struct EmptyStringVisibilityConverter : EmptyStringVisibilityConverterT<EmptyStringVisibilityConverter>
     {
-        CommandKeyChordVisibilityConverter() = default;
+        EmptyStringVisibilityConverter() = default;
 
         Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value,
                                                   Windows::UI::Xaml::Interop::TypeName const& targetType,
@@ -23,5 +23,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    BASIC_FACTORY(CommandKeyChordVisibilityConverter);
+    BASIC_FACTORY(EmptyStringVisibilityConverter);
 }

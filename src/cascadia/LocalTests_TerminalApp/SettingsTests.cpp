@@ -5,6 +5,7 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
+#include "../TerminalApp/TerminalPage.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 #include <defaults.h>
@@ -84,10 +85,49 @@ namespace TerminalAppLocalTests
 
         TEST_METHOD(TestCommandsAndKeybindings);
 
+        TEST_METHOD(TestIterateCommands);
+        TEST_METHOD(TestIterateOnGeneratedNamedCommands);
+        TEST_METHOD(TestIterateOnBadJson);
+        TEST_METHOD(TestNestedCommands);
+        TEST_METHOD(TestNestedInNestedCommand);
+        TEST_METHOD(TestNestedInIterableCommand);
+        TEST_METHOD(TestIterableInNestedCommand);
+        TEST_METHOD(TestMixedNestedAndIterableCommand);
+        TEST_METHOD(TestNestedCommandWithoutName);
+        TEST_METHOD(TestUnbindNestedCommand);
+        TEST_METHOD(TestRebindNestedCommand);
+
+        TEST_METHOD(TestIterableColorSchemeCommands);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
             return true;
+        }
+
+    private:
+        void _logCommandNames(winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands, const int indentation = 1)
+        {
+            if (indentation == 1)
+            {
+                Log::Comment((commands.Size() == 0) ? L"Commands:\n  <none>" : L"Commands:");
+            }
+            for (const auto& nameAndCommand : commands)
+            {
+                Log::Comment(fmt::format(L"{0:>{1}}* {2}->{3}",
+                                         L"",
+                                         indentation,
+                                         nameAndCommand.Key(),
+                                         nameAndCommand.Value().Name())
+                                 .c_str());
+
+                winrt::com_ptr<implementation::Command> cmdImpl;
+                cmdImpl.copy_from(winrt::get_self<implementation::Command>(nameAndCommand.Value()));
+                if (cmdImpl->HasNestedCommands())
+                {
+                    _logCommandNames(cmdImpl->_subcommands, indentation + 2);
+                }
+            }
         }
     };
 
@@ -2258,53 +2298,49 @@ namespace TerminalAppLocalTests
 
     void SettingsTests::ValidateExecuteCommandlineWarning()
     {
-        Log::Comment(L"This test is affected by GH#6949, so we're just skipping it for now.");
-        Log::Result(WEX::Logging::TestResults::Skipped);
-        return;
+        const std::string badSettings{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                }
+            ],
+            "keybindings": [
+                { "name":null, "command": { "action": "wt" }, "keys": [ "ctrl+a" ] },
+                { "name":null, "command": { "action": "wt", "commandline":"" }, "keys": [ "ctrl+b" ] },
+                { "name":null, "command": { "action": "wt", "commandline":null }, "keys": [ "ctrl+c" ] }
+            ]
+        })" };
 
-        // const std::string badSettings{ R"(
-        // {
-        //     "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-        //     "profiles": [
-        //         {
-        //             "name" : "profile0",
-        //             "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
-        //         },
-        //         {
-        //             "name" : "profile1",
-        //             "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
-        //         }
-        //     ],
-        //     "keybindings": [
-        //         { "name":null, "command": { "action": "wt" }, "keys": [ "ctrl+a" ] },
-        //         { "name":null, "command": { "action": "wt", "commandline":"" }, "keys": [ "ctrl+b" ] },
-        //         { "name":null, "command": { "action": "wt", "commandline":null }, "keys": [ "ctrl+c" ] }
-        //     ]
-        // })" };
+        const auto settingsObject = VerifyParseSucceeded(badSettings);
 
-        // const auto settingsObject = VerifyParseSucceeded(badSettings);
+        auto settings = CascadiaSettings::FromJson(settingsObject);
 
-        // auto settings = CascadiaSettings::FromJson(settingsObject);
+        VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
 
-        // VERIFY_ARE_EQUAL(0u, settings->_globals._keybindings->_keyShortcuts.size());
+        for (const auto& warning : settings->_globals._keybindingsWarnings)
+        {
+            Log::Comment(NoThrowString().Format(
+                L"warning:%d", warning));
+        }
+        VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
 
-        // for (const auto& warning : settings->_globals._keybindingsWarnings)
-        // {
-        //     Log::Comment(NoThrowString().Format(
-        //         L"warning:%d", warning));
-        // }
-        // VERIFY_ARE_EQUAL(3u, settings->_globals._keybindingsWarnings.size());
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(0));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(1));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_globals._keybindingsWarnings.at(2));
+        settings->_ValidateKeybindings();
 
-        // settings->_ValidateKeybindings();
-
-        // VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(1));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
-        // VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
+        VERIFY_ARE_EQUAL(4u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning, settings->_warnings.at(0));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(2));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.at(3));
     }
 
     void SettingsTests::ValidateLegacyGlobalsWarning()
@@ -2402,7 +2438,7 @@ namespace TerminalAppLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
-            "bindings": [
+            "actions": [
                 { "keys": "ctrl+a",                   "command": { "action": "splitPane", "split": "vertical" } },
                 {                   "name": "ctrl+b", "command": { "action": "splitPane", "split": "vertical" } },
                 { "keys": "ctrl+c", "name": "ctrl+c", "command": { "action": "splitPane", "split": "vertical" } },
@@ -2433,7 +2469,7 @@ namespace TerminalAppLocalTests
         // * A and D share the same name, so they'll only generate a single action.
         // * F's name is set manually to `null`
         auto commands = settings._globals.GetCommands();
-        VERIFY_ARE_EQUAL(4u, commands.size());
+        VERIFY_ARE_EQUAL(4u, commands.Size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
@@ -2510,9 +2546,9 @@ namespace TerminalAppLocalTests
         }
 
         Log::Comment(L"Now verify the commands");
-
+        _logCommandNames(commands);
         {
-            auto command = commands.at(L"Split pane, direction: Vertical");
+            auto command = commands.Lookup(L"Split pane, split: vertical");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2528,7 +2564,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.at(L"ctrl+b");
+            auto command = commands.Lookup(L"ctrl+b");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2544,7 +2580,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.at(L"ctrl+c");
+            auto command = commands.Lookup(L"ctrl+c");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2560,7 +2596,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            auto command = commands.at(L"Split pane, direction: Horizontal");
+            auto command = commands.Lookup(L"Split pane, split: horizontal");
             VERIFY_IS_NOT_NULL(command);
             auto actionAndArgs = command.Action();
             VERIFY_IS_NOT_NULL(actionAndArgs);
@@ -2574,6 +2610,1474 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+        }
+    }
+    void SettingsTests::TestIterateCommands()
+    {
+        // For this test, put an iterable command with a given `name`,
+        // containing a ${profile.name} to replace. When we expand it, it should
+        // have created one command for each profile.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "iterable command ${profile.name}",
+                    "iterateOn": "profiles",
+                    "command": { "action": "splitPane", "profile": "${profile.name}" }
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const auto guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            auto command = commands.Lookup(L"iterable command ${profile.name}");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
+        }
+
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command profile0");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command profile1");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command profile2");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+        }
+    }
+
+    void SettingsTests::TestIterateOnGeneratedNamedCommands()
+    {
+        // For this test, put an iterable command without a given `name` to
+        // replace. When we expand it, it should still work.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "iterateOn": "profiles",
+                    "command": { "action": "splitPane", "profile": "${profile.name}" }
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const auto guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            auto command = commands.Lookup(L"Split pane, profile: ${profile.name}");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
+        }
+
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        {
+            auto command = expandedCommands.Lookup(L"Split pane, profile: profile0");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"Split pane, profile: profile1");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"Split pane, profile: profile2");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+        }
+    }
+
+    void SettingsTests::TestIterateOnBadJson()
+    {
+        // For this test, put an iterable command with a profile name that would
+        // cause bad json to be filled in. Something like a profile with a name
+        // of "Foo\"", so the trailing '"' might break the json parsing.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1\"",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "iterable command ${profile.name}",
+                    "iterateOn": "profiles",
+                    "command": { "action": "splitPane", "profile": "${profile.name}" }
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const auto guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            auto command = commands.Lookup(L"iterable command ${profile.name}");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
+        }
+
+        settings._ValidateSettings();
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command profile0");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile0", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command profile1\"");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile1\"", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command profile2");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
+        }
+    }
+
+    void SettingsTests::TestNestedCommands()
+    {
+        // This test checks a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ Connect to ssh...
+        //    ├─ first.com
+        //    └─ second.com
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "Connect to ssh...",
+                    "commands": [
+                        {
+                            "name": "first.com",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "second.com",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
+
+        auto rootCommandProj = expandedCommands.Lookup(L"Connect to ssh...");
+        VERIFY_IS_NOT_NULL(rootCommandProj);
+        auto rootActionAndArgs = rootCommandProj.Action();
+        VERIFY_IS_NULL(rootActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> rootCommandImpl;
+        rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
+
+        VERIFY_ARE_EQUAL(2u, rootCommandImpl->_subcommands.Size());
+
+        {
+            winrt::hstring commandName{ L"first.com" };
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
+        }
+        {
+            winrt::hstring commandName{ L"second.com" };
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
+        }
+    }
+
+    void SettingsTests::TestNestedInNestedCommand()
+    {
+        // This test checks a nested command that includes nested commands.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ grandparent
+        //    └─ parent
+        //       ├─ child1
+        //       └─ child2
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "grandparent",
+                    "commands": [
+                        {
+                            "name": "parent",
+                            "commands": [
+                                {
+                                    "name": "child1",
+                                    "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                                },
+                                {
+                                    "name": "child2",
+                                    "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                                }
+                            ]
+                        },
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
+
+        auto grandparentCommandProj = expandedCommands.Lookup(L"grandparent");
+        VERIFY_IS_NOT_NULL(grandparentCommandProj);
+        auto grandparentActionAndArgs = grandparentCommandProj.Action();
+        VERIFY_IS_NULL(grandparentActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> grandparentCommandImpl;
+        grandparentCommandImpl.copy_from(winrt::get_self<implementation::Command>(grandparentCommandProj));
+
+        VERIFY_ARE_EQUAL(1u, grandparentCommandImpl->_subcommands.Size());
+
+        winrt::hstring parentName{ L"parent" };
+        auto parentProj = grandparentCommandImpl->_subcommands.Lookup(parentName);
+        VERIFY_IS_NOT_NULL(parentProj);
+        auto parentActionAndArgs = parentProj.Action();
+        VERIFY_IS_NULL(parentActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> parentImpl;
+        parentImpl.copy_from(winrt::get_self<implementation::Command>(parentProj));
+
+        VERIFY_ARE_EQUAL(2u, parentImpl->_subcommands.Size());
+        {
+            winrt::hstring childName{ L"child1" };
+            auto childProj = parentImpl->_subcommands.Lookup(childName);
+            VERIFY_IS_NOT_NULL(childProj);
+            auto childActionAndArgs = childProj.Action();
+            VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
+            const auto& realArgs = childActionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"ssh me@first.com", realArgs.TerminalArgs().Commandline());
+
+            winrt::com_ptr<implementation::Command> childImpl;
+            childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
+
+            VERIFY_IS_FALSE(childImpl->HasNestedCommands());
+        }
+        {
+            winrt::hstring childName{ L"child2" };
+            auto childProj = parentImpl->_subcommands.Lookup(childName);
+            VERIFY_IS_NOT_NULL(childProj);
+            auto childActionAndArgs = childProj.Action();
+            VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
+            const auto& realArgs = childActionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"ssh me@second.com", realArgs.TerminalArgs().Commandline());
+
+            winrt::com_ptr<implementation::Command> childImpl;
+            childImpl.copy_from(winrt::get_self<implementation::Command>(childProj));
+
+            VERIFY_IS_FALSE(childImpl->HasNestedCommands());
+        }
+    }
+
+    void SettingsTests::TestNestedInIterableCommand()
+    {
+        // This test checks a iterable command that includes a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        //  ├─ profile0...
+        //  |  ├─ Split pane, profile: profile0
+        //  |  ├─ Split pane, direction: vertical, profile: profile0
+        //  |  └─ Split pane, direction: horizontal, profile: profile0
+        //  ├─ profile1...
+        //  |  ├─Split pane, profile: profile1
+        //  |  ├─Split pane, direction: vertical, profile: profile1
+        //  |  └─Split pane, direction: horizontal, profile: profile1
+        //  └─ profile2...
+        //     ├─ Split pane, profile: profile2
+        //     ├─ Split pane, direction: vertical, profile: profile2
+        //     └─ Split pane, direction: horizontal, profile: profile2
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "iterateOn": "profiles",
+                    "name": "${profile.name}...",
+                    "commands": [
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                    ]
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        {
+            winrt::hstring commandName{ name + L"..." };
+            auto commandProj = expandedCommands.Lookup(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
+            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
+            _logCommandNames(commandImpl->_subcommands);
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
+            }
+        }
+    }
+
+    void SettingsTests::TestIterableInNestedCommand()
+    {
+        // This test checks a nested command that includes an iterable command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ New Tab With Profile...
+        //    ├─ Profile 1
+        //    ├─ Profile 2
+        //    └─ Profile 3
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "New Tab With Profile...",
+                    "commands": [
+                        {
+                            "iterateOn": "profiles",
+                            "command": { "action": "newTab", "profile": "${profile.name}" }
+                        }
+                    ]
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
+
+        auto rootCommandProj = expandedCommands.Lookup(L"New Tab With Profile...");
+        VERIFY_IS_NOT_NULL(rootCommandProj);
+        auto rootActionAndArgs = rootCommandProj.Action();
+        VERIFY_IS_NULL(rootActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> rootCommandImpl;
+        rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
+
+        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.Size());
+
+        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        {
+            winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
+        }
+    }
+    void SettingsTests::TestMixedNestedAndIterableCommand()
+    {
+        // This test checks a nested commands that includes an iterable command
+        // that includes a nested command.
+        // The commands should look like:
+        //
+        // <Command Palette>
+        // └─ New Pane...
+        //    ├─ profile0...
+        //    |  ├─ Split automatically
+        //    |  ├─ Split vertically
+        //    |  └─ Split horizontally
+        //    ├─ profile1...
+        //    |  ├─ Split automatically
+        //    |  ├─ Split vertically
+        //    |  └─ Split horizontally
+        //    └─ profile2...
+        //       ├─ Split automatically
+        //       ├─ Split vertically
+        //       └─ Split horizontally
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "New Pane...",
+                    "commands": [
+                        {
+                            "iterateOn": "profiles",
+                            "name": "${profile.name}...",
+                            "commands": [
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, expandedCommands.Size());
+
+        auto rootCommandProj = expandedCommands.Lookup(L"New Pane...");
+        VERIFY_IS_NOT_NULL(rootCommandProj);
+        auto rootActionAndArgs = rootCommandProj.Action();
+        VERIFY_IS_NULL(rootActionAndArgs);
+
+        winrt::com_ptr<implementation::Command> rootCommandImpl;
+        rootCommandImpl.copy_from(winrt::get_self<implementation::Command>(rootCommandProj));
+
+        VERIFY_ARE_EQUAL(3u, rootCommandImpl->_subcommands.Size());
+
+        for (auto name : std::vector<std::wstring>({ L"profile0", L"profile1", L"profile2" }))
+        {
+            winrt::hstring commandName{ name + L"..." };
+            auto commandProj = rootCommandImpl->_subcommands.Lookup(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NULL(actionAndArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
+            VERIFY_ARE_EQUAL(3u, commandImpl->_subcommands.Size());
+
+            _logCommandNames(commandImpl->_subcommands);
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
+            }
+            {
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                auto childCommandProj = commandImpl->_subcommands.Lookup(childCommandName);
+                VERIFY_IS_NOT_NULL(childCommandProj);
+                auto childActionAndArgs = childCommandProj.Action();
+                VERIFY_IS_NOT_NULL(childActionAndArgs);
+
+                VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
+                const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
+                VERIFY_IS_NOT_NULL(realArgs);
+                // Verify the args have the expected value
+                VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+                VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+                VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+                VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+                VERIFY_ARE_EQUAL(name, realArgs.TerminalArgs().Profile());
+
+                winrt::com_ptr<implementation::Command> childCommandImpl;
+                childCommandImpl.copy_from(winrt::get_self<implementation::Command>(childCommandProj));
+
+                VERIFY_IS_FALSE(childCommandImpl->HasNestedCommands());
+            }
+        }
+    }
+
+    void SettingsTests::TestNestedCommandWithoutName()
+    {
+        // This test tests a nested command without a name specified. This type
+        // of command should just be ignored, since we can't auto-generate names
+        // for nested commands, they _must_ have names specified.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        // Because the "parent" command didn't have a name, it couldn't be
+        // placed into the list of commands. It and it's children are just
+        // ignored.
+        VERIFY_ARE_EQUAL(0u, commands.Size());
+    }
+
+    void SettingsTests::TestUnbindNestedCommand()
+    {
+        // Test that layering a command with `"commands": null` set will unbind a command that already exists.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "parent",
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const std::string settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "name": "parent",
+                    "commands": null
+                },
+            ],
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        VerifyParseSucceeded(settings1Json);
+
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        Log::Comment(L"Layer second bit of json, to unbind the original command.");
+
+        settings._ParseJsonString(settings1Json, false);
+        settings.LayerJson(settings._userSettings);
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(0u, commands.Size());
+    }
+
+    void SettingsTests::TestRebindNestedCommand()
+    {
+        // Test that layering a command with an action set on top of a command
+        // with nested commands replaces the nested commands with an action.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "actions": [
+                {
+                    "name": "parent",
+                    "commands": [
+                        {
+                            "name": "child1",
+                            "command": { "action": "newTab", "commandline": "ssh me@first.com" }
+                        },
+                        {
+                            "name": "child2",
+                            "command": { "action": "newTab", "commandline": "ssh me@second.com" }
+                        }
+                    ]
+                },
+            ],
+            "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
+        })" };
+
+        const std::string settings1Json{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "actions": [
+                {
+                    "name": "parent",
+                    "command": "newTab"
+                },
+            ],
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        VerifyParseSucceeded(settings1Json);
+
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            winrt::hstring commandName{ L"parent" };
+            auto commandProj = commands.Lookup(commandName);
+            VERIFY_IS_NOT_NULL(commandProj);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_TRUE(commandImpl->HasNestedCommands());
+            VERIFY_ARE_EQUAL(2u, commandImpl->_subcommands.Size());
+        }
+
+        Log::Comment(L"Layer second bit of json, to unbind the original command.");
+        settings._ParseJsonString(settings1Json, false);
+        settings.LayerJson(settings._userSettings);
+        settings._ValidateSettings();
+        _logCommandNames(commands);
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            winrt::hstring commandName{ L"parent" };
+            auto commandProj = commands.Lookup(commandName);
+
+            VERIFY_IS_NOT_NULL(commandProj);
+            auto actionAndArgs = commandProj.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+
+            winrt::com_ptr<implementation::Command> commandImpl;
+            commandImpl.copy_from(winrt::get_self<implementation::Command>(commandProj));
+
+            VERIFY_IS_FALSE(commandImpl->HasNestedCommands());
+        }
+    }
+
+    void SettingsTests::TestIterableColorSchemeCommands()
+    {
+        // For this test, put an iterable command with a given `name`,
+        // containing a ${profile.name} to replace. When we expand it, it should
+        // have created one command for each profile.
+
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+                {
+                    "name": "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2,
+                    "commandline": "pwsh.exe"
+                },
+                {
+                    "name": "profile2",
+                    "historySize": 3,
+                    "commandline": "wsl.exe"
+                }
+            ],
+            "schemes": [
+                { "name": "scheme_0" },
+                { "name": "scheme_1" },
+                { "name": "scheme_2" },
+            ],
+            "bindings": [
+                {
+                    "name": "iterable command ${scheme.name}",
+                    "iterateOn": "schemes",
+                    "command": { "action": "splitPane", "profile": "${scheme.name}" }
+                },
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+        CascadiaSettings settings{};
+        settings._ParseJsonString(settingsJson, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+
+        VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
+
+        auto& commands = settings._globals.GetCommands();
+        VERIFY_ARE_EQUAL(1u, commands.Size());
+
+        {
+            auto command = commands.Lookup(L"iterable command ${scheme.name}");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
+        }
+
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands.GetView(), settings.GetProfiles(), settings._globals.GetColorSchemes());
+        _logCommandNames(expandedCommands);
+
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(3u, expandedCommands.Size());
+
+        // Yes, this test is testing splitPane with profiles named after each
+        // color scheme. These would obviously not work in real life, they're
+        // just easy tests to write.
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_0");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_0", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_1");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_1", realArgs.TerminalArgs().Profile());
+        }
+
+        {
+            auto command = expandedCommands.Lookup(L"iterable command scheme_2");
+            VERIFY_IS_NOT_NULL(command);
+            auto actionAndArgs = command.Action();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"scheme_2", realArgs.TerminalArgs().Profile());
         }
     }
 

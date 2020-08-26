@@ -16,6 +16,7 @@
 namespace TerminalAppLocalTests
 {
     class TabTests;
+    class SettingsTests;
 };
 
 namespace winrt::TerminalApp::implementation
@@ -134,6 +135,11 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabIcon(Tab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
+        void _UpdateCommandsForPalette();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
+                                                                                                                          gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                                                                          const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes);
+
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
@@ -165,7 +171,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
-        bool _CopyText(const bool trimTrailingWhitespace);
+        bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
         void _PasteText();
 
         fire_and_forget _LaunchSettings(const winrt::TerminalApp::SettingsTarget target);
@@ -231,11 +237,12 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseOtherTabs(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTabsAfter(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleTabSwitcher(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenTabSearch(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 
         friend class TerminalAppLocalTests::TabTests;
+        friend class TerminalAppLocalTests::SettingsTests;
     };
 }
 

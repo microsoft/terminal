@@ -27,7 +27,9 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Windows10version1903:ThemeShadow x:Name="CommandPaletteShadow" />
 
             <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
-            <local:CommandKeyChordVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
+            <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -170,12 +172,23 @@ the MIT License. See LICENSE in the project root for license information. -->
             </TextBox>
 
             <TextBlock
-            Padding="16"
-            x:Name="_noMatchesText"
-            FontStyle="Italic"
-            Visibility="Collapsed"
-            Grid.Row="1"
-            Text="{x:Bind NoMatchesText, Mode=OneWay}">
+                Padding="16, 0, 16, 4"
+                x:Name="_parentCommandText"
+                FontStyle="Italic"
+                Visibility="{x:Bind ParentCommandName,
+                             Mode=OneWay,
+                             Converter={StaticResource ParentCommandVisibilityConverter}}"
+                Grid.Row="1"
+                Text="{x:Bind ParentCommandName, Mode=OneWay}">
+            </TextBlock>
+
+            <TextBlock
+                Padding="16"
+                x:Name="_noMatchesText"
+                FontStyle="Italic"
+                Visibility="Collapsed"
+                Grid.Row="1"
+                Text="{x:Bind NoMatchesText, Mode=OneWay}">
             </TextBlock>
 
             <ListView
@@ -195,7 +208,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <DataTemplate x:DataType="local:Command">
 
                         <!-- This HorizontalContentAlignment="Stretch" is important
-                    to make sure it takes the entire width of the line -->
+                        to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
                                   AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
@@ -210,31 +223,48 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </Grid.ColumnDefinitions>
 
                                 <IconSourceElement
-                                Grid.Column="0"
-                                IconSource="{x:Bind IconSource, Mode=OneWay}"/>
+                                    Grid.Column="0"
+                                    Width="16"
+                                    Height="16"
+                                    IconSource="{x:Bind IconSource, Mode=OneWay}"/>
 
                                 <TextBlock Grid.Column="1"
                                        HorizontalAlignment="Left"
                                        Text="{x:Bind Name, Mode=OneWay}" />
 
                                 <!-- The block for the key chord is only visible
-                            when there's actual text set as the label. See
-                            CommandKeyChordVisibilityConverter for details. -->
+                                when there's actual text set as the label. See
+                                CommandKeyChordVisibilityConverter for details. -->
                                 <Border
-                                Grid.Column="2"
-                                Visibility="{x:Bind KeyChordText,
-                                             Mode=OneWay,
-                                             Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                Style="{ThemeResource KeyChordBorderStyle}"
-                                Padding="2,0,2,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
+                                    Grid.Column="2"
+                                    Visibility="{x:Bind KeyChordText,
+                                                 Mode=OneWay,
+                                                 Converter={StaticResource CommandKeyChordVisibilityConverter}}"
+                                    Style="{ThemeResource KeyChordBorderStyle}"
+                                    Padding="2,0,2,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
 
                                     <TextBlock
-                                    Style="{ThemeResource KeyChordTextBlockStyle}"
-                                    FontSize="12"
-                                    Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                                        Style="{ThemeResource KeyChordTextBlockStyle}"
+                                        FontSize="12"
+                                        Text="{x:Bind KeyChordText, Mode=OneWay}" />
                                 </Border>
+
+                                <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
+                                <FontIcon
+                                    FontFamily="Segoe MDL2 Assets"
+                                    Glyph="&#xE70E;"
+                                    HorizontalAlignment="Right"
+                                    Visibility="{x:Bind HasNestedCommands,
+                                                 Mode=OneWay,
+                                                 Converter={StaticResource HasNestedCommandsVisibilityConverter}}"
+                                    Grid.Column="2">
+
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform CenterX="0.5" CenterY="0.5" Angle="90"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
 
                             </Grid>
                         </ListViewItem>
