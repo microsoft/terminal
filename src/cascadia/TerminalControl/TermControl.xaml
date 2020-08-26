@@ -47,7 +47,20 @@
 
                 <SwapChainPanel x:Name="SwapChainPanel"
                                 SizeChanged="_SwapChainSizeChanged"
-                                CompositionScaleChanged="_SwapChainScaleChanged" />
+                                CompositionScaleChanged="_SwapChainScaleChanged">
+
+                    <Canvas x:Name="SubCanvas"
+                            Visibility="Visible">
+                        <Border x:Name="SubBorder"
+                                BorderThickness="0.5,0.5,0.5,0.5"
+                                BorderBrush="Transparent">
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Name="LinkTip"
+                                         Placement="Mouse"/>
+                            </ToolTipService.ToolTip>
+                        </Border>
+                    </Canvas>
+                </SwapChainPanel>
 
                 <!-- Putting this in a grid w/ the SwapChainPanel
                 ensures that it's always aligned w/ the scrollbar -->
