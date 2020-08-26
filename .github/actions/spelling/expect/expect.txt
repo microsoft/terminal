@@ -12,6 +12,7 @@ ACTCTXW
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
+adaa
 ADDALIAS
 ADDREF
 addressof
@@ -160,7 +161,6 @@ Borland
 BOTTOMLEFT
 BOTTOMRIGHT
 boutput
-boxheader
 BPBF
 bpp
 BPPF
@@ -189,6 +189,7 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
+carlos
 CARRIAGERETURN
 cascadia
 cassert
@@ -287,6 +288,8 @@ codepage
 codepath
 codepoint
 codeproject
+coffgroup
+coffgrp
 coinit
 COLLECTIONURI
 colorizing
@@ -297,7 +300,6 @@ colorspaces
 colorspec
 colortable
 colortbl
-colortest
 colortool
 COLR
 combaseapi
@@ -383,14 +385,12 @@ CPINFOEX
 CPLINFO
 cplusplus
 cpp
-CPPARM
 CPPCORECHECK
 cppcorecheckrules
 cppm
 cpprest
 cpprestsdk
 cppwinrt
-CPPx
 CProc
 cpx
 crbegin
@@ -401,7 +401,6 @@ creativecommons
 cred
 cref
 crend
-Crisman
 CRLFs
 crloew
 Crt
@@ -480,6 +479,7 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
+datetime
 DBatch
 dbcs
 DBCSCHAR
@@ -508,7 +508,6 @@ dealloc
 Debian
 debolden
 debugtype
-DECAC
 DECALN
 DECANM
 DECAUPSS
@@ -609,7 +608,6 @@ DINLINE
 directio
 DIRECTX
 Dirs
-DISABLEDELAYEDEXPANSION
 DISABLENOSCROLL
 DISPLAYATTRIBUTE
 DISPLAYATTRIBUTEPROPERTY
@@ -634,14 +632,13 @@ doskey
 dotnet
 doubleclick
 downlevel
-DPG
+dpg
 dpi
 DPIAPI
 DPICHANGE
 DPICHANGED
 dpix
 dpiy
-dpnx
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
@@ -673,8 +670,8 @@ dxgidwm
 dxinterop
 dxsm
 dxttbmp
-Dyreen
 eachother
+eae
 eaf
 EASTEUROPE
 ECH
@@ -689,13 +686,13 @@ edputil
 edu
 Efast
 EHsc
-EINS
 EJO
 ELEMENTNOTAVAILABLE
 elems
 elif
 elseif
 emacs
+emplate
 EMPTYBOX
 enabledelayedexpansion
 endian
@@ -715,7 +712,6 @@ enumranges
 envvar
 eol
 EPres
-EQU
 ERASEBKGND
 errno
 errorlevel
@@ -765,13 +761,11 @@ fdw
 fesb
 FFDE
 FFrom
-fgbg
 FGCOLOR
 fgetc
 fgetwc
 FGHIJ
 fgidx
-FGs
 FILEDESCRIPTION
 fileno
 filepath
@@ -796,7 +790,6 @@ FIXEDCONVERTED
 FIXEDFILEINFO
 Flg
 flyout
-fmix
 fmodern
 fmtarg
 fmtid
@@ -825,7 +818,6 @@ FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FORCEV
 foreach
-forground
 fprintf
 framebuffer
 FRAMECHANGED
@@ -858,6 +850,7 @@ gcy
 gdi
 gdip
 gdirenderer
+GENPROFILE
 geopol
 GETALIAS
 GETALIASES
@@ -942,12 +935,9 @@ groupbox
 gset
 gsl
 GTP
-GTR
-guardxfg
 guc
 gui
 guidatom
-guiddef
 GValue
 GWL
 GWLP
@@ -978,6 +968,7 @@ hfont
 hfontresource
 hglobal
 hhh
+HHmm
 hhook
 hhx
 HIBYTE
@@ -1007,6 +998,7 @@ horiz
 HORZ
 hostable
 hostlib
+Hostx
 HPA
 HPAINTBUFFER
 HPCON
@@ -1133,6 +1125,7 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
+installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1162,6 +1155,7 @@ IRaw
 IRead
 IReference
 IRender
+IRenderer
 IScheme
 ISelection
 IShell
@@ -1360,7 +1354,6 @@ lstrcmp
 lstrcmpi
 LTEXT
 LTLTLTLTL
-ltrim
 ltype
 LUID
 lval
@@ -1387,7 +1380,6 @@ MAXDIMENSTRING
 maxing
 MAXLENGTH
 MAXSHORT
-maxval
 maxversiontested
 MAXWORD
 maybenull
@@ -1433,6 +1425,7 @@ mkdir
 MMBB
 mmcc
 MMCPL
+MMdd
 mmsystem
 MNC
 MNOPQ
@@ -1474,6 +1467,7 @@ msix
 msrc
 msvcrt
 MSVCRTD
+MSVS
 msys
 msysgit
 MTSM
@@ -1541,7 +1535,6 @@ NOCOLOR
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
-nodefaultlib
 nodiscard
 NODUP
 noexcept
@@ -1581,7 +1574,6 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
-notmatch
 NOTNULL
 NOTOPMOST
 NOTRACK
@@ -1589,7 +1581,6 @@ NOTSUPPORTED
 nouicompat
 nounihan
 NOUPDATE
-novtable
 NOWAIT
 NOYIELD
 NOZORDER
@@ -1691,7 +1682,6 @@ OUTOFCONTEXT
 OUTOFMEMORY
 outout
 Outptr
-outstr
 OVERLAPPEDWINDOW
 OWNDC
 OWNERDRAWFIXED
@@ -1768,7 +1758,6 @@ PFONTENUMDATA
 PFS
 pgd
 pgdn
-PGONu
 pgorepro
 pgort
 PGU
@@ -1803,7 +1792,6 @@ PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
-Poli
 POLYTEXTW
 popd
 POPF
@@ -1989,6 +1977,7 @@ REGISTERVDM
 regkey
 REGSTR
 reingest
+Relayout
 RELBINPATH
 remoting
 renamer
@@ -2051,8 +2040,6 @@ rtf
 RTFTo
 Rtl
 RTLREADING
-Rtn
-rtrim
 RTTI
 ruleset
 runas
@@ -2069,7 +2056,6 @@ runut
 runxamlformat
 rvalue
 RVERTICAL
-rvpa
 RWIN
 rxvt
 safearray
@@ -2182,6 +2168,7 @@ SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
 SHRT
+sid
 sidebyside
 SIF
 SIGDN
@@ -2212,6 +2199,7 @@ somefile
 SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
+SPACEBAR
 spammy
 spand
 sprintf
@@ -2244,7 +2232,6 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
-stdc
 stdcall
 stdcpp
 stderr
@@ -2269,7 +2256,6 @@ strrev
 strsafe
 strtok
 structs
-STUBHEAD
 STUVWX
 STX
 stylecop
@@ -2391,7 +2377,6 @@ TIcon
 tif
 tilunittests
 Timeline
-timelines
 titlebar
 TITLEISLINKNAME
 TJson
@@ -2490,7 +2475,6 @@ uint
 uintptr
 ulcch
 ulong
-umd
 Unadvise
 unattend
 uncomment
@@ -2518,6 +2502,7 @@ unmark
 UNORM
 unparseable
 unpause
+Unregister
 unregistering
 untests
 untextured
@@ -2530,6 +2515,7 @@ upvote
 uri
 url
 urlencoded
+Urxvt
 USASCII
 usebackq
 USECALLBACK
@@ -2574,6 +2560,7 @@ Vcount
 vcpkg
 vcprintf
 vcproj
+vcvarsall
 vcxitems
 vcxproj
 vec
@@ -2658,7 +2645,6 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
-webclient
 webpage
 website
 websocket
@@ -2733,7 +2719,6 @@ Winperf
 WInplace
 winres
 winrt
-winsdk
 wintelnet
 winternl
 winuser
@@ -2780,7 +2765,6 @@ WRITECONSOLE
 WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
-wrkstr
 wrl
 wrp
 WRunoff
@@ -2829,9 +2813,9 @@ xdy
 XEncoding
 xes
 xff
-xfg
 XFile
 XFORM
+xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2864,6 +2848,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition
@@ -2871,6 +2856,7 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+zamora
 ZCmd
 ZCtrl
 zsh
