@@ -333,7 +333,6 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
         if ((mode == CloseOnExitMode::Always) ||
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
-            // _ClosedHandlers(nullptr, nullptr);
             Close();
         }
     }
