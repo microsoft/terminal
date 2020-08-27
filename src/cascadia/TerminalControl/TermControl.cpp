@@ -1252,14 +1252,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
-            const auto uri = _terminal->GetHyperlinkAtPosition(_GetTerminalPosition(point.Position()));
-            if (!uri.empty())
+            const auto terminalPos = _GetTerminalPosition(point.Position());
+            if (terminalPos != _lastHoveredCell)
             {
-                // We have hovered over a link, update the tooltip with the URI and move the border
-                // to the mouse location
-                LinkTip().Content(winrt::box_value(uri));
-                SubCanvas().SetLeft(SubBorder(), (point.Position().X - SwapChainPanel().ActualOffset().x));
-                SubCanvas().SetTop(SubBorder(), (point.Position().Y - SwapChainPanel().ActualOffset().y));
+                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
+                if (!uri.empty())
+                {
+                    // Update the tooltip with the URI
+                    LinkTip().Content(winrt::box_value(uri));
+
+                    // Set the border thickness so it covers the entire cell
+                    const til::size fontSize{ _actualFont.GetSize() };
+                    const double ht = static_cast<double>(fontSize.height()) / SwapChainPanel().CompositionScaleY();
+                    const double wt = static_cast<double>(fontSize.width()) / SwapChainPanel().CompositionScaleX();
+                    const Thickness newThickness{ wt, ht, 0, 0 };
+                    SubBorder().BorderThickness(newThickness);
+
+                    // Move the border to the top left corner of the cell
+                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                    const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::point posInPixels{ startPos * fontSize };
+                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                    SubCanvas().SetLeft(SubBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                    SubCanvas().SetTop(SubBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                }
+                _lastHoveredCell = terminalPos;
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)

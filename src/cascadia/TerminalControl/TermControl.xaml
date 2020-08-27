@@ -52,7 +52,6 @@
                     <Canvas x:Name="SubCanvas"
                             Visibility="Visible">
                         <Border x:Name="SubBorder"
-                                BorderThickness="0.5,0.5,0.5,0.5"
                                 BorderBrush="Transparent">
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Name="LinkTip"

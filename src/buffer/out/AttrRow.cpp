@@ -192,6 +192,54 @@ std::unordered_set<uint16_t> ATTR_ROW::GetHyperlinks()
     return ids;
 }
 
+// Method description:
+// - Gets the start and endpoint of a particular link in this row, ignoring other attributes
+// - Use this to get the full hyperlinked text from just one cell (for example, if the user hovers over a
+//   cell in the middle of a link and we need the entire link)
+// Arguments:
+// - The column in the link
+// Return value:
+// - A pair where the first value is the start point and the second value is the endpoint of the link
+const std::pair<size_t, size_t> ATTR_ROW::GetLinkEndPoints(size_t column)
+{
+    const auto runPos = FindAttrIndex(column, nullptr);
+    const auto id = _list.at(runPos).GetAttributes().GetHyperlinkId();
+    size_t startPos = 0;
+    for (size_t i = 0; i < runPos; i++)
+    {
+        startPos += _list.at(i).GetLength();
+    }
+    size_t endPos = startPos + _list.at(runPos).GetLength();
+
+    // the link might extend to before this specific run, so check for that
+    for (auto it = _list.rend() - runPos; it != _list.rend(); ++it)
+    {
+        if (it->GetAttributes().GetHyperlinkId() == id)
+        {
+            startPos -= it->GetLength();
+        }
+        else
+        {
+            // the moment we hit a region with a different hyperlink id, we break
+            break;
+        }
+    }
+    // the link might also extend to after this specific run, so check for that
+    for (auto it = _list.begin() + runPos + 1; it != _list.end(); ++it)
+    {
+        if (it->GetAttributes().GetHyperlinkId() == id)
+        {
+            endPos += it->GetLength();
+        }
+        else
+        {
+            // the moment we hit a region with a different hyperlink id, we break
+            break;
+        }
+    }
+    return std::pair<size_t, size_t>(startPos, endPos);
+}
+
 // Routine Description:
 // - Sets the attributes (colors) of all character positions from the given position through the end of the row.
 // Arguments:
