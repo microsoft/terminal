@@ -365,6 +365,14 @@ void TextAttribute::SetDefaultBackground() noexcept
     _background = TextColor();
 }
 
+// Method description:
+// - Resets only the meta and extended attributes
+void TextAttribute::SetDefaultMetaAttrs() noexcept
+{
+    _extendedAttrs = ExtendedAttributes::Normal;
+    _wAttrLegacy = 0;
+}
+
 // Method Description:
 // - Returns true if this attribute indicates its background is the "default"
 //      background. Its _rgbBackground will contain the actual value of the
@@ -385,7 +393,6 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 //      requires for most erasing and filling operations.
 void TextAttribute::SetStandardErase() noexcept
 {
-    _extendedAttrs = ExtendedAttributes::Normal;
-    _wAttrLegacy = 0;
+    SetDefaultMetaAttrs();
     _hyperlinkId = 0;
 }

@@ -133,6 +133,7 @@ public:
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
+    void SetDefaultMetaAttrs() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
 
