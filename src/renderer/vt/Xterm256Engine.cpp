@@ -147,7 +147,7 @@ HRESULT Microsoft::Console::Render::Xterm256Engine::_UpdateHyperlinkAttr(const T
         {
             const auto id = textAttributes.GetHyperlinkId();
             const auto customId = pData->GetHyperlinkCustomId(id);
-            RETURN_IF_FAILED(_SetHyperlink(pData->GetHyperlinkUri(id), customId));
+            RETURN_IF_FAILED(_SetHyperlink(pData->GetHyperlinkUri(id), customId, id));
         }
         else
         {

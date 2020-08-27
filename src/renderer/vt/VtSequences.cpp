@@ -463,19 +463,26 @@ using namespace Microsoft::Console::Render;
 // - The hyperlink URI
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId) noexcept
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId, const uint16_t& numberId) noexcept
 {
     // Opening OSC8 sequence
     if (customId.empty())
     {
-        const std::string fmt{ "\x1b]8;;{}\x1b\\" };
+        // This is the case of auto-assigned IDs:
+        // send the auto-assigned ID, prefixed with the PID of this session
+        // (we do this so different conpty sessions do not overwrite each other's hyperlinks)
+        const auto sessionID = GetCurrentProcessId();
+        const std::string fmt{ "\x1b]8;id={}-{};{}\x1b\\" };
         const std::string uri_str{ til::u16u8(uri) };
-        auto s = fmt::format(fmt, uri_str);
+        auto s = fmt::format(fmt, sessionID, numberId, uri_str);
         return _Write(s);
     }
     else
     {
-        const std::string fmt{ "\x1b]8;id={};{}\x1b\\" };
+        // This is the case of user-defined IDs:
+        // send the user-defined ID, prefixed with a "u"
+        // (we do this so no application can accidentally override a user defined ID)
+        const std::string fmt{ "\x1b]8;id=u-{};{}\x1b\\" };
         const std::string uri_str{ til::u16u8(uri) };
         const std::string customId_str{ til::u16u8(customId) };
         auto s = fmt::format(fmt, customId_str, uri_str);
