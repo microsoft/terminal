@@ -14,6 +14,13 @@
 #include "..\host\srvinit.h"
 #include "..\host\telemetry.hpp"
 
+#include "..\host\IConsoleHandoff_h.h"
+
+//2B607BC1-43EB-40C3-95AE-2856ADDB7F23
+//1F9F2BF5-5BC3-4F17-B0E6-912413F1F451
+//const IID IID_IConsoleHandoff = { 0x2b607bc1, 0x43eb, 0x40c3, 0x95, 0xae, 0x28, 0x56, 0xad, 0xdb, 0x7f, 0x23 };
+const CLSID CLSID_Handoff = { 0x1f9f2bf5, 0x5bc3, 0x4f17, 0xb0, 0xe6, 0x91, 0x24, 0x13, 0xf1, 0xf4, 0x51 };
+
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
@@ -67,8 +74,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
                                                                           handle));
         break;
 
-    case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT:
-    {
+    case CD_IO_OBJECT_TYPE_CURRENT_OUTPUT: {
         SCREEN_INFORMATION& ScreenInformation = gci.GetActiveOutputBuffer().GetMainBuffer();
         Status = NTSTATUS_FROM_HRESULT(ScreenInformation.AllocateIoHandle(ConsoleHandleData::HandleType::Output,
                                                                           CreateInformation->DesiredAccess,
@@ -160,20 +166,47 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     Globals& Globals = ServiceLocator::LocateGlobals();
     if (!Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
     {
-        
-
-        typedef HRESULT (*PFNHANDOFF)(HANDLE,
-                                      const ConsoleArguments* const, // this can't stay like this because ConsoleArguments could change...
-                                      HANDLE,
-                                      PCONSOLE_API_MSG);
-
-        HMODULE mod = LoadLibraryW(L"OpenConsoleDll.dll");
-        PFNHANDOFF addr = (PFNHANDOFF)GetProcAddress(mod, "ConsoleEstablishHandoff");
-        HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get(), pReceiveMsg);
-        if (SUCCEEDED(res))
+        HRESULT hr;
+        hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        if (SUCCEEDED(hr))
         {
-            ExitThread(S_OK);
+            ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
+            hr = CoCreateInstance(CLSID_Handoff, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&handoff));
+            if (SUCCEEDED(hr))
+            {
+                CONSOLE_PORTABLE_ARGUMENTS args;
+                // args = &Globals.launchArgs
+                CONSOLE_PORTABLE_ATTACH_MSG msg;
+                // msg = pReceiveMsg
+
+                hr = handoff->EstablishHandoff(Globals.pDeviceComm->_Server.get(),
+                                               Globals.hInputEvent.get(),
+                                               &args,
+                                               &msg);
+
+                if (SUCCEEDED(hr))
+                {
+                    ExitThread(S_OK);
+                }
+            }
         }
+        if (FAILED(hr))
+        {
+            LOG_HR(hr);
+        }
+
+        //typedef HRESULT (*PFNHANDOFF)(HANDLE,
+        //                              const ConsoleArguments* const, // this can't stay like this because ConsoleArguments could change...
+        //                              HANDLE,
+        //                              PCONSOLE_API_MSG);
+
+        //HMODULE mod = LoadLibraryW(L"OpenConsoleDll.dll");
+        //PFNHANDOFF addr = (PFNHANDOFF)GetProcAddress(mod, "ConsoleEstablishHandoff");
+        //HRESULT res = addr(Globals.pDeviceComm->_Server.get(), &Globals.launchArgs, Globals.hInputEvent.get(), pReceiveMsg);
+        //if (SUCCEEDED(res))
+        //{
+        //    ExitThread(S_OK);
+        //}
     }
 
     Status = NTSTATUS_FROM_HRESULT(gci.ProcessHandleList.AllocProcessData(dwProcessId,

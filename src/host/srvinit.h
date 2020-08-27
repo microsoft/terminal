@@ -33,4 +33,6 @@ extern "C" __declspec(dllexport) HRESULT ConsoleEstablishHandoff(_In_ HANDLE Ser
                                                                  HANDLE driverInputEvent,
                                                                  PCONSOLE_API_MSG connectMessage);
 
+
+
 void ConsoleCheckDebug();

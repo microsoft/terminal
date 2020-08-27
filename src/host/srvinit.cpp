@@ -23,6 +23,8 @@
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
 
+#include "./lib/Handoff_h.h"
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity;
@@ -320,6 +322,8 @@ static wchar_t* _ConsoleHostPath()
     }();
     return consoleHostPath.get();
 }
+
+
 
 HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                 const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...

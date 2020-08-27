@@ -19,6 +19,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ClCompile Include="..\exemain.cpp" />
+    <ClCompile Include="dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj">

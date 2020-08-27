@@ -1,0 +1,35 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+//static constexpr GUID IID_IConsoleHandoff = { 0x2B607BC1, 0x43EB, 0x40C3, { 0x95, 0xAE, 0x28, 0x56, 0xAD, 0xDB, 0x7F, 0x23 } };
+
+typedef struct _CONSOLE_PORTABLE_ARGUMENTS
+{
+    HANDLE input;
+    HANDLE output;
+    [string] wchar_t* argString;
+} CONSOLE_PORTABLE_ARGUMENTS;
+
+typedef CONSOLE_PORTABLE_ARGUMENTS* PCONSOLE_PORTABLE_ARGUMENTS;
+typedef const CONSOLE_PORTABLE_ARGUMENTS* PCCONSOLE_PORTABLE_ARGUMENTS;
+
+typedef struct _CONSOLE_PORTABLE_ATTACH_MSG
+{
+    DWORD foo;
+} CONSOLE_PORTABLE_ATTACH_MSG;
+
+typedef CONSOLE_PORTABLE_ATTACH_MSG* PCONSOLE_PORTABLE_ATTACH_MSG;
+typedef const CONSOLE_PORTABLE_ATTACH_MSG* PCCONSOLE_PORTABLE_ATTACH_MSG;
+
+// IConsoleHandoff
+[
+    object,
+    uuid(2B607BC1-43EB-40C3-95AE-2856ADDB7F23), // IID_IConsoleHandoff
+    local
+] interface IConsoleHandoff : IUnknown
+{
+    HRESULT EstablishHandoff([in] HANDLE server,
+                             [in] HANDLE inputEvent,
+                             [in, ref] PCCONSOLE_PORTABLE_ARGUMENTS args,
+                             [in, ref] PCCONSOLE_PORTABLE_ATTACH_MSG msg);
+};
