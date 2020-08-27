@@ -73,16 +73,6 @@ namespace winrt::TerminalApp::implementation
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
-        // HERE BE DRAGONS:
-        // StartingDirectory is nullable. A null starting directory inherits that
-        //  one of its parent process. However, MIDL does not allow us to have an
-        //  IReference<String>. So we're storing it as an optional in the backend,
-        //  and evaluating its true value when exporting it to a TerminalSettings
-        //  object via EvaluateStartingDirectory().
-        bool HasStartingDirectory() const noexcept;
-        hstring StartingDirectory() const noexcept;
-        void StartingDirectory(const hstring& value) noexcept;
-
         GETSET_PROPERTY(hstring, Name, L"Default");
         GETSET_PROPERTY(hstring, Source);
         GETSET_PROPERTY(bool, Hidden, false);
@@ -104,10 +94,11 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, Padding, DEFAULT_PADDING);
 
         GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
+        GETSET_PROPERTY(hstring, StartingDirectory, L"");
 
         GETSET_PROPERTY(hstring, BackgroundImagePath);
-        GETSET_PROPERTY(Windows::Foundation::IReference<double>, BackgroundImageOpacity);
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Xaml::Media::Stretch>, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
+        GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
+        GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
 
         GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_PROPERTY(bool, RetroTerminalEffect, false);
@@ -128,10 +119,12 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
     private:
-        std::optional<winrt::guid> _Guid = std::nullopt;
-        std::optional<winrt::guid> _ConnectionType = std::nullopt;
-        std::optional<winrt::hstring> _StartingDirectory = std::nullopt;
-        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment;
+        std::optional<winrt::guid> _Guid{ std::nullopt };
+        std::optional<winrt::guid> _ConnectionType{ std::nullopt };
+        std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> _BackgroundImageAlignment{
+            Windows::UI::Xaml::HorizontalAlignment::Center,
+            Windows::UI::Xaml::VerticalAlignment::Center
+        };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 

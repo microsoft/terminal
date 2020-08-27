@@ -67,6 +67,13 @@ namespace TerminalApp::JsonUtils
             using Type = typename std::decay<TOpt>::type;
             static constexpr bool IsOptional = true;
         };
+
+        template<>
+        struct DeduceOptional<::winrt::hstring>
+        {
+            using Type = typename ::winrt::hstring;
+            static constexpr bool IsOptional = true;
+        };
     }
 
     class DeserializationError : public std::runtime_error

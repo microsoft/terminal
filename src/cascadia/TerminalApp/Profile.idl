@@ -44,8 +44,8 @@ namespace TerminalApp
 
         String BackgroundImagePath;
         String GetExpandedBackgroundImagePath();
-        Windows.Foundation.IReference<Double> BackgroundImageOpacity;
-        Windows.Foundation.IReference<Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode;
+        Double BackgroundImageOpacity;
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 

@@ -98,9 +98,9 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
 
     terminalSettings.Commandline(_Commandline);
 
-    if (_StartingDirectory)
+    if (!_StartingDirectory.empty())
     {
-        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_StartingDirectory.value().c_str());
+        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_StartingDirectory.c_str());
         terminalSettings.StartingDirectory(evaluatedDirectory);
     }
 
@@ -149,23 +149,14 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const std::
         terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
     }
 
-    if (_BackgroundImageOpacity)
-    {
-        terminalSettings.BackgroundImageOpacity(_BackgroundImageOpacity.Value());
-    }
+    terminalSettings.BackgroundImageOpacity(_BackgroundImageOpacity);
+    terminalSettings.BackgroundImageStretchMode(_BackgroundImageStretchMode);
 
-    if (_BackgroundImageStretchMode)
-    {
-        terminalSettings.BackgroundImageStretchMode(_BackgroundImageStretchMode.Value());
-    }
+    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_BackgroundImageAlignment);
+    terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
 
-    if (_BackgroundImageAlignment.has_value())
-    {
-        const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_BackgroundImageAlignment.value());
-        const auto imageVerticalAlignment = std::get<VerticalAlignment>(_BackgroundImageAlignment.value());
-        terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
-        terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
-    }
+    const auto imageVerticalAlignment = std::get<VerticalAlignment>(_BackgroundImageAlignment);
+    terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
 
     terminalSettings.RetroTerminalEffect(_RetroTerminalEffect);
 
@@ -495,44 +486,22 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 
 const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
 {
-    if (_BackgroundImageAlignment.has_value())
-    {
-        return std::get<HorizontalAlignment>(_BackgroundImageAlignment.value());
-    }
-    return HorizontalAlignment::Center;
+    return std::get<HorizontalAlignment>(_BackgroundImageAlignment);
 }
 
 void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
 {
-    if (!_BackgroundImageAlignment.has_value())
-    {
-        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
-    }
-    else
-    {
-        std::get<HorizontalAlignment>(_BackgroundImageAlignment.value()) = value;
-    }
+    std::get<HorizontalAlignment>(_BackgroundImageAlignment) = value;
 }
 
 const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
 {
-    if (_BackgroundImageAlignment.has_value())
-    {
-        return std::get<VerticalAlignment>(_BackgroundImageAlignment.value());
-    }
-    return VerticalAlignment::Center;
+    return std::get<VerticalAlignment>(_BackgroundImageAlignment);
 }
 
 void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
 {
-    if (!_BackgroundImageAlignment.has_value())
-    {
-        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
-    }
-    else
-    {
-        std::get<VerticalAlignment>(_BackgroundImageAlignment.value()) = value;
-    }
+    std::get<VerticalAlignment>(_BackgroundImageAlignment) = value;
 }
 
 bool Profile::HasGuid() const noexcept
@@ -565,23 +534,4 @@ winrt::guid Profile::ConnectionType() const noexcept
 void Profile::ConnectionType(winrt::guid conType) noexcept
 {
     _ConnectionType = conType;
-}
-
-bool Profile::HasStartingDirectory() const noexcept
-{
-    return _StartingDirectory.has_value();
-}
-
-winrt::hstring Profile::StartingDirectory() const noexcept
-{
-    // This can throw if we never had our _StartingDirectory set to a formal value.
-    // A null value can only be detected via HasStartingDirectory().
-    // For more details, read the StartingDirectory note in Profile.h
-    THROW_HR_IF_MSG(E_FAIL, !_StartingDirectory.has_value(), "Profile._StartingDirectory is null");
-    return *_StartingDirectory;
-}
-
-void Profile::StartingDirectory(const winrt::hstring& value) noexcept
-{
-    _StartingDirectory = std::move(value);
 }
