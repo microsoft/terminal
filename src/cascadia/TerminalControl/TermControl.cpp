@@ -719,11 +719,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _cursorTimer = std::nullopt;
             }
 
-            // Set up a hover timer, but don't start it yet
-            int hoverTime = 500;
-            _hoverTimer.Interval(std::chrono::milliseconds(hoverTime));
-            _hoverTimer.Tick({ get_weak(), &TermControl::_HoverTimerTick });
-
             // import value from WinUser (convert from milli-seconds to micro-seconds)
             _multiClickTimer = GetDoubleClickTime() * 1000;
 
@@ -1257,12 +1252,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
-            //else
-            //{
-            //    // We have moved to a new position, start/reset the hover timer
-            //    _hoverTimer.Start();
-            //    _hoverPos = point.Position();
-            //}
             const auto uri = _terminal->GetHyperlinkAtPosition(_GetTerminalPosition(point.Position()));
             if (!uri.empty())
             {
@@ -1799,7 +1788,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _cursorTimer.value().Stop();
             _terminal->SetCursorOn(false);
-            _hoverTimer.Stop();
         }
     }
 
@@ -2012,26 +2000,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
         _terminal->SetCursorOn(!_terminal->IsCursorOn());
-    }
-
-    void TermControl::_HoverTimerTick(Windows::Foundation::IInspectable const& /* sender */,
-                                      Windows::Foundation::IInspectable const& /* e */)
-    {
-        // Stop the timer
-        _hoverTimer.Stop();
-        if (_closing)
-        {
-            return;
-        }
-        const auto uri = _terminal->GetHyperlinkAtPosition(_GetTerminalPosition(_hoverPos));
-        if (!uri.empty())
-        {
-            // We have hovered over a link, update the tooltip with the URI and move the border
-            // to the mouse location
-            LinkTip().Content(winrt::box_value(uri));
-            SubCanvas().SetLeft(SubBorder(), (_hoverPos.X-SwapChainPanel().ActualOffset().x));
-            SubCanvas().SetTop(SubBorder(), (_hoverPos.Y-SwapChainPanel().ActualOffset().y));
-        }
     }
 
     // Method Description:
