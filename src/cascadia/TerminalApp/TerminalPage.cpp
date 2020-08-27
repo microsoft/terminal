@@ -251,6 +251,11 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // Settings AllowDependentAnimations will affect whether animations are
+        // enabled application-wide, so we don't need to check it each time we
+        // want to create an animation.
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings->GlobalSettings().DisableAnimations());
+
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
         // window will be, so they can subdivide that space.

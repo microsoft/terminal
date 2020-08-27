@@ -20,6 +20,8 @@ using namespace TerminalApp;
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const float Half = 0.50f;
+static const int AnimationDurationInMilliseconds = 200;
+static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
@@ -766,6 +768,18 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
     if (auto pane{ weakThis.get() })
     {
+        // If animations are disabled, just skip this and go straight to
+        // _CloseChild. Curiously, the pane opening animation doesn't need this,
+        // and will skip straight to Completed when animations are disabled, but
+        // this one doesn't seem to.
+        if (!Media::Animation::Timeline::AllowDependentAnimations())
+        {
+            pane->_CloseChild(closeFirst);
+            return;
+        }
+
+        // Setup the animation
+
         auto removedChild = closeFirst ? _firstChild : _secondChild;
         auto remainingChild = closeFirst ? _secondChild : _firstChild;
         const bool splitWidth = _splitState == SplitState::Vertical;
@@ -782,7 +796,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
         // Remove both children from the grid
         _root.Children().Clear();
-        // Add the remaining child back to the grid
+        // Add the remaining child back to the grid, in the right place.
         _root.Children().Append(remainingChild->GetRootElement());
         if (_splitState == SplitState::Vertical)
         {
@@ -793,13 +807,11 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
             Controls::Grid::SetRow(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
         }
 
-        // Create the dummy grid
+        // Create the dummy grid. This grid will be the one we actually animate,
+        // in the place of the closed pane.
         Controls::Grid dummyGrid;
-        // Color magenta = ColorHelper::FromArgb(255, 255, 0, 255);
-        // SolidColorBrush b;
-        // b.Color(magenta);
-        // dummyGrid.Background(b);
         dummyGrid.Background(s_unfocusedBorderBrush);
+        // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
         dummyGrid.Height(removedOriginalSize.Height);
         // Put it where the removed child is
@@ -816,6 +828,12 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
         // Set up the rows/cols as auto/auto, so they'll only use the size of
         // the elements in the grid.
+        //
+        // * For the closed pane, we want to make that row/col "auto" sized, so
+        //   it takes up as much space as is available.
+        // * For the remaining pane, we'll make that row/col "*" sized, so it
+        //   takes all the remaining space. As the dummy grid is resized down,
+        //   the remaining pane will expand to take the rest of the space.
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
         if (_splitState == SplitState::Vertical)
@@ -837,39 +855,17 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
             _root.RowDefinitions().Append(secondRowDef);
         }
 
-        // TODO:
-        // If the remaining child isn't a leaf, then pre-size it's children to
-        // the space they'll use in when they take up this full space.
-        //
-        // const auto [firstSize, secondSize] = remainingChild->_CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
-
-        // Set the remaining grid to manually be the size of us
-        if (splitWidth)
-        {
-            // remainingChild->_root.Width(totalSize);
-            // remainingChild->_root.Width(remainingOriginalSize.Width);
-            // remainingChild->_root.HorizontalAlignment(HorizontalAlignment::Left);
-        }
-        else
-        {
-            // remainingChild->_root.Height(totalSize);
-            // remainingChild->_root.Height(remainingOriginalSize.Height);
-            // remainingChild->_root.VerticalAlignment(VerticalAlignment::Top);
-        }
-
         // Animate the dummy grid from it's current size down to 0
-
-        Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(200)));
-
         Media::Animation::DoubleAnimation animation{};
-        animation.Duration(duration);
+        animation.Duration(AnimationDuration);
         animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
         animation.To(0.0);
+        // This easing is the same as the entrance animation.
         animation.EasingFunction(Media::Animation::QuadraticEase{});
         animation.EnableDependentAnimation(true);
 
         Media::Animation::Storyboard s;
-        s.Duration(duration);
+        s.Duration(AnimationDuration);
         s.Children().Append(animation);
         s.SetTarget(animation, dummyGrid);
         s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
@@ -878,28 +874,14 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         s.Begin();
 
         std::weak_ptr<Pane> weakThis{ shared_from_this() };
-        // When the animation is completed, undo the trickiness from before, to
-        // restore the controls to the behavior they'd usually have.
-        animation.Completed([weakThis, closeFirst, splitWidth](auto&&, auto&&) {
+
+        // When the animation is completed, reparent the child's content up to
+        // us, and remove the child nodes from the tree.
+        animation.Completed([weakThis, closeFirst](auto&&, auto&&) {
             if (auto pane{ weakThis.lock() })
             {
-                auto remainingChild = closeFirst ? pane->_secondChild : pane->_firstChild;
-                // Remove both children from the grid
-                pane->_root.Children().Clear();
-                // Add the remaining child back to the grid
-                pane->_root.Children().Append(remainingChild->GetRootElement());
-
-                if (splitWidth)
-                {
-                    remainingChild->_root.Width(NAN);
-                    remainingChild->_root.HorizontalAlignment(HorizontalAlignment::Stretch);
-                }
-                else
-                {
-                    remainingChild->_root.Height(NAN);
-                    remainingChild->_root.VerticalAlignment(VerticalAlignment::Stretch);
-                }
-
+                // We don't need to manually undo any of the above trickiness.
+                // We're going to re-parent the child's content into us anyways
                 pane->_CloseChild(closeFirst);
             }
         });
