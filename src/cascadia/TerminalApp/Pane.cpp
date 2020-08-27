@@ -795,10 +795,11 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
         // Create the dummy grid
         Controls::Grid dummyGrid;
-        Color magenta = ColorHelper::FromArgb(255, 255, 0, 255);
-        SolidColorBrush b;
-        b.Color(magenta);
-        dummyGrid.Background(b);
+        // Color magenta = ColorHelper::FromArgb(255, 255, 0, 255);
+        // SolidColorBrush b;
+        // b.Color(magenta);
+        // dummyGrid.Background(b);
+        dummyGrid.Background(s_unfocusedBorderBrush);
         dummyGrid.Width(removedOriginalSize.Width);
         dummyGrid.Height(removedOriginalSize.Height);
         // Put it where the removed child is
@@ -858,7 +859,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
         // Animate the dummy grid from it's current size down to 0
 
-        Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(1000)));
+        Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(200)));
 
         Media::Animation::DoubleAnimation animation{};
         animation.Duration(duration);
