@@ -331,7 +331,8 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
         if ((mode == CloseOnExitMode::Always) ||
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
-            _ClosedHandlers(nullptr, nullptr);
+            // _ClosedHandlers(nullptr, nullptr);
+            Close();
         }
     }
 }
@@ -765,7 +766,142 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
     if (auto pane{ weakThis.get() })
     {
-        _CloseChild(closeFirst);
+        auto removedChild = closeFirst ? _firstChild : _secondChild;
+        auto remainingChild = closeFirst ? _secondChild : _firstChild;
+        const bool splitWidth = _splitState == SplitState::Vertical;
+        const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
+
+        Size removedOriginalSize{
+            ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),
+            ::base::saturated_cast<float>(removedChild->_root.ActualHeight())
+        };
+        Size remainingOriginalSize{
+            ::base::saturated_cast<float>(remainingChild->_root.ActualWidth()),
+            ::base::saturated_cast<float>(remainingChild->_root.ActualHeight())
+        };
+
+        // Remove both children from the grid
+        _root.Children().Clear();
+        // Add the remaining child back to the grid
+        _root.Children().Append(remainingChild->GetRootElement());
+        if (_splitState == SplitState::Vertical)
+        {
+            Controls::Grid::SetColumn(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            Controls::Grid::SetRow(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
+        }
+
+        // Create the dummy grid
+        Controls::Grid dummyGrid;
+        Color magenta = ColorHelper::FromArgb(255, 255, 0, 255);
+        SolidColorBrush b;
+        b.Color(magenta);
+        dummyGrid.Background(b);
+        dummyGrid.Width(removedOriginalSize.Width);
+        dummyGrid.Height(removedOriginalSize.Height);
+        // Put it where the removed child is
+        if (_splitState == SplitState::Vertical)
+        {
+            Controls::Grid::SetColumn(dummyGrid, closeFirst ? 0 : 1);
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            Controls::Grid::SetRow(dummyGrid, closeFirst ? 0 : 1);
+        }
+        // Add it to the tree
+        _root.Children().Append(dummyGrid);
+
+        // Set up the rows/cols as auto/auto, so they'll only use the size of
+        // the elements in the grid.
+        _root.ColumnDefinitions().Clear();
+        _root.RowDefinitions().Clear();
+        if (_splitState == SplitState::Vertical)
+        {
+            auto firstColDef = Controls::ColumnDefinition();
+            auto secondColDef = Controls::ColumnDefinition();
+            firstColDef.Width(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            secondColDef.Width(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            _root.ColumnDefinitions().Append(firstColDef);
+            _root.ColumnDefinitions().Append(secondColDef);
+        }
+        else if (_splitState == SplitState::Horizontal)
+        {
+            auto firstRowDef = Controls::RowDefinition();
+            auto secondRowDef = Controls::RowDefinition();
+            firstRowDef.Height(!closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            secondRowDef.Height(closeFirst ? GridLengthHelper::FromValueAndType(1, GridUnitType::Star) : GridLengthHelper::Auto());
+            _root.RowDefinitions().Append(firstRowDef);
+            _root.RowDefinitions().Append(secondRowDef);
+        }
+
+        // TODO:
+        // If the remaining child isn't a leaf, then pre-size it's children to
+        // the space they'll use in when they take up this full space.
+        //
+        // const auto [firstSize, secondSize] = remainingChild->_CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
+
+        // Set the remaining grid to manually be the size of us
+        if (splitWidth)
+        {
+            // remainingChild->_root.Width(totalSize);
+            // remainingChild->_root.Width(remainingOriginalSize.Width);
+            // remainingChild->_root.HorizontalAlignment(HorizontalAlignment::Left);
+        }
+        else
+        {
+            // remainingChild->_root.Height(totalSize);
+            // remainingChild->_root.Height(remainingOriginalSize.Height);
+            // remainingChild->_root.VerticalAlignment(VerticalAlignment::Top);
+        }
+
+        // Animate the dummy grid from it's current size down to 0
+
+        Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(1000)));
+
+        Media::Animation::DoubleAnimation animation{};
+        animation.Duration(duration);
+        animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
+        animation.To(0.0);
+        animation.EasingFunction(Media::Animation::QuadraticEase{});
+        animation.EnableDependentAnimation(true);
+
+        Media::Animation::Storyboard s;
+        s.Duration(duration);
+        s.Children().Append(animation);
+        s.SetTarget(animation, dummyGrid);
+        s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
+
+        // Start the animation.
+        s.Begin();
+
+        std::weak_ptr<Pane> weakThis{ shared_from_this() };
+        // When the animation is completed, undo the trickiness from before, to
+        // restore the controls to the behavior they'd usually have.
+        animation.Completed([weakThis, closeFirst, splitWidth](auto&&, auto&&) {
+            if (auto pane{ weakThis.lock() })
+            {
+                auto remainingChild = closeFirst ? pane->_secondChild : pane->_firstChild;
+                // Remove both children from the grid
+                pane->_root.Children().Clear();
+                // Add the remaining child back to the grid
+                pane->_root.Children().Append(remainingChild->GetRootElement());
+
+                if (splitWidth)
+                {
+                    remainingChild->_root.Width(NAN);
+                    remainingChild->_root.HorizontalAlignment(HorizontalAlignment::Stretch);
+                }
+                else
+                {
+                    remainingChild->_root.Height(NAN);
+                    remainingChild->_root.VerticalAlignment(VerticalAlignment::Stretch);
+                }
+
+                pane->_CloseChild(closeFirst);
+            }
+        });
     }
 }
 
