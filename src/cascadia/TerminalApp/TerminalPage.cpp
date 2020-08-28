@@ -1819,8 +1819,22 @@ namespace winrt::TerminalApp::implementation
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
-    fire_and_forget TerminalPage::_LaunchSettings(const SettingsTarget target)
+    fire_and_forget TerminalPage::_LaunchSettings(const SettingsTarget /*target*/)
     {
+        const auto control = _GetActiveControl();
+        auto conn{ control.Connection() };
+        auto [replacementConn, debugConnection] = OpenDebugTapConnection(conn);
+        control.Connection(replacementConn);
+        TermControl newControl{ control.Settings(), debugConnection };
+
+        auto tab{ _GetFocusedTab() };
+        _RegisterTerminalEvents(newControl, *tab);
+        // Split (auto) with the debug tap.
+        tab->SplitPane(SplitState::Automatic, tab->GetFocusedProfile().value_or(GUID{}), newControl);
+
+        co_await winrt::resume_background();
+
+#if 0
         // This will switch the execution of the function to a background (not
         // UI) thread. This is IMPORTANT, because the Windows.Storage API's
         // (used for retrieving the path to the file) will crash on the UI
@@ -1848,6 +1862,7 @@ namespace winrt::TerminalApp::implementation
             openFile(CascadiaSettings::GetSettingsPath());
             break;
         }
+#endif
     }
 
     // Method Description:

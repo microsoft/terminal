@@ -48,6 +48,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         void UpdateSettings(Microsoft.Terminal.TerminalControl.IControlSettings newSettings);
 
+        Microsoft.Terminal.TerminalConnection.ITerminalConnection Connection;
         Microsoft.Terminal.TerminalControl.IControlSettings Settings { get; };
 
         event TitleChangedEventArgs TitleChanged;

@@ -59,7 +59,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
-        _connection{ connection },
+        _connection{ nullptr },
         _initializedTerminal{ false },
         _settings{ settings },
         _closing{ false },
@@ -100,22 +100,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
-        // This event is explicitly revoked in the destructor: does not need weak_ref
-        auto onReceiveOutputFn = [this](const hstring str) {
-            _terminal->Write(str);
-        };
-        _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
+        Connection(connection);
 
         _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
             _SendInputToConnection(wstr);
         });
 
         _terminal->UpdateSettings(settings);
-
-        // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
-            _ConnectionStateChangedHandlers(*this, nullptr);
-        });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
@@ -169,6 +160,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings();
+    }
+
+    void TermControl::Connection(TerminalConnection::ITerminalConnection connection)
+    {
+        if (connection == _connection)
+        {
+            return;
+        }
+
+        // Explicitly revoked in the destructor
+        auto connectionOutputRevoker = connection.TerminalOutput(winrt::auto_revoke, [this](const hstring str) {
+            _terminal->Write(str);
+        });
+
+        // Subscribe to the connection's disconnected event and call our connection closed handlers.
+        auto connectionStateChangedRevoker = connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
+            _ConnectionStateChangedHandlers(*this, nullptr);
+        });
+
+        std::swap(_connectionStateChangedRevoker, connectionStateChangedRevoker);
+        std::swap(_connectionOutputRevoker, connectionOutputRevoker);
+        std::swap(_connection, connection);
+    }
+
+    TerminalConnection::ITerminalConnection TermControl::Connection() const
+    {
+        return _connection;
     }
 
     // Method Description:
@@ -2256,7 +2274,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!_closing.exchange(true))
         {
             // Stop accepting new output and state changes before we disconnect everything.
-            _connection.TerminalOutput(_connectionOutputEventToken);
+            _connectionOutputRevoker.revoke();
             _connectionStateChangedRevoker.revoke();
 
             TSFInputControl().Close(); // Disconnect the TSF input control so it doesn't receive EditContext events.

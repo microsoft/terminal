@@ -71,6 +71,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
+        void Connection(TerminalConnection::ITerminalConnection connection);
+        TerminalConnection::ITerminalConnection Connection() const;
+
         winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
 
         hstring Title();
@@ -146,7 +149,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
-        event_token _connectionOutputEventToken;
+        TerminalConnection::ITerminalConnection::TerminalOutput_revoker _connectionOutputRevoker;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
