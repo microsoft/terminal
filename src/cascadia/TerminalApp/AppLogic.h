@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
-        winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
+        TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();

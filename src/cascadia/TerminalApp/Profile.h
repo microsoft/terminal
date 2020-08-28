@@ -16,7 +16,7 @@ Author(s):
 #pragma once
 
 #include "Profile.g.h"
-#include "ColorScheme.g.h"
+#include "TerminalSettings.h"
 
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         Profile();
         Profile(guid guid);
 
-        TerminalApp::TerminalSettings CreateTerminalSettings(const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes) const;
+        TerminalApp::TerminalSettings CreateTerminalSettings(const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes) const;
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
@@ -61,11 +61,11 @@ namespace winrt::TerminalApp::implementation
 
         bool HasGuid() const noexcept;
         winrt::guid Guid() const;
-        void Guid(winrt::guid guid) noexcept;
+        void Guid(const winrt::guid& guid) noexcept;
 
         bool HasConnectionType() const noexcept;
         winrt::guid ConnectionType() const noexcept;
-        void ConnectionType(winrt::guid conType) noexcept;
+        void ConnectionType(const winrt::guid& conType) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
         const Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;

@@ -107,7 +107,9 @@
     <ClInclude Include="ColorScheme.h">
       <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="GlobalAppSettings.h" />
+    <ClInclude Include="GlobalAppSettings.h">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
@@ -188,7 +190,9 @@
     <ClCompile Include="ColorScheme.cpp">
       <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="GlobalAppSettings.cpp" />
+    <ClCompile Include="GlobalAppSettings.cpp">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
@@ -281,6 +285,7 @@
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Profile.idl" />
+    <Midl Include="GlobalAppSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

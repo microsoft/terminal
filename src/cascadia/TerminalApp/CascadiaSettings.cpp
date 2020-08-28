@@ -52,7 +52,8 @@ CascadiaSettings::CascadiaSettings() :
 //   generators. Set this to `false` for unit testing.
 // Arguments:
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
-CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
+CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
+    _globals{ winrt::make_self<winrt::TerminalApp::implementation::GlobalAppSettings>() }
 {
     if (addDynamicProfiles)
     {
@@ -106,7 +107,7 @@ gsl::span<const Profile> CascadiaSettings::GetProfiles() const noexcept
 // - the globally configured keybindings
 AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 {
-    return _globals.GetKeybindings();
+    return _globals->GetKeybindings();
 }
 
 // Method Description:
@@ -115,9 +116,9 @@ AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 // - <none>
 // Return Value:
 // - a reference to our global settings
-GlobalAppSettings& CascadiaSettings::GlobalSettings()
+winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings()
 {
-    return _globals;
+    return *_globals;
 }
 
 // Method Description:
@@ -227,9 +228,9 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 void CascadiaSettings::_ResolveDefaultProfile()
 {
     const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
-    if (unparsedDefaultProfile)
+    if (!unparsedDefaultProfile.empty())
     {
-        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(*unparsedDefaultProfile) };
+        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
         auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, winrt::guid{}) };
         GlobalSettings().DefaultProfile(defaultProfileGuid);
     }
@@ -404,15 +405,11 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     bool foundInvalidScheme = false;
     for (auto& profile : _profiles)
     {
-        auto schemeName = profile.ColorSchemeName();
-        if (!schemeName.empty())
+        const auto schemeName = profile.ColorSchemeName();
+        if (!_globals->GetColorSchemes().HasKey(schemeName))
         {
-            const auto found = _globals.GetColorSchemes().find(schemeName.c_str());
-            if (found == _globals.GetColorSchemes().end())
-            {
-                profile.ColorSchemeName({ L"Campbell" });
-                foundInvalidScheme = true;
-            }
+            profile.ColorSchemeName({ L"Campbell" });
+            foundInvalidScheme = true;
         }
     }
 
@@ -536,10 +533,10 @@ TerminalSettings CascadiaSettings::BuildSettings(winrt::guid profileGuid) const
     THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
     const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
-    TerminalSettings result = profileImpl->CreateTerminalSettings(_globals.GetColorSchemes());
+    TerminalSettings result = profileImpl->CreateTerminalSettings(_globals->GetColorSchemes());
 
     // Place our appropriate global settings into the Terminal Settings
-    _globals.ApplyToSettings(result);
+    _globals->ApplyToSettings(result);
 
     return result;
 }
@@ -573,7 +570,7 @@ winrt::guid CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTermi
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return til::coalesce_value(profileByName, profileByIndex, _globals.DefaultProfile());
+    return til::coalesce_value(profileByName, profileByIndex, _globals->DefaultProfile());
 }
 
 // Method Description:
@@ -661,7 +658,7 @@ std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optiona
 // - <none>
 void CascadiaSettings::_ValidateKeybindings()
 {
-    auto keybindingWarnings = _globals.GetKeybindingsWarnings();
+    auto keybindingWarnings = _globals->GetKeybindingsWarnings();
 
     if (!keybindingWarnings.empty())
     {
@@ -746,16 +743,8 @@ const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const winrt::guid p
     {
         return nullptr;
     }
-    const std::wstring schemeName{ profile.ColorSchemeName() };
-    auto scheme = _globals.GetColorSchemes().find(schemeName);
-    if (scheme != _globals.GetColorSchemes().end())
-    {
-        return scheme->second;
-    }
-    else
-    {
-        return nullptr;
-    }
+    const auto schemeName = profile.ColorSchemeName();
+    return _globals->GetColorSchemes().TryLookup(schemeName);
 }
 
 // Method Description:
@@ -768,13 +757,10 @@ const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const winrt::guid p
 // Return Value:
 // - true iff we found a matching scheme for the name schemeName
 bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings,
-                                        std::wstring_view schemeName)
+                                        winrt::hstring schemeName)
 {
-    std::wstring name{ schemeName };
-    auto schemeAndName = _globals.GetColorSchemes().find(name);
-    if (schemeAndName != _globals.GetColorSchemes().end())
+    if (auto scheme{ _globals->GetColorSchemes().TryLookup(schemeName) })
     {
-        const auto& scheme = schemeAndName->second;
         scheme.ApplyScheme(settings);
         return true;
     }

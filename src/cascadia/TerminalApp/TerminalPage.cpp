@@ -2070,16 +2070,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
                                                                                     gsl::span<const winrt::TerminalApp::Profile> profiles,
-                                                                                    const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes)
+                                                                                    IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
 
         std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
-        sortedSchemes.reserve(schemes.size());
+        sortedSchemes.reserve(schemes.Size());
 
         for (const auto& nameAndScheme : schemes)
         {
-            sortedSchemes.push_back(nameAndScheme.second);
+            sortedSchemes.push_back(nameAndScheme.Value());
         }
         std::sort(sortedSchemes.begin(),
                   sortedSchemes.end(),
@@ -2108,7 +2108,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands(),
                                                                                            _settings->GetProfiles(),
                                                                                            _settings->GlobalSettings().GetColorSchemes());
 

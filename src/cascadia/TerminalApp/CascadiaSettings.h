@@ -67,7 +67,7 @@ public:
     std::tuple<winrt::guid, winrt::TerminalApp::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
     winrt::TerminalApp::TerminalSettings BuildSettings(winrt::guid profileGuid) const;
 
-    GlobalAppSettings& GlobalSettings();
+    winrt::TerminalApp::GlobalAppSettings GlobalSettings();
 
     gsl::span<const winrt::TerminalApp::Profile> GetProfiles() const noexcept;
 
@@ -84,10 +84,10 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
-    bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, std::wstring_view schemeName);
+    bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, winrt::hstring schemeName);
 
 private:
-    GlobalAppSettings _globals;
+    winrt::com_ptr<winrt::TerminalApp::implementation::GlobalAppSettings> _globals;
     std::vector<winrt::TerminalApp::Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 

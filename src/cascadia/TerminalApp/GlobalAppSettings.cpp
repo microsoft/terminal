@@ -9,8 +9,10 @@
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include "GlobalAppSettings.g.cpp"
+
 using namespace TerminalApp;
-using namespace winrt::TerminalApp;
+using namespace winrt::TerminalApp::implementation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::UI::Xaml::Controls;
@@ -51,52 +53,40 @@ static constexpr bool debugFeaturesDefault{ false };
 #endif
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
+    _keybindings{ winrt::make_self<AppKeyBindings>() },
     _keybindingsWarnings{},
-    _colorSchemes{},
-    _unparsedDefaultProfile{ std::nullopt },
+    _unparsedDefaultProfile{},
     _defaultProfile{},
-    _InitialRows{ DEFAULT_ROWS },
-    _InitialCols{ DEFAULT_COLS },
-    _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
     _commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+    _colorSchemes = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::ColorScheme>();
 }
 
-GlobalAppSettings::~GlobalAppSettings()
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> GlobalAppSettings::GetColorSchemes() noexcept
 {
+    return _colorSchemes.GetView();
 }
 
-std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
+void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
 {
-    return _colorSchemes;
-}
-
-const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
-{
-    return _colorSchemes;
-}
-
-void GlobalAppSettings::DefaultProfile(const GUID defaultProfile) noexcept
-{
-    _unparsedDefaultProfile.reset();
+    _unparsedDefaultProfile.clear();
     _defaultProfile = defaultProfile;
 }
 
-GUID GlobalAppSettings::DefaultProfile() const
+winrt::guid GlobalAppSettings::DefaultProfile() const
 {
     // If we have an unresolved default profile, we should likely explode.
-    THROW_HR_IF(E_INVALIDARG, _unparsedDefaultProfile.has_value());
+    THROW_HR_IF(E_INVALIDARG, !_unparsedDefaultProfile.empty());
     return _defaultProfile;
 }
 
-std::optional<std::wstring> GlobalAppSettings::UnparsedDefaultProfile() const
+winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
 {
     return _unparsedDefaultProfile;
 }
 
-AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
+winrt::TerminalApp::AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
     return *_keybindings;
 }
@@ -107,7 +97,7 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 // - settings: a TerminalSettings object to add global property values to.
 // Return Value:
 // - <none>
-void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexcept
+void GlobalAppSettings::ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept
 {
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_InitialRows);
@@ -126,10 +116,10 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 // - json: an object which should be a serialization of a GlobalAppSettings object.
 // Return Value:
 // - a new GlobalAppSettings instance created from the values in `json`
-GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
+winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value& json)
 {
-    GlobalAppSettings result;
-    result.LayerJson(json);
+    auto result = winrt::make_self<GlobalAppSettings>();
+    result->LayerJson(json);
     return result;
 }
 
@@ -214,10 +204,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - scheme: the color scheme to add
 // Return Value:
 // - <none>
-void GlobalAppSettings::AddColorScheme(ColorScheme scheme)
+void GlobalAppSettings::AddColorScheme(const winrt::TerminalApp::ColorScheme& scheme)
 {
-    std::wstring name{ scheme.Name() };
-    _colorSchemes[name] = std::move(scheme);
+    _colorSchemes.Insert(scheme.Name(), scheme);
 }
 
 // Method Description:
@@ -234,12 +223,7 @@ std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindings
     return _keybindingsWarnings;
 }
 
-const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() const noexcept
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> GlobalAppSettings::GetCommands() noexcept
 {
-    return _commands;
-}
-
-winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GlobalAppSettings::GetCommands() noexcept
-{
-    return _commands;
+    return _commands.GetView();
 }
