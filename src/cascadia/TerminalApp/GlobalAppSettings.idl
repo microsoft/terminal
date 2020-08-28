@@ -46,6 +46,7 @@ namespace TerminalApp
         Boolean StartOnUserLogin;
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
+        Boolean DisableAnimations;
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> GetColorSchemes();
         void AddColorScheme(ColorScheme scheme);

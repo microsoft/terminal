@@ -20,6 +20,13 @@ using namespace TerminalApp;
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 static const float Half = 0.50f;
+
+// WARNING: Don't do this! This won't work
+//   Duration duration{ std::chrono::milliseconds{ 200 } };
+// Instead, make a duration from a TimeSpan from the time in millis
+//
+// 200ms was chosen because it's quick enough that it doesn't break your
+// flow, but not too quick to see
 static const int AnimationDurationInMilliseconds = 200;
 static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(AnimationDurationInMilliseconds)));
 
@@ -767,14 +774,20 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
 
     if (auto pane{ weakThis.get() })
     {
+        // This will query if animations are enabled via the "Show animations in
+        // Windows" setting in the OS
+        winrt::Windows::UI::ViewManagement::UISettings uiSettings;
+        const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+        const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
+
         // If animations are disabled, just skip this and go straight to
         // _CloseChild. Curiously, the pane opening animation doesn't need this,
         // and will skip straight to Completed when animations are disabled, but
         // this one doesn't seem to.
-        if (!Media::Animation::Timeline::AllowDependentAnimations())
+        if (!animationsEnabledInOS || !animationsEnabledInApp)
         {
             pane->_CloseChild(closeFirst);
-            return;
+            co_return;
         }
 
         // Setup the animation
@@ -1031,25 +1044,22 @@ void Pane::_ApplySplitDefinitions()
 //   have been set up.
 void Pane::_SetupEntranceAnimation()
 {
+    // This will query if animations are enabled via the "Show animations in
+    // Windows" setting in the OS
+    winrt::Windows::UI::ViewManagement::UISettings uiSettings;
+    const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+
     const bool splitWidth = _splitState == SplitState::Vertical;
     const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
     // If we don't have a size yet, it's likely that we're in startup, or we're
     // being executed as a sequence of actions. In that case, just skip the
     // animation.
-    if (totalSize <= 0)
+    if (totalSize <= 0 || !animationsEnabledInOS)
     {
         return;
     }
 
     const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
-
-    // WARNING: Don't do this! This won't work
-    // Duration duration{ std::chrono::milliseconds{ 200 } };
-    // Instead, make a duration from a TimeSpan from the time in millis
-    //
-    // 100ms was chosen because it's quick enough that it doesn't break your
-    // flow, but not too quick to see
-    Duration duration = DurationHelper::FromTimeSpan(winrt::Windows::Foundation::TimeSpan(std::chrono::milliseconds(200)));
 
     // This is safe to capture this, because it's only being called in the
     // context of this method (not on another thread)
@@ -1064,7 +1074,7 @@ void Pane::_SetupEntranceAnimation()
         // * IMPORTANT! We'll manually tell the animation that "yes we know what
         //   we're doing, we want an animation here."
         Media::Animation::DoubleAnimation animation{};
-        animation.Duration(duration);
+        animation.Duration(AnimationDuration);
         if (isFirstChild)
         {
             // If we're animating the first pane, the size should decrease, form the
@@ -1088,7 +1098,7 @@ void Pane::_SetupEntranceAnimation()
         // * Apply the animation to the grid of the new pane we're adding to the tree.
         // * apply the animation to the Width or Height property.
         Media::Animation::Storyboard s;
-        s.Duration(duration);
+        s.Duration(AnimationDuration);
         s.Children().Append(animation);
         s.SetTarget(animation, childGrid);
         s.SetTargetProperty(animation, splitWidth ? L"Width" : L"Height");
