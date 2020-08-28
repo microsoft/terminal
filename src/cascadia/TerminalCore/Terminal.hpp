@@ -130,6 +130,7 @@ public:
     bool IsTrackingMouseInput() const noexcept;
 
     std::wstring GetHyperlinkAtPosition(const COORD position);
+    uint16_t GetHyperlinkIdAtPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)

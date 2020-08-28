@@ -118,6 +118,8 @@ namespace Microsoft::Console::Render
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
 
+        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
+
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
@@ -163,6 +165,8 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
+
+        uint16_t _hyperlinkHoveredId;
 
         bool _firstFrame;
         bool _invalidateFullRows;

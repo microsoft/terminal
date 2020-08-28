@@ -1279,6 +1279,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     SubCanvas().SetTop(SubBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
                 _lastHoveredCell = terminalPos;
+
+                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
+                // If the hyperlink ID changed, trigger a redraw all
+                if (newId != _lastHoveredId)
+                {
+                    _renderEngine->UpdateHyperlinkHoveredId(newId);
+                    _renderer->TriggerRedrawAll();
+                    _lastHoveredId = newId;
+                }
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)

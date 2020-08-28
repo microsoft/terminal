@@ -1716,6 +1716,13 @@ CATCH_RETURN()
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
     }
 
+    if (textAttributes.IsHyperlink() && (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId))
+    {
+        // For now, we just change the colour of all the links
+        // This needs to be changed to a custom effect or something else before merging
+        _d2dBrushForeground->SetColor(D2D1::ColorF(D2D1::ColorF::LightCyan));
+    }
+
     return S_OK;
 }
 
@@ -2403,6 +2410,16 @@ try
     LOG_IF_FAILED(InvalidateAll());
 }
 CATCH_LOG()
+
+// Method Description:
+// - Updates our internal tracker for which hyperilnk ID we are hovering over
+//   This is needed for UpdateDrawingBrushes to know where we need to set a different style
+// Arguments:
+// - The new link ID we are hovering over
+void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
+{
+    _hyperlinkHoveredId = hoveredId;
+}
 
 // Method Description:
 // - Informs this render engine about certain state for this frame at the
