@@ -18,45 +18,33 @@ This spec proposes a major refactor and repurposing of the TerminalSettings proj
 ## Inspiration
 
 The main driver for this change is the Settings UI. The Settings UI will need to read and modify Terminal Settings.
- At the time of writing this spec, the Terminal Settings are serialized as objects in the TerminalApp project.
+ At the time of writing this spec, the Terminal's settings are serialized as objects in the TerminalApp project.
  To access these objects, the Settings UI would need to be a part of TerminalApp too, making it more bloated.
 
 ## Solution Design
 
+The existing TerminalSettings project will be repurposed and renamed to be TerminalSettingsModel.
+ This project is responsible for the serialization, deserialization, and exposure of Windows Terminal's
+ settings. It will host a variety of WinRT settings objects within the `Microsoft.Terminal.Settings.Model`
+ namespace.
+
 ### Terminal Settings Model: Objects and Projections
 
-The objects/interfaces introduced in this section will be exposed as WinRT objects/interfaces
- within the `Microsoft.Terminal.Settings.Model` namespace. This allows them to be interacted with across
- different project layers.
+The TerminalSettingsModel project will include the following WinRT objects (as well as various others):
+- GlobalAppSettings: global settings that generally only affect TerminalApp
+- Profile: profile-level settings
+- ColorScheme: the color table used for a terminal instance
+- AppKeyBindings: the key bindings to invoke actions
+- Command: actions identified by a string (used in Command Palette)
+- AppSettings: a top-level container and representation of Windows Terminal settings (formerly CascadiaSettings)
 
-Additionally, the top-level object holding all of the settings related to Windows Terminal will be
-`AppSettings`. The runtime class will look something like this:
-```c++
-runtimeclass AppSettings
-{
-    // global settings that generally only affect TerminalApp
-    GlobalSettings Globals { get; };
+NOTE: All of these objects already exist in TerminalApp. The work to be done mainly
+ includes transforming them into WinRT objects and moving them out of the TerminalApp project.
 
-    // the list of profiles available to Windows Terminal (custom and dynamically generated)
-    IObservableVector<Profile> Profiles { get; };
-
-    // the list of key bindings indexed by their unique key chord
-    IObservableMap<KeyChord, Action> Keybindings { get; };
-
-    // the list of command palette commands indexed by their name (custom or auto-generated)
-    IObservableMap<String, Action> Commands { get; };
-
-    // the list of color schemes indexed by their unique names
-    IObservableMap<String, ColorScheme> Schemes { get; };
-
-    // a list of warnings encountered during the serialization of the JSON
-    IVector<SerializationWarnings> Warnings { get; };
-}
-```
-
-Introducing a number of observable WinRT types allows for other components to subscribe to changes
- to these collections. A particular example of this being used can be a preview of the TermControl in
- the upcoming Settings UI.
+Additionally, this refactor will expose these settings objects as observable WinRT types.
+ This allows for other components to subscribe to changes to the settings. A particular example of this
+ being used will be an embedded TermControl in the upcoming Settings UI previewing changes to the color
+ scheme.
 
 Adjacent to the introduction of `AppSettings`, `IControlSettings` and `ICoreSettings` will be moved
  to the `Microsoft.Terminal.TerminalControl` namespace. This allows for a better consumption of the
@@ -70,13 +58,18 @@ Introducing these `Microsoft.Terminal.Settings.Model` WinRT objects also allow t
  for setting serialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
 
 Deserialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
- already includes `FromJson` and `CanConvert`. Deserialization would be handled by a `ToJson` function.
+ already includes `FromJson` and `CanConvert`. Deserialization would be handled via the introduction of a `ToJson` function.
 
 
 ### Interacting with the Terminal Settings Model
 
-Separate projects can interact with `AppSettings` to extract data, subscribe to changes, and commit changes.
-This API will look something like this:
+Separate projects can construct an `AppSettings` to extract data, subscribe to changes, and commit changes
+ to the Terminal's settings. Today, Windows Terminal uses the settings.json file to load the user's preferences.
+ This process is a part of the `LoadAll()` function call, which constructs and returns an `AppSettings`
+ from defaults.json and settings.json.
+
+Introducing the following `AppSettings` constructor will let users construct a settings object
+ from a different file path.
 ```c++
 runtimeclass AppSettings
 {
@@ -85,27 +78,19 @@ runtimeclass AppSettings
     AppSettings(String path);
 }
 ```
+Today, the defaults.json text is injected directly as a string to improve performance. This will
+ be unchanged. The `path` parameter simply dictates where settings.json is located.
 
 #### TerminalApp: Loading and Reloading Changes
 
 TerminalApp will construct and reference an `AppSettings settings` as follows:
 - TerminalApp will have a global reference to the "settings.json" filepath
-- construct an `AppSettings` using `AppSettings("settings.json")`. This builds an `AppSettings`
-   from the "defaults.json" file data (which is already compiled as a string literal) 
+- construct an `AppSettings` using `AppSettings("C:\path\to\settings.json")`. This builds an `AppSettings`
+   from the "defaults.json" file data (which is already compiled as a string literal)
    and layers the settings.json data on top of it.
 
-**NOTE:** This model allows us to layer even more settings files on top of the existing Terminal Settings
- Model, if so desired. This could be helpful when importing additional settings files from an external location
- such as a marketplace.
-
 When TerminalApp detects a change to "settings.json", it'll repeat the steps above. We could cache the result from
- constructing an `AppSettings` from "defaults.json" data to improve performance.
-
-Additionally, TerminalApp would reference `settings` for the following functionality...
-- `Profiles` to populate the dropdown menu
-- `Keybindings` to detect active key bindings and which actions they run
-- `Commands` to populate the Command Palette
-- `Warnings` to show a serialization warning, if any
+ constructing an `AppSettings` from "defaults.json" data to improve performance, if so desired.
 
 #### TerminalControl: Acquiring and Applying the Settings
 
@@ -119,6 +104,9 @@ At the time of writing this spec, TerminalApp constructs `TerminalControl.Termin
  very similarly as it does today. On construction of the TermControl or hot-reload,
  `TerminalSettings` will be constructed by copying the relevant values of `AppSettings`.
  Then, it will be passed to TermControl (and TermCore by extension).
+
+To accomplish this new distribution of responsibilities, `CascadiaSettings::BuildSettings()` will be
+ moved to TerminalApp's AppLogic; it will use its reference of `AppSettings`
 
 
 ## UI/UX Design
@@ -202,7 +190,7 @@ runtimeclass AppSettings
 {
     // Create a copy of the existing AppSettings
     AppSettings Clone();
-    
+
     // Compares object to "source" and applies changes to
     // the settings file at "outPath"
     void Save(String outPath);
@@ -218,10 +206,10 @@ settingsClone = settingsSource.Clone()
 
 As the user navigates the Settings UI, the relevant contents of `settingsClone` will be retrieved and presented.
  As the user makes changes to the Settings UI, XAML will update `settingsClone` using XAML data binding.
- When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; 
+ When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called;
  this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
 
-As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`. 
+As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `AppSettings`.
  Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
  something like this occurs, `settingsSource` will automatically be updated too.
 
