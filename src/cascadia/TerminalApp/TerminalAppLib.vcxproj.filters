@@ -151,6 +151,9 @@
     <Midl Include="../ColorScheme.idl">
       <Filter>settings</Filter>
     </Midl>
+    <Midl Include="../Profile.idl">
+      <Filter>settings</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="../packages.config" />

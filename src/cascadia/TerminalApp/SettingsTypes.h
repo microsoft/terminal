@@ -13,13 +13,6 @@ Abstract:
 
 namespace TerminalApp
 {
-    enum class CloseOnExitMode
-    {
-        Never = 0,
-        Graceful,
-        Always
-    };
-
     struct LaunchPosition
     {
         std::optional<int> x;
