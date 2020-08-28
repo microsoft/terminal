@@ -2849,7 +2849,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - The uri
     void TermControl::_HyperlinkHandler(const std::wstring_view uri)
     {
-        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring(uri));
+        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring{ uri });
         _openHyperlinkHandlers(*this, *hyperlinkArgs);
     }
 

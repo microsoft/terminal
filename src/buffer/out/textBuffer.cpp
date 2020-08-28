@@ -2299,6 +2299,11 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view params)
         }
         id = (*(result.first)).second;
     }
+    // _currentHyperlinkId could overflow, make sure its not 0
+    if (_currentHyperlinkId == 0)
+    {
+        ++_currentHyperlinkId;
+    }
     return id;
 }
 
@@ -2343,8 +2348,8 @@ std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
 // - Copies the hyperlink/customID maps of the old buffer into this one
 // Arguments:
 // - The other buffer
-void TextBuffer::CopyHyperlinkMaps(const TextBuffer& OtherBuffer)
+void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 {
-    _hyperlinkMap = OtherBuffer._hyperlinkMap;
-    _hyperlinkCustomIdMap = OtherBuffer._hyperlinkCustomIdMap;
+    _hyperlinkMap = other._hyperlinkMap;
+    _hyperlinkCustomIdMap = other._hyperlinkCustomIdMap;
 }
