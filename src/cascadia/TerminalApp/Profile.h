@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, Padding, DEFAULT_PADDING);
 
         GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
-        GETSET_PROPERTY(hstring, StartingDirectory, L"");
+        GETSET_PROPERTY(hstring, StartingDirectory);
 
         GETSET_PROPERTY(hstring, BackgroundImagePath);
         GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
