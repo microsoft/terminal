@@ -2160,6 +2160,10 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     switch (cursorStyle)
     {
+    case DispatchTypes::CursorStyle::UserDefault:
+        _pConApi->GetUserDefaultCursorStyle(actualType);
+        fEnableBlinking = true;
+        break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         fEnableBlinking = true;
         actualType = CursorType::FullBox;

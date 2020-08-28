@@ -513,6 +513,19 @@ bool ConhostInternalGetSet::PrivateEraseAll()
     return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
+// Method Description:
+// - Retrieves the current user default cursor style.
+// Arguments:
+// - style - Structure to receive cursor style.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::GetUserDefaultCursorStyle(CursorType& style)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    style = gci.GetCursorType();
+    return true;
+}
+
 // Routine Description:
 // - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
 //   SetCursorStyle is an internal-only "API" call that the vt commands can execute,

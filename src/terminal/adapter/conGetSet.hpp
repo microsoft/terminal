@@ -70,6 +70,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateEnableAnyEventMouseMode(const bool enabled) = 0;
         virtual bool PrivateEnableAlternateScroll(const bool enabled) = 0;
         virtual bool PrivateEraseAll() = 0;
+        virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;
         virtual bool SetCursorStyle(const CursorType style) = 0;
         virtual bool SetCursorColor(const COLORREF color) = 0;
         virtual bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
