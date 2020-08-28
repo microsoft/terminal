@@ -107,8 +107,12 @@
     <ClInclude Include="ColorScheme.h">
       <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="GlobalAppSettings.h" />
-    <ClInclude Include="Profile.h" />
+    <ClInclude Include="GlobalAppSettings.h">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Profile.h">
+      <DependentUpon>Profile.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h" />
     <ClInclude Include="KeyChordSerialization.h" />
     <ClInclude Include="JsonUtils.h" />
@@ -186,8 +190,12 @@
     <ClCompile Include="ColorScheme.cpp">
       <DependentUpon>ColorScheme.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="GlobalAppSettings.cpp" />
-    <ClCompile Include="Profile.cpp" />
+    <ClCompile Include="GlobalAppSettings.cpp">
+      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Profile.cpp">
+      <DependentUpon>Profile.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="AppKeyBindingsSerialization.cpp" />
@@ -276,6 +284,8 @@
     <Midl Include="Tab.idl" />
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="ColorScheme.idl" />
+    <Midl Include="Profile.idl" />
+    <Midl Include="GlobalAppSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
