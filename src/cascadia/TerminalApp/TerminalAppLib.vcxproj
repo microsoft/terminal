@@ -114,7 +114,9 @@
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="CascadiaSettings.h" />
+    <ClInclude Include="CascadiaSettings.h">
+      <DependentUpon>CascadiaSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="KeyChordSerialization.h" />
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="Utils.h" />
@@ -198,8 +200,12 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="CascadiaSettings.cpp" />
-    <ClCompile Include="CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="CascadiaSettings.cpp">
+      <DependentUpon>CascadiaSettings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="CascadiaSettingsSerialization.cpp">
+      <DependentUpon>CascadiaSettings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="DefaultProfileUtils.cpp" />
@@ -288,6 +294,7 @@
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="CascadiaSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

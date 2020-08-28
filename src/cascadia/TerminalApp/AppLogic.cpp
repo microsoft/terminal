@@ -616,8 +616,10 @@ namespace winrt::TerminalApp::implementation
         try
         {
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
-            _settings = std::move(newSettings);
-            const auto& warnings = _settings->GetWarnings();
+            _settings.copy_from(winrt::get_self<CascadiaSettings>(newSettings));
+
+            auto settingsImpl = _settings.as<CascadiaSettings>();
+            const auto& warnings = settingsImpl->GetWarnings();
             hr = warnings.size() == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
@@ -675,7 +677,7 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            _settings = CascadiaSettings::LoadDefaults();
+            _settings.copy_from(winrt::get_self<CascadiaSettings>(CascadiaSettings::LoadDefaults()));
         }
 
         auto end = std::chrono::high_resolution_clock::now();
@@ -859,9 +861,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns a pointer to the global shared settings.
-    [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> AppLogic::GetSettings() const noexcept
+    [[nodiscard]] TerminalApp::CascadiaSettings AppLogic::GetSettings() const noexcept
     {
-        return _settings;
+        return *_settings;
     }
 
     // Method Description:

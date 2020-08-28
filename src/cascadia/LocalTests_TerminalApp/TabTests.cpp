@@ -75,7 +75,7 @@ namespace TerminalAppLocalTests
 
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                     std::shared_ptr<CascadiaSettings> initialSettings);
+                                     winrt::com_ptr<winrt::TerminalApp::implementation::CascadiaSettings>& initialSettings);
     };
 
     void TabTests::EnsureTestsActivate()
@@ -190,7 +190,7 @@ namespace TerminalAppLocalTests
     // Return Value:
     // - <none>
     void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                           std::shared_ptr<CascadiaSettings> initialSettings)
+                                           winrt::com_ptr<winrt::TerminalApp::implementation::CascadiaSettings>& initialSettings)
     {
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
@@ -277,7 +277,7 @@ namespace TerminalAppLocalTests
         })" };
 
         VerifyParseSucceeded(settingsJson0);
-        auto settings0 = std::make_shared<CascadiaSettings>(false);
+        auto settings0 = winrt::make_self<implementation::CascadiaSettings>(false);
         VERIFY_IS_NOT_NULL(settings0);
         settings0->_ParseJsonString(settingsJson0, false);
         settings0->LayerJson(settings0->_userSettings);
@@ -339,14 +339,14 @@ namespace TerminalAppLocalTests
         })" };
 
         VerifyParseSucceeded(settingsJson0);
-        auto settings0 = std::make_shared<CascadiaSettings>(false);
+        auto settings0 = winrt::make_self<implementation::CascadiaSettings>(false);
         VERIFY_IS_NOT_NULL(settings0);
         settings0->_ParseJsonString(settingsJson0, false);
         settings0->LayerJson(settings0->_userSettings);
         settings0->_ValidateSettings();
 
         VerifyParseSucceeded(settingsJson1);
-        auto settings1 = std::make_shared<CascadiaSettings>(false);
+        auto settings1 = winrt::make_self<implementation::CascadiaSettings>(false);
         VERIFY_IS_NOT_NULL(settings1);
         settings1->_ParseJsonString(settingsJson1, false);
         settings1->LayerJson(settings1->_userSettings);
@@ -434,14 +434,14 @@ namespace TerminalAppLocalTests
         })" };
 
         VerifyParseSucceeded(settingsJson0);
-        auto settings0 = std::make_shared<CascadiaSettings>(false);
+        auto settings0 = winrt::make_self<implementation::CascadiaSettings>(false);
         VERIFY_IS_NOT_NULL(settings0);
         settings0->_ParseJsonString(settingsJson0, false);
         settings0->LayerJson(settings0->_userSettings);
         settings0->_ValidateSettings();
 
         VerifyParseSucceeded(settingsJson1);
-        auto settings1 = std::make_shared<CascadiaSettings>(false);
+        auto settings1 = winrt::make_self<implementation::CascadiaSettings>(false);
         VERIFY_IS_NOT_NULL(settings1);
         settings1->_ParseJsonString(settingsJson1, false);
         settings1->LayerJson(settings1->_userSettings);

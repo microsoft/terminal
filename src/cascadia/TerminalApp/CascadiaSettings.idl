@@ -1,0 +1,32 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "TerminalSettings.idl";
+import "GlobalAppSettings.idl";
+import "Profile.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass CascadiaSettings {
+        CascadiaSettings();
+        CascadiaSettings(Boolean addDynamicProfiles);
+
+        static CascadiaSettings LoadDefaults();
+        static CascadiaSettings LoadAll();
+        static CascadiaSettings LoadUniversal();
+
+        TerminalSettings BuildSettings(Guid profileGuid);
+
+        GlobalAppSettings GlobalSettings { get; };
+
+        Windows.Foundation.Collections.IVectorView<Profile> Profiles { get; };
+
+        AppKeyBindings Keybindings { get; };
+
+        Profile FindProfile(Guid profileGuid);
+        ColorScheme GetColorSchemeForProfile(Guid profileGuid);
+
+        Boolean ApplyColorScheme(Microsoft.Terminal.TerminalControl.IControlSettings settings, String schemeName);
+
+    }
+}

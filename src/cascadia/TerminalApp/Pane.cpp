@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Pane.h"
 #include "Profile.h"
-#include "CascadiaSettings.h"
+#include "AppLogic.h"
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
@@ -319,7 +319,9 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
         return;
     }
 
-    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+    const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() };
+    THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
+    auto settings = appLogic->GetSettings();
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {

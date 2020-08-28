@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - settings: The settings who's keybindings we should use to look up the key chords from
     // - commands: The list of commands to label.
-    static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+    static void _recursiveUpdateCommandKeybindingLabels(TerminalApp::CascadiaSettings settings,
                                                         IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
@@ -70,7 +70,7 @@ namespace winrt::TerminalApp::implementation
             // part of the command in the UI. Each Command's KeyChordText is
             // unset by default, so we don't need to worry about clearing it
             // if there isn't a key associated with it.
-            auto keyChord{ settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+            auto keyChord{ settings.Keybindings().GetKeyBindingForActionWithArgs(command.Action()) };
 
             if (keyChord)
             {
@@ -101,7 +101,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+    winrt::fire_and_forget TerminalPage::SetSettings(winrt::com_ptr<CascadiaSettings> settings,
                                                      bool needRefreshUI)
     {
         _settings = settings;
@@ -115,14 +115,14 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyBindings(_settings->GetKeybindings());
+            CommandPalette().SetKeyBindings(_settings->Keybindings());
         }
     }
 
     void TerminalPage::Create()
     {
         // Hookup the key bindings
-        _HookupKeyBindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings->Keybindings());
 
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
@@ -449,14 +449,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CreateNewTabFlyout()
     {
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
-        auto keyBindings = _settings->GetKeybindings();
+        auto keyBindings = _settings->Keybindings();
 
-        const GUID defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
+        const winrt::guid defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
-        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
+        auto const profileCount = gsl::narrow_cast<int>(_settings->Profiles().Size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
-            const auto& profile = _settings->GetProfiles()[profileIndex];
+            const auto& profile = _settings->Profiles().GetAt(profileIndex);
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
             // Add the keyboard shortcuts based on the number of profiles defined
@@ -492,7 +492,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
-            if (profile.Guid() == winrt::guid{ defaultProfileGuid })
+            if (profile.Guid() == defaultProfileGuid)
             {
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
@@ -617,7 +617,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     try
     {
-        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
+        const auto [profileGuid, settings] = _settings.as<CascadiaSettings>()->BuildSettings(newTerminalArgs);
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -1483,7 +1483,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
+                std::tie(realGuid, controlSettings) = _settings.as<CascadiaSettings>()->BuildSettings(newTerminalArgs);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -2013,11 +2013,11 @@ namespace winrt::TerminalApp::implementation
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
-        _HookupKeyBindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings->Keybindings());
 
         // Refresh UI elements
-        auto profiles = _settings->GetProfiles();
-        for (auto& profile : profiles)
+        auto profiles = _settings->Profiles();
+        for (auto profile : profiles)
         {
             const auto profileGuid = profile.Guid();
 
@@ -2084,7 +2084,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                    gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                    IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                                     IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
@@ -2124,10 +2124,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateCommandsForPalette()
     {
         IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands(),
-                                                                                           _settings->GetProfiles(),
+                                                                                           _settings->Profiles(),
                                                                                            _settings->GlobalSettings().GetColorSchemes());
 
-        _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
+        _recursiveUpdateCommandKeybindingLabels(_settings.as<TerminalApp::CascadiaSettings>(), copyOfCommands.GetView());
         _recursiveUpdateCommandIcons(copyOfCommands.GetView());
 
         // Update the command palette when settings reload
