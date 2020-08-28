@@ -21,6 +21,12 @@ Author(s):
 #include "Command.h"
 #include "ColorScheme.h"
 
+#ifdef _DEBUG
+static constexpr bool debugFeaturesDefault{ true };
+#else
+static constexpr bool debugFeaturesDefault{ false };
+#endif
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -34,7 +40,6 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         GlobalAppSettings();
-        ~GlobalAppSettings();
 
         Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme> GetColorSchemes() noexcept;
         void AddColorScheme(const TerminalApp::ColorScheme& scheme);
@@ -56,15 +61,15 @@ namespace winrt::TerminalApp::implementation
         guid DefaultProfile() const;
         hstring UnparsedDefaultProfile() const;
 
-        GETSET_PROPERTY(int32_t, InitialRows); // default value set in constructor
-        GETSET_PROPERTY(int32_t, InitialCols); // default value set in constructor
+        GETSET_PROPERTY(int32_t, InitialRows, DEFAULT_ROWS);
+        GETSET_PROPERTY(int32_t, InitialCols, DEFAULT_COLS);
         GETSET_PROPERTY(bool, AlwaysShowTabs, true);
         GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
         GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
         GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
-        GETSET_PROPERTY(hstring, WordDelimiters); // default value set in constructor
+        GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         GETSET_PROPERTY(bool, CopyOnSelect, false);
         GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
         GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
@@ -75,7 +80,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
         GETSET_PROPERTY(bool, ForceVTInput, false);
-        GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
+        GETSET_PROPERTY(bool, DebugFeaturesEnabled, debugFeaturesDefault);
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
         GETSET_PROPERTY(bool, UseTabSwitcher, true);

@@ -17,8 +17,6 @@ namespace TerminalApp
         Profile();
         Profile(Guid guid);
 
-        TerminalSettings CreateTerminalSettings(Windows.Foundation.Collections.IMapView<String, ColorScheme> schemes);
-
         String Name;
         Boolean HasGuid();
         Guid Guid;

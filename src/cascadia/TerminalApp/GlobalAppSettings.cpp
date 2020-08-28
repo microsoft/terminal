@@ -46,28 +46,14 @@ static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.re
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
-#ifdef _DEBUG
-static constexpr bool debugFeaturesDefault{ true };
-#else
-static constexpr bool debugFeaturesDefault{ false };
-#endif
-
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{ winrt::make_self<AppKeyBindings>() },
     _keybindingsWarnings{},
-    _unparsedDefaultProfile{ },
-    _defaultProfile{},
-    _InitialRows{ DEFAULT_ROWS },
-    _InitialCols{ DEFAULT_COLS },
-    _WordDelimiters{ DEFAULT_WORD_DELIMITERS },
-    _DebugFeaturesEnabled{ debugFeaturesDefault }
+    _unparsedDefaultProfile{},
+    _defaultProfile{}
 {
     _commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::ColorScheme>();
-}
-
-GlobalAppSettings::~GlobalAppSettings()
-{
 }
 
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> GlobalAppSettings::GetColorSchemes() noexcept

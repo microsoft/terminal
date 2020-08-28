@@ -87,7 +87,7 @@ public:
     bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, winrt::hstring schemeName);
 
 private:
-    winrt::TerminalApp::GlobalAppSettings _globals;
+    winrt::com_ptr<winrt::TerminalApp::implementation::GlobalAppSettings> _globals;
     std::vector<winrt::TerminalApp::Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 
