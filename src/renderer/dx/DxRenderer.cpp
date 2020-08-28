@@ -618,7 +618,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                                   &_d2dBrushForeground));
 
-        const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
+        _strokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
             D2D1_CAP_STYLE_SQUARE, // dashCap
@@ -627,7 +627,18 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
             D2D1_DASH_STYLE_SOLID, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_strokeStyle));
+
+        _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
+            D2D1_CAP_STYLE_SQUARE, // startCap
+            D2D1_CAP_STYLE_SQUARE, // endCap
+            D2D1_CAP_STYLE_SQUARE, // dashCap
+            D2D1_LINE_JOIN_MITER, // lineJoin
+            0.f, // miterLimit
+            D2D1_DASH_STYLE_DASH, // dashStyle
+            0.f, // dashOffset
+        };
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1493,6 +1504,11 @@ try
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
+    const auto DrawDashLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
+    {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
+    };
+
     // NOTE: Line coordinates are centered within the line, so they need to be
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
@@ -1544,14 +1560,22 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline))
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::DashedUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + _lineMetrics.underlineOffset;
 
-        DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        if (lines & GridLines::Underline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::DashedUnderline)
+        {
+            DrawDashLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
 
         if (lines & GridLines::DoubleUnderline)
         {
@@ -1718,9 +1742,16 @@ CATCH_RETURN()
 
     if (textAttributes.IsHyperlink() && (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId))
     {
-        // For now, we just change the colour of all the links
-        // This needs to be changed to a custom effect or something else before merging
-        _d2dBrushForeground->SetColor(D2D1::ColorF(D2D1::ColorF::LightCyan));
+        // This is a little cheeky:
+        // All hyperlinks are rendered with a dashed underline using _dashStrokeStyle,
+        // so when we update the drawing brushes for hyperlinks that we are hovering over, we simply
+        // change _dashStrokeStyle to be the regular stroke style (which has no dashes)
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+    }
+    else
+    {
+        // Revert the _dashStrokeStye change for other situations
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
     }
 
     return S_OK;

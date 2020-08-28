@@ -192,6 +192,10 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
+        ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
+
+        D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
+        D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;
 
         // Device-Dependent Resources
         bool _recreateDeviceRequested;
