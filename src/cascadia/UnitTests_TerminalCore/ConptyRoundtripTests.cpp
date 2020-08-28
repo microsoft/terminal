@@ -3474,7 +3474,7 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
 }
 
-// This test checks that upon conpty rerendering, terminal still maintains
+// This test checks that upon conpty rendering again, terminal still maintains
 // the same hyperlink IDs
 void ConptyRoundtripTests::HyperlinkIdConsistency()
 {
