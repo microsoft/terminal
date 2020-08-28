@@ -2412,7 +2412,7 @@ try
 CATCH_LOG()
 
 // Method Description:
-// - Updates our internal tracker for which hyperilnk ID we are hovering over
+// - Updates our internal tracker for which hyperlink ID we are hovering over
 //   This is needed for UpdateDrawingBrushes to know where we need to set a different style
 // Arguments:
 // - The new link ID we are hovering over
