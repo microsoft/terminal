@@ -53,7 +53,7 @@ CascadiaSettings::CascadiaSettings() :
 // Arguments:
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
 CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
-    _globals(winrt::make_self<winrt::TerminalApp::implementation::GlobalAppSettings>())
+    _globals{ winrt::make_self<winrt::TerminalApp::implementation::GlobalAppSettings>() }
 {
     if (addDynamicProfiles)
     {

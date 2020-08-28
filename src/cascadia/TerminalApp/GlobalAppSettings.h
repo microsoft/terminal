@@ -21,12 +21,6 @@ Author(s):
 #include "Command.h"
 #include "ColorScheme.h"
 
-#ifdef _DEBUG
-static constexpr bool debugFeaturesDefault{ true };
-#else
-static constexpr bool debugFeaturesDefault{ false };
-#endif
-
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -80,7 +74,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
         GETSET_PROPERTY(bool, ForceVTInput, false);
-        GETSET_PROPERTY(bool, DebugFeaturesEnabled, debugFeaturesDefault);
+        GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
         GETSET_PROPERTY(bool, UseTabSwitcher, true);
