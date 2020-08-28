@@ -20,8 +20,6 @@ namespace TerminalApp
     };
 
     [default_interface] runtimeclass GlobalAppSettings {
-        GlobalAppSettings();
-
         Guid DefaultProfile;
         String UnparsedDefaultProfile();
 

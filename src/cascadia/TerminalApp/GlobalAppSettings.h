@@ -93,8 +93,3 @@ namespace winrt::TerminalApp::implementation
         friend class TerminalAppLocalTests::ColorSchemeTests;
     };
 }
-
-namespace winrt::TerminalApp::factory_implementation
-{
-    BASIC_FACTORY(GlobalAppSettings);
-}
