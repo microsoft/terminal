@@ -1,9 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "TerminalSettings.idl";
-import "ColorScheme.idl";
-
 namespace TerminalApp
 {
     enum CloseOnExitMode

@@ -508,7 +508,7 @@ bool Profile::HasGuid() const noexcept
     return _Guid.has_value();
 }
 
-winrt::guid Profile::Guid() const noexcept
+winrt::guid Profile::Guid() const
 {
     // This can throw if we never had our guid set to a legitimate value.
     THROW_HR_IF_MSG(E_FAIL, !_Guid.has_value(), "Profile._guid always expected to have a value");

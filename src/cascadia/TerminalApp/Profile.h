@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         bool HasGuid() const noexcept;
-        winrt::guid Guid() const noexcept;
+        winrt::guid Guid() const;
         void Guid(const winrt::guid& guid) noexcept;
 
         bool HasConnectionType() const noexcept;
