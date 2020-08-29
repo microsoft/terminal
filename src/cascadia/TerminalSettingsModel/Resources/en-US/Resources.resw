@@ -259,6 +259,9 @@
   <data name="ResetTabNameCommandKey" xml:space="preserve">
     <value>Reset tab title</value>
   </data>
+  <data name="OpenTabRenamerCommandKey" xml:space="preserve">
+    <value>Rename tab title...</value>
+  </data>
   <data name="ResizePaneCommandKey" xml:space="preserve">
     <value>Resize pane</value>
   </data>

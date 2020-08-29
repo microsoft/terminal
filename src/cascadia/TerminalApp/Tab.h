@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetTabText(winrt::hstring title);
         void ResetTabText();
+        void ActivateTabRenamer();
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 

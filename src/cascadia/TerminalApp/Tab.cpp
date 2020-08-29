@@ -53,8 +53,7 @@ namespace winrt::TerminalApp::implementation
         _tabViewItem.DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_inRename = true;
-                tab->_UpdateTabHeader();
+                tab->ActivateTabRenamer();
             }
         });
 
@@ -399,6 +398,19 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Show a TextBox in the Header to allow the user to set a string
+    //     to use as an override for the tab's text
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ActivateTabRenamer()
+    {
+        _inRename = true;
+        _UpdateTabHeader();
+    }
+
+    // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
     //   of Panes in this tab. We'll add events too:
@@ -577,8 +589,7 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
-                    tab->_inRename = true;
-                    tab->_UpdateTabHeader();
+                    tab->ActivateTabRenamer();
                 }
             });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
