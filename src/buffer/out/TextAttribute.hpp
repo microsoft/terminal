@@ -69,7 +69,8 @@ public:
     std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false) const noexcept;
+                                                     const bool reverseScreenMode = false,
+                                                     const bool blinkingIsFaint = false) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
