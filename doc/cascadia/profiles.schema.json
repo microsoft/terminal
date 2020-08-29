@@ -66,6 +66,7 @@
         "paste",
         "prevTab",
         "renameTab",
+        "openTabRenamer",
         "resetFontSize",
         "resizePane",
         "scrollDown",
