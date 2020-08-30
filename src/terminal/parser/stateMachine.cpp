@@ -1678,11 +1678,11 @@ void StateMachine::_EventVariableLengthStringTermination(const wchar_t wch)
         {
             _ActionOscDispatch(wch);
         }
-        if (_state == VTStates::DcsTermination)
+        else if (_state == VTStates::DcsTermination)
         {
             // TODO:GH#7316: The Dcs sequence has successfully terminated. This is where we'd be dispatching the DCS command.
         }
-        if (_state == VTStates::SosPmApcTermination)
+        else if (_state == VTStates::SosPmApcTermination)
         {
             // We don't support any SOS/PM/APC control string yet.
         }
