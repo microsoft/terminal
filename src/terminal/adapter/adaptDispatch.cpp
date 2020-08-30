@@ -2190,6 +2190,10 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         fEnableBlinking = false;
         actualType = CursorType::VerticalBar;
         break;
+
+    default:
+        // Invalid argument should be ignored.
+        return true;
     }
 
     bool success = _pConApi->SetCursorStyle(actualType);

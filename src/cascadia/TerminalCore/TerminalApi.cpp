@@ -417,7 +417,9 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
         finalCursorType = CursorType::VerticalBar;
         shouldBlink = false;
         break;
+
     default:
+        // Invalid argument should be ignored.
         return true;
     }
 
