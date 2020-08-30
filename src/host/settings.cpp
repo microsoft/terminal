@@ -13,6 +13,7 @@ constexpr unsigned int DEFAULT_NUMBER_OF_COMMANDS = 25;
 constexpr unsigned int DEFAULT_NUMBER_OF_BUFFERS = 4;
 
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::Render::BlinkingState;
 
 Settings::Settings() :
     _dwHotKey(0),
@@ -870,10 +871,17 @@ COLORREF Settings::CalculateDefaultBackground() const noexcept
 // - The color values of the attribute's foreground and background.
 std::pair<COLORREF, COLORREF> Settings::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
+    _blinkingState.RecordBlinkingUsage(attr);
     return attr.CalculateRgbColors(Get256ColorTable(),
                                    CalculateDefaultForeground(),
                                    CalculateDefaultBackground(),
-                                   _fScreenReversed);
+                                   _fScreenReversed,
+                                   _blinkingState.IsBlinkingFaint());
+}
+
+BlinkingState& Settings::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
 }
 
 bool Settings::GetCopyColor() const noexcept
