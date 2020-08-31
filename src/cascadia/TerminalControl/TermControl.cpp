@@ -723,7 +723,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             // Set up blinking attributes
-            if (blinkTime != INFINITE)
+            BOOL animationsEnabled = true;
+            SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+            if (animationsEnabled && blinkTime != INFINITE)
             {
                 // Create a timer
                 DispatcherTimer blinkTimer;
