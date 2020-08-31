@@ -11,18 +11,12 @@ Abstract:
 
 #pragma once
 
-namespace TerminalApp
+namespace winrt::TerminalApp
 {
-    enum class CloseOnExitMode
+    enum class ExpandCommandType : uint32_t
     {
-        Never = 0,
-        Graceful,
-        Always
-    };
-
-    struct LaunchPosition
-    {
-        std::optional<int> x;
-        std::optional<int> y;
+        None = 0,
+        Profiles,
+        ColorSchemes
     };
 };

@@ -67,6 +67,13 @@ namespace TerminalApp::JsonUtils
             using Type = typename std::decay<TOpt>::type;
             static constexpr bool IsOptional = true;
         };
+
+        template<>
+        struct DeduceOptional<::winrt::hstring>
+        {
+            using Type = typename ::winrt::hstring;
+            static constexpr bool IsOptional = true;
+        };
     }
 
     class DeserializationError : public std::runtime_error
@@ -269,10 +276,25 @@ namespace TerminalApp::JsonUtils
         }
     };
 
-    // (GUID and winrt::guid are mutually convertible!)
+    // GUID and winrt::guid are mutually convertible,
+    // but IReference<winrt::guid> throws some of this off
     template<>
-    struct ConversionTrait<winrt::guid> : public ConversionTrait<GUID>
+    struct ConversionTrait<winrt::guid>
     {
+        winrt::guid FromJson(const Json::Value& json) const
+        {
+            return static_cast<winrt::guid>(ConversionTrait<GUID>{}.FromJson(json));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<GUID>{}.CanConvert(json);
+        }
+
+        std::string TypeDescription() const
+        {
+            return ConversionTrait<GUID>{}.TypeDescription();
+        }
     };
 
     template<>
@@ -299,6 +321,27 @@ namespace TerminalApp::JsonUtils
             return "color (#rrggbb, #rgb)";
         }
     };
+
+#ifdef WINRT_Windows_UI_H
+    template<>
+    struct ConversionTrait<winrt::Windows::UI::Color>
+    {
+        winrt::Windows::UI::Color FromJson(const Json::Value& json) const
+        {
+            return static_cast<winrt::Windows::UI::Color>(ConversionTrait<til::color>{}.FromJson(json));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<til::color>{}.CanConvert(json);
+        }
+
+        std::string TypeDescription() const
+        {
+            return ConversionTrait<til::color>{}.TypeDescription();
+        }
+    };
+#endif
 
     template<typename T, typename TBase>
     struct EnumMapper

@@ -22,6 +22,7 @@ Author(s):
 #include "TerminalWarnings.h"
 #include "Profile.h"
 #include "..\inc\cppwinrt_utils.h"
+#include "SettingsTypes.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -32,12 +33,6 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    enum class ExpandCommandType : uint32_t
-    {
-        None = 0,
-        Profiles
-    };
-
     struct Command : CommandT<Command>
     {
         Command();
@@ -46,13 +41,16 @@ namespace winrt::TerminalApp::implementation
                                                 std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                   gsl::span<const ::TerminalApp::Profile> profiles,
+                                   gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                   gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                                                           const Json::Value& json);
         bool HasNestedCommands();
         Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
+
+        void RefreshIcon();
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
@@ -68,8 +66,11 @@ namespace winrt::TerminalApp::implementation
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _subcommands{ nullptr };
 
+        winrt::hstring _lastIconPath{};
+
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
-                                                                       gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                       gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                       gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;

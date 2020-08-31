@@ -156,6 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     scrollBar.Maximum(update.newMaximum);
                     scrollBar.Minimum(update.newMinimum);
                     scrollBar.ViewportSize(update.newViewportSize);
+                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.)); // scroll one "screenful" at a time when the scroll bar is clicked
 
                     control->_isInternalScrollBarUpdate = false;
                 }
@@ -699,6 +700,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBar().Minimum(0);
             ScrollBar().Value(0);
             ScrollBar().ViewportSize(bufferHeight);
+            ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
             localPointerToThread->EnablePainting();
 

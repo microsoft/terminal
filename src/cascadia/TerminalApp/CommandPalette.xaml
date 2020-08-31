@@ -208,7 +208,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <DataTemplate x:DataType="local:Command">
 
                         <!-- This HorizontalContentAlignment="Stretch" is important
-                    to make sure it takes the entire width of the line -->
+                        to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
                                   AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
@@ -223,30 +223,32 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </Grid.ColumnDefinitions>
 
                                 <IconSourceElement
-                                Grid.Column="0"
-                                IconSource="{x:Bind IconSource, Mode=OneWay}"/>
+                                    Grid.Column="0"
+                                    Width="16"
+                                    Height="16"
+                                    IconSource="{x:Bind IconSource, Mode=OneWay}"/>
 
                                 <TextBlock Grid.Column="1"
                                        HorizontalAlignment="Left"
                                        Text="{x:Bind Name, Mode=OneWay}" />
 
                                 <!-- The block for the key chord is only visible
-                            when there's actual text set as the label. See
-                            CommandKeyChordVisibilityConverter for details. -->
+                                when there's actual text set as the label. See
+                                CommandKeyChordVisibilityConverter for details. -->
                                 <Border
-                                Grid.Column="2"
-                                Visibility="{x:Bind KeyChordText,
-                                             Mode=OneWay,
-                                             Converter={StaticResource CommandKeyChordVisibilityConverter}}"
-                                Style="{ThemeResource KeyChordBorderStyle}"
-                                Padding="2,0,2,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
+                                    Grid.Column="2"
+                                    Visibility="{x:Bind KeyChordText,
+                                                 Mode=OneWay,
+                                                 Converter={StaticResource CommandKeyChordVisibilityConverter}}"
+                                    Style="{ThemeResource KeyChordBorderStyle}"
+                                    Padding="2,0,2,0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
 
                                     <TextBlock
-                                    Style="{ThemeResource KeyChordTextBlockStyle}"
-                                    FontSize="12"
-                                    Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                                        Style="{ThemeResource KeyChordTextBlockStyle}"
+                                        FontSize="12"
+                                        Text="{x:Bind KeyChordText, Mode=OneWay}" />
                                 </Border>
 
                                 <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->

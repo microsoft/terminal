@@ -561,7 +561,7 @@ namespace winrt::TerminalApp::implementation
     // - defaultInitialY: the system default y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
-    winrt::Windows::Foundation::Point AppLogic::GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY)
+    TerminalApp::InitialPosition AppLogic::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
     {
         if (!_loadedInitialSettings)
         {
@@ -570,12 +570,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto initialPosition{ _settings->GlobalSettings().InitialPosition() };
-        winrt::Windows::Foundation::Point point{
-            /* X */ gsl::narrow_cast<float>(initialPosition.x.value_or(defaultInitialX)),
-            /* Y */ gsl::narrow_cast<float>(initialPosition.y.value_or(defaultInitialY))
+        return {
+            initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
+            initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
         };
-
-        return point;
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()
@@ -938,6 +936,13 @@ namespace winrt::TerminalApp::implementation
                 if (auto focusedElement{ focusedObject.try_as<Windows::UI::Xaml::FrameworkElement>() })
                 {
                     focusedObject = focusedElement.Parent();
+
+                    // Parent() seems to return null when the focusedElement is created from an ItemTemplate.
+                    // Use the VisualTreeHelper's GetParent as a fallback.
+                    if (!focusedObject)
+                    {
+                        focusedObject = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
+                    }
                 }
                 else
                 {

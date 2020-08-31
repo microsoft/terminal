@@ -30,6 +30,6 @@ jobs:
   parameters:
     dependsOn:
     - RunTestsInHelix
-    condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
+    condition: and(succeededOrFailed(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}
