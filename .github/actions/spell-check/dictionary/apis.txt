@@ -47,6 +47,8 @@ SIZENS
 snprintf
 spsc
 STDCPP
+Subheader
+Subpage
 syscall
 tmp
 tolower
