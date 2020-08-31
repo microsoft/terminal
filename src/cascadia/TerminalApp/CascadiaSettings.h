@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::GlobalAppSettings GlobalSettings();
 
-        Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> Profiles() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Profile> Profiles() const noexcept;
 
         TerminalApp::AppKeyBindings Keybindings() const noexcept;
 
@@ -90,7 +90,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         com_ptr<GlobalAppSettings> _globals;
-        Windows::Foundation::Collections::IVector<TerminalApp::Profile> _profiles;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Profile> _profiles;
         std::vector<::TerminalApp::SettingsLoadWarnings> _warnings;
 
         std::vector<std::unique_ptr<::TerminalApp::IDynamicProfileGenerator>> _profileGenerators;

@@ -46,7 +46,7 @@ CascadiaSettings::CascadiaSettings() :
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
 CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _globals{ winrt::make_self<implementation::GlobalAppSettings>() },
-    _profiles{ winrt::single_threaded_vector<TerminalApp::Profile>() }
+    _profiles{ winrt::single_threaded_observable_vector<TerminalApp::Profile>() }
 {
     if (addDynamicProfiles)
     {
@@ -87,9 +87,9 @@ winrt::TerminalApp::Profile CascadiaSettings::FindProfile(winrt::guid profileGui
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-IVectorView<winrt::TerminalApp::Profile> CascadiaSettings::Profiles() const noexcept
+IObservableVector<winrt::TerminalApp::Profile> CascadiaSettings::Profiles() const noexcept
 {
-    return _profiles.GetView();
+    return _profiles;
 }
 
 // Method Description:

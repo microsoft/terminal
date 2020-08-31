@@ -19,7 +19,7 @@ namespace TerminalApp
 
         GlobalAppSettings GlobalSettings { get; };
 
-        Windows.Foundation.Collections.IVectorView<Profile> Profiles { get; };
+        Windows.Foundation.Collections.IObservableVector<Profile> Profiles { get; };
 
         AppKeyBindings Keybindings { get; };
 

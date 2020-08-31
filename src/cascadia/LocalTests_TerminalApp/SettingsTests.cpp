@@ -2693,7 +2693,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -2824,7 +2824,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -2958,7 +2958,7 @@ namespace TerminalAppLocalTests
         }
 
         settings->_ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -3080,7 +3080,7 @@ namespace TerminalAppLocalTests
 
         auto commands = settings->_globals->GetCommands();
         settings->_ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -3189,7 +3189,7 @@ namespace TerminalAppLocalTests
 
         auto commands = settings->_globals->GetCommands();
         settings->_ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -3329,7 +3329,7 @@ namespace TerminalAppLocalTests
 
         auto commands = settings->_globals->GetCommands();
         settings->_ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -3483,7 +3483,7 @@ namespace TerminalAppLocalTests
 
         auto commands = settings->_globals->GetCommands();
         settings->_ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -3597,7 +3597,7 @@ namespace TerminalAppLocalTests
 
         auto commands = settings->_globals->GetCommands();
         settings->_ValidateSettings();
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());
@@ -4035,7 +4035,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles(), settings->_globals->GetColorSchemes());
+        auto expandedCommands = implementation::TerminalPage::_ExpandCommands(commands, settings->Profiles().GetView(), settings->_globals->GetColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.size());

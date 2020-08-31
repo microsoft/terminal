@@ -2124,7 +2124,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateCommandsForPalette()
     {
         IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands(),
-                                                                                           _settings->Profiles(),
+                                                                                           _settings->Profiles().GetView(),
                                                                                            _settings->GlobalSettings().GetColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings.as<TerminalApp::CascadiaSettings>(), copyOfCommands.GetView());
