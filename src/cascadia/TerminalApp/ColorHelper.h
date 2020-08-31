@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.h"
-#include "lib/pch.h"
 
 #include <winrt/windows.ui.core.h>
 

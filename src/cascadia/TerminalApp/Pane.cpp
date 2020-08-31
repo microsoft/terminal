@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "lib/pch.h"
 #include "Pane.h"
 #include "Profile.h"
 #include "CascadiaSettings.h"

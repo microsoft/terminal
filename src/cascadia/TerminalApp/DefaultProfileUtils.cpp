@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "lib/pch.h"
 #include "DefaultProfileUtils.h"
 #include "../../types/inc/utils.hpp"
 

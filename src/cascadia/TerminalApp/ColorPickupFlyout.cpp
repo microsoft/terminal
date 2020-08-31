@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "lib/pch.h"
 #include "ColorPickupFlyout.h"
 #include "ColorPickupFlyout.g.cpp"
 #include "winrt/Windows.UI.Xaml.Media.h"

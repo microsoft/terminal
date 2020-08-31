@@ -106,7 +106,7 @@ VtIo::VtIo() :
                                         const std::wstring& VtMode,
                                         _In_opt_ const HANDLE SignalHandle)
 {
-//    FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
+    FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
 
     RETURN_IF_FAILED(ParseIoMode(VtMode, _IoMode));
 

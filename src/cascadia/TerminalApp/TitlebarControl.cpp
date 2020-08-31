@@ -6,7 +6,6 @@
 //
 
 #include "pch.h"
-#include "lib/pch.h"
 
 #include "TitlebarControl.h"
 

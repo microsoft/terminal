@@ -7,7 +7,6 @@
 // - Mike Griese - May 2019
 
 #include "pch.h"
-#include "lib/pch.h"
 #include "AppKeyBindings.h"
 #include "ActionAndArgs.h"
 #include "KeyChordSerialization.h"

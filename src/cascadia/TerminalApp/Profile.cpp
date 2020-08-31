@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "lib/pch.h"
 #include "Profile.h"
 #include "Utils.h"
 #include "JsonUtils.h"
