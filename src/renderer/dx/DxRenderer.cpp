@@ -639,6 +639,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
             0.f, // dashOffset
         };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        _dashStrokeChanged = false;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1747,11 +1748,13 @@ CATCH_RETURN()
         // so when we update the drawing brushes for hyperlinks that we are hovering over, we simply
         // change _dashStrokeStyle to be the regular stroke style (which has no dashes)
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        _dashStrokeChanged = true;
     }
-    else
+    else if (_dashStrokeChanged)
     {
         // Revert the _dashStrokeStye change for other situations
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        _dashStrokeChanged = false;
     }
 
     return S_OK;
