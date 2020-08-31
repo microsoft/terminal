@@ -487,13 +487,12 @@ namespace winrt::TerminalApp::implementation
                 _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
             }
 
-            auto profileName = profile.GetName();
-            winrt::hstring hName{ profileName };
-            profileMenuItem.Text(hName);
+            auto profileName = profile.Name();
+            profileMenuItem.Text(profileName);
 
             // If there's an icon set for this profile, set it as the icon for
             // this flyout item.
-            if (profile.HasIcon())
+            if (!profile.IconPath().empty())
             {
                 auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.GetExpandedIconPath());
 
@@ -503,7 +502,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
-            if (profile.GetGuid() == defaultProfileGuid)
+            if (profile.Guid() == winrt::guid{ defaultProfileGuid })
             {
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
@@ -742,10 +741,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Set this tab's icon to the icon from the user's profile
-        const auto* const profile = _settings->FindProfile(profileGuid);
-        if (profile != nullptr && profile->HasIcon())
+        const auto profile = _settings->FindProfile(profileGuid);
+        if (profile != nullptr && !profile.IconPath().empty())
         {
-            newTabImpl->UpdateIcon(profile->GetExpandedIconPath());
+            newTabImpl->UpdateIcon(profile.GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -781,20 +780,21 @@ namespace winrt::TerminalApp::implementation
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
                                                                                         TerminalApp::TerminalSettings settings)
     {
-        const auto* const profile = _settings->FindProfile(profileGuid);
+        const auto profile = _settings->FindProfile(profileGuid);
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
-        GUID connectionType{ 0 };
-        GUID sessionGuid{ 0 };
+        winrt::guid connectionType{};
+        winrt::guid sessionGuid{};
 
-        if (profile->HasConnectionType())
+        const auto hasConnectionType = profile.HasConnectionType();
+        if (hasConnectionType)
         {
-            connectionType = profile->GetConnectionType();
+            connectionType = profile.ConnectionType();
         }
 
-        if (profile->HasConnectionType() &&
-            profile->GetConnectionType() == AzureConnectionType &&
+        if (hasConnectionType &&
+            connectionType == AzureConnectionType &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
@@ -809,8 +809,8 @@ namespace winrt::TerminalApp::implementation
                                                               winrt::guid());
         }
 
-        else if (profile->HasConnectionType() &&
-                 profile->GetConnectionType() == TelnetConnectionType)
+        else if (hasConnectionType &&
+                 connectionType == TelnetConnectionType)
         {
             connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
@@ -982,10 +982,10 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            const auto matchingProfile = _settings->FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile->GetExpandedIconPath());
+                tab.UpdateIcon(matchingProfile.GetExpandedIconPath());
             }
             else
             {
@@ -2020,7 +2020,7 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings->GetProfiles();
         for (auto& profile : profiles)
         {
-            const GUID profileGuid = profile.GetGuid();
+            const auto profileGuid = profile.Guid();
 
             try
             {
@@ -2090,17 +2090,17 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                    gsl::span<const ::TerminalApp::Profile> profiles,
-                                                                                    const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes)
+                                                                                    gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                    IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
 
         std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
-        sortedSchemes.reserve(schemes.size());
+        sortedSchemes.reserve(schemes.Size());
 
         for (const auto& nameAndScheme : schemes)
         {
-            sortedSchemes.push_back(nameAndScheme.second);
+            sortedSchemes.push_back(nameAndScheme.Value());
         }
         std::sort(sortedSchemes.begin(),
                   sortedSchemes.end(),
@@ -2129,7 +2129,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands(),
                                                                                            _settings->GetProfiles(),
                                                                                            _settings->GlobalSettings().GetColorSchemes());
 

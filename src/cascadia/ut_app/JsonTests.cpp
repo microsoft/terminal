@@ -94,10 +94,10 @@ namespace TerminalAppUnitTests
         const auto schemeObject = VerifyParseSucceeded(campbellScheme);
         auto scheme = implementation::ColorScheme::FromJson(schemeObject);
         VERIFY_ARE_EQUAL(L"Campbell", scheme->Name());
-        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), scheme->Foreground());
-        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), scheme->Background());
-        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), scheme->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), scheme->CursorColor());
+        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), til::color{ scheme->Foreground() });
+        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), til::color{ scheme->Background() });
+        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), til::color{ scheme->SelectionBackground() });
+        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], COLOR_TABLE_SIZE);
@@ -150,21 +150,21 @@ namespace TerminalAppUnitTests
         const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
         const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
 
-        const auto profile0 = Profile::FromJson(profile0Json);
-        const auto profile1 = Profile::FromJson(profile1Json);
-        const auto profile2 = Profile::FromJson(profile2Json);
-        const auto profile3 = Profile::FromJson(profile3Json);
-        const auto profile4 = Profile::FromJson(profile4Json);
-        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
-        const GUID nullGuid{ 0 };
+        const auto profile0 = implementation::Profile::FromJson(profile0Json);
+        const auto profile1 = implementation::Profile::FromJson(profile1Json);
+        const auto profile2 = implementation::Profile::FromJson(profile2Json);
+        const auto profile3 = implementation::Profile::FromJson(profile3Json);
+        const auto profile4 = implementation::Profile::FromJson(profile4Json);
+        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const winrt::guid nullGuid{};
 
-        VERIFY_IS_FALSE(profile0._guid.has_value());
-        VERIFY_IS_FALSE(profile1._guid.has_value());
-        VERIFY_IS_FALSE(profile2._guid.has_value());
-        VERIFY_IS_TRUE(profile3._guid.has_value());
-        VERIFY_IS_TRUE(profile4._guid.has_value());
+        VERIFY_IS_FALSE(profile0->HasGuid());
+        VERIFY_IS_FALSE(profile1->HasGuid());
+        VERIFY_IS_FALSE(profile2->HasGuid());
+        VERIFY_IS_TRUE(profile3->HasGuid());
+        VERIFY_IS_TRUE(profile4->HasGuid());
 
-        VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
     }
 }

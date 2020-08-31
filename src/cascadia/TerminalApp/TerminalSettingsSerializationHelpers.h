@@ -79,7 +79,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasing
 
 // Type Description:
 // - Helper for converting a user-specified closeOnExit value to its corresponding enum
-JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
+JSON_ENUM_MAPPER(::winrt::TerminalApp::CloseOnExitMode)
 {
     JSON_MAPPINGS(3) = {
         pair_type{ "always", ValueType::Always },
@@ -88,7 +88,7 @@ JSON_ENUM_MAPPER(::TerminalApp::CloseOnExitMode)
     };
 
     // Override mapping parser to add boolean parsing
-    CloseOnExitMode FromJson(const Json::Value& json)
+    ::winrt::TerminalApp::CloseOnExitMode FromJson(const Json::Value& json)
     {
         if (json.isBool())
         {
@@ -184,7 +184,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode)
     };
 };
 
-JSON_ENUM_MAPPER(::TerminalApp::ExpandCommandType)
+JSON_ENUM_MAPPER(winrt::TerminalApp::ExpandCommandType)
 {
     JSON_MAPPINGS(2) = {
         pair_type{ "profiles", ValueType::Profiles },
@@ -226,11 +226,11 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 //   (abc, 100): if a value is not valid, we treat it as default
 //   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
 template<>
-struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
+struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::TerminalApp::LaunchPosition>
 {
-    ::TerminalApp::LaunchPosition FromJson(const Json::Value& json)
+    ::winrt::TerminalApp::LaunchPosition FromJson(const Json::Value& json)
     {
-        ::TerminalApp::LaunchPosition ret;
+        ::winrt::TerminalApp::LaunchPosition ret;
         std::string initialPosition{ json.asString() };
         static constexpr char singleCharDelim = ',';
         std::stringstream tokenStream(initialPosition);
@@ -244,15 +244,15 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::TerminalApp::LaunchPosition>
         {
             try
             {
-                int32_t position = std::stoi(token);
+                int64_t position = std::stol(token);
                 if (initialPosIndex == 0)
                 {
-                    ret.x.emplace(position);
+                    ret.X = position;
                 }
 
                 if (initialPosIndex == 1)
                 {
-                    ret.y.emplace(position);
+                    ret.Y = position;
                 }
             }
             catch (...)
