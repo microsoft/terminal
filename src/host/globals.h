@@ -70,6 +70,7 @@ public:
     ApiRoutines api;
 
     bool handoffTarget = false;
+    
     std::optional<CLSID> handoffClsid;
 
 #ifdef UNIT_TESTING

@@ -160,6 +160,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     }
 
     Globals& Globals = ServiceLocator::LocateGlobals();
+    // TODO: only the inside windows one should probably bother trying to delegate, the out of box one could probably assume it doesn't need to.
     if (Globals.handoffClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
     {
         try
