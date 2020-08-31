@@ -22,6 +22,8 @@ Author(s):
 #include "Profile.h"
 #include "IDynamicProfileGenerator.h"
 
+#include "ColorScheme.h"
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -39,7 +41,15 @@ namespace TerminalAppUnitTests
 
 namespace TerminalApp
 {
+    class SettingsTypedDeserializationException;
     class CascadiaSettings;
+};
+
+class TerminalApp::SettingsTypedDeserializationException final : public std::runtime_error
+{
+public:
+    SettingsTypedDeserializationException(const std::string_view description) :
+        runtime_error(description.data()) {}
 };
 
 class TerminalApp::CascadiaSettings final
@@ -70,9 +80,11 @@ public:
     static std::filesystem::path GetDefaultSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
-    const ColorScheme* GetColorSchemeForProfile(const GUID profileGuid) const;
+    const winrt::TerminalApp::ColorScheme GetColorSchemeForProfile(const GUID profileGuid) const;
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
+
+    bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, std::wstring_view schemeName);
 
 private:
     GlobalAppSettings _globals;
@@ -89,7 +101,7 @@ private:
     void _LayerOrCreateProfile(const Json::Value& profileJson);
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
-    ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
+    winrt::com_ptr<winrt::TerminalApp::implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
     void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
     static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
     static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);

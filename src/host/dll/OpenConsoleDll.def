@@ -1,6 +1,8 @@
 LIBRARY OpenConsoleDll
 
 EXPORTS
-    DllGetActivationFactory PRIVATE
-    DllGetClassObject       PRIVATE
-    DllCanUnloadNow         PRIVATE
+    DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE
+    DllRegisterServer PRIVATE
+    DllUnregisterServer PRIVATE
+    GetProxyDllInfo

@@ -27,6 +27,9 @@
     <ClCompile Include="precomp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DelegationConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="conpropsp.hpp">
@@ -44,5 +47,11 @@
     <ClInclude Include="TrueTypeFontList.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DelegationConfig.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

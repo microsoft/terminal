@@ -18,7 +18,6 @@
 #include "WslDistroGenerator.h"
 #include "AzureCloudShellGenerator.h"
 
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
@@ -227,9 +226,12 @@ void CascadiaSettings::_ValidateProfilesHaveGuid()
 void CascadiaSettings::_ResolveDefaultProfile()
 {
     const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
-    auto maybeParsedDefaultProfile{ _GetProfileGuidByName(unparsedDefaultProfile) };
-    auto defaultProfileGuid{ Utils::CoalesceOptionals(maybeParsedDefaultProfile, GUID{}) };
-    GlobalSettings().DefaultProfile(defaultProfileGuid);
+    if (unparsedDefaultProfile)
+    {
+        auto maybeParsedDefaultProfile{ _GetProfileGuidByName(*unparsedDefaultProfile) };
+        auto defaultProfileGuid{ til::coalesce_value(maybeParsedDefaultProfile, GUID{}) };
+        GlobalSettings().DefaultProfile(defaultProfileGuid);
+    }
 }
 
 // Method Description:
@@ -567,7 +569,7 @@ GUID CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return Utils::CoalesceOptionals(profileByName, profileByIndex, _globals.DefaultProfile());
+    return til::coalesce_value(profileByName, profileByIndex, _globals.DefaultProfile());
 }
 
 // Method Description:
@@ -693,14 +695,11 @@ void CascadiaSettings::_ValidateNoGlobalsKey()
 // - The new settings string.
 std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const
 {
+    // We're using replace_needle_in_haystack_inplace here, because it's more
+    // efficient to iteratively modify a single string in-place than it is to
+    // keep copying over the contents and modifying a copy (which
+    // replace_needle_in_haystack would do).
     std::string finalSettings{ settingsTemplate };
-    auto replace{ [](std::string& haystack, std::string_view needle, std::string_view replacement) {
-        auto pos{ std::string::npos };
-        while ((pos = haystack.rfind(needle, pos)) != std::string::npos)
-        {
-            haystack.replace(pos, needle.size(), replacement);
-        }
-    } };
 
     std::wstring defaultProfileGuid{ DEFAULT_WINDOWS_POWERSHELL_GUID };
     if (const auto psCoreProfileGuid{ _GetProfileGuidByName(PowershellCoreProfileGenerator::GetPreferredPowershellProfileName()) })
@@ -708,14 +707,22 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
         defaultProfileGuid = Utils::GuidToString(*psCoreProfileGuid);
     }
 
-    replace(finalSettings, "%DEFAULT_PROFILE%", til::u16u8(defaultProfileGuid));
+    til::replace_needle_in_haystack_inplace(finalSettings,
+                                            "%DEFAULT_PROFILE%",
+                                            til::u16u8(defaultProfileGuid));
     if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
     {
-        replace(finalSettings, "%VERSION%", til::u16u8(appLogic->ApplicationVersion()));
-        replace(finalSettings, "%PRODUCT%", til::u16u8(appLogic->ApplicationDisplayName()));
+        til::replace_needle_in_haystack_inplace(finalSettings,
+                                                "%VERSION%",
+                                                til::u16u8(appLogic->ApplicationVersion()));
+        til::replace_needle_in_haystack_inplace(finalSettings,
+                                                "%PRODUCT%",
+                                                til::u16u8(appLogic->ApplicationDisplayName()));
     }
 
-    replace(finalSettings, "%COMMAND_PROMPT_LOCALIZED_NAME%", RS_A(L"CommandPromptDisplayName"));
+    til::replace_needle_in_haystack_inplace(finalSettings,
+                                            "%COMMAND_PROMPT_LOCALIZED_NAME%",
+                                            RS_A(L"CommandPromptDisplayName"));
 
     return finalSettings;
 }
@@ -728,7 +735,7 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - profileGuid: the GUID of the profile to find the scheme for.
 // Return Value:
 // - a non-owning pointer to the scheme.
-const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
+const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const GUID profileGuid) const
 {
     auto* profile = FindProfile(profileGuid);
     if (!profile)
@@ -739,10 +746,33 @@ const ColorScheme* CascadiaSettings::GetColorSchemeForProfile(const GUID profile
     auto scheme = _globals.GetColorSchemes().find(schemeName);
     if (scheme != _globals.GetColorSchemes().end())
     {
-        return &scheme->second;
+        return scheme->second;
     }
     else
     {
         return nullptr;
     }
+}
+
+// Method Description:
+// - Apply the color scheme (provided by name) to the given IControlSettings.
+//   The settings are modified in-place.
+// - If the name doesn't correspond to any of our schemes, this does nothing.
+// Arguments:
+// - settings: the IControlSettings object to modify
+// - name: the name of the scheme to apply
+// Return Value:
+// - true iff we found a matching scheme for the name schemeName
+bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings,
+                                        std::wstring_view schemeName)
+{
+    std::wstring name{ schemeName };
+    auto schemeAndName = _globals.GetColorSchemes().find(name);
+    if (schemeAndName != _globals.GetColorSchemes().end())
+    {
+        const auto& scheme = schemeAndName->second;
+        scheme.ApplyScheme(settings);
+        return true;
+    }
+    return false;
 }

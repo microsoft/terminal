@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../ShortcutActionDispatch.idl";
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
@@ -12,5 +12,11 @@ namespace TerminalApp
         String Name;
         ActionAndArgs Action;
         String KeyChordText;
+
+        Windows.UI.Xaml.Controls.IconSource IconSource;
+        void RefreshIcon();
+
+        Boolean HasNestedCommands { get; };
+        Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
     }
 }

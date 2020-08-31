@@ -147,6 +147,10 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
+        [[nodiscard]] HRESULT _DrawGlyphRun(_In_opt_ void* clientDrawingContext,
+                                            gsl::not_null<IDWriteTextRenderer*> renderer,
+                                            D2D_POINT_2F& mutableOrigin,
+                                            const Run& run) noexcept;
 
         [[nodiscard]] static constexpr UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 

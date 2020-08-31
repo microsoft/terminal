@@ -38,6 +38,13 @@ static const WORD leftShiftScanCode = 0x2A;
     THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
 
     // Ask how much space we will need.
+    // In certain codepages, Mb2Wc will "successfully" produce zero characters (like in CP50220, where a SHIFT-IN character
+    // is consumed but not transformed into anything) without explicitly failing. When it does this, GetLastError will return
+    // the last error encountered by the last function that actually did have an error.
+    // This is arguably correct (as the documentation says "The function returns 0 if it does not succeed"). There is a
+    // difference that we **don't actually care about** between failing and successfully producing zero characters.,
+    // Anyway: we need to clear the last error so that we can fail out and IGNORE_BAD_GLE after it inevitably succeed-fails.
+    SetLastError(0);
     int const iTarget = MultiByteToWideChar(codePage, 0, source.data(), iSource, nullptr, 0);
     THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == iTarget);
 

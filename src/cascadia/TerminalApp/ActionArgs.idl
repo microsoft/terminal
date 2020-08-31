@@ -67,6 +67,7 @@ namespace TerminalApp
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
         Boolean SingleLine { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
@@ -94,6 +95,11 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    {
+        String Input { get; };
+    };
+
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
         SplitState SplitStyle { get; };
@@ -104,6 +110,11 @@ namespace TerminalApp
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
         SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
+    {
+        String SchemeName { get; };
     };
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
@@ -119,5 +130,15 @@ namespace TerminalApp
     [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
     {
         String Commandline;
+    };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> Index { get; };
     };
 }

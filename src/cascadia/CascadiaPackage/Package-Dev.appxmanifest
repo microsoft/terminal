@@ -80,15 +80,17 @@
                 </uap3:Properties>
             </uap3:AppExtension>      
         </uap3:Extension>
-
+        <com:Extension Category="windows.comInterface">
+            <com:ComInterface>
+                <com:ProxyStub Id="DA2E620C-0B90-45D2-8362-A5B1006D9243" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleDll.dll"/>
+                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DA2E620C-0B90-45D2-8362-A5B1006D9243"/>
+            </com:ComInterface>
+        </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
-                <!--<com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
                     <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451"/>
-                </com:ExeServer>-->
-                <com:SurrogateServer DisplayName="OpenConsole">
-                    <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451" Path="OpenConsole.dll" ThreadingModel="STA"/>
-                </com:SurrogateServer>
+                </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>

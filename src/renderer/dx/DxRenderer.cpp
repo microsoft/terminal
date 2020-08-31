@@ -1417,7 +1417,7 @@ try
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
         _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
-        for (const auto rect : _invalidMap.runs())
+        for (const auto& rect : _invalidMap.runs())
         {
             // Use aliased.
             // For graphics reasons, it'll look better because it will ensure that
@@ -1488,8 +1488,7 @@ try
     const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
-    {
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
@@ -1544,7 +1543,7 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & GridLines::Underline)
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
@@ -1552,6 +1551,12 @@ try
         const auto y = target.y + _lineMetrics.underlineOffset;
 
         DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+
+        if (lines & GridLines::DoubleUnderline)
+        {
+            const auto y2 = target.y + _lineMetrics.underlineOffset2;
+            DrawLine(startX, y2, endX, y2, _lineMetrics.underlineWidth);
+        }
     }
 
     if (lines & GridLines::Strikethrough)
@@ -2283,9 +2288,28 @@ CATCH_RETURN();
         lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
         lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
 
-        // We also add half the stroke width to the offset, since the line
+        // For double underlines we need a second offset, just below the first,
+        // but with a bit of a gap (about double the grid line width).
+        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
+                                       lineMetrics.underlineWidth +
+                                       std::round(fontSize * 0.05f);
+
+        // However, we don't want the underline to extend past the bottom of the
+        // cell, so we clamp the offset to fit just inside.
+        const auto maxUnderlineOffset = lineSpacing.height - _lineMetrics.underlineWidth;
+        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+        // But if the resulting gap isn't big enough even to register as a thicker
+        // line, it's better to place the second line slightly above the first.
+        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
+        {
+            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
+        }
+
+        // We also add half the stroke width to the offsets, since the line
         // coordinates designate the center of the line.
         lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
         lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
     }
     CATCH_RETURN();
@@ -2329,12 +2353,12 @@ CATCH_RETURN();
 // - color - GDI Color
 // Return Value:
 // - N/A
-void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+void DxEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
     _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
-                                        0.5f);
+                                        alpha);
 }
 
 // Routine Description:

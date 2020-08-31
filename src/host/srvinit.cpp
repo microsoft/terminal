@@ -9,6 +9,7 @@
 #include "handle.h"
 #include "registry.hpp"
 #include "renderFontDefaults.hpp"
+#include "..\propslib\DelegationConfig.hpp"
 
 #include "ApiRoutines.h"
 
@@ -34,27 +35,31 @@ const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
 [[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
+try
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
-    try
+    Globals.pDeviceComm = new DeviceComm(Server);
+
+    Globals.launchArgs = *args;
+
+    Globals.uiOEMCP = GetOEMCP();
+    Globals.uiWindowsCP = GetACP();
+
+    Globals.pFontDefaultList = new RenderFontDefaults();
+
+    FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
+
+    IID delegationClsid;
+    if (SUCCEEDED(DelegationConfig::s_Get(delegationClsid)))
     {
-        Globals.pDeviceComm = new DeviceComm(Server);
-
-        Globals.launchArgs = *args;
-
-        Globals.uiOEMCP = GetOEMCP();
-        Globals.uiWindowsCP = GetACP();
-
-        Globals.pFontDefaultList = new RenderFontDefaults();
-
-        FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
+        Globals.handoffClsid = delegationClsid;
     }
-    CATCH_RETURN();
 
     // Removed allocation of scroll buffer here.
     return S_OK;
 }
+CATCH_RETURN();
 
 static bool s_IsOnDesktop()
 {
@@ -314,7 +319,7 @@ static wchar_t* _ConsoleHostPath()
         return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
 #else
         // Use the STL only if we're not building in Windows.
-        std::filesystem::path modulePath{ "D:\\src\\terminal\\src\\cascadia\\CascadiaPackage\\bin\\x64\\Debug\\AppX\\wtd.exe"};
+        std::filesystem::path modulePath{ "D:\\src\\terminal\\src\\cascadia\\CascadiaPackage\\bin\\x64\\Debug\\AppX\\wtd.exe" };
         //modulePath.replace_filename(L"OpenConsole.exe");
         auto modulePathAsString{ modulePath.wstring() };
         return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
@@ -322,8 +327,6 @@ static wchar_t* _ConsoleHostPath()
     }();
     return consoleHostPath.get();
 }
-
-
 
 HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
                                 const ConsoleArguments* const args, // this can't stay like this because ConsoleArguments could change...
@@ -408,21 +411,20 @@ HRESULT ConsoleEstablishHandoff(_In_ HANDLE Server,
     wil::unique_process_information pi;
     // Call create process
     RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
-                                                cmd,
-                                                nullptr,
-                                                nullptr,
-                                                TRUE,
-                                                EXTENDED_STARTUPINFO_PRESENT,
-                                                nullptr,
-                                                nullptr,
-                                                &siEx.StartupInfo,
-                                                pi.addressof()));
+                                              cmd,
+                                              nullptr,
+                                              nullptr,
+                                              TRUE,
+                                              EXTENDED_STARTUPINFO_PRESENT,
+                                              nullptr,
+                                              nullptr,
+                                              &siEx.StartupInfo,
+                                              pi.addressof()));
 
     inPipeTheirSide.release();
     outPipeTheirSide.release();
     signalPipeTheirSide.release();
 
-    
     auto originalCommandLine = args->GetOriginalCommandLine();
 
     auto str2 = fmt::format(L" --headless --signal {:#x}", (int64_t)signalPipeOurSide.release());
