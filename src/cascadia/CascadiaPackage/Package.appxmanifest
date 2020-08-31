@@ -70,9 +70,28 @@
             Enabled="false"
             DisplayName="ms-resource:AppName" />
         </uap5:Extension>
-
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.console.host"
+                Id="OpenConsole-Dev"
+                DisplayName="OpenConsole"
+                Description="Console host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>      
+        </uap3:Extension>
+        <com:Extension Category="windows.comInterface">
+            <com:ComInterface>
+                <com:ProxyStub Id="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleDll.dll"/>
+                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F"/>
+            </com:ComInterface>
+        </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                    <com:Class Id="2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69"/>
+                </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>
