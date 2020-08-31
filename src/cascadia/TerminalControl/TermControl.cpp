@@ -1262,26 +1262,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     LinkTip().Content(winrt::box_value(uri));
 
                     // Set the border thickness so it covers the entire cell
-                    const til::size fontSize{ _actualFont.GetSize() };
-                    const double ht = static_cast<double>(fontSize.height()) / SwapChainPanel().CompositionScaleY();
-                    const double wt = static_cast<double>(fontSize.width()) / SwapChainPanel().CompositionScaleX();
-                    const Thickness newThickness{ wt, ht, 0, 0 };
+                    const auto charSizeInPixels = CharacterDimensions();
+                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
                     SubBorder().BorderThickness(newThickness);
 
-                    // Move the border to the top left corner of the cell
+                    // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
                     const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::size fontSize{ _actualFont.GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
                     const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
+                    // Move the border to the top left corner of the cell
                     SubCanvas().SetLeft(SubBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                     SubCanvas().SetTop(SubBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
                 _lastHoveredCell = terminalPos;
 
                 const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
-                // If the hyperlink ID changed, trigger a redraw all
+                // If the hyperlink ID changed, trigger a redraw all (so this will happen both when we move
+                // onto a link and when we move off a link)
                 if (newId != _lastHoveredId)
                 {
                     _renderEngine->UpdateHyperlinkHoveredId(newId);
