@@ -25,7 +25,6 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 
 #include "ConsoleArguments.hpp"
 #include "../inc/conattrs.hpp"
-#include "../renderer/inc/BlinkingState.hpp"
 
 class Settings
 {
@@ -186,11 +185,6 @@ public:
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
-    COLORREF CalculateDefaultForeground() const noexcept;
-    COLORREF CalculateDefaultBackground() const noexcept;
-    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
-    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
-
 private:
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;
@@ -250,6 +244,5 @@ private:
     COLORREF _DefaultForeground;
     COLORREF _DefaultBackground;
     bool _TerminalScrolling;
-    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
     friend class RegistrySerialization;
 };
