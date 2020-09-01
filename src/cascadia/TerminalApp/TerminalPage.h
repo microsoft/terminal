@@ -9,6 +9,7 @@
 #include "Profile.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+//#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include "AppCommandlineArgs.h"
 
@@ -53,11 +54,12 @@ namespace winrt::TerminalApp::implementation
         void ToggleFocusMode();
         void ToggleFullscreen();
         void ToggleAlwaysOnTop();
+        void ToggleInboundPty();
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+        bool InboundPty() const;
 
-        void SetStartupConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection conn);
         void SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions);
         static std::vector<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
 
@@ -71,6 +73,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(InboundPtyChanged, _inboundPtyChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -96,6 +99,7 @@ namespace winrt::TerminalApp::implementation
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isAlwaysOnTop{ false };
+        bool _isInboundPty{ false };
 
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
@@ -109,7 +113,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _startupConnection{ nullptr };
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> _startupActions;
         winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions, const bool initial);
 
@@ -201,6 +204,9 @@ namespace winrt::TerminalApp::implementation
 
         void _UnZoomIfNeeded();
 
+        void _OnInboundPtyChanged(const IInspectable& sender, const IInspectable& eventArgs);
+        //void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
@@ -240,6 +246,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCloseOtherTabs(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTabsAfter(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleOpenTabSearch(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleToggleInboundPty(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

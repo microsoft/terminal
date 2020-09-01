@@ -9,7 +9,17 @@
 
 #pragma hdrstop
 
-[[nodiscard]] HRESULT DelegationConfig::s_Get(IID& iid)
+[[nodiscard]] HRESULT DelegationConfig::s_GetConsole(IID& iid)
+{
+    return s_Get(L"DelegationConsole", iid);
+}
+
+[[nodiscard]] HRESULT DelegationConfig::s_GetTerminal(IID& iid)
+{
+    return s_Get(L"DelegationTerminal", iid);
+}
+
+[[nodiscard]] HRESULT DelegationConfig::s_Get(PCWSTR value, IID& iid)
 {
     wil::unique_hkey currentUserKey;
     wil::unique_hkey consoleKey;
@@ -21,7 +31,7 @@
 
     DWORD bytesNeeded = 0;
     NTSTATUS result = RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                          L"DelegationConsole",
+                                                          value,
                                                           0,
                                                           REG_SZ,
                                                           nullptr,
@@ -37,7 +47,7 @@
     DWORD bytesUsed = 0;
 
     RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_QueryValue(startupKey.get(),
-                                                                  L"DelegationConsole",
+                                                                  value,
                                                                   bytesNeeded,
                                                                   REG_SZ,
                                                                   reinterpret_cast<BYTE*>(buffer.get()),

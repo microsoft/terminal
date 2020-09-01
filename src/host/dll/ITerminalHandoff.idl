@@ -1,0 +1,15 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+#include "ConsoleComGuids.h"
+cpp_quote("#include \"ConsoleComGuids.h\"")
+
+[
+    object,
+    uuid(__IID_ITerminalHandoff)
+] interface ITerminalHandoff : IUnknown
+{
+    HRESULT EstablishHandoff([in, system_handle(sh_file)] HANDLE in,
+                             [in, system_handle(sh_file)] HANDLE out,
+                             [in, system_handle(sh_file)] HANDLE signal);
+};

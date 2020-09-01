@@ -70,7 +70,7 @@
             DisplayName="ms-resource:AppNameDev" />
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtension">
-            <uap3:AppExtension Name="com.microsoft.console.host"
+            <uap3:AppExtension Name="com.microsoft.windows.console.host"
                 Id="OpenConsole-Dev"
                 DisplayName="OpenConsole"
                 Description="Console host built from microsoft/terminal open source repository"
@@ -78,18 +78,33 @@
                 <uap3:Properties>
                     <Clsid>1F9F2BF5-5BC3-4F17-B0E6-912413F1F451</Clsid>
                 </uap3:Properties>
-            </uap3:AppExtension>      
+            </uap3:AppExtension>
+        </uap3:Extension>
+        <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="com.microsoft.windows.terminal.host"
+                Id="Terminal-Dev"
+                DisplayName="Windows Terminal Dev"
+                Description="Terminal host built from microsoft/terminal open source repository"
+                PublicFolder="Public">
+                <uap3:Properties>
+                    <Clsid>E7B98685-0CC0-45D6-8F4C-B7C863C03DE2</Clsid>
+                </uap3:Properties>
+            </uap3:AppExtension>
         </uap3:Extension>
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
                 <com:ProxyStub Id="DA2E620C-0B90-45D2-8362-A5B1006D9243" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleDll.dll"/>
                 <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DA2E620C-0B90-45D2-8362-A5B1006D9243"/>
+                <com:Interface Id="F89E4430-FF48-4DD7-A22C-182B546A8BA2" ProxyStubClsid="DA2E620C-0B90-45D2-8362-A5B1006D9243"/>
             </com:ComInterface>
         </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
                 <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
                     <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451"/>
+                </com:ExeServer>
+                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe" Arguments="--embedding">
+                    <com:Class Id="E7B98685-0CC0-45D6-8F4C-B7C863C03DE2"/>
                 </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>

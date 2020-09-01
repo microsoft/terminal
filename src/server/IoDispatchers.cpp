@@ -161,14 +161,14 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     Globals& Globals = ServiceLocator::LocateGlobals();
     // TODO: only the inside windows one should probably bother trying to delegate, the out of box one could probably assume it doesn't need to.
-    if (Globals.handoffClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
+    if (Globals.handoffConsoleClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
     {
         try
         {
             auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
             ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
 
-            THROW_IF_FAILED(CoCreateInstance(Globals.handoffClsid.value(), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&handoff)));
+            THROW_IF_FAILED(CoCreateInstance(Globals.handoffConsoleClsid.value(), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&handoff)));
 
             // Pack up just enough of the attach message for the other console to process it.
             // NOTE: It can and will pick up the size/title/etc parameters from the driver again.

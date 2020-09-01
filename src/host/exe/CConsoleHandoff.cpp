@@ -8,7 +8,7 @@
 wil::unique_event _exitEvent;
 
 // Routine Description:
-// - Called back whne COM says there is nothing left for our server to do and we can tear down.
+// - Called back when COM says there is nothing left for our server to do and we can tear down.
 void _releaseNotifier() noexcept
 {
     _exitEvent.SetEvent();

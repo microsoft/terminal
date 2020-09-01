@@ -13,6 +13,7 @@
 #include <userenv.h>
 
 #include "ConptyConnection.g.cpp"
+#include "CTerminalHandoff.h"
 
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/Environment.hpp"
@@ -481,4 +482,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return 0;
     }
 
+    static winrt::event<NewConnectionHandler> _newConnectionHandlers;
+
+    winrt::event_token ConptyConnection::NewConnection(NewConnectionHandler const& handler) { return _newConnectionHandlers.add(handler); };
+    void ConptyConnection::NewConnection(winrt::event_token const& token) { _newConnectionHandlers.remove(token); };
+
+    HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
+    try
+    {
+        UNREFERENCED_PARAMETER(in);
+        UNREFERENCED_PARAMETER(out);
+        UNREFERENCED_PARAMETER(signal);
+        //_newConnectionHandlers(in, out, signal);
+        return S_FALSE;
+    }
+    CATCH_RETURN()
+
+    void ConptyConnection::StartInboundListener()
+    {
+        THROW_IF_FAILED(CTerminalHandoff::StartListening(&ConptyConnection::NewHandoff));
+    }
+
+    void ConptyConnection::StopInboundListener()
+    {
+        THROW_IF_FAILED(CTerminalHandoff::StopListening());
+    }
 }

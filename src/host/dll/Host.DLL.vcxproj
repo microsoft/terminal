@@ -13,6 +13,8 @@
     <ClCompile Include="dlldata.c" />
     <ClCompile Include="IConsoleHandoff_i.c" />
     <ClCompile Include="IConsoleHandoff_p.c" />
+    <ClCompile Include="ITerminalHandoff_i.c" />
+    <ClCompile Include="ITerminalHandoff_p.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Host.DLL.rc" />
@@ -23,9 +25,11 @@
   <ItemGroup>
     <ClInclude Include="ConsoleComGuids.h" />
     <ClInclude Include="IConsoleHandoff_h.h" />
+    <ClInclude Include="ITerminalHandoff_h.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl" />
+    <Midl Include="ITerminalHandoff.idl" />
   </ItemGroup>
   <PropertyGroup>
     <EmbedManifest>

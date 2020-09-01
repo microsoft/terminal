@@ -989,15 +989,7 @@ namespace winrt::TerminalApp::implementation
         if (result == 0)
         {
             _appArgs.ValidateStartupCommands();
-            if (_appArgs.HasStartupHandles())
-            {
-                auto conn = _appArgs.GetStartupConnection();
-                _root->SetStartupConnection(conn);
-            }
-            else
-            {
-                _root->SetStartupActions(_appArgs.GetStartupActions());
-            }
+            _root->SetStartupActions(_appArgs.GetStartupActions());
         }
 
         return result;

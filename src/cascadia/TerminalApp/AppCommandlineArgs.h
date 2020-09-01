@@ -37,8 +37,6 @@ public:
     static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
-    bool HasStartupHandles() const noexcept;
-    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection GetStartupConnection();
     void ValidateStartupCommands();
     std::vector<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
     const std::string& GetExitMessage();
@@ -76,8 +74,6 @@ private:
     CLI::App* _focusTabCommand;
     CLI::App* _focusTabShort;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
-
-    int64_t _ptySigHandle;
 
     std::string _profileName;
     std::string _startingDirectory;

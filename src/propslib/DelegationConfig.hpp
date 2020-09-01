@@ -18,5 +18,9 @@ Author(s):
 class DelegationConfig
 {
 public:
-    [[nodiscard]] static HRESULT s_Get(IID& iid);
+    [[nodiscard]] static HRESULT s_GetConsole(IID& iid);
+    [[nodiscard]] static HRESULT s_GetTerminal(IID& iid);
+
+private:
+    [[nodiscard]] static HRESULT s_Get(PCWSTR value, IID& iid);
 };

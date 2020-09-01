@@ -195,6 +195,10 @@ namespace winrt::TerminalApp::implementation
         // Hookup our event handlers to the ShortcutActionDispatch
         _RegisterActionCallbacks();
 
+        // Hook up inbound PTY event handlers
+        InboundPtyChanged({ this, &TerminalPage::_OnInboundPtyChanged });
+        //Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection(&TerminalPage::_OnNewConnection);
+
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
@@ -284,24 +288,15 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
-            if (_startupConnection)
+            if (_startupActions.Size() == 0)
             {
-                _OpenNewTab(nullptr, _startupConnection);
+                _OpenNewTab(nullptr);
 
                 _CompleteInitialization();
             }
             else
             {
-                if (_startupActions.Size() == 0)
-                {
-                    _OpenNewTab(nullptr);
-
-                    _CompleteInitialization();
-                }
-                else
-                {
-                    _ProcessStartupActions(_startupActions, true);
-                }
+                _ProcessStartupActions(_startupActions, true);
             }
         }
     }
@@ -339,7 +334,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    return;
+                    co_return;
                 }
             }
         }
@@ -951,6 +946,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
+        _actionDispatch->ToggleInboundPty({ this, &TerminalPage::_HandleToggleInboundPty });
     }
 
     // Method Description:
@@ -2069,11 +2065,6 @@ namespace winrt::TerminalApp::implementation
         _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
-    void TerminalPage::SetStartupConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection conn)
-    {
-        _startupConnection = conn;
-    }
-
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
     static bool _compareSchemeNames(const winrt::TerminalApp::ColorScheme& lhs, const winrt::TerminalApp::ColorScheme& rhs)
     {
@@ -2239,6 +2230,18 @@ namespace winrt::TerminalApp::implementation
     {
         _isAlwaysOnTop = !_isAlwaysOnTop;
         _alwaysOnTopChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Toggles inbound pty mode. Raises InboundPtyChanged event.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::ToggleInboundPty()
+    {
+        _isInboundPty = !_isInboundPty;
+        _inboundPtyChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2495,6 +2498,29 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
+    bool TerminalPage::InboundPty() const
+    {
+        return _isInboundPty;
+    }
+
+
+    void TerminalPage::_OnInboundPtyChanged(const IInspectable& /*sender*/,
+                                           const IInspectable& /*eventArgs*/)
+    {
+        if (InboundPty())
+        {
+            ConptyConnection::StartInboundListener();
+        }
+        else
+        {
+            ConptyConnection::StopInboundListener();
+        }
+    }
+
+    //void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection /*connection*/)
+    //{
+    //}
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
@@ -2504,4 +2530,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, InboundPtyChanged, _inboundPtyChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

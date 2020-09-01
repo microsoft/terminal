@@ -174,9 +174,14 @@ void AppCommandlineArgs::_buildParser()
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
-    // Incoming PTY flags
-    //  --pty
-    _app.add_option("--pty", _ptySigHandle, "PTY Signal Handle");
+    // Started explicitly as a COM server for incoming PTY flags
+    // /Embedding (we don't pick this, it's just how COM does it.)
+    auto comEmbeddingCallback = [this](int64_t /*count*/) {
+        auto embeddingAction = winrt::make_self<implementation::ActionAndArgs>();
+        embeddingAction->Action(ShortcutAction::ToggleInboundPty);
+        _startupActions.push_back(*embeddingAction);
+    };
+    _app.add_flag_function("--embedding", comEmbeddingCallback, RS_A(L"CmdEmbeddingDesc"));
 
     // Maximized and Fullscreen flags
     //   -M,--maximized: Maximizes the window on launch
@@ -468,8 +473,6 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusNextTab = false;
     _focusPrevTab = false;
 
-    _ptySigHandle = 0;
-
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).
@@ -638,22 +641,6 @@ bool AppCommandlineArgs::ShouldExitEarly() const noexcept
     return _shouldExitEarly;
 }
 
-bool AppCommandlineArgs::HasStartupHandles() const noexcept
-{
-    return _ptySigHandle != 0;
-}
-
-winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection AppCommandlineArgs::GetStartupConnection()
-{
-    uint64_t ptySigHandle = (uint64_t)_ptySigHandle;
-    uint64_t ptyOutHandle = (uint64_t)GetStdHandle(STD_OUTPUT_HANDLE);
-    uint64_t ptyInHandle = (uint64_t)GetStdHandle(STD_INPUT_HANDLE);
-    ptySigHandle;
-    ptyOutHandle;
-    ptyInHandle;
-    return winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection(ptySigHandle, ptyInHandle, ptyOutHandle);
-}
-
 // Method Description:
 // - Ensure that the first command in our list of actions is a NewTab action.
 //   This makes sure that if the user passes a commandline like "wt split-pane
@@ -682,11 +669,6 @@ void AppCommandlineArgs::ValidateStartupCommands()
         newTabAction->Args(*args);
         // push the arg onto the front
         _startupActions.insert(_startupActions.begin(), 1, *newTabAction);
-    }
-
-    if (_ptySigHandle != 0)
-    {
-        
     }
 }
 

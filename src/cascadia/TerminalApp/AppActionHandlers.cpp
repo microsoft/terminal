@@ -495,4 +495,11 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleToggleInboundPty(const IInspectable& /*sender*/,
+                                               const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleInboundPty();
+        args.Handled(true);
+    }
 }

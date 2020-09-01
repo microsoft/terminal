@@ -21,6 +21,7 @@
     <ClInclude Include="AzureConnection.h">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="CTerminalHandoff.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConptyConnection.h">
       <DependentUpon>ConptyConnection.idl</DependentUpon>
@@ -33,6 +34,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CTerminalHandoff.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AzureConnection.cpp">
       <DependentUpon>AzureConnection.idl</DependentUpon>
@@ -96,6 +98,5 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets" Condition="Exists('..\..\..\packages\vcpkg-telnetpp.1.0.1\build\native\vcpkg-telnetpp.targets')" />
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

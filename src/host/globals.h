@@ -71,7 +71,8 @@ public:
 
     bool handoffTarget = false;
     
-    std::optional<CLSID> handoffClsid;
+    std::optional<CLSID> handoffConsoleClsid;
+    std::optional<CLSID> handoffTerminalClsid;
 
 #ifdef UNIT_TESTING
     void EnableConptyModeForTests(std::unique_ptr<Microsoft::Console::Render::VtEngine> vtRenderEngine);

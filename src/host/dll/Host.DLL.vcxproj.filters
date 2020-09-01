@@ -24,6 +24,12 @@
     <ClCompile Include="IConsoleHandoff_p.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ITerminalHandoff_i.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ITerminalHandoff_p.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Host.DLL.rc">
@@ -45,9 +51,15 @@
     <ClInclude Include="ConsoleComGuids.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ITerminalHandoff_h.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+    <Midl Include="ITerminalHandoff.idl">
       <Filter>Source Files</Filter>
     </Midl>
   </ItemGroup>
