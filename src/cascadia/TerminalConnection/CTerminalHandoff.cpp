@@ -4,6 +4,8 @@
 
 static NewHandoff _pfnHandoff = nullptr;
 
+static DWORD g_cTerminalHandoffRegistration = 0;
+
 // Routine Description:
 // - Called back when COM says there is nothing left for our server to do and we can tear down.
 void _releaseNotifier() noexcept
@@ -15,7 +17,13 @@ HRESULT CTerminalHandoff::StartListening(NewHandoff pfnHandoff)
 {
     RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
 
-    RETURN_IF_FAILED(Module<OutOfProc>::Create(&_releaseNotifier).RegisterObjects());
+    auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
+    RETURN_IF_NULL_ALLOC(classFactory);
+
+    ComPtr<IUnknown> unk;
+    RETURN_IF_FAILED(classFactory.As(&unk));
+
+    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CTerminalHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &g_cTerminalHandoffRegistration));
 
     _pfnHandoff = pfnHandoff;
 
@@ -26,7 +34,11 @@ HRESULT CTerminalHandoff::StopListening()
 {
     _pfnHandoff = nullptr;
 
-    RETURN_IF_FAILED(Module<OutOfProc>::Create(&_releaseNotifier).UnregisterObjects());
+    if (g_cTerminalHandoffRegistration)
+    {
+        RETURN_IF_FAILED(CoRevokeClassObject(g_cTerminalHandoffRegistration));
+        g_cTerminalHandoffRegistration = 0;
+    }
 
     CoUninitialize();
 
