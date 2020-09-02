@@ -2108,7 +2108,6 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 
 //Routine Description:
 // Enable Any Event mode - send all mouse events to the input.
-
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
@@ -2146,8 +2145,20 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
     return success;
 }
 
+
+//Routine Description:
+// Enable "brackted paste mode".
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableBracketedPasteMode(const bool /*enabled*/)
 {
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
     return false;
 }
 
