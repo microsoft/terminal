@@ -22,6 +22,7 @@ class Jumplist
 public:
     Jumplist() = default;
     void UpdateJumplist(std::shared_ptr<::TerminalApp::CascadiaSettings> settings);
+
 private:
     HRESULT _updateProfiles(winrt::com_ptr<IObjectCollection>& jumplistItems, const gsl::span<const winrt::TerminalApp::Profile>& profiles);
     HRESULT _createShellLink(const std::wstring_view& name, const std::wstring_view& path, const std::wstring_view& args, winrt::com_ptr<IShellLink>& shLink);
