@@ -116,10 +116,8 @@ HRESULT Jumplist::_createShellLink(const std::wstring_view& name,
         return result;
     }
 
-    wchar_t wtExe[MAX_PATH];
-    // Passing null gives us the path of the executable file of the current process.
-    GetModuleFileName(NULL, wtExe, ARRAYSIZE(wtExe));
-    shLink->SetPath(wtExe);
+    std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+    shLink->SetPath(module.c_str());
     shLink->SetArguments(args.data());
 
     PROPVARIANT titleProp;
