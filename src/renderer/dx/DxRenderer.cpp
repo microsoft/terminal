@@ -629,7 +629,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_strokeStyle));
 
-        _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
+        _hyperlinkStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
             D2D1_CAP_STYLE_SQUARE, // dashCap
@@ -638,8 +638,8 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
             D2D1_DASH_STYLE_DASH, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
-        _dashStrokeChanged = false;
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_hyperlinkStrokeStyleProperties, nullptr, 0, &_hyperlinkStrokeStyle));
+        _hyperlinkStrokeChanged = false;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1505,9 +1505,9 @@ try
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
     };
 
-    const auto DrawDashLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
+    const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
     {
-        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _dashStrokeStyle.Get());
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
     };
 
     // NOTE: Line coordinates are centered within the line, so they need to be
@@ -1561,7 +1561,7 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::DashedUnderline))
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
@@ -1573,9 +1573,9 @@ try
             DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
         }
 
-        if (lines & GridLines::DashedUnderline)
+        if (lines & GridLines::HyperlinkUnderline)
         {
-            DrawDashLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+            DrawHyperlinkLine(startX, y, endX, y, _lineMetrics.underlineWidth);
         }
 
         if (lines & GridLines::DoubleUnderline)
@@ -1743,18 +1743,15 @@ CATCH_RETURN()
 
     if (textAttributes.IsHyperlink() && (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId))
     {
-        // This is a little cheeky:
-        // All hyperlinks are rendered with a dashed underline using _dashStrokeStyle,
-        // so when we update the drawing brushes for hyperlinks that we are hovering over, we simply
-        // change _dashStrokeStyle to be the regular stroke style (which has no dashes)
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
-        _dashStrokeChanged = true;
+        // Update the hyperlink stroke style with the regular stroke style properties
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_hyperlinkStrokeStyle));
+        _hyperlinkStrokeChanged = true;
     }
-    else if (_dashStrokeChanged)
+    else if (_hyperlinkStrokeChanged)
     {
-        // Revert the _dashStrokeStye change for other situations
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
-        _dashStrokeChanged = false;
+        // Revert the hyperlink stroke style change for other situations
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_hyperlinkStrokeStyleProperties, nullptr, 0, &_hyperlinkStrokeStyle));
+        _hyperlinkStrokeChanged = false;
     }
 
     return S_OK;

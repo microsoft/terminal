@@ -878,7 +878,7 @@ IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttri
 
     if (textAttribute.IsHyperlink())
     {
-        lines |= IRenderEngine::GridLines::DashedUnderline;
+        lines |= IRenderEngine::GridLines::HyperlinkUnderline;
     }
     return lines;
 }
