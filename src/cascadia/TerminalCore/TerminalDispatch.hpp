@@ -59,6 +59,7 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override; // ?1002
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override; // ?1003
     bool EnableAlternateScroll(const bool enabled) noexcept override; // ?1007
+    bool EnableBracketedPasteMode(const bool enabled) noexcept override; // ?2004
 
     bool SetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> /*params*/) noexcept override; // DECSET
     bool ResetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> /*params*/) noexcept override; // DECRST

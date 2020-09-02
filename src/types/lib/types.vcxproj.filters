@@ -78,6 +78,9 @@
     <ClCompile Include="..\TermControlUiaTextRange.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\PasteConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\IInputEvent.hpp">
@@ -159,6 +162,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\IUiaTraceable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\PasteConverter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

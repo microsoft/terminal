@@ -186,6 +186,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SGR_EXTENDED_MODE = 1006,
         ALTERNATE_SCROLL = 1007,
         ASB_AlternateScreenBuffer = 1049,
+        XTERM_BracketedPasteMode = 2004,
         W32IM_Win32InputMode = 9001
     };
 

@@ -20,6 +20,7 @@
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
     <ClCompile Include="..\ModifierKeyState.cpp" />
+    <ClCompile Include="..\PasteConverter.cpp" />
     <ClCompile Include="..\ScreenInfoUiaProviderBase.cpp" />
     <ClCompile Include="..\ThemeUtils.cpp" />
     <ClCompile Include="..\UiaTextRangeBase.cpp" />
@@ -42,6 +43,7 @@
     <ClInclude Include="..\inc\Environment.hpp" />
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\PasteConverter.h" />
     <ClInclude Include="..\inc\ThemeUtils.h" />
     <ClInclude Include="..\inc\utils.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />

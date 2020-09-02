@@ -107,6 +107,7 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
+    bool EnableBracketedPasteMode(const bool enabled) noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
 
@@ -219,6 +220,7 @@ private:
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
+    bool _bracketedPasteMode;
 
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)

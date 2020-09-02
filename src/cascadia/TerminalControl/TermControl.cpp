@@ -8,6 +8,7 @@
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
 #include <Utils.h>
+#include <PasteConverter.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
@@ -16,6 +17,7 @@
 #include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
+using namespace ::Microsoft::Console::Utils;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
@@ -1797,31 +1799,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Pre-process text pasted (presumably from the clipboard)
-    //   before sending it over the terminal's connection, converting
-    //   Windows-space \r\n line-endings to \r line-endings
+    //   and send it over the terminal's connection.
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Some notes on this implementation:
-        //
-        // - std::regex can do this in a single line, but is somewhat
-        //   overkill for a simple search/replace operation (and its
-        //   performance guarantees aren't exactly stellar)
-        // - The STL doesn't have a simple string search/replace method.
-        //   This fact is lamentable.
-        // - This line-ending conversion is intentionally fairly
-        //   conservative, to avoid stripping out lone \n characters
-        //   where they could conceivably be intentional.
+        PasteFlags flags = PasteFlags::CarriageReturnNewline;
 
-        std::wstring stripped{ wstr };
-
-        std::wstring::size_type pos = 0;
-
-        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
-        {
-            stripped.replace(pos, 2, L"\r");
-        }
-
-        _connection.WriteInput(stripped);
+        _connection.WriteInput(PasteConverter::Convert(wstr, flags));
         _terminal->TrySnapOnInput();
     }
 

@@ -361,6 +361,12 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
+bool TerminalDispatch::EnableBracketedPasteMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableBracketedPasteMode(enabled);
+    return true;
+}
+
 bool TerminalDispatch::SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept
 {
     return _SetResetPrivateModes(params, true);
@@ -435,6 +441,9 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
         break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::XTERM_BracketedPasteMode:
+        success = false;
         break;
     case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);

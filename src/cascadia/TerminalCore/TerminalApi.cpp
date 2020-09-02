@@ -526,6 +526,12 @@ bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
     return true;
 }
 
+bool Terminal::EnableBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
+    return true;
+}
+
 bool Terminal::IsVtInputEnabled() const noexcept
 {
     // We should never be getting this call in Terminal.
