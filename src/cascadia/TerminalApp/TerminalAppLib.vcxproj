@@ -72,6 +72,7 @@
     <ClInclude Include="App.base.h" />
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
+    <ClInclude Include="Jumplist.h" />
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
@@ -155,6 +156,7 @@
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
+    <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
