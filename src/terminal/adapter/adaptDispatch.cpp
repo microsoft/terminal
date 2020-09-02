@@ -2147,7 +2147,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 
 
 //Routine Description:
-// Enable "brackted paste mode".
+// Enable "bracketed paste mode".
 //Arguments:
 // - enabled - true to enable, false to disable.
 // Return value:
