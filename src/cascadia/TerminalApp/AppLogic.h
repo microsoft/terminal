@@ -8,6 +8,7 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "TerminalPage.h"
+#include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
@@ -78,6 +79,8 @@ namespace winrt::TerminalApp::implementation
         wil::unique_folder_change_reader_nothrow _reader;
 
         std::shared_mutex _dialogLock;
+
+        Jumplist jumplist;
 
         std::atomic<bool> _settingsReloadQueued{ false };
 

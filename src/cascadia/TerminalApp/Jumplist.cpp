@@ -8,11 +8,8 @@
 
 using namespace winrt::TerminalApp;
 
-//  This property key isn't already defined, but is used by UWP Jumplist to determine the icon of the jumplist item.
-//  We need this because our icon paths are 
-//  Name:     System.AppUserModel.DestinationListLogoUri -- PKEY_AppUserModel_DestListLogoUri
-//  Type:     String -- VT_LPWSTR
-//  FormatID: {9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}, 29
+//  This property key isn't already defined in Propkey.h, but is used by UWP Jumplist to determine the icon of the jumplist item.
+//  IShellLink's SetIconLocation isn't going to read "ms-appx://" icon paths, so we'll need to use this to set the icon.
 DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3, 29);
 #define INIT_PKEY_AppUserModel_DestListLogoUri                                         \
 {                                                                                      \
@@ -41,8 +38,8 @@ void Jumplist::UpdateJumplist(std::shared_ptr<::TerminalApp::CascadiaSettings> s
         return;
     }
 
-    // TODO: It's just easier to clear the list and re-add everything. The settings aren't
-    // updated often, and there likely isn't a huge number of profiles to add.
+    // It's easier to clear the list and re-add everything. The settings aren't
+    // updated often, and there likely isn't a huge amount of items to add.
     jumplistItems->Clear();
 
     // Update the list of profiles.
@@ -52,6 +49,7 @@ void Jumplist::UpdateJumplist(std::shared_ptr<::TerminalApp::CascadiaSettings> s
     }
 
     // TODO: Add items from the future customizable new tab dropdown as well.
+    // This could either replace the default profiles, or be added alongside them.
 
     // Add the items to the jumplist Task section.
     // The Tasks section is immutable by the user, unlike the destinations
@@ -71,7 +69,7 @@ void Jumplist::UpdateJumplist(std::shared_ptr<::TerminalApp::CascadiaSettings> s
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-HRESULT Jumplist::_updateProfiles(winrt::com_ptr<IObjectCollection>& jumplistItems, gsl::span<const Profile> profiles)
+HRESULT Jumplist::_updateProfiles(winrt::com_ptr<IObjectCollection>& jumplistItems, const gsl::span<const Profile>& profiles)
 {
     HRESULT result = S_OK;
 
