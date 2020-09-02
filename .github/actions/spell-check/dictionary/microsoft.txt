@@ -18,6 +18,7 @@ pgo
 pgosweep
 powerrename
 powershell
+propkey
 pscustomobject
 robocopy
 SACLs
