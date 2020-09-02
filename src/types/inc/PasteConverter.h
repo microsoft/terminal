@@ -19,7 +19,7 @@ namespace Microsoft::Console::Utils
     enum PasteFlags
     {
         CarriageReturnNewline = 1,
-        Bracketed             = 2
+        Bracketed = 2
     };
 
     DEFINE_ENUM_FLAG_OPERATORS(PasteFlags)

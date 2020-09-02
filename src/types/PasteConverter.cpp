@@ -36,14 +36,24 @@ std::wstring PasteConverter::Convert(const std::wstring& wstr, PasteFlags flags)
     if (flags & PasteFlags::Bracketed)
     {
         // For security reasons, control characters should be filtered.
-        // For details, check out the "Paste Protection" section in https://lwn.net/Articles/749992/.
         // Here ASCII control characters will be removed, except HT(0x09), LF(0x0a), CR(0x0d) and DEL(0x7F).
-        converted.erase(std::remove_if(converted.begin(), converted.end(), [](wchar_t c)
+        converted.erase(std::remove_if(converted.begin(), converted.end(), [](wchar_t c) {
+            if (c >= L'\x20' && c <= L'\x7f')
             {
-                return c >= L'\x00' && c <= L'\x08' ||
-                    c >= L'\x0b' && c <= L'\x0c' ||
-                    c >= L'\x0e' && c <= L'\x1f';
-            }));
+                // Printable ASCII + DEL.
+                return false;
+            }
+
+            if (c > L'\x7f')
+            {
+                // Not a control character for sure.
+                return false;
+            }
+
+            return c >= L'\x00' && c <= L'\x08' ||
+                   c >= L'\x0b' && c <= L'\x0c' ||
+                   c >= L'\x0e' && c <= L'\x1f';
+        }));
 
         converted.insert(0, L"\x1b[200~");
         converted.append(L"\x1b[201~");
