@@ -443,7 +443,7 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
         success = EnableCursorBlinking(enable);
         break;
     case DispatchTypes::PrivateModeParams::XTERM_BracketedPasteMode:
-        success = false;
+        success = EnableBracketedPasteMode(enable);
         break;
     case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);

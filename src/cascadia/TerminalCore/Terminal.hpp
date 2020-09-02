@@ -108,6 +108,7 @@ public:
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
     bool EnableAlternateScrollMode(const bool enabled) noexcept override;
     bool EnableBracketedPasteMode(const bool enabled) noexcept override;
+    bool IsBracketedPasteModeEnabled() const noexcept override;
 
     bool IsVtInputEnabled() const noexcept override;
 

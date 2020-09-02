@@ -55,6 +55,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EnableAnyEventMouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableAlternateScrollMode(const bool enabled) noexcept = 0;
         virtual bool EnableBracketedPasteMode(const bool enabled) noexcept = 0;
+        virtual bool IsBracketedPasteModeEnabled() const = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
 

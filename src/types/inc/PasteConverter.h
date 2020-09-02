@@ -22,6 +22,8 @@ namespace Microsoft::Console::Utils
         Bracketed             = 2
     };
 
+    DEFINE_ENUM_FLAG_OPERATORS(PasteFlags)
+
     class PasteConverter
     {
     public:

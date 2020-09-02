@@ -1804,6 +1804,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         PasteFlags flags = PasteFlags::CarriageReturnNewline;
 
+        if (_terminal->IsBracketedPasteModeEnabled())
+        {
+            flags |= PasteFlags::Bracketed;
+        }
+
         _connection.WriteInput(PasteConverter::Convert(wstr, flags));
         _terminal->TrySnapOnInput();
     }

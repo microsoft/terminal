@@ -532,6 +532,11 @@ bool Terminal::EnableBracketedPasteMode(const bool enabled) noexcept
     return true;
 }
 
+bool Terminal::IsBracketedPasteModeEnabled() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
 bool Terminal::IsVtInputEnabled() const noexcept
 {
     // We should never be getting this call in Terminal.
