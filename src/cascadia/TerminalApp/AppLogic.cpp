@@ -694,7 +694,6 @@ namespace winrt::TerminalApp::implementation
         // Register for directory change notification.
         _RegisterSettingsChange();
 
-        // Update the jumplist
         jumplist.UpdateJumplist(_settings);
     }
 
