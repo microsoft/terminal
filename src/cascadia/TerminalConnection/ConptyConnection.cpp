@@ -490,11 +490,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal) noexcept
     try
     {
-        UNREFERENCED_PARAMETER(in);
-        UNREFERENCED_PARAMETER(out);
-        UNREFERENCED_PARAMETER(signal);
-        //_newConnectionHandlers(in, out, signal);
-        return S_FALSE;
+        auto conn = winrt::make<ConptyConnection>((uint64_t)in, (uint64_t)out, (uint64_t)signal);
+        _newConnectionHandlers(conn);
+
+        return S_OK;
     }
     CATCH_RETURN()
 

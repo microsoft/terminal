@@ -13,6 +13,8 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
     STDMETHODIMP EstablishHandoff(HANDLE in,
                                   HANDLE out,
                                   HANDLE signal);
+
+    STDMETHODIMP DoNothing();
 #pragma endregion
 
     static HRESULT StartListening(NewHandoff pfnHandoff);

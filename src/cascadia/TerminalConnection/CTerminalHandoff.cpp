@@ -15,8 +15,11 @@ void _releaseNotifier() noexcept
 
 HRESULT CTerminalHandoff::StartListening(NewHandoff pfnHandoff)
 {
-    RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+    // has to be because the rest of TerminalConnection is apartment threaded already
+    // also is it really necessary if the rest of it already is?
+    RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
 
+    // We could probably hold this in a static...
     auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
     RETURN_IF_NULL_ALLOC(classFactory);
 
@@ -71,4 +74,11 @@ HRESULT CTerminalHandoff::EstablishHandoff(HANDLE in, HANDLE out, HANDLE signal)
 
     // Call registered handler from when we started listening.
     return _pfnHandoff(in, out, signal);
+
+    //return S_OK;
+}
+
+HRESULT CTerminalHandoff::DoNothing()
+{
+    return S_FALSE;
 }

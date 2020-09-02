@@ -105,6 +105,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build Common", "_Build Common", "{04170EEF-983A-4195-BFEF-2321E5E38A1E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "src\server\lib\server.vcxproj", "{18D09A24-8240-42D6-8CB6-236EEE820262}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E437B604-3E98-4F40-A927-E173E818EA4B} = {E437B604-3E98-4F40-A927-E173E818EA4B}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Host.Tests.UIA", "src\host\ft_uia\Host.Tests.UIA.csproj", "{C17E1BF3-9D34-4779-9458-A8EF98CC5662}"
 	ProjectSection(ProjectDependencies) = postProject

@@ -18,6 +18,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include "..\host\exe\CConsoleHandoff.h"
+
 using namespace Microsoft::Console::Interactivity;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
@@ -161,32 +163,35 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     Globals& Globals = ServiceLocator::LocateGlobals();
     // TODO: only the inside windows one should probably bother trying to delegate, the out of box one could probably assume it doesn't need to.
-    if (Globals.handoffConsoleClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
+    if (!Globals.launchArgs.IsHeadless() && Globals.handoffConsoleClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
     {
         try
         {
-            auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
-            ::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
+            //auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+            //::Microsoft::WRL::ComPtr<IConsoleHandoff> handoff;
 
-            THROW_IF_FAILED(CoCreateInstance(Globals.handoffConsoleClsid.value(), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&handoff)));
+            //THROW_IF_FAILED(CoCreateInstance(Globals.handoffConsoleClsid.value(), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&handoff)));
 
-            // Pack up just enough of the attach message for the other console to process it.
-            // NOTE: It can and will pick up the size/title/etc parameters from the driver again.
-            CONSOLE_PORTABLE_ATTACH_MSG msg;
-            msg.IdHighPart = pReceiveMsg->Descriptor.Identifier.HighPart;
-            msg.IdLowPart = pReceiveMsg->Descriptor.Identifier.LowPart;
-            msg.Process = pReceiveMsg->Descriptor.Process;
-            msg.Object = pReceiveMsg->Descriptor.Object;
-            msg.Function = pReceiveMsg->Descriptor.Function;
-            msg.InputSize = pReceiveMsg->Descriptor.InputSize;
-            msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
+            //// Pack up just enough of the attach message for the other console to process it.
+            //// NOTE: It can and will pick up the size/title/etc parameters from the driver again.
+            //CONSOLE_PORTABLE_ATTACH_MSG msg;
+            //msg.IdHighPart = pReceiveMsg->Descriptor.Identifier.HighPart;
+            //msg.IdLowPart = pReceiveMsg->Descriptor.Identifier.LowPart;
+            //msg.Process = pReceiveMsg->Descriptor.Process;
+            //msg.Object = pReceiveMsg->Descriptor.Object;
+            //msg.Function = pReceiveMsg->Descriptor.Function;
+            //msg.InputSize = pReceiveMsg->Descriptor.InputSize;
+            //msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
 
-            THROW_IF_FAILED(handoff->EstablishHandoff(Globals.pDeviceComm->_Server.get(),
-                                                      Globals.hInputEvent.get(),
-                                                      Globals.launchArgs.GetVtInHandle(),
-                                                      Globals.launchArgs.GetVtOutHandle(),
-                                                      L"test", // TODO: this and the VT args aren't right yet.
-                                                      &msg));
+            //THROW_IF_FAILED(handoff->EstablishHandoff(Globals.pDeviceComm->_Server.get(),
+            //                                          Globals.hInputEvent.get(),
+            //                                          Globals.launchArgs.GetVtInHandle(),
+            //                                          Globals.launchArgs.GetVtOutHandle(),
+            //                                          L"test", // TODO: this and the VT args aren't right yet.
+            //                                          &msg));
+
+            ConsoleArguments args;
+            THROW_IF_FAILED(ConsoleEstablishHandoff(Globals.pDeviceComm->_Server.get(), &args, Globals.hInputEvent.get(), pReceiveMsg));
 
             ExitThread(S_OK);
         }

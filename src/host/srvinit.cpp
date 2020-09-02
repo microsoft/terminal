@@ -331,25 +331,30 @@ try
     wil::unique_handle outPipeTheirSide;
     wil::unique_handle outPipeOurSide;
 
-    SECURITY_ATTRIBUTES sa;
-    sa.nLength = sizeof(sa);
-    // Mark inheritable for signal handle when creating. It'll have the same value on the other side.
-    sa.bInheritHandle = FALSE;
-    sa.lpSecurityDescriptor = nullptr;
+    //SECURITY_ATTRIBUTES sa;
+    //sa.nLength = sizeof(sa);
+    //// Mark inheritable for signal handle when creating. It'll have the same value on the other side.
+    //sa.bInheritHandle = TRUE;
+    //sa.lpSecurityDescriptor = nullptr;
 
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), &sa, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeOurSide.addressof(), signalPipeTheirSide.addressof(), nullptr, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), &sa, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(inPipeOurSide.addressof(), inPipeTheirSide.addressof(), nullptr, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(inPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), &sa, 0));
+    RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
     ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
 
-    RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&handoff)));
+    RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+
+    handoff->AddRef();
+    handoff->DoNothing();
+
+    /*handoff->EstablishHandoff((HANDLE)4, (HANDLE)8, (HANDLE)12);*/
 
     RETURN_IF_FAILED(handoff->EstablishHandoff(inPipeTheirSide.get(),
                                                outPipeTheirSide.get(),

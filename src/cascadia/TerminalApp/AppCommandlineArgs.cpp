@@ -176,12 +176,20 @@ void AppCommandlineArgs::_buildParser()
 
     // Started explicitly as a COM server for incoming PTY flags
     // /Embedding (we don't pick this, it's just how COM does it.)
-    auto comEmbeddingCallback = [this](int64_t /*count*/) {
-        auto embeddingAction = winrt::make_self<implementation::ActionAndArgs>();
-        embeddingAction->Action(ShortcutAction::ToggleInboundPty);
-        _startupActions.push_back(*embeddingAction);
+    auto comEmbeddingCallback = [this](std::string param) {
+        if ("mbedding" == param)
+        {
+            auto embeddingAction = winrt::make_self<implementation::ActionAndArgs>();
+            embeddingAction->Action(ShortcutAction::ToggleInboundPty);
+            _startupActions.push_back(*embeddingAction);
+        }
+        else
+        {
+            throw CLI::ParseError(fmt::format("Invalid call to COM server with {}", param), E_INVALIDARG);
+        }
     };
-    _app.add_flag_function("--embedding", comEmbeddingCallback, RS_A(L"CmdEmbeddingDesc"));
+    
+    _app.add_option_function<std::string>("-E", comEmbeddingCallback, RS_A(L"CmdEmbeddingDesc"));
 
     // Maximized and Fullscreen flags
     //   -M,--maximized: Maximizes the window on launch

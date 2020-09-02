@@ -93,9 +93,9 @@
         </uap3:Extension>
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
-                <com:ProxyStub Id="DA2E620C-0B90-45D2-8362-A5B1006D9243" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleDll.dll"/>
-                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DA2E620C-0B90-45D2-8362-A5B1006D9243"/>
-                <com:Interface Id="F89E4430-FF48-4DD7-A22C-182B546A8BA2" ProxyStubClsid="DA2E620C-0B90-45D2-8362-A5B1006D9243"/>
+                <com:ProxyStub Id="DEC4804D-56D1-4F73-9FBE-6828E7C85C56" DisplayName="OpenConsoleHandoffProxy" Path="OpenConsoleDll.dll"/>
+                <com:Interface Id="2B607BC1-43EB-40C3-95AE-2856ADDB7F23" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
+                <com:Interface Id="FA1E3AB4-9AEC-4A3C-96CA-E6078C30BD74" ProxyStubClsid="DEC4804D-56D1-4F73-9FBE-6828E7C85C56"/>
             </com:ComInterface>
         </com:Extension>
         <com:Extension Category="windows.comServer">
@@ -103,8 +103,8 @@
                 <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
                     <com:Class Id="1F9F2BF5-5BC3-4F17-B0E6-912413F1F451"/>
                 </com:ExeServer>
-                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe" Arguments="--embedding">
-                    <com:Class Id="E7B98685-0CC0-45D6-8F4C-B7C863C03DE2"/>
+                <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
+                    <com:Class Id="051F34EE-C1FD-4B19-AF75-9BA54648434C"/>
                 </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
