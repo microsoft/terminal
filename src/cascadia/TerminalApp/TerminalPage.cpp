@@ -197,7 +197,7 @@ namespace winrt::TerminalApp::implementation
 
         // Hook up inbound PTY event handlers
         InboundPtyChanged({ this, &TerminalPage::_OnInboundPtyChanged });
-        //Microsoft::Terminal::TerminalConnection::ConptyConnection::NewConnection(&TerminalPage::_OnNewConnection);
+        TerminalConnection::ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -2517,9 +2517,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    //void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection /*connection*/)
-    //{
-    //}
+    void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    {
+        // TODO: this should probably use a more reasonable profile than nullptr.
+        _OpenNewTab(nullptr, connection);
+    }
 
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.

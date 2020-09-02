@@ -205,7 +205,7 @@ namespace winrt::TerminalApp::implementation
         void _UnZoomIfNeeded();
 
         void _OnInboundPtyChanged(const IInspectable& sender, const IInspectable& eventArgs);
-        //void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+        void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

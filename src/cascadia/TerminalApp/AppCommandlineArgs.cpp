@@ -183,13 +183,7 @@ void AppCommandlineArgs::_buildParser()
             embeddingAction->Action(ShortcutAction::ToggleInboundPty);
             _startupActions.push_back(*embeddingAction);
         }
-        else
-        {
-            throw CLI::ParseError(fmt::format("Invalid call to COM server with {}", param), E_INVALIDARG);
-        }
     };
-    
-    _app.add_option_function<std::string>("-E", comEmbeddingCallback, RS_A(L"CmdEmbeddingDesc"));
 
     // Maximized and Fullscreen flags
     //   -M,--maximized: Maximizes the window on launch
@@ -666,7 +660,7 @@ void AppCommandlineArgs::ValidateStartupCommands()
     // If we parsed no commands, or the first command we've parsed is not a new
     // tab action, prepend a new-tab command to the front of the list.
     if (_startupActions.empty() ||
-        _startupActions.front().Action() != ShortcutAction::NewTab)
+        (_startupActions.front().Action() != ShortcutAction::NewTab && _startupActions.front().Action() != ShortcutAction::ToggleInboundPty))
     {
         // Build the NewTab action from the values we've parsed on the commandline.
         auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
@@ -700,6 +694,17 @@ std::optional<winrt::TerminalApp::LaunchMode> AppCommandlineArgs::GetLaunchMode(
 // - 0 if the commandline was successfully parsed
 int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
 {
+    for (auto& arg : args)
+    {
+        if (arg == L"-Embedding")
+        {
+            auto embeddingAction = winrt::make_self<implementation::ActionAndArgs>();
+            embeddingAction->Action(ShortcutAction::ToggleInboundPty);
+            _startupActions.push_back(*embeddingAction);
+            return 0;
+        }
+    }
+
     auto commands = ::TerminalApp::AppCommandlineArgs::BuildCommands(args);
 
     for (auto& cmdBlob : commands)
