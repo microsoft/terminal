@@ -31,9 +31,7 @@ std::wstring PasteConverter::Convert(const std::wstring& wstr, PasteFlags flags)
         }
     }
 
-    // Bracketed Paste Mode, invented by xterm and implemented in many popular terminal emulators.
-    // See: http://www.xfree86.org/current/ctlseqs.html#Bracketed%20Paste%20Mode
-    if (flags & PasteFlags::Bracketed)
+    if (flags & PasteFlags::FilterControlCodes)
     {
         // For security reasons, control characters should be filtered.
         // Here ASCII control characters will be removed, except HT(0x09), LF(0x0a), CR(0x0d) and DEL(0x7F).
@@ -54,7 +52,12 @@ std::wstring PasteConverter::Convert(const std::wstring& wstr, PasteFlags flags)
                    c >= L'\x0b' && c <= L'\x0c' ||
                    c >= L'\x0e' && c <= L'\x1f';
         }));
+    }
 
+    // Bracketed Paste Mode, invented by xterm and implemented in many popular terminal emulators.
+    // See: http://www.xfree86.org/current/ctlseqs.html#Bracketed%20Paste%20Mode
+    if (flags & PasteFlags::Bracketed)
+    {
         converted.insert(0, L"\x1b[200~");
         converted.append(L"\x1b[201~");
     }
