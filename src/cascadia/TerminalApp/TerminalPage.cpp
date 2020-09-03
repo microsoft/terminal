@@ -1808,15 +1808,15 @@ namespace winrt::TerminalApp::implementation
             else if (auto presenter{ _dialogPresenter.get() })
             {
                 // FindName needs to be called first to actually load the xaml object
-                FindName(L"UnsupportedSchemeDialog").try_as<WUX::Controls::ContentDialog>();
+                auto unsupportedSchemeDialog = FindName(L"UnsupportedSchemeDialog").try_as<WUX::Controls::ContentDialog>();
 
                 // Set the content
                 const auto errorMsg = fmt::format(std::wstring_view{ RS_(L"UnsupportedSchemeContent") },
                                                   parsed.SchemeName());
-                UnsupportedSchemeDialog().Content(winrt::box_value(errorMsg));
+                unsupportedSchemeDialog.Content(winrt::box_value(errorMsg));
 
                 // Show the dialog
-                presenter.ShowDialog(FindName(L"UnsupportedSchemeDialog").try_as<WUX::Controls::ContentDialog>());
+                presenter.ShowDialog(unsupportedSchemeDialog);
             }
         }
         catch (...)
@@ -1824,14 +1824,6 @@ namespace winrt::TerminalApp::implementation
             LOG_CAUGHT_EXCEPTION();
             if (auto presenter{ _dialogPresenter.get() })
             {
-                // FindName needs to be called first to actually load the xaml object
-                FindName(L"InvalidLinkDialog").try_as<WUX::Controls::ContentDialog>();
-
-                // Set the content
-                const auto errorMsg = fmt::format(std::wstring_view{ RS_(L"InvalidLinkContent") },
-                                                  eventArgs.Uri());
-                InvalidLinkDialog().Content(winrt::box_value(errorMsg));
-
                 // Show the dialog
                 presenter.ShowDialog(FindName(L"InvalidLinkDialog").try_as<WUX::Controls::ContentDialog>());
             }
