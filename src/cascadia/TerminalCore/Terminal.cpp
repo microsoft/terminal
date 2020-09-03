@@ -168,7 +168,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 }
 
 // Method Description:
-// - Resize the terminal as the result of some user interaction.
+// - Resize the terminal text buffer as the result of some user interaction.
 // Arguments:
 // - viewportSize: the new size of the viewport, in chars
 // Return Value:
