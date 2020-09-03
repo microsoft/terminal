@@ -1268,7 +1268,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
                     const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
                     const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
-                    SubBorder().BorderThickness(newThickness);
+                    HyperlinkTooltipBorder().BorderThickness(newThickness);
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
@@ -1279,8 +1279,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
                     // Move the border to the top left corner of the cell
-                    SubCanvas().SetLeft(SubBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    SubCanvas().SetTop(SubBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
                 _lastHoveredCell = terminalPos;
 

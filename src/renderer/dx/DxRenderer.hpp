@@ -197,7 +197,6 @@ namespace Microsoft::Console::Render
 
         D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
         D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;
-        bool _hyperlinkStrokeIsDash;
 
         // Device-Dependent Resources
         bool _recreateDeviceRequested;

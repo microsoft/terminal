@@ -640,7 +640,6 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
         _hyperlinkStrokeStyle = _dashStrokeStyle;
-        _hyperlinkStrokeIsDash = true;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1741,17 +1740,9 @@ CATCH_RETURN()
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
     }
 
-    if (textAttributes.IsHyperlink() && (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId))
+    if (textAttributes.IsHyperlink())
     {
-        // Update the hyperlink stroke style with the regular stroke style properties
-        _hyperlinkStrokeStyle = _strokeStyle;
-        _hyperlinkStrokeIsDash = false;
-    }
-    else if (!_hyperlinkStrokeIsDash)
-    {
-        // Revert the hyperlink stroke style change for other situations
-        _hyperlinkStrokeStyle = _dashStrokeStyle;
-        _hyperlinkStrokeIsDash = true;
+        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
     }
 
     return S_OK;
