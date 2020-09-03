@@ -56,16 +56,16 @@ namespace Microsoft.Terminal.Wpf
         /// Gets or sets a value indicating whether resizing the control should also resize the text buffer.
         /// </summary>
         /// <remarks>Set to true by default. The renderer draw space will always fill the control, even if the text buffer doesn't.</remarks>
-        public bool Autofit
+        public bool AutoFit
         {
             get
             {
-                return this.termContainer.Autofit;
+                return this.termContainer.AutoFit;
             }
 
             set
             {
-                this.termContainer.Autofit = value;
+                this.termContainer.AutoFit = value;
             }
         }
 

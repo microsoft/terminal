@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
-        private bool autofit = true;
+        private bool autoFit = true;
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
@@ -67,16 +67,16 @@ namespace Microsoft.Terminal.Wpf
         /// Gets or sets a value indicating whether resizing the control should also resize the text buffer.
         /// </summary>
         /// <remarks>Set to true by default. The renderer draw space will always fill the control, even if the text buffer doesn't.</remarks>
-        public bool Autofit
+        public bool AutoFit
         {
             get
             {
-                return this.autofit;
+                return this.autoFit;
             }
 
             set
             {
-                this.autofit = value;
+                this.autoFit = value;
             }
         }
 
@@ -190,10 +190,15 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalResize(this.terminal, dimensions);
 
-            this.Rows = dimensions.Y;
-            this.Columns = dimensions.X;
+            // If AutoFit is true, save the new dimensions, otherwise keep the old size since we are only
+            // resizing the text buffer and not the render space.
+            if (this.AutoFit)
+            {
+                this.Rows = dimensions.Y;
+                this.Columns = dimensions.X;
+            }
 
-            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+            this.connection?.Resize((uint)this.Rows, (uint)this.Columns);
         }
 
         /// <inheritdoc/>
@@ -319,13 +324,13 @@ namespace Microsoft.Terminal.Wpf
 
                         NativeMethods.COORD dimensions;
 
-                        if (this.Autofit)
+                        if (this.AutoFit)
                         {
                             NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
                         }
                         else
                         {
-                            NativeMethods.ResizeRendererDrawSpace(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
+                            NativeMethods.ResizeRendererDrawSpace(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
                         }
 
                         this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);

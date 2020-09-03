@@ -777,10 +777,12 @@ HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
 /// <summary>
 /// Resizes the renderer to fit the provided width and height without changing the text
 /// buffer size.
+/// The out parameter "dimensions" is the total amount of characters that would fit with this new size.
 /// </summary>
-HRESULT _stdcall ResizeRendererDrawSpace(void* terminal, double width, double height, _Out_ COORD* dimensions)
+HRESULT _stdcall ResizeRendererDrawSpace(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
+    RETURN_HR_IF_NULL(E_INVALIDARG, terminal);
 
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -796,7 +798,7 @@ HRESULT _stdcall ResizeRendererDrawSpace(void* terminal, double width, double he
         static_cast<int>(height),
         0));
 
-    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+    const SIZE windowSize{ width, height };
 
     RETURN_IF_FAILED(publicTerminal->_renderEngine->SetWindowSize(windowSize));
 
@@ -805,7 +807,7 @@ HRESULT _stdcall ResizeRendererDrawSpace(void* terminal, double width, double he
 
     // Convert our new dimensions to characters
     const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                       { gsl::narrow<short>(windowSize.cx), gsl::narrow<short>(windowSize.cy) });
+                                                       { width, height });
     const auto vp = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
 
     dimensions->X = vp.Width();

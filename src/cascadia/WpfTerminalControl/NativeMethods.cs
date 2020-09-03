@@ -246,7 +246,7 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalKillFocus(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint ResizeRendererDrawSpace(IntPtr terminal, double width, double height, out COORD dimensions);
+        public static extern uint ResizeRendererDrawSpace(IntPtr terminal, short width, short height, out COORD dimensions);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);
