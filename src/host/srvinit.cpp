@@ -50,6 +50,7 @@ try
 
     FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
 
+    // TODO: This is looked up twice in the middle hop console.
     IID delegationClsid;
     if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
     {
@@ -317,6 +318,16 @@ try
     auto& g = ServiceLocator::LocateGlobals();
     g.handoffTarget = true;
 
+    IID delegationClsid;
+    if (SUCCEEDED(DelegationConfig::s_GetConsole(delegationClsid)))
+    {
+        g.handoffConsoleClsid = delegationClsid;
+    }
+    if (SUCCEEDED(DelegationConfig::s_GetTerminal(delegationClsid)))
+    {
+        g.handoffTerminalClsid = delegationClsid;
+    }
+
     if (!g.handoffTerminalClsid)
     {
         return E_NOT_SET;
@@ -346,7 +357,6 @@ try
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(outPipeTheirSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    auto coinit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
     ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
 
     RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));

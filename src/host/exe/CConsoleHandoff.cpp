@@ -14,6 +14,8 @@ void _releaseNotifier() noexcept
     _exitEvent.SetEvent();
 }
 
+DWORD g_cTerminalHandoffRegistration = 0;
+
 // Routine Description:
 // - Performs registrations for our COM types and waits until COM tells us we're done being a server.
 // Return Value:
@@ -23,13 +25,27 @@ try
 {
     _exitEvent.create();
 
-    auto uninit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+
+     // has to be because the rest of TerminalConnection is apartment threaded already
+    // also is it really necessary if the rest of it already is?
+    RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
+
+    // We could probably hold this in a static...
+    auto classFactory = Make<SimpleClassFactory<CConsoleHandoff>>();
+    RETURN_IF_NULL_ALLOC(classFactory);
+
+    ComPtr<IUnknown> unk;
+    RETURN_IF_FAILED(classFactory.As(&unk));
+
+    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CConsoleHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_SINGLEUSE, &g_cTerminalHandoffRegistration));
+
+   /* auto uninit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
     auto& module = Module<OutOfProc>::Create(&_releaseNotifier);
-    RETURN_IF_FAILED(module.RegisterObjects());
+    RETURN_IF_FAILED(module.RegisterObjects());*/
 
     _exitEvent.wait();
 
-    RETURN_IF_FAILED(module.UnregisterObjects());
+    //RETURN_IF_FAILED(module.UnregisterObjects());
 
     return S_OK;
 }
