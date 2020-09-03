@@ -21,9 +21,9 @@ struct IShellLinkW;
 class Jumplist
 {
 public:
-    static HRESULT UpdateJumplist(const TerminalApp::CascadiaSettings& settings);
+    static HRESULT UpdateJumplist(const TerminalApp::CascadiaSettings& settings) noexcept;
 
 private:
-    static HRESULT _updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const winrt::TerminalApp::Profile>& profiles);
-    static HRESULT _createShellLink(const std::wstring_view name, const std::wstring_view path, const std::wstring_view args, IShellLinkW** shLink);
+    [[nodiscard]] static HRESULT _updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const winrt::TerminalApp::Profile>& profiles) noexcept;
+    [[nodiscard]] static HRESULT _createShellLink(const std::wstring_view name, const std::wstring_view path, const std::wstring_view args, IShellLinkW** shLink) noexcept;
 };

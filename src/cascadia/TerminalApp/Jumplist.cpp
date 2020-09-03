@@ -23,33 +23,37 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings)
+HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) noexcept
 {
-    auto jumplistInstance = winrt::create_instance<ICustomDestinationList>(CLSID_DestinationList, CLSCTX_ALL);
+    try
+    {
+        auto jumplistInstance = winrt::create_instance<ICustomDestinationList>(CLSID_DestinationList, CLSCTX_ALL);
 
-    // Start the Jumplist edit transaction
-    uint32_t slots;
-    winrt::com_ptr<IObjectCollection> jumplistItems;
-    jumplistItems.capture(jumplistInstance, &ICustomDestinationList::BeginList, &slots);
+        // Start the Jumplist edit transaction
+        uint32_t slots;
+        winrt::com_ptr<IObjectCollection> jumplistItems;
+        jumplistItems.capture(jumplistInstance, &ICustomDestinationList::BeginList, &slots);
 
-    // It's easier to clear the list and re-add everything. The settings aren't
-    // updated often, and there likely isn't a huge amount of items to add.
-    RETURN_IF_FAILED(jumplistItems->Clear());
+        // It's easier to clear the list and re-add everything. The settings aren't
+        // updated often, and there likely isn't a huge amount of items to add.
+        RETURN_IF_FAILED(jumplistItems->Clear());
 
-    // Update the list of profiles.
-    RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.GetProfiles()));
+        // Update the list of profiles.
+        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.GetProfiles()));
 
-    // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
-    // This could either replace the default profiles, or be added alongside them.
+        // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
+        // This could either replace the default profiles, or be added alongside them.
 
-    // Add the items to the jumplist Task section.
-    // The Tasks section is immutable by the user, unlike the destinations
-    // section that can have its items pinned and removed.
-    RETURN_IF_FAILED(jumplistInstance->AddUserTasks(jumplistItems.get()));
+        // Add the items to the jumplist Task section.
+        // The Tasks section is immutable by the user, unlike the destinations
+        // section that can have its items pinned and removed.
+        RETURN_IF_FAILED(jumplistInstance->AddUserTasks(jumplistItems.get()));
 
-    RETURN_IF_FAILED(jumplistInstance->CommitList());
+        RETURN_IF_FAILED(jumplistInstance->CommitList());
 
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Method Description:
@@ -59,21 +63,25 @@ HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings)
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const Profile>& profiles)
+[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const Profile>& profiles) noexcept
 {
-    for (const auto& profile : profiles)
+    try
     {
-        // Craft the arguments following "wt.exe"
-        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
+        for (const auto& profile : profiles)
+        {
+            // Craft the arguments following "wt.exe"
+            auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
 
-        // Create the shell link object for the profile
-        winrt::com_ptr<IShellLinkW> shLink;
-        RETURN_IF_FAILED(_createShellLink(profile.Name(), profile.GetExpandedIconPath(), args, shLink.put()));
+            // Create the shell link object for the profile
+            winrt::com_ptr<IShellLinkW> shLink;
+            RETURN_IF_FAILED(_createShellLink(profile.Name(), profile.GetExpandedIconPath(), args, shLink.put()));
 
-        RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));
+            RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));
+        }
+
+        return S_OK;
     }
-
-    return S_OK;
+    CATCH_RETURN();
 }
 
 // Method Description:
@@ -88,32 +96,36 @@ HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, const gsl::s
 // - shLink: The shell link object to return.
 // Return Value:
 // - S_OK or HRESULT failure code.
-HRESULT Jumplist::_createShellLink(const std::wstring_view name,
-                                   const std::wstring_view path,
-                                   const std::wstring_view args,
-                                   IShellLinkW** shLink)
+[[nodiscard]] HRESULT Jumplist::_createShellLink(const std::wstring_view name,
+                                                 const std::wstring_view path,
+                                                 const std::wstring_view args,
+                                                 IShellLinkW** shLink) noexcept
 {
-    auto sh = winrt::create_instance<IShellLinkW>(CLSID_ShellLink, CLSCTX_ALL);
+    try
+    {
+        auto sh = winrt::create_instance<IShellLinkW>(CLSID_ShellLink, CLSCTX_ALL);
 
-    std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
-    RETURN_IF_FAILED(sh->SetPath(module.c_str()));
-    RETURN_IF_FAILED(sh->SetArguments(args.data()));
+        std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+        RETURN_IF_FAILED(sh->SetPath(module.c_str()));
+        RETURN_IF_FAILED(sh->SetArguments(args.data()));
 
-    PROPVARIANT titleProp;
-    titleProp.vt = VT_LPWSTR;
-    titleProp.pwszVal = const_cast<wchar_t*>(name.data());
+        PROPVARIANT titleProp;
+        titleProp.vt = VT_LPWSTR;
+        titleProp.pwszVal = const_cast<wchar_t*>(name.data());
 
-    PROPVARIANT iconProp;
-    iconProp.vt = VT_LPWSTR;
-    iconProp.pwszVal = const_cast<wchar_t*>(path.data());
+        PROPVARIANT iconProp;
+        iconProp.vt = VT_LPWSTR;
+        iconProp.pwszVal = const_cast<wchar_t*>(path.data());
 
-    auto propStore{ sh.as<IPropertyStore>() };
-    RETURN_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
-    RETURN_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
+        auto propStore{ sh.as<IPropertyStore>() };
+        RETURN_IF_FAILED(propStore->SetValue(PKEY_Title, titleProp));
+        RETURN_IF_FAILED(propStore->SetValue(PKEY_AppUserModel_DestListLogoUri, iconProp));
 
-    RETURN_IF_FAILED(propStore->Commit());
+        RETURN_IF_FAILED(propStore->Commit());
 
-    *shLink = sh.detach();
+        *shLink = sh.detach();
 
-    return S_OK;
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
