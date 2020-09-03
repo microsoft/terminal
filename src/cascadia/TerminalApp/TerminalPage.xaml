@@ -68,6 +68,20 @@ the MIT License. See LICENSE in the project root for license information. -->
             DefaultButton="Primary">
         </ContentDialog>
 
+        <ContentDialog
+            x:Load="False"
+            x:Name="UnsupportedSchemeDialog"
+            x:Uid="UnsupportedSchemeDialog"
+            DefaultButton="Primary">
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="InvalidLinkDialog"
+            x:Uid="InvalidLinkDialog"
+            DefaultButton="Primary">
+        </ContentDialog>
+
         <local:CommandPalette
             x:Name="CommandPalette"
             Grid.Row="1"
