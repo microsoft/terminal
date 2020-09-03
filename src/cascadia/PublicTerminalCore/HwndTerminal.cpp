@@ -433,6 +433,7 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
     publicTerminal->SendOutput(data);
 }
 
+// Resizes the terminal text buffer and renderer draw space to fill the provided width and height.
 HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
@@ -760,7 +761,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     publicTerminal->Refresh(windowSize, &dimensions);
 }
 
-// Resizes the terminal to the specified rows and columns.
+// Resizes the terminal text buffer to the specified rows and columns.
 HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
@@ -769,7 +770,48 @@ HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
     publicTerminal->_terminal->ClearSelection();
     publicTerminal->_renderer->TriggerRedrawAll();
 
+    // Resize the text buffer without changing the renderer draw size.
     return publicTerminal->_terminal->UserResize(dimensions);
+}
+
+/// <summary>
+/// Resizes the renderer to fit the provided width and height without changing the text
+/// buffer size.
+/// </summary>
+HRESULT _stdcall ResizeRendererDrawSpace(void* terminal, double width, double height, _Out_ COORD* dimensions)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
+
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+
+    auto lock = publicTerminal->_terminal->LockForWriting();
+    publicTerminal->_terminal->ClearSelection();
+
+    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(
+        publicTerminal->GetHwnd(),
+        nullptr,
+        0,
+        0,
+        static_cast<int>(width),
+        static_cast<int>(height),
+        0));
+
+    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+
+    RETURN_IF_FAILED(publicTerminal->_renderEngine->SetWindowSize(windowSize));
+
+    // Invalidate everything
+    publicTerminal->_renderer->TriggerRedrawAll();
+
+    // Convert our new dimensions to characters
+    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                       { gsl::narrow<short>(windowSize.cx), gsl::narrow<short>(windowSize.cy) });
+    const auto vp = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
+
+    dimensions->X = vp.Width();
+    dimensions->Y = vp.Height();
+
+    return S_OK;
 }
 
 void _stdcall TerminalBlinkCursor(void* terminal)

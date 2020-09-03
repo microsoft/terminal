@@ -53,6 +53,23 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether resizing the control should also resize the text buffer.
+        /// </summary>
+        /// <remarks>Set to true by default. The renderer draw space will always fill the control, even if the text buffer doesn't.</remarks>
+        public bool Autofit
+        {
+            get
+            {
+                return this.termContainer.Autofit;
+            }
+
+            set
+            {
+                this.termContainer.Autofit = value;
+            }
+        }
+
+        /// <summary>
         /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
         /// </summary>
         /// <param name="theme">The color theme to use in the terminal.</param>

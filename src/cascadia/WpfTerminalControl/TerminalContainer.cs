@@ -20,20 +20,7 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
-        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
-        {
-            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
-            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
-            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
-            vkey = (ushort)wParam;
-        }
-
-        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
-        {
-            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
-            character = (char)vKey;
-        }
-
+        private bool autofit = true;
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
@@ -75,6 +62,23 @@ namespace Microsoft.Terminal.Wpf
         /// Event that is fired when the user engages in a mouse scroll over the terminal hwnd.
         /// </summary>
         internal event EventHandler<int> UserScrolled;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether resizing the control should also resize the text buffer.
+        /// </summary>
+        /// <remarks>Set to true by default. The renderer draw space will always fill the control, even if the text buffer doesn't.</remarks>
+        public bool Autofit
+        {
+            get
+            {
+                return this.autofit;
+            }
+
+            set
+            {
+                this.autofit = value;
+            }
+        }
 
         /// <summary>
         /// Gets the character rows available to the terminal.
@@ -238,6 +242,20 @@ namespace Microsoft.Terminal.Wpf
             this.terminal = IntPtr.Zero;
         }
 
+        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
+        {
+            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
+            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
+            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
+            vkey = (ushort)wParam;
+        }
+
+        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
+        {
+            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
+            character = (char)vKey;
+        }
+
         private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
         {
             e.Handled = true;
@@ -299,13 +317,22 @@ namespace Microsoft.Terminal.Wpf
                             break;
                         }
 
-                        NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out var dimensions);
+                        NativeMethods.COORD dimensions;
+
+                        if (this.Autofit)
+                        {
+                            NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
+                        }
+                        else
+                        {
+                            NativeMethods.ResizeRendererDrawSpace(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
+                        }
 
                         this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         this.Columns = dimensions.X;
                         this.Rows = dimensions.Y;
-
                         break;
+
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
                         var delta = (short)(((long)wParam) >> 16);
                         this.UserScrolled?.Invoke(this, delta);

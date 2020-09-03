@@ -43,6 +43,7 @@ __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 __declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
 __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
+__declspec(dllexport) HRESULT _stdcall ResizeRendererDrawSpace(void* terminal, double width, double height, _Out_ COORD* dimensions);
 };
 
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
@@ -103,6 +104,7 @@ private:
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
     friend void _stdcall TerminalSetFocus(void* terminal);
     friend void _stdcall TerminalKillFocus(void* terminal);
+    friend HRESULT _stdcall ResizeRendererDrawSpace(void* terminal, double width, double height, _Out_ COORD* dimensions);
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring& text) noexcept;
