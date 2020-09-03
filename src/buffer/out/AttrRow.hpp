@@ -42,7 +42,6 @@ public:
                          size_t* const pApplies) const;
 
     std::unordered_set<uint16_t> GetHyperlinks();
-    const std::pair<size_t, size_t> GetLinkEndPoints(const size_t column);
 
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
