@@ -702,8 +702,13 @@ try
     }
     else
     {
+        const auto bufferSize = _pData->GetTextBuffer().GetSize();
+        if (!bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true))
+        {
+            return E_FAIL;
+        }
         auto inclusiveEnd = _end;
-        _pData->GetTextBuffer().GetSize().DecrementInBounds(inclusiveEnd);
+        bufferSize.DecrementInBounds(inclusiveEnd);
         _pData->SelectNewRegion(_start, inclusiveEnd);
     }
 
