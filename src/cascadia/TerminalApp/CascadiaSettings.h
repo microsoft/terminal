@@ -81,8 +81,6 @@ public:
 
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
-    bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, winrt::hstring schemeName);
-
     winrt::guid GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
 private:

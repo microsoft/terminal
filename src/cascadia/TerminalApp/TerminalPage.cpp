@@ -617,8 +617,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     try
     {
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(*_settings, newTerminalArgs);
-        settings.KeyBindings(*_bindings);
+        auto [profileGuid, settings] = TerminalSettings::BuildSettings(*_settings, newTerminalArgs, *_bindings);
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -1032,7 +1031,7 @@ namespace winrt::TerminalApp::implementation
                 const auto& profileGuid = focusedTab->GetFocusedProfile();
                 if (profileGuid.has_value())
                 {
-                    const auto settings = TerminalSettings::BuildSettings(*_settings, profileGuid.value());
+                    const auto settings{ winrt::make<TerminalSettings>(*_settings, profileGuid.value(), *_bindings) };
                     _CreateNewTabFromSettings(profileGuid.value(), settings);
                 }
             }
@@ -1465,7 +1464,7 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    controlSettings = TerminalSettings::BuildSettings(*_settings, current_guid.value());
+                    controlSettings = { winrt::make<TerminalSettings>(*_settings, current_guid.value(), *_bindings) };
                     realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
@@ -1483,7 +1482,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(*_settings, newTerminalArgs);
+                std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(*_settings, newTerminalArgs, *_bindings);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -2010,10 +2009,9 @@ namespace winrt::TerminalApp::implementation
 
             try
             {
-                // BuildSettings can throw an exception if the profileGuid does
+                // This can throw an exception if the profileGuid does
                 // not belong to an actual profile in the list of profiles.
-                auto settings = TerminalSettings::BuildSettings(*_settings, profileGuid);
-                settings.KeyBindings(*_bindings);
+                auto settings{ winrt::make<TerminalSettings>(*_settings, profileGuid, *_bindings) };
 
                 for (auto tab : _tabs)
                 {

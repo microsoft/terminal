@@ -64,27 +64,6 @@ ColorScheme::~ColorScheme()
 }
 
 // Method Description:
-// - Apply our values to the given TerminalSettings object. Sets the foreground,
-//      background, and color table of the settings object.
-// Arguments:
-// - terminalSettings: the object to apply our settings to.
-// Return Value:
-// - <none>
-void ColorScheme::ApplyScheme(const winrt::Microsoft::Terminal::TerminalControl::IControlSettings& terminalSettings) const
-{
-    terminalSettings.DefaultForeground(static_cast<COLORREF>(_defaultForeground));
-    terminalSettings.DefaultBackground(static_cast<COLORREF>(_defaultBackground));
-    terminalSettings.SelectionBackground(static_cast<COLORREF>(_selectionBackground));
-    terminalSettings.CursorColor(static_cast<COLORREF>(_cursorColor));
-
-    auto const tableCount = gsl::narrow_cast<int>(_table.size());
-    for (int i = 0; i < tableCount; i++)
-    {
-        terminalSettings.SetColorTableEntry(i, static_cast<COLORREF>(_table[i]));
-    }
-}
-
-// Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a ColorScheme object.

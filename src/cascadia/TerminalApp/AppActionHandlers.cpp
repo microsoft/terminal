@@ -319,10 +319,11 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto activeControl = activeTab->GetActiveTerminalControl())
                 {
-                    auto controlSettings = activeControl.Settings();
-                    if (_settings->ApplyColorScheme(controlSettings, realArgs.SchemeName()))
+                    auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                    const auto schemes = _settings->GlobalSettings().GetColorSchemes();
+                    if (controlSettings->ApplyColorScheme(realArgs.SchemeName(), schemes))
                     {
-                        activeControl.UpdateSettings(controlSettings);
+                        activeControl.UpdateSettings(*controlSettings);
                         args.Handled(true);
                     }
                 }

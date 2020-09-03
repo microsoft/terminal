@@ -6,8 +6,21 @@
 
 #include "TerminalSettings.g.cpp"
 
+using namespace winrt::Microsoft::Terminal::TerminalControl;
+
 namespace winrt::TerminalApp::implementation
 {
+    TerminalSettings::TerminalSettings(const ::TerminalApp::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
+        _KeyBindings{ keybindings }
+    {
+        const auto profile = appSettings.FindProfile(profileGuid);
+        THROW_HR_IF_NULL(E_INVALIDARG, profile);
+
+        const auto globals = appSettings.GlobalSettings();
+        _ApplyProfileSettings(profile, globals.GetColorSchemes());
+        _ApplyGlobalSettings(globals);
+    }
+
     // Method Description:
     // - Create a TerminalSettings object for the provided newTerminalArgs. We'll
     //   use the newTerminalArgs to look up the profile that should be used to
@@ -15,18 +28,22 @@ namespace winrt::TerminalApp::implementation
     //   newTerminalArgs to the profile's settings, to enable customization on top
     //   of the profile's default values.
     // Arguments:
+    // - appSettings: the set of settings being used to construct the new terminal
     // - newTerminalArgs: An object that may contain a profile name or GUID to
     //   actually use. If the Profile value is not a guid, we'll treat it as a name,
     //   and attempt to look the profile up by name instead.
     //   * Additionally, we'll use other values (such as Commandline,
     //     StartingDirectory) in this object to override the settings directly from
     //     the profile.
+    // - keybindings: the keybinding handler
     // Return Value:
     // - the GUID of the created profile, and a fully initialized TerminalSettings object
-    std::tuple<winrt::guid, winrt::TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
+    std::tuple<winrt::guid, winrt::TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings,
+                                                                                                  const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs,
+                                                                                                  const IKeyBindings& keybindings)
     {
         const winrt::guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settings = BuildSettings(appSettings, profileGuid);
+        auto settings{ winrt::make<TerminalSettings>(appSettings, profileGuid, keybindings) };
 
         if (newTerminalArgs)
         {
@@ -49,123 +66,90 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Create a TerminalSettings object for the profile with a GUID matching the
-    //   provided GUID. If no profile matches this GUID, then this method will
-    //   throw.
-    // Arguments:
-    // - profileGuid: The GUID of a profile to use to create a settings object for.
-    // Return Value:
-    // - a fully initialized TerminalSettings object
-    winrt::TerminalApp::TerminalSettings TerminalSettings::BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings, winrt::guid profileGuid)
-    {
-        const auto profile = appSettings.FindProfile(profileGuid);
-        THROW_HR_IF_NULL(E_INVALIDARG, profile);
-
-        const auto globals = appSettings.GlobalSettings();
-        TerminalApp::TerminalSettings result = _CreateTerminalSettings(profile, globals.GetColorSchemes());
-
-        // Place our appropriate global settings into the Terminal Settings
-        _ApplyToSettings(globals, result);
-
-        return result;
-    }
-
-    // Method Description:
     // - Create a TerminalSettings from this object. Apply our settings, as well as
     //      any colors from our color scheme, if we have one.
     // Arguments:
     // - schemes: a list of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - a new TerminalSettings object with our settings in it.
-    winrt::TerminalApp::TerminalSettings TerminalSettings::_CreateTerminalSettings(const TerminalApp::Profile& profile, const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const TerminalApp::Profile& profile, const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::ColorScheme>& schemes)
     {
-        auto terminalSettings = winrt::make<TerminalSettings>();
-
         // Fill in the Terminal Setting's CoreSettings from the profile
-        terminalSettings.HistorySize(profile.HistorySize());
-        terminalSettings.SnapOnInput(profile.SnapOnInput());
-        terminalSettings.AltGrAliasing(profile.AltGrAliasing());
-        terminalSettings.CursorHeight(profile.CursorHeight());
-        terminalSettings.CursorShape(profile.CursorShape());
+        _HistorySize = profile.HistorySize();
+        _SnapOnInput = profile.SnapOnInput();
+        _AltGrAliasing = profile.AltGrAliasing();
+        _CursorHeight = profile.CursorHeight();
+        _CursorShape = profile.CursorShape();
 
         // Fill in the remaining properties from the profile
-        terminalSettings.ProfileName(profile.Name());
-        terminalSettings.UseAcrylic(profile.UseAcrylic());
-        terminalSettings.TintOpacity(profile.AcrylicOpacity());
+        _ProfileName = profile.Name();
+        _UseAcrylic = profile.UseAcrylic();
+        _TintOpacity = profile.AcrylicOpacity();
 
-        terminalSettings.FontFace(profile.FontFace());
-        terminalSettings.FontSize(profile.FontSize());
-        terminalSettings.FontWeight(profile.FontWeight());
-        terminalSettings.Padding(profile.Padding());
+        _FontFace = profile.FontFace();
+        _FontSize = profile.FontSize();
+        _FontWeight = profile.FontWeight();
+        _Padding = profile.Padding();
 
-        terminalSettings.Commandline(profile.Commandline());
+        _Commandline = profile.Commandline();
 
         if (!profile.StartingDirectory().empty())
         {
-            terminalSettings.StartingDirectory(profile.GetEvaluatedStartingDirectory());
+            _StartingDirectory = profile.GetEvaluatedStartingDirectory();
         }
 
         // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
         // use the profile name
-        terminalSettings.StartingTitle(!profile.TabTitle().empty() ? profile.TabTitle() : profile.Name());
+        _StartingTitle = !profile.TabTitle().empty() ? profile.TabTitle() : profile.Name();
 
         if (profile.SuppressApplicationTitle())
         {
-            terminalSettings.SuppressApplicationTitle(profile.SuppressApplicationTitle());
+            _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
         if (!profile.ColorSchemeName().empty())
         {
-            if (const auto found{ schemes.TryLookup(profile.ColorSchemeName()) })
-            {
-                found.ApplyScheme(terminalSettings);
-            }
+            ApplyColorScheme(profile.ColorSchemeName(), schemes);
         }
         if (profile.Foreground())
         {
-            const til::color colorRef{ profile.Foreground().Value() };
-            terminalSettings.DefaultForeground(static_cast<uint32_t>(colorRef));
+            _DefaultForeground = til::color{ profile.Foreground().Value() };
         }
         if (profile.Background())
         {
-            const til::color colorRef{ profile.Background().Value() };
-            terminalSettings.DefaultBackground(static_cast<uint32_t>(colorRef));
+            _DefaultBackground = til::color{ profile.Background().Value() };
         }
         if (profile.SelectionBackground())
         {
-            const til::color colorRef{ profile.SelectionBackground().Value() };
-            terminalSettings.SelectionBackground(static_cast<uint32_t>(colorRef));
+            _SelectionBackground = til::color{ profile.SelectionBackground().Value() };
         }
         if (profile.CursorColor())
         {
-            const til::color colorRef{ profile.CursorColor().Value() };
-            terminalSettings.CursorColor(static_cast<uint32_t>(colorRef));
+            _CursorColor = til::color{ profile.CursorColor().Value() };
         }
 
-        terminalSettings.ScrollState(profile.ScrollState());
+        _ScrollState = profile.ScrollState();
 
         if (!profile.BackgroundImagePath().empty())
         {
-            terminalSettings.BackgroundImage(profile.GetExpandedBackgroundImagePath());
+            _BackgroundImage = profile.GetExpandedBackgroundImagePath();
         }
 
-        terminalSettings.BackgroundImageOpacity(profile.BackgroundImageOpacity());
-        terminalSettings.BackgroundImageStretchMode(profile.BackgroundImageStretchMode());
+        _BackgroundImageOpacity = profile.BackgroundImageOpacity();
+        _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
 
-        terminalSettings.BackgroundImageHorizontalAlignment(profile.BackgroundImageHorizontalAlignment());
-        terminalSettings.BackgroundImageVerticalAlignment(profile.BackgroundImageVerticalAlignment());
+        _BackgroundImageHorizontalAlignment = profile.BackgroundImageHorizontalAlignment();
+        _BackgroundImageVerticalAlignment = profile.BackgroundImageVerticalAlignment();
 
-        terminalSettings.RetroTerminalEffect(profile.RetroTerminalEffect());
+        _RetroTerminalEffect = profile.RetroTerminalEffect();
 
-        terminalSettings.AntialiasingMode(profile.AntialiasingMode());
+        _AntialiasingMode = profile.AntialiasingMode();
 
         if (profile.TabColor())
         {
             const til::color colorRef{ profile.TabColor().Value() };
-            terminalSettings.TabColor(static_cast<uint32_t>(colorRef));
+            _TabColor = static_cast<uint32_t>(colorRef);
         }
-
-        return terminalSettings;
     }
 
     // Method Description:
@@ -174,16 +158,48 @@ namespace winrt::TerminalApp::implementation
     // - settings: a TerminalSettings object to add global property values to.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyToSettings(const TerminalApp::GlobalAppSettings& globalSettings, const TerminalApp::TerminalSettings& settings) noexcept
+    void TerminalSettings::_ApplyGlobalSettings(const TerminalApp::GlobalAppSettings& globalSettings) noexcept
     {
-        settings.InitialRows(globalSettings.InitialRows());
-        settings.InitialCols(globalSettings.InitialCols());
+        _InitialRows = globalSettings.InitialRows();
+        _InitialCols = globalSettings.InitialCols();
 
-        settings.WordDelimiters(globalSettings.WordDelimiters());
-        settings.CopyOnSelect(globalSettings.CopyOnSelect());
-        settings.ForceFullRepaintRendering(globalSettings.ForceFullRepaintRendering());
-        settings.SoftwareRendering(globalSettings.SoftwareRendering());
-        settings.ForceVTInput(globalSettings.ForceVTInput());
+        _WordDelimiters = globalSettings.WordDelimiters();
+        _CopyOnSelect = globalSettings.CopyOnSelect();
+        _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
+        _SoftwareRendering = globalSettings.SoftwareRendering();
+        _ForceVTInput = globalSettings.ForceVTInput();
+    }
+
+    // Method Description:
+    // - Apply our values to the given TerminalSettings object. Sets the foreground,
+    //      background, and color table of the settings object.
+    // Arguments:
+    // - terminalSettings: the object to apply our settings to.
+    // Return Value:
+    // - <none>
+    void TerminalSettings::_ApplyColorScheme(const TerminalApp::ColorScheme& scheme)
+    {
+        _DefaultForeground = til::color{ scheme.Foreground() };
+        _DefaultBackground = til::color{ scheme.Background() };
+        _SelectionBackground = til::color{ scheme.SelectionBackground() };
+        _CursorColor = til::color{ scheme.CursorColor() };
+
+        const auto table = scheme.Table();
+        auto const tableCount = gsl::narrow_cast<int>(table.size());
+        for (int i = 0; i < tableCount; i++)
+        {
+            SetColorTableEntry(i, til::color{ table[i] });
+        }
+    }
+
+    bool TerminalSettings::ApplyColorScheme(const hstring& scheme, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes)
+    {
+        if (const auto found{ schemes.TryLookup(scheme) })
+        {
+            _ApplyColorScheme(found);
+            return true;
+        }
+        return false;
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept

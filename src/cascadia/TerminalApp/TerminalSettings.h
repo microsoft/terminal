@@ -26,9 +26,15 @@ namespace winrt::TerminalApp::implementation
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
         TerminalSettings() = default;
+        TerminalSettings(const ::TerminalApp::CascadiaSettings& appSettings,
+                         guid profileGuid,
+                         const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 
-        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings, const TerminalApp::NewTerminalArgs& newTerminalArgs);
-        static TerminalApp::TerminalSettings BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings, guid profileGuid);
+        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings,
+                                                                             const TerminalApp::NewTerminalArgs& newTerminalArgs,
+                                                                             const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+
+        bool ApplyColorScheme(const hstring& scheme, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
 
 // TECHNICALLY, the hstring copy assignment can throw, but the GETSET_PROPERTY
 // macro defines the operator as `noexcept`. We're not really worried about it,
@@ -107,8 +113,9 @@ namespace winrt::TerminalApp::implementation
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
 
-        static TerminalApp::TerminalSettings _CreateTerminalSettings(const TerminalApp::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
-        static void _ApplyToSettings(const TerminalApp::GlobalAppSettings& globalSettings, const TerminalApp::TerminalSettings& settings) noexcept;
+        void _ApplyProfileSettings(const TerminalApp::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
+        void _ApplyGlobalSettings(const TerminalApp::GlobalAppSettings& globalSettings) noexcept;
+        void _ApplyColorScheme(const TerminalApp::ColorScheme& scheme);
     };
 }
 

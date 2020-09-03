@@ -684,23 +684,3 @@ const ColorScheme CascadiaSettings::GetColorSchemeForProfile(const winrt::guid p
     const auto schemeName = profile.ColorSchemeName();
     return _globals->GetColorSchemes().TryLookup(schemeName);
 }
-
-// Method Description:
-// - Apply the color scheme (provided by name) to the given IControlSettings.
-//   The settings are modified in-place.
-// - If the name doesn't correspond to any of our schemes, this does nothing.
-// Arguments:
-// - settings: the IControlSettings object to modify
-// - name: the name of the scheme to apply
-// Return Value:
-// - true iff we found a matching scheme for the name schemeName
-bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings,
-                                        winrt::hstring schemeName)
-{
-    if (auto scheme{ _globals->GetColorSchemes().TryLookup(schemeName) })
-    {
-        scheme.ApplyScheme(settings);
-        return true;
-    }
-    return false;
-}
