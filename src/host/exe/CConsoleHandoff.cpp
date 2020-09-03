@@ -16,6 +16,30 @@ void _releaseNotifier() noexcept
 
 DWORD g_cTerminalHandoffRegistration = 0;
 
+template<int RegClsType>
+class DefaultOutOfProcModuleWithRegistrationFlag;
+
+template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
+class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
+{
+public:
+    STDMETHOD(RegisterCOMObject)
+    (_In_opt_z_ const wchar_t* serverName, _In_reads_(count) IID* clsids, _In_reads_(count) IClassFactory** factories, _Inout_updates_(count) DWORD* cookies, unsigned int count)
+    {
+        return Microsoft::WRL::Details::RegisterCOMObject<RegClsType>(serverName, clsids, factories, cookies, count);
+    }
+};
+
+template<int RegClsType>
+class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithRegistrationFlag<RegClsType, DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
+{
+};
+
+int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
+{
+    OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create();
+}
+
 // Routine Description:
 // - Performs registrations for our COM types and waits until COM tells us we're done being a server.
 // Return Value:
