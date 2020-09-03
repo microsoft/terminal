@@ -694,7 +694,7 @@ namespace winrt::TerminalApp::implementation
         // Register for directory change notification.
         _RegisterSettingsChange();
 
-        jumplist.UpdateJumplist(_settings);
+        Jumplist::UpdateJumplist(*_settings);
     }
 
     // Method Description:
@@ -854,7 +854,7 @@ namespace winrt::TerminalApp::implementation
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 
-        jumplist.UpdateJumplist(_settings);
+        Jumplist::UpdateJumplist(*_settings);
     }
 
     // Method Description:

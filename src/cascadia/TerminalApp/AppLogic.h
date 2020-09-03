@@ -80,8 +80,6 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_mutex _dialogLock;
 
-        Jumplist jumplist;
-
         std::atomic<bool> _settingsReloadQueued{ false };
 
         ::TerminalApp::AppCommandlineArgs _appArgs;

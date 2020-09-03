@@ -15,15 +15,15 @@
 #include "CascadiaSettings.h"
 #include "Profile.h"
 
-#include <ShObjIdl.h>
+struct IObjectCollection;
+struct IShellLinkW;
 
 class Jumplist
 {
 public:
-    Jumplist() = default;
-    void UpdateJumplist(std::shared_ptr<::TerminalApp::CascadiaSettings> settings);
+    static HRESULT UpdateJumplist(const TerminalApp::CascadiaSettings& settings);
 
 private:
-    HRESULT _updateProfiles(winrt::com_ptr<IObjectCollection>& jumplistItems, const gsl::span<const winrt::TerminalApp::Profile>& profiles);
-    HRESULT _createShellLink(const std::wstring_view& name, const std::wstring_view& path, const std::wstring_view& args, winrt::com_ptr<IShellLink>& shLink);
+    static HRESULT _updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const winrt::TerminalApp::Profile>& profiles);
+    static HRESULT _createShellLink(const std::wstring_view name, const std::wstring_view path, const std::wstring_view args, IShellLinkW** shLink);
 };
