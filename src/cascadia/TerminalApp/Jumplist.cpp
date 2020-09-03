@@ -64,8 +64,7 @@ HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, const gsl::s
     for (const auto& profile : profiles)
     {
         // Craft the arguments following "wt.exe"
-        auto guid = to_hstring(profile.Guid());
-        auto args = fmt::format(L"-p {}", guid);
+        auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
 
         // Create the shell link object for the profile
         winrt::com_ptr<IShellLinkW> shLink;
