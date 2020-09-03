@@ -629,7 +629,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         };
         RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_strokeStyle));
 
-        _hyperlinkStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
+        _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
             D2D1_CAP_STYLE_SQUARE, // dashCap
@@ -638,8 +638,9 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
             D2D1_DASH_STYLE_DASH, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_hyperlinkStrokeStyleProperties, nullptr, 0, &_hyperlinkStrokeStyle));
-        _hyperlinkStrokeChanged = false;
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        _hyperlinkStrokeStyle = _dashStrokeStyle;
+        _hyperlinkStrokeIsDash = true;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1578,6 +1579,7 @@ try
 
         if (lines & GridLines::DoubleUnderline)
         {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
             const auto y2 = target.y + _lineMetrics.underlineOffset2;
             DrawLine(startX, y2, endX, y2, _lineMetrics.underlineWidth);
         }
@@ -1742,14 +1744,14 @@ CATCH_RETURN()
     if (textAttributes.IsHyperlink() && (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId))
     {
         // Update the hyperlink stroke style with the regular stroke style properties
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_hyperlinkStrokeStyle));
-        _hyperlinkStrokeChanged = true;
+        _hyperlinkStrokeStyle = _strokeStyle;
+        _hyperlinkStrokeIsDash = false;
     }
-    else if (_hyperlinkStrokeChanged)
+    else if (!_hyperlinkStrokeIsDash)
     {
         // Revert the hyperlink stroke style change for other situations
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_hyperlinkStrokeStyleProperties, nullptr, 0, &_hyperlinkStrokeStyle));
-        _hyperlinkStrokeChanged = false;
+        _hyperlinkStrokeStyle = _dashStrokeStyle;
+        _hyperlinkStrokeIsDash = true;
     }
 
     return S_OK;
