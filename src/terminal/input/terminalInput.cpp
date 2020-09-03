@@ -588,8 +588,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         }
     }
 
-    const auto senderFunc = [this](const std::wstring_view seq) noexcept
-    {
+    const auto senderFunc = [this](const std::wstring_view seq) noexcept {
         _SendInputSequence(seq);
     };
 

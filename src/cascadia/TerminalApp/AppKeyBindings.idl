@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import "../ActionArgs.idl";
-import "../ShortcutActionDispatch.idl";
+import "ActionArgs.idl";
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {

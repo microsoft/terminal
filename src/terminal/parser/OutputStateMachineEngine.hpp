@@ -251,6 +251,7 @@ namespace Microsoft::Console::VirtualTerminal
                                  std::wstring& content,
                                  bool& queryClipboard) const noexcept;
 
+        static constexpr std::wstring_view hyperlinkIDParameter{ L"id=" };
         bool _ParseHyperlink(const std::wstring_view string,
                              std::wstring& params,
                              std::wstring& uri) const;

@@ -137,7 +137,8 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                                                          gsl::span<const ::TerminalApp::Profile> profiles);
+                                                                                                                          gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                                                          Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes);
 
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
@@ -239,7 +240,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseOtherTabs(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTabsAfter(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleTabSwitcher(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenTabSearch(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

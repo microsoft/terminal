@@ -141,13 +141,13 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 HRESULT Microsoft::Console::Render::Xterm256Engine::_UpdateHyperlinkAttr(const TextAttribute& textAttributes,
                                                                          const gsl::not_null<IRenderData*> pData) noexcept
 {
-    if (textAttributes.IsHyperlink() != _lastTextAttributes.IsHyperlink())
+    if (textAttributes.GetHyperlinkId() != _lastTextAttributes.GetHyperlinkId())
     {
         if (textAttributes.IsHyperlink())
         {
             const auto id = textAttributes.GetHyperlinkId();
             const auto customId = pData->GetHyperlinkCustomId(id);
-            RETURN_IF_FAILED(_SetHyperlink(pData->GetHyperlinkUri(id), customId));
+            RETURN_IF_FAILED(_SetHyperlink(pData->GetHyperlinkUri(id), customId, id));
         }
         else
         {

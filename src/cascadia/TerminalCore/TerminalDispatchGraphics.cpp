@@ -107,7 +107,7 @@ bool TerminalDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes:
         case Off:
             attr.SetDefaultForeground();
             attr.SetDefaultBackground();
-            attr.SetStandardErase();
+            attr.SetDefaultMetaAttrs();
             break;
         case ForegroundDefault:
             attr.SetDefaultForeground();

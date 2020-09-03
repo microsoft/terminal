@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     // - settings: The settings who's keybindings we should use to look up the key chords from
     // - commands: The list of commands to label.
     static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
-                                                        Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+                                                        IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
         {
@@ -83,20 +83,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    static void _recursiveUpdateCommandIcons(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
+    static void _recursiveUpdateCommandIcons(IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
         {
             const auto& command = nameAndCmd.Value();
-            // Set the default IconSource to a BitmapIconSource with a null source
-            // (instead of just nullptr) because there's a really weird crash when swapping
-            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-            // Swapping between nullptr IconSources and non-null IconSources causes a crash
-            // to occur, but swapping between IconSources with a null source and non-null IconSources
-            // work perfectly fine :shrug:.
-            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-            icon.UriSource(nullptr);
-            command.IconSource(icon);
+
+            // !!! LOAD-BEARING !!! If this is never called, then Commands will
+            // have a nullptr icon. If they do, a really weird crash can occur.
+            // MAKE SURE this is called once after a settings load.
+            command.RefreshIcon();
 
             if (command.HasNestedCommands())
             {
@@ -119,6 +115,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
+            CommandPalette().SetKeyBindings(_settings->GetKeybindings());
         }
     }
 
@@ -462,34 +459,30 @@ namespace winrt::TerminalApp::implementation
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
-            // add the keyboard shortcuts for the first 9 profiles
-            if (profileIndex < 9)
-            {
-                // Look for a keychord that is bound to the equivalent
-                // NewTab(ProfileIndex=N) action
-                auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
-                actionAndArgs->Action(ShortcutAction::NewTab);
-                auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
-                auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
-                newTerminalArgs->ProfileIndex(profileIndex);
-                newTabArgs->TerminalArgs(*newTerminalArgs);
-                actionAndArgs->Args(*newTabArgs);
-                auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
+            // Add the keyboard shortcuts based on the number of profiles defined
+            // Look for a keychord that is bound to the equivalent
+            // NewTab(ProfileIndex=N) action
+            auto actionAndArgs = winrt::make_self<winrt::TerminalApp::implementation::ActionAndArgs>();
+            actionAndArgs->Action(ShortcutAction::NewTab);
+            auto newTabArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTabArgs>();
+            auto newTerminalArgs = winrt::make_self<winrt::TerminalApp::implementation::NewTerminalArgs>();
+            newTerminalArgs->ProfileIndex(profileIndex);
+            newTabArgs->TerminalArgs(*newTerminalArgs);
+            actionAndArgs->Args(*newTabArgs);
+            auto profileKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(*actionAndArgs) };
 
-                // make sure we find one to display
-                if (profileKeyChord)
-                {
-                    _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
-                }
+            // make sure we find one to display
+            if (profileKeyChord)
+            {
+                _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
             }
 
-            auto profileName = profile.GetName();
-            winrt::hstring hName{ profileName };
-            profileMenuItem.Text(hName);
+            auto profileName = profile.Name();
+            profileMenuItem.Text(profileName);
 
             // If there's an icon set for this profile, set it as the icon for
             // this flyout item.
-            if (profile.HasIcon())
+            if (!profile.IconPath().empty())
             {
                 auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.GetExpandedIconPath());
 
@@ -499,7 +492,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
-            if (profile.GetGuid() == defaultProfileGuid)
+            if (profile.Guid() == winrt::guid{ defaultProfileGuid })
             {
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
@@ -732,10 +725,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Set this tab's icon to the icon from the user's profile
-        const auto* const profile = _settings->FindProfile(profileGuid);
-        if (profile != nullptr && profile->HasIcon())
+        const auto profile = _settings->FindProfile(profileGuid);
+        if (profile != nullptr && !profile.IconPath().empty())
         {
-            newTabImpl->UpdateIcon(profile->GetExpandedIconPath());
+            newTabImpl->UpdateIcon(profile.GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -771,20 +764,21 @@ namespace winrt::TerminalApp::implementation
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
                                                                                         TerminalApp::TerminalSettings settings)
     {
-        const auto* const profile = _settings->FindProfile(profileGuid);
+        const auto profile = _settings->FindProfile(profileGuid);
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
-        GUID connectionType{ 0 };
-        GUID sessionGuid{ 0 };
+        winrt::guid connectionType{};
+        winrt::guid sessionGuid{};
 
-        if (profile->HasConnectionType())
+        const auto hasConnectionType = profile.HasConnectionType();
+        if (hasConnectionType)
         {
-            connectionType = profile->GetConnectionType();
+            connectionType = profile.ConnectionType();
         }
 
-        if (profile->HasConnectionType() &&
-            profile->GetConnectionType() == AzureConnectionType &&
+        if (hasConnectionType &&
+            connectionType == AzureConnectionType &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
@@ -799,8 +793,8 @@ namespace winrt::TerminalApp::implementation
                                                               winrt::guid());
         }
 
-        else if (profile->HasConnectionType() &&
-                 profile->GetConnectionType() == TelnetConnectionType)
+        else if (hasConnectionType &&
+                 connectionType == TelnetConnectionType)
         {
             connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
@@ -941,7 +935,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
-        _actionDispatch->ToggleTabSwitcher({ this, &TerminalPage::_HandleToggleTabSwitcher });
+        _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
     }
 
     // Method Description:
@@ -972,10 +966,10 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            const auto matchingProfile = _settings->FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile->GetExpandedIconPath());
+                tab.UpdateIcon(matchingProfile.GetExpandedIconPath());
             }
             else
             {
@@ -1204,7 +1198,21 @@ namespace winrt::TerminalApp::implementation
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
             const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            _SelectTab(newTabIndex);
+
+            if (_settings->GlobalSettings().UseTabSwitcher())
+            {
+                if (CommandPalette().Visibility() == Visibility::Visible)
+                {
+                    CommandPalette().SelectNextItem(bMoveRight);
+                }
+
+                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
+            else
+            {
+                _SelectTab(newTabIndex);
+            }
         }
     }
 
@@ -1298,9 +1306,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns the index in our list of tabs of the currently focused tab. If
-    //      no tab is currently selected, returns -1.
+    //      no tab is currently selected, returns nullopt.
     // Return Value:
-    // - the index of the currently focused tab if there is one, else -1
+    // - the index of the currently focused tab if there is one, else nullopt
     std::optional<uint32_t> TerminalPage::_GetFocusedTabIndex() const noexcept
     {
         // GH#1117: This is a workaround because _tabView.SelectedIndex()
@@ -2011,7 +2019,7 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings->GetProfiles();
         for (auto& profile : profiles)
         {
-            const GUID profileGuid = profile.GetGuid();
+            const auto profileGuid = profile.Guid();
 
             try
             {
@@ -2061,6 +2069,14 @@ namespace winrt::TerminalApp::implementation
         _alwaysOnTopChangedHandlers(*this, nullptr);
     }
 
+    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
+    static bool _compareSchemeNames(const winrt::TerminalApp::ColorScheme& lhs, const winrt::TerminalApp::ColorScheme& rhs)
+    {
+        std::wstring leftName{ lhs.Name() };
+        std::wstring rightName{ rhs.Name() };
+        return leftName.compare(rightName) < 0;
+    }
+
     // Method Description:
     // - Takes a mapping of names->commands and expands them
     // Arguments:
@@ -2068,9 +2084,22 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                    gsl::span<const ::TerminalApp::Profile> profiles)
+                                                                                    gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                    IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes)
     {
         std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+
+        std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
+        sortedSchemes.reserve(schemes.Size());
+
+        for (const auto& nameAndScheme : schemes)
+        {
+            sortedSchemes.push_back(nameAndScheme.Value());
+        }
+        std::sort(sortedSchemes.begin(),
+                  sortedSchemes.end(),
+                  _compareSchemeNames);
+
         IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
         for (const auto& nameAndCommand : commandsToExpand)
         {
@@ -2079,6 +2108,7 @@ namespace winrt::TerminalApp::implementation
 
         Command::ExpandCommands(copyOfCommands,
                                 profiles,
+                                sortedSchemes,
                                 warnings);
 
         return copyOfCommands;
@@ -2093,8 +2123,9 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands().GetView(),
-                                                                                           _settings->GetProfiles());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands(),
+                                                                                           _settings->GetProfiles(),
+                                                                                           _settings->GlobalSettings().GetColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
         _recursiveUpdateCommandIcons(copyOfCommands.GetView());
