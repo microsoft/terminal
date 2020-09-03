@@ -8,6 +8,7 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "TerminalPage.h"
+#include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
