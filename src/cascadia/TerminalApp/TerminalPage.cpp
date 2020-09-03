@@ -1805,6 +1805,22 @@ namespace winrt::TerminalApp::implementation
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
             }
+            if (parsed.SchemeName() == L"file")
+            {
+                const auto host = parsed.Host();
+                // If no hostname was provided or if the hostname was "localhost", Host() will return null
+                // and we allow it
+                if (host == L"")
+                {
+                    ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                }
+                // TODO: by the OSC 8 spec, if a hostname (other than localhost) is provided, we _should_ be
+                // comparing that value against what is returned by GetComputerNameExW and making sure they match.
+                // However, ShellExecute does not seem to be happy with file URIs of the form
+                //          file://{hostname}/path/to/file.ext
+                // and so while we could do the hostname matching, we do not know how to actually open the URI
+                // if its given in that form. So for now we ignore all hostnames other than localhost
+            }
         }
         CATCH_LOG();
     }
