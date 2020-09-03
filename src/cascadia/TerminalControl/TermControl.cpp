@@ -1083,6 +1083,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+            const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
             if (_CanSendVTMouseInput())
             {
@@ -1123,7 +1124,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 // Update the selection appropriately
-                if (shiftEnabled && _terminal->IsSelectionActive())
+                if (ctrlEnabled && multiClickMapper == 1 &&
+                    !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+                {
+                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                }
+                else if (shiftEnabled && _terminal->IsSelectionActive())
                 {
                     // Shift+Click: only set expand on the "end" selection point
                     _terminal->SetSelectionEnd(terminalPosition, mode);
@@ -2839,6 +2845,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsGlyphVisible(false);
     }
 
+    // Method description:
+    // - Checks if the uri is valid and sends an event if so
+    // Arguments:
+    // - The uri
+    void TermControl::_HyperlinkHandler(const std::wstring_view uri)
+    {
+        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring{ uri });
+        _openHyperlinkHandlers(*this, *hyperlinkArgs);
+    }
+
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
     winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
@@ -2884,5 +2900,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
     // clang-format on
 }

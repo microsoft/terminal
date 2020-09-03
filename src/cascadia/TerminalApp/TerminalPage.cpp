@@ -1136,6 +1136,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
+        term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
+
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
@@ -1790,6 +1792,19 @@ namespace winrt::TerminalApp::implementation
             }
 
             eventArgs.HandleClipboardData(text);
+        }
+        CATCH_LOG();
+    }
+
+    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
+    {
+        try
+        {
+            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
+            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            {
+                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+            }
         }
         CATCH_LOG();
     }

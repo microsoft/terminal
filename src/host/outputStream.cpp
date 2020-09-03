@@ -770,3 +770,22 @@ bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 {
     return _io.GetActiveInputBuffer()->IsInVirtualTerminalInputMode();
 }
+
+// Method Description:
+// - Updates the buffer's current text attributes depending on whether we are
+//   starting/ending a hyperlink
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - true
+bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
+{
+    DoSrvAddHyperlink(_io.GetActiveOutputBuffer(), uri, params);
+    return true;
+}
+
+bool ConhostInternalGetSet::PrivateEndHyperlink() const
+{
+    DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
+    return true;
+}

@@ -145,6 +145,9 @@ public:
 
     bool PrivateIsVtInputEnabled() const override;
 
+    bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
+    bool PrivateEndHyperlink() const override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

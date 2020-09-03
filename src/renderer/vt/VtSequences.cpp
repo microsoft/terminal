@@ -456,3 +456,46 @@ using namespace Microsoft::Console::Render;
 {
     return _Write("\x1b[?9001h");
 }
+
+// Method Description:
+// - Formats and writes a sequence to add a hyperlink to the terminal buffer
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId, const uint16_t& numberId) noexcept
+{
+    // Opening OSC8 sequence
+    if (customId.empty())
+    {
+        // This is the case of auto-assigned IDs:
+        // send the auto-assigned ID, prefixed with the PID of this session
+        // (we do this so different conpty sessions do not overwrite each other's hyperlinks)
+        const auto sessionID = GetCurrentProcessId();
+        const std::string fmt{ "\x1b]8;id={}-{};{}\x1b\\" };
+        const std::string uri_str{ til::u16u8(uri) };
+        auto s = fmt::format(fmt, sessionID, numberId, uri_str);
+        return _Write(s);
+    }
+    else
+    {
+        // This is the case of user-defined IDs:
+        // send the user-defined ID, prefixed with a "u"
+        // (we do this so no application can accidentally override a user defined ID)
+        const std::string fmt{ "\x1b]8;id=u-{};{}\x1b\\" };
+        const std::string uri_str{ til::u16u8(uri) };
+        const std::string customId_str{ til::u16u8(customId) };
+        auto s = fmt::format(fmt, customId_str, uri_str);
+        return _Write(s);
+    }
+}
+
+// Method Description:
+// - Formats and writes a sequence to end a hyperlink to the terminal buffer
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndHyperlink() noexcept
+{
+    // Closing OSC8 sequence
+    return _Write("\x1b]8;;\x1b\\");
+}

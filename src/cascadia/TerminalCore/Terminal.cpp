@@ -407,6 +407,21 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
+// - If the clicked text is a hyperlink, open it
+// Arguments:
+// - The position of the clicked text
+std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
+{
+    auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
+    if (attr.IsHyperlink())
+    {
+        auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return uri;
+    }
+    return {};
+}
+
+// Method Description:
 // - Send this particular (non-character) key event to the terminal.
 // - The terminal will translate the key and the modifiers pressed into the
 //   appropriate VT sequence for that key chord. If we do translate the key,
