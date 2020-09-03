@@ -1794,7 +1794,7 @@ namespace TerminalAppLocalTests
         settings.LayerJson(settings._userSettings);
         settings._ValidateSettings();
 
-        auto appKeyBindingsProj = settings._globals->GetKeybindings();
+        auto appKeyBindingsProj = settings._globals->GetKeyMap();
         VERIFY_ARE_EQUAL(3u, settings.GetProfiles().size());
 
         const auto profile2Guid = settings._profiles.at(2).Guid();
@@ -2466,7 +2466,7 @@ namespace TerminalAppLocalTests
         const auto profile2Guid = settings._profiles.at(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
-        auto appKeyBindings = winrt::get_self<implementation::AppKeyBindings>(settings._globals->GetKeybindings());
+        auto appKeyBindings = winrt::get_self<implementation::AppKeyBindings>(settings._globals->GetKeyMap());
         VERIFY_ARE_EQUAL(5u, appKeyBindings->_keyShortcuts.size());
 
         // A/D, B, C, E will be in the list of commands, for 4 total.

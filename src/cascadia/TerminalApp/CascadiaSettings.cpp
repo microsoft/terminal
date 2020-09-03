@@ -105,9 +105,9 @@ gsl::span<const Profile> CascadiaSettings::GetProfiles() const noexcept
 // - <none>
 // Return Value:
 // - the globally configured keybindings
-AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
+KeyMapping CascadiaSettings::GetKeyMap() const noexcept
 {
-    return _globals->GetKeybindings();
+    return _globals->GetKeyMap();
 }
 
 // Method Description:
@@ -116,7 +116,7 @@ AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 // - <none>
 // Return Value:
 // - a reference to our global settings
-winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings()
+winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 {
     return *_globals;
 }
@@ -480,68 +480,6 @@ void CascadiaSettings::_ValidateMediaResources()
 }
 
 // Method Description:
-// - Create a TerminalSettings object for the provided newTerminalArgs. We'll
-//   use the newTerminalArgs to look up the profile that should be used to
-//   create these TerminalSettings. Then, we'll apply settings contained in the
-//   newTerminalArgs to the profile's settings, to enable customization on top
-//   of the profile's default values.
-// Arguments:
-// - newTerminalArgs: An object that may contain a profile name or GUID to
-//   actually use. If the Profile value is not a guid, we'll treat it as a name,
-//   and attempt to look the profile up by name instead.
-//   * Additionally, we'll use other values (such as Commandline,
-//     StartingDirectory) in this object to override the settings directly from
-//     the profile.
-// Return Value:
-// - the GUID of the created profile, and a fully initialized TerminalSettings object
-std::tuple<winrt::guid, TerminalSettings> CascadiaSettings::BuildSettings(const NewTerminalArgs& newTerminalArgs) const
-{
-    const winrt::guid profileGuid = _GetProfileForArgs(newTerminalArgs);
-    auto settings = BuildSettings(profileGuid);
-
-    if (newTerminalArgs)
-    {
-        // Override commandline, starting directory if they exist in newTerminalArgs
-        if (!newTerminalArgs.Commandline().empty())
-        {
-            settings.Commandline(newTerminalArgs.Commandline());
-        }
-        if (!newTerminalArgs.StartingDirectory().empty())
-        {
-            settings.StartingDirectory(newTerminalArgs.StartingDirectory());
-        }
-        if (!newTerminalArgs.TabTitle().empty())
-        {
-            settings.StartingTitle(newTerminalArgs.TabTitle());
-        }
-    }
-
-    return { profileGuid, settings };
-}
-
-// Method Description:
-// - Create a TerminalSettings object for the profile with a GUID matching the
-//   provided GUID. If no profile matches this GUID, then this method will
-//   throw.
-// Arguments:
-// - profileGuid: The GUID of a profile to use to create a settings object for.
-// Return Value:
-// - a fully initialized TerminalSettings object
-TerminalSettings CascadiaSettings::BuildSettings(winrt::guid profileGuid) const
-{
-    const auto profile = FindProfile(profileGuid);
-    THROW_HR_IF_NULL(E_INVALIDARG, profile);
-
-    const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
-    TerminalSettings result = profileImpl->CreateTerminalSettings(_globals->GetColorSchemes());
-
-    // Place our appropriate global settings into the Terminal Settings
-    _globals->ApplyToSettings(result);
-
-    return result;
-}
-
-// Method Description:
 // - Helper to get the GUID of a profile, given an optional index and a possible
 //   "profile" value to override that.
 // - First, we'll try looking up the profile for the given index. This will
@@ -557,7 +495,7 @@ TerminalSettings CascadiaSettings::BuildSettings(winrt::guid profileGuid) const
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-winrt::guid CascadiaSettings::_GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
+winrt::guid CascadiaSettings::GetProfileForArgs(const NewTerminalArgs& newTerminalArgs) const
 {
     std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)

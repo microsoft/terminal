@@ -41,6 +41,7 @@ namespace TerminalApp
 
         String Commandline;
         String StartingDirectory;
+        String GetEvaluatedStartingDirectory();
 
         String BackgroundImagePath;
         String GetExpandedBackgroundImagePath();

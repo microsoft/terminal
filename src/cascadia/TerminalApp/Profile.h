@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 
 #include "Profile.g.h"
-#include "TerminalSettings.h"
 
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -46,14 +45,13 @@ namespace winrt::TerminalApp::implementation
         Profile();
         Profile(guid guid);
 
-        TerminalApp::TerminalSettings CreateTerminalSettings(const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes) const;
-
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
         static bool IsDynamicProfileObject(const Json::Value& json);
 
+        hstring GetEvaluatedStartingDirectory() const;
         hstring GetExpandedIconPath() const;
         hstring GetExpandedBackgroundImagePath() const;
         void GenerateGuidIfNecessary() noexcept;

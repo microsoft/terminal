@@ -64,14 +64,11 @@ public:
 
     static const CascadiaSettings& GetCurrentAppSettings();
 
-    std::tuple<winrt::guid, winrt::TerminalApp::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
-    winrt::TerminalApp::TerminalSettings BuildSettings(winrt::guid profileGuid) const;
-
-    winrt::TerminalApp::GlobalAppSettings GlobalSettings();
+    winrt::TerminalApp::GlobalAppSettings GlobalSettings() const;
 
     gsl::span<const winrt::TerminalApp::Profile> GetProfiles() const noexcept;
 
-    winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+    winrt::TerminalApp::KeyMapping GetKeyMap() const noexcept;
 
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
@@ -85,6 +82,8 @@ public:
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
     bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, winrt::hstring schemeName);
+
+    winrt::guid GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
 private:
     winrt::com_ptr<winrt::TerminalApp::implementation::GlobalAppSettings> _globals;
@@ -120,7 +119,6 @@ private:
 
     std::optional<winrt::guid> _GetProfileGuidByName(const std::wstring_view) const;
     std::optional<winrt::guid> _GetProfileGuidByIndex(std::optional<int> index) const;
-    winrt::guid _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     void _ValidateSettings();
     void _ValidateProfilesExist();

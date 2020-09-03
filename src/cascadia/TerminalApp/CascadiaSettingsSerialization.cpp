@@ -218,9 +218,9 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
             // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
             // and avoid extraneous data.
-            auto akb = winrt::make_self<implementation::AppKeyBindings>();
-            akb->LayerJson(userKeybindings);
-            auto value = akb->ToJson();
+            auto km = winrt::make_self<implementation::KeyMapping>();
+            km->LayerJson(userKeybindings);
+            auto value = km->ToJson();
 
             // Reserialize the keybindings
             Json::StreamWriterBuilder wbuilder;

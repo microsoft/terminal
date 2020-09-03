@@ -3,9 +3,8 @@
 
 import "AppLogic.idl";
 import "ColorScheme.idl";
-import "AppKeybindings.idl";
+import "KeyMapping.idl";
 import "Command.idl";
-import "TerminalSettings.idl";
 
 namespace TerminalApp
 {
@@ -50,10 +49,8 @@ namespace TerminalApp
         Windows.Foundation.Collections.IMapView<String, ColorScheme> GetColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 
-        AppKeyBindings GetKeybindings();
+        KeyMapping GetKeyMap();
 
         Windows.Foundation.Collections.IMapView<String, Command> GetCommands();
-
-        void ApplyToSettings(TerminalSettings settings);
     }
 }

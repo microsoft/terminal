@@ -17,7 +17,7 @@ Author(s):
 
 #include "GlobalAppSettings.g.h"
 
-#include "AppKeyBindings.h"
+#include "KeyMapping.h"
 #include "Command.h"
 #include "ColorScheme.h"
 
@@ -38,12 +38,10 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme> GetColorSchemes() noexcept;
         void AddColorScheme(const TerminalApp::ColorScheme& scheme);
 
-        TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+        TerminalApp::KeyMapping GetKeyMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
-
-        void ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept;
 
         std::vector<::TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
@@ -83,7 +81,7 @@ namespace winrt::TerminalApp::implementation
         hstring _unparsedDefaultProfile;
         guid _defaultProfile;
 
-        com_ptr<AppKeyBindings> _keybindings;
+        com_ptr<KeyMapping> _keymap;
         std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
         Windows::Foundation::Collections::IMap<hstring, TerminalApp::ColorScheme> _colorSchemes;

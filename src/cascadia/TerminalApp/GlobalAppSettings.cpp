@@ -53,7 +53,7 @@ static constexpr bool debugFeaturesDefault{ false };
 #endif
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{ winrt::make_self<AppKeyBindings>() },
+    _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},
     _unparsedDefaultProfile{},
     _defaultProfile{},
@@ -86,28 +86,9 @@ winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
     return _unparsedDefaultProfile;
 }
 
-winrt::TerminalApp::AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
+winrt::TerminalApp::KeyMapping GlobalAppSettings::GetKeyMap() const noexcept
 {
-    return *_keybindings;
-}
-
-// Method Description:
-// - Applies appropriate settings from the globals into the given TerminalSettings.
-// Arguments:
-// - settings: a TerminalSettings object to add global property values to.
-// Return Value:
-// - <none>
-void GlobalAppSettings::ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept
-{
-    settings.KeyBindings(GetKeybindings());
-    settings.InitialRows(_InitialRows);
-    settings.InitialCols(_InitialCols);
-
-    settings.WordDelimiters(_WordDelimiters);
-    settings.CopyOnSelect(_CopyOnSelect);
-    settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
-    settings.SoftwareRendering(_SoftwareRendering);
-    settings.ForceVTInput(_ForceVTInput);
+    return *_keymap;
 }
 
 // Method Description:
@@ -179,7 +160,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     auto parseBindings = [this, &json](auto jsonKey) {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _keybindings->LayerJson(bindings);
+            auto warnings = _keymap->LayerJson(bindings);
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can
             // recover from. Most of these warnings cannot be detected later in the

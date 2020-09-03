@@ -19,11 +19,16 @@ Author(s):
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
+#include "CascadiaSettings.h"
+
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
         TerminalSettings() = default;
+
+        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings, const TerminalApp::NewTerminalArgs& newTerminalArgs);
+        static TerminalApp::TerminalSettings BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings, guid profileGuid);
 
 // TECHNICALLY, the hstring copy assignment can throw, but the GETSET_PROPERTY
 // macro defines the operator as `noexcept`. We're not really worried about it,
@@ -101,6 +106,9 @@ namespace winrt::TerminalApp::implementation
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
+
+        static TerminalApp::TerminalSettings _CreateTerminalSettings(const TerminalApp::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
+        static void _ApplyToSettings(const TerminalApp::GlobalAppSettings& globalSettings, const TerminalApp::TerminalSettings& settings) noexcept;
     };
 }
 

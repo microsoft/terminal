@@ -70,7 +70,7 @@ namespace winrt::TerminalApp::implementation
             // part of the command in the UI. Each Command's KeyChordText is
             // unset by default, so we don't need to worry about clearing it
             // if there isn't a key associated with it.
-            auto keyChord{ settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+            auto keyChord{ settings->GetKeyMap().GetKeyBindingForActionWithArgs(command.Action()) };
 
             if (keyChord)
             {
@@ -115,14 +115,14 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyBindings(_settings->GetKeybindings());
+            CommandPalette().SetKeyBindings(*_bindings);
         }
     }
 
     void TerminalPage::Create()
     {
         // Hookup the key bindings
-        _HookupKeyBindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings->GetKeyMap());
 
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
@@ -449,7 +449,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CreateNewTabFlyout()
     {
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
-        auto keyBindings = _settings->GetKeybindings();
+        auto keyBindings = _settings->GetKeyMap();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
@@ -613,11 +613,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
-    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    //   configurations. See TerminalSettings::BuildSettings for more details.
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     try
     {
-        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
+        auto [profileGuid, settings] = TerminalSettings::BuildSettings(*_settings, newTerminalArgs);
+        settings.KeyBindings(*_bindings);
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -878,13 +879,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Configure the AppKeyBindings to use our ShortcutActionDispatch as the
-    //   object to handle dispatching ShortcutAction events.
+    // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated KeyMapping
+    // as the object to handle dispatching ShortcutAction events.
     // Arguments:
     // - bindings: A AppKeyBindings object to wire up with our event handlers
-    void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
+    void TerminalPage::_HookupKeyBindings(TerminalApp::KeyMapping keymap) noexcept
     {
-        bindings.SetDispatch(*_actionDispatch);
+        _bindings->SetDispatch(*_actionDispatch);
+        _bindings->SetKeyMapping(keymap);
     }
 
     // Method Description:
@@ -1030,7 +1032,7 @@ namespace winrt::TerminalApp::implementation
                 const auto& profileGuid = focusedTab->GetFocusedProfile();
                 if (profileGuid.has_value())
                 {
-                    const auto settings = _settings->BuildSettings(profileGuid.value());
+                    const auto settings = TerminalSettings::BuildSettings(*_settings, profileGuid.value());
                     _CreateNewTabFromSettings(profileGuid.value(), settings);
                 }
             }
@@ -1463,7 +1465,7 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    controlSettings = _settings->BuildSettings(current_guid.value());
+                    controlSettings = TerminalSettings::BuildSettings(*_settings, current_guid.value());
                     realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
@@ -1481,7 +1483,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
+                std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(*_settings, newTerminalArgs);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -1998,7 +2000,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
-        _HookupKeyBindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings->GetKeyMap());
 
         // Refresh UI elements
         auto profiles = _settings->GetProfiles();
@@ -2010,7 +2012,8 @@ namespace winrt::TerminalApp::implementation
             {
                 // BuildSettings can throw an exception if the profileGuid does
                 // not belong to an actual profile in the list of profiles.
-                const auto settings = _settings->BuildSettings(profileGuid);
+                auto settings = TerminalSettings::BuildSettings(*_settings, profileGuid);
+                settings.KeyBindings(*_bindings);
 
                 for (auto tab : _tabs)
                 {
