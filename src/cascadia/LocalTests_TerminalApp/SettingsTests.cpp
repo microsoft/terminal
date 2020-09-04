@@ -2246,8 +2246,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(6u, settings._profiles.size());
         VERIFY_ARE_EQUAL(2u, settings._globals->GetColorSchemes().Size());
 
-        auto createTerminalSettings = [&](const auto& profile, const auto& schemes)
-        {
+        auto createTerminalSettings = [&](const auto& profile, const auto& schemes) {
             auto terminalSettings{ winrt::make_self<implementation::TerminalSettings>() };
             terminalSettings->_ApplyProfileSettings(profile, schemes);
             return terminalSettings;

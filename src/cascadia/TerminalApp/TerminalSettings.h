@@ -21,7 +21,6 @@ Author(s):
 
 #include "CascadiaSettings.h"
 
-
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
