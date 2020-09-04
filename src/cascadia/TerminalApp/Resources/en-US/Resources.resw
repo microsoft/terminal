@@ -658,10 +658,6 @@
   <data name="InvalidLinkDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="UnopenedUriText" xml:space="preserve">
-    <value>{}</value>
-    <comment> {} will be replaced with the URI we could not open or parse </comment>
-  </data>
   <data name="UnsupportedSchemeContent" xml:space="preserve">
     <value>The scheme "{0}" is not supported. </value>
     <comment>{0} will be replaced with the scheme the user is trying to use.</comment>

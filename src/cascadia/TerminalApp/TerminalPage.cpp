@@ -1812,10 +1812,8 @@ namespace winrt::TerminalApp::implementation
                 auto unopenedUri = FindName(L"UnopenedUri").try_as<Windows::UI::Xaml::Documents::Run>();
 
                 // Insert the URI
-                const auto uriMsg = fmt::format(std::wstring_view{ RS_(L"UnopenedUriText") },
-                                                eventArgs.Uri().c_str());
-                unopenedUri.Text(uriMsg);
-                
+                unopenedUri.Text(eventArgs.Uri().c_str());
+
                 // Show the dialog
                 presenter.ShowDialog(unsupportedSchemeDialog);
             }
