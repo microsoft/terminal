@@ -58,9 +58,7 @@
                                          Placement="Mouse">
                                     <TextBlock IsTextSelectionEnabled="True">
                                         <Run x:Name="HoveredUri"/> <LineBreak />
-                                        <Run FontStyle="Italic"
-                                            Text="ctrl+click to follow link" >
-                                        </Run>
+                                        <Run x:Uid="HowToOpenRun" />
                                     </TextBlock>
                                 </ToolTip>
                             </ToolTipService.ToolTip>
