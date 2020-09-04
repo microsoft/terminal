@@ -21,6 +21,13 @@ Author(s):
 
 #include "CascadiaSettings.h"
 
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
@@ -116,6 +123,8 @@ namespace winrt::TerminalApp::implementation
         void _ApplyProfileSettings(const TerminalApp::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const TerminalApp::GlobalAppSettings& globalSettings) noexcept;
         void _ApplyColorScheme(const TerminalApp::ColorScheme& scheme);
+
+        friend class TerminalAppLocalTests::SettingsTests;
     };
 }
 
