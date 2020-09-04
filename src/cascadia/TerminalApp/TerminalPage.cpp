@@ -1807,15 +1807,15 @@ namespace winrt::TerminalApp::implementation
             }
             else if (auto presenter{ _dialogPresenter.get() })
             {
-                // FindName needs to be called first to actually load the xaml objects
-                auto unsupportedSchemeDialog = FindName(L"UnsupportedSchemeDialog").try_as<WUX::Controls::ContentDialog>();
-                auto unopenedUri = FindName(L"UnopenedUri").try_as<Windows::UI::Xaml::Documents::Run>();
+                // FindName needs to be called first to actually load the xaml object
+                auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
 
-                // Insert the URI
-                unopenedUri.Text(eventArgs.Uri().c_str());
+                // Insert the reason (unsupported scheme) and the URI
+                CouldNotOpenUriReason().Text(RS_(L"UnsupportedSchemeText"));
+                UnopenedUri().Text(eventArgs.Uri());
 
                 // Show the dialog
-                presenter.ShowDialog(unsupportedSchemeDialog);
+                presenter.ShowDialog(unopenedUriDialog);
             }
         }
         catch (...)
@@ -1823,8 +1823,15 @@ namespace winrt::TerminalApp::implementation
             LOG_CAUGHT_EXCEPTION();
             if (auto presenter{ _dialogPresenter.get() })
             {
+                // FindName needs to be called first to actually load the xaml object
+                auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+
+                // Insert the reason (invalid URI) and the URI
+                CouldNotOpenUriReason().Text(RS_(L"InvalidUriText"));
+                UnopenedUri().Text(eventArgs.Uri());
+
                 // Show the dialog
-                presenter.ShowDialog(FindName(L"InvalidLinkDialog").try_as<WUX::Controls::ContentDialog>());
+                presenter.ShowDialog(unopenedUriDialog);
             }
         }
     }

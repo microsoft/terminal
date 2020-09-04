@@ -70,23 +70,16 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <ContentDialog
             x:Load="False"
-            x:Name="UnsupportedSchemeDialog"
-            x:Uid="UnsupportedSchemeDialog"
+            x:Name="CouldNotOpenUriDialog"
+            x:Uid="CouldNotOpenUriDialog"
             DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True">
-                <Run x:Uid="UnsupportedSchemeText" /> <LineBreak />
+                <Run x:Name="CouldNotOpenUriReason" /> <LineBreak />
                 <Run
                     x:Name="UnopenedUri"
                     FontFamily="Cascadia Mono">
                 </Run>
             </TextBlock>
-        </ContentDialog>
-
-        <ContentDialog
-            x:Load="False"
-            x:Name="InvalidLinkDialog"
-            x:Uid="InvalidLinkDialog"
-            DefaultButton="Primary">
         </ContentDialog>
 
         <local:CommandPalette

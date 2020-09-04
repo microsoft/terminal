@@ -652,20 +652,13 @@
   <data name="CloseTabsAfterDefaultCommandKey" xml:space="preserve">
     <value>Close all tabs after the current tab</value>
   </data>
-  <data name="InvalidLinkDialog.Content" xml:space="preserve">
-    <value>There was an error reading this hyperlink.</value>
+  <data name="InvalidUriText" xml:space="preserve">
+    <value>This link is invalid:</value>
   </data>
-  <data name="InvalidLinkDialog.PrimaryButtonText" xml:space="preserve">
+  <data name="UnsupportedSchemeText" xml:space="preserve">
+    <value>This link type is currently not supported:</value>
+  </data>
+  <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
-  </data>
-  <data name="UnsupportedSchemeContent" xml:space="preserve">
-    <value>The scheme "{0}" is not supported. </value>
-    <comment>{0} will be replaced with the scheme the user is trying to use.</comment>
-  </data>
-  <data name="UnsupportedSchemeDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="UnsupportedSchemeText.Text" xml:space="preserve">
-    <value>This link type is currently not supported.</value>
   </data>
 </root>
