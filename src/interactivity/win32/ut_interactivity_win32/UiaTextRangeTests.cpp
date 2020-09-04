@@ -694,7 +694,7 @@ class UiaTextRangeTests
                     {0, bottomRow},
                     {0, bottomRow}
                 }
-            }
+            },
 
             MoveTest{
                 L"can move to a new row when necessary when moving forward",
