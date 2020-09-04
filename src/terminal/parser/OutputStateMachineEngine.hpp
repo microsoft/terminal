@@ -239,7 +239,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscSetColor(const std::wstring_view string,
                              DWORD& rgb) const noexcept;
 
-        static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
+        static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::UserDefault;
         bool _GetCursorStyle(const gsl::span<const size_t> parameters,
                              DispatchTypes::CursorStyle& cursorStyle) const noexcept;
 

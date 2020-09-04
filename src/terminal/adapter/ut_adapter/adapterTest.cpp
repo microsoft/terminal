@@ -434,6 +434,12 @@ public:
         return TRUE;
     }
 
+    bool GetUserDefaultCursorStyle(CursorType& style) override
+    {
+        style = CursorType::Legacy;
+        return true;
+    }
+
     bool SetCursorStyle(const CursorType cursorType) override
     {
         Log::Comment(L"SetCursorStyle MOCK called...");
