@@ -173,6 +173,8 @@ namespace winrt::TerminalApp::implementation
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
         void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
+        bool _IsUriSupported(const winrt::Windows::Foundation::Uri parsedUri);
+
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
 
         void _PasteText();
