@@ -710,13 +710,13 @@ class UiaTextRangeTests
 
             MoveTest{
                 L"can move to a new row when necessary when moving backward",
-                { 0, 0 + 1 },
-                { lastColumnIndex, 0 + 1 },
+                { 0, 7 },
+                { 0, 7 },
                 -5,
                 {
                     -5,
-                    {lastColumnIndex - 5, 0},
-                    {lastColumnIndex - 5, 0}
+                    {0, 7 - 5},
+                    {0, 7 - 5}
                 }
             }
         };
