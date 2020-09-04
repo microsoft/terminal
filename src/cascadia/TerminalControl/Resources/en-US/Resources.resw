@@ -178,7 +178,4 @@
   <data name="HowToOpenRun.Text" xml:space="preserve">
     <value>ctrl+click to follow link</value>
   </data>
-  <data name="HowToOpenRun.FontStyle" xml:space="preserve">
-    <value>Italic</value>
-  </data>
 </root>
