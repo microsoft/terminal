@@ -55,7 +55,14 @@
                                 BorderBrush="Transparent">
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Name="LinkTip"
-                                         Placement="Mouse"/>
+                                         Placement="Mouse">
+                                    <TextBlock IsTextSelectionEnabled="True">
+                                        <Run x:Name="HoveredUri"/> <LineBreak />
+                                        <Run FontStyle="Italic"
+                                            Text="ctrl+click to follow link" >
+                                        </Run>
+                                    </TextBlock>
+                                </ToolTip>
                             </ToolTipService.ToolTip>
                         </Border>
                     </Canvas>

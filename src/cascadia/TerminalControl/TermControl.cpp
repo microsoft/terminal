@@ -1261,7 +1261,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (!uri.empty())
                 {
                     // Update the tooltip with the URI
-                    LinkTip().Content(winrt::box_value(uri));
+                    HoveredUri().Text(uri);
 
                     // Set the border thickness so it covers the entire cell
                     const auto charSizeInPixels = CharacterDimensions();
