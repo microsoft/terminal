@@ -58,7 +58,9 @@
                                          Placement="Mouse">
                                     <TextBlock IsTextSelectionEnabled="True">
                                         <Run x:Name="HoveredUri"/> <LineBreak />
-                                        <Run x:Uid="HowToOpenRun" />
+                                        <Run x:Uid="HowToOpenRun"
+                                             FontStyle="Italic">
+                                        </Run>
                                     </TextBlock>
                                 </ToolTip>
                             </ToolTipService.ToolTip>
