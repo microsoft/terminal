@@ -703,8 +703,8 @@ class UiaTextRangeTests
                 5,
                 {
                     5,
-                    {lastColumnIndex , 0 + 5},
-                    {lastColumnIndex , 0 + 5}
+                    {0, 0 + 5},
+                    {0, 0 + 5}
                 }
             },
 
