@@ -437,7 +437,7 @@ public:
     bool GetUserDefaultCursorStyle(CursorType& style) override
     {
         style = CursorType::Legacy;
-        return TRUE;
+        return true;
     }
 
     bool SetCursorStyle(const CursorType cursorType) override
