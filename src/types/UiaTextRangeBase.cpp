@@ -606,7 +606,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     {
         if (wasDegenerate)
         {
-            // The range was degenerate before the move.
+            // GH#7342: The range was degenerate before the move.
             // To keep it that way, move _end to the new _start.
             _end = _start;
         }
