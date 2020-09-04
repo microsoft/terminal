@@ -73,6 +73,13 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="UnsupportedSchemeDialog"
             x:Uid="UnsupportedSchemeDialog"
             DefaultButton="Primary">
+            <TextBlock IsTextSelectionEnabled="True">
+                <Run x:Uid="UnsupportedSchemeText" /> <LineBreak />
+                <Run
+                    x:Name="UnopenedUri"
+                    FontFamily="Cascadia Mono">
+                </Run>
+            </TextBlock>
         </ContentDialog>
 
         <ContentDialog

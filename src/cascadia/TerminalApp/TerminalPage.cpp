@@ -1807,14 +1807,15 @@ namespace winrt::TerminalApp::implementation
             }
             else if (auto presenter{ _dialogPresenter.get() })
             {
-                // FindName needs to be called first to actually load the xaml object
+                // FindName needs to be called first to actually load the xaml objects
                 auto unsupportedSchemeDialog = FindName(L"UnsupportedSchemeDialog").try_as<WUX::Controls::ContentDialog>();
+                auto unopenedUri = FindName(L"UnopenedUri").try_as<Windows::UI::Xaml::Documents::Run>();
 
-                // Set the content
-                const auto errorMsg = fmt::format(std::wstring_view{ RS_(L"UnsupportedSchemeContent") },
-                                                  parsed.SchemeName());
-                unsupportedSchemeDialog.Content(winrt::box_value(errorMsg));
-
+                // Insert the URI
+                const auto uriMsg = fmt::format(std::wstring_view{ RS_(L"UnopenedUriText") },
+                                                eventArgs.Uri().c_str());
+                unopenedUri.Text(uriMsg);
+                
                 // Show the dialog
                 presenter.ShowDialog(unsupportedSchemeDialog);
             }
