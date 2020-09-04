@@ -695,6 +695,30 @@ class UiaTextRangeTests
                     {0, bottomRow}
                 }
             }
+
+            MoveTest{
+                L"can move to a new row when necessary when moving forward",
+                { lastColumnIndex, 0 },
+                { lastColumnIndex, 0 },
+                5,
+                {
+                    5,
+                    {lastColumnIndex , 0 + 5},
+                    {lastColumnIndex , 0 + 5}
+                }
+            },
+
+            MoveTest{
+                L"can move to a new row when necessary when moving backward",
+                { 0, 0 + 1 },
+                { lastColumnIndex, 0 + 1 },
+                -5,
+                {
+                    -5,
+                    {lastColumnIndex - 5, 0},
+                    {lastColumnIndex - 5, 0}
+                }
+            }
         };
         // clang-format on
 
