@@ -713,16 +713,6 @@ namespace winrt::TerminalApp::implementation
 
         auto tabViewItem = newTabImpl->GetTabViewItem();
         _tabView.TabItems().Append(tabViewItem);
-        // GH#6570
-        // The TabView does not apply compact sizing to items added after Compact is enabled.
-        // By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
-        // that it works.
-        // Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
-        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
-        {
-            _tabView.UpdateLayout();
-            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
-        }
 
         // Set this tab's icon to the icon from the user's profile
         const auto profile = _settings->FindProfile(profileGuid);
