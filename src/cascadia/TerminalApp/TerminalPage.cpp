@@ -1815,7 +1815,7 @@ namespace winrt::TerminalApp::implementation
     // - The parsed URI
     // Return value:
     // - True if we support it, false otherwise
-    bool TerminalPage::_IsUriSupported(winrt::Windows::Foundation::Uri parsedUri)
+    bool TerminalPage::_IsUriSupported(const winrt::Windows::Foundation::Uri& parsedUri)
     {
         if (parsedUri.SchemeName() == L"http" || parsedUri.SchemeName() == L"https")
         {
