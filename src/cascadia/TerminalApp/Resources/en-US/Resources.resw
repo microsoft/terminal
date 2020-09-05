@@ -534,6 +534,9 @@
   <data name="ToggleRetroEffectCommandKey" xml:space="preserve">
     <value>Toggle retro terminal effect</value>
   </data>
+  <data name="ToggleTerminalEffectsCommandKey" xml:space="preserve">
+    <value>Toggle terminal visual effects</value>
+  </data>
   <data name="ToggleCommandPaletteCommandKey" xml:space="preserve">
     <value>Toggle command palette</value>
   </data>

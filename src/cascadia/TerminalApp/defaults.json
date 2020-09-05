@@ -45,7 +45,9 @@
             "snapOnInput": true,
             "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
-            "useAcrylic": false
+            "useAcrylic": false,
+            // Supported options: RETRO, RETROII or file path to a pixel shader
+            "experimental.pixelShaderEffect": null
         },
         {
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
@@ -64,7 +66,9 @@
             "snapOnInput": true,
             "altGrAliasing": true,
             "startingDirectory": "%USERPROFILE%",
-            "useAcrylic": false
+            "useAcrylic": false,
+            // Supported options: RETRO, RETROII or file path to a pixel shader
+            "experimental.pixelShaderEffect": null
         }
     ],
     "schemes":
@@ -285,6 +289,7 @@
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
         { "command": "toggleRetroEffect" },
+        { "command": "toggleTerminalEffects" },
         { "command": "openTabColorPicker" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
 

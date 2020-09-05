@@ -171,6 +171,11 @@ namespace winrt::TerminalApp::implementation
             _ToggleRetroEffectHandlers(*this, *eventArgs);
             break;
         }
+        case ShortcutAction::ToggleTerminalEffects:
+        {
+            _ToggleTerminalEffectsHandlers(*this, *eventArgs);
+            break;
+        }
         case ShortcutAction::ToggleFocusMode:
         {
             _ToggleFocusModeHandlers(*this, *eventArgs);

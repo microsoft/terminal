@@ -67,6 +67,7 @@ Properties listed below are specific to each unique profile.
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 | `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. The transparency only applies to focused windows due to OS limitation. |
 | `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
+| `experimental.pixelShaderEffect` | Optional | String |  | If set to a file name or preset, compiles the pixel shader effect and applies it the terminal view. Currently 2 presets are supported `RETRO` and `RETROII`. This is an experimental feature, and its continued existence is not guaranteed. |
 
 ## Schemes
 

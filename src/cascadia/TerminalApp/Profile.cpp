@@ -58,6 +58,7 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
+static constexpr std::string_view PixelShaderEffectKey{ "experimental.pixelShaderEffect" };
 
 Profile::Profile()
 {
@@ -166,6 +167,8 @@ winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const Colle
         const til::color colorRef{ _TabColor.Value() };
         terminalSettings.TabColor(static_cast<uint32_t>(colorRef));
     }
+
+    terminalSettings.PixelShaderEffect(_PixelShaderEffect);
 
     return terminalSettings;
 }
@@ -342,8 +345,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
-
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    JsonUtils::GetValueForKey(json, PixelShaderEffectKey, _PixelShaderEffect);
 }
 
 // Method Description:

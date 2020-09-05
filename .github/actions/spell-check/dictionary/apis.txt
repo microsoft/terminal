@@ -7,6 +7,7 @@ CLASSNOTAVAILABLE
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+frac
 fullkbd
 futex
 Hashtable
@@ -23,8 +24,8 @@ IExplorer
 IMap
 IObject
 IStorage
-llabs
 LCID
+llabs
 lround
 LSHIFT
 NCHITTEST
@@ -44,6 +45,7 @@ RSHIFT
 rx
 serializer
 SIZENS
+smoothstep
 spsc
 STDCPP
 syscall

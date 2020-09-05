@@ -936,6 +936,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
+        _actionDispatch->ToggleTerminalEffects({ this, &TerminalPage::_HandleToggleTerminalEffects });
     }
 
     // Method Description:

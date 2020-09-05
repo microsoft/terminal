@@ -11,16 +11,20 @@ duhowett
 ethanschoonover
 Firefox
 Gatta
+glsl
 Grie
 Griese
 Hernan
 Howett
 Illhardt
+iquilezles
 jantari
 jerrysh
 Kaiyu
 kimwalisch
 KMehrain
+KODELIFE
+Kodelife
 Kourosh
 kowalczyk
 leonmsft
@@ -29,6 +33,7 @@ lukesampson
 Manandhar
 mbadolato
 Mehrain
+menger
 mgravell
 michaelniksa
 migrie
@@ -38,6 +43,7 @@ miniksa
 niksa
 oising
 oldnewthing
+opengl
 osgwiki
 paulcam
 pauldotknopf
@@ -46,6 +52,7 @@ Pham
 Rincewind
 rprichard
 Schoonover
+shadertoy
 Somuah
 sonph
 sonpham
@@ -55,8 +62,8 @@ Wirt
 Wojciech
 zadjii
 Zamor
-Zamora
 zamora
+Zamora
 Zoey
 zorio
 Zverovich

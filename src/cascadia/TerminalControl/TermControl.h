@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void SendInput(const winrt::hstring& input);
         void ToggleRetroEffect();
+        void ToggleTerminalEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);

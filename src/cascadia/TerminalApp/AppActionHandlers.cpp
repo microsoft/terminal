@@ -276,6 +276,14 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleTerminalEffects(const IInspectable& /*sender*/,
+                                                    const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.ToggleTerminalEffects();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
                                               const TerminalApp::ActionEventArgs& args)
     {

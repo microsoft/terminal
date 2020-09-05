@@ -118,6 +118,8 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
+        GETSET_PROPERTY(hstring, PixelShaderEffect, L"");
+
     private:
         std::optional<winrt::guid> _Guid{ std::nullopt };
         std::optional<winrt::guid> _ConnectionType{ std::nullopt };

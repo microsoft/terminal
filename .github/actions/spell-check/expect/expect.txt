@@ -23,8 +23,8 @@ ADDREF
 addressof
 ADDSTRING
 ADDTOOL
-AEnd
 aef
+AEnd
 AFew
 AFill
 AFX
@@ -633,6 +633,7 @@ doskey
 dotnet
 doubleclick
 downlevel
+DOWNSCALE
 dpg
 dpi
 DPIAPI
@@ -838,6 +839,7 @@ fuzzwrapper
 fwdecl
 fwe
 fwlink
+GAUSSIAN
 gb
 gci
 gcx
@@ -914,6 +916,7 @@ Goldmine
 gonce
 Google
 goutput
+GPUs
 Gravell's
 grayscale
 GREENSCROLL
@@ -1111,6 +1114,7 @@ INTERCEPTCOPYPASTE
 INTERNALNAME
 interop
 interoperability
+intersectors
 inthread
 intptr
 intsafe
@@ -1211,6 +1215,7 @@ KJ
 KLF
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+Kode
 KU
 KVM
 KX
@@ -1594,6 +1599,7 @@ OACR
 oauth
 objbase
 ocf
+ocolor
 odl
 oem
 oemcp
@@ -1793,6 +1799,7 @@ pragma
 prc
 prealigned
 prebuilt
+precendence
 precomp
 prect
 prefast
@@ -1837,6 +1844,7 @@ pshn
 PSHNOTIFY
 PSHORT
 pshpack
+psin
 PSINGLE
 psl
 psldl
@@ -1885,10 +1893,12 @@ QWER
 qzmp
 RAII
 RALT
+rasterbar
 rasterfont
 rasterization
 rawinput
 RAWPATH
+raytracers
 razzlerc
 rbar
 rbegin
@@ -1959,10 +1969,12 @@ RESETCONTENT
 resheader
 resizable
 resmimetype
+reso
 restrictedcapabilities
 restrictederrorinfo
 resw
 resx
+RETROII
 retval
 rfa
 rfc
@@ -2034,11 +2046,14 @@ SBCSDBCS
 sbi
 sbiex
 sbold
+sbri
+scanbri
 scancode
 scanline
 schemename
 SCL
 scm
+scol
 scprintf
 SCRBUF
 SCRBUFSIZE
@@ -2173,6 +2188,9 @@ SOURCESDIRECTORY
 SPACEBAR
 spammy
 spand
+spe
+sph
+spherefunctions
 splashscreen
 sprintf
 sqlproj
@@ -2303,6 +2321,7 @@ telnet
 telnetd
 telnetpp
 templated
+teraflop
 terminalcore
 TERMINALSCROLLING
 terminfo
@@ -2550,6 +2569,7 @@ vga
 vgaoem
 viewkind
 viewports
+Viginetting
 Virt
 VIRTTERM
 Virtualizing
@@ -2767,6 +2787,7 @@ wwaproj
 WWith
 wx
 wxh
+wz
 xa
 xact
 xamarin
@@ -2811,7 +2832,10 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
+XWV
 xy
+xyw
+Xzn
 yact
 YAML
 YCast
@@ -2827,6 +2851,7 @@ YVIRTUALSCREEN
 Yw
 YWalk
 yx
+yzx
 Zc
 ZCmd
 ZCtrl
