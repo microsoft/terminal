@@ -11,6 +11,7 @@ CYICON
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+frac
 fullkbd
 futex
 GETDESKWALLPAPER
@@ -33,7 +34,6 @@ IMap
 IObject
 IStorage
 ITaskbar
-llabs
 LCID
 llabs
 localtime
@@ -63,6 +63,7 @@ semver
 serializer
 shobjidl
 SIZENS
+smoothstep
 spsc
 sregex
 STDCPP

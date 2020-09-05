@@ -15,6 +15,7 @@
 #include <d2d1.h>
 #include <d2d1_1.h>
 #include <d2d1helper.h>
+#include <DirectXMath.h>
 #include <dwrite.h>
 #include <dwrite_1.h>
 #include <dwrite_2.h>
@@ -56,8 +57,12 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
-        bool GetRetroTerminalEffects() const noexcept;
-        void SetRetroTerminalEffects(bool enable) noexcept;
+        void ToggleTerminalEffects();
+
+        bool GetRetroTerminalEffect() const noexcept;
+        void SetRetroTerminalEffect(bool enable) noexcept;
+
+        void SetPixelShaderPath(std::wstring_view value) noexcept;
 
         void SetForceFullRepaintRendering(bool enable) noexcept;
 
@@ -124,6 +129,7 @@ namespace Microsoft::Console::Render
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
+        [[nodiscard]] bool _FullRepaintNeeded() const noexcept;
 
     private:
         enum class SwapChainMode
@@ -221,7 +227,22 @@ namespace Microsoft::Console::Render
         std::unique_ptr<DrawingContext> _drawingContext;
 
         // Terminal effects resources.
-        bool _retroTerminalEffects;
+
+        // Controls if configured terminal effects are enabled
+        bool _terminalEffectsEnabled;
+
+        // Experimental and deprecated retro terminal effect
+        //  Preserved for backwards compatibility
+        //  Implemented in terms of the more generic pixel shader effect
+        //  Has precendence over pixel shader effect
+        bool _retroTerminalEffect;
+
+        // Experimental and pixel shader effect
+        //  Allows user to load a pixel shader from a few presets or from a file path
+        std::wstring _pixelShaderPath;
+        bool _pixelShaderLoaded{ false };
+
+        // DX resources needed for terminal effects
         ::Microsoft::WRL::ComPtr<ID3D11RenderTargetView> _renderTargetView;
         ::Microsoft::WRL::ComPtr<ID3D11VertexShader> _vertexShader;
         ::Microsoft::WRL::ComPtr<ID3D11PixelShader> _pixelShader;
@@ -242,12 +263,19 @@ namespace Microsoft::Console::Render
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
         {
-            float ScaledScanLinePeriod;
-            float ScaledGaussianSigma;
+            // Note: This can be seen as API endpoint towards user provided pixel shaders.
+            //  Changes here can break existing pixel shaders so be careful with changing datatypes
+            //  and order of parameters
+            float Time;
+            float Scale;
+            DirectX::XMFLOAT2 Resolution;
+            DirectX::XMFLOAT4 Background;
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
         } _pixelShaderSettings;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        bool _HasTerminalEffects() const noexcept;
+        std::string _LoadPixelShaderFile() const;
         HRESULT _SetupTerminalEffects();
         void _ComputePixelShaderSettings() noexcept;
 

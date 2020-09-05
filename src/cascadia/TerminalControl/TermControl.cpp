@@ -38,6 +38,22 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+// MIKETODO ---------------------------------------
+// TODO:GH#7013 Where is a good place to put this common function?
+static std::optional<std::wstring> _HStringToOptionalString(const winrt::hstring& s)
+{
+    std::wstring_view v = s;
+    if (v.empty())
+    {
+        return std::nullopt;
+    }
+    else
+    {
+        return std::wstring(v);
+    }
+}
+// /MIKETODO --------------------------------------
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
@@ -308,7 +324,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update DxEngine settings under the lock
             _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
-            _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            std::wstring_view shaderPath{ _settings.PixelShaderPath().data(), _settings.PixelShaderPath().size() };
+            _renderEngine->SetPixelShaderPath(shaderPath);
             _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -350,8 +368,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::ToggleRetroEffect()
     {
+        ToggleTerminalEffects();
+    }
+
+    void TermControl::ToggleTerminalEffects()
+    {
         auto lock = _terminal->LockForWriting();
-        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+        _renderEngine->ToggleTerminalEffects();
     }
 
     // Method Description:
@@ -695,7 +718,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            std::wstring_view shaderPath{ _settings.PixelShaderPath().data(), _settings.PixelShaderPath().size() };
+            dxEngine->SetPixelShaderPath(shaderPath);
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 

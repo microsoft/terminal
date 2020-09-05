@@ -87,7 +87,9 @@ DxEngine::DxEngine() :
     _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _recreateDeviceRequested{ false },
-    _retroTerminalEffects{ false },
+    _terminalEffectsEnabled{ false },
+    _retroTerminalEffect{ false },
+    _pixelShaderPath{},
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
@@ -230,12 +232,100 @@ _CompileShader(
 }
 
 // Routine Description:
+// - Checks if terminal effects are enabled.
+// Arguments:
+// Return Value:
+// - True if terminal effects are enabled
+bool DxEngine::_HasTerminalEffects() const noexcept
+{
+    return _terminalEffectsEnabled && (_retroTerminalEffect || !_pixelShaderPath.empty());
+}
+
+// Routine Description:
+// - Toggles terminal effects off and on. If no terminal effect is configured has no effect
+// Arguments:
+// Return Value:
+// - Void
+void DxEngine::ToggleTerminalEffects()
+{
+    _terminalEffectsEnabled = !_terminalEffectsEnabled;
+    LOG_IF_FAILED(InvalidateAll());
+}
+
+// Routine Description:
+// - Loads pixel shader source depending on _retroTerminalEffect and _pixelShaderPath
+// Arguments:
+// Return Value:
+// - Pixel shader source code
+std::string DxEngine::_LoadPixelShaderFile() const
+{
+    try
+    {
+        // If the user specified the legacy option retroTerminalEffect it has precendence
+        if (_retroTerminalEffect)
+        {
+            return std::string{ retroPixelShaderString };
+        }
+
+        // If no pixel shader effect is specified this function shouldn't end up being called.
+        //  If it happens anyway return the error shader
+        if (_pixelShaderPath.empty())
+        {
+            return std::string{};
+        }
+
+        wil::unique_hfile hFile{ CreateFileW(_pixelShaderPath.c_str(),
+                                             GENERIC_READ,
+                                             FILE_SHARE_READ,
+                                             nullptr,
+                                             OPEN_EXISTING,
+                                             FILE_ATTRIBUTE_NORMAL,
+                                             nullptr) };
+
+        THROW_LAST_ERROR_IF(!hFile); // This will be caught below.
+
+        // fileSize is in bytes
+        const auto fileSize = GetFileSize(hFile.get(), nullptr);
+        THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
+
+        auto utf8buffer = std::vector<char>(fileSize);
+
+        DWORD bytesRead = 0;
+        THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.data(), fileSize, &bytesRead, nullptr));
+
+        // convert buffer to UTF-8 string
+        std::string utf8string(utf8buffer.data(), fileSize);
+
+        return utf8string;
+    }
+    catch (...)
+    {
+        // If we ran into any problems during loading pixel shader let's revert to
+        //  the error pixel shader which should "always" be able to load and indicates
+        //  to the user something went wrong
+        LOG_CAUGHT_EXCEPTION();
+
+        // TODOMIKE: Display dialog
+
+        return std::string{};
+    }
+}
+
+// Routine Description:
 // - Setup D3D objects for doing shader things for terminal effects.
 // Arguments:
 // Return Value:
 // - HRESULT status.
 HRESULT DxEngine::_SetupTerminalEffects()
 {
+    _pixelShaderLoaded = false;
+
+    const auto pixelShaderSource = _LoadPixelShaderFile();
+    if (pixelShaderSource.empty())
+    {
+        return S_FALSE;
+    }
+
     ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
     RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
 
@@ -260,12 +350,22 @@ HRESULT DxEngine::_SetupTerminalEffects()
 
     // Prepare shaders.
     auto vertexBlob = _CompileShader(screenVertexShaderString, "vs_5_0");
-    auto pixelBlob = _CompileShader(screenPixelShaderString, "ps_5_0");
-    // TODO:GH#3928 move the shader files to to hlsl files and package their
-    // build output to UWP app and load with these.
-    // ::Microsoft::WRL::ComPtr<ID3DBlob> vertexBlob, pixelBlob;
-    // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenVertexShader.cso", &vertexBlob));
-    // RETURN_IF_FAILED(D3DReadFileToBlob(L"ScreenPixelShader.cso", &pixelBlob));
+    Microsoft::WRL::ComPtr<ID3DBlob> pixelBlob;
+    // As the pixel shader source is user provided it's possible there's a problem with it
+    //  so load it inside a try catch, on any error log and fallback on the error pixel shader
+    //  If even the error pixel shader fails to load rely on standard exception handling
+    try
+    {
+        pixelBlob = _CompileShader(pixelShaderSource, "ps_5_0");
+    }
+    catch (...)
+    {
+        // TODOMIKE: Display a dialog here
+
+        pixelBlob = nullptr;
+        _pixelShaderLoaded = false;
+        RETURN_CAUGHT_EXCEPTION();
+    }
 
     RETURN_IF_FAILED(_d3dDevice->CreateVertexShader(
         vertexBlob->GetBufferPointer(),
@@ -329,23 +429,47 @@ HRESULT DxEngine::_SetupTerminalEffects()
     // Create the texture sampler state.
     RETURN_IF_FAILED(_d3dDevice->CreateSamplerState(&samplerDesc, &_samplerState));
 
+    _pixelShaderLoaded = true;
     return S_OK;
 }
 
 // Routine Description:
 // - Puts the correct values in _pixelShaderSettings, so the struct can be
-//   passed the GPU.
+//   passed the GPU and updates the GPU resource.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void DxEngine::_ComputePixelShaderSettings() noexcept
 {
-    // Retro scan lines alternate every pixel row at 100% scaling.
-    _pixelShaderSettings.ScaledScanLinePeriod = _scale * 1.0f;
+    if (_HasTerminalEffects() && _d3dDeviceContext && _pixelShaderSettingsBuffer)
+    {
+        try
+        {
+            // Set the time
+            //  TODO:GH#7013 Grab timestamp
+            _pixelShaderSettings.Time = 0.0f;
 
-    // Gaussian distribution sigma used for blurring.
-    _pixelShaderSettings.ScaledGaussianSigma = _scale * 2.0f;
+            // Set the UI Scale
+            _pixelShaderSettings.Scale = _scale;
+
+            // Set the display resolution
+            const float w = 1.0f * _displaySizePixels.width<UINT>();
+            const float h = 1.0f * _displaySizePixels.height<UINT>();
+            _pixelShaderSettings.Resolution = XMFLOAT2{ w, h };
+
+            // Set the background
+            DirectX::XMFLOAT4 background{};
+            background.x = _backgroundColor.r;
+            background.y = _backgroundColor.g;
+            background.z = _backgroundColor.b;
+            background.w = _backgroundColor.a;
+            _pixelShaderSettings.Background = background;
+
+            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
+        }
+        CATCH_LOG();
+    }
 }
 
 // Routine Description;
@@ -521,12 +645,11 @@ try
             }
         }
 
-        if (_retroTerminalEffects)
+        if (_HasTerminalEffects())
         {
             const HRESULT hr = _SetupTerminalEffects();
             if (FAILED(hr))
             {
-                _retroTerminalEffects = false;
                 LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
             }
         }
@@ -559,6 +682,8 @@ try
         }
         CATCH_LOG(); // A failure in the notification function isn't a failure to prepare, so just log it and go on.
     }
+
+    _recreateDeviceRequested = false;
 
     return S_OK;
 }
@@ -675,7 +800,15 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     {
         _haveDeviceResources = false;
 
+        // Destroy Terminal Effect resources
+        _renderTargetView.Reset();
+        _vertexShader.Reset();
+        _pixelShader.Reset();
+        _vertexLayout.Reset();
+        _screenQuadVertexBuffer.Reset();
         _pixelShaderSettingsBuffer.Reset();
+        _samplerState.Reset();
+        _framebufferCapture.Reset();
 
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
@@ -802,17 +935,31 @@ void DxEngine::SetCallback(std::function<void()> pfn)
     _pfn = pfn;
 }
 
-bool DxEngine::GetRetroTerminalEffects() const noexcept
+bool DxEngine::GetRetroTerminalEffect() const noexcept
 {
-    return _retroTerminalEffects;
+    return _retroTerminalEffect;
 }
 
-void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+void DxEngine::SetRetroTerminalEffect(bool enable) noexcept
 try
 {
-    if (_retroTerminalEffects != enable)
+    if (_retroTerminalEffect != enable)
     {
-        _retroTerminalEffects = enable;
+        _terminalEffectsEnabled = true;
+        _retroTerminalEffect = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
+}
+CATCH_LOG()
+
+void DxEngine::SetPixelShaderPath(std::wstring_view value) noexcept
+try
+{
+    if (_pixelShaderPath != value)
+    {
+        _terminalEffectsEnabled = true;
+        _pixelShaderPath = { value };
         _recreateDeviceRequested = true;
         LOG_IF_FAILED(InvalidateAll());
     }
@@ -1085,14 +1232,9 @@ try
 {
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-    // If someone explicitly requested differential rendering off, then we need to invalidate everything
+    // If full repaints are needed then we need to invalidate everything
     // so the entire frame is repainted.
-    //
-    // If retro terminal effects are on, we must invalidate everything for them to draw correctly.
-    // Yes, this will further impact the performance of retro terminal effects.
-    // But we're talking about running the entire display pipeline through a shader for
-    // cosmetic effect, so performance isn't likely the top concern with this feature.
-    if (_forceFullRepaintRendering || _retroTerminalEffects)
+    if (_FullRepaintNeeded())
     {
         _invalidMap.set_all();
     }
@@ -1118,7 +1260,6 @@ try
         if (!_haveDeviceResources || _recreateDeviceRequested)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
-            _recreateDeviceRequested = false;
         }
         else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
@@ -1312,12 +1453,12 @@ void DxEngine::WaitUntilCanRender() noexcept
 {
     if (_presentReady)
     {
-        if (_retroTerminalEffects)
+        if (_HasTerminalEffects() && _pixelShaderLoaded)
         {
             const HRESULT hr2 = _PaintTerminalEffects();
             if (FAILED(hr2))
             {
-                _retroTerminalEffects = false;
+                _pixelShaderLoaded = false;
                 LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
             }
         }
@@ -1378,10 +1519,15 @@ void DxEngine::WaitUntilCanRender() noexcept
                 }
             }
 
-            // Finally copy the front image (being presented now) onto the backing buffer
-            // (where we are about to draw the next frame) so we can draw only the differences
-            // next frame.
-            RETURN_IF_FAILED(_CopyFrontToBack());
+            // If we are doing full repaints we don't need to copy front buffer to back buffer
+            if (!_FullRepaintNeeded())
+            {
+                // Finally copy the front image (being presented now) onto the backing buffer
+                // (where we are about to draw the next frame) so we can draw only the differences
+                // next frame.
+                RETURN_IF_FAILED(_CopyFrontToBack());
+            }
+
             _presentReady = false;
 
             _presentDirty.clear();
@@ -1687,6 +1833,18 @@ try
 }
 CATCH_RETURN()
 
+[[nodiscard]] bool DxEngine::_FullRepaintNeeded() const noexcept
+{
+    // If someone explicitly requested differential rendering off, then we need to invalidate everything
+    // so the entire frame is repainted.
+    //
+    // If terminal effects are on, we must invalidate everything for them to draw correctly.
+    // Yes, this will further impact the performance of terminal effects.
+    // But we're talking about running the entire display pipeline through a shader for
+    // cosmetic effect, so performance isn't likely the top concern with this feature.
+    return _forceFullRepaintRendering || _HasTerminalEffects();
+}
+
 // Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
@@ -1748,6 +1906,9 @@ CATCH_RETURN()
     {
         _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
     }
+
+    // Update pixel shader settings as background color might have changed
+    _ComputePixelShaderSettings();
 
     return S_OK;
 }
@@ -1813,15 +1974,8 @@ CATCH_RETURN();
 
     RETURN_IF_FAILED(InvalidateAll());
 
-    if (_retroTerminalEffects && _d3dDeviceContext && _pixelShaderSettingsBuffer)
-    {
-        _ComputePixelShaderSettings();
-        try
-        {
-            _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
-        }
-        CATCH_RETURN();
-    }
+    // Update pixel shader settings as scale might have changed
+    _ComputePixelShaderSettings();
 
     return S_OK;
 }
