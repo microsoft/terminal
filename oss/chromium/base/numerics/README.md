@@ -20,7 +20,7 @@ The public API is broken out into the following header files:
 
 *** aside
 **Note:** The `Numeric` template types implicitly convert from C numeric types
-and `Numeric` templates that are convertable to an underlying C numeric type.
+and `Numeric` templates that are convertible to an underlying C numeric type.
 The conversion priority for `Numeric` type coercions is:
 
 *   `StrictNumeric` coerces to `ClampedNumeric` and `CheckedNumeric`
@@ -102,7 +102,7 @@ of corner cases and employ various optimizations.
 When making exact calculations—such as for buffer lengths—it's often necessary
 to know when those calculations trigger an overflow, undefined behavior, or
 other boundary conditions. The `CheckedNumeric` template does this by storing
-a bit determining whether or not some arithmetic operation has occured that
+a bit determining whether or not some arithmetic operation has occurred that
 would put the variable in an "invalid" state. Attempting to extract the value
 from a variable in an invalid state will trigger a check/trap condition, that
 by default will result in process termination.
@@ -170,7 +170,7 @@ performing a range of conversions, assignments, and tests.
     to perform a behavior other than crashing.
 *   `saturated_cast<>()` - Analogous to `static_cast` for numeric types, except
     that it returns a saturated result when the specified numeric conversion
-    would otherwise overflow or underflow. An NaN source returns 0 by
+    would otherwise overflow or underflow. A NaN source returns 0 by
     default, but can be overridden to return a different result.
 *   `strict_cast<>()` - Analogous to `static_cast` for numeric types, except
     this causes a compile failure if the destination type is not large
@@ -215,10 +215,10 @@ data types, and contains overloads for basic arithmetic operations (i.e.: `+`,
 `-`, `*`, `/` for all types and `%`, `<<`, `>>`, `&`, `|`, `^` for integers).
 However, *the [variadic template functions
 ](#CheckedNumeric_in-checked_math_h-Non_member-helper-functions)
-are the prefered API,* as they remove type ambiguities and help prevent a number
-of common errors. The variadic functions can also be more performant, as they
-eliminate redundant expressions that are unavoidable with the with the operator
-overloads. (Ideally the compiler should optimize those away, but better to avoid
+are the preferred API,* as they remove type ambiguities and help prevent some
+ common errors. The variadic functions can also be more performant, as they
+eliminate redundant expressions that are unavoidable with the operator
+overloads. (Ideally, the compiler should optimize those away, but better to avoid
 them in the first place.)
 
 Type promotions are a slightly modified version of the [standard C/C++ numeric
@@ -238,7 +238,7 @@ with the following unary arithmetic methods, which return a new
     (valid for only integral types).
 *   `Max()` - Returns whichever is greater of the current instance or argument.
     The underlying return type is whichever has the greatest magnitude.
-*   `Min()` - Returns whichever is lowest of the current instance or argument.
+*   `Min()` - Returns whichever is the lowest of the current instance or argument.
     The underlying return type is whichever has can represent the lowest
     number in the smallest width (e.g. int8_t over unsigned, int over
     int8_t, and float over int).
@@ -311,7 +311,7 @@ disambiguator syntax when converting a destination type.
 *   `ValueOrDieForType<>()` in place of: `a.template ValueOrDie<>()`
 *   `ValueOrDefaultForType<>()` in place of: `a.template ValueOrDefault<>()`
 
-The following general utility methods is are useful for converting from
+The following general utility methods are useful for converting from
 arithmetic types to `CheckedNumeric` types:
 
 *   `MakeCheckedNum()` - Creates a new `CheckedNumeric` from the underlying type
@@ -328,10 +328,10 @@ all types and `%`, `<<`, `>>`, `&`, `|`, `^` for integers) along with comparison
 operators for arithmetic types of any size. However, *the [variadic template
 functions
 ](#ClampedNumeric_in-clamped_math_h-Non_member-helper-functions)
-are the prefered API,* as they remove type ambiguities and help prevent
-a number of common errors. The variadic functions can also be more performant,
+are the preferred API,* as they remove type ambiguities and help prevent
+some common errors. The variadic functions can also be more performant,
 as they eliminate redundant expressions that are unavoidable with the operator
-overloads. (Ideally the compiler should optimize those away, but better to avoid
+overloads. (Ideally, the compiler should optimize those away, but better to avoid
 them in the first place.)
 
 Type promotions are a slightly modified version of the [standard C/C++ numeric
@@ -345,7 +345,7 @@ Most arithmetic operations saturate normally, to the numeric limit in the
 direction of the sign. The potentially unusual cases are:
 
 *   **Division:** Division by zero returns the saturated limit in the direction
-    of sign of the dividend (first argument). The one exception is 0/0, which
+    of the sign of the dividend (first argument). The one exception is 0/0, which
 	returns zero (although logically is NaN).
 *   **Modulus:** Division by zero returns the dividend (first argument).
 *   **Left shift:** Non-zero values saturate in the direction of the signed
@@ -368,7 +368,7 @@ with the following unary arithmetic methods, which return a new
     (valid for only integral types).
 *   `Max()` - Returns whichever is greater of the current instance or argument.
     The underlying return type is whichever has the greatest magnitude.
-*   `Min()` - Returns whichever is lowest of the current instance or argument.
+*   `Min()` - Returns whichever is the lowest of the current instance or argument.
     The underlying return type is whichever has can represent the lowest
     number in the smallest width (e.g. int8_t over unsigned, int over
     int8_t, and float over int).
