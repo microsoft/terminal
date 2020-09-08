@@ -373,9 +373,6 @@ HRESULT HwndTerminal::Refresh(_In_ const SIZE windowSize, _In_ bool autoFit, _Ou
         // If this function succeeds with S_FALSE, then the terminal didn't
         //      actually change size. No need to notify the connection of this
         //      no-op.
-        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-        // I believe we'll need support for CSI 2J, and additionally I think
-        //      we're resetting the viewport to the top
         RETURN_IF_FAILED(_terminal->UserResize({ vp.Width(), vp.Height() }));
     }
 
