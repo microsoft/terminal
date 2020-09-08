@@ -1807,13 +1807,13 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri().c_str());
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri());
             }
         }
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
-            _ShowCouldNotOpenDialog(RS_(L"InvalidUriText"), eventArgs.Uri().c_str());
+            _ShowCouldNotOpenDialog(RS_(L"InvalidUriText"), eventArgs.Uri());
         }
     }
 
