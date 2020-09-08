@@ -17,6 +17,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         static AppLogic* Current() noexcept;
+        static const TerminalApp::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
         ~AppLogic() = default;
@@ -69,7 +70,7 @@ namespace winrt::TerminalApp::implementation
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
-        winrt::com_ptr<CascadiaSettings> _settings{ nullptr };
+        TerminalApp::CascadiaSettings _settings{ nullptr };
 
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};

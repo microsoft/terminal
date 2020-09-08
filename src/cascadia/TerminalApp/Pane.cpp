@@ -319,9 +319,7 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
         return;
     }
 
-    const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() };
-    THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
-    auto settings = appLogic->GetSettings();
+    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {

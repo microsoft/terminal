@@ -364,8 +364,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 // - <none>
 void CascadiaSettings::_RemoveHiddenProfiles()
 {
-    uint32_t i = 0;
-    while (i < _profiles.Size())
+    for (uint32_t i{}; i < _profiles.Size();)
     {
         if (_profiles.GetAt(i).Hidden())
         {
@@ -701,7 +700,7 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
     std::string finalSettings{ settingsTemplate };
 
     std::wstring defaultProfileGuid{ DEFAULT_WINDOWS_POWERSHELL_GUID };
-    if (const auto psCoreProfileGuid{ _GetProfileGuidByName(PowershellCoreProfileGenerator::GetPreferredPowershellProfileName().data()) })
+    if (const auto psCoreProfileGuid{ _GetProfileGuidByName(hstring{ PowershellCoreProfileGenerator::GetPreferredPowershellProfileName() }) })
     {
         defaultProfileGuid = Utils::GuidToString(*psCoreProfileGuid);
     }

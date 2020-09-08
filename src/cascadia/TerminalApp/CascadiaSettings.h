@@ -60,7 +60,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         CascadiaSettings();
-        CascadiaSettings(const bool addDynamicProfiles);
+        explicit CascadiaSettings(const bool addDynamicProfiles);
 
         static TerminalApp::CascadiaSettings LoadDefaults();
         static TerminalApp::CascadiaSettings LoadAll();

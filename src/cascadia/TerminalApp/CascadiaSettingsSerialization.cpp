@@ -264,7 +264,7 @@ winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadUniversal()
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
 
-    return resultPtr.as<winrt::TerminalApp::CascadiaSettings>();
+    return *resultPtr;
 }
 
 // Function Description:
@@ -620,7 +620,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             }
 
             profile->LayerJson(profileJson);
-            _profiles.Append(profile.as<winrt::TerminalApp::Profile>());
+            _profiles.Append(*profile);
         }
     }
 }

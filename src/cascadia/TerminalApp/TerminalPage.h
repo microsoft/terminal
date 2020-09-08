@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        winrt::fire_and_forget SetSettings(com_ptr<CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(TerminalApp::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
-        com_ptr<CascadiaSettings> _settings{ nullptr };
+        TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
