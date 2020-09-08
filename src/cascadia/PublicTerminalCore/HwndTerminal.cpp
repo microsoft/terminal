@@ -349,7 +349,7 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
     return _uiaProvider.Get();
 }
 
-HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
+HRESULT HwndTerminal::Refresh(_In_ const SIZE windowSize, _In_ bool autoFit, _Out_ COORD* dimensions)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
@@ -367,13 +367,18 @@ HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
                                                        { gsl::narrow<short>(windowSize.cx), gsl::narrow<short>(windowSize.cy) });
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
-    // If this function succeeds with S_FALSE, then the terminal didn't
-    //      actually change size. No need to notify the connection of this
-    //      no-op.
-    // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-    // I believe we'll need support for CSI 2J, and additionally I think
-    //      we're resetting the viewport to the top
-    RETURN_IF_FAILED(_terminal->UserResize({ vp.Width(), vp.Height() }));
+    // Only resize the text buffer if size isn't being controlled manually.
+    if (autoFit)
+    {
+        // If this function succeeds with S_FALSE, then the terminal didn't
+        //      actually change size. No need to notify the connection of this
+        //      no-op.
+        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
+        // I believe we'll need support for CSI 2J, and additionally I think
+        //      we're resetting the viewport to the top
+        RETURN_IF_FAILED(_terminal->UserResize({ vp.Width(), vp.Height() }));
+    }
+
     dimensions->X = vp.Width();
     dimensions->Y = vp.Height();
 
@@ -434,7 +439,7 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
 }
 
 // Resizes the terminal text buffer and renderer draw space to fill the provided width and height.
-HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
+HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ double width, _In_ double height, _In_ bool autoFit, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -448,7 +453,7 @@ HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double heig
         0));
 
     const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
-    return publicTerminal->Refresh(windowSize, dimensions);
+    return publicTerminal->Refresh(windowSize, autoFit, dimensions);
 }
 
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
@@ -728,7 +733,7 @@ void _stdcall DestroyTerminal(void* terminal)
 }
 
 // Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
-void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
+void _stdcall TerminalSetTheme(_In_ void* terminal, _In_ TerminalTheme theme, _In_ LPCWSTR fontFamily, _In_ short fontSize, _In_ int newDpi, _In_ bool autoFit)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     {
@@ -758,7 +763,8 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 
     COORD dimensions = {};
     const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
-    publicTerminal->Refresh(windowSize, &dimensions);
+
+    publicTerminal->Refresh(windowSize, autoFit, &dimensions);
 }
 
 // Resizes the terminal text buffer to the specified rows and columns.
@@ -772,48 +778,6 @@ HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
 
     // Resize the text buffer without changing the renderer draw size.
     return publicTerminal->_terminal->UserResize(dimensions);
-}
-
-/// <summary>
-/// Resizes the renderer to fit the provided width and height without changing the text
-/// buffer size.
-/// The out parameter "dimensions" is the total amount of characters that would fit with this new size.
-/// </summary>
-HRESULT _stdcall ResizeRendererDrawSpace(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
-    RETURN_HR_IF_NULL(E_INVALIDARG, terminal);
-
-    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-
-    auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->ClearSelection();
-
-    LOG_IF_WIN32_BOOL_FALSE(SetWindowPos(
-        publicTerminal->GetHwnd(),
-        nullptr,
-        0,
-        0,
-        static_cast<int>(width),
-        static_cast<int>(height),
-        0));
-
-    const SIZE windowSize{ width, height };
-
-    RETURN_IF_FAILED(publicTerminal->_renderEngine->SetWindowSize(windowSize));
-
-    // Invalidate everything
-    publicTerminal->_renderer->TriggerRedrawAll();
-
-    // Convert our new dimensions to characters
-    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                       { width, height });
-    const auto vp = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
-
-    dimensions->X = vp.Width();
-    dimensions->Y = vp.Height();
-
-    return S_OK;
 }
 
 void _stdcall TerminalBlinkCursor(void* terminal)

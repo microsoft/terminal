@@ -187,7 +187,7 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalSendOutput(IntPtr terminal, string lpdata);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalTriggerResize(IntPtr terminal, double width, double height, out COORD dimensions);
+        public static extern uint TerminalTriggerResize(IntPtr terminal, double width, double height, bool autoFit, out COORD dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern uint TerminalResize(IntPtr terminal, COORD dimensions);
@@ -231,7 +231,7 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode, ushort flags);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
+        public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi, bool autoFit);
 
         [DllImport("PublicTerminalCore.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalBlinkCursor(IntPtr terminal);
@@ -244,9 +244,6 @@ namespace Microsoft.Terminal.Wpf
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalKillFocus(IntPtr terminal);
-
-        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint ResizeRendererDrawSpace(IntPtr terminal, short width, short height, out COORD dimensions);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);

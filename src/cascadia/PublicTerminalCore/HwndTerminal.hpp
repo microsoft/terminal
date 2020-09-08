@@ -27,7 +27,7 @@ extern "C" {
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ double width, _In_ double height, _In_ bool autoFit, _Out_ COORD* dimensions);
 __declspec(dllexport) HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
@@ -35,7 +35,7 @@ __declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
 __declspec(dllexport) const wchar_t* _stdcall TerminalGetSelection(void* terminal);
 __declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
-__declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+__declspec(dllexport) void _stdcall TerminalSetTheme(_In_ void* terminal, _In_ TerminalTheme theme, _In_ LPCWSTR fontFamily, _In_ short fontSize, _In_ int newDpi, _In_ bool autoFit);
 __declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
 __declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD flags, WORD scanCode);
@@ -43,7 +43,6 @@ __declspec(dllexport) void _stdcall TerminalBlinkCursor(void* terminal);
 __declspec(dllexport) void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
 __declspec(dllexport) void _stdcall TerminalSetFocus(void* terminal);
 __declspec(dllexport) void _stdcall TerminalKillFocus(void* terminal);
-__declspec(dllexport) HRESULT _stdcall ResizeRendererDrawSpace(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
 };
 
 struct HwndTerminal : ::Microsoft::Console::Types::IControlAccessibilityInfo
@@ -60,7 +59,7 @@ public:
     HRESULT Initialize();
     void Teardown() noexcept;
     void SendOutput(std::wstring_view data);
-    HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
+    HRESULT Refresh(const SIZE windowSize,_In_ bool autoFit, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
     ::Microsoft::Console::Types::IUiaData* GetUiaData() const noexcept;
@@ -99,12 +98,11 @@ private:
     friend bool _stdcall TerminalIsSelectionActive(void* terminal);
     friend void _stdcall TerminalSendKeyEvent(void* terminal, WORD vkey, WORD scanCode, WORD flags, bool keyDown);
     friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch, WORD scanCode, WORD flags);
-    friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+    friend void _stdcall TerminalSetTheme(_In_ void* terminal, _In_ TerminalTheme theme, _In_ LPCWSTR fontFamily, _In_ short fontSize, _In_ int newDpi, _In_ bool autoFit);
     friend void _stdcall TerminalBlinkCursor(void* terminal);
     friend void _stdcall TerminalSetCursorVisible(void* terminal, const bool visible);
     friend void _stdcall TerminalSetFocus(void* terminal);
     friend void _stdcall TerminalKillFocus(void* terminal);
-    friend HRESULT _stdcall ResizeRendererDrawSpace(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
 
     void _UpdateFont(int newDpi);
     void _WriteTextToConnection(const std::wstring& text) noexcept;

@@ -137,7 +137,7 @@ namespace Microsoft.Terminal.Wpf
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
-            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
+            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX, this.AutoFit);
 
             this.TriggerResize(this.RenderSize);
         }
@@ -166,7 +166,7 @@ namespace Microsoft.Terminal.Wpf
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
             NativeMethods.COORD dimensions;
-            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width * dpiScale.DpiScaleX, renderSize.Height * dpiScale.DpiScaleY, out dimensions);
+            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width * dpiScale.DpiScaleX, renderSize.Height * dpiScale.DpiScaleY, this.AutoFit, out dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
@@ -323,15 +323,7 @@ namespace Microsoft.Terminal.Wpf
                         }
 
                         NativeMethods.COORD dimensions;
-
-                        if (this.AutoFit)
-                        {
-                            NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
-                        }
-                        else
-                        {
-                            NativeMethods.ResizeRendererDrawSpace(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
-                        }
+                        NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, this.autoFit, out dimensions);
 
                         this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         this.Columns = dimensions.X;
