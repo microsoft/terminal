@@ -1805,34 +1805,36 @@ namespace winrt::TerminalApp::implementation
             {
                 ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
             }
-            else if (auto presenter{ _dialogPresenter.get() })
+            else
             {
-                // FindName needs to be called first to actually load the xaml object
-                auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
-
-                // Insert the reason (unsupported scheme) and the URI
-                CouldNotOpenUriReason().Text(RS_(L"UnsupportedSchemeText"));
-                UnopenedUri().Text(eventArgs.Uri());
-
-                // Show the dialog
-                presenter.ShowDialog(unopenedUriDialog);
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri().c_str());
             }
         }
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
-            if (auto presenter{ _dialogPresenter.get() })
-            {
-                // FindName needs to be called first to actually load the xaml object
-                auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+            _ShowCouldNotOpenDialog(RS_(L"InvalidUriText"), eventArgs.Uri().c_str());
+        }
+    }
 
-                // Insert the reason (invalid URI) and the URI
-                CouldNotOpenUriReason().Text(RS_(L"InvalidUriText"));
-                UnopenedUri().Text(eventArgs.Uri());
+    // Method Description:
+    // - Opens up a dialog box explaining why we could not open a URI
+    // Arguments:
+    // - The reason (unsupported scheme, invalid uri, potentially more in the future)
+    // - The uri
+    void TerminalPage::_ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            // FindName needs to be called first to actually load the xaml object
+            auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
 
-                // Show the dialog
-                presenter.ShowDialog(unopenedUriDialog);
-            }
+            // Insert the reason and the URI
+            CouldNotOpenUriReason().Text(reason);
+            UnopenedUri().Text(uri);
+
+            // Show the dialog
+            presenter.ShowDialog(unopenedUriDialog);
         }
     }
 
