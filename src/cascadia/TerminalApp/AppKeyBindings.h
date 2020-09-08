@@ -53,7 +53,7 @@ namespace winrt::TerminalApp::implementation
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::TerminalControl::KeyModifiers modifiers);
 
         // Defined in AppKeyBindingsSerialization.cpp
-        std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(const Json::Value& json);
+        std::vector<TerminalApp::SettingsLoadWarnings> LayerJson(const Json::Value& json);
         Json::Value ToJson();
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
