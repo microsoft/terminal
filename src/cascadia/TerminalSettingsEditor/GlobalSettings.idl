@@ -24,9 +24,6 @@ namespace SettingsControl
         Boolean CopyFormatting;
         Boolean WarnAboutLargePaste;
         Boolean WarnAboutMultiLinePaste;
-        // TODO CARLOS: fix JsonConverters for these unique types
-        //LaunchPosition InitialPosition;
-        //AppLaunchMode LaunchMode;
         Boolean SnapToGridOnResize;
         Boolean ForceFullRepaintRendering;
         Boolean SoftwareRendering;
