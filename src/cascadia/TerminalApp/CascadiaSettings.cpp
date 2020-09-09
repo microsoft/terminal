@@ -364,7 +364,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 // - <none>
 void CascadiaSettings::_RemoveHiddenProfiles()
 {
-    for (uint32_t i{}; i < _profiles.Size();)
+    for (uint32_t i = 0; i < _profiles.Size();)
     {
         if (_profiles.GetAt(i).Hidden())
         {
