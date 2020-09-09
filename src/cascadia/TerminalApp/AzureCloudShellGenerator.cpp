@@ -37,8 +37,6 @@ std::vector<TerminalApp::Profile> AzureCloudShellGenerator::GenerateProfiles()
         azureCloudShellProfile.SetCommandline(L"Azure");
         azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         azureCloudShellProfile.SetColorScheme({ L"Vintage" });
-        azureCloudShellProfile.SetAcrylicOpacity(0.6);
-        azureCloudShellProfile.SetUseAcrylic(true);
         azureCloudShellProfile.SetConnectionType(AzureConnectionType);
         profiles.emplace_back(azureCloudShellProfile);
     }
