@@ -66,12 +66,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Create a TerminalSettings from this object. Apply our settings, as well as
-    //      any colors from our color scheme, if we have one.
+    // - Apply Profile settings, as well as any colors from our color scheme, if we have one.
     // Arguments:
-    // - schemes: a list of schemes to look for our color scheme in, if we have one.
+    // - profile: the profile settings we're applying
+    // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
-    // - a new TerminalSettings object with our settings in it.
+    // - <none>
     void TerminalSettings::_ApplyProfileSettings(const TerminalApp::Profile& profile, const winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::ColorScheme>& schemes)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
@@ -153,9 +153,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Applies appropriate settings from the globals into the given TerminalSettings.
+    // - Applies appropriate settings from the globals into the TerminalSettings object.
     // Arguments:
-    // - settings: a TerminalSettings object to add global property values to.
+    // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
     void TerminalSettings::_ApplyGlobalSettings(const TerminalApp::GlobalAppSettings& globalSettings) noexcept
@@ -171,10 +171,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Apply our values to the given TerminalSettings object. Sets the foreground,
-    //      background, and color table of the settings object.
+    // - Apply a given ColorScheme's values to the TerminalSettings object.
+    //      Sets the foreground, background, and color table of the settings object.
     // Arguments:
-    // - terminalSettings: the object to apply our settings to.
+    // - scheme: the ColorScheme we are applying to the TerminalSettings object
     // Return Value:
     // - <none>
     void TerminalSettings::_ApplyColorScheme(const TerminalApp::ColorScheme& scheme)
