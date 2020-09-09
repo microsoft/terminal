@@ -19,7 +19,7 @@
 // "Generated Files" directory.
 
 using namespace ::TerminalApp;
-using namespace winrt::TerminalApp;
+using namespace winrt::TerminalApp::implementation;
 using namespace ::Microsoft::Console;
 
 static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
@@ -101,9 +101,10 @@ static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view
 //   profiles inserted into their list of profiles.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
+winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadAll()
 {
-    auto resultPtr = LoadDefaults();
+    auto settings = LoadDefaults();
+    auto resultPtr = winrt::get_self<CascadiaSettings>(settings);
 
     // GH 3588, we need this below to know if the user chose something that wasn't our default.
     // Collect it up here in case it gets modified by any of the other layers between now and when
@@ -218,7 +219,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
             // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
             // and avoid extraneous data.
-            auto akb = winrt::make_self<implementation::AppKeyBindings>();
+            auto akb = winrt::make_self<AppKeyBindings>();
             akb->LayerJson(userKeybindings);
             auto value = akb->ToJson();
 
@@ -240,7 +241,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         }
     }
 
-    return resultPtr;
+    return *resultPtr;
 }
 
 // Function Description:
@@ -249,13 +250,13 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 // - <none>
 // Return Value:
 // - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
+winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadUniversal()
 {
     // We're going to do this ourselves because we want to exclude almost everything
     // from the special Universal-for-developers configuration
 
     // Create settings and get the universal defaults loaded up.
-    auto resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr = winrt::make_self<CascadiaSettings>();
     resultPtr->_ParseJsonString(DefaultUniversalJson, true);
     resultPtr->LayerJson(resultPtr->_defaultSettings);
 
@@ -263,7 +264,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
 
-    return resultPtr;
+    return *resultPtr;
 }
 
 // Function Description:
@@ -273,9 +274,9 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
 // - <none>
 // Return Value:
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
+winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
-    auto resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr = winrt::make_self<CascadiaSettings>();
 
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
@@ -284,7 +285,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     resultPtr->LayerJson(resultPtr->_defaultSettings);
     resultPtr->_ResolveDefaultProfile();
 
-    return resultPtr;
+    return *resultPtr;
 }
 
 // Method Description:
@@ -329,7 +330,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
                     // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
                     profile.Source(generatorNamespace);
 
-                    _profiles.emplace_back(profile);
+                    _profiles.Append(profile);
                 }
             }
             CATCH_LOG_MSG("Dynamic Profile Namespace: \"%ls\"", generatorNamespace.data());
@@ -607,9 +608,9 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // If this JSON represents a dynamic profile, we _shouldn't_ create the
         // profile here. We only want to create profiles for profiles without a
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
-        if (!implementation::Profile::IsDynamicProfileObject(profileJson))
+        if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            auto profile = winrt::make_self<implementation::Profile>();
+            auto profile = winrt::make_self<Profile>();
 
             // GH#2325: If we have a set of default profile settings, apply them here.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
@@ -619,7 +620,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             }
 
             profile->LayerJson(profileJson);
-            _profiles.emplace_back(*profile);
+            _profiles.Append(*profile);
         }
     }
 }
@@ -635,11 +636,11 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 // Return Value:
 // - a Profile that can be layered with the given json object, iff such a
 //   profile exists.
-winrt::com_ptr<implementation::Profile> CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
+winrt::com_ptr<Profile> CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
 {
-    for (auto& profile : _profiles)
+    for (auto profile : _profiles)
     {
-        auto profileImpl = winrt::get_self<winrt::TerminalApp::implementation::Profile>(profile);
+        auto profileImpl = winrt::get_self<Profile>(profile);
         if (profileImpl->ShouldBeLayered(profileJson))
         {
             return profileImpl->get_strong();
@@ -682,9 +683,9 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         // hyper-explode, so just don't let them do that.
         _userDefaultProfileSettings.removeMember({ "guid" });
 
-        for (auto& profile : _profiles)
+        for (auto profile : _profiles)
         {
-            auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+            auto profileImpl = winrt::get_self<Profile>(profile);
             profileImpl->LayerJson(_userDefaultProfileSettings);
         }
     }
@@ -708,7 +709,7 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
     else
     {
-        const auto scheme = implementation::ColorScheme::FromJson(schemeJson);
+        const auto scheme = ColorScheme::FromJson(schemeJson);
         _globals->AddColorScheme(*scheme);
     }
 }
@@ -724,13 +725,13 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 // Return Value:
 // - a ColorScheme that can be layered with the given json object, iff such a
 //   color scheme exists.
-winrt::com_ptr<implementation::ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
+winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
-    if (auto schemeName = implementation::ColorScheme::GetNameFromJson(schemeJson))
+    if (auto schemeName = ColorScheme::GetNameFromJson(schemeJson))
     {
         if (auto scheme{ _globals->GetColorSchemes().TryLookup(*schemeName) })
         {
-            return winrt::get_self<implementation::ColorScheme>(scheme)->get_strong();
+            return winrt::get_self<ColorScheme>(scheme)->get_strong();
         }
     }
     return nullptr;

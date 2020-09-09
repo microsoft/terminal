@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        winrt::fire_and_forget SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(TerminalApp::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
-        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
+        TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
@@ -137,7 +137,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                                                          gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                                                          Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                                                                           Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes);
 
         void _DuplicateTabViewItem();

@@ -353,7 +353,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void Command::ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                 gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                 Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                  gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                  std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {
@@ -409,7 +409,7 @@ namespace winrt::TerminalApp::implementation
     // - and empty vector if the command wasn't expandable, otherwise a list of
     //   the newly-created commands.
     std::vector<winrt::TerminalApp::Command> Command::_expandCommand(Command* const expandable,
-                                                                     gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                     Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                      gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
     {

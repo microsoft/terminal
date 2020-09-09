@@ -83,7 +83,7 @@ static std::wstring_view _getExePath()
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) noexcept
+HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
     try
     {
@@ -99,7 +99,7 @@ HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) 
         RETURN_IF_FAILED(jumplistItems->Clear());
 
         // Update the list of profiles.
-        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.GetProfiles()));
+        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.Profiles().GetView()));
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.
@@ -123,7 +123,7 @@ HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) 
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const Profile>& profiles) noexcept
+[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles) noexcept
 {
     try
     {

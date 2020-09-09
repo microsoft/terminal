@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
                                                 std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                   gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                   Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                    gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                    std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
 
@@ -69,7 +69,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _lastIconPath{};
 
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
-                                                                       gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                       Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                        gsl::span<winrt::TerminalApp::ColorScheme> schemes,
                                                                        std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
         friend class TerminalAppLocalTests::SettingsTests;

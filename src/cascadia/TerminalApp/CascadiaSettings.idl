@@ -1,0 +1,23 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "GlobalAppSettings.idl";
+import "Profile.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass CascadiaSettings {
+        static CascadiaSettings LoadDefaults();
+        static CascadiaSettings LoadAll();
+        static CascadiaSettings LoadUniversal();
+
+        GlobalAppSettings GlobalSettings { get; };
+
+        Windows.Foundation.Collections.IObservableVector<Profile> Profiles { get; };
+
+        AppKeyBindings Keybindings { get; };
+
+        Profile FindProfile(Guid profileGuid);
+        ColorScheme GetColorSchemeForProfile(Guid profileGuid);
+    }
+}
