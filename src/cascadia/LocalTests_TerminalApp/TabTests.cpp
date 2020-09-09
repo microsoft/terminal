@@ -206,7 +206,7 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
             projectedPage = winrt::TerminalApp::TerminalPage();
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = initialSettings;
+            page->_settings = *initialSettings;
         });
         VERIFY_SUCCEEDED(result);
 
@@ -383,7 +383,7 @@ namespace TerminalAppLocalTests
             L"Change the settings of the TerminalPage so the first profile is "
             L"no longer in the list of profiles"));
         result = RunOnUIThread([&page, settings1]() {
-            page->_settings = settings1;
+            page->_settings = *settings1;
         });
         VERIFY_SUCCEEDED(result);
 
@@ -488,7 +488,7 @@ namespace TerminalAppLocalTests
             L"Change the settings of the TerminalPage so the first profile is "
             L"no longer in the list of profiles"));
         result = RunOnUIThread([&page, settings1]() {
-            page->_settings = settings1;
+            page->_settings = *settings1;
         });
         VERIFY_SUCCEEDED(result);
 
