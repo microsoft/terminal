@@ -1599,12 +1599,12 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     bool foundTableIndex = false;
     bool success = false;
-    // We can have anywhere between [6,16] characters
+    // We can have anywhere between [6,22] characters
     // 6  "#;#hhh"
     // 22 "###;rgb:hhhh/hhhh/hhhh"
     // Any fewer cannot be valid, and any more will be too many.
     // Return early in this case.
-    //      We'll still have to bounds check when parsing the hh/hh/hh values
+    //      We'll still have to bounds check when parsing the actual RGB values
     if (string.size() < 6 || string.size() > 22)
     {
         return false;
