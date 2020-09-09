@@ -1408,10 +1408,13 @@ static constexpr bool _isHexNumber(const wchar_t wch) noexcept
 
 // Routine Description:
 // - Given a color spec string, attempts to parse the color that's encoded.
-//   The only supported spec currently is the following:
-//      spec: a color in the following format:
+//   The supported specs currently are the following:
+//      spec1: a color in the following format:
 //          "rgb:<red>/<green>/<blue>"
-//          where <color> is one or two hex digits, upper or lower case.
+//      spec2: a color in the following format:
+//          "#<red><green><blue>"
+//
+//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
 // Arguments:
 // - string - The string containing the color spec string to parse.
 // - rgb - receives the color that we parsed
@@ -1421,50 +1424,75 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
                                                 DWORD& rgb) noexcept
 {
     bool foundRGB = false;
+    bool isSharpSignFormat = false;
+    size_t rgbHexDigitCount = 0;
     bool foundValidColorSpec = false;
-    std::array<unsigned int, 3> colorValues = { 0 };
+    std::array<float, 3> colorValues = { 0 };
+    std::array<unsigned int, 3> parameterValues = { 0 };
     bool success = false;
-    // We can have anywhere between [11,15] characters
-    // 9 "rgb:h/h/h"
-    // 12 "rgb:hh/hh/hh"
-    // Any fewer cannot be valid, and any more will be too many.
-    // Return early in this case.
-    //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (string.size() < 9 || string.size() > 12)
-    {
-        return false;
-    }
+    const auto stringSize = string.size();
 
-    // Now we look for "rgb:"
+    // First we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
-
     auto curr = string.cbegin();
     if ((*curr++ == L'r') &&
         (*curr++ == L'g') &&
         (*curr++ == L'b') &&
         (*curr++ == L':'))
     {
+        // We can have one of the following formats:
+        // 9 "rgb:h/h/h"
+        // 12 "rgb:hh/hh/hh"
+        // 15 "rgb:hhh/hhh/hhh"
+        // 18 "rgb:hhhh/hhhh/hhhh"
+        // Any other cases will be invalid.
+        if (!(stringSize == 9 || stringSize == 12 || stringSize == 15 || stringSize == 18))
+        {
+            return false;
+        }
+
         foundRGB = true;
+        rgbHexDigitCount = ((stringSize - 3) / 3) - 1;
+    }
+
+    // Try the sharp sign format.
+    curr--;
+    if (*curr++ == L'#')
+    {
+        // We can have one of the following formats:
+        // 4 "#hhh"
+        // 7 "#hhhhhh"
+        // 10 "#hhhhhhhhh"
+        // 13 "#hhhhhhhhhhhh"
+        // Any other cases will be invalid.
+        if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
+        {
+            return false;
+        }
+
+        isSharpSignFormat = true;
+        foundRGB = true;
+        rgbHexDigitCount = (stringSize - 1) / 3;
     }
 
     if (foundRGB)
     {
-        // Colorspecs are up to hh/hh/hh, for 1-2 h's
+        // Colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
-            auto& value = til::at(colorValues, component);
-            for (size_t i = 0; i < 3; i++)
+            auto& parameterValue = til::at(parameterValues, component);
+            for (size_t i = 0; i < rgbHexDigitCount; i++)
             {
                 const wchar_t wch = *curr++;
 
                 if (_isHexNumber(wch))
                 {
-                    value *= 16;
+                    parameterValue *= 16;
                     unsigned int intVal = 0;
                     if (s_HexToUint(wch, intVal))
                     {
-                        value += intVal;
+                        parameterValue += intVal;
                     }
                     else
                     {
@@ -1472,41 +1500,76 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
                         foundColor = false;
                         break;
                     }
-                    // If we're on the blue component, we're not going to see a /.
-                    // Break out once we hit the end.
-                    if (component == 2 && curr >= string.cend())
-                    {
-                        foundValidColorSpec = true;
-                        break;
-                    }
                 }
-                else if (wch == L'/')
+            }
+
+            if (isSharpSignFormat)
+            {
+                // Successfully parsed this component. Start the next one.
+                foundColor = true;
+            }
+            else
+            {
+                if (curr < string.cend() && *curr == L'/')
                 {
-                    // Break this component, and start the next one.
+                    // Same as above but need to skip the delimiter.
+                    curr++;
                     foundColor = true;
-                    break;
                 }
                 else
                 {
-                    // Encountered something weird oh no
+                    // Invalid delimiter. Treat it as an error.
                     foundColor = false;
                     break;
                 }
             }
+
             if (!foundColor || curr >= string.cend())
             {
-                // Indicates there was a some error parsing color
-                //  or we're at the end of the string.
+                // Indicates there was some error parsing color.
                 break;
             }
         }
+
+        if (curr >= string.cend())
+        {
+            // We're at the end of the string and we have successfully parsed the color.
+            foundValidColorSpec = true;
+        }
     }
+
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
-        DWORD color = RGB(LOBYTE(colorValues.at(0)),
-                          LOBYTE(colorValues.at(1)),
-                          LOBYTE(colorValues.at(2)));
+        for (size_t component = 0; component < 3; component++)
+        {
+            auto& parameterValue = til::at(parameterValues, component);
+            auto& colorValue = til::at(colorValues, component);
+
+            // Calculate the actual color value based on the hex digit count.
+            switch (rgbHexDigitCount)
+            {
+            case 1:
+                colorValue = (float)parameterValue / 0xf * 0xff;
+                break;
+            case 2:
+                colorValue = (float)parameterValue;
+                break;
+            case 3:
+                colorValue = (float)parameterValue / 0xfff * 0xff;
+                break;
+            case 4:
+                colorValue = (float)parameterValue / 0xffff * 0xff;
+                break;
+            default:
+                // Should not get here.
+                break;
+            }
+        }
+
+        DWORD color = RGB(LOBYTE((unsigned int)colorValues.at(0)),
+                          LOBYTE((unsigned int)colorValues.at(1)),
+                          LOBYTE((unsigned int)colorValues.at(2)));
 
         rgb = color;
         success = true;
@@ -1536,13 +1599,13 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     bool foundTableIndex = false;
     bool success = false;
-    // We can have anywhere between [11,16] characters
-    // 11 "#;rgb:h/h/h"
-    // 16 "###;rgb:hh/hh/hh"
+    // We can have anywhere between [6,16] characters
+    // 6  "#;#hhh"
+    // 22 "###;rgb:hhhh/hhhh/hhhh"
     // Any fewer cannot be valid, and any more will be too many.
     // Return early in this case.
     //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (string.size() < 11 || string.size() > 16)
+    if (string.size() < 6 || string.size() > 22)
     {
         return false;
     }
@@ -1573,7 +1636,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
             break;
         }
     }
-    // Now we look for "rgb:"
+    // Now we look for the actual RGB value.
     // Other colorspaces are theoretically possible, but we don't support them.
     if (foundTableIndex)
     {
