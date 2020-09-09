@@ -281,7 +281,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - A vector containing any warnings detected while parsing
     std::vector<SettingsLoadWarnings> Command::LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                                                        const Json::Value& json)
+                                                         const Json::Value& json)
     {
         std::vector<SettingsLoadWarnings> warnings;
 

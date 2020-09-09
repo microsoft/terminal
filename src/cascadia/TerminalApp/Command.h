@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
                                    std::vector<TerminalApp::SettingsLoadWarnings>& warnings);
 
         static std::vector<TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                                                          const Json::Value& json);
+                                                                        const Json::Value& json);
         bool HasNestedCommands();
         Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
 
