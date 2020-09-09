@@ -109,7 +109,10 @@ namespace winrt::TerminalApp::implementation
 
         if (!profile.ColorSchemeName().empty())
         {
-            ApplyColorScheme(profile.ColorSchemeName(), schemes);
+            if (const auto scheme = schemes.TryLookup(profile.ColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
         }
         if (profile.Foreground())
         {
@@ -177,7 +180,7 @@ namespace winrt::TerminalApp::implementation
     // - scheme: the ColorScheme we are applying to the TerminalSettings object
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyColorScheme(const TerminalApp::ColorScheme& scheme)
+    void TerminalSettings::ApplyColorScheme(const TerminalApp::ColorScheme& scheme)
     {
         _DefaultForeground = til::color{ scheme.Foreground() };
         _DefaultBackground = til::color{ scheme.Background() };
@@ -190,16 +193,6 @@ namespace winrt::TerminalApp::implementation
         {
             SetColorTableEntry(i, til::color{ table[i] });
         }
-    }
-
-    bool TerminalSettings::ApplyColorScheme(const hstring& scheme, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes)
-    {
-        if (const auto found{ schemes.TryLookup(scheme) })
-        {
-            _ApplyColorScheme(found);
-            return true;
-        }
-        return false;
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept

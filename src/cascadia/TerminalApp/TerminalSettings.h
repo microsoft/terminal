@@ -40,7 +40,7 @@ namespace winrt::TerminalApp::implementation
                                                                              const TerminalApp::NewTerminalArgs& newTerminalArgs,
                                                                              const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 
-        bool ApplyColorScheme(const hstring& scheme, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
+        void ApplyColorScheme(const TerminalApp::ColorScheme& scheme);
 
 // TECHNICALLY, the hstring copy assignment can throw, but the GETSET_PROPERTY
 // macro defines the operator as `noexcept`. We're not really worried about it,
@@ -121,7 +121,6 @@ namespace winrt::TerminalApp::implementation
 
         void _ApplyProfileSettings(const TerminalApp::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const TerminalApp::GlobalAppSettings& globalSettings) noexcept;
-        void _ApplyColorScheme(const TerminalApp::ColorScheme& scheme);
 
         friend class TerminalAppLocalTests::SettingsTests;
     };
