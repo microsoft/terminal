@@ -855,7 +855,11 @@ bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
     }
 
     size_t eventsWritten;
-    success = _pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with eachother.
+    success = _pConApi->PrivateWriteConsoleInputW(inEvents, eventsWritten);
 
     return success;
 }
