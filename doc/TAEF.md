@@ -2,7 +2,7 @@
 
 TAEF, the Test Authoring and Execution Framework, is used extensively within the Windows organization to test the operating system code in a unified manner for system, driver, and application code. As the console is a Windows OS Component, we strive to continue using the same system such that tests can be ran in a unified manner both externally to Microsoft as well as inside the official OS Build/Test system.
 
-The [official documentation](https://msdn.microsoft.com/en-us/library/windows/hardware/hh439725\(v=vs.85\).aspx) for TAEF describes the basic architecture, usage, and functionality of the test system. It is similar to Visual Studio test, but a bit more comprehensive and flexible.
+The [official documentation](https://docs.microsoft.com/en-us/windows-hardware/drivers/taef/) for TAEF describes the basic architecture, usage, and functionality of the test system. It is similar to Visual Studio test, but a bit more comprehensive and flexible.
 
 ### Writing Tests
 
@@ -12,9 +12,9 @@ Use the [TAEF Verify Macros for C++](https://docs.microsoft.com/en-us/windows-ha
 
 ### Running Tests
 
-If you have Visual Studio and related C++ components installed, you should have `te.exe` available locally.
+If you have Visual Studio and related C++ components installed, you should have the TAEF test runner `te.exe` available locally.
 
-In a "normal" CMD enviroment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
+In a "normal" command line enviroment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
 
 ```shell
 .\tools\razzle.cmd
@@ -34,8 +34,6 @@ Limiting the tests to be run is also useful with:
 
 Any pattern of class/method names can be specified after the */name:* flag with wildcard patterns.
 
-For any further details on the functionality of the TAEF test runner, *TE.exe*, please see the documentation above or run the embedded help with
+For any further details on the functionality of the TAEF test runner, please see the [Executing Tests](https://docs.microsoft.com/en-us/windows-hardware/drivers/taef/executing-tests) section in the official documentation. Or run the embedded help with
 
 	te.exe /!
-
-See `.\tools\runut.cmd` for how TAEF is being used in this project.
