@@ -12,7 +12,7 @@ Use the [TAEF Verify Macros for C++](https://docs.microsoft.com/en-us/windows-ha
 
 ### Running Tests
 
-If you have Visual Studio and related C++ toolchain installed, you should have `te.exe` available locally.
+If you have Visual Studio and related C++ components installed, you should have `te.exe` available locally.
 
 In a "normal" CMD enviroment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
 
@@ -20,7 +20,7 @@ In a "normal" CMD enviroment, `te.exe` may not be directly available. Try the fo
 .\tools\razzle.cmd
 ```
 
-You should be able to use `%TAEF%` as an alias of the actual `te.exe`.
+Then you should be able to use `%TAEF%` as an alias of the actual `te.exe`.
 
 For the purposes of the OpenConsole project, you can run the tests using the `te.exe` that matches the architecture for which the test was build (x86/x64) in the pattern
 
@@ -37,3 +37,5 @@ Any pattern of class/method names can be specified after the */name:* flag with 
 For any further details on the functionality of the TAEF test runner, *TE.exe*, please see the documentation above or run the embedded help with
 
 	te.exe /!
+
+See `.\tools\runut.cmd` for how TAEF is being used in this project.
