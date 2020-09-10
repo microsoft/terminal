@@ -499,11 +499,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::StartInboundListener()
     {
-        THROW_IF_FAILED(CTerminalHandoff::StartListening(&ConptyConnection::NewHandoff));
+        THROW_IF_FAILED(CTerminalHandoff::s_StartListening(&ConptyConnection::NewHandoff));
     }
 
     void ConptyConnection::StopInboundListener()
     {
-        THROW_IF_FAILED(CTerminalHandoff::StopListening());
+        THROW_IF_FAILED(CTerminalHandoff::s_StopListening());
     }
 }

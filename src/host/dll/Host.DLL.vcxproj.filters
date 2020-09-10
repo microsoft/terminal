@@ -40,11 +40,6 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="OpenConsoleDll.def">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="IConsoleHandoff_h.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -62,5 +57,10 @@
     <Midl Include="ITerminalHandoff.idl">
       <Filter>Source Files</Filter>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="OpenConsoleProxy.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

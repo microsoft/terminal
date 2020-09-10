@@ -6,8 +6,6 @@
 
 #include "Commandline.h"
 
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-
 #ifdef UNIT_TESTING
 // fwdecl unittest classes
 namespace TerminalAppLocalTests

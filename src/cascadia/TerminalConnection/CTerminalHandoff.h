@@ -14,11 +14,10 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
                                   HANDLE out,
                                   HANDLE signal);
 
-    STDMETHODIMP DoNothing();
 #pragma endregion
 
-    static HRESULT StartListening(NewHandoff pfnHandoff);
-    static HRESULT StopListening();
+    static HRESULT s_StartListening(NewHandoff pfnHandoff);
+    static HRESULT s_StopListening();
 };
 
 CoCreatableClass(CTerminalHandoff);

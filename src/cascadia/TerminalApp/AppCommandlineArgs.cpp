@@ -174,17 +174,6 @@ void AppCommandlineArgs::_buildParser()
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
-    // Started explicitly as a COM server for incoming PTY flags
-    // /Embedding (we don't pick this, it's just how COM does it.)
-    auto comEmbeddingCallback = [this](std::string param) {
-        if ("mbedding" == param)
-        {
-            auto embeddingAction = winrt::make_self<implementation::ActionAndArgs>();
-            embeddingAction->Action(ShortcutAction::ToggleInboundPty);
-            _startupActions.push_back(*embeddingAction);
-        }
-    };
-
     // Maximized and Fullscreen flags
     //   -M,--maximized: Maximizes the window on launch
     //   -F,--fullscreen: Fullscreens the window on launch

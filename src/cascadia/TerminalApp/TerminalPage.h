@@ -9,7 +9,6 @@
 #include "Profile.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-//#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include "AppCommandlineArgs.h"
 

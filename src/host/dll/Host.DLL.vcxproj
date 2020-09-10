@@ -4,8 +4,8 @@
     <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>host</RootNamespace>
-    <ProjectName>Host.DLL</ProjectName>
-    <TargetName>OpenConsoleDll</TargetName>
+    <ProjectName>Host.ProxyDLL</ProjectName>
+    <TargetName>OpenConsoleProxy</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
@@ -20,7 +20,7 @@
     <ResourceCompile Include="Host.DLL.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="OpenConsoleDll.def" />
+    <None Include="OpenConsoleProxy.def" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleComGuids.h" />
@@ -43,7 +43,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>OpenConsoleDll.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
       <AllowIsolation>true</AllowIsolation>
       <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
     </Link>

@@ -18,8 +18,6 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-#include "..\host\exe\CConsoleHandoff.h"
-
 using namespace Microsoft::Console::Interactivity;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
@@ -187,12 +185,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
                                                       Globals.hInputEvent.get(),
                                                       Globals.launchArgs.GetVtInHandle(),
                                                       Globals.launchArgs.GetVtOutHandle(),
-                                                      L"test", // TODO: this and the VT args aren't right yet.
+                                                      Globals.launchArgs.GetOriginalCommandLine().data(),
                                                       &msg));
 
-            /*ConsoleArguments args;
-            THROW_IF_FAILED(ConsoleEstablishHandoff(Globals.pDeviceComm->_Server.get(), &args, Globals.hInputEvent.get(), pReceiveMsg));
-            UnlockConsole();*/
+            // TODO: anymore cleanup of stuff we're holding onto like handles?
+            UnlockConsole();
 
             ExitThread(S_OK);
         }

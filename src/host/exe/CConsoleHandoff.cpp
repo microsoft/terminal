@@ -4,6 +4,31 @@
 
 #include "srvinit.h"
 
+// Define a specialization of WRL::Module so we can specify a REGCLS_SINGLEUSE type server.
+// We would like to use all the conveniences afforded to us by WRL::Module<T>, but it only
+// creates REGCLS_MULTIPLEUSE with no override. This makes an override for it by taking advantage
+// of its existing virtual declarations.
+#pragma region Single Use Out of Proc Specialization
+template<int RegClsType>
+class DefaultOutOfProcModuleWithRegistrationFlag;
+
+template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
+class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
+{
+public:
+    STDMETHOD(RegisterCOMObject)
+    (_In_opt_z_ const wchar_t* serverName, _In_reads_(count) IID* clsids, _In_reads_(count) IClassFactory** factories, _Inout_updates_(count) DWORD* cookies, unsigned int count)
+    {
+        return Microsoft::WRL::Details::RegisterCOMObject<RegClsType>(serverName, clsids, factories, cookies, count);
+    }
+};
+
+template<int RegClsType>
+class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithRegistrationFlag<RegClsType, DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
+{
+};
+#pragma endregion
+
 // Holds the wwinmain open until COM tells us there are no more server connections
 wil::unique_event _exitEvent;
 
@@ -14,32 +39,6 @@ void _releaseNotifier() noexcept
     _exitEvent.SetEvent();
 }
 
-DWORD g_cTerminalHandoffRegistration = 0;
-
-//template<int RegClsType>
-//class DefaultOutOfProcModuleWithRegistrationFlag;
-//
-//template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
-//class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
-//{
-//public:
-//    STDMETHOD(RegisterCOMObject)
-//    (_In_opt_z_ const wchar_t* serverName, _In_reads_(count) IID* clsids, _In_reads_(count) IClassFactory** factories, _Inout_updates_(count) DWORD* cookies, unsigned int count)
-//    {
-//        return Microsoft::WRL::Details::RegisterCOMObject<RegClsType>(serverName, clsids, factories, cookies, count);
-//    }
-//};
-//
-//template<int RegClsType>
-//class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithRegistrationFlag<RegClsType, DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
-//{
-//};
-//
-//int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
-//{
-//    OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create();
-//}
-
 // Routine Description:
 // - Performs registrations for our COM types and waits until COM tells us we're done being a server.
 // Return Value:
@@ -49,27 +48,13 @@ try
 {
     _exitEvent.create();
 
-
-     // has to be because the rest of TerminalConnection is apartment threaded already
-    // also is it really necessary if the rest of it already is?
     RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
 
-    // We could probably hold this in a static...
-    auto classFactory = Make<SimpleClassFactory<CConsoleHandoff>>();
-    RETURN_IF_NULL_ALLOC(classFactory);
+    auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
 
-    ComPtr<IUnknown> unk;
-    RETURN_IF_FAILED(classFactory.As(&unk));
-
-    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CConsoleHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_SINGLEUSE, &g_cTerminalHandoffRegistration));
-
-   /* auto uninit = wil::CoInitializeEx(COINIT_APARTMENTTHREADED);
-    auto& module = Module<OutOfProc>::Create(&_releaseNotifier);
-    RETURN_IF_FAILED(module.RegisterObjects());*/
-
+    RETURN_IF_FAILED(module.RegisterObjects());
     _exitEvent.wait();
-
-    //RETURN_IF_FAILED(module.UnregisterObjects());
+    RETURN_IF_FAILED(module.UnregisterObjects());
 
     return S_OK;
 }

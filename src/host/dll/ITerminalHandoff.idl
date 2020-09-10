@@ -9,8 +9,6 @@ cpp_quote("#include \"ConsoleComGuids.h\"")
     uuid(__IID_ITerminalHandoff)
 ] interface ITerminalHandoff : IUnknown
 {
-    HRESULT DoNothing();
-
     HRESULT EstablishHandoff([in, system_handle(sh_pipe)] HANDLE in,
                              [in, system_handle(sh_pipe)] HANDLE out,
                              [in, system_handle(sh_pipe)] HANDLE signal);

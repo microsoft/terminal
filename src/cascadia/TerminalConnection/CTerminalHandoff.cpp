@@ -2,25 +2,25 @@
 
 #include "CTerminalHandoff.h"
 
+// The callback function when a connection is received
 static NewHandoff _pfnHandoff = nullptr;
-
+// The registration ID of the class object for deregistration later
 static DWORD g_cTerminalHandoffRegistration = 0;
 
 // Routine Description:
-// - Called back when COM says there is nothing left for our server to do and we can tear down.
-void _releaseNotifier() noexcept
+// - Starts listening for TerminalHandoff requests by registering
+//   our class and interface with COM.
+// Arguments:
+// - pfnHandoff - Function to callback when a handoff is received
+// Return Value:
+// - S_OK, E_NOT_VALID_STATE (start called when already started) or relevant COM registration error.
+HRESULT CTerminalHandoff::s_StartListening(NewHandoff pfnHandoff)
 {
-    CTerminalHandoff::StopListening();
-}
-
-HRESULT CTerminalHandoff::StartListening(NewHandoff pfnHandoff)
-{
-    // has to be because the rest of TerminalConnection is apartment threaded already
-    // also is it really necessary if the rest of it already is?
-    RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED));
+    RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
 
     // We could probably hold this in a static...
     auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
+    
     RETURN_IF_NULL_ALLOC(classFactory);
 
     ComPtr<IUnknown> unk;
@@ -33,8 +33,17 @@ HRESULT CTerminalHandoff::StartListening(NewHandoff pfnHandoff)
     return S_OK;
 }
 
-HRESULT CTerminalHandoff::StopListening()
+// Routine Description:
+// - Stops listening for TerminalHandoff requests by deregistering
+//   our class and interface with COM
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM deregistration error
+HRESULT CTerminalHandoff::s_StopListening()
 {
+    RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff == nullptr);
+
     _pfnHandoff = nullptr;
 
     if (g_cTerminalHandoffRegistration)
@@ -42,8 +51,6 @@ HRESULT CTerminalHandoff::StopListening()
         RETURN_IF_FAILED(CoRevokeClassObject(g_cTerminalHandoffRegistration));
         g_cTerminalHandoffRegistration = 0;
     }
-
-    CoUninitialize();
 
     return S_OK;
 }
@@ -58,7 +65,7 @@ HRESULT CTerminalHandoff::StopListening()
 // - S_OK or Win32 error from `::DuplicateHandle`
 HRESULT _duplicateHandle(const HANDLE in, HANDLE& out)
 {
-    RETURN_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
+    RETURN_IF_WIN32_BOOL_FALSE(::DuplicateHandle(GetCurrentProcess(), in, GetCurrentProcess(), &out, 0, FALSE, DUPLICATE_SAME_ACCESS));
     return S_OK;
 }
 
@@ -74,11 +81,5 @@ HRESULT CTerminalHandoff::EstablishHandoff(HANDLE in, HANDLE out, HANDLE signal)
 
     // Call registered handler from when we started listening.
     return _pfnHandoff(in, out, signal);
-
-    //return S_OK;
 }
 
-HRESULT CTerminalHandoff::DoNothing()
-{
-    return S_FALSE;
-}
