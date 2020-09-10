@@ -164,6 +164,7 @@ Looking through the additional json files could negatively impact startup time.
 Cases which would likely be frustrating:
 
 * An installer dumps a _lot_ of json files into the folder which we need to look through
+* An installer dumps some badly formatted settings that cause our validate settings check to fail, resulting in default settings being used everywhere
 
 ## Future considerations
 
