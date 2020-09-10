@@ -98,7 +98,7 @@ Here is an example of a json stub that contains a full profile:
 {
     "guid": "{a821ae62-9d4a-3e34-b989-0a998ec283e6}",
     "name": "Cool Profile",
-    "comandline": "powershell.exe",
+    "commandline": "powershell.exe",
     "antialiasingMode": "aliased",
     "fontWeight": "bold",
     "scrollbarState": "hidden"
