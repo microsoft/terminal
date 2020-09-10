@@ -87,7 +87,7 @@ namespace TerminalAppUnitTests
                                           "\"purple\" : \"#881798\","
                                           "\"red\" : \"#C50F1F\","
                                           "\"selectionBackground\" : \"#131313\","
-                                          "\"white\" : \"#CCC\","
+                                          "\"white\" : \"#CCCCCC\","
                                           "\"yellow\" : \"#C19C00\""
                                           "}" };
 
@@ -110,6 +110,10 @@ namespace TerminalAppUnitTests
             const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
             VERIFY_ARE_EQUAL(expected, actual);
         }
+
+        Log::Comment(L"Roundtrip Test for Color Scheme");
+        const auto outJson = implementation::ColorScheme::ToJson(*scheme);
+        VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 
     void JsonTests::ProfileGeneratesGuid()

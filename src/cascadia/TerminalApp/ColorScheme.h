@@ -42,6 +42,9 @@ namespace winrt::TerminalApp::implementation
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
 
+        static Json::Value ToJson(const TerminalApp::ColorScheme& scheme);
+        void UpdateJson(Json::Value& json);
+
         hstring Name() const noexcept;
         com_array<Windows::UI::Color> Table() const noexcept;
         Windows::UI::Color Foreground() const noexcept;
