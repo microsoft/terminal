@@ -48,7 +48,7 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _globals{ winrt::make_self<implementation::GlobalAppSettings>() },
     _profiles{ winrt::single_threaded_observable_vector<TerminalApp::Profile>() },
     _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
-    _serializationErrorMessage{ L"" }
+    _deserializationErrorMessage{ L"" }
 {
     if (addDynamicProfiles)
     {
@@ -133,7 +133,7 @@ winrt::Windows::Foundation::IReference<winrt::TerminalApp::SettingsLoadErrors> C
 
 winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
 {
-    return _serializationErrorMessage;
+    return _deserializationErrorMessage;
 }
 
 // Method Description:

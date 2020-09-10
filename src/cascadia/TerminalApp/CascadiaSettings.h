@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Profile> _profiles;
         Windows::Foundation::Collections::IVector<TerminalApp::SettingsLoadWarnings> _warnings;
         Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
-        hstring _serializationErrorMessage;
+        hstring _deserializationErrorMessage;
 
         std::vector<std::unique_ptr<::TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
 

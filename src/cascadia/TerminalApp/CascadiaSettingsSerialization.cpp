@@ -246,15 +246,15 @@ winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadAll()
     }
     catch (const SettingsException& ex)
     {
-        auto settings = winrt::get_self<implementation::CascadiaSettings>(LoadDefaults());
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
         settings->_loadError = ex.Error();
         return *settings;
     }
     catch (const SettingsTypedDeserializationException& e)
     {
-        auto settings = winrt::get_self<implementation::CascadiaSettings>(LoadDefaults());
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
         std::string_view what{ e.what() };
-        settings->_serializationErrorMessage = til::u8u16(what);
+        settings->_deserializationErrorMessage = til::u8u16(what);
         return *settings;
     }
 }
@@ -285,15 +285,15 @@ winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadUniversal()
     }
     catch (const SettingsException& ex)
     {
-        auto settings = winrt::get_self<implementation::CascadiaSettings>(LoadDefaults());
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
         settings->_loadError = ex.Error();
         return *settings;
     }
     catch (const SettingsTypedDeserializationException& e)
     {
-        auto settings = winrt::get_self<implementation::CascadiaSettings>(LoadDefaults());
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
         std::string_view what{ e.what() };
-        settings->_serializationErrorMessage = til::u8u16(what);
+        settings->_deserializationErrorMessage = til::u8u16(what);
         return *settings;
     }
 }
@@ -307,7 +307,7 @@ winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadUniversal()
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
-    auto resultPtr = winrt::make_self<CascadiaSettings>();
+    auto resultPtr{ winrt::make_self<CascadiaSettings>() };
 
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
