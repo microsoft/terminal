@@ -70,6 +70,9 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
+    <Midl>
+      <AdditionalOptions>/target NT100 %(AdditionalOptions)</AdditionalOptions>
+    </Midl>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>

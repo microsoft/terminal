@@ -26,6 +26,12 @@
 
 #include "..\host\dll\ITerminalHandoff_h.h"
 
+#include <wil/resource.h>
+#include <wil/winrt.h>
+#include <windows.foundation.collections.h>
+#include <Windows.ApplicationModel.h>
+#include <Windows.ApplicationModel.AppExtensions.h>
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity;
@@ -33,6 +39,57 @@ using namespace Microsoft::Console::Render;
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
+
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Wrappers;
+using namespace ABI::Windows::Foundation;
+using namespace ABI::Windows::Foundation::Collections;
+using namespace ABI::Windows::ApplicationModel;
+using namespace ABI::Windows::ApplicationModel::AppExtensions;
+
+HRESULT LookupCatalog()
+{
+    auto coinit = wil::CoInitializeEx(COINIT_MULTITHREADED);
+
+    ComPtr<IAppExtensionCatalogStatics> catalogStatics;
+    RETURN_IF_FAILED(Windows::Foundation::GetActivationFactory(HStringReference(RuntimeClass_Windows_ApplicationModel_AppExtensions_AppExtensionCatalog).Get(), &catalogStatics));
+
+    ComPtr<IAppExtensionCatalog> catalog;
+    RETURN_IF_FAILED(catalogStatics->Open(HStringReference(L"com.microsoft.windows.console.host").Get(), &catalog));
+
+    ComPtr<IAsyncOperation<IVectorView<AppExtension*>*>> findOperation;
+    RETURN_IF_FAILED(catalog->FindAllAsync(&findOperation));
+
+    ComPtr<IVectorView<AppExtension*>> extensionList;
+    RETURN_IF_FAILED(wil::wait_for_completion_nothrow(findOperation.Get(), &extensionList));
+
+    UINT extensionCount;
+    RETURN_IF_FAILED(extensionList->get_Size(&extensionCount));
+    for (UINT index = 0; index < extensionCount; index++)
+    {
+        ComPtr<IAppExtension> extension;
+        RETURN_IF_FAILED(extensionList->GetAt(index, &extension));
+
+        ComPtr<IPackage> extensionPackage;
+        RETURN_IF_FAILED(extension->get_Package(&extensionPackage));
+
+        ComPtr<IPackageId> extensionPackageId;
+        RETURN_IF_FAILED(extensionPackage->get_Id(&extensionPackageId));
+
+        HString publisherId;
+        RETURN_IF_FAILED(extensionPackageId->get_PublisherId(publisherId.GetAddressOf()));
+
+        // PackageId.Name
+        HString name;
+        RETURN_IF_FAILED(extensionPackageId->get_Name(name.GetAddressOf()));
+
+        // PackageId.Version
+        PackageVersion version;
+        RETURN_IF_FAILED(extensionPackageId->get_Version(&version));
+    }
+
+    return S_OK;
+}
 
 [[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
 try
@@ -49,6 +106,8 @@ try
     Globals.pFontDefaultList = new RenderFontDefaults();
 
     FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
+
+    //LookupCatalog();
 
     // TODO: This is looked up twice in the middle hop console.
     IID delegationClsid;
