@@ -2789,6 +2789,9 @@ XCount
 xdy
 xe
 XEncoding
+xes
+Xes
+XES
 xff
 XFile
 xlang
