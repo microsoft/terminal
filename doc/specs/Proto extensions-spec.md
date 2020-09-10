@@ -64,10 +64,20 @@ GUID. Then, in the stub they provide the GUID can be used to identify which prof
 Since dynamic profiles also have a "source" field which we use as matching criteria, the stub would also need to
 have that field if it wants to modify a dynamic profile. These are just static strings that we can easily provide. 
 
-We might run into the case where multiple json stubs modify the same profile and so they override each other. We
-will need some sort of hierarchy to determine which stub to ultimately use. For the initial implementation, we
+We might run into the case where multiple json stubs modify the same profile and so they override each other. For the initial implementation, we
 are simply going to apply _all_ the changes. Eventually, we will probably want some sort of hierarchy to determine
-an order to which changes are applied. 
+an order to which changes are applied.
+
+Here is an example of a json stub that modifies an existing profile (specifically the Azure cloud shell profile):
+
+```js
+{
+    "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+    "source": "Windows.Terminal.Azure",
+    "fontSize": 16,
+    "fontWeight": "thin"
+}
+```
 
 #### Full profile stubs
 
@@ -80,7 +90,20 @@ new profile objects from stubs that contain at least the following
 * A unique GUID - this is so we avoid conflicts if several different creators name their profile the same thing
 
 As in the case of the dynamic profile generator, if we create a profile that did not exist before (i.e. does not
-exist in the user settings), we need to add the profile to the user settings file and re-save that file. 
+exist in the user settings), we need to add the profile to the user settings file and re-save that file.
+
+Here is an example of a json stub that contains a full profile:
+
+```js
+{
+    "guid": "{a821ae62-9d4a-3e34-b989-0a998ec283e6}",
+    "name": "Cool Profile",
+    "comandline": "powershell.exe",
+    "antialiasingMode": "aliased",
+    "fontWeight": "bold",
+    "scrollbarState": "hidden"
+}
+```
 
 #### Colour schemes
 
@@ -89,14 +112,19 @@ will require a hierarchy here as well. Though since the 'owner' of a colour sche
 if we should only allow creation of new colour schemes for now and ignore requests to modify existing colour
 schemes. 
 
-### Location(s) of the json files
+### Creation and location(s) of the json files
+
+#### For apps installed through Microsoft store (or similar)
+
+For apps that are installed through something like the Microsoft Store, they should add their json file(s) to
+an app extension. During our profile generation, we will probe the OS for app extensions of this type that it
+knows about and obtain the json files.
+
+#### For apps installed 'traditionally' and third parties/independent users
 
 For apps that are installed 'traditionally', their installer could simply add a json file to a specific local folder
-(specified by us) that we will look through every time we generate profiles. This is also where users can add
-their own json files for Terminal to generate profiles from. 
-
-For apps that are installed through something like the Microsoft Store, they should add their json stub(s) to
-an app extension. We will then obtain them during profile generation. 
+(specified by us) that we will look through every time we generate profiles. This is also where independent users will
+add their own json files for Terminal to generate/modify profiles. 
 
 ## UI/UX Design
 
