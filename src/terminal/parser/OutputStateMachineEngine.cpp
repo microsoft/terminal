@@ -8,6 +8,7 @@
 #include "base64.hpp"
 
 #include "ascii.hpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -1422,12 +1423,14 @@ static constexpr bool _isHexNumber(const wchar_t wch) noexcept
 // - True if a color was successfully parsed
 bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
                                                 DWORD& rgb) noexcept
+try
 {
-    bool foundRGB = false;
+    bool foundRGBColorSpec = false;
+    bool foundValidColorSpec = false;
+
     bool isSharpSignFormat = false;
     size_t rgbHexDigitCount = 0;
-    bool foundValidColorSpec = false;
-    std::array<float, 3> colorValues = { 0 };
+    std::array<unsigned int, 3> colorValues = { 0 };
     std::array<unsigned int, 3> parameterValues = { 0 };
     bool success = false;
     const auto stringSize = string.size();
@@ -1435,100 +1438,147 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
     // First we look for "rgb:"
     // Other colorspaces are theoretically possible, but we don't support them.
     auto curr = string.cbegin();
-    if ((*curr++ == L'r') &&
-        (*curr++ == L'g') &&
-        (*curr++ == L'b') &&
-        (*curr++ == L':'))
+    if (stringSize > 4)
     {
-        // We can have one of the following formats:
-        // 9 "rgb:h/h/h"
-        // 12 "rgb:hh/hh/hh"
-        // 15 "rgb:hhh/hhh/hhh"
-        // 18 "rgb:hhhh/hhhh/hhhh"
-        // Any other cases will be invalid.
-        if (!(stringSize == 9 || stringSize == 12 || stringSize == 15 || stringSize == 18))
+        auto prefix = std::wstring(string.substr(0, 4));
+        std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::towlower);
+        if (prefix.compare(L"rgb:") == 0)
         {
-            return false;
-        }
+            // We can have one of the following formats:
+            // 9 "rgb:h/h/h"
+            // 12 "rgb:hh/hh/hh"
+            // 15 "rgb:hhh/hhh/hhh"
+            // 18 "rgb:hhhh/hhhh/hhhh"
+            // Any fewer cannot be valid, and any more will be too many.
+            // Return early in this case.
+            if (stringSize < 9 || stringSize > 18)
+            {
+                return false;
+            }
 
-        foundRGB = true;
-        rgbHexDigitCount = ((stringSize - 3) / 3) - 1;
+            foundRGBColorSpec = true;
+
+            std::advance(curr, 4);
+        }
     }
 
     // Try the sharp sign format.
-    curr--;
-    if (*curr++ == L'#')
+    if (!foundRGBColorSpec && stringSize > 1)
     {
-        // We can have one of the following formats:
-        // 4 "#hhh"
-        // 7 "#hhhhhh"
-        // 10 "#hhhhhhhhh"
-        // 13 "#hhhhhhhhhhhh"
-        // Any other cases will be invalid.
-        if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
+        const auto prefix = string.substr(0, 1);
+        if (prefix.compare(L"#") == 0)
         {
-            return false;
-        }
+            // We can have one of the following formats:
+            // 4 "#hhh"
+            // 7 "#hhhhhh"
+            // 10 "#hhhhhhhhh"
+            // 13 "#hhhhhhhhhhhh"
+            // Any other cases will be invalid.
+            // Return early in this case.
+            if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
+            {
+                return false;
+            }
 
-        isSharpSignFormat = true;
-        foundRGB = true;
-        rgbHexDigitCount = (stringSize - 1) / 3;
+            isSharpSignFormat = true;
+            foundRGBColorSpec = true;
+            rgbHexDigitCount = (stringSize - 1) / 3;
+
+            std::advance(curr, 1);
+        }
     }
 
-    if (foundRGB)
+    // Try the XOrg app color name.
+    if (!foundRGBColorSpec)
     {
-        // Colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
+        try
+        {
+            til::color color = Utils::ColorFromXOrgAppColorName(string);
+            rgb = RGB(color.r, color.g, color.b);
+            success = true;
+        }
+        catch (...)
+        {
+        }
+    }
+
+    if (foundRGBColorSpec)
+    {
         for (size_t component = 0; component < 3; component++)
         {
             bool foundColor = false;
             auto& parameterValue = til::at(parameterValues, component);
-            for (size_t i = 0; i < rgbHexDigitCount; i++)
+            // For "sharp sign" format, the rgbHexDigitCount is known.
+            // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
+            const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
+            for (size_t i = 0; i < iteration && curr < string.cend(); i++)
             {
                 const wchar_t wch = *curr++;
 
-                if (_isHexNumber(wch))
+                if (!_isHexNumber(wch))
                 {
-                    parameterValue *= 16;
-                    unsigned int intVal = 0;
-                    if (s_HexToUint(wch, intVal))
+                    return false;
+                }
+
+                parameterValue *= 16;
+                unsigned int intVal = 0;
+                const auto ret = s_HexToUint(wch, intVal);
+                if (!ret)
+                {
+                    // Encountered something weird oh no
+                    return false;
+                }
+
+                parameterValue += intVal;
+
+                if (isSharpSignFormat)
+                {
+                    // If we get this far, any number can be seen as a valid part
+                    // of this component.
+                    foundColor = true;
+
+                    if (i >= rgbHexDigitCount)
                     {
-                        parameterValue += intVal;
+                        // Successfully parsed this component. Start the next one.
+                        break;
                     }
-                    else
+                }
+                else
+                {
+                    // Record the hex digit count of the current component.
+                    rgbHexDigitCount = i + 1;
+
+                    // If this is the first 2 component...
+                    if (component < 2 && curr < string.cend() && *curr == L'/')
                     {
-                        // Encountered something weird oh no
-                        foundColor = false;
+                        // ...and we have successfully parsed this component, we need
+                        // to skip the delimiter before starting the next one.
+                        curr++;
+                        foundColor = true;
+                        break;
+                    }
+                    // Or we have reached the end of the string...
+                    else if (curr >= string.cend())
+                    {
+                        // ...meaning that this is the last component. We're not going to
+                        // see any delimiter. We can just break out.
+                        foundColor = true;
                         break;
                     }
                 }
             }
 
-            if (isSharpSignFormat)
-            {
-                // Successfully parsed this component. Start the next one.
-                foundColor = true;
-            }
-            else
-            {
-                if (curr < string.cend() && *curr == L'/')
-                {
-                    // Same as above but need to skip the delimiter.
-                    curr++;
-                    foundColor = true;
-                }
-                else
-                {
-                    // Invalid delimiter. Treat it as an error.
-                    foundColor = false;
-                    break;
-                }
-            }
-
-            if (!foundColor || curr >= string.cend())
+            if (!foundColor)
             {
                 // Indicates there was some error parsing color.
-                break;
+                return false;
             }
+
+            // Calculate the actual color value based on the hex digit count.
+            auto& colorValue = til::at(colorValues, component);
+            const auto scaleMultiplier = 0x11;
+            const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
+            colorValue = parameterValue * scaleMultiplier / scaleDivisor;
         }
 
         if (curr >= string.cend())
@@ -1541,41 +1591,16 @@ bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
-        for (size_t component = 0; component < 3; component++)
-        {
-            auto& parameterValue = til::at(parameterValues, component);
-            auto& colorValue = til::at(colorValues, component);
-
-            // Calculate the actual color value based on the hex digit count.
-            switch (rgbHexDigitCount)
-            {
-            case 1:
-                colorValue = (float)parameterValue / 0xf * 0xff;
-                break;
-            case 2:
-                colorValue = (float)parameterValue;
-                break;
-            case 3:
-                colorValue = (float)parameterValue / 0xfff * 0xff;
-                break;
-            case 4:
-                colorValue = (float)parameterValue / 0xffff * 0xff;
-                break;
-            default:
-                // Should not get here.
-                break;
-            }
-        }
-
-        DWORD color = RGB(LOBYTE((unsigned int)colorValues.at(0)),
-                          LOBYTE((unsigned int)colorValues.at(1)),
-                          LOBYTE((unsigned int)colorValues.at(2)));
+        DWORD color = RGB(LOBYTE(colorValues.at(0)),
+                          LOBYTE(colorValues.at(1)),
+                          LOBYTE(colorValues.at(2)));
 
         rgb = color;
         success = true;
     }
     return success;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Routine Description:
 // - OSC 4 ; c ; spec ST
@@ -1599,16 +1624,6 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     bool foundTableIndex = false;
     bool success = false;
-    // We can have anywhere between [6,22] characters
-    // 6  "#;#hhh"
-    // 22 "###;rgb:hhhh/hhhh/hhhh"
-    // Any fewer cannot be valid, and any more will be too many.
-    // Return early in this case.
-    //      We'll still have to bounds check when parsing the actual RGB values
-    if (string.size() < 6 || string.size() > 22)
-    {
-        return false;
-    }
 
     // First try to get the table index, a number between [0,256]
     size_t current = 0;

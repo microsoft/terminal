@@ -596,6 +596,110 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
+    TEST_METHOD(TestOscParseColorSpec)
+    {
+        DWORD color = 0;
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"RGB:1/1/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:111/1/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1111/1/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/11/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/111/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1111/1", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/11", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/111", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/1111", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/23/4", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x23, 0x44));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/23/45", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x23, 0x45));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/23/456", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x23, 0x45));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:12/34/5", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x34, 0x55));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:12/34/56", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x34, 0x56));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:12/345/67", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x34, 0x67));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:12/345/678", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x34, 0x67));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:123/456/789", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:123/4564/789", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:123/4564/7897", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1231/4564/7897", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#111", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#123456", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x34, 0x56));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#123456789", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#123145647897", color));
+        VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"orange", color));
+        VERIFY_ARE_EQUAL(color, RGB(255, 165, 0));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"dark green", color));
+        VERIFY_ARE_EQUAL(color, RGB(0, 100, 0));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"medium sea green", color));
+        VERIFY_ARE_EQUAL(color, RGB(60, 179, 113));
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"LightYellow", color));
+        VERIFY_ARE_EQUAL(color, RGB(255, 255, 224));
+
+        // Invalid sequences.
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"r:", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rg:", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:/", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb://", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:///", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/11/", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/1/", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:1/1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:this/is/invalid", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgba:1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgbi:1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"cmyk:1/1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb#111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"rgb:#111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#1111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#11111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#11/1/", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#1111111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#/1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#rgb:1/1/1", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#111invalid", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#1111111111111111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"#invalid111", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"12/34/56", color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"123456", color));
+    }
+
     TEST_METHOD(TestDcsEntry)
     {
         auto dispatch = std::make_unique<DummyDispatch>();
@@ -816,6 +920,10 @@ public:
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
         _win32InputMode{ false },
+        _setDefaultForeground(false),
+        _defaultForegroundColor{ RGB(0, 0, 0) },
+        _setDefaultBackground(false),
+        _defaultBackgroundColor{ RGB(0, 0, 0) },
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
     {
@@ -1163,6 +1271,20 @@ public:
         return true;
     }
 
+    bool SetDefaultForeground(const DWORD color) noexcept override
+    {
+        _setDefaultForeground = true;
+        _defaultForegroundColor = color;
+        return true;
+    }
+
+    bool SetDefaultBackground(const DWORD color) noexcept override
+    {
+        _setDefaultBackground = true;
+        _defaultBackgroundColor = color;
+        return true;
+    }
+
     bool SetClipboard(std::wstring_view content) noexcept override
     {
         _copyContent = { content.begin(), content.end() };
@@ -1234,6 +1356,10 @@ public:
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
     bool _win32InputMode;
+    bool _setDefaultForeground;
+    DWORD _defaultForegroundColor;
+    bool _setDefaultBackground;
+    DWORD _defaultBackgroundColor;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;
@@ -2414,6 +2540,82 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
+    }
+
+    TEST_METHOD(TestOscSetDefaultForeground)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]10;rgb:1/1/1\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;rgb:12/34/56\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#111\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#123456\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;DarkOrange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscSetDefaultBackground)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]11;rgb:1/1/1\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;rgb:12/34/56\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#123456\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;DarkOrange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
     }
 
     TEST_METHOD(TestSetClipboard)
