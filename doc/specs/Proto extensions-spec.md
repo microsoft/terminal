@@ -198,7 +198,7 @@ we will give the value `global` to the source field.
 For full profiles that came from the *local* folder `C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal`,
 we will give the value `local` to the source field.
 
-For full profiles that came from app extensions, we will the value `app` to the source field.
+For full profiles that came from app extensions, we will give the value `app` to the source field.
 
 
 
@@ -208,7 +208,8 @@ This feature will allow other installations a level of control over how their pr
 if Ubuntu gets a new icon or a new font they can have those changes be reflected in Terminal users' Ubuntu profiles.
 
 Furthermore, this allows users an easy way to share profiles they have created - instead of needing to modify their
-settings file directly they could simply download a json file into a specific folder. 
+settings file directly they could simply download a json file into the folder
+`C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal`.
 
 ## Capabilities
 
