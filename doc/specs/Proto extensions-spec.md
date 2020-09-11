@@ -95,7 +95,7 @@ Technically, full profile stubs do not need to contain anything (they could just
 have some qualifying minimum criteria before we accept a stub as a full profile. I suggest that we only create
 new profile objects from stubs that contain at least the following
 
-* A name (and this name _should not_ match the names of existing profiles as described above, because that would cause us to interpret this profile as modifying an existing one)
+* A name
 * A commandline argument
 * A unique GUID - this is so we avoid conflicts if several different creators name their profile the same thing
 
