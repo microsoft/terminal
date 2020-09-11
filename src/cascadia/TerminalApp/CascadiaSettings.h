@@ -84,14 +84,18 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::Profile FindProfile(guid profileGuid) const noexcept;
         TerminalApp::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 
-        std::vector<::TerminalApp::SettingsLoadWarnings>& GetWarnings();
+        Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
+        Windows::Foundation::IReference<SettingsLoadErrors> GetLoadingError();
+        hstring GetSerializationErrorMessage();
 
         bool ApplyColorScheme(Microsoft::Terminal::TerminalControl::IControlSettings settings, hstring schemeName);
 
     private:
         com_ptr<GlobalAppSettings> _globals;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Profile> _profiles;
-        std::vector<::TerminalApp::SettingsLoadWarnings> _warnings;
+        Windows::Foundation::Collections::IVector<TerminalApp::SettingsLoadWarnings> _warnings;
+        Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
+        hstring _deserializationErrorMessage;
 
         std::vector<std::unique_ptr<::TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
 

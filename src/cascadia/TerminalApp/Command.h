@@ -38,15 +38,15 @@ namespace winrt::TerminalApp::implementation
         Command();
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
-                                                std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+                                                std::vector<TerminalApp::SettingsLoadWarnings>& warnings);
 
         static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
                                    Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                    gsl::span<winrt::TerminalApp::ColorScheme> schemes,
-                                   std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+                                   std::vector<TerminalApp::SettingsLoadWarnings>& warnings);
 
-        static std::vector<::TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                                                          const Json::Value& json);
+        static std::vector<TerminalApp::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
+                                                                        const Json::Value& json);
         bool HasNestedCommands();
         Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::Command> NestedCommands();
 
@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
         static std::vector<winrt::TerminalApp::Command> _expandCommand(Command* const expandable,
                                                                        Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                        gsl::span<winrt::TerminalApp::ColorScheme> schemes,
-                                                                       std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+                                                                       std::vector<TerminalApp::SettingsLoadWarnings>& warnings);
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;
     };

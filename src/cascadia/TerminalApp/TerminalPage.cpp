@@ -2120,7 +2120,7 @@ namespace winrt::TerminalApp::implementation
                                                                                     IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                                     IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes)
     {
-        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        std::vector<TerminalApp::SettingsLoadWarnings> warnings;
 
         std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
         sortedSchemes.reserve(schemes.Size());

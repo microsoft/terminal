@@ -29,7 +29,7 @@ static const winrt::hstring StartupTaskName = L"StartTerminalOnLoginTask";
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(winrt::TerminalApp::SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
@@ -41,7 +41,7 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson")
 };
-static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(winrt::TerminalApp::SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
@@ -76,7 +76,7 @@ static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_vi
 // - warning: the SettingsLoadWarnings value to get the localized text for.
 // Return Value:
 // - localized text for the given warning
-static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning)
+static winrt::hstring _GetWarningText(winrt::TerminalApp::SettingsLoadWarnings warning)
 {
     return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels);
 }
@@ -89,7 +89,7 @@ static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warnin
 // - error: the SettingsLoadErrors value to get the localized text for.
 // Return Value:
 // - localized text for the given error
-static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error)
+static winrt::hstring _GetErrorText(winrt::TerminalApp::SettingsLoadErrors error)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
@@ -411,8 +411,7 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        const auto settingsImpl{ winrt::get_self<implementation::CascadiaSettings>(_settings) };
-        const auto& warnings = settingsImpl->GetWarnings();
+        const auto warnings = _settings.Warnings();
         for (const auto& warning : warnings)
         {
             // Try looking up the warning message key for each warning.
@@ -631,26 +630,24 @@ namespace winrt::TerminalApp::implementation
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
             _settings = newSettings;
 
-            const auto settingsImpl{ winrt::get_self<implementation::CascadiaSettings>(_settings) };
-            const auto& warnings = settingsImpl->GetWarnings();
-            hr = warnings.size() == 0 ? S_OK : S_FALSE;
+            if (_settings.GetLoadingError())
+            {
+                _settingsLoadExceptionText = _GetErrorText(_settings.GetLoadingError().Value());
+                return E_INVALIDARG;
+            }
+            else if (!_settings.GetSerializationErrorMessage().empty())
+            {
+                _settingsLoadExceptionText = _settings.GetSerializationErrorMessage();
+                return E_INVALIDARG;
+            }
+
+            hr = _settings.Warnings().Size() == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
             hr = e.code();
             _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
-        }
-        catch (const ::TerminalApp::SettingsException& ex)
-        {
-            hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(ex.Error());
-        }
-        catch (const ::TerminalApp::SettingsTypedDeserializationException& e)
-        {
-            hr = E_INVALIDARG;
-            std::string_view what{ e.what() };
-            _settingsLoadExceptionText = til::u8u16(what);
         }
         catch (...)
         {

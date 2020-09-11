@@ -122,7 +122,9 @@
     <ClInclude Include="Utils.h" />
     <ClInclude Include="DefaultProfileUtils.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
-    <ClInclude Include="TerminalWarnings.h" />
+    <ClInclude Include="TerminalWarnings.h">
+      <DependentUpon>TerminalWarnings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="WslDistroGenerator.h" />
@@ -295,6 +297,7 @@
     <Midl Include="Profile.idl" />
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="CascadiaSettings.idl" />
+    <Midl Include="TerminalWarnings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

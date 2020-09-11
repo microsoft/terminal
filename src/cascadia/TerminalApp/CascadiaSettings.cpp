@@ -46,7 +46,9 @@ CascadiaSettings::CascadiaSettings() :
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
 CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _globals{ winrt::make_self<implementation::GlobalAppSettings>() },
-    _profiles{ winrt::single_threaded_observable_vector<TerminalApp::Profile>() }
+    _profiles{ winrt::single_threaded_observable_vector<TerminalApp::Profile>() },
+    _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
+    _deserializationErrorMessage{ L"" }
 {
     if (addDynamicProfiles)
     {
@@ -119,9 +121,19 @@ winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings()
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
 // - a reference to our list of warnings.
-std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetWarnings()
+IVectorView<winrt::TerminalApp::SettingsLoadWarnings> CascadiaSettings::Warnings()
 {
-    return _warnings;
+    return _warnings.GetView();
+}
+
+winrt::Windows::Foundation::IReference<winrt::TerminalApp::SettingsLoadErrors> CascadiaSettings::GetLoadingError()
+{
+    return _loadError;
+}
+
+winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
+{
+    return _deserializationErrorMessage;
 }
 
 // Method Description:
@@ -136,7 +148,7 @@ std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetWarnings()
 // - <none>
 void CascadiaSettings::_ValidateSettings()
 {
-    _warnings.clear();
+    _warnings.Clear();
 
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
@@ -198,7 +210,7 @@ void CascadiaSettings::_ValidateProfilesExist()
         // We can't add the warning to the list of warnings here, because this
         // object is not going to be returned at any point.
 
-        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::NoProfiles);
+        throw SettingsException(TerminalApp::SettingsLoadErrors::NoProfiles);
     }
 }
 
@@ -252,7 +264,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
     if (nullDefaultProfile || defaultProfileNotInProfiles)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
         // Use the first profile as the new default
 
         // _temporarily_ set the default profile to the first profile. Because
@@ -295,7 +307,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     if (foundDupe)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::DuplicateProfile);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::DuplicateProfile);
     }
 }
 
@@ -384,7 +396,7 @@ void CascadiaSettings::_RemoveHiddenProfiles()
     {
         // Throw an exception. This is an invalid state, and we want the app to
         // be able to gracefully use the default settings.
-        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::AllProfilesHidden);
+        throw SettingsException(TerminalApp::SettingsLoadErrors::AllProfilesHidden);
     }
 }
 
@@ -413,7 +425,7 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 
     if (foundInvalidScheme)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
+        _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
     }
 }
 
@@ -468,12 +480,12 @@ void CascadiaSettings::_ValidateMediaResources()
 
     if (invalidBackground)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
     }
 
     if (invalidIcon)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidIcon);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::InvalidIcon);
     }
 }
 
@@ -659,8 +671,11 @@ void CascadiaSettings::_ValidateKeybindings()
 
     if (!keybindingWarnings.empty())
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
-        _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        for (auto warning : keybindingWarnings)
+        {
+            _warnings.Append(warning);
+        }
     }
 }
 
@@ -679,7 +694,7 @@ void CascadiaSettings::_ValidateNoGlobalsKey()
 {
     if (auto oldGlobalsProperty{ _userSettings["globals"] })
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty);
     }
 }
 
