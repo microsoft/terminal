@@ -394,7 +394,7 @@ namespace TerminalAppUnitTests
             expected[key] = "third";
 
             Json::Value json{};
-            SetValueForKey<JsonTestEnum>(json, key, val);
+            SetValueForKey(json, key, val);
             VERIFY_ARE_EQUAL(expected, json);
         }
     }
@@ -419,7 +419,7 @@ namespace TerminalAppUnitTests
             expected[key] = "third";
 
             Json::Value json{};
-            SetValueForKey<JsonTestFlags>(json, key, val);
+            SetValueForKey(json, key, val);
             VERIFY_ARE_EQUAL(expected, json);
         }
 
@@ -431,7 +431,7 @@ namespace TerminalAppUnitTests
             expected[key] = "all";
 
             Json::Value json{};
-            SetValueForKey<JsonTestFlags>(json, key, val);
+            SetValueForKey(json, key, val);
             VERIFY_ARE_EQUAL(expected, json);
         }
 
@@ -449,7 +449,7 @@ namespace TerminalAppUnitTests
             expected[key] = arrayFirstSecond;
 
             Json::Value json{};
-            SetValueForKey<JsonTestFlags>(json, key, val);
+            SetValueForKey(json, key, val);
             VERIFY_ARE_EQUAL(expected, json);
         }
 
@@ -465,7 +465,7 @@ namespace TerminalAppUnitTests
             expected[key] = "none";
 
             Json::Value json{};
-            SetValueForKey<JsonTestFlags>(json, key, val);
+            SetValueForKey(json, key, val);
             VERIFY_ARE_EQUAL(expected, json);
         }
 

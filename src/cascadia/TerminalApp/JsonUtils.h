@@ -523,7 +523,7 @@ namespace TerminalApp::JsonUtils
                     if (pair.second != AllClear &&
                         (val & pair.second) == pair.second)
                     {
-                        json.append({ pair.first.data() });
+                        json.append(BaseEnumMapper::ToJson(pair.second));
                     }
                 }
                 return json;
@@ -682,7 +682,7 @@ namespace TerminalApp::JsonUtils
     template<typename T, typename Converter>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
     {
-        json[key.data()] = conv.ToJson(target);
+        *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
     }
 
     // SetValueForKey, type-deduced, with automatic converter
