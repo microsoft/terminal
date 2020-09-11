@@ -39,7 +39,7 @@
 namespace winrt::TerminalApp::implementation
 {
     using namespace ::TerminalApp;
-    using FromJsonResult = std::tuple<winrt::TerminalApp::IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+    using FromJsonResult = std::tuple<winrt::TerminalApp::IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
 
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
@@ -202,7 +202,7 @@ namespace winrt::TerminalApp::implementation
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
             if (args->_Direction == TerminalApp::Direction::None)
             {
-                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
             else
             {
@@ -237,7 +237,7 @@ namespace winrt::TerminalApp::implementation
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
             if (args->_Direction == TerminalApp::Direction::None)
             {
-                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
             else
             {
@@ -299,7 +299,7 @@ namespace winrt::TerminalApp::implementation
             JsonUtils::GetValueForKey(json, InputKey, args->_Input);
             if (args->_Input.empty())
             {
-                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
         }
@@ -395,7 +395,7 @@ namespace winrt::TerminalApp::implementation
             JsonUtils::GetValueForKey(json, NameKey, args->_SchemeName);
             if (args->_SchemeName.empty())
             {
-                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
         }
@@ -486,7 +486,7 @@ namespace winrt::TerminalApp::implementation
             JsonUtils::GetValueForKey(json, CommandlineKey, args->_Commandline);
             if (args->_Commandline.empty())
             {
-                return { nullptr, { ::TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { TerminalApp::SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
         }

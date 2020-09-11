@@ -73,8 +73,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;
         virtual bool SetCursorStyle(const CursorType style) = 0;
         virtual bool SetCursorColor(const COLORREF color) = 0;
-        virtual bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                size_t& eventsWritten) = 0;
         virtual bool PrivateWriteConsoleControlInput(const KeyEvent key) = 0;
         virtual bool PrivateRefreshWindow() = 0;
 

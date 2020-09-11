@@ -320,7 +320,8 @@ namespace winrt::TerminalApp::implementation
                 if (auto activeControl = activeTab->GetActiveTerminalControl())
                 {
                     auto controlSettings = activeControl.Settings();
-                    if (_settings->ApplyColorScheme(controlSettings, realArgs.SchemeName()))
+                    const auto settingsImpl{ winrt::get_self<implementation::CascadiaSettings>(_settings) };
+                    if (settingsImpl->ApplyColorScheme(controlSettings, realArgs.SchemeName()))
                     {
                         activeControl.UpdateSettings(controlSettings);
                         args.Handled(true);

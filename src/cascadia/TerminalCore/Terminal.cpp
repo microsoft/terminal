@@ -424,6 +424,17 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 }
 
 // Method Description:
+// - Gets the hyperlink ID of the text at the given terminal position
+// Arguments:
+// - The position of the text
+// Return value:
+// - The hyperlink ID
+uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+{
+    return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+}
+
+// Method Description:
 // - Send this particular (non-character) key event to the terminal.
 // - The terminal will translate the key and the modifiers pressed into the
 //   appropriate VT sequence for that key chord. If we do translate the key,
