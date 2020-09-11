@@ -218,7 +218,7 @@ void GlobalAppSettings::AddColorScheme(const winrt::TerminalApp::ColorScheme& sc
 // - <none>
 // Return Value:
 // - <none>
-std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
+std::vector<winrt::TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
 {
     return _keybindingsWarnings;
 }

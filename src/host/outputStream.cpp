@@ -513,6 +513,19 @@ bool ConhostInternalGetSet::PrivateEraseAll()
     return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
+// Method Description:
+// - Retrieves the current user default cursor style.
+// Arguments:
+// - style - Structure to receive cursor style.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::GetUserDefaultCursorStyle(CursorType& style)
+{
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    style = gci.GetCursorType();
+    return true;
+}
+
 // Routine Description:
 // - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
 //   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
@@ -525,22 +538,6 @@ bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 {
     DoSrvSetCursorStyle(_io.GetActiveOutputBuffer(), style);
     return true;
-}
-
-// Routine Description:
-// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - events - the input events to be copied into the head of the input
-//            buffer for the underlying attached process
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - true if successful (see DoSrvPrivatePrependConsoleInput). false otherwise.
-bool ConhostInternalGetSet::PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                       size_t& eventsWritten)
-{
-    return SUCCEEDED(DoSrvPrivatePrependConsoleInput(_io.GetActiveInputBuffer(),
-                                                     events,
-                                                     eventsWritten));
 }
 
 // Routine Description:

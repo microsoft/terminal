@@ -130,6 +130,7 @@ public:
     bool IsTrackingMouseInput() const noexcept;
 
     std::wstring GetHyperlinkAtPosition(const COORD position);
+    uint16_t GetHyperlinkIdAtPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -221,6 +222,7 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    CursorType _defaultCursorShape;
     bool _screenReversed;
 
     bool _snapOnInput;

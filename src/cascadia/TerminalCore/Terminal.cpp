@@ -134,6 +134,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
                                       cursorShape);
     }
 
+    _defaultCursorShape = cursorShape;
+
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = settings.GetColorTableEntry(i);
@@ -419,6 +421,17 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         return uri;
     }
     return {};
+}
+
+// Method Description:
+// - Gets the hyperlink ID of the text at the given terminal position
+// Arguments:
+// - The position of the text
+// Return value:
+// - The hyperlink ID
+uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+{
+    return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
 
 // Method Description:

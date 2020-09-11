@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
 
         void ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept;
 
-        std::vector<::TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
+        std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
 
         Windows::Foundation::Collections::IMapView<hstring, TerminalApp::Command> GetCommands() noexcept;
 
@@ -84,7 +84,7 @@ namespace winrt::TerminalApp::implementation
         guid _defaultProfile;
 
         com_ptr<AppKeyBindings> _keybindings;
-        std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
+        std::vector<TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
         Windows::Foundation::Collections::IMap<hstring, TerminalApp::ColorScheme> _colorSchemes;
         Windows::Foundation::Collections::IMap<hstring, TerminalApp::Command> _commands;
