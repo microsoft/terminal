@@ -2801,6 +2801,8 @@ XMFLOAT
 xml
 xmlns
 xor
+xorg
+XOrg
 Xpath
 XPosition
 XResource
