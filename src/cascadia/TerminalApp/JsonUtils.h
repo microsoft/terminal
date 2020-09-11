@@ -682,6 +682,7 @@ namespace TerminalApp::JsonUtils
     template<typename T, typename Converter>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
     {
+        // demand guarantees that it will return a value or throw an exception
         *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
     }
 
