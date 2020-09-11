@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const uint32_t rows,
             const uint32_t cols,
             const guid& guid);
+        static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
         void WriteInput(hstring const& data);

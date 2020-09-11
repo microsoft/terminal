@@ -389,8 +389,10 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
 
     switch (cursorStyle)
     {
-    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
-        [[fallthrough]];
+    case DispatchTypes::CursorStyle::UserDefault:
+        finalCursorType = _defaultCursorShape;
+        shouldBlink = true;
+        break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         finalCursorType = CursorType::FullBox;
         shouldBlink = true;
@@ -415,9 +417,10 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
         finalCursorType = CursorType::VerticalBar;
         shouldBlink = false;
         break;
+
     default:
-        finalCursorType = CursorType::Legacy;
-        shouldBlink = false;
+        // Invalid argument should be ignored.
+        return true;
     }
 
     _buffer->GetCursor().SetType(finalCursorType);
@@ -560,3 +563,32 @@ try
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
+
+// Method Description:
+// - Updates the buffer's current text attributes to start a hyperlink
+// Arguments:
+// - The hyperlink URI
+// - The customID provided (if there was one)
+// Return Value:
+// - true
+bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
+{
+    auto attr = _buffer->GetCurrentAttributes();
+    const auto id = _buffer->GetHyperlinkId(params);
+    attr.SetHyperlinkId(id);
+    _buffer->SetCurrentAttributes(attr);
+    _buffer->AddHyperlinkToMap(uri, id);
+    return true;
+}
+
+// Method Description:
+// - Updates the buffer's current text attributes to end a hyperlink
+// Return Value:
+// - true
+bool Terminal::EndHyperlink() noexcept
+{
+    auto attr = _buffer->GetCurrentAttributes();
+    attr.SetHyperlinkId(0);
+    _buffer->SetCurrentAttributes(attr);
+    return true;
+}

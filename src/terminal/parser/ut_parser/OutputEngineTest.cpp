@@ -816,6 +816,7 @@ public:
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
         _win32InputMode{ false },
+        _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
     {
     }
@@ -1168,6 +1169,25 @@ public:
         return true;
     }
 
+    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override
+    {
+        _hyperlinkMode = true;
+        _uri = uri;
+        if (!params.empty())
+        {
+            _customId = params;
+        }
+        return true;
+    }
+
+    bool EndHyperlink() noexcept override
+    {
+        _hyperlinkMode = false;
+        _uri.clear();
+        _customId.clear();
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -1214,7 +1234,10 @@ public:
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
     bool _win32InputMode;
+    bool _hyperlinkMode;
     std::wstring _copyContent;
+    std::wstring _uri;
+    std::wstring _customId;
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
@@ -2457,6 +2480,40 @@ class StateMachineExternalTest final
         // Passing a query character with one more extra param is illegal, won't change the content.
         mach.ProcessString(L"\x1b]52;;;?\x07");
         VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestAddHyperlink)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        // First we test with no custom id
+        // Process the opening osc 8 sequence
+        mach.ProcessString(L"\x1b]8;;test.url\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"test.url");
+        VERIFY_IS_TRUE(pDispatch->_customId.empty());
+
+        // Process the closing osc 8 sequences
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // Next we test with a custom id
+        // Process the opening osc 8 sequence
+        mach.ProcessString(L"\x1b]8;id=testId;test2.url\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"test2.url");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        // Process the closing osc 8 sequence
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         pDispatch->ClearState();
     }

@@ -32,11 +32,11 @@ namespace winrt::TerminalApp::implementation
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
         TerminalSettings() = default;
-        TerminalSettings(const ::TerminalApp::CascadiaSettings& appSettings,
+        TerminalSettings(const TerminalApp::CascadiaSettings& appSettings,
                          guid profileGuid,
                          const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 
-        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const ::TerminalApp::CascadiaSettings& appSettings,
+        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const TerminalApp::CascadiaSettings& appSettings,
                                                                              const TerminalApp::NewTerminalArgs& newTerminalArgs,
                                                                              const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 

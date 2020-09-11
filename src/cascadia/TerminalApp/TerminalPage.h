@@ -35,7 +35,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        winrt::fire_and_forget SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(TerminalApp::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -88,7 +88,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
-        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
+        TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
@@ -140,7 +140,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                                                          gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                                                          Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                                                                           Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes);
 
         void _DuplicateTabViewItem();
@@ -174,7 +174,11 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
+
+        void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
+        void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
+
         void _PasteText();
 
         fire_and_forget _LaunchSettings(const winrt::TerminalApp::SettingsTarget target);

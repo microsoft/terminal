@@ -855,7 +855,11 @@ bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
     }
 
     size_t eventsWritten;
-    success = _pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with eachother.
+    success = _pConApi->PrivateWriteConsoleInputW(inEvents, eventsWritten);
 
     return success;
 }
@@ -2160,8 +2164,11 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     switch (cursorStyle)
     {
+    case DispatchTypes::CursorStyle::UserDefault:
+        _pConApi->GetUserDefaultCursorStyle(actualType);
+        fEnableBlinking = true;
+        break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
-    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
         actualType = CursorType::FullBox;
         break;
@@ -2187,6 +2194,10 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         fEnableBlinking = false;
         actualType = CursorType::VerticalBar;
         break;
+
+    default:
+        // Invalid argument should be handled by the connected terminal.
+        return false;
     }
 
     bool success = _pConApi->SetCursorStyle(actualType);
@@ -2339,6 +2350,26 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     }
 
     return success;
+}
+
+// Method Description:
+// - Starts a hyperlink
+// Arguments:
+// - The hyperlink URI, optional additional parameters
+// Return Value:
+// - true
+bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
+{
+    return _pConApi->PrivateAddHyperlink(uri, params);
+}
+
+// Method Description:
+// - Ends a hyperlink
+// Return Value:
+// - true
+bool AdaptDispatch::EndHyperlink()
+{
+    return _pConApi->PrivateEndHyperlink();
 }
 
 // Routine Description:

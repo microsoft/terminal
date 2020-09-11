@@ -63,7 +63,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::ColorScheme>();
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> GlobalAppSettings::GetColorSchemes() noexcept
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
 {
     return _colorSchemes.GetView();
 }
@@ -86,7 +86,7 @@ winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
     return _unparsedDefaultProfile;
 }
 
-winrt::TerminalApp::KeyMapping GlobalAppSettings::GetKeyMap() const noexcept
+winrt::TerminalApp::KeyMapping GlobalAppSettings::KeyMap() const noexcept
 {
     return *_keymap;
 }
@@ -199,12 +199,12 @@ void GlobalAppSettings::AddColorScheme(const winrt::TerminalApp::ColorScheme& sc
 // - <none>
 // Return Value:
 // - <none>
-std::vector<TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
+std::vector<winrt::TerminalApp::SettingsLoadWarnings> GlobalAppSettings::KeybindingsWarnings() const
 {
     return _keybindingsWarnings;
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> GlobalAppSettings::GetCommands() noexcept
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> GlobalAppSettings::Commands() noexcept
 {
     return _commands.GetView();
 }
