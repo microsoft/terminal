@@ -148,8 +148,6 @@ Testing is a key component in the development workflow. Both Windows Terminal an
 
 If your changes affect existing test cases, or you're working on brand new features and also the accompanying test cases, see [TAEF](./doc/TAEF.md) for more information about how to validate your work locally.
 
-> Note that you can not run TAEF tests through Visual Studio. There may be plugins that can help you with that, but this approach is not recommended or supported.
-
 ### Code Review
 
 When you'd like the team to take a look, (even if the work is not yet fully-complete), mark the PR as 'Ready For Review' so that the team can review your work and provide comments, suggestions, and request changes. It may take several cycles, but the end result will be solid, testable, conformant code that is safe for us to merge.
