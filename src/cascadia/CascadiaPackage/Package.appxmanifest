@@ -77,7 +77,7 @@
                 Description="Console host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
-                    <Clsid>2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69</Clsid>
+                    <Clsid>{2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69}</Clsid>
                 </uap3:Properties>
             </uap3:AppExtension>
         </uap3:Extension>
@@ -88,7 +88,7 @@
                 Description="Terminal host built from microsoft/terminal open source repository"
                 PublicFolder="Public">
                 <uap3:Properties>
-                    <Clsid>E12CFF52-A866-4C77-9A90-F570A7AA2C6B</Clsid>
+                    <Clsid>{E12CFF52-A866-4C77-9A90-F570A7AA2C6B}</Clsid>
                 </uap3:Properties>
             </uap3:AppExtension>
         </uap3:Extension>

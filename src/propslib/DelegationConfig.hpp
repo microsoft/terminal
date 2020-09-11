@@ -18,9 +18,31 @@ Author(s):
 class DelegationConfig
 {
 public:
-    [[nodiscard]] static HRESULT s_GetConsole(IID& iid);
-    [[nodiscard]] static HRESULT s_GetTerminal(IID& iid);
+    struct DelegationBase
+    {
+        CLSID clsid;
+        std::wstring name;
+        std::wstring author;
+    };
+
+    struct DelegationConsole : public DelegationBase
+    {
+    };
+
+    struct DelegationTerminal : public DelegationBase
+    {
+    };
+
+    [[nodiscard]] static HRESULT s_GetAvailableConsoles(std::vector<DelegationConsole>& consoles) noexcept;
+    [[nodiscard]] static HRESULT s_GetAvailableTerminals(std::vector<DelegationTerminal>& terminals) noexcept;
+
+    [[nodiscard]] static HRESULT s_SetConsole(const DelegationConsole& console) noexcept;
+    [[nodiscard]] static HRESULT s_SetTerminal(const DelegationTerminal& terminal) noexcept;
+
+    [[nodiscard]] static HRESULT s_GetConsole(IID& iid) noexcept;
+    [[nodiscard]] static HRESULT s_GetTerminal(IID& iid) noexcept;
 
 private:
-    [[nodiscard]] static HRESULT s_Get(PCWSTR value, IID& iid);
+    [[nodiscard]] static HRESULT s_Get(PCWSTR value, IID& iid) noexcept;
+    [[nodiscard]] static HRESULT s_Set(PCWSTR value, const CLSID clsid) noexcept;
 };

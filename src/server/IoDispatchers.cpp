@@ -13,12 +13,14 @@
 #include "..\host\handle.h"
 #include "..\host\srvinit.h"
 #include "..\host\telemetry.hpp"
+#include "..\types\inc\utils.hpp"
 
 #include "..\host\dll\IConsoleHandoff_h.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Utils;
 
 // From ntstatus.h, which we cannot include without causing a bunch of other conflicts. So we just include the one code we need.
 //
@@ -160,7 +162,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     }
 
     Globals& Globals = ServiceLocator::LocateGlobals();
-    // TODO: only the inside windows one should probably bother trying to delegate, the out of box one could probably assume it doesn't need to.
     if (!Globals.launchArgs.IsHeadless() && Globals.handoffConsoleClsid && !Globals.handoffTarget && ConsoleConnectionDeservesVisibleWindow(&Cac))
     {
         try
@@ -181,17 +182,25 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
             msg.InputSize = pReceiveMsg->Descriptor.InputSize;
             msg.OutputSize = pReceiveMsg->Descriptor.OutputSize;
 
+            HANDLE vtIn = Globals.launchArgs.GetVtInHandle();
+            HANDLE vtOut = Globals.launchArgs.GetVtOutHandle();
+
+            // TODO: pass sig if we have it?
+            HANDLE vtSig = Globals.launchArgs.GetSignalHandle();
+            vtSig;
+
             THROW_IF_FAILED(handoff->EstablishHandoff(Globals.pDeviceComm->_Server.get(),
                                                       Globals.hInputEvent.get(),
-                                                      Globals.launchArgs.GetVtInHandle(),
-                                                      Globals.launchArgs.GetVtOutHandle(),
+                                                      vtIn,
+                                                      vtOut,
                                                       Globals.launchArgs.GetOriginalCommandLine().data(),
                                                       &msg));
 
-            // TODO: anymore cleanup of stuff we're holding onto like handles?
+            // Unlock in case anything tries to spool down as we exit.
             UnlockConsole();
 
-            ExitThread(S_OK);
+            // We've handed off responsibility. Exit process to clean up any outstanding things we have open.
+            ExitProcess(S_OK);
         }
         CATCH_LOG(); // Just log, don't do anything more. We'll move on to launching normally on failure.
     }

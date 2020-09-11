@@ -4,62 +4,6 @@
 
 #include "srvinit.h"
 
-// Define a specialization of WRL::Module so we can specify a REGCLS_SINGLEUSE type server.
-// We would like to use all the conveniences afforded to us by WRL::Module<T>, but it only
-// creates REGCLS_MULTIPLEUSE with no override. This makes an override for it by taking advantage
-// of its existing virtual declarations.
-#pragma region Single Use Out of Proc Specialization
-template<int RegClsType>
-class DefaultOutOfProcModuleWithRegistrationFlag;
-
-template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
-class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
-{
-public:
-    STDMETHOD(RegisterCOMObject)
-    (_In_opt_z_ const wchar_t* serverName, _In_reads_(count) IID* clsids, _In_reads_(count) IClassFactory** factories, _Inout_updates_(count) DWORD* cookies, unsigned int count)
-    {
-        return Microsoft::WRL::Details::RegisterCOMObject<RegClsType>(serverName, clsids, factories, cookies, count);
-    }
-};
-
-template<int RegClsType>
-class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithRegistrationFlag<RegClsType, DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
-{
-};
-#pragma endregion
-
-// Holds the wwinmain open until COM tells us there are no more server connections
-wil::unique_event _exitEvent;
-
-// Routine Description:
-// - Called back when COM says there is nothing left for our server to do and we can tear down.
-void _releaseNotifier() noexcept
-{
-    _exitEvent.SetEvent();
-}
-
-// Routine Description:
-// - Performs registrations for our COM types and waits until COM tells us we're done being a server.
-// Return Value:
-// - S_OK or a suitable COM/RPC error from registration or ongoing execution.
-HRESULT RunAsComServer() noexcept
-try
-{
-    _exitEvent.create();
-
-    RETURN_IF_FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED));
-
-    auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
-
-    RETURN_IF_FAILED(module.RegisterObjects());
-    _exitEvent.wait();
-    RETURN_IF_FAILED(module.UnregisterObjects());
-
-    return S_OK;
-}
-CATCH_RETURN()
-
 // Routine Description:
 // - Helper to duplicate a handle to ourselves so we can keep holding onto it
 //   after the caller frees the original one.

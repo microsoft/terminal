@@ -18,6 +18,4 @@ struct __declspec(uuid(__CLSID_CConsoleHandoff))
 #pragma endregion
 };
 
-HRESULT RunAsComServer() noexcept;
-
 CoCreatableClass(CConsoleHandoff);

@@ -17,6 +17,37 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x770aa552, 0x671a, 0x5e97, 0x57, 0x9b, 0x15, 0x17, 0x09, 0xec, 0x0d, 0xbd),
     TraceLoggingOptionMicrosoftTelemetry());
 
+// Define a specialization of WRL::Module so we can specify a REGCLS_SINGLEUSE type server.
+// We would like to use all the conveniences afforded to us by WRL::Module<T>, but it only
+// creates REGCLS_MULTIPLEUSE with no override. This makes an override for it by taking advantage
+// of its existing virtual declarations.
+#pragma region Single Use Out of Proc Specialization
+template<int RegClsType>
+class DefaultOutOfProcModuleWithRegistrationFlag;
+
+template<int RegClsType, typename ModuleT = DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
+class OutOfProcModuleWithRegistrationFlag : public Microsoft::WRL::Module<Microsoft::WRL::ModuleType::OutOfProc, ModuleT>
+{
+    using Elsewhere = Module<OutOfProc, ModuleT>;
+    using Super = Details::OutOfProcModuleBase<ModuleT>;
+
+public:
+    STDMETHOD(RegisterCOMObject)
+    (_In_opt_z_ const wchar_t* serverName, _In_reads_(count) IID* clsids, _In_reads_(count) IClassFactory** factories, _Inout_updates_(count) DWORD* cookies, unsigned int count)
+    {
+        return Microsoft::WRL::Details::RegisterCOMObject<RegClsType>(serverName, clsids, factories, cookies, count);
+    }
+};
+
+template<int RegClsType>
+class DefaultOutOfProcModuleWithRegistrationFlag : public OutOfProcModuleWithRegistrationFlag<RegClsType, DefaultOutOfProcModuleWithRegistrationFlag<RegClsType>>
+{
+};
+#pragma endregion
+
+// Holds the wwinmain open until COM tells us there are no more server connections
+wil::unique_event _comServerExitEvent;
+
 static bool ConhostV2ForcedInRegistry()
 {
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
@@ -144,6 +175,13 @@ static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 }
 
 // Routine Description:
+// - Called back when COM says there is nothing left for our server to do and we can tear down.
+void _releaseNotifier() noexcept
+{
+    _comServerExitEvent.SetEvent();
+}
+
+// Routine Description:
 // - Main entry point for EXE version of console launching.
 //   This can be used as a debugging/diagnostics tool as well as a method of testing the console without
 //   replacing the system binary.
@@ -164,6 +202,14 @@ int CALLBACK wWinMain(
 
     ConsoleCheckDebug();
 
+    // Set up OutOfProc COM server stuff in case we become one.
+    // WRL Module gets going right before winmain is called, so if we don't
+    // set this up appropriately... other things using WRL that aren't us
+    // could get messed up by the singleton module and cause unexpected errors.
+    _comServerExitEvent.create();
+    auto& module = OutOfProcModuleWithRegistrationFlag<REGCLS_SINGLEUSE>::Create(&_releaseNotifier);
+
+
     // Register Trace provider by GUID
     TraceLoggingRegister(g_ConhostLauncherProvider);
 
@@ -178,7 +224,29 @@ int CALLBACK wWinMain(
     {
         if (args.ShouldRunAsComServer())
         {
-            hr = RunAsComServer();
+            try
+            {
+                // OK we have to do this here and not in another method because
+                // we would either have to store the module ref above in some accessible
+                // variable (which would be awful because of the gigantic template name)
+                // or we would have to come up with some creativity to extract it out
+                // of the singleton module base without accidentally having WRL
+                // think we're recreating it (and then assert because it's already created.)
+                //
+                // Also this is all a problem because the decrementing count of used objects
+                // in this module in WRL::Module base doesn't null check the release notifier
+                // callback function in the OutOfProc variant in the 18362 SDK. So if anything
+                // else uses WRL directly or indirectly, it'll crash if the refcount
+                // ever hits 0.
+                // It does in the 19041 SDK so this can be cleaned into its own class if
+                // we ever build with 19041 or later.
+                auto comScope{ wil::CoInitializeEx(COINIT_MULTITHREADED) };
+
+                RETURN_IF_FAILED(module.RegisterObjects());
+                _comServerExitEvent.wait();
+                RETURN_IF_FAILED(module.UnregisterObjects());
+            }
+            CATCH_RETURN()
         }
         else
         {
