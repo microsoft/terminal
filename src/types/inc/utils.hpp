@@ -45,7 +45,7 @@ namespace Microsoft::Console::Utils
 
     std::string ColorToHexString(const til::color color);
     til::color ColorFromHexString(const std::string_view wstr);
-    til::color ColorFromXOrgAppColorName(const std::wstring_view wstr);
+    bool ColorFromXOrgAppColorName(const std::wstring_view wstr, til::color& color);
 
     void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
     void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);

@@ -1491,14 +1491,11 @@ try
     // Try the XOrg app color name.
     if (!foundRGBColorSpec)
     {
-        try
+        til::color color;
+        success = Utils::ColorFromXOrgAppColorName(string, color);
+        if (success)
         {
-            til::color color = Utils::ColorFromXOrgAppColorName(string);
             rgb = RGB(color.r, color.g, color.b);
-            success = true;
-        }
-        catch (...)
-        {
         }
     }
 
