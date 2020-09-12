@@ -286,7 +286,7 @@ static constexpr std::array<til::color, 256> standardXterm256ColorTable{
     til::color{ 0xEE, 0xEE, 0xEE },
 };
 
-static til::static_map xorgAppColorTable {
+static til::static_map xorgAppColorTable{
     std::pair{ L"snow"sv, til::color{ 255, 250, 250 } },
     std::pair{ L"ghost white"sv, til::color{ 248, 248, 255 } },
     std::pair{ L"ghostwhite"sv, til::color{ 248, 248, 255 } },
