@@ -700,6 +700,35 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"123456", color));
     }
 
+    TEST_METHOD(TestOscColorTableIndex)
+    {
+        size_t tableIndex = 0;
+        DWORD color = 0;
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"0;rgb:1/1/1", tableIndex, color));
+        VERIFY_ARE_EQUAL(tableIndex, 0);
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"16;rgb:11/11/11", tableIndex, color));
+        VERIFY_ARE_EQUAL(tableIndex, 16);
+        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"64;#111", tableIndex, color));
+        VERIFY_ARE_EQUAL(tableIndex, 64);
+        VERIFY_ARE_EQUAL(color, RGB(0x10, 0x10, 0x10));
+
+        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"128;orange", tableIndex, color));
+        VERIFY_ARE_EQUAL(tableIndex, 128);
+        VERIFY_ARE_EQUAL(color, RGB(255, 165, 0));
+
+        // Invalid sequences.
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"0", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;111", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;rgb:", tableIndex, color));
+    }
+
     TEST_METHOD(TestDcsEntry)
     {
         auto dispatch = std::make_unique<DummyDispatch>();

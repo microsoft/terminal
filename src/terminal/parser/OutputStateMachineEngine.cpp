@@ -746,7 +746,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscTitle(string, title);
         break;
     case OscActionCodes::SetColor:
-        success = _GetOscSetColorTable(string, tableIndex, color);
+        success = s_GetOscSetColorTable(string, tableIndex, color);
         break;
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
@@ -1512,11 +1512,6 @@ try
             {
                 const wchar_t wch = *curr++;
 
-                if (!_isHexNumber(wch))
-                {
-                    return false;
-                }
-
                 parameterValue *= 16;
                 unsigned int intVal = 0;
                 const auto ret = s_HexToUint(wch, intVal);
@@ -1611,9 +1606,9 @@ CATCH_LOG_RETURN_FALSE()
 // - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
-bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
+bool OutputStateMachineEngine::s_GetOscSetColorTable(const std::wstring_view string,
                                                     size_t& tableIndex,
-                                                    DWORD& rgb) const noexcept
+                                                    DWORD& rgb) noexcept
 {
     tableIndex = 0;
     rgb = 0;
@@ -1624,7 +1619,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
 
     // First try to get the table index, a number between [0,256]
     size_t current = 0;
-    for (size_t i = 0; i < 4; i++)
+    for (size_t i = 0; i < string.size(); i++)
     {
         const wchar_t wch = string.at(current);
         if (_isNumber(wch))
