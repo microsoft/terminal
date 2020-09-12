@@ -1576,7 +1576,7 @@ try
 
             // Calculate the actual color value based on the hex digit count.
             auto& colorValue = til::at(colorValues, component);
-            const auto scaleMultiplier = 0x11;
+            const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
             const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
             colorValue = parameterValue * scaleMultiplier / scaleDivisor;
         }

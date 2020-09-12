@@ -644,7 +644,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(color, RGB(0x12, 0x45, 0x78));
 
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#111", color));
-        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
+        VERIFY_ARE_EQUAL(color, RGB(0x10, 0x10, 0x10));
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#123456", color));
         VERIFY_ARE_EQUAL(color, RGB(0x12, 0x34, 0x56));
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_ParseColorSpec(L"#123456789", color));
@@ -2563,7 +2563,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\033]10;#111\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
 
         pDispatch->ClearState();
 
@@ -2601,7 +2601,7 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\033]11;#111\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
-        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
