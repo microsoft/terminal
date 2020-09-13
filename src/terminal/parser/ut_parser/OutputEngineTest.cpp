@@ -706,19 +706,19 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         DWORD color = 0;
 
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"0;rgb:1/1/1", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 0);
+        VERIFY_ARE_EQUAL(tableIndex, 0u);
         VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
 
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"16;rgb:11/11/11", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 16);
+        VERIFY_ARE_EQUAL(tableIndex, 16u);
         VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
 
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"64;#111", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 64);
+        VERIFY_ARE_EQUAL(tableIndex, 64u);
         VERIFY_ARE_EQUAL(color, RGB(0x10, 0x10, 0x10));
 
         VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"128;orange", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 128);
+        VERIFY_ARE_EQUAL(tableIndex, 128u);
         VERIFY_ARE_EQUAL(color, RGB(255, 165, 0));
 
         // Invalid sequences.
