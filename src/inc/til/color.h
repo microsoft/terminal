@@ -21,10 +21,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Here, we leverage the spec-legality of using unions for type conversions and the
         // overlap of four uint8_ts and a uint32_t to make the conversion very obvious to
         // both compilers.
-        union {
+        union
+        {
             struct
             {
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__  == __ORDER_BIG_ENDIAN__ // Clang, GCC
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ // Clang, GCC
                 uint8_t a, b, g, r;
 #else
                 uint8_t r, g, b, a;
