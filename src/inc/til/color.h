@@ -14,10 +14,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         // Clang (10) has no trouble optimizing the COLORREF conversion operator, below, to a
         // simple 32-bit load with mask (!) even though it's a series of bit shifts across
-        // mutliple struct members.
-        // MSVC (19.24) doesn't make the same optimization decision, and it emits three 8-bit loads
+        // multiple struct members.
+        // CL (19.24) doesn't make the same optimization decision, and it emits three 8-bit loads
         // and some shifting.
-        // In any case, the optimimization only applies at -O2 (clang) and above.
+        // In any case, the optimization only applies at -O2 (clang) and above.
         // Here, we leverage the spec-legality of using unions for type conversions and the
         // overlap of four uint8_ts and a uint32_t to make the conversion very obvious to
         // both compilers.
