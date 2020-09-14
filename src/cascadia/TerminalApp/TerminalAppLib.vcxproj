@@ -148,6 +148,9 @@
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="KeyMapping.h">
+      <DependentUpon>KeyMapping.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
@@ -208,7 +211,9 @@
     <ClCompile Include="CascadiaSettingsSerialization.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="AppKeyBindingsSerialization.cpp" />
+    <ClCompile Include="KeyMappingSerialization.cpp">
+      <DependentUpon>KeyMapping.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="DefaultProfileUtils.cpp" />
     <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
@@ -226,6 +231,9 @@
     </ClCompile>
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyMapping.cpp">
+      <DependentUpon>KeyMapping.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -262,6 +270,7 @@
     </Midl>
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
+    <Midl Include="KeyMapping.idl" />
     <Midl Include="AppLogic.idl" />
     <Midl Include="ActionArgs.idl" />
     <Midl Include="MinMaxCloseControl.idl">

@@ -23,7 +23,7 @@ namespace TerminalApp
         Boolean Hidden;
 
         String IconPath;
-        String GetExpandedIconPath();
+        String ExpandedIconPath { get; };
 
         CloseOnExitMode CloseOnExit;
         String TabTitle;
@@ -41,9 +41,10 @@ namespace TerminalApp
 
         String Commandline;
         String StartingDirectory;
+        String EvaluatedStartingDirectory { get; };
 
         String BackgroundImagePath;
-        String GetExpandedBackgroundImagePath();
+        String ExpandedBackgroundImagePath { get; };
         Double BackgroundImageOpacity;
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;

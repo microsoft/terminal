@@ -53,7 +53,7 @@ static constexpr bool debugFeaturesDefault{ false };
 #endif
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{ winrt::make_self<AppKeyBindings>() },
+    _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},
     _unparsedDefaultProfile{},
     _defaultProfile{},
@@ -63,7 +63,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::ColorScheme>();
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> GlobalAppSettings::GetColorSchemes() noexcept
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
 {
     return _colorSchemes.GetView();
 }
@@ -86,28 +86,9 @@ winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
     return _unparsedDefaultProfile;
 }
 
-winrt::TerminalApp::AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
+winrt::TerminalApp::KeyMapping GlobalAppSettings::KeyMap() const noexcept
 {
-    return *_keybindings;
-}
-
-// Method Description:
-// - Applies appropriate settings from the globals into the given TerminalSettings.
-// Arguments:
-// - settings: a TerminalSettings object to add global property values to.
-// Return Value:
-// - <none>
-void GlobalAppSettings::ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept
-{
-    settings.KeyBindings(GetKeybindings());
-    settings.InitialRows(_InitialRows);
-    settings.InitialCols(_InitialCols);
-
-    settings.WordDelimiters(_WordDelimiters);
-    settings.CopyOnSelect(_CopyOnSelect);
-    settings.ForceFullRepaintRendering(_ForceFullRepaintRendering);
-    settings.SoftwareRendering(_SoftwareRendering);
-    settings.ForceVTInput(_ForceVTInput);
+    return *_keymap;
 }
 
 // Method Description:
@@ -179,7 +160,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     auto parseBindings = [this, &json](auto jsonKey) {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _keybindings->LayerJson(bindings);
+            auto warnings = _keymap->LayerJson(bindings);
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can
             // recover from. Most of these warnings cannot be detected later in the
@@ -190,8 +171,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
             // Now parse the array again, but this time as a list of commands.
             warnings = winrt::TerminalApp::implementation::Command::LayerJson(_commands, bindings);
-            // It's possible that the user provided commands have some warnings
-            // in them, similar to the keybindings.
         }
     };
     parseBindings(LegacyKeybindingsKey);
@@ -218,12 +197,12 @@ void GlobalAppSettings::AddColorScheme(const winrt::TerminalApp::ColorScheme& sc
 // - <none>
 // Return Value:
 // - <none>
-std::vector<winrt::TerminalApp::SettingsLoadWarnings> GlobalAppSettings::GetKeybindingsWarnings() const
+std::vector<winrt::TerminalApp::SettingsLoadWarnings> GlobalAppSettings::KeybindingsWarnings() const
 {
     return _keybindingsWarnings;
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> GlobalAppSettings::GetCommands() noexcept
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> GlobalAppSettings::Commands() noexcept
 {
     return _commands.GetView();
 }

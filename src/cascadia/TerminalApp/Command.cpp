@@ -467,7 +467,7 @@ namespace winrt::TerminalApp::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.GetExpandedIconPath()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.ExpandedIconPath()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);

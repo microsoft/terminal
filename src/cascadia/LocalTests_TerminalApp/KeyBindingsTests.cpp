@@ -5,6 +5,7 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
+#include "../KeyMapping.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 
@@ -66,18 +67,18 @@ namespace TerminalAppLocalTests
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
 
-        auto appKeyBindings = winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings1Json);
-        VERIFY_ARE_EQUAL(2u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings1Json);
+        VERIFY_ARE_EQUAL(2u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(4u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings2Json);
+        VERIFY_ARE_EQUAL(4u, keymap->_keyShortcuts.size());
     }
 
     void KeyBindingsTests::LayerKeybindings()
@@ -90,18 +91,18 @@ namespace TerminalAppLocalTests
         const auto bindings1Json = VerifyParseSucceeded(bindings1String);
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
 
-        auto appKeyBindings = winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings1Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings1Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(2u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings2Json);
+        VERIFY_ARE_EQUAL(2u, keymap->_keyShortcuts.size());
     }
 
     void KeyBindingsTests::UnbindKeybindings()
@@ -120,52 +121,52 @@ namespace TerminalAppLocalTests
         const auto bindings4Json = VerifyParseSucceeded(bindings4String);
         const auto bindings5Json = VerifyParseSucceeded(bindings5String);
 
-        auto appKeyBindings = winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
 
-        appKeyBindings->LayerJson(bindings1Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings1Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `\"unbound\"` to unbind the key"));
-        appKeyBindings->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings2Json);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `null` to unbind the key"));
         // First add back a good binding
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
         // Then try layering in the bad setting
-        appKeyBindings->LayerJson(bindings3Json);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings3Json);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using an unrecognized command to unbind the key"));
         // First add back a good binding
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
         // Then try layering in the bad setting
-        appKeyBindings->LayerJson(bindings4Json);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings4Json);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using a straight up invalid value to unbind the key"));
         // First add back a good binding
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
         // Then try layering in the bad setting
-        appKeyBindings->LayerJson(bindings5Json);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings5Json);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key that wasn't bound at all"));
-        appKeyBindings->LayerJson(bindings2Json);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
+        keymap->LayerJson(bindings2Json);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
     }
 
     void KeyBindingsTests::TestArbitraryArgs()
@@ -189,17 +190,17 @@ namespace TerminalAppLocalTests
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
-        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(10u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(10u, keymap->_keyShortcuts.size());
 
         {
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` without args parses as Copy(SingleLine=false)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -210,7 +211,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` with args parses them correctly"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -221,7 +222,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` with args parses them correctly"));
             KeyChord kc{ false, true, true, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
@@ -232,7 +233,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTab` without args parses as NewTab(Index=null)"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('T') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -244,7 +245,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `newTab` parses args correctly"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('T') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -258,7 +259,7 @@ namespace TerminalAppLocalTests
                 L"Verify that `newTab` with an index greater than the legacy "
                 L"args afforded parses correctly"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('Y') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -272,7 +273,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` ignores args it doesn't understand"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -284,7 +285,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `copy` null as it's `args` parses as the default option"));
             KeyChord kc{ true, false, true, static_cast<int32_t>('B') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -296,7 +297,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `adjustFontSize` with a positive delta parses args correctly"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::AdjustFontSize, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -308,7 +309,7 @@ namespace TerminalAppLocalTests
             Log::Comment(NoThrowString().Format(
                 L"Verify that `adjustFontSize` with a negative delta parses args correctly"));
             KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::AdjustFontSize, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -329,15 +330,15 @@ namespace TerminalAppLocalTests
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
-        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(5u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(5u, keymap->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -346,7 +347,7 @@ namespace TerminalAppLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -355,7 +356,7 @@ namespace TerminalAppLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -364,7 +365,7 @@ namespace TerminalAppLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -373,7 +374,7 @@ namespace TerminalAppLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -392,15 +393,15 @@ namespace TerminalAppLocalTests
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
-        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(3u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(3u, keymap->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -409,7 +410,7 @@ namespace TerminalAppLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -420,7 +421,7 @@ namespace TerminalAppLocalTests
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
@@ -437,15 +438,15 @@ namespace TerminalAppLocalTests
 
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
-        auto appKeyBindings = winrt::make_self<implementation::AppKeyBindings>();
-        VERIFY_IS_NOT_NULL(appKeyBindings);
-        VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
-        appKeyBindings->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
+        auto keymap = winrt::make_self<winrt::TerminalApp::implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, keymap->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(*appKeyBindings, kc);
+            auto actionAndArgs = TestUtils::GetActionAndArgs(*keymap, kc);
             const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
