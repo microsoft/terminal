@@ -327,8 +327,7 @@
         { "command": { "action": "moveFocus", "direction": "down" }, "keys": "alt+down" },
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
-        { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
-        { "command": "togglePaneZoom" },
+        { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" }
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
