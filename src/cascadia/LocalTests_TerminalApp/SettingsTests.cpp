@@ -3989,7 +3989,7 @@ namespace TerminalAppLocalTests
                 { "name": "scheme_1" },
                 { "name": "scheme_2" },
             ],
-            "bindings": [
+            "actions": [
                 {
                     "name": "iterable command ${scheme.name}",
                     "iterateOn": "schemes",
