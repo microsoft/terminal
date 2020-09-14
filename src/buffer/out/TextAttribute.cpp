@@ -112,6 +112,17 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<
     return { fg, bg };
 }
 
+// Method description:
+// - Tells us whether the text is a hyperlink or not
+// Return value:
+// - True if it is a hyperlink, false otherwise
+bool TextAttribute::IsHyperlink() const noexcept
+{
+    // All non-hyperlink text have a default hyperlinkId of 0 while
+    // all hyperlink text have a non-zero hyperlinkId
+    return _hyperlinkId != 0;
+}
+
 TextColor TextAttribute::GetForeground() const noexcept
 {
     return _foreground;
@@ -120,6 +131,15 @@ TextColor TextAttribute::GetForeground() const noexcept
 TextColor TextAttribute::GetBackground() const noexcept
 {
     return _background;
+}
+
+// Method description:
+// - Retrieves the hyperlink ID of the text
+// Return value:
+// - The hyperlink ID
+uint16_t TextAttribute::GetHyperlinkId() const noexcept
+{
+    return _hyperlinkId;
 }
 
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
@@ -172,6 +192,15 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
     {
         SetBackground(rgbColor);
     }
+}
+
+// Method description:
+// - Sets the hyperlink ID of the text
+// Arguments:
+// - id - the id we wish to set
+void TextAttribute::SetHyperlinkId(uint16_t id) noexcept
+{
+    _hyperlinkId = id;
 }
 
 bool TextAttribute::IsLeadingByte() const noexcept
@@ -336,6 +365,14 @@ void TextAttribute::SetDefaultBackground() noexcept
     _background = TextColor();
 }
 
+// Method description:
+// - Resets only the meta and extended attributes
+void TextAttribute::SetDefaultMetaAttrs() noexcept
+{
+    _extendedAttrs = ExtendedAttributes::Normal;
+    _wAttrLegacy = 0;
+}
+
 // Method Description:
 // - Returns true if this attribute indicates its background is the "default"
 //      background. Its _rgbBackground will contain the actual value of the
@@ -356,6 +393,6 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 //      requires for most erasing and filling operations.
 void TextAttribute::SetStandardErase() noexcept
 {
-    _extendedAttrs = ExtendedAttributes::Normal;
-    _wAttrLegacy = 0;
+    SetDefaultMetaAttrs();
+    _hyperlinkId = 0;
 }

@@ -319,7 +319,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (auto activeControl = activeTab->GetActiveTerminalControl())
                 {
-                    if (const auto scheme = _settings->GlobalSettings().GetColorSchemes().TryLookup(realArgs.SchemeName()))
+                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
                         auto controlSettings = activeControl.Settings().as<TerminalSettings>();
                         controlSettings->ApplyColorScheme(scheme);
