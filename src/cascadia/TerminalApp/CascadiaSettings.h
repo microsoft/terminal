@@ -66,14 +66,11 @@ namespace winrt::TerminalApp::implementation
         static TerminalApp::CascadiaSettings LoadAll();
         static TerminalApp::CascadiaSettings LoadUniversal();
 
-        std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const TerminalApp::NewTerminalArgs& newTerminalArgs) const;
-        TerminalApp::TerminalSettings BuildSettings(guid profileGuid) const;
-
-        TerminalApp::GlobalAppSettings GlobalSettings();
+        TerminalApp::GlobalAppSettings GlobalSettings() const;
 
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Profile> Profiles() const noexcept;
 
-        TerminalApp::AppKeyBindings Keybindings() const noexcept;
+        TerminalApp::KeyMapping KeyMap() const noexcept;
 
         static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
@@ -84,14 +81,18 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::Profile FindProfile(guid profileGuid) const noexcept;
         TerminalApp::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 
-        std::vector<::TerminalApp::SettingsLoadWarnings>& GetWarnings();
+        Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
+        Windows::Foundation::IReference<SettingsLoadErrors> GetLoadingError();
+        hstring GetSerializationErrorMessage();
 
-        bool ApplyColorScheme(Microsoft::Terminal::TerminalControl::IControlSettings settings, hstring schemeName);
+        winrt::guid GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
     private:
         com_ptr<GlobalAppSettings> _globals;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Profile> _profiles;
-        std::vector<::TerminalApp::SettingsLoadWarnings> _warnings;
+        Windows::Foundation::Collections::IVector<TerminalApp::SettingsLoadWarnings> _warnings;
+        Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
+        hstring _deserializationErrorMessage;
 
         std::vector<std::unique_ptr<::TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
 
@@ -122,7 +123,6 @@ namespace winrt::TerminalApp::implementation
 
         std::optional<guid> _GetProfileGuidByName(const hstring) const;
         std::optional<guid> _GetProfileGuidByIndex(std::optional<int> index) const;
-        guid _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
         void _ValidateSettings();
         void _ValidateProfilesExist();

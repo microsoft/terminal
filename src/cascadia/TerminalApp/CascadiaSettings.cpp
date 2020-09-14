@@ -46,7 +46,9 @@ CascadiaSettings::CascadiaSettings() :
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
 CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _globals{ winrt::make_self<implementation::GlobalAppSettings>() },
-    _profiles{ winrt::single_threaded_observable_vector<TerminalApp::Profile>() }
+    _profiles{ winrt::single_threaded_observable_vector<TerminalApp::Profile>() },
+    _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
+    _deserializationErrorMessage{ L"" }
 {
     if (addDynamicProfiles)
     {
@@ -98,9 +100,9 @@ IObservableVector<winrt::TerminalApp::Profile> CascadiaSettings::Profiles() cons
 // - <none>
 // Return Value:
 // - the globally configured keybindings
-winrt::TerminalApp::AppKeyBindings CascadiaSettings::Keybindings() const noexcept
+winrt::TerminalApp::KeyMapping CascadiaSettings::KeyMap() const noexcept
 {
-    return _globals->GetKeybindings();
+    return _globals->KeyMap();
 }
 
 // Method Description:
@@ -109,7 +111,7 @@ winrt::TerminalApp::AppKeyBindings CascadiaSettings::Keybindings() const noexcep
 // - <none>
 // Return Value:
 // - a reference to our global settings
-winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings()
+winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings() const
 {
     return *_globals;
 }
@@ -119,9 +121,19 @@ winrt::TerminalApp::GlobalAppSettings CascadiaSettings::GlobalSettings()
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
 // - a reference to our list of warnings.
-std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetWarnings()
+IVectorView<winrt::TerminalApp::SettingsLoadWarnings> CascadiaSettings::Warnings()
 {
-    return _warnings;
+    return _warnings.GetView();
+}
+
+winrt::Windows::Foundation::IReference<winrt::TerminalApp::SettingsLoadErrors> CascadiaSettings::GetLoadingError()
+{
+    return _loadError;
+}
+
+winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
+{
+    return _deserializationErrorMessage;
 }
 
 // Method Description:
@@ -136,7 +148,7 @@ std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetWarnings()
 // - <none>
 void CascadiaSettings::_ValidateSettings()
 {
-    _warnings.clear();
+    _warnings.Clear();
 
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
@@ -198,7 +210,7 @@ void CascadiaSettings::_ValidateProfilesExist()
         // We can't add the warning to the list of warnings here, because this
         // object is not going to be returned at any point.
 
-        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::NoProfiles);
+        throw SettingsException(TerminalApp::SettingsLoadErrors::NoProfiles);
     }
 }
 
@@ -252,7 +264,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
     if (nullDefaultProfile || defaultProfileNotInProfiles)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
         // Use the first profile as the new default
 
         // _temporarily_ set the default profile to the first profile. Because
@@ -295,7 +307,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     if (foundDupe)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::DuplicateProfile);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::DuplicateProfile);
     }
 }
 
@@ -384,7 +396,7 @@ void CascadiaSettings::_RemoveHiddenProfiles()
     {
         // Throw an exception. This is an invalid state, and we want the app to
         // be able to gracefully use the default settings.
-        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::AllProfilesHidden);
+        throw SettingsException(TerminalApp::SettingsLoadErrors::AllProfilesHidden);
     }
 }
 
@@ -404,7 +416,7 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     for (auto profile : _profiles)
     {
         const auto schemeName = profile.ColorSchemeName();
-        if (!_globals->GetColorSchemes().HasKey(schemeName))
+        if (!_globals->ColorSchemes().HasKey(schemeName))
         {
             profile.ColorSchemeName({ L"Campbell" });
             foundInvalidScheme = true;
@@ -413,7 +425,7 @@ void CascadiaSettings::_ValidateAllSchemesExist()
 
     if (foundInvalidScheme)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
+        _warnings.Append(SettingsLoadWarnings::UnknownColorScheme);
     }
 }
 
@@ -441,7 +453,7 @@ void CascadiaSettings::_ValidateMediaResources()
             // This covers file paths on the machine, app data, URLs, and other resource paths.
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedBackgroundImagePath() };
+                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedBackgroundImagePath() };
             }
             catch (...)
             {
@@ -455,7 +467,7 @@ void CascadiaSettings::_ValidateMediaResources()
         {
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedIconPath() };
+                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedIconPath() };
             }
             catch (...)
             {
@@ -468,75 +480,13 @@ void CascadiaSettings::_ValidateMediaResources()
 
     if (invalidBackground)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::InvalidBackgroundImage);
     }
 
     if (invalidIcon)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::InvalidIcon);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::InvalidIcon);
     }
-}
-
-// Method Description:
-// - Create a TerminalSettings object for the provided newTerminalArgs. We'll
-//   use the newTerminalArgs to look up the profile that should be used to
-//   create these TerminalSettings. Then, we'll apply settings contained in the
-//   newTerminalArgs to the profile's settings, to enable customization on top
-//   of the profile's default values.
-// Arguments:
-// - newTerminalArgs: An object that may contain a profile name or GUID to
-//   actually use. If the Profile value is not a guid, we'll treat it as a name,
-//   and attempt to look the profile up by name instead.
-//   * Additionally, we'll use other values (such as Commandline,
-//     StartingDirectory) in this object to override the settings directly from
-//     the profile.
-// Return Value:
-// - the GUID of the created profile, and a fully initialized TerminalSettings object
-std::tuple<winrt::guid, winrt::TerminalApp::TerminalSettings> CascadiaSettings::BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const
-{
-    const winrt::guid profileGuid = _GetProfileForArgs(newTerminalArgs);
-    auto settings = BuildSettings(profileGuid);
-
-    if (newTerminalArgs)
-    {
-        // Override commandline, starting directory if they exist in newTerminalArgs
-        if (!newTerminalArgs.Commandline().empty())
-        {
-            settings.Commandline(newTerminalArgs.Commandline());
-        }
-        if (!newTerminalArgs.StartingDirectory().empty())
-        {
-            settings.StartingDirectory(newTerminalArgs.StartingDirectory());
-        }
-        if (!newTerminalArgs.TabTitle().empty())
-        {
-            settings.StartingTitle(newTerminalArgs.TabTitle());
-        }
-    }
-
-    return { profileGuid, settings };
-}
-
-// Method Description:
-// - Create a TerminalSettings object for the profile with a GUID matching the
-//   provided GUID. If no profile matches this GUID, then this method will
-//   throw.
-// Arguments:
-// - profileGuid: The GUID of a profile to use to create a settings object for.
-// Return Value:
-// - a fully initialized TerminalSettings object
-winrt::TerminalApp::TerminalSettings CascadiaSettings::BuildSettings(winrt::guid profileGuid) const
-{
-    const auto profile = FindProfile(profileGuid);
-    THROW_HR_IF_NULL(E_INVALIDARG, profile);
-
-    const auto profileImpl = winrt::get_self<Profile>(profile);
-    auto result = profileImpl->CreateTerminalSettings(_globals->GetColorSchemes());
-
-    // Place our appropriate global settings into the Terminal Settings
-    _globals->ApplyToSettings(result);
-
-    return result;
 }
 
 // Method Description:
@@ -555,7 +505,7 @@ winrt::TerminalApp::TerminalSettings CascadiaSettings::BuildSettings(winrt::guid
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-winrt::guid CascadiaSettings::_GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const
+winrt::guid CascadiaSettings::GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const
 {
     std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)
@@ -655,12 +605,15 @@ std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optiona
 // - <none>
 void CascadiaSettings::_ValidateKeybindings()
 {
-    auto keybindingWarnings = _globals->GetKeybindingsWarnings();
+    auto keybindingWarnings = _globals->KeybindingsWarnings();
 
     if (!keybindingWarnings.empty())
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
-        _warnings.insert(_warnings.end(), keybindingWarnings.begin(), keybindingWarnings.end());
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        for (auto warning : keybindingWarnings)
+        {
+            _warnings.Append(warning);
+        }
     }
 }
 
@@ -679,7 +632,7 @@ void CascadiaSettings::_ValidateNoGlobalsKey()
 {
     if (auto oldGlobalsProperty{ _userSettings["globals"] })
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty);
+        _warnings.Append(TerminalApp::SettingsLoadWarnings::LegacyGlobalsProperty);
     }
 }
 
@@ -741,25 +694,5 @@ winrt::TerminalApp::ColorScheme CascadiaSettings::GetColorSchemeForProfile(const
         return nullptr;
     }
     const auto schemeName = profile.ColorSchemeName();
-    return _globals->GetColorSchemes().TryLookup(schemeName);
-}
-
-// Method Description:
-// - Apply the color scheme (provided by name) to the given IControlSettings.
-//   The settings are modified in-place.
-// - If the name doesn't correspond to any of our schemes, this does nothing.
-// Arguments:
-// - settings: the IControlSettings object to modify
-// - name: the name of the scheme to apply
-// Return Value:
-// - true iff we found a matching scheme for the name schemeName
-bool CascadiaSettings::ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings settings,
-                                        winrt::hstring schemeName)
-{
-    if (auto scheme{ _globals->GetColorSchemes().TryLookup(schemeName) })
-    {
-        scheme.ApplyScheme(settings);
-        return true;
-    }
-    return false;
+    return _globals->ColorSchemes().TryLookup(schemeName);
 }

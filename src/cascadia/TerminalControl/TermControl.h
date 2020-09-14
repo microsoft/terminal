@@ -206,6 +206,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
+        // Track the last cell we hovered over (used in pointerMovedHandler)
+        COORD _lastHoveredCell;
+        // Track the last hyperlink ID we hovered over
+        uint16_t _lastHoveredId;
+
         using Timestamp = uint64_t;
 
         // imported from WinUser

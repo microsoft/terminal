@@ -119,13 +119,13 @@ namespace TerminalAppLocalTests
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
         VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(0, 0, 0, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_ARE_EQUAL(til::color(0, 0, 0), til::color{ profile0->Foreground().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->SelectionBackground().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->SelectionBackground().Value() });
 
         VERIFY_ARE_EQUAL(L"profile0", profile0->Name());
 
@@ -136,13 +136,13 @@ namespace TerminalAppLocalTests
         profile0->LayerJson(profile1Json);
 
         VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(2, 2, 2, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile0->Foreground().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_ARE_EQUAL(L"profile1", profile0->Name());
 
@@ -154,13 +154,13 @@ namespace TerminalAppLocalTests
         profile0->LayerJson(profile2Json);
 
         VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(3, 3, 3, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_ARE_EQUAL(til::color(3, 3, 3), til::color{ profile0->Foreground().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(2, 2, 2, 0), til::color{ profile0->SelectionBackground().Value() });
+        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile0->SelectionBackground().Value() });
 
         VERIFY_ARE_EQUAL(L"profile2", profile0->Name());
 

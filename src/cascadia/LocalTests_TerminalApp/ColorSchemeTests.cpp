@@ -195,7 +195,7 @@ namespace TerminalAppLocalTests
 
         auto settings = winrt::make_self<winrt::TerminalApp::implementation::CascadiaSettings>();
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->GetColorSchemes().Size());
+        VERIFY_ARE_EQUAL(0u, settings->_globals->ColorSchemes().Size());
         VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme0Json));
         VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme1Json));
         VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme2Json));
@@ -203,15 +203,15 @@ namespace TerminalAppLocalTests
 
         settings->_LayerOrCreateColorScheme(scheme0Json);
         {
-            for (auto kv : settings->_globals->GetColorSchemes())
+            for (auto kv : settings->_globals->ColorSchemes())
             {
                 Log::Comment(NoThrowString().Format(
                     L"kv:%s->%s", kv.Key().data(), kv.Value().Name().data()));
             }
-            VERIFY_ARE_EQUAL(1u, settings->_globals->GetColorSchemes().Size());
+            VERIFY_ARE_EQUAL(1u, settings->_globals->ColorSchemes().Size());
 
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme0");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
+            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
             auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
 
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
@@ -225,13 +225,13 @@ namespace TerminalAppLocalTests
         settings->_LayerOrCreateColorScheme(scheme1Json);
 
         {
-            VERIFY_ARE_EQUAL(2u, settings->_globals->GetColorSchemes().Size());
+            VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme0");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
+            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
             auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme1"));
-            auto scheme1Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme1");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme1"));
+            auto scheme1Proj = settings->_globals->ColorSchemes().Lookup(L"scheme1");
             auto scheme1 = winrt::get_self<ColorScheme>(scheme1Proj);
 
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
@@ -246,13 +246,13 @@ namespace TerminalAppLocalTests
         settings->_LayerOrCreateColorScheme(scheme2Json);
 
         {
-            VERIFY_ARE_EQUAL(2u, settings->_globals->GetColorSchemes().Size());
+            VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme0");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
+            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
             auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme1"));
-            auto scheme1Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme1");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme1"));
+            auto scheme1Proj = settings->_globals->ColorSchemes().Lookup(L"scheme1");
             auto scheme1 = winrt::get_self<ColorScheme>(scheme1Proj);
 
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
@@ -267,16 +267,16 @@ namespace TerminalAppLocalTests
         settings->_LayerOrCreateColorScheme(scheme3Json);
 
         {
-            VERIFY_ARE_EQUAL(3u, settings->_globals->GetColorSchemes().Size());
+            VERIFY_ARE_EQUAL(3u, settings->_globals->ColorSchemes().Size());
 
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme0");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
+            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
             auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L"scheme1"));
-            auto scheme1Proj = settings->_globals->GetColorSchemes().Lookup(L"scheme1");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme1"));
+            auto scheme1Proj = settings->_globals->ColorSchemes().Lookup(L"scheme1");
             auto scheme1 = winrt::get_self<ColorScheme>(scheme1Proj);
-            VERIFY_IS_TRUE(settings->_globals->GetColorSchemes().HasKey(L""));
-            auto scheme2Proj = settings->_globals->GetColorSchemes().Lookup(L"");
+            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L""));
+            auto scheme2Proj = settings->_globals->ColorSchemes().Lookup(L"");
             auto scheme2 = winrt::get_self<ColorScheme>(scheme2Proj);
 
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
