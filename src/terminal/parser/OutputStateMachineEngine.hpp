@@ -231,7 +231,7 @@ namespace Microsoft::Console::VirtualTerminal
                                 unsigned int& value) noexcept;
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   size_t& tableIndex,
-                                  DWORD& rgb) noexcept;
+                                  DWORD& rgb) const noexcept;
 
         static bool s_ParseColorSpec(const std::wstring_view string,
                                      DWORD& rgb) noexcept;

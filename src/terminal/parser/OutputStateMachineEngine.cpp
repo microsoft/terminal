@@ -1608,7 +1608,7 @@ CATCH_LOG_RETURN_FALSE()
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
                                                     size_t& tableIndex,
-                                                    DWORD& rgb) noexcept
+                                                    DWORD& rgb) const noexcept
 {
     tableIndex = 0;
     rgb = 0;
