@@ -118,6 +118,9 @@ namespace winrt::TerminalApp::implementation
         void _ApplyDefaultsFromUserSettings();
 
         void _LoadDynamicProfiles();
+        void _LoadProtoExtensions();
+        void _AccumulateJsonStubsInDirectory(const std::wstring_view directory, std::unordered_set<std::string>& out);
+        void _AddOrModifyProfiles(std::unordered_set<std::string> stubs, winrt::hstring source);
 
         static bool _IsPackaged();
         static void _WriteSettings(const std::string_view content);

@@ -128,6 +128,7 @@ winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadAll()
         // created by now, because we're going to check in there for any generators
         // that should be disabled (if the user had any settings.)
         resultPtr->_LoadDynamicProfiles();
+        resultPtr->_LoadProtoExtensions();
 
         if (!fileHasData)
         {
@@ -365,6 +366,125 @@ void CascadiaSettings::_LoadDynamicProfiles()
                 }
             }
             CATCH_LOG_MSG("Dynamic Profile Namespace: \"%ls\"", generatorNamespace.data());
+        }
+    }
+}
+
+void CascadiaSettings::_LoadProtoExtensions()
+{
+    std::unordered_set<std::wstring> ignoredNamespaces;
+    const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
+    if (disabledProfileSources.isArray())
+    {
+        for (const auto& json : disabledProfileSources)
+        {
+            ignoredNamespaces.emplace(JsonUtils::GetValue<std::wstring>(json));
+        }
+    }
+
+    // TODO: Create the folders
+    //                  %ProgramData%\\Microsoft\\Windows\\Terminal
+    //                  %LOCALAPPDATA%\\Microsoft\\Windows\\Terminal
+    // if they did not already exist
+    // QUESTION: should these folder creations happen during installation?
+
+    // TODO: accumulate json stubs from app extensions
+
+    // TODO: The strings
+    //          "local"
+    //          "global"
+    //          "%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal"
+    //          "%ProgramData%\\Microsoft\\Windows\\Terminal"
+    //       should probably be localized
+
+    if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal")))
+    {
+        std::unordered_set<std::string> jsonStubs;
+        _AccumulateJsonStubsInDirectory(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal", jsonStubs);
+        _AddOrModifyProfiles(jsonStubs, L"local");
+    }
+    if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramData%\\Microsoft\\Windows\\Terminal")))
+    {
+        std::unordered_set<std::string> jsonStubs;
+        _AccumulateJsonStubsInDirectory(L"%ProgramData%\\Microsoft\\Windows\\Terminal", jsonStubs);
+        _AddOrModifyProfiles(jsonStubs, L"global");
+    }
+}
+
+void CascadiaSettings::_AccumulateJsonStubsInDirectory(const std::wstring_view directory, std::unordered_set<std::string>& out)
+{
+    const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
+    for (auto& protoExt : std::filesystem::directory_iterator(root))
+    {
+        // TODO: the string ".json" should probably be localized
+        if (protoExt.path().extension() == ".json")
+        {
+            wil::unique_hfile hFile{ CreateFileW(protoExt.path().c_str(),
+                                                 GENERIC_READ,
+                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                 nullptr,
+                                                 OPEN_EXISTING,
+                                                 FILE_ATTRIBUTE_NORMAL,
+                                                 nullptr) };
+
+            if (hFile)
+            {
+                const auto fileData = _ReadFile(hFile.get()).value();
+                out.emplace(fileData);
+            }
+        }
+    }
+}
+
+// This function is _extremely_ similar to _LayerOrCreateProfile, but unfortunately we cannot use that
+// because we need to add the source parameter for new profiles we find through proto extensions
+void CascadiaSettings::_AddOrModifyProfiles(std::unordered_set<std::string> stubs, winrt::hstring source)
+{
+    for (auto stub : stubs)
+    {
+        // TODO (maybe): should this 'json parsing' part of the code be its own helper?
+        // then _ParseJsonString can use it too
+        // Note: we cannot use _ParseJsonString because it wants to write into the user settings or default settings,
+        // but we don't want to do either here - we just want to append to our profiles vector and let the
+        // _AppendDynamicProfilesToUserSettings function that gets called later handle the writeback
+        auto actualDataStart = stub.data();
+        const auto actualDataEnd = stub.data() + stub.size();
+        if (stub.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
+        {
+            actualDataStart += Utf8Bom.size();
+        }
+
+        std::string errs; // This string will receive any error text from failing to parse.
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+        Json::Value res;
+        // `parse` will return false if it fails.
+        if (!reader->parse(actualDataStart, actualDataEnd, &res, &errs))
+        {
+            // This will be caught by App::_TryLoadSettings, who will display
+            // the text to the user.
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+
+        auto pProfile = _FindMatchingProfile(res);
+        if (pProfile)
+        {
+            // We found a matching profile, so this is just a modification that we should layer
+            pProfile->LayerJson(res);
+        }
+        else
+        {
+            // This is a new profile
+            // TODO: make sure the new profile meets our minimum requirements -
+            //       it should at least have a name and a commandline argument
+            auto profile = winrt::make_self<Profile>();
+            if (_userDefaultProfileSettings)
+            {
+                profile->LayerJson(_userDefaultProfileSettings);
+            }
+            profile->LayerJson(res);
+            profile->Source(source);
+            _profiles.Append(*profile);
         }
     }
 }
