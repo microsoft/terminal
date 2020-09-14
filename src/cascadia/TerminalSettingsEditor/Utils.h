@@ -5,5 +5,9 @@
 
 #include "../inc/cppwinrt_utils.h"
 
-winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);
-winrt::hstring KeyToString(winrt::Windows::System::VirtualKey key);
+namespace winrt::Microsoft::Terminal::Settings
+{
+    winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);
+    winrt::hstring KeyToString(winrt::Windows::System::VirtualKey key);
+}
+

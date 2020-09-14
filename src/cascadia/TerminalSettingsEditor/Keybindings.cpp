@@ -13,6 +13,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Controls::Primitives;
 using namespace winrt::Windows::System;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

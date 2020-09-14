@@ -17,6 +17,7 @@ using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Input;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::UI::Xaml::Navigation;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 // The User Control item template is documented at https://go.microsoft.com/fwlink/?LinkId=234236
 
