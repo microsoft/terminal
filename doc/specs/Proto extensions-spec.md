@@ -40,7 +40,7 @@ in between 2 and 3:
    1. modifications to existing profiles
    2. additions of full profiles
    3. additions of colour schemes
-4. Layer the user settings on top of all the profiles created in steps 1 through 3
+4. Layer the user settings on top of all the profiles created in steps 1 through 3 (this includes the user-defined default settings which they wish to apply to all profiles)
 5. Validate the settings
 
 ### Specifications of the json stubs
