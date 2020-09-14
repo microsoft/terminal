@@ -220,9 +220,9 @@ winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadAll()
 
                 // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
                 // and avoid extraneous data.
-                auto akb = winrt::make_self<AppKeyBindings>();
-                akb->LayerJson(userKeybindings);
-                auto value = akb->ToJson();
+                auto km = winrt::make_self<implementation::KeyMapping>();
+                km->LayerJson(userKeybindings);
+                auto value = km->ToJson();
 
                 // Reserialize the keybindings
                 Json::StreamWriterBuilder wbuilder;
@@ -760,7 +760,7 @@ winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Jso
 {
     if (auto schemeName = ColorScheme::GetNameFromJson(schemeJson))
     {
-        if (auto scheme{ _globals->GetColorSchemes().TryLookup(*schemeName) })
+        if (auto scheme{ _globals->ColorSchemes().TryLookup(*schemeName) })
         {
             return winrt::get_self<ColorScheme>(scheme)->get_strong();
         }

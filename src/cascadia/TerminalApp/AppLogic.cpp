@@ -494,8 +494,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Use the default profile to determine how big of a window we need.
-        const auto settingsImpl{ winrt::get_self<implementation::CascadiaSettings>(_settings) };
-        const auto [_, settings] = settingsImpl->BuildSettings(nullptr);
+        const auto [_, settings] = TerminalSettings::BuildSettings(_settings, nullptr, nullptr);
 
         auto proposedSize = TermControl::GetProposedDimensions(settings, dpi);
 

@@ -61,9 +61,6 @@ namespace TerminalCoreUnitTests
         void SelectionBackground(uint32_t) {}
         void ForceVTInput(bool) {}
 
-        // other unimplemented methods
-        void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}
-
         GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
     private:

@@ -7,6 +7,8 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
+#include "AppKeyBindings.h"
+#include "TerminalSettings.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -103,7 +105,8 @@ namespace winrt::TerminalApp::implementation
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
 
-        winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
+        winrt::com_ptr<AppKeyBindings> _bindings{ winrt::make_self<implementation::AppKeyBindings>() };
+        winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<implementation::ShortcutActionDispatch>() };
 
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
@@ -128,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
-        void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
+        void _HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const Tab& tab);

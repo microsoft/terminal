@@ -1,13 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-// - A couple helper functions for serializing/deserializing an AppKeyBindings
+// - A couple helper functions for serializing/deserializing a KeyMapping
 //   to/from json.
 //
 // Author(s):
 // - Mike Griese - May 2019
 
 #include "pch.h"
-#include "AppKeyBindings.h"
+#include "KeyMapping.h"
 #include "ActionAndArgs.h"
 #include "KeyChordSerialization.h"
 #include "Utils.h"
@@ -52,12 +52,12 @@ static Json::Value _ShortcutAsJsonObject(const KeyChord& chord,
 }
 
 // Method Description:
-// - Serialize this AppKeyBindings to a json array of objects. Each object in
+// - Serialize this KeyMapping to a json array of objects. Each object in
 //   the array represents a single keybinding, mapping a KeyChord to a
 //   ShortcutAction.
 // Return Value:
 // - a Json::Value which is an equivalent serialization of this object.
-Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
+Json::Value winrt::TerminalApp::implementation::KeyMapping::ToJson()
 {
     Json::Value bindingsArray;
 
@@ -81,7 +81,7 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 }
 
 // Method Description:
-// - Deserialize an AppKeyBindings from the key mappings that are in the array
+// - Deserialize a KeyMapping from the key mappings that are in the array
 //   `json`. The json array should contain an array of objects with both a
 //   `command` string and a `keys` array, where `command` is one of the names
 //   listed in `ActionAndArgs::ActionKeyNamesMap`, and `keys` is an array of
@@ -93,7 +93,7 @@ Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 //   `"unbound"`, then we'll clear the keybinding from the existing keybindings.
 // Arguments:
 // - json: an array of Json::Value's to deserialize into our _keyShortcuts mapping.
-std::vector<SettingsLoadWarnings> winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
+std::vector<SettingsLoadWarnings> winrt::TerminalApp::implementation::KeyMapping::LayerJson(const Json::Value& json)
 {
     // It's possible that the user provided keybindings have some warnings in
     // them - problems that we should alert the user to, but we can recover
