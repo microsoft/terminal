@@ -723,6 +723,11 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 
         // Invalid sequences.
         VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";;", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";0", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";111", tableIndex, color));
+        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";#111", tableIndex, color));
         VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"0", tableIndex, color));
         VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;", tableIndex, color));
         VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;111", tableIndex, color));

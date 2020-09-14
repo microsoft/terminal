@@ -1444,13 +1444,13 @@ try
         std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::towlower);
         if (prefix.compare(L"rgb:") == 0)
         {
-            // We can have one of the following formats:
+            // If all the components have the same digit count, we can have one of the following formats:
             // 9 "rgb:h/h/h"
             // 12 "rgb:hh/hh/hh"
             // 15 "rgb:hhh/hhh/hhh"
             // 18 "rgb:hhhh/hhhh/hhhh"
-            // Any fewer cannot be valid, and any more will be too many.
-            // Return early in this case.
+            // Anything in between these is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
+            // Any fewer cannot be valid, and any more will be too many. Return early in this case.
             if (stringSize < 9 || stringSize > 18)
             {
                 return false;
@@ -1619,7 +1619,7 @@ bool OutputStateMachineEngine::s_GetOscSetColorTable(const std::wstring_view str
 
     // First try to get the table index, a number between [0,256]
     size_t current = 0;
-    for (size_t i = 0; i < string.size(); i++)
+    while (current < string.size())
     {
         const wchar_t wch = string.at(current);
         if (_isNumber(wch))
@@ -1629,7 +1629,7 @@ bool OutputStateMachineEngine::s_GetOscSetColorTable(const std::wstring_view str
 
             ++current;
         }
-        else if (wch == L';' && i > 0)
+        else if (wch == L';' && current > 0)
         {
             // We need to explicitly pass in a number, we can't default to 0 if
             //  there's no param
