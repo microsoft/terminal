@@ -1062,7 +1062,7 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 // - Parses a color from a string based on the XOrg app color name table.
 // Arguments:
 // - str: a string representation of the color name to parse
-// - color: a color to write the result to 
+// - color: a color to write the result to
 // Return Value:
 // - True if the string is successfully parsed. False otherwise.
 bool Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr, til::color& color)
