@@ -700,40 +700,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_IS_FALSE(OutputStateMachineEngine::s_ParseColorSpec(L"123456", color));
     }
 
-    TEST_METHOD(TestOscColorTableIndex)
-    {
-        size_t tableIndex = 0;
-        DWORD color = 0;
-
-        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"0;rgb:1/1/1", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 0u);
-        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
-
-        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"16;rgb:11/11/11", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 16u);
-        VERIFY_ARE_EQUAL(color, RGB(0x11, 0x11, 0x11));
-
-        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"64;#111", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 64u);
-        VERIFY_ARE_EQUAL(color, RGB(0x10, 0x10, 0x10));
-
-        VERIFY_IS_TRUE(OutputStateMachineEngine::s_GetOscSetColorTable(L"128;orange", tableIndex, color));
-        VERIFY_ARE_EQUAL(tableIndex, 128u);
-        VERIFY_ARE_EQUAL(color, RGB(255, 165, 0));
-
-        // Invalid sequences.
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";;", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";0", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";111", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L";#111", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"0", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;111", tableIndex, color));
-        VERIFY_IS_FALSE(OutputStateMachineEngine::s_GetOscSetColorTable(L"1;rgb:", tableIndex, color));
-    }
-
     TEST_METHOD(TestDcsEntry)
     {
         auto dispatch = std::make_unique<DummyDispatch>();
@@ -959,7 +925,9 @@ public:
         _setDefaultBackground(false),
         _defaultBackgroundColor{ RGB(0, 0, 0) },
         _hyperlinkMode{ false },
-        _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) } // fill with cleared option
+        _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
+        _colorTable{},
+        _setColorTableEntry{ false }
     {
     }
 
@@ -1305,6 +1273,13 @@ public:
         return true;
     }
 
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
+    {
+        _setColorTableEntry = true;
+        _colorTable.at(tableIndex) = color;
+        return true;
+    }
+
     bool SetDefaultForeground(const DWORD color) noexcept override
     {
         _setDefaultForeground = true;
@@ -1394,6 +1369,7 @@ public:
     DWORD _defaultForegroundColor;
     bool _setDefaultBackground;
     DWORD _defaultBackgroundColor;
+    bool _setColorTableEntry;
     bool _hyperlinkMode;
     std::wstring _copyContent;
     std::wstring _uri;
@@ -1401,7 +1377,9 @@ public:
 
     static const size_t s_cMaxOptions = 16;
     static const size_t s_uiGraphicsCleared = UINT_MAX;
+    static const size_t XTERM_COLOR_TABLE_SIZE = 256;
     std::vector<DispatchTypes::GraphicsOptions> _options;
+    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
 };
 
 class StateMachineExternalTest final
@@ -2612,6 +2590,16 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultForegroundColor);
 
         pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;rgb:1/1/\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+
+        pDispatch->ClearState();
     }
 
     TEST_METHOD(TestOscSetDefaultBackground)
@@ -2648,6 +2636,84 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]11;DarkOrange\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;rgb:1/1/\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestOscSetColorTableEntry)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\033]4;0;rgb:1/1/1\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(0));
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;16;rgb:11/11/11\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(16));
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;64;#111\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_colorTable.at(64));
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;128;orange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(255, 165, 0), pDispatch->_colorTable.at(128));
+
+        pDispatch->ClearState();
+
+        // Invalid sequences.
+        mach.ProcessString(L"\033]4;\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;;\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;0\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;111\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;#111\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;1;111\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;1;rgb:\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
 
         pDispatch->ClearState();
     }

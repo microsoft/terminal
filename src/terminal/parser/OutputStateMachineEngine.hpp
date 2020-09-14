@@ -229,9 +229,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         static bool s_HexToUint(const wchar_t wch,
                                 unsigned int& value) noexcept;
-        static bool s_GetOscSetColorTable(const std::wstring_view string,
-                                          size_t& tableIndex,
-                                          DWORD& rgb) noexcept;
+        bool _GetOscSetColorTable(const std::wstring_view string,
+                                  size_t& tableIndex,
+                                  DWORD& rgb) noexcept;
 
         static bool s_ParseColorSpec(const std::wstring_view string,
                                      DWORD& rgb) noexcept;

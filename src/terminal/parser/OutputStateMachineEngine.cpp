@@ -746,7 +746,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscTitle(string, title);
         break;
     case OscActionCodes::SetColor:
-        success = s_GetOscSetColorTable(string, tableIndex, color);
+        success = _GetOscSetColorTable(string, tableIndex, color);
         break;
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
@@ -1606,9 +1606,9 @@ CATCH_LOG_RETURN_FALSE()
 // - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
-bool OutputStateMachineEngine::s_GetOscSetColorTable(const std::wstring_view string,
-                                                     size_t& tableIndex,
-                                                     DWORD& rgb) noexcept
+bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
+                                                    size_t& tableIndex,
+                                                    DWORD& rgb) noexcept
 {
     tableIndex = 0;
     rgb = 0;
