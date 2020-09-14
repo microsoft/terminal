@@ -57,10 +57,19 @@ static constexpr std::array<std::string_view, 16> TableColors = {
     BrightWhiteKey,
 };
 
+ColorScheme::ColorScheme() :
+    _Foreground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+    _Background{ DEFAULT_BACKGROUND_WITH_ALPHA },
+    _SelectionBackground{ DEFAULT_FOREGROUND },
+    _CursorColor{ DEFAULT_CURSOR_COLOR }
+{
+}
+
 ColorScheme::ColorScheme(winrt::hstring name, Color defaultFg, Color defaultBg, Color cursorColor) :
     _Name{ name },
     _Foreground{ defaultFg },
     _Background{ defaultBg },
+    _SelectionBackground{ DEFAULT_FOREGROUND },
     _CursorColor{ cursorColor }
 {
 }
@@ -163,6 +172,19 @@ winrt::com_array<Color> ColorScheme::Table() const noexcept
     winrt::com_array<Color> result{ COLOR_TABLE_SIZE };
     std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> Color { return c; });
     return result;
+}
+
+// Method Description:
+// - Set a color in the color table
+// Arguments:
+// - index: the index of the desired color within the table
+// - value: the color value we are setting the color table color to
+// Return Value:
+// - none
+void ColorScheme::SetColorTable(uint8_t index, const winrt::Windows::UI::Color& value) noexcept
+{
+    THROW_HR_IF(E_INVALIDARG, index > COLOR_TABLE_SIZE - 1);
+    _table[index] = value;
 }
 
 // Method Description:

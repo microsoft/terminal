@@ -5,32 +5,15 @@ namespace TerminalApp
 {
     [default_interface] runtimeclass ColorScheme {
         ColorScheme();
-        ColorScheme(String name, Windows.UI.Color defaultFg, Windows.UI.Color defaultBg, Windows.UI.Color cursorColor);
 
-        String Name { get; };
+        String Name;
 
         Windows.UI.Color Foreground;
         Windows.UI.Color Background;
         Windows.UI.Color SelectionBackground;
         Windows.UI.Color CursorColor;
 
-        Windows.UI.Color Black;
-        Windows.UI.Color Red;
-        Windows.UI.Color Green;
-        Windows.UI.Color Yellow;
-        Windows.UI.Color Blue;
-        Windows.UI.Color Purple;
-        Windows.UI.Color Cyan;
-        Windows.UI.Color White;
-        Windows.UI.Color BrightBlack;
-        Windows.UI.Color BrightRed;
-        Windows.UI.Color BrightGreen;
-        Windows.UI.Color BrightYellow;
-        Windows.UI.Color BrightBlue;
-        Windows.UI.Color BrightPurple;
-        Windows.UI.Color BrightCyan;
-        Windows.UI.Color BrightWhite;
-
         Windows.UI.Color[] Table { get; };
+        void SetColorTable(UInt8 index, Windows.UI.Color value);
     }
 }
