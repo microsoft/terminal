@@ -1495,7 +1495,7 @@ try
         success = Utils::ColorFromXOrgAppColorName(string, color);
         if (success)
         {
-            rgb = RGB(color.r, color.g, color.b);
+            rgb = color;
         }
     }
 
