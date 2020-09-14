@@ -11,7 +11,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
-    <!--TODO: SETTINGSUI make sure there isn't a separate UI for a new profile vs existing ones.-->
+    <!--TODO: SETTINGS UI make sure there isn't a separate UI for a new profile vs existing ones.-->
     <Page.Resources>
         <Flyout x:Key="cursorColorPickerFlyout">
             <RelativePanel>
@@ -26,7 +26,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ColumnDefinition/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <!--TODO: SETTINGSUI consolidate common styles across XAML pages. -->
+                    <!--TODO: SETTINGS UI consolidate common styles across XAML pages. -->
                     <Button Content="OK"
                         Margin="0,12,2,0" HorizontalAlignment="Stretch"/>
                     <Button Content="Cancel"

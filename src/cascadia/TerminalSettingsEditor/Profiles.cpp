@@ -51,7 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         FileOpenPicker picker;
 
-        //TODO: SETTINGSUI Commandline handling should be robust and intelligent
+        //TODO: SETTINGS UI Commandline handling should be robust and intelligent
         picker.ViewMode(PickerViewMode::Thumbnail);
         picker.SuggestedStartLocation(PickerLocationId::ComputerFolder);
         picker.FileTypeFilter().ReplaceAll({ L".bat", L".exe" });

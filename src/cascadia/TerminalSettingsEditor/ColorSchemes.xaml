@@ -41,7 +41,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Windows10version1809:DropDownButton>
         </StackPanel>
 
-        <!--TODO: SETTINGSUI make sure the color flyouts are all as one control, not separate-->
+        <!--TODO: SETTINGS UI make sure the color flyouts are all as one control, not separate-->
         <StackPanel Grid.Row="2"
                     Grid.Column="0">
             <StackPanel Orientation="Horizontal"
