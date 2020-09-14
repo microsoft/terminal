@@ -57,8 +57,6 @@ namespace TerminalApp
 
     [default_interface] runtimeclass KeyMapping
     {
-        KeyMapping();
-
         ActionAndArgs TryLookup(Microsoft.Terminal.TerminalControl.KeyChord chord);
 
         void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.TerminalControl.KeyChord chord);

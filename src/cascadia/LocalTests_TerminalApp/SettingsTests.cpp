@@ -1429,7 +1429,7 @@ namespace TerminalAppLocalTests
         settings._ParseJsonString(settingsJson, false);
         settings.LayerJson(settings._userSettings);
         VERIFY_IS_FALSE(settings._profiles.empty());
-        VERIFY_ARE_EQUAL(expectedPath, settings._profiles[0].GetExpandedIconPath());
+        VERIFY_ARE_EQUAL(expectedPath, settings._profiles[0].ExpandedIconPath());
     }
     void SettingsTests::TestProfileBackgroundImageWithEnvVar()
     {

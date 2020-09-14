@@ -443,7 +443,7 @@ void CascadiaSettings::_ValidateMediaResources()
             // This covers file paths on the machine, app data, URLs, and other resource paths.
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedBackgroundImagePath() };
+                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedBackgroundImagePath() };
             }
             catch (...)
             {
@@ -457,7 +457,7 @@ void CascadiaSettings::_ValidateMediaResources()
         {
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.GetExpandedIconPath() };
+                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedIconPath() };
             }
             catch (...)
             {

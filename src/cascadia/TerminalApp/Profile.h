@@ -51,9 +51,9 @@ namespace winrt::TerminalApp::implementation
         void LayerJson(const Json::Value& json);
         static bool IsDynamicProfileObject(const Json::Value& json);
 
-        hstring GetEvaluatedStartingDirectory() const;
-        hstring GetExpandedIconPath() const;
-        hstring GetExpandedBackgroundImagePath() const;
+        hstring EvaluatedStartingDirectory() const;
+        hstring ExpandedIconPath() const;
+        hstring ExpandedBackgroundImagePath() const;
         void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 

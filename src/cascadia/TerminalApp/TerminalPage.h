@@ -131,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
-        void _HookupKeyBindings(TerminalApp::KeyMapping keymap) noexcept;
+        void _HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const Tab& tab);

@@ -484,7 +484,7 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (!profile.IconPath().empty())
             {
-                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.GetExpandedIconPath());
+                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.ExpandedIconPath());
 
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
@@ -728,7 +728,7 @@ namespace winrt::TerminalApp::implementation
         const auto profile = _settings->FindProfile(profileGuid);
         if (profile != nullptr && !profile.IconPath().empty())
         {
-            newTabImpl->UpdateIcon(profile.GetExpandedIconPath());
+            newTabImpl->UpdateIcon(profile.ExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -882,7 +882,7 @@ namespace winrt::TerminalApp::implementation
     // as the object to handle dispatching ShortcutAction events.
     // Arguments:
     // - bindings: A AppKeyBindings object to wire up with our event handlers
-    void TerminalPage::_HookupKeyBindings(TerminalApp::KeyMapping keymap) noexcept
+    void TerminalPage::_HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept
     {
         _bindings->SetDispatch(*_actionDispatch);
         _bindings->SetKeyMapping(keymap);
@@ -970,7 +970,7 @@ namespace winrt::TerminalApp::implementation
             const auto matchingProfile = _settings->FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile.GetExpandedIconPath());
+                tab.UpdateIcon(matchingProfile.ExpandedIconPath());
             }
             else
             {

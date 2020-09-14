@@ -250,7 +250,7 @@ void Profile::LayerJson(const Json::Value& json)
 //   path, if there are any.
 // Return Value:
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
-winrt::hstring Profile::GetExpandedIconPath() const
+winrt::hstring Profile::ExpandedIconPath() const
 {
     if (_IconPath.empty())
     {
@@ -265,7 +265,7 @@ winrt::hstring Profile::GetExpandedIconPath() const
 //   any environment variables in the path, if there are any.
 // Return Value:
 // - This profile's expanded background image path / the empty string.
-winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
     if (_BackgroundImagePath.empty())
     {
@@ -274,7 +274,7 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
     return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
 }
 
-winrt::hstring Profile::GetEvaluatedStartingDirectory() const
+winrt::hstring Profile::EvaluatedStartingDirectory() const
 {
     return winrt::hstring{ Profile::EvaluateStartingDirectory(_StartingDirectory.c_str()) };
 }

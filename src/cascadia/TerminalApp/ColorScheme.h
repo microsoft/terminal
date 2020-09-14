@@ -18,7 +18,6 @@ Author(s):
 #include "../../inc/conattrs.hpp"
 #include "inc/cppwinrt_utils.h"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "ColorScheme.g.h"
 
 // fwdecl unittest classes

@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
 
         if (!profile.StartingDirectory().empty())
         {
-            _StartingDirectory = profile.GetEvaluatedStartingDirectory();
+            _StartingDirectory = profile.EvaluatedStartingDirectory();
         }
 
         // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
@@ -135,7 +135,7 @@ namespace winrt::TerminalApp::implementation
 
         if (!profile.BackgroundImagePath().empty())
         {
-            _BackgroundImage = profile.GetExpandedBackgroundImagePath();
+            _BackgroundImage = profile.ExpandedBackgroundImagePath();
         }
 
         _BackgroundImageOpacity = profile.BackgroundImageOpacity();
@@ -188,22 +188,13 @@ namespace winrt::TerminalApp::implementation
         _CursorColor = til::color{ scheme.CursorColor() };
 
         const auto table = scheme.Table();
-        auto const tableCount = gsl::narrow_cast<int>(table.size());
-        for (int i = 0; i < tableCount; i++)
-        {
-            SetColorTableEntry(i, til::color{ table[i] });
-        }
+        std::transform(table.cbegin(), table.cend(), _colorTable.begin(), [](auto&& color) {
+            return static_cast<uint32_t>(til::color{ color });
+        });
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept
     {
         return _colorTable.at(index);
-    }
-
-    void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
-    {
-        auto const colorTableCount = gsl::narrow_cast<decltype(index)>(_colorTable.size());
-        THROW_HR_IF(E_INVALIDARG, index >= colorTableCount);
-        _colorTable.at(index) = value;
     }
 }

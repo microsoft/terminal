@@ -51,10 +51,9 @@ namespace winrt::TerminalApp::implementation
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
 
-        // Get/Set ColorTableEntry needs to be implemented manually, to get a
+        // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
         uint32_t GetColorTableEntry(int32_t index) const noexcept;
-        void SetColorTableEntry(int32_t index, uint32_t value);
 
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);

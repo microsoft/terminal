@@ -75,8 +75,3 @@ namespace winrt::TerminalApp::implementation
         friend class TerminalAppLocalTests::TestUtils;
     };
 }
-
-namespace winrt::TerminalApp::factory_implementation
-{
-    BASIC_FACTORY(KeyMapping);
-}
