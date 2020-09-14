@@ -97,7 +97,6 @@ new profile objects from stubs that contain at least the following
 
 * A name
 * A commandline argument
-* A unique GUID - this is so we avoid conflicts if several different creators name their profile the same thing
 
 As in the case of the dynamic profile generator, if we create a profile that did not exist before (i.e. does not
 exist in the user settings), we need to add the profile to the user settings file and re-save that file.
