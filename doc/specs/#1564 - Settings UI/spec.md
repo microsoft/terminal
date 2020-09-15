@@ -11,9 +11,13 @@ issue id: #1564
 
 This spec describes the basic functionality of the settings UI, including disabling it, the navigation items, launch methods, and editing of settings. The specific layout of each page will defined in later design reviews.
 
+<br>
+
 ## Inspiration
 
 We have been wanting a settings UI since the dawn of Terminal time, so we need to define how it will interact with the application and how users should expect to interact with it.
+
+<br>
 
 ## Solution Design
 
@@ -44,6 +48,8 @@ We will also be adding a TerminalControl inside the settings UI to preview what 
 #### We also considered: automatically save settings
 
 As users edit fields in the settings UI, they are automatically saved and written to the JSON file. This allows the user to see their settings changes taking place in real time.
+
+<br>
 
 ## UI/UX Design
 
@@ -87,6 +93,8 @@ For Bindings, it would have key bindings, mouse bindings, and command palette in
 
 ![Settings UI navigation 1](./navigation.png)
 
+<br>
+
 ## Capabilities
 
 ### Accessibility
@@ -109,7 +117,13 @@ This will change the default experience to open the UI, rather than the JSON fil
 
 This does not affect performance, power, nor efficiency.
 
+<br>
+
 ## Potential Issues
+
+N/A
+
+<br>
 
 ## Future considerations
 
@@ -119,4 +133,8 @@ This does not affect performance, power, nor efficiency.
 - Once we have a marketplace for themes and extensions, this should be added to the top-level navigation.
 - As we add more features, the top-level navigation is subject to change in favor of improved usability.
 
+<br>
+
 ## Resources
+
+N/A
