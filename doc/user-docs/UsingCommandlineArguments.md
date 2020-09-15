@@ -25,6 +25,8 @@ pass, and gives some examples of how to use the `wt` commandline.
 
 Display the help message.
 
+<br>
+
 ## Subcommands
 
 #### `new-tab`
@@ -93,6 +95,8 @@ following:
 ### Notes
 
 * <span id="footnote-1"></span> [1]: If you try to run a `wt` commandline while running in a Windows Terminal window, the commandline will _always_ create a new window by default. Being able to run `wt` commandlines in the _current_ window is planned in the future - for more information, refer to [#4472].
+
+<br>
 
 ## Examples
 
