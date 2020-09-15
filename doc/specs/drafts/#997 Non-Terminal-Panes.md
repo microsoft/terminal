@@ -13,6 +13,8 @@ This spec hopes to cover the work necessary to enable panes to host non-terminal
 content. It'll describe changes to the `Pane` class to support hosting arbitrary
 controls in addition to terminals.
 
+<br>
+
 ## Inspiration
 
 The primary driver for this change is to enable testing of the pane code. If a
@@ -24,6 +26,8 @@ focus to the correct pane content.
 Additionally, non-terminal panes could be used to host a variety of other
 content, such as browser panes, sticky notes, text editor scratch-pads, etc.
 Some discussion of these ideas are in #644.
+
+<br>
 
 ## Solution Design
 
@@ -50,11 +54,15 @@ if the pane has a GUID, we can assume that the control is a TermControl.
 When we want to host other types of content, we'll simply pass any other control
 to the Pane, and it'll render it just as it would the `TermControl`.
 
+<br>
+
 ## UI/UX Design
 
 Instead of a pane hosting a terminal, it could host _any arbitrary control_. The
 control would still be subject to the sizing provided to it by the `Pane`, but
 it could host any arbitrary content.
+
+<br>
 
 ## Capabilities
 
@@ -87,6 +95,8 @@ When implementing the accessibility tree for Panes, we'll need to make sure that
 for panes with arbitrary content, we properly activate their accessibility,
 should the control provide some sort of accessibility pattern.
 
+<br>
+
 ## Potential Issues
 
 * [ ] It's entirely possible that panes with non-terminal content will not be
@@ -103,12 +113,16 @@ should the control provide some sort of accessibility pattern.
   give the control the first chance to handle the keypress. This may be mildly
   confusing to end users.
 
+<br>
+
 ## Future considerations
 
 I expect this to be a major part of our (eventual) extensibility model. By
 allowing arbitrary controls to be hosted in a Tab/Pane, this will allow
 extension authors to embed their own UI experiences alongside the terminal.
 See #555 for more discussion on the extensibility/plugin subject.
+
+<br>
 
 ## Resources
 
