@@ -14,8 +14,16 @@ using namespace ::Microsoft::Console;
 constexpr std::wstring_view telnetScheme = L"telnet";
 constexpr std::wstring_view msTelnetLoopbackScheme = L"ms-telnet-loop";
 
+// {311153fb-d3f0-4ac6-b920-038de7cf5289}
+static constexpr winrt::guid TelnetConnectionType = { 0x311153fb, 0xd3f0, 0x4ac6, { 0xb9, 0x20, 0x03, 0x8d, 0xe7, 0xcf, 0x52, 0x89 } };
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
+    winrt::guid TelnetConnection::ConnectionType()
+    {
+        return TelnetConnectionType;
+    }
+
     TelnetConnection::TelnetConnection(const hstring& uri) :
         _reader{ nullptr },
         _writer{ nullptr },

@@ -16,6 +16,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::TerminalApp;
 
 namespace winrt
@@ -29,7 +30,7 @@ static const winrt::hstring StartupTaskName = L"StartTerminalOnLoginTask";
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, static_cast<uint32_t>(winrt::TerminalApp::SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
@@ -41,7 +42,7 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(winrt::Terminal
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson")
 };
-static const std::array<std::wstring_view, static_cast<uint32_t>(winrt::TerminalApp::SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
+static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
@@ -76,7 +77,7 @@ static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_vi
 // - warning: the SettingsLoadWarnings value to get the localized text for.
 // Return Value:
 // - localized text for the given warning
-static winrt::hstring _GetWarningText(winrt::TerminalApp::SettingsLoadWarnings warning)
+static winrt::hstring _GetWarningText(SettingsLoadWarnings warning)
 {
     return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels);
 }
@@ -89,7 +90,7 @@ static winrt::hstring _GetWarningText(winrt::TerminalApp::SettingsLoadWarnings w
 // - error: the SettingsLoadErrors value to get the localized text for.
 // Return Value:
 // - localized text for the given error
-static winrt::hstring _GetErrorText(winrt::TerminalApp::SettingsLoadErrors error)
+static winrt::hstring _GetErrorText(SettingsLoadErrors error)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels);
 }
@@ -169,7 +170,7 @@ namespace winrt::TerminalApp::implementation
     // - Returns the settings currently in use by the entire Terminal application.
     // Throws:
     // - HR E_INVALIDARG if the app isn't up and running.
-    const TerminalApp::CascadiaSettings AppLogic::CurrentAppSettings()
+    const CascadiaSettings AppLogic::CurrentAppSettings()
     {
         auto appLogic{ ::winrt::TerminalApp::implementation::AppLogic::Current() };
         THROW_HR_IF_NULL(E_INVALIDARG, appLogic);
@@ -718,7 +719,7 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         // Get the containing folder.
-        const auto settingsPath{ CascadiaSettings::GetSettingsPath() };
+        const std::filesystem::path settingsPath{ CascadiaSettings::SettingsPath().c_str() };
         const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
@@ -870,7 +871,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns a pointer to the global shared settings.
-    [[nodiscard]] TerminalApp::CascadiaSettings AppLogic::GetSettings() const noexcept
+    [[nodiscard]] CascadiaSettings AppLogic::GetSettings() const noexcept
     {
         return _settings;
     }
@@ -1039,65 +1040,6 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::ShouldExitEarly()
     {
         return _appArgs.ShouldExitEarly();
-    }
-
-    winrt::hstring AppLogic::ApplicationDisplayName() const
-    {
-        try
-        {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            return package.DisplayName();
-        }
-        CATCH_LOG();
-
-        return RS_(L"ApplicationDisplayNameUnpackaged");
-    }
-
-    winrt::hstring AppLogic::ApplicationVersion() const
-    {
-        try
-        {
-            const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-            const auto version{ package.Id().Version() };
-            winrt::hstring formatted{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
-            return formatted;
-        }
-        CATCH_LOG();
-
-        // Try to get the version the old-fashioned way
-        try
-        {
-            struct LocalizationInfo
-            {
-                WORD language, codepage;
-            };
-            // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
-            auto filename{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
-            auto size{ GetFileVersionInfoSizeExW(0, filename.c_str(), nullptr) };
-            THROW_LAST_ERROR_IF(size == 0);
-            auto versionBuffer{ std::make_unique<std::byte[]>(size) };
-            THROW_IF_WIN32_BOOL_FALSE(GetFileVersionInfoExW(0, filename.c_str(), 0, size, versionBuffer.get()));
-
-            // Get the list of Version localizations
-            LocalizationInfo* pVarLocalization{ nullptr };
-            UINT varLen{ 0 };
-            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\VarFileInfo\\Translation", reinterpret_cast<void**>(&pVarLocalization), &varLen));
-            THROW_HR_IF(E_UNEXPECTED, varLen < sizeof(*pVarLocalization)); // there must be at least one translation
-
-            // Get the product version from the localized version compartment
-            // We're using String/ProductVersion here because our build pipeline puts more rich information in it (like the branch name)
-            // than in the unlocalized numeric version fields.
-            WCHAR* pProductVersion{ nullptr };
-            UINT versionLen{ 0 };
-            const auto localizedVersionName{ wil::str_printf<std::wstring>(L"\\StringFileInfo\\%04x%04x\\ProductVersion",
-                                                                           pVarLocalization->language ? pVarLocalization->language : 0x0409, // well-known en-US LCID
-                                                                           pVarLocalization->codepage) };
-            THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), localizedVersionName.c_str(), reinterpret_cast<void**>(&pProductVersion), &versionLen));
-            return { pProductVersion };
-        }
-        CATCH_LOG();
-
-        return RS_(L"ApplicationVersionUnknown");
     }
 
     bool AppLogic::FocusMode() const

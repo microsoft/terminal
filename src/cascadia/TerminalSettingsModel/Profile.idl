@@ -1,0 +1,71 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum CloseOnExitMode
+    {
+        Never = 0,
+        Graceful,
+        Always
+    };
+
+    [default_interface] runtimeclass Profile {
+        Profile();
+        Profile(Guid guid);
+
+        String Name;
+        Boolean HasGuid();
+        Guid Guid;
+        String Source;
+        Boolean HasConnectionType();
+        Guid ConnectionType;
+        Boolean Hidden;
+
+        String IconPath;
+        String ExpandedIconPath { get; };
+
+        CloseOnExitMode CloseOnExit;
+        String TabTitle;
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor;
+        Boolean SuppressApplicationTitle;
+
+        Boolean UseAcrylic;
+        Double AcrylicOpacity;
+        Microsoft.Terminal.TerminalControl.ScrollbarState ScrollState;
+
+        String FontFace;
+        Int32 FontSize;
+        Windows.UI.Text.FontWeight FontWeight;
+        String Padding;
+
+        String Commandline;
+        String StartingDirectory;
+        String EvaluatedStartingDirectory { get; };
+
+        String BackgroundImagePath;
+        String ExpandedBackgroundImagePath { get; };
+        Double BackgroundImageOpacity;
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
+        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
+        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+
+        Microsoft.Terminal.TerminalControl.TextAntialiasingMode AntialiasingMode;
+        Boolean RetroTerminalEffect;
+        Boolean ForceFullRepaintRendering;
+        Boolean SoftwareRendering;
+
+        String ColorSchemeName;
+        Windows.Foundation.IReference<Windows.UI.Color> Foreground;
+        Windows.Foundation.IReference<Windows.UI.Color> Background;
+        Windows.Foundation.IReference<Windows.UI.Color> SelectionBackground;
+        Windows.Foundation.IReference<Windows.UI.Color> CursorColor;
+
+        Int32 HistorySize;
+        Boolean SnapOnInput;
+        Boolean AltGrAliasing;
+
+        Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
+        UInt32 CursorHeight;
+    }
+}

@@ -35,6 +35,8 @@ static constexpr auto HttpUserAgent = L"Terminal/0.0";
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
 
+static constexpr winrt::guid AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+
 static inline std::wstring _colorize(const unsigned int colorCode, const std::wstring_view text)
 {
     return fmt::format(L"\x1b[{0}m{1}\x1b[m", colorCode, text);
@@ -60,6 +62,11 @@ static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
+    winrt::guid AzureConnection::ConnectionType()
+    {
+        return AzureConnectionType;
+    }
+
     // This function exists because the clientID only gets added by the release pipelines
     // and is not available on local builds, so we want to be able to make sure we don't
     // try to make an Azure connection if its a local build

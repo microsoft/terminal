@@ -8,13 +8,12 @@
 #include "Tab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "ActionAndArgs.h"
-#include "ActionArgs.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -304,7 +303,7 @@ namespace winrt::TerminalApp::implementation
     // - splitType: The type of split we want to create.
     // Return Value:
     // - True if the focused pane can be split. False otherwise.
-    bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
+    bool Tab::CanSplitPane(SplitState splitType)
     {
         return _activePane->CanSplit(splitType);
     }
@@ -318,7 +317,7 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
+    void Tab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
@@ -364,7 +363,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+    void Tab::ResizePane(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -378,7 +377,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+    void Tab::NavigateFocus(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -1043,15 +1042,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::_MakeSwitchToTabCommand()
     {
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-        args->TabIndex(_TabViewIndex);
+        SwitchToTabArgs args{ _TabViewIndex };
+        ActionAndArgs focusTabAction{ShortcutAction::SwitchToTab, args};
 
-        focusTabAction->Action(ShortcutAction::SwitchToTab);
-        focusTabAction->Args(*args);
-
-        winrt::TerminalApp::Command command;
-        command.Action(*focusTabAction);
+        Command command;
+        command.Action(focusTabAction);
         command.Name(Title());
         command.IconSource(IconSource());
 
@@ -1061,7 +1056,7 @@ namespace winrt::TerminalApp::implementation
     void Tab::UpdateTabViewIndex(const uint32_t idx)
     {
         TabViewIndex(idx);
-        SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
+        SwitchToTabCommand().Action().Args().as<SwitchToTabArgs>().TabIndex(idx);
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

@@ -92,9 +92,6 @@
     <ClInclude Include="CommandPalette.h">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Command.h">
-      <DependentUpon>Command.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
@@ -105,31 +102,7 @@
       <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="ColorScheme.h">
-      <DependentUpon>ColorScheme.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="GlobalAppSettings.h">
-      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Profile.h">
-      <DependentUpon>Profile.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="CascadiaSettings.h">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyChordSerialization.h" />
-    <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="Utils.h" />
-    <ClInclude Include="DefaultProfileUtils.h" />
-    <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
-    <ClInclude Include="TerminalWarnings.h">
-      <DependentUpon>TerminalWarnings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="IDynamicProfileGenerator.h" />
-    <ClInclude Include="PowershellCoreProfileGenerator.h" />
-    <ClInclude Include="WslDistroGenerator.h" />
-    <ClInclude Include="AzureCloudShellGenerator.h" />
-    <ClInclude Include="TelnetGenerator.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
@@ -138,18 +111,9 @@
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ActionArgs.h">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ActionAndArgs.h">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyMapping.h">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
@@ -183,9 +147,6 @@
     <ClCompile Include="CommandPalette.cpp">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Command.cpp">
-      <DependentUpon>Command.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
@@ -196,29 +157,6 @@
       <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
-    <ClCompile Include="ColorScheme.cpp">
-      <DependentUpon>ColorScheme.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="GlobalAppSettings.cpp">
-      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="Profile.cpp">
-      <DependentUpon>Profile.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="CascadiaSettings.cpp">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="CascadiaSettingsSerialization.cpp">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyChordSerialization.cpp" />
-    <ClCompile Include="DefaultProfileUtils.cpp" />
-    <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
-    <ClCompile Include="WslDistroGenerator.cpp" />
-    <ClCompile Include="AzureCloudShellGenerator.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
@@ -232,17 +170,8 @@
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="KeyMapping.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ActionAndArgs.cpp">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ActionArgs.cpp">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="App.cpp">
       <DependentUpon>App.xaml</DependentUpon>
@@ -252,11 +181,6 @@
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
-    </ClCompile>
-    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
-    you want to use jsoncpp -->
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
@@ -270,9 +194,7 @@
     </Midl>
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="AppLogic.idl" />
-    <Midl Include="ActionArgs.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -297,16 +219,10 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="Command.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="Tab.idl" />
     <Midl Include="TerminalSettings.idl" />
-    <Midl Include="ColorScheme.idl" />
-    <Midl Include="Profile.idl" />
-    <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="CascadiaSettings.idl" />
-    <Midl Include="TerminalWarnings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -358,12 +274,18 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
+    <Reference Include="Microsoft.Terminal.Settings.Model">
+      <HintPath>$(_BinRoot)TerminalSettingsModel\Microsoft.Terminal.Settings.Model.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -402,20 +324,6 @@
         <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
-  </Target>
-  <!-- This target will take our defaults.json and stamp it into a .h file that
-  we can include in the code directly. This way, we don't need to worry about
-  failing to load the default settings at runtime. -->
-  <Target Name="_TerminalAppGenerateDefaultsH" Inputs="defaults.json" Outputs="Generated Files\defaults.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
-  </Target>
-  <!-- A different set of defaults for Universal variant -->
-  <Target Name="_TerminalAppGenerateDefaultsUniversalH" Inputs="defaults-universal.json" Outputs="Generated Files\defaults-universal.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile defaults-universal.json -OutPath '&quot;Generated Files\defaults-universal.h&quot;' -VariableName DefaultUniversalJson" />
-  </Target>
-  <!-- Same as above, but for the default settings.json template -->
-  <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
 
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />

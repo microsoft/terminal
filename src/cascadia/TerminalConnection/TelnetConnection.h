@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct TelnetConnection : TelnetConnectionT<TelnetConnection>, ConnectionStateHolder<TelnetConnection>
     {
+        static winrt::guid ConnectionType();
+
         TelnetConnection(const hstring& uri);
 
         void Start();

@@ -1,0 +1,30 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "KeyMapping.idl";
+import "Profile.idl";
+import "ColorScheme.idl";
+import "TerminalWarnings.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass Command : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Command();
+
+        String Name;
+        ActionAndArgs Action;
+        String KeyChordText;
+
+        Windows.UI.Xaml.Controls.IconSource IconSource;
+        void RefreshIcon();
+
+        Boolean HasNestedCommands { get; };
+        Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
+
+        static void ExpandCommands(Windows.Foundation.Collections.IMap<String, Command> commands,
+                                   Windows.Foundation.Collections.IVectorView<Profile> profiles,
+                                   Windows.Foundation.Collections.IVectorView<ColorScheme> schemes,
+                                   Windows.Foundation.Collections.IVector<SettingsLoadWarnings> warnings);
+    }
+}

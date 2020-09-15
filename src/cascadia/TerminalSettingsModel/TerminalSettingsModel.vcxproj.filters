@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="AzureCloudShellGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="PowershellCoreProfileGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="WslDistroGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="KeyMappingSerialization.cpp" />
+    <ClCompile Include="CascadiaSettings.cpp" />
+    <ClCompile Include="CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="GlobalAppSettings.cpp" />
+    <ClCompile Include="KeyChordSerialization.cpp" />
+    <ClCompile Include="Profile.cpp" />
+    <ClCompile Include="ColorScheme.cpp" />
+    <ClCompile Include="DefaultProfileUtils.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Utils.cpp" />
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <Filter>json</Filter>
+    </ClCompile>
+    <ClCompile Include="init.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AzureCloudShellGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="IDynamicProfileGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="PowershellCoreProfileGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="WslDistroGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="CascadiaSettings.h" />
+    <ClInclude Include="GlobalAppSettings.h" />
+    <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
+    <ClInclude Include="KeyChordSerialization.h" />
+    <ClInclude Include="Profile.h" />
+    <ClInclude Include="SettingsTypes.h" />
+    <ClInclude Include="TerminalWarnings.h" />
+    <ClInclude Include="ColorScheme.h" />
+    <ClInclude Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Utils.h" />
+    <ClInclude Include="DefaultProfileUtils.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonUtils.h">
+      <Filter>json</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="ActionArgs.idl" />
+    <Midl Include="ColorScheme.idl" />
+    <Midl Include="Command.idl" />
+    <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="KeyMapping.idl" />
+    <Midl Include="Profile.idl" />
+    <Midl Include="TerminalWarnings.idl" />
+    <Midl Include="CascadiaSettings.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="TerminalSettingsModel.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="profileGeneration">
+      <UniqueIdentifier>{c81be61b-0d58-4277-8fd1-fcc888c3da9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="json">
+      <UniqueIdentifier>{81a6314f-aa5b-4533-a499-13bc3a5c4af0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

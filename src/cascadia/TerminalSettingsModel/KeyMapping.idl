@@ -1,0 +1,71 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ActionArgs.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    enum ShortcutAction
+    {
+        Invalid = 0,
+        CopyText,
+        PasteText,
+        OpenNewTabDropdown,
+        DuplicateTab,
+        NewTab,
+        NewWindow,
+        CloseWindow,
+        CloseTab,
+        ClosePane,
+        NextTab,
+        PrevTab,
+        SplitVertical,
+        SplitHorizontal,
+        SendInput,
+        SplitPane,
+        TogglePaneZoom,
+        SwitchToTab,
+        AdjustFontSize,
+        ResetFontSize,
+        ScrollUp,
+        ScrollDown,
+        ScrollUpPage,
+        ScrollDownPage,
+        ResizePane,
+        MoveFocus,
+        Find,
+        ToggleRetroEffect,
+        ToggleFocusMode,
+        ToggleFullscreen,
+        ToggleAlwaysOnTop,
+        OpenSettings,
+        SetColorScheme,
+        SetTabColor,
+        OpenTabColorPicker,
+        RenameTab,
+        ExecuteCommandline,
+        ToggleCommandPalette,
+        CloseOtherTabs,
+        CloseTabsAfter,
+        TabSearch
+    };
+
+    [default_interface] runtimeclass ActionAndArgs {
+        ActionAndArgs();
+        ActionAndArgs(ShortcutAction action, IActionArgs args);
+
+        IActionArgs Args;
+        ShortcutAction Action;
+    };
+
+    [default_interface] runtimeclass KeyMapping
+    {
+        ActionAndArgs TryLookup(Microsoft.Terminal.TerminalControl.KeyChord chord);
+
+        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.TerminalControl.KeyChord chord);
+        void ClearKeyBinding(Microsoft.Terminal.TerminalControl.KeyChord chord);
+
+        Microsoft.Terminal.TerminalControl.KeyChord GetKeyBindingForAction(ShortcutAction action);
+        Microsoft.Terminal.TerminalControl.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
+    }
+}

@@ -4,10 +4,10 @@
 #include "pch.h"
 #include "AppLogic.h"
 #include "AppCommandlineArgs.h"
-#include "ActionArgs.h"
 #include <LibraryResources.h>
 
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 
 // Either a ; at the start of a line, or a ; preceded by any non-\ char.
@@ -159,18 +159,15 @@ void AppCommandlineArgs::_buildParser()
 {
     // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
-        if (const auto appLogic{ winrt::TerminalApp::implementation::AppLogic::Current() })
-        {
-            // Set our message to display the application name and the current version.
-            _exitMessage = fmt::format("{0}\n{1}",
-                                       til::u16u8(appLogic->ApplicationDisplayName()),
-                                       til::u16u8(appLogic->ApplicationVersion()));
-            // Theoretically, we don't need to exit now, since this isn't really
-            // an error case. However, in practice, it feels weird to have `wt
-            // -v` open a new tab, and makes enough sense that `wt -v ;
-            // split-pane` (or whatever) just displays the version and exits.
-            _shouldExitEarly = true;
-        }
+        // Set our message to display the application name and the current version.
+        _exitMessage = fmt::format("{0}\n{1}",
+                                   til::u16u8(CascadiaSettings::ApplicationDisplayName()),
+                                   til::u16u8(CascadiaSettings::ApplicationVersion()));
+        // Theoretically, we don't need to exit now, since this isn't really
+        // an error case. However, in practice, it feels weird to have `wt
+        // -v` open a new tab, and makes enough sense that `wt -v ;
+        // split-pane` (or whatever) just displays the version and exits.
+        _shouldExitEarly = true;
     };
     _app.add_flag_function("-v,--version", versionCallback, RS_A(L"CmdVersionDesc"));
 
@@ -178,10 +175,10 @@ void AppCommandlineArgs::_buildParser()
     //   -M,--maximized: Maximizes the window on launch
     //   -F,--fullscreen: Fullscreens the window on launch
     auto maximizedCallback = [this](int64_t /*count*/) {
-        _launchMode = winrt::TerminalApp::LaunchMode::MaximizedMode;
+        _launchMode = winrt::Microsoft::Terminal::Settings::Model::LaunchMode::MaximizedMode;
     };
     auto fullscreenCallback = [this](int64_t /*count*/) {
-        _launchMode = winrt::TerminalApp::LaunchMode::FullscreenMode;
+        _launchMode = winrt::Microsoft::Terminal::Settings::Model::LaunchMode::FullscreenMode;
     };
     auto maximized = _app.add_flag_function("-M,--maximized", maximizedCallback, RS_A(L"CmdMaximizedDesc"));
     auto fullscreen = _app.add_flag_function("-F,--fullscreen", fullscreenCallback, RS_A(L"CmdFullscreenDesc"));
@@ -214,14 +211,13 @@ void AppCommandlineArgs::_buildNewTabParser()
         // command was parsed.
         subcommand.subcommand->callback([&, this]() {
             // Build the NewTab action from the values we've parsed on the commandline.
-            auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
-            newTabAction->Action(ShortcutAction::NewTab);
-            auto args = winrt::make_self<implementation::NewTabArgs>();
+            ActionAndArgs newTabAction{};
+            newTabAction.Action(ShortcutAction::NewTab);
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
-            args->TerminalArgs(_getNewTerminalArgs(subcommand));
-            newTabAction->Args(*args);
-            _startupActions.push_back(*newTabAction);
+            NewTabArgs args{ _getNewTerminalArgs(subcommand) };
+            newTabAction.Args(args);
+            _startupActions.push_back(newTabAction);
         });
     };
 
@@ -257,29 +253,29 @@ void AppCommandlineArgs::_buildSplitPaneParser()
         // command was parsed.
         subcommand.subcommand->callback([&, this]() {
             // Build the SplitPane action from the values we've parsed on the commandline.
-            auto splitPaneActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-            splitPaneActionAndArgs->Action(ShortcutAction::SplitPane);
-            auto args = winrt::make_self<implementation::SplitPaneArgs>();
+            ActionAndArgs splitPaneActionAndArgs{};
+            splitPaneActionAndArgs.Action(ShortcutAction::SplitPane);
+
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
-            args->TerminalArgs(_getNewTerminalArgs(subcommand));
-            args->SplitStyle(SplitState::Automatic);
+            auto terminalArgs{ _getNewTerminalArgs(subcommand) };
+            auto style{ SplitState::Automatic };
             // Make sure to use the `Option`s here to check if they were set -
             // _getNewTerminalArgs might reset them while parsing a commandline
             if ((*subcommand._horizontalOption || *subcommand._verticalOption))
             {
                 if (_splitHorizontal)
                 {
-                    args->SplitStyle(SplitState::Horizontal);
+                    style = SplitState::Horizontal;
                 }
                 else if (_splitVertical)
                 {
-                    args->SplitStyle(SplitState::Vertical);
+                    style = SplitState::Vertical;
                 }
             }
-
-            splitPaneActionAndArgs->Args(*args);
-            _startupActions.push_back(*splitPaneActionAndArgs);
+            SplitPaneArgs args{ style, terminalArgs };
+            splitPaneActionAndArgs.Args(args);
+            _startupActions.push_back(splitPaneActionAndArgs);
         });
     };
 
@@ -319,20 +315,19 @@ void AppCommandlineArgs::_buildFocusTabParser()
         // command was parsed.
         subcommand->callback([&, this]() {
             // Build the action from the values we've parsed on the commandline.
-            auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+            ActionAndArgs focusTabAction{};
 
             if (_focusTabIndex >= 0)
             {
-                focusTabAction->Action(ShortcutAction::SwitchToTab);
-                auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-                args->TabIndex(_focusTabIndex);
-                focusTabAction->Args(*args);
-                _startupActions.push_back(*focusTabAction);
+                focusTabAction.Action(ShortcutAction::SwitchToTab);
+                SwitchToTabArgs args{ static_cast<unsigned int>(_focusTabIndex) };
+                focusTabAction.Args(args);
+                _startupActions.push_back(focusTabAction);
             }
             else if (_focusNextTab || _focusPrevTab)
             {
-                focusTabAction->Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
-                _startupActions.push_back(*focusTabAction);
+                focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                _startupActions.push_back(focusTabAction);
             }
         });
     };
@@ -379,7 +374,7 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
 // - A fully initialized NewTerminalArgs corresponding to values we've currently parsed.
 NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewTerminalSubcommand& subcommand)
 {
-    auto args = winrt::make_self<implementation::NewTerminalArgs>();
+    NewTerminalArgs args{};
 
     if (!_commandline.empty())
     {
@@ -403,25 +398,25 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
             }
         }
 
-        args->Commandline(winrt::to_hstring(cmdlineBuffer.str()));
+        args.Commandline(winrt::to_hstring(cmdlineBuffer.str()));
     }
 
     if (*subcommand.profileNameOption)
     {
-        args->Profile(winrt::to_hstring(_profileName));
+        args.Profile(winrt::to_hstring(_profileName));
     }
 
     if (*subcommand.startingDirectoryOption)
     {
-        args->StartingDirectory(winrt::to_hstring(_startingDirectory));
+        args.StartingDirectory(winrt::to_hstring(_startingDirectory));
     }
 
     if (*subcommand.titleOption)
     {
-        args->TabTitle(winrt::to_hstring(_startingTitle));
+        args.TabTitle(winrt::to_hstring(_startingTitle));
     }
 
-    return *args;
+    return args;
 }
 
 // Method Description:
@@ -599,7 +594,7 @@ void AppCommandlineArgs::_addCommandsForArg(std::vector<Commandline>& commands, 
 // - <none>
 // Return Value:
 // - the deque of actions we've buffered as a result of parsing commands.
-std::vector<winrt::TerminalApp::ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
+std::vector<ActionAndArgs>& AppCommandlineArgs::GetStartupActions()
 {
     return _startupActions;
 }
@@ -652,18 +647,15 @@ void AppCommandlineArgs::ValidateStartupCommands()
         _startupActions.front().Action() != ShortcutAction::NewTab)
     {
         // Build the NewTab action from the values we've parsed on the commandline.
-        auto newTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        newTabAction->Action(ShortcutAction::NewTab);
-        auto args = winrt::make_self<implementation::NewTabArgs>();
-        auto newTerminalArgs = winrt::make_self<implementation::NewTerminalArgs>();
-        args->TerminalArgs(*newTerminalArgs);
-        newTabAction->Args(*args);
+        NewTerminalArgs newTerminalArgs{ newTerminalArgs };
+        NewTabArgs args{ newTerminalArgs };
+        ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
         // push the arg onto the front
-        _startupActions.insert(_startupActions.begin(), 1, *newTabAction);
+        _startupActions.insert(_startupActions.begin(), 1, newTabAction);
     }
 }
 
-std::optional<winrt::TerminalApp::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
+std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept
 {
     return _launchMode;
 }

@@ -7,10 +7,11 @@
 #include "TerminalSettings.g.cpp"
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalSettings::TerminalSettings(const TerminalApp::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
+    TerminalSettings::TerminalSettings(const CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
         _KeyBindings{ keybindings }
     {
         const auto profile = appSettings.FindProfile(profileGuid);
@@ -38,8 +39,8 @@ namespace winrt::TerminalApp::implementation
     // - keybindings: the keybinding handler
     // Return Value:
     // - the GUID of the created profile, and a fully initialized TerminalSettings object
-    std::tuple<guid, TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const TerminalApp::CascadiaSettings& appSettings,
-                                                                                    const TerminalApp::NewTerminalArgs& newTerminalArgs,
+    std::tuple<guid, TerminalApp::TerminalSettings> TerminalSettings::BuildSettings(const CascadiaSettings& appSettings,
+                                                                                    const NewTerminalArgs& newTerminalArgs,
                                                                                     const IKeyBindings& keybindings)
     {
         const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
@@ -72,7 +73,7 @@ namespace winrt::TerminalApp::implementation
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const TerminalApp::Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, TerminalApp::ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
@@ -161,7 +162,7 @@ namespace winrt::TerminalApp::implementation
     // - globalSettings: the global property values we're applying.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyGlobalSettings(const TerminalApp::GlobalAppSettings& globalSettings) noexcept
+    void TerminalSettings::_ApplyGlobalSettings(const GlobalAppSettings& globalSettings) noexcept
     {
         _InitialRows = globalSettings.InitialRows();
         _InitialCols = globalSettings.InitialCols();
@@ -180,7 +181,7 @@ namespace winrt::TerminalApp::implementation
     // - scheme: the ColorScheme we are applying to the TerminalSettings object
     // Return Value:
     // - <none>
-    void TerminalSettings::ApplyColorScheme(const TerminalApp::ColorScheme& scheme)
+    void TerminalSettings::ApplyColorScheme(const ColorScheme& scheme)
     {
         _DefaultForeground = til::color{ scheme.Foreground() };
         _DefaultBackground = til::color{ scheme.Background() };
