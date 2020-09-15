@@ -15,11 +15,17 @@ This spec outlines adding support for launching a profile from the jumplist. The
 
 The profiles available in the jumplist will match the profiles available in the application from the + dropdown. The scope of the jumplist feature is limited to desktop devices.
 
+<br>
+
 ## Inspiration
 The inspiration is to be able to quickly open the terminal with one of the configured profiles.
 
+<br>
+
 ## Terminology
 - Jumplist: This is the menu that appears when the application is right-clicked on the taskbar or the start menu.
+
+<br>
 
 ## Solution Design
 
@@ -84,6 +90,8 @@ If we look at the property key `9f4c2855-9f79-4b39-a8d0-e1d42de1d5f3\29`, it spe
 ### Launching the terminal from the jumplist
 The jumplist will launch the terminal by calling the executable alias `wt.exe` with arguments to indicate the profile. The command line arguments to use are tracked in issue [#607](https://github.com/microsoft/terminal/issues/607)
 
+<br>
+
 ## UI/UX Design
 No UI changes are needed. The jumplist is provided by Windows.
 
@@ -92,6 +100,8 @@ Depending on how the jump list items will be worded.
 
 ### Profile order
 The order of the profiles in the jumplist should match the order within the application.
+
+<br>
 
 ## Capabilities
 
@@ -117,8 +127,12 @@ The jumplist will have to be saved each time a profile change occurs but the fre
 #### What should happen if a non existant profile is launched
 The jumplist is only updated when the application is running so the profiles could be modified or deleted outside and the jumplist will not be updated. Handling will be done by whatever handles the command line parsing.
 
+<br>
+
 ## Future considerations
 Other things could potentially be added to the jumplist other than profiles.
+
+<br>
 
 ## Resources
 
