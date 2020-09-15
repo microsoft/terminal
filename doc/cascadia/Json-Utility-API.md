@@ -26,6 +26,8 @@ auto four = JsonUtils::GetValue<std::optional<std::string>>(json);
 // four is populated or nullopt
 ```
 
+<br>
+
 ## Key lookup (GetValueForKey)
 
 `GetValueForKey` follows the same rules as `GetValue`, but takes an additional key.
@@ -47,6 +49,8 @@ auto three = JsonUtils::GetValueForKey<std::string>(json, "thirdKey");
 auto four = JsonUtils::GetValueForKey<std::optional<std::string>>(json, "fourthKey");
 // four is populated or nullopt
 ```
+
+<br>
 
 ## Rationale: Value-Returning Getters
 
@@ -73,6 +77,8 @@ If you are... | Use
 --------------|-----
 Deserializing | `GetValue(..., storage)`
 Interrogating | `storage = GetValue<T>(...)`
+
+<br>
 
 ## Converting User-Defined Types
 
@@ -218,6 +224,8 @@ MultiplyingConverter conv{ 10 };
 auto v = JsonUtils::GetValue<int>(json, conv);
 // v is equal to 660.
 ```
+
+<br>
 
 ## Behavior Chart
 
