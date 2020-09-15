@@ -81,9 +81,9 @@ Feature Notes:
 
 \* Feature Priorities:
 
-+ Mandatory <br/>
-+ Optimal <br/>
-+ Optional / Stretch-goal <br/>
+0. Mandatory <br/>
+1. Optimal <br/>
+2. Optional / Stretch-goal <br/>
 
 [1.1]: https://github.com/microsoft/terminal/milestone/24
 [1.2]: https://github.com/microsoft/terminal/milestone/25
