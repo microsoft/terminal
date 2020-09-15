@@ -31,6 +31,8 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 1. Issues manually marked as `Resolution-Duplicate` will be closed shortly after activity stops
 1. Pull requests manually marked as `AutoMerge` will permit the bot to complete the PR and do cleanup when certain conditions are met. See details below.
 
+<br>
+
 ## Rules
 
 ### Triage Shorthand
@@ -43,6 +45,8 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 1. Close the issue
 1. Remove all `Needs-*` tags
 1. Add `Resolution-Duplicate`
+
+# 
 
 ### Issue Management
 
@@ -83,6 +87,8 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 #### Remove Help Wanted from In PR issues
 - If an issue gets the `In-PR` tag when a new PR is created, we will remove the `Help-Wanted` tag to avoid someone trying to work on an issue where another person has already submitted a proposed fix.
 
+# 
+
 ### PR Management
 
 #### Codeflow Link *(Disabled)*
@@ -120,11 +126,15 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 #### Remove Needs-Second from completed PRs
 - If a PR is closed and it has the `Needs-Second` tag, the bot will remove the tag.
 
+# 
+
 ### Release Management
 
 When a release is created, if the PR ID number is linked inside the release description, the bot will walk through the related PR and all of its related issues and leave a message.
 - PR message: "🎉{release name} {release version} has been released which incorporates this pull request.🎉
 - Issue message: 🎉This issue was addressed in #{pull request ID}, which has now been successfully released as {release name} {release version}.🎉"
+
+<br>
 
 ## Admin Panel
 [Here](https://fabric-cp.azurewebsites.net/bot/)
