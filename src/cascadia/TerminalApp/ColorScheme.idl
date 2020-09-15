@@ -14,6 +14,6 @@ namespace TerminalApp
         Windows.UI.Color CursorColor;
 
         Windows.UI.Color[] Table { get; };
-        void SetColorTable(UInt8 index, Windows.UI.Color value);
+        void SetColorTableEntry(UInt8 index, Windows.UI.Color value);
     }
 }

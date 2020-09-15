@@ -45,7 +45,7 @@ namespace winrt::TerminalApp::implementation
         static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 
         com_array<Windows::UI::Color> Table() const noexcept;
-        void SetColorTable(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
+        void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
 
         GETSET_PROPERTY(winrt::hstring, Name, L"");
         GETSET_COLORPROPERTY(Foreground); // defined in constructor

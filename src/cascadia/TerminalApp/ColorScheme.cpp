@@ -181,7 +181,7 @@ winrt::com_array<Color> ColorScheme::Table() const noexcept
 // - value: the color value we are setting the color table color to
 // Return Value:
 // - none
-void ColorScheme::SetColorTable(uint8_t index, const winrt::Windows::UI::Color& value) noexcept
+void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept
 {
     THROW_HR_IF(E_INVALIDARG, index > COLOR_TABLE_SIZE - 1);
     _table[index] = value;
