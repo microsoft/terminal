@@ -29,6 +29,8 @@ needing to re-write the user's settings file.
 It also outlines a mechanism by which profiles could be dynamically added or
 hidden from the profiles list, based on some external source.
 
+<br>
+
 ## Inspiration
 
 Largely inspired by the settings model that both VS Code (and Sublime Text) use.
@@ -75,6 +77,8 @@ machine.
 
 While we won't be able to non-destructively prevent all failures of this case,
 we should be able to catch it in certain scenarios.
+
+<br>
 
 ## Solution Design
 
@@ -479,6 +483,8 @@ default profiles that don't appear in the user's settings, they'll appear
 _after_ any profiles in the user's settings. Then, we'll overlay the full user
 settings on top of the defaults.
 
+<br>
+
 ## UI/UX Design
 
 ### Opening `defaults.json`
@@ -528,6 +534,8 @@ the "Serializing User Settings" section. We'll only be serializing settings that
 have changed from the defaults, so only the actual changes they've made will be
 persisted back to the user settings file.
 
+<br>
+
 ## Capabilities
 ### Security
 
@@ -553,6 +561,8 @@ can read more below, in "Dynamic Profile Generators Need to be Enabled".
 
 ### Accessibility
 N/A
+
+<br>
 
 ## Potential Issues
 
@@ -663,6 +673,8 @@ So the trade-off with this design is that non-existent dynamic profiles will
 never roam to machines where they don't exist and aren't valid, but the
 generators _must_ be enabled to use the dynamic profiles.
 
+<br>
+
 ## Future considerations
 * It's possible that a very similar layering loading mechanism could be used to
   layer per-machine settings with roaming settings. Currently, there's only one
@@ -707,6 +719,8 @@ generators _must_ be enabled to use the dynamic profiles.
   would be a great place to add code to support this re-ordering, with whatever
   algorithm we eventually land on. Determining such an algorithm is outside the
   scope of this spec, however.
+
+<br>
 
 ## Resources
 N/A
