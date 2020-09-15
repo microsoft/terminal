@@ -21,11 +21,15 @@ function.
 With this change, we'll be able to remove these _essentially_ duplicated events,
 and allow the user to specify arbitrary arguments to these functions.
 
+<br>
+
 ## Inspiration
 
 Largely inspired by the keybindings in VsCode and Sublime Text. Additionally,
 much of the content regarding keybinding events being "handled" was designed as
 a solution for [#2285].
+
+<br>
 
 ## Solution Design
 
@@ -256,6 +260,8 @@ Similar to how we parse arguments from the json, we'll need to update the
 `AppKeyBindingsSerialization` code to be able to serialize the arguments from a
 particular `IActionArgs`.
 
+<br>
+
 ## UI/UX Design
 
 ### Keybindings in the New Tab Dropdown
@@ -273,6 +279,8 @@ also by a `ShortcutAction` and `IActionArgs`. We'll need to update the
 also probably want each `IActionArgs` implementation to define an
 `Equals(IActionArgs)` method, so that we can easily check if two different
 `IActionArgs` are the same in this method.
+
+<br>
 
 ## Capabilities
 ### Accessibility
@@ -330,9 +338,13 @@ for them:
 
 N/A
 
+<br>
+
 ## Potential Issues
 
 N/A
+
+<br>
 
 ## Future considerations
 
@@ -354,6 +366,8 @@ N/A
   - [1] We probably won't be able to use the `ActionAndArgs` class directly,
     since that class is specific to the actions we define. We'll need another
     way for extensions to be able to uniquely identify their own actions.
+
+<br>
 
 ## Resources
 
