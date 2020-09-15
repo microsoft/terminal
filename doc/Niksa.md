@@ -11,6 +11,7 @@ This document serves as a storage point for those posts.
 - [Why can't we have mixed elevated and non-elevated tabs in the Terminal?](#elevation)
 - [What's the difference between a shell and a terminal?](#shell-vs-terminal)
 
+<br>
 
 ## <a name="cmd"></a>Why do we avoid changing CMD.exe?
 `setlocal` doesn't behave the same way as an environment variable. It's a thing that would have to be put in at the top of the batch script that is `somefile.cmd` as one of its first commands to adjust the way that one specific batch file is processed by the `cmd.exe` engine. That's probably not suitable for your needs, but that's the way we have to go.
@@ -25,7 +26,9 @@ I would just ask you to understand that `cmd.exe` is very, very much in a mainte
 
 I would highly recommend that Gulp convert to using PowerShell scripts and that if such an issue exists with PowerShell, that we get their modern, supported, and better-engineered platform to support the scenario. I don't want you to sit around waiting for `cmd.exe` to change this because it's really not going to happen faster than that script could be converted to `ps1` and it fixed in PowerShell Core (if that's even a problem in that world.)
 
-Original Source: https://github.com/microsoft/terminal/issues/217#issuecomment-404240443
+> **Original Source:** https://github.com/microsoft/terminal/issues/217#issuecomment-404240443
+
+<br>
 
 ## <a name="screenPerf"></a>Why is typing-to-screen performance better than every other app?
 
@@ -53,7 +56,9 @@ As an aside, @bitcrazed wants us to automate performance tests in some conhost s
 
 If there's anything else you'd like to know, let me know. I could go on all day. I deleted like 15 tangents from this reply before posting it.... 
 
-Original Source: https://github.com/microsoft/terminal/issues/327#issuecomment-447391705
+> **Original Source:** https://github.com/microsoft/terminal/issues/327#issuecomment-447391705
+
+<br>
 
 ## <a name="gfxMsgStack"></a>How are the Windows graphics/messaging stack assembled?
 
@@ -88,7 +93,9 @@ Basically... it's like the answer to anything software... "it's an unmitigated d
 
 Anyway, that's enough ramble for one morning. Hopefully that somewhat answered your questions and gave you a bit more insight.
 
-Original Source: https://github.com/microsoft/terminal/issues/327#issuecomment-447926388
+> **Original Source:** https://github.com/microsoft/terminal/issues/327#issuecomment-447926388
+
+<br>
 
 ## <a name="fesb"></a>Output Processing between "Far East" and "Western"
 
@@ -133,7 +140,9 @@ I don't know why the "Eastern" copy was checking `C1_CNTRL` at all in the first 
 Presuming CJK codepages have no conflict in this range for their DBCS codepages... we could probably remove the check with `GetStringTypeW` entirely and always run everything through `ConvertOutputToUnicode`. More risky than just the flag test change... but theoretically an option as well.
 
 
-Original Source: https://github.com/microsoft/terminal/issues/166#issuecomment-510953359
+> **Original Source:** https://github.com/microsoft/terminal/issues/166#issuecomment-510953359
+
+<br>
 
 ## <a name="backport"></a>Why do we not backport things?
 
@@ -147,7 +156,9 @@ It's also costly in terms of time, effort, and testing for us to validate a modi
 
 So from our little team working hard to make developers happy, we virtually never make the cut for servicing. We're sorry, but we hope you can understand. It's just the reality of the situation to say "nope" when people ask for a backport. In our team's ideal world, you would all be running the latest console bits everywhere everytime we make a change. But that's just not how it is today.
 
-Original Source: https://github.com/microsoft/terminal/issues/279#issuecomment-439179675
+> **Original Source:** https://github.com/microsoft/terminal/issues/279#issuecomment-439179675
+
+<br>
 
 ## <a name="elevation"></a>Why can't we have mixed elevated and non-elevated tabs in the Terminal?
 
@@ -179,7 +190,9 @@ It's a small risk, but it _is_ a risk.
 
 Other platforms have accepted that risk in preference for user convenience. They aren't wrong to do so, but I think Microsoft gets less of a "pass" on things like "accepting risk for user convenience". Windows 9x was an unmitigated security disaster, and limited user accounts and elevation prompts and kernel-level security for window management were the answer to those things. They're not locks to be loosened lightly.
 
-Original Source: https://github.com/microsoft/terminal/issues/632#issuecomment-519375707
+> **Original Source:** https://github.com/microsoft/terminal/issues/632#issuecomment-519375707
+
+<br>
 
 ## <a name="shell-vs-terminal"></a>What's the difference between a shell and a terminal?
 
@@ -197,4 +210,4 @@ Any terminal can run any commandline client application. So you can use the Wind
 
 It's not the Terminal's responsibility to remember the commands executed by a commandline client. That's the responsibility of the _shell_. How would the terminal remember commands executed by something like `emacs` or `vim`? Those are both applications where the user is typing input and hitting enter, like they would at a cmd prompt, but without something that resembles a command history.
 
-Original Source: https://github.com/microsoft/terminal/issues/6500#issuecomment-670035468
+> **Original Source:** https://github.com/microsoft/terminal/issues/6500#issuecomment-670035468
