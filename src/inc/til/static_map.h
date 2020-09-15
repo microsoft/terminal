@@ -23,9 +23,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
     {
-        struct unsorted_input_t: public std::false_type { };
+        struct unsorted_input_t : public std::false_type
+        {
+        };
 
-        struct presorted_input_t: public std::true_type { };
+        struct presorted_input_t : public std::true_type
+        {
+        };
     }
 
     template<typename K, typename V, typename Compare = std::less<K>, size_t N = 0, typename SortedInput = details::unsorted_input_t>
