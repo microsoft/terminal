@@ -9,6 +9,8 @@ All of these profiles are provided _without_ their `guid` set. If you'd like to
 set any of these profiles as your _default_ profile, you'll need to make sure to
 [generate a unique guid](https://www.guidgenerator.com/) for them manually.
 
+<br>
+
 ## Anaconda
 
 Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
@@ -22,6 +24,8 @@ Assuming that you've installed Anaconda into `%USERPROFILE%\Anaconda3`:
 }
 ```
 
+<br>
+
 ## cmder
 
 Assuming that you've installed cmder into `%CMDER_ROOT%`:
@@ -34,6 +38,8 @@ Assuming that you've installed cmder into `%CMDER_ROOT%`:
     "startingDirectory" : "%USERPROFILE%"
 }
 ```
+
+<br>
 
 ## Cygwin
 
@@ -52,6 +58,8 @@ Note that the starting directory of Cygwin is set as it is to make the path
 work. The default directory opened when starting Cygwin will be `$HOME` because
 of the `--login` flag.
 
+<br>
+
 ## Far Manager
 
 Assuming that you've installed Far into `c:\Program Files\Far Manager`:
@@ -64,6 +72,8 @@ Assuming that you've installed Far into `c:\Program Files\Far Manager`:
     "useAcrylic" : false
 },
 ```
+
+<br>
 
 ## Git Bash
 
@@ -78,6 +88,8 @@ Assuming that you've installed Git Bash into `C:/Program Files/Git`:
 }
 ````
 
+<br>
+
 ## Git Bash (WOW64)
 
 Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
@@ -91,6 +103,8 @@ Assuming that you've installed Git Bash into `C:/Program Files (x86)/Git`:
 }
 ```
 
+<br>
+
 ## MSYS2
 
 Assuming that you've installed MSYS2 into `C:/msys64`:
@@ -103,6 +117,8 @@ Assuming that you've installed MSYS2 into `C:/msys64`:
     "startingDirectory" : "C:/msys64/home/user"
 }
 ````
+
+<br>
 
 ## Developer Command Prompt for Visual Studio
 
