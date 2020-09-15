@@ -12,6 +12,8 @@ When a failure occurs in one of these passes, a bug will automatically be genera
 
 The next step would be investigating one of these failures...
 
+<br>
+
 ## Investigation
 
 A quick overview of investigation... normally you can just attempt to build and reproduce the failure locally with the `OpenConsole` project and it will happen the same way as it did on the nightly build in the lab. However, sometimes the failure will be exclusive to the lab or won't happen in the same way as it does on your local dev machine. At that point, you need to move into setting up the environment as it was during the testpass and figuring out what went wrong.
@@ -26,10 +28,10 @@ Prerequisites:
 
 1. Open Visual Studio 2017 and use the TDP drop-down menu to open the `Device Manager`.
 1. In the pane that opens to the left, choose `Add` and then `Nebula VM Device`. Nebula is a cloud provider for VMs (like Azure but a more private instance for corporate work usage).
-1. Name the machine and choose the build/branch/flavor/SKU from the drop downs at the bottom. It will find the VHD for you from the build shares. Hit `Add Device` to deploy to Nebula.
+1. Name the machine and choose the ``ild/branch/flavor/SKU``rom the drop downs at the bottom. It will find the VHD for you from the build shares. Hit `Add Device` to deploy to Nebula.
 1. Wait a few minutes. It took 5-10 for it to be deployed.
 1. Right click the machine name in the `Device Manager` list and choose `Launch T-Shell`. You can also use `Connect via Console` to get a "remote desktop"-like session to the KVM port on the VM.
-1. In T-shell, use `testd Microsoft.Console.TestLab.Desktop.testlist` or a command of that format with a different TESTLIST or TESTMD name from our project (see the [UniversalTest.md] documentation). The `testd` utility will automatically resolve the build/branch/flavor information, dig through the build shares for the matching TESTLIST/TESTMD metadata, and attempt to deploy all relevant packages and dependencies on the device. When it's successful, it will move onto running all the tests and giving you the results. On conclusion, the test results should pop up in the web browser or the `Hubble - Log Viewer` tool provided by the Engineering Systems team.
+1. In T-shell, use `testd Microsoft.Console.TestLab.Desktop.testlist` or a command of that format with a different TESTLIST or TESTMD name from our project (see the [UniversalTest.md] documentation). The `testd` utility will automatically resolve the ``build/branch/flavor`` information, dig through the build shares for the matching ``TESTLIST/TESTMD`` metadata, and attempt to deploy all relevant packages and dependencies on the device. When it's successful, it will move onto running all the tests and giving you the results. On conclusion, the test results should pop up in the web browser or the `Hubble - Log Viewer` tool provided by the Engineering Systems team.
 
 If some of the above things do not work, go to [https://osgwiki.com] and type them into the Search bar. For instance, if T-Shell isn't found or working, you can find out where to get it or download it on `OSGWiki`. The same goes for the other commands besides `testd` to use in T-shell and more information on what `Hubble` or `Nebula` are. 
 
