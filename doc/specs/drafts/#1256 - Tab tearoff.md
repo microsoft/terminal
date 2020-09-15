@@ -11,6 +11,8 @@ issue id: #1256
 
 This spec describes the sort of interprocess communications that will be required to support features like tab tearoff and merge. It goes through some of the considerations that became apparent when I tried to prototype passing connections between `conhost` and `wt`.
 
+<br>
+
 ## Inspiration
 
 Two main drivers:
@@ -20,6 +22,8 @@ Two main drivers:
 Both of these concerns will require there to exist some sort of interprocess communication manager that can send/receive the system handles representing connections between client applications and the hosting environment.
 
 I spent some time during the Microsoft Hackathon in July 2019 investigating these avenues with a branch I pushed and linked at the bottom. The work resulted in me finding more questions than answers and ultimately deciding that a Hackathon is good enough for exploration of the mechanisms and ideas behind this, but not a good time for a full implementation.
+
+<br>
 
 ## Solution Design
 
@@ -128,6 +132,8 @@ For the parameters passing, I see a few options:
 1. `conhost.exe` can call the execution alias with parameters. WSL distro launchers use this.
 1. We can define a protocol handler for these sorts of connections and let `wt.exe` register for it. Protocol handlers are already well supported and understood both by classic applications and by packaged/modern applications on Windows. They must have provisions to communicate at least some semblance of argument data as well. This is the route I'd probably prefer. `ms-term://incoming/<session-id>` or something like that. The receiving `wt.exe` can contact the manager process (or set one up if it is the first) and negotiate receiving the session that was specified into a new tab.
 
+<br>
+
 ## UI/UX Design
 
 ### For Tab Tear-off
@@ -162,6 +168,8 @@ If a `wt.exe` is already started, `conhost.exe` would find the running instance 
 
 #### Multiple WTs already started
 If multiple `wt.exe`s are already started, `conhost.exe` would have to find the foreground one, the active one, or the primary/manager one and send the tab there. I'm not sure how other tabbing things to do this. We could research/study.
+
+<br>
 
 ## Capabilities
 
@@ -298,6 +306,8 @@ Additionally, `wt.exe` is worse than `conhost.exe` alone in all efficiency categ
 
 It is, however, not likely to be much if any worse than just choosing to use `wt.exe` anyway over `conhost.exe`.
 
+<br>
+
 ## Potential Issues
 
 I've listed most of the issues above in their individual sections. The primary highlights are:
@@ -306,9 +316,13 @@ I've listed most of the issues above in their individual sections. The primary h
 1. Default launch expectations - It is possible that test utilities or automation are counting on `conhost.exe` being the host application or that they're not ready to tolerate the potential for other applications to start. I think the interactive/non-interactive check mitigates this, but we'd have to remain concerned here.
 1. `AttachConsole` and `DetachConsole` and `AllocConsole` - I don't have the slightest idea what happens for these APIs. We would have to explore. `AttachConsole` has restrictions based on the process hierarchy. It would likely behave in interesting ways with the strange parenting order and might be a driver to why we would have to adjust the parenting of the processes (or change the API under the hood). `DetachConsole` might create an issue where a tab disappears out of the terminal and the job object causes everything to die. `AttachConsole` wouldn't necessarily be guaranteed to go back into the same `wt.exe` or a `wt.exe` at all. 
 
+<br>
+
 ## Future considerations
 
 This might unlock some sort of isolation for extensions as well. Extensions of some sort our on our own long term roadmap, but they're inherently risky to the stability and integrity of the application. If we have to go through a lot of gyrations to enable process containerization and an interprocess communication model for tab tear off and default application work, we might also be able to contain extensions the same way. This derives further from the idea of what browsers do.
+
+<br>
 
 ## Resources
 
