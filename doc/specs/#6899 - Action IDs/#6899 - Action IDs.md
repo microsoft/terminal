@@ -19,6 +19,8 @@ much as possible. This spec proposes a mechanism by which actions could be
 uniquely identifiable, so that the user could refer to bindings in other
 contexts without needing to replicate an entire json blob.
 
+<br>
+
 ## Solution Design
 
 This spec was largely inspired by the following diagram from @DHowett:
@@ -172,10 +174,14 @@ actions in these menus _at all_. The actions should exclusively be defined in
 `actions`, and other menus should only be able to refer to these actions by
 `id`.
 
+<br>
+
 ## UI/UX Design
 
 There's not a whole lot of UI for this feature specifically. This is largely
 behind-the-scenes refactoring of how actions can be defined.
+
+<br>
 
 ## Capabilities
 
@@ -199,11 +205,15 @@ _(no change expected)_
 
 _(no change expected)_
 
+<br>
+
 ## Potential Issues
 
 This won't necessarily play well with iterable commands in the Command Palette,
 but that's okay. For iterable commands, users will still need to define the
 actions manually.
+
+<br>
 
 ## Future considerations
 
