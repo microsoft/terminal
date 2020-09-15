@@ -21,6 +21,8 @@ window while working in another.
 This spec will help outline the design of the implementation of panes in the
 Windows Terminal.
 
+<br>
+
 ## Inspirations
 
 Panes within the context of a single terminal window are not a new idea. The
@@ -36,6 +38,8 @@ limited to):
 * terminator
 * emacs & vim
 * Iterm2
+
+<br>
 
 ## Design
 
@@ -180,6 +184,8 @@ then the parent will take both the children of the remaining pane, and make them
 the parent's children, as if the parent node was taken from the tree and
 replaced by the remaining child.
 
+<br>
+
 ## Future considerations
 
 The Pane implementation isn't complete in it's current form. There are many
@@ -206,6 +212,8 @@ no means a comprehensive list.
   host another UIElement. One could imagine enabling a user to quickly open up a
   Browser pane to search for a particular string without needing to leave the
   terminal.
+
+<br>
 
 ## Footnotes
 
