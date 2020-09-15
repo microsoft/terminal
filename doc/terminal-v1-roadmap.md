@@ -4,6 +4,8 @@
 
 This document outlines our roadmap to delivering Windows Terminal v1.0 by spring 2020.
 
+<br>
+
 ## Milestones
 
 The Windows Terminal project is engineered and delivered as a set of 4-week milestones:
@@ -13,6 +15,8 @@ The Windows Terminal project is engineered and delivered as a set of 4-week mile
 | 2 weeks | Dev Work<br/> <ul><li>Fixes / Features for future Windows Releases</li><li>Fixes / Features for Windows Terminal</li></ul> |  Release to Internal Selfhosters at end of week 2 |
 | 1 week | Quality & Stability<br/> <ul><li>Bug Fixes</li><li>Perf & Stability</li><li>UI Polish</li><li>Tests</li><li>etc.</li></ul>| Push to Microsoft Store at end of week 3 |
 | 1 week | Release <br/> <ul><li>Available from [Microsoft Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) & [GitHub Releases](https://github.com/microsoft/terminal/releases) (Tues of 4th week)</li><li>Release Notes & Announcement Blog published</li><li>Engineering System Maintenance</li><li>Community Engagement</li><li>Docs</li><li>Future Milestone Planning</li></ul> | Release available from Microsoft Store & GitHub Releases |
+
+<br>
 
 ## Terminal Roadmap / Timeline
 
@@ -36,6 +40,8 @@ Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, a
 | 2020-03-24 | RC | Pri 0 bug fixes |
 | 2020-05    | v1.0 | Terminal v1.0 Release |
 
+<br>
+
 ## GitHub Milestones
 
 Each milestone above is/will be reflected in our [GitHub milestones](https://github.com/microsoft/terminal/milestones):
@@ -50,6 +56,8 @@ Each milestone above is/will be reflected in our [GitHub milestones](https://git
 | [Terminal v1.0](https://github.com/microsoft/terminal/milestone/6) | Work planned for v1.0, but not yet assigned to a milestone |
 | [Terminal Backlog](https://github.com/microsoft/terminal/milestone/7) | Work not yet assigned to a milestone or release |
 
+<br>
+
 ## Issue Triage & Prioritization
 
 Incoming issues/asks/etc. are triaged several times a week, labelled appropriately, and assigned to a milestone in priority order:
@@ -57,6 +65,8 @@ Incoming issues/asks/etc. are triaged several times a week, labelled appropriate
 * P0 (serious crashes, data loss, etc.) issues are scheduled to be dealt with ASAP
 * P1/2 issues/features/asks  assigned to the current or future milestone, or to the [Terminal v1.0 milestone](https://github.com/microsoft/terminal/milestone/6) for future assignment, if required to deliver a v1.0 feature
 * Issues/features/asks not on our list of v1.0 features is assigned to the [Terminal Backlog](https://github.com/microsoft/terminal/milestone/7) for subsequent triage, prioritization & scheduling.
+
+<br>
 
 ## v1.0 Scenarios
 
@@ -90,6 +100,6 @@ Feature Notes:
 
 \* Feature Priorities:
 
-0. Mandatory <br/>
-1. Optimal <br/>
-2. Optional / Stretch-goal <br/>
++ Mandatory <br/>
++ Optimal <br/>
++ Optional / Stretch-goal <br/>
