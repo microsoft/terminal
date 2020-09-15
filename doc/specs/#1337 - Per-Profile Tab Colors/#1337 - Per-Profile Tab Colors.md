@@ -12,6 +12,8 @@ This spec describes a way to specify tab colors in a profile in a way that will
 be forward compatible with theming the Terminal. This spec will be largely
 dedicated to the design of a single setting, but within the context of theming.
 
+<br>
+
 ## Inspiration
 
 Following the addition of the Tab Color Picker in [#3789], we've had numerous
@@ -21,6 +23,8 @@ a tab color, the theming spec ([#5772] )is very large and will take a while to
 revise and approve. This spec is intended to pull a single point out from that
 spec to make it more easily reviewable, and implement it in a way that will
 continue working when we add support for themes in the future.
+
+<br>
 
 ## Solution Design
 
@@ -69,12 +73,15 @@ Some examples:
   profiles without `tabColor` set) will appear green, using the color from the
   theme.
 
+<br>
 
 ## UI/UX Design
 
 In general, this is going to look exactly like the colored tabs look now.
 
 ![preview](profile-tabColor-000.gif)
+
+<br>
 
 ## Capabilities
 
@@ -113,9 +120,13 @@ No expected change
 </tr>
 </table>
 
+<br>
+
 ## Potential Issues
 
 None expected.
+
+<br>
 
 ## Footnotes
 
@@ -129,6 +140,8 @@ provide support for setting colors as one of a variety of values:
 
 When support for these other types of "smart" colors is added, then the profile
 `tabColor` setting will also gracefully accept these values.
+
+<br>
 
 ## Future considerations
 
