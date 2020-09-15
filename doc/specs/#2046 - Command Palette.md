@@ -14,6 +14,8 @@ The Command Palette is a GUI that the user can activate to search for and
 execute commands. Beneficially, the command palette allows the user to execute
 commands _even if they aren't bound to a keybinding_.
 
+<br>
+
 ## Inspiration
 
 This feature is largely inspired by the "Command Palette" in text editors like
@@ -31,6 +33,8 @@ arguments](https://github.com/microsoft/terminal/issues/4632) to the Windows
 Terminal in v0.9, we also considered what it might mean to be able to have the
 command palette work as an effective UI not only for dispatching pre-defined
 commands, but also `wt.exe` commandlines to the current terminal instance.
+
+<br>
 
 ## Solution Design
 
@@ -225,6 +229,8 @@ wsl.exe`, the terminal would execute two `SplitPane` actions in the currently
 focused pane, creating one with the "Windows PowerShell" profile and another
 with the default profile running `wsl` in it.
 
+<br>
+
 ## UI/UX Design
 
 We'll add another action that can be used to toggle the visibility of the
@@ -387,6 +393,8 @@ they could set the action to `null`:
 
 This will remove the command from the command list.
 
+<br>
+
 ## Capabilities
 
 ### Accessibility
@@ -428,6 +436,8 @@ increase our runtime memory footprint while the palette is open.
 
 We'll additionally be introducing a few extra json values to parse, so that could
 increase our load times (though this will likely be negligible).
+
+<br>
 
 ## Potential Issues
 
@@ -522,12 +532,16 @@ default. These are largely the actions that are bound by default.
 ]
 ```
 
+<br>
+
 ## Addenda
 
 This spec also has a follow-up spec which introduces further changes upon this
 original draft. Please also refer to:
 
 * June 2020: Unified keybindings and commands, and synthesized action names.
+
+<br>
 
 ## Future considerations
 
@@ -765,6 +779,8 @@ cleanly in the settings.
 We'd need to have validation on that though, what if both of them were set to
 `null`? One of them would _need_ to be `null`, so if both have a character, do
 we just assume one is the default?
+
+<br>
 
 ## Resources
 Initial post that inspired this spec: #[2046](https://github.com/microsoft/terminal/issues/2046)
