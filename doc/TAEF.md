@@ -3,7 +3,7 @@ TAEF, the Test Authoring and Execution Framework, is used extensively within the
 
 The [official documentation](https://msdn.microsoft.com/en-us/library/windows/hardware/hh439725\(v=vs.85\).aspx) for TAEF describes the basic architecture, usage, and functionality of the test system. It is similar to Visual Studio test, but a bit more comprehensive and flexible.
 
-For the purposes of the console project, you can run the tests using the *TE.exe* that matches the architecture for which the test was build (x86/x64) in the pattern
+For the purposes of the console project, you can run the tests using the ``TE.exe`` that matches the architecture for which the test was build (x86/x64) in the pattern
 
 	te.exe Console.Unit.Tests.dll
 
