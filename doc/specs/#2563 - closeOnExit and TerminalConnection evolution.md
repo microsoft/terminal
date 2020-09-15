@@ -15,9 +15,13 @@ This specification describes an improvement to the `closeOnExit` profile feature
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED",  "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://tools.ietf.org/html/rfc2119).
 
+<br>
+
 ## Inspiration
 
 Other terminal emulators like ConEmu have a similar feature.
+
+<br>
 
 ## Solution Design
 
@@ -56,6 +60,8 @@ Other terminal emulators like ConEmu have a similar feature.
     * **The new default value for `closeOnExit` will be `graceful`.**
 2. `Pane` will remain responsible for making the final determination as to whether it is closed based on the settings of the profile it is hosting.
 
+<br>
+
 ## UI/UX Design
 
 * The existing `ITerminalConnection` implementations will be augmented to print out interesting and useful status information when they transition into a `Closed` or `Failed` state.
@@ -67,6 +73,8 @@ Other terminal emulators like ConEmu have a similar feature.
 * If the user's settings specify `closeOnExit: never/false`, the terminal hosting the connection will never be automatically closed. The message will remain on-screen.
 * If the user's settings specify `closeOnExit: graceful/true`, the terminal hosting the connection _will_ automatically be closed if the connection's state is `Closed`. A connection in the `Failed` state will not be closed, and the message will remain on-screen.
 * If the user's settings specify `closeOnExit: always`, the terminal hosting the connection will be closed. The message will not be seen.
+
+<br>
 
 ## Capabilities
 
@@ -93,9 +101,13 @@ This will make for a clean transition to Windows Terminal's sane new defaults.
 
 ### Performance, Power, and Efficiency
 
+<br>
+
 ## Potential Issues
 
 There will be no impact to Performance, Power or Efficiency.
+
+<br>
 
 ## Future considerations
 
