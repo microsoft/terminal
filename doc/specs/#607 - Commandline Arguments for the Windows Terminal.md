@@ -14,6 +14,8 @@ commandline arguments. These arguments can be used to enable customized launch
 scenarios for the Terminal, such as booting directly into a specific profile or
 directory.
 
+<br>
+
 ## Inspiration
 
 Since the addition of the "execution alias" `wt.exe` which enables launching the
@@ -32,6 +34,8 @@ to enable custom launch scenarios. This need was amplified by requests like:
 Additionally, the final design for the arguments was heavily inspired by the
 arguments available to `tmux`, which also enables robust startup configuration
 through commandline arguments.
+
+<br>
 
 ## User Stories
 
@@ -65,6 +69,8 @@ use commandline arguments, to help guide the design.
     commandlines, and specific split sizes
 14. A user wants to use a file to provide a reusable startup configuration with
     many steps, to avoid needing to type the commandline each time.
+
+<br>
 
 ## Solution Design
 
@@ -181,6 +187,8 @@ wt new-tab ; split-pane -V ; split-pane --target 1 -H media.exe
 wt new-tab ; split-pane -V ; split-pane -t 1 -H media.exe
 
 ```
+
+<br>
 
 ## `wt` Syntax
 
@@ -405,6 +413,8 @@ like `guid` and `name`, as well as high priority properties to add as arguments.
 * `startingDirectory` is a _highly_ requested commandline argument, so that's
   been given priority in this spec.
 
+<br>
+
 ## Implementation Details
 
 Following an investigation performed the week of Nov 18th, 2019, I've determined
@@ -509,6 +519,8 @@ runtimeclass TerminalParameters {
   - We'll need to track each `Pane`'s ID as `Pane`s are created, so that we can
     quickly switch to the nth `Pane`.
   - This is in order to support the `-t,--target` parameter of `split-pane`.
+
+<br>
 
 ## Capabilities
 
@@ -664,6 +676,8 @@ command, that command by itself should not imply a `new-tab`. `wt open-settings`
 should simply open the settings in the user's chosen `.json` editor, without
 needing to open a terminal window.
 
+<br>
+
 ## Future considerations
 
 * These are some additional argument ideas which are dependent on other features
@@ -709,6 +723,7 @@ needing to open a terminal window.
   could become `nt`, `split-pane` becomes `sp`, etc. A commandline could look
   like `wt ; sp less some-log.txt ; fp -t 0` then.
 
+<br>
 
 ## Resources
 
