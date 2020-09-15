@@ -2,6 +2,8 @@
 
 Settings in the Windows Console Host can be a bit tricky to understand. This is mostly because the settings system evolved over the course of decades. Before we dig into the details of how settings are persisted, it's probably worth taking a quick look at what these settings are.
 
+<br>
+
 ## Settings Description
 
 |Name                       |Type                   |Description                           |
@@ -43,6 +45,8 @@ Settings in the Windows Console Host can be a bit tricky to understand. This is 
 store the Width and Height values in the high and low word in the registry's
 double word values.
 
+<br>
+
 ## The Settings Hierarchy
 
 Settings are persisted to a variety of locations depending on how they are modified and how the Windows Console Host was invoked:
@@ -59,15 +63,19 @@ To modify settings specific to the current application, invoke the `Properties` 
 
 When console applications are launched, the Windows Console Host determines which settings to use by overlaying settings from the above locations.
 
-1. Initialize settings based on hardcoded defaults
-2. Overlay settings specified by the user's configured defaults
-3. Overlay application-specific settings from either the registry or the shortcut file, depending on how the application was launched
++ Initialize settings based on hardcoded defaults
++ Overlay settings specified by the user's configured defaults
++ Overlay application-specific settings from either the registry or the shortcut file, depending on how the application was launched
 
 Note that the registry settings are "sparse" settings repositories, meaning that if a setting isn't present, then whatever value that is already in use remains unchanged. This allows users to have some settings shared amongst all console applications and other settings be specific. Shortcut files, however, store each setting regardless of whether it was a default setting or not.
+
+<br>
 
 ## Known Issues
 
 * Modifications to system-created Start Menu and Win-X menu console applications are not kept during upgrade.
+
+<br>
 
 ## Adding settings
 
