@@ -37,6 +37,8 @@ enabling client applications to receive the full range of keys once again.
 Included at the bottom of this document is a collection of [options that were
 investigated](#options-considered) as a part of preparing this document.
 
+<br>
+
 ## Considerations
 
 When evaluating existing encoding schemes for viability, the following things
@@ -73,6 +75,8 @@ Keys that we definitely need to support, that don't have unique VT sequences:
 > `KEY_EVENT_RECORD`s. It is left as a Future Consideration to add support for
 > the other types of `INPUT_RECORD` as other sequences, which could be done
 > trivially similarly to the following proposal.
+
+<br>
 
 ## Solution Design
 
@@ -321,10 +325,13 @@ specified above, the above sequences could each be shortened to the following.
 * When `cmd.exe` reads the input, they'll receive the full `INPUT_RECORD`s
   they're expecting
 
+<br>
 
 ## UI/UX Design
 
 This is not a user-facing feature.
+
+<br>
 
 ## Capabilities
 
@@ -397,9 +404,13 @@ machine.
 
 _(no change expected)_
 
+<br>
+
 ## Potential Issues
 
 _(no change expected)_
+
+<br>
 
 ## Future considerations
 
@@ -414,6 +425,8 @@ _(no change expected)_
   `win32-input-mode`, and the client will read `win32-input-mode` encoded
   sequences as input. This could enable other cross-platform applications to
   also use win32-like input in the future.
+
+<br>
 
 ## Options Considered
 
@@ -530,6 +543,7 @@ Notably looking at
 * Doesn't differentiate between keydowns and keyups
 * Unsure who implements this - not extensively investigated
 
+<br>
 
 ## Resources
 
