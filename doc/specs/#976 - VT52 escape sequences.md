@@ -11,9 +11,13 @@ issue id: 976
 
 This spec outlines the work required to split off the existing VT52 commands from the VT100 implementation, and extend the VT52 support to cover all of the core commands.
 
+<br>
+
 ## Inspiration
 
 The existing VT52 commands aren't currently implemented as a separate mode, so they conflict with sequences defined in the VT100 specification. This is blocking us from adding support for the VT100 Index (IND) escape sequence, which is one of the missing commands required to pass the test of cursor movements in Vttest.
+
+<br>
 
 ## Solution Design
 
@@ -209,9 +213,13 @@ For fuzzing support, we'll need to add the DECANM option to the `GeneratePrivate
 
 In terms of manual testing, it can be useful to run the _Test of VT52 mode_ option in Vttest, and confirm that everything looks correct there. It's also worth going through some of the options in the The _Test of keyboard_ section, since those tests aren't only intended for the later VT models - they do cover the VT52 keyboard as well.
 
+<br>
+
 ## UI/UX Design
 
 There is no additional UI associated with this feature.
+
+<br>
 
 ## Capabilities
 
@@ -235,13 +243,19 @@ This could be a breaking change for code that relies on the few existing VT52 co
 
 The additional mode flags and associated processing in the `StateMachine` and `TerminalInput` classes could have some performance impact, but that is unlikely to be significant.
 
+<br>
+
 ## Potential Issues
 
 The only negative impacts I can think of would be the potential for breaking changes, and the possible impact on performance, as discussed in the _Compatibility_ and _Performance_ sections above. But as with any new code, there is always the possibility of new bugs being introduced as well.
 
+<br>
+
 ## Future considerations
 
 As mentioned in the _Inspiration_ section, having the VT52 functionality isolated with a new mode would enable us to implement the VT100 Index (IND) escape sequence, which currently conflicts with the VT52 _Cursor Left_ command.
+
+<br>
 
 ## Resources
 
