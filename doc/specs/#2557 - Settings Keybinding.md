@@ -11,6 +11,8 @@ issue id: #2557
 
 This spec outlines an expansion to the existing `openSettings` keybinding.
 
+<br>
+
 ## Inspiration
 
 As a Settings UI becomes more of a reality, the behavior of this keybinding will be expanded on to better interact with the UI. Prior to a Settings UI, there was only one concept of the modifiable user settings: settings.json.
@@ -24,6 +26,7 @@ Once the Settings UI is created, we can expect users to want to access the follo
 - defaults.json
 These are provided as non-comprehensive examples of pages that might be in a future Settings UI. The rest of the doc assumes these are the pages in the Settings UI.
 
+<br>
 
 ## Solution Design
 Originally, #2557 was intended to allow for a keybinding arg to access defaults.json. I imagined a keybinding arg such as "openDefaults: true/false" to accomplish this. However, this is not expandable in the following scenarios:
@@ -89,6 +92,8 @@ Here, we take away the ability to specifically choose which page the user wants 
 
 If there are concerns about adding more settings files in the future, `openDefaults` could be renamed to be `target`, and this would still serve as a hybrid of Proposition 1 and 2, with less possible options.
 
+<br>
+
 ## UI/UX Design
 
 The user has full control over modifying and adding these keybindings.
@@ -99,6 +104,8 @@ However, the question arises for what the default experience should be. I propos
 | <kbd>ctrl+alt+,</kbd> | Open defaults.json |
 
 When the Settings UI gets added in, they will be updated to open their respective pages in the Settings UI.
+
+<br>
 
 ## Capabilities
 
@@ -120,9 +127,13 @@ Users that expect a json file to open would have to update their keybinding to d
 
 ### Performance, Power, and Efficiency
 
+<br>
+
 ## Potential Issues
 
 None.
+
+<br>
 
 ## Future considerations
 
