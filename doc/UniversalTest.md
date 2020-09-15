@@ -5,20 +5,22 @@
 Universal Testing is the Microsoft framework for creating and deploying test packages onto just about any device through just about any process. We use it for packaging up all sorts of test resources and sending it into our automated test labs no matter what the source of the content or the engineering system involved.
 
 It involves several parts:
-- TESTMD
+- **TESTMD**
   - These define a package unit for deployment to the test device. This usually includes the test binaries and any dependent data that it will need to execute.
   - There can also be a hierarchy where one package can depend on another such that packages can be re-used.
 
-- TESTLIST
+- **TESTLIST**
   - This defines a batch of TESTMD packages that should be executed together.
 
-- TESTPASSES
+- **TESTPASSES**
   - This defines a list of tests via a TESTLIST and a lab environment configuration on which the tests should be run.
 
   These files can either include their child element as they're supposed to (TESTMDs included in TESTLISTs) or they can often include themselves to provide chain structuring (one TESTLIST can reference another TESTLIST).
 
-- TREX
+- **TREX**
     - This is the legacy configuration system that performed the same job as TESTPASSES, but not in source files.
+
+<br>
 
 ## Configuration
 
