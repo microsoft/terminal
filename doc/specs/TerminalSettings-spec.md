@@ -3,9 +3,13 @@
 * author: Mike Griese __migrie__
 * created on: 2018-Oct-23
 
+<br>
+
 ## Abstract
 
 This spec will outline how various terminal frontends will be able to interact with the settings for the terminal.
+
+<br>
 
 ## Terminology
 * **Frontend** or **Application Layer**: This is the end-user experience. This
@@ -18,6 +22,8 @@ This spec will outline how various terminal frontends will be able to interact w
 * **Terminal Layer**: This is the shared core implementation of the terminal.
   This is the Terminal Connection, Parser/Adapter, Buffer, and Renderer (but not
   the UX-dependant RenderEngine).
+
+<br>
 
 ## User Stories
 1. "Project Cascadia" should be able to have both global settings (such as
@@ -38,6 +44,8 @@ This spec will outline how various terminal frontends will be able to interact w
    application that's embedding it, such as font size and face, scrollbar
    visibility, etc. These should be settings that are specific to the component,
    and the Terminal should logically be unaffected by these settings.
+
+<br>
 
 ## Details
 
@@ -224,6 +232,8 @@ Then, when the settings are closed, it'll enumerate all of the components it has
 
 ~~We need to have a way so that only the currently foreground component can change the window size.~~
 I don't like that - if we change the font size, we should just recalculate how many characters can fit in the current window size.
+
+<br>
 
 ## Questions / TODO
 * How does this interplay with setting properties of the terminal component in XAML?
