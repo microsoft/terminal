@@ -11,6 +11,8 @@ issue id: #1564
 
 This design document describes how each page of the settings UI will be laid out along with design mockups to display how the UI will appear. The mock ups are for appearance purposes and some layouts and naming may be different in this doc. This doc should be considered the final say.
 
+<br>
+
 ## UI Design
 
 ### Overall navigation with Startup page
@@ -63,6 +65,8 @@ If the command they select has additional arguments/actions, the modal will dyna
 
 ![Keyboard page modal arguments](./keyboard-modal-args.png)
 
+<br>
+
 ## Settings layout
 
 Below is the list of all settings on their respective pages in the settings UI. The title row aligns with the navigation view on the left of the UI. Bolded headers in those columns align with top nav on the page.
@@ -105,8 +109,20 @@ Below is the list of all settings on their respective pages in the settings UI. 
 | | | | | | | History size (number picker) | History size (number picker) |
 | | | | | | | How the profile closes (radio) | How the profile closes (radio) |
 
+<br>
+
 ## Potential Issues
+
+N/A
+
+<br>
 
 ## Future considerations
 
+N/A
+
+<br>
+
 ## Resources
+
+N/A
