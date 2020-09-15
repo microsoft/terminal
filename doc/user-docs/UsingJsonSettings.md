@@ -25,6 +25,8 @@ The settings are grouped under four headings:
 3. Profiles: A group of settings to be applied to a tab when it is opened using that profile. E.g. shell to use, cursor shape etc.
 4. Schemes: Sets of colors for background, text etc. that can be used by profiles
 
+<br>
+
 ## Global Settings
 
 These settings define startup defaults, and application-wide settings that might
@@ -49,6 +51,8 @@ Example settings include
 ```
 
 These global properties should exist in the root json object.
+
+<br>
 
 ## Key Bindings
 
@@ -124,6 +128,8 @@ add multiple bindings for the same action. For example:
 
 In this snippet, all three of <kbd>ctrl+shift+c</kbd>, <kbd>ctrl+c</kbd> and <kbd>enter</kbd> are bound to `copy`.
 
+<br>
+
 ## Profiles
 
 A profile contains the settings applied when a new WT tab is opened. Each
@@ -170,6 +176,8 @@ the property `"hidden": true` to the profile's json. This can also be used to
 remove the default `cmd` and PowerShell profiles, if the user does not wish to
 see them.
 
+<br>
+
 ## Color Schemes
 
 Each scheme defines the color values to be used for various terminal escape sequences.
@@ -189,6 +197,8 @@ Each schema is identified by the name field. Examples include
 ```
 
 The schema name can then be referenced in one or more profiles.
+
+<br>
 
 ## Settings layering
 
@@ -370,6 +380,8 @@ could achieve that with the following:
 
 In the above settings, the `"fontFace"` in the `cmd.exe` profile overrides the
 `"fontFace"` from the `defaults`.
+
+<br>
 
 ## Configuration Examples
 
