@@ -28,6 +28,8 @@ Properties listed below affect the entire window, regardless of the profile sett
 | `experimental.rendering.forceFullRepaint` | Optional | Boolean | `false` | When set to true, we will redraw the entire screen each frame. When set to false, we will render only the updates to the screen between frames. |
 | `experimental.rendering.software` | Optional | Boolean | `false` | When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one. |
 
+<br>
+
 ## Profiles
 
 Properties listed below are specific to each unique profile.
@@ -68,6 +70,8 @@ Properties listed below are specific to each unique profile.
 | `useAcrylic` | Optional | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. The transparency only applies to focused windows due to OS limitation. |
 | `experimental.retroTerminalEffect` | Optional | Boolean | `false` | When set to `true`, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed. |
 
+<br>
+
 ## Schemes
 
 Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
@@ -95,6 +99,8 @@ Properties listed below are specific to each color scheme. [ColorTool](https://g
 | `red` | _Required_ | String | Sets the color used as ANSI red. |
 | `white` | _Required_ | String | Sets the color used as ANSI white. |
 | `yellow` | _Required_ | String | Sets the color used as ANSI yellow. |
+
+<br>
 
 ## Keybindings
 
@@ -162,6 +168,8 @@ For commands with arguments:
 | Arrow Keys | `down`, `left`, `right`, `up`, `pagedown`, `pageup`, `pgdn`, `pgup`, `end`, `home`, `plus`, `app`, `menu` |
 | Action Keys | `tab`, `enter`, `esc`, `escape`, `space`, `backspace`, `delete`, `insert` |
 | Numpad Keys | `numpad_0-numpad_9`, `numpad0-numpad9`, `numpad_add`, `numpad_plus`, `numpad_decimal`, `numpad_period`, `numpad_divide`, `numpad_minus`, `numpad_subtract`, `numpad_multiply` |
+
+<br>
 
 ## Background Images and Icons
 
