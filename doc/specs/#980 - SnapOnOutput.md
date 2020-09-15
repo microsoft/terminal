@@ -13,11 +13,15 @@ The goal of this change is to determine the Terminal's scroll response to newly 
 
 Currently, new output causes the Terminal to always scroll to it. Some users want to be able to scroll through the buffer without interruptions.
 
+<br>
+
 ## Inspiration
 
 In ConHost, a selection causes the active process to be completely paused. When the selection is removed, the process continues.
 
 Typical Unix terminals work differently. Rather than disabling the output, they disable the automatic scrolling. This allows the user to continue to see more output by choice.
+
+<br>
 
 ## Solution Design
 
@@ -30,6 +34,8 @@ This behavior will not be configurable. If the user wants the viewport to stop a
 Alternative solutions were considered and are recorded below. These solutions may be revisited if users desire an additional level of configurability.
 
 Researching other terminal emulators has shown that this behavior is not configurable.
+
+<br>
 
 ## Alternative Solutions
 
@@ -66,6 +72,7 @@ The introduction of a `scrollLock` action would require a visual indicator for t
 - In Unix consoles, <kbd>ctrl+s</kbd> and <kbd>ctrl+q</kbd> freeze and unfreeze output respectively. However, this is a feature that is implemented outside of the scope for Terminal. Other shells like PowerShell do not have this feature, for example. There, <kbd>ctrl+s</kbd> does a 'Forward Search History' instead.
 - Additionally, there is a <kbd>Pause</kbd> key that pauses the output in the conhost console. Pressing any other key will resume scrolling.
 
+<br>
 
 ## Capabilities
 
@@ -89,6 +96,8 @@ N/A
 
 N/A
 
+<br>
+
 ## Potential Issues
 
 ### Circling the buffer
@@ -98,6 +107,8 @@ In the event that the buffer is circling and the viewport has been moved to the 
 
 ### Infinite Scrollback
 See **Future considerations** > **Infinite Scrollback**.
+
+<br>
 
 ## Future considerations
 
@@ -114,6 +125,8 @@ There are a couple of private mode escape sequences that some terminals use to c
 
 DECSET 1010 should set the `SnapOnOutput` value via a Terminal API.
 DECSET 1011 should set the `SnapOnInput` value via a Terminal API.
+
+<br>
 
 ## Resources
 
