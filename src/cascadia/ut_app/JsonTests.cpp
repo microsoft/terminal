@@ -7,6 +7,7 @@
 #include "../TerminalApp/Profile.h"
 #include "../TerminalApp/CascadiaSettings.h"
 #include "../LocalTests_TerminalApp/JsonTestClass.h"
+#include "../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;

@@ -8,7 +8,7 @@
 #include "base64.hpp"
 
 #include "ascii.hpp"
-#include "../../types/inc/utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;

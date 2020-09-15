@@ -9,6 +9,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
