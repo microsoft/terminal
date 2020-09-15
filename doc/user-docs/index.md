@@ -3,6 +3,8 @@
 NOTE: At the time of writing Windows Terminal is still under active development and many things will
 change. If you notice an error in the docs, please raise an issue. Or better yet, please file a PR with an appropriate update!
 
+<br>
+
 ## Installing Windows Terminal
 
 ### From Source Code
@@ -16,6 +18,8 @@ To compile Windows Terminal yourself using the source code, follow the instructi
 3. Review the minimum system requirements to confirm you can successfully install Windows Terminal.
 4. Click `Get` to begin the installation process.
 
+<br>
+
 ## Starting Windows Terminal
 
 1. Locate the _Windows Terminal_ app in your Start menu.
@@ -27,10 +31,14 @@ NOTE: The default shell is PowerShell; you can change this using the _Running a 
 
 Windows Terminal has implemented a rich set of command-line options in part as response to issue [#607](https://github.com/microsoft/terminal/issues/607).  See [UsingCommandlineArguments.md](https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingCommandlineArguments.md) for details.
 
+<br>
+
 ## Multiple Tabs
 
 Additional shells can be started by hitting the `+` button from the tab bar -- a new instance of the
 default shell is displayed (default shortcut: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>).
+
+<br>
 
 ## Running a Different Shell
 
@@ -43,9 +51,13 @@ Windows Terminal uses PowerShell as its default shell. You can also use Windows 
 
 To customize the shell list, see the _Configuring Windows Terminal_ section below.
 
+<br>
+
 ## Starting a new PowerShell tab with admin privilege
 
 There is no current plan to support this feature for security reasons. See issue [#632](https://github.com/microsoft/terminal/issues/632)
+
+<br>
 
 ## Selecting and Copying Text in Windows Terminal
 
@@ -59,9 +71,13 @@ Copy and paste operations can also be keybound. For more information on how to b
 
 > 👉 **Note**: If you have the `copyOnSelect` global setting enabled, a selection will persist and immediately copy the selected text to your clipboard. Right-clicking will always paste your clipboard data.
 
+<br>
+
 ## Add a "Open Windows Terminal Here" to File Explorer
 
 Not currently supported "out of the box" (See issue [#1060](https://github.com/microsoft/terminal/issues/1060)). However, you can open Windows Terminal in current directory by typing `wt -d .` in the Explorer address bar.
+
+<br>
 
 ## Configuring Windows Terminal
 
@@ -74,6 +90,8 @@ To open the settings file from Windows Terminal:
 3. Your default `json` editor will open the settings file.
 
 For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [settings.json documentation](../cascadia/SettingsSchema.md) section.
+
+<br>
 
 ## Tips and Tricks
 
