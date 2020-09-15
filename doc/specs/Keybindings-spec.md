@@ -3,10 +3,14 @@
 * author: Mike Griese __migrie__
 * created on: 2018-Oct-23
 
+<br>
+
 ## Abstract
 It should be possible to configure the terminal so that it doesn't send certain keystrokes as input to the terminal, and instead triggers certain actions. Examples of these actions could be copy/pasting text, opening a new tab, or changing the font size.
 
 This spec describes a mechanism by which we could provide a common implementation of handling keyboard shortcuts like these. This common implementation could then be leveraged and extended by the UX implementation as to handle certain callbacks in the UX layer. For example, The TerminalCore doesn't have a concept of what a tab is, but the keymap abstraction could raise an event such that a WPF app could implement creating a new tab in its idiomatic way, and UWP could implement them in their own way.
+
+<br>
 
 ## Terminology
 * **Key Chord**: This is any possible keystroke that a user can input
@@ -17,12 +21,16 @@ This spec describes a mechanism by which we could provide a common implementatio
   key chords. Trying to press them simultaneously (<kbd>Ctrl+B+C</kbd>) should
   generate two separate key chords, with the order determined by the OS.
 
+<br>
+
 ## User Stories
 1. The User should be able to press certain key-chords to trigger certain
    actions in the frontend of the application, such as copying text, pasting,
    opening new tabs, or switching focus between panes.
 2. The user should be able to configure which key chords are bound to which actions.
 3. If a key chord is not mapped to an action, it should be sent to the Terminal just as any other keypress.
+
+<br>
 
 ## Details
 
