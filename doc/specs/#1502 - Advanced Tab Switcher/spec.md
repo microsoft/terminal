@@ -15,6 +15,8 @@ Having a tab switcher UI, like the ones in Visual Studio and Visual Studio Code,
 
 To try to alleviate some of these user scenarios, we want to create a tab switcher similar to the ones found in VSCode and VS. This spec will cover the design of the switcher, and how a user would interact with the switcher. It would be primarily keyboard driven, and would give a pop-up display of a vertical list of tabs. The tab switcher would also be able to display the tabs in Most Recently Used (MRU) order.
 
+<br>
+
 ## Inspiration
 
 This was mainly inspired by the tab switcher that's found in Visual Studio Code and Visual Studio.
@@ -33,6 +35,8 @@ I'm partial towards looking like VSCode's Tab Switcher - specifically because it
 
 Since Terminal now has a command palette, it would be amazing to reuse that UI and simply fill it with the names of a user's currently open tabs!
 
+<br>
+
 ## Solution Design
 
 To extend upon the command palette, we simply need to create and maintain two Vector<Commands>, where each command will simply dispatch a `SwitchToTab` `ShortcutAction`. One vector will have the commands in tab row order, and the other will be in MRU order. They'll both have to be maintained along with our existing vector of tabs.  
@@ -40,6 +44,8 @@ To extend upon the command palette, we simply need to create and maintain two Ve
 These vectors of commands can then be set as the commands to pull from in the command palette, and as long as the tab titles are available in these commands, the command palette will be able to naturally filter through the tabs as a user types in its search bar. Just like the command palette, a user will be able to navigate through the list of tabs with the arrow keys and pointer interactions. As part of this implementation, I can supplement these actions with "tab switcher specific" navigation keybindings that would only work if the command palette is in tab switcher mode. 
 
 The `TabSwitcherControl` will use `TerminalPage`'s `ShortcutActionDispatch` to dispatch a `SwitchToTab` `ShortcutAction`. This will eventually cause `TerminalPage::_OnTabSelectionChanged` to be called. We can update the MRU in this function to be sure that changing tabs from the TabSwitcher, clicking on a tab, or nextTab/prevTab-ing will keep the MRU up-to-date. Adding or closing tabs are handled in `_OpenNewTab` and `_CloseFocusedTab`, which will need to be modified to update the command vectors.
+
+<br>
 
 ## UI/UX Design
 
@@ -152,6 +158,8 @@ By default (when the arg isn't specified), `displayOrder` will be "mruOrder".
 
 Similar to how the user can currently switch to a particular tab with a combination of keys such as <kbd>ctrl+shift+1</kbd>, we want to have the tab switcher provide a number to the first nine tabs (1-9) in the list for quick switching. If there are more than nine tabs in the list, then the rest of the tabs will not have a number assigned.
 
+<br>
+
 ## Capabilities
 
 ### Accessibility
@@ -179,6 +187,8 @@ How we're updating the MRU is something to watch out for since it triggers on a 
 
 ### Performance, Power, and Efficiency
 
+<br>
+
 ## Potential Issues
 
 We'll need to be careful about how the UI is presented depending on different sizes of the terminal. We also should test how the UI looks as it's open and resizing is happening. Visual Studio's tab switcher is a fixed size, and is always in the middle. Even when the VS window is smaller than the tab switcher size, the tab switcher will show up larger than the VS window itself.
@@ -191,6 +201,8 @@ Visual Studio Code only allows the user to shrink the window until it hits a min
 ![Small Visual Studio Code with Tab Switcher](img/VSCodeMinimumTabSwitcherSize.png)
 
 Terminal can't really replicate Visual Studio's version of the tab switcher in this situation. The TabSwitcher needs to be contained within the Terminal. So, if the TabSwitcher is always centered and has a percentage padding from the borders of the Terminal, it'll shrink as Terminal shrinks. Since the Terminal also has a minimum width, the switcher should always have enough space to be usefully visible.
+
+<br>
 
 ## Future considerations
 
@@ -210,6 +222,8 @@ Pane navigation is a clear next step to build on top of the tab switcher, but th
 
 With this feature, having a tab highlighted in the switcher would make the Terminal display that tab as if it switched to it. I believe currently there is no way to set focus to a tab in a "preview" mode. This is important because MRU updates whenever a tab is focused, but we don't want the MRU to update on a preview. Given that this feature is a "nice thing to have", I'll leave it for
 after the tab switcher has landed.
+
+<br>
 
 ## Resources
 
