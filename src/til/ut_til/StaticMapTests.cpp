@@ -120,5 +120,4 @@ class StaticMapTests
         VERIFY_THROWS(unused = intIntMap[7], std::runtime_error);
 #pragma warning(pop)
     }
-
 };
