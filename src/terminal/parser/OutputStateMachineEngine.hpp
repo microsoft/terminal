@@ -160,6 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowTitle = 2,
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
+            Hyperlink = 8,
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
@@ -238,7 +239,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscSetColor(const std::wstring_view string,
                              DWORD& rgb) const noexcept;
 
-        static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
+        static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::UserDefault;
         bool _GetCursorStyle(const gsl::span<const size_t> parameters,
                              DispatchTypes::CursorStyle& cursorStyle) const noexcept;
 
@@ -249,6 +250,11 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,
                                  bool& queryClipboard) const noexcept;
+
+        static constexpr std::wstring_view hyperlinkIDParameter{ L"id=" };
+        bool _ParseHyperlink(const std::wstring_view string,
+                             std::wstring& params,
+                             std::wstring& uri) const;
 
         void _ClearLastChar() noexcept;
     };

@@ -6,6 +6,7 @@
 #include "TermControl.g.h"
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
+#include "OpenHyperlinkEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -65,6 +66,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     private:
         std::function<void(std::wstring)> m_clipboardDataHandler;
+    };
+
+    struct OpenHyperlinkEventArgs :
+        public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
+    {
+    public:
+        OpenHyperlinkEventArgs(hstring uri) :
+            _uri(uri) {}
+
+        hstring Uri() { return _uri; };
+
+    private:
+        hstring _uri;
     };
 
     struct TermControl : TermControlT<TermControl>
@@ -133,6 +147,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
 
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
@@ -191,6 +206,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
+        // Track the last cell we hovered over (used in pointerMovedHandler)
+        COORD _lastHoveredCell;
+        // Track the last hyperlink ID we hovered over
+        uint16_t _lastHoveredId;
+
         using Timestamp = uint64_t;
 
         // imported from WinUser
@@ -228,6 +248,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+        void _HyperlinkHandler(const std::wstring_view uri);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
