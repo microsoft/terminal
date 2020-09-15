@@ -11,9 +11,13 @@ issue id: #605
 
 This spec is for feature request #605 "Search". It goes over the details of a new feature that allows users to search text in Terminal, within one tab or from all tabs. Expected behavior and design of this feature is included. Besides, future possible follow-up works are also addressed. 
 
+<br>
+
 ## Inspiration
 
 One of the superior features of iTerm2 is it's content search. The search comes in two variants: search from active tab and search from all tabs. In almost any editor, there is an roughly equivalent string search. We also want to realize search experience in Terminal. There will be two variants, search within one tab or from multiple tabs. We will start with one-tab search implementation. 
+
+<br>
 
 ## Solution Design
 
@@ -44,6 +48,8 @@ We will create a `SearchBoxControl` Xaml `UserControl` element. When a search pr
 6. If the user clicks on the "X" button or press <kbd>Esc</kbd>, the search box will disappear and the object will be destructed and detached from the `TermControl` XAML tree. In phase one we do not store any state. 
 7. We need to guarantee full interaction with the terminal when the search box is open. To achieve this, search box and terminal input should be separated. If the current keyboard focus is on the search box, then keydown events will be handled on "search box level". 
 
+<br>
+
 ## UI/UX Design
 
 ![SearchBox mockup](images/SearchBoxControl.png)
@@ -68,6 +74,8 @@ The search box defaults to be on the top right corner of the Terminal window. If
 8. If the user clicks on the terminal when the search box is open, it will draw focus back to the terminal from the search box. The search box will still stay open. 
 9. The user can interact with the terminal when the search box is open, which means that the user can scroll the terminal content, or input text when the focus is on the terminal control. 
 10. If the user switches tabs while the search box is open, the focus will be moved back to the terminal. 
+
+<br>
 
 ## Capabilities
 
@@ -102,11 +110,15 @@ This feature won't break existing features of Terminal.
 
 This feature only launches in need. It does not impact the performance of Terminal. 
 
+<br>
+
 ## Potential Issues
                                                               
 1. If the terminal window is not wide enough for the search box to be visible, the buttons on the right of the `TextBox` will become invisible, but the `TextBox` is still visible and the window could not be narrower than the `TextBox`. This is similar to the behavior of other editors. Please see the image below:
    ![SearchBox width not enough](images/SearchBoxControlNoEnoughWidth.png)
 2. If the terminal window is not high enough for the search box to be visible, the whole terminal screen, including the `SearchBoxControl` can disappear. This is similar to the behavior of other editors.
+
+<br>
 
 ## Future considerations
 
@@ -120,6 +132,8 @@ In version 1, we want realize a case sensitive/insensitive exact text match. But
 6. Add size handle. Some text editors let the user resize the search box, and there is a size handle on the left side of the search box. This helps user when they search for long text. If the community desires it we may add a similar feature.
 
 This open issue tracks the phase features of Search: https://github.com/microsoft/terminal/issues/3920
+
+<br>
 
 ## Resources
 
