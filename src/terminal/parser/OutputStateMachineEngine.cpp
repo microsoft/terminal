@@ -1449,7 +1449,8 @@ try
             // 12 "rgb:hh/hh/hh"
             // 15 "rgb:hhh/hhh/hhh"
             // 18 "rgb:hhhh/hhhh/hhhh"
-            // Anything in between these is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
+            // Note that the component sizes aren't required to be the same.
+            // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
             // Any fewer cannot be valid, and any more will be too many. Return early in this case.
             if (stringSize < 9 || stringSize > 18)
             {
@@ -1473,8 +1474,7 @@ try
             // 7 "#hhhhhh"
             // 10 "#hhhhhhhhh"
             // 13 "#hhhhhhhhhhhh"
-            // Any other cases will be invalid.
-            // Return early in this case.
+            // Any other cases will be invalid. Return early in this case.
             if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
             {
                 return false;
