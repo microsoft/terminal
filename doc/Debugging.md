@@ -9,6 +9,8 @@ If you want to debug code in the Cascadia package via Visual Studio, your breakp
 1. Right-click on *CascadiaPackage* in Solution Explorer and select Properties.
 2. Change the *Application process* type from *Mixed (Managed and Native)* to *Native Only*.
 
+<br>
+
 ## Popping into the Debugger from Running Code
 
 Sometimes you will encounter a scenario where you need to break into the console or terminal code under the debugger but you cannot, for whatever reason, do so by launching it from the beginning under the debugger. This can be especially useful for debugging tests with TAEF which usually launch through several child processes and modules before hitting your code. 
@@ -16,6 +18,8 @@ Sometimes you will encounter a scenario where you need to break into the console
 To accomplish this, add a `DebugBreak()` statement somewhere in the code and ensure you have a Post-Mortem debugger set.
 
 **NOTE:** `conhost.exe` already has a provision for a conditional `DebugBreak()` very early in the startup code if it was built in debug mode. Set `HKCU\Console` with `DebugLaunch` as a `REG_DWORD` with the value of `1`.
+
+<br>
 
 ### Setting Visual Studio as Post Mortem Debugger
 
@@ -27,6 +31,8 @@ Then when you run something with `DebugBreak()` in it, you will see this:
 ![image](https://user-images.githubusercontent.com/18221333/72091543-42453780-32c5-11ea-8b4b-83a362eb73df.png)
 
 The top ones will be new instances of the Visual Studios installed on your system. The bottom ones will be the running instances of Visual Studio. You can see in the image that one is open already. If you choose the bottom one, VS will attach straight up as if you F5'd from the solution at the point from the `DebugBreak()`. Step up to get out of the break and back into the code.
+
+<br>
 
 ### Setting WinDBG as Post Mortem Debugger
 
