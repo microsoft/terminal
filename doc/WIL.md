@@ -1,4 +1,4 @@
-# Windows Implementation Library
+# WIL - Windows Implementation Library
 
 ## Overview
 [Windows Implementation Library](https://github.com/Microsoft/wil), or WIL, is a header-only library created to help make working with the Windows API more predictable and (hopefully) bug free.
@@ -21,7 +21,7 @@ As an example, the method `DuplicateHandle()` returns a `BOOL` value that is `FA
 
 This leads to nice patterns where you can set up all resources in a function as protected by `std::unique_ptr` or the various `wil::` smart pointers and smart handles then `RETURN_IF_*` on every call to a Windows API and be guaranteed that your resources will be cleaned up appropriately under any failure case. Do note that this generally requires you to return an `HRESULT` as your return code and use out pointer parameters for return data. There are exceptions to this... read the header for more details. 
 
-The additional advantage to using this pattern is that failures at any point are logged to our global tracing/debugging channels to be viewed under the debugger output with the exact line number and function details for the error.
+The additional advantage to using this pattern is that failures at any point are logged to our global ``tracing/debugging`` channels to be viewed under the debugger output with the exact line number and function details for the error.
 
 Additionally, if you just want to make sure that a failure case is logged for debugging purposes, all of these macros have a `LOG_IF_*` equivalent that will simply log a failure and keep rolling.
 
