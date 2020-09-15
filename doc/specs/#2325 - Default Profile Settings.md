@@ -16,12 +16,16 @@ functionality to the user in our JSON settings model. In this first document,
 we'll examine a number of proposed solutions, as well as state our finalized
 design.
 
+<br>
+
 ## Inspiration
 
 During the course of the pull request review on [#3369], the original pull
 request for this feature's implementation, it became apparent that the entire
 team has differing opinions on how this feature should be exposed to the user.
 This doc is born from that discussion.
+
+<br>
 
 ## Solution Proposals
 
@@ -321,6 +325,8 @@ Maybe not as easy to mentally picture how one profile inherits from another. The
 user would probably need to manually build the tree of profile inheritance in
 their own head to understand how a profile gets its settings.
 
+<br>
+
 ## Conclusions
 
 After discussion the available options, the team has settled on proposal 3. The
@@ -333,6 +339,8 @@ major selling points being:
 We also like the idea of proposal 4, but felt that it was too heavy-handed of an
 approach for this relatively simple feature. It's been added to the backlog of
 terminal features, tracked in [#3818].
+
+<br>
 
 ## Resources
 
