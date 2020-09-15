@@ -17,11 +17,15 @@ A common ask is for the ability to reorder and reorganize this dropdown. This
 spec provides a design for how the user might be able to specify the
 customization in their settings.
 
+<br>
+
 ## Inspiration
 
 Largely, this spec was inspired by discussion in
 [#1571](https://github.com/microsoft/terminal/issues/1571#issuecomment-519504048)
 and the _many_ linked threads.
+
+<br>
 
 ## Solution Design
 
@@ -154,6 +158,8 @@ The design chosen in this spec more cleanly separates the responsibilities of
 the list of profiles and the contents of the new tab menu. This way, each object
 can be defined independent of the structure of the other.
 
+<br>
+
 ## UI/UX Design
 
 See the above _figure 1_.
@@ -167,6 +173,8 @@ Beneath the list of profiles will _always_ be the same "Settings", "Feedback"
 and "About" entries, separated by a `MenuFlyoutSeparator`. This is consistent
 with the UI as it exists with no customization. These entries cannot be removed
 with this feature, only the list of profiles customized.
+
+<br>
 
 ## Capabilities
 
@@ -190,6 +198,8 @@ _(no change expected)_
 ### Performance, Power, and Efficiency
 
 _(no change expected)_
+
+<br>
 
 ## Potential Issues
 
@@ -261,6 +271,8 @@ And assuming the user has bound:
   enter/space to creates a new tab/split
 * <kbd>ctrl+shift+3</kbd> performs Action E
 * <kbd>ctrl+shift+4</kbd> Creates a new tab/split with Profile F
+
+<br>
 
 ## Future considerations
 
