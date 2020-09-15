@@ -4,6 +4,7 @@
 
 This document outlines the roadmap towards delivering Windows Terminal 2.0 by Spring 2021.
 
+<br>
 
 ## Milestones
 
@@ -14,6 +15,8 @@ The Windows Terminal project is engineered and delivered as a set of 4-week mile
 | 2 weeks | Dev Work<br/> <ul><li>Fixes / Features for future Windows Releases</li><li>Fixes / Features for Windows Terminal</li></ul> |  Release to Internal Selfhosters at end of week 2 |
 | 1 week | Quality & Stability<br/> <ul><li>Bug Fixes</li><li>Perf & Stability</li><li>UI Polish</li><li>Tests</li><li>etc.</li></ul>| Push to Microsoft Store at end of week 3 |
 | 1 week | Release <br/> <ul><li>Available from [Microsoft Store](https://aka.ms/terminal) & [GitHub Releases](https://github.com/microsoft/terminal/releases)</li><li>Release Notes & Announcement Blog published</li><li>Engineering System Maintenance</li><li>Community Engagement</li><li>Docs</li><li>Future Milestone Planning</li></ul> | Release available from Microsoft Store & GitHub Releases |
+
+<br>
 
 ## Terminal Roadmap / Timeline
 
@@ -34,6 +37,8 @@ Below is the schedule for when milestones will be included in release builds of 
 | 2021-04-30 | 2.0 RC in Windows Terminal Preview<br>2.0 RC in Windows Terminal | |
 | 2021-05-31 | [2.0] in Windows Terminal Preview<br>[2.0] in Windows Terminal | |
 
+<br>
+
 ## Issue Triage & Prioritization
 
 Incoming issues/asks/etc. are triaged several times a week, labeled appropriately, and assigned to a milestone in priority order:
@@ -41,6 +46,8 @@ Incoming issues/asks/etc. are triaged several times a week, labeled appropriatel
 * P0 (serious crashes, data loss, etc.) issues are scheduled to be dealt with ASAP
 * P1/2 issues/features/asks  assigned to the current or future milestone, or to the [Terminal 2.0 milestone](https://github.com/microsoft/terminal/milestone/22) for future assignment, if required to deliver a 2.0 feature
 * Issues/features/asks not on our list of 2.0 features are assigned to the [Terminal Backlog](https://github.com/microsoft/terminal/milestone/7) for subsequent triage, prioritization & scheduling.
+
+<br>
 
 ## 2.0 Scenarios
 
@@ -74,9 +81,9 @@ Feature Notes:
 
 \* Feature Priorities:
 
-0. Mandatory <br/>
-1. Optimal <br/>
-2. Optional / Stretch-goal <br/>
++ Mandatory <br/>
++ Optimal <br/>
++ Optional / Stretch-goal <br/>
 
 [1.1]: https://github.com/microsoft/terminal/milestone/24
 [1.2]: https://github.com/microsoft/terminal/milestone/25
