@@ -13,6 +13,8 @@ When copying text, the Terminal should provide the option of including formattin
 
 ![Twitter poll](twitter-poll.png)
 
+<br>
+
 ## Solution Proposals
 
 A proposal for the right click behavior as well as two user settings proposals are described below. The conclusion the team arrived at is at the bottom under the [Conclusions section](#conclusions).
@@ -32,6 +34,8 @@ We could add an argument to the `copy` key binding argument to allow for formatt
 ### Right click behavior
 
 By default, right clicking to copy would only copy the plain text.
+
+<br>
 
 ## UI/UX Design
 
@@ -55,6 +59,8 @@ b. We could also split out the html and rtf formats. The right click behavior wo
 
 `{"command": {"action": "copy", "formats": ["html","rtf","plain"]}, "keys": "ctrl+a"}`
 
+<br>
+
 ## Capabilities
 
 ### Accessibility
@@ -75,13 +81,19 @@ This breaks the existing behavior of always copying the formatting. The justific
 
 ### Performance, Power, and Efficiency
 
+<br>
+
 ## Potential Issues
 
 One possible issue is that discovering how to copy the formatting might be difficult to find. We could mitigate this by adding it into the settings.json file and commenting it out.
 
+<br>
+
 ## Conclusions
 
 The team has decided to have plain text as the default copy behavior and to enable formatted copying with a global setting that accepts a boolean value (settings option 1 - global setting, option b). In the future, we can modify this setting to also accept an array, so the user can specify which formats they would like to copy. Additionally, a key binding can be added to allow for greater flexibility.
+
+<br>
 
 ## Future considerations
 
