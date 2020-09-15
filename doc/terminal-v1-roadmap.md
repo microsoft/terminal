@@ -100,6 +100,6 @@ Feature Notes:
 
 \* Feature Priorities:
 
-+ Mandatory <br/>
-+ Optimal <br/>
-+ Optional / Stretch-goal <br/>
+0. Mandatory <br/>
+1. Optimal <br/>
+2. Optional / Stretch-goal <br/>
