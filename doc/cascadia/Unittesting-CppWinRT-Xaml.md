@@ -10,6 +10,8 @@ going to cover the steps that I took to get the Windows Terminal updated to be
 able to test not only our C++/WinRT components, but also pure c++ classes that
 were used in the application, and components that used XAML UI elements.
 
+<br>
+
 ## Prerequisites
 
 Make sure you're using at least the 2.0.190605.7 version of the CppWinRT nuget
@@ -29,6 +31,8 @@ however, that doesn't have the fix necessary. Fortunately, the TAEF team was
 kind enough to prototype a fix for us, which is the version
 `10.38.190610001-uapadmin`, which we're using in this repo until an official
 release with the fix is available.
+
+<br>
 
 ## Move the C++/WinRT implementation to a static lib
 
@@ -160,6 +164,7 @@ the new static lib project.
 At this point, you should be able to rebuild your solution, and everything
 should be working just the same as before.
 
+<br>
 
 ## Add TAEF Tests
 
