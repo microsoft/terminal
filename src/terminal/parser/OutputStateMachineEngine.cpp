@@ -816,8 +816,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             break;
         case OscActionCodes::ResetCursorColor:
             // the console uses 0xffffffff as an "invalid color" value
-            DWORD color = 0xffffffff;
-            success = _dispatch->SetCursorColor(color);
+            success = _dispatch->SetCursorColor(0xffffffff);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         case OscActionCodes::Hyperlink:
