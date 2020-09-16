@@ -225,7 +225,7 @@ For apps that are installed 'traditionally', there are 2 cases. The first is tha
 the users of the system - in this case, the installer should add their json files to the global folder:
 
 ```
-C:\ProgramData\Microsoft\Windows\Terminal
+C:\ProgramData\Microsoft\Windows Terminal\Fragments
 ```
 
 Note: `C:\ProgramData` is a [known folder](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776911(v=vs.85))
@@ -235,7 +235,7 @@ In the second case, the installation is only for the current user. For this case
 json files to the local folder:
 
 ```
-C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal
+C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments
 ```
 
 This is also where independent users will add their own json files for Terminal to generate/modify profiles.
