@@ -15,34 +15,8 @@ Author(s):
 --*/
 #pragma once
 
-namespace TerminalApp
+namespace winrt::TerminalApp::implementation
 {
-    // SettingsLoadWarnings are scenarios where the settings contained
-    // information we knew was invalid, but we could recover from.
-    enum class SettingsLoadWarnings : uint32_t
-    {
-        MissingDefaultProfile = 0,
-        DuplicateProfile = 1,
-        UnknownColorScheme = 2,
-        InvalidBackgroundImage = 3,
-        InvalidIcon = 4,
-        AtLeastOneKeybindingWarning = 5,
-        TooManyKeysForChord = 6,
-        MissingRequiredParameter = 7,
-        LegacyGlobalsProperty = 8,
-        FailedToParseCommandJson = 9,
-        WARNINGS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
-    };
-
-    // SettingsLoadWarnings are scenarios where the settings had invalid state
-    // that we could not recover from.
-    enum class SettingsLoadErrors : uint32_t
-    {
-        NoProfiles = 0,
-        AllProfilesHidden = 1,
-        ERRORS_SIZE // IMPORTANT: This MUST be the last value in this enum. It's an unused placeholder.
-    };
-
     // This is a helper class to wrap up a SettingsLoadErrors into a proper
     // exception type.
     class SettingsException : public std::runtime_error

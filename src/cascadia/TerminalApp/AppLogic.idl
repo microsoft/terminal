@@ -7,6 +7,12 @@ import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
+    struct InitialPosition
+    {
+        Int64 X;
+        Int64 Y;
+    };
+
     enum LaunchMode
     {
         DefaultMode,
@@ -47,7 +53,7 @@ namespace TerminalApp
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
 
-        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();

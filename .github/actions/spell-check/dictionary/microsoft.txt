@@ -2,6 +2,7 @@ ACLs
 altform
 appendwttlogging
 backplating
+CPRs
 DACL
 DACLs
 dotnetfeed
@@ -18,6 +19,7 @@ pgo
 pgosweep
 powerrename
 powershell
+propkey
 pscustomobject
 robocopy
 SACLs

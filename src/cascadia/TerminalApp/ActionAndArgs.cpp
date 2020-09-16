@@ -105,7 +105,7 @@ namespace winrt::TerminalApp::implementation
         { UnboundKey, ShortcutAction::Invalid },
     };
 
-    using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+    using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
     using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
     // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
@@ -169,7 +169,7 @@ namespace winrt::TerminalApp::implementation
     // - a deserialized ActionAndArgs corresponding to the values in json, or
     //   null if we failed to deserialize an action.
     winrt::com_ptr<ActionAndArgs> ActionAndArgs::FromJson(const Json::Value& json,
-                                                          std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                                          std::vector<TerminalApp::SettingsLoadWarnings>& warnings)
     {
         // Invalid is our placeholder that the action was not parsed.
         ShortcutAction action = ShortcutAction::Invalid;
@@ -208,7 +208,7 @@ namespace winrt::TerminalApp::implementation
         // does, we'll try to deserialize any "args" that were provided with
         // the binding.
         IActionArgs args{ nullptr };
-        std::vector<::TerminalApp::SettingsLoadWarnings> parseWarnings;
+        std::vector<TerminalApp::SettingsLoadWarnings> parseWarnings;
         const auto deserializersIter = argParsers.find(action);
         if (deserializersIter != argParsers.end())
         {

@@ -370,7 +370,7 @@
           }
         }
       ],
-      "required": [ "name" ]
+      "required": [ "colorScheme" ]
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",

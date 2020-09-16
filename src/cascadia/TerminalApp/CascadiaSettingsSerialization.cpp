@@ -18,8 +18,7 @@
 // Both defaults.h and userDefaults.h are generated at build time into the
 // "Generated Files" directory.
 
-using namespace ::TerminalApp;
-using namespace winrt::TerminalApp;
+using namespace winrt::TerminalApp::implementation;
 using namespace ::Microsoft::Console;
 
 static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
@@ -101,146 +100,163 @@ static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view
 //   profiles inserted into their list of profiles.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
+winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadAll()
 {
-    auto resultPtr = LoadDefaults();
-
-    // GH 3588, we need this below to know if the user chose something that wasn't our default.
-    // Collect it up here in case it gets modified by any of the other layers between now and when
-    // the user's preferences are loaded and layered.
-    const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().DefaultProfile();
-
-    std::optional<std::string> fileData = _ReadUserSettings();
-    const bool foundFile = fileData.has_value();
-
-    // Make sure the file isn't totally empty. If it is, we'll treat the file
-    // like it doesn't exist at all.
-    const bool fileHasData = foundFile && !fileData.value().empty();
-    bool needToWriteFile = false;
-    if (fileHasData)
-    {
-        resultPtr->_ParseJsonString(fileData.value(), false);
-    }
-
-    // Load profiles from dynamic profile generators. _userSettings should be
-    // created by now, because we're going to check in there for any generators
-    // that should be disabled (if the user had any settings.)
-    resultPtr->_LoadDynamicProfiles();
-
-    if (!fileHasData)
-    {
-        // We didn't find the user settings. We'll need to create a file
-        // to use as the user defaults.
-        // For now, just parse our user settings template as their user settings.
-        auto userSettings{ resultPtr->_ApplyFirstRunChangesToSettingsTemplate(UserSettingsJson) };
-        resultPtr->_ParseJsonString(userSettings, false);
-        needToWriteFile = true;
-    }
-
     try
     {
-        // See microsoft/terminal#2325: find the defaultSettings from the user's
-        // settings. Layer those settings upon all the existing profiles we have
-        // (defaults and dynamic profiles). We'll also set
-        // _userDefaultProfileSettings here. When we LayerJson below to apply the
-        // user settings, we'll make sure to use these defaultSettings _before_ any
-        // profiles the user might have.
-        resultPtr->_ApplyDefaultsFromUserSettings();
+        auto settings = LoadDefaults();
+        auto resultPtr = winrt::get_self<CascadiaSettings>(settings);
 
-        // Apply the user's settings
-        resultPtr->LayerJson(resultPtr->_userSettings);
-    }
-    catch (...)
-    {
-        _CatchRethrowSerializationExceptionWithLocationInfo(resultPtr->_userSettingsString);
-    }
+        // GH 3588, we need this below to know if the user chose something that wasn't our default.
+        // Collect it up here in case it gets modified by any of the other layers between now and when
+        // the user's preferences are loaded and layered.
+        const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().DefaultProfile();
 
-    // After layering the user settings, check if there are any new profiles
-    // that need to be inserted into their user settings file.
-    needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
+        std::optional<std::string> fileData = _ReadUserSettings();
+        const bool foundFile = fileData.has_value();
 
-    if (needToWriteFile)
-    {
-        // For safety's sake, we need to re-parse the JSON document to ensure that
-        // all future patches are applied with updated object offsets.
-        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
-    }
-
-    // Make sure there's a $schema at the top of the file.
-    needToWriteFile = resultPtr->_PrependSchemaDirective() || needToWriteFile;
-
-    // TODO:GH#2721 If powershell core is installed, we need to set that to the
-    // default profile, but only when the settings file was newly created. We'll
-    // re-write the segment of the user settings for "default profile" to have
-    // the powershell core GUID instead.
-
-    // If we created the file, or found new dynamic profiles, write the user
-    // settings string back to the file.
-    if (needToWriteFile)
-    {
-        // If AppendDynamicProfilesToUserSettings (or the pwsh check above)
-        // changed the file, then our local settings JSON is no longer accurate.
-        // We should re-parse, but not re-layer
-        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
-
-        _WriteSettings(resultPtr->_userSettingsString);
-    }
-
-    // If this throws, the app will catch it and use the default settings
-    resultPtr->_ValidateSettings();
-
-    // GH 3855 - Gathering Data on custom profiles to inform better defaults
-    // Do it after everything else so it won't happen unless validation passed.
-    // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
-    // is a lot of computation we can skip if no one cares.
-    if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES))
-    {
-        const auto guid = resultPtr->GlobalSettings().DefaultProfile();
-
-        // Compare to the defaults.json one that we set on install.
-        // If it's different, log what the user chose.
-        if (hardcodedDefaultGuid != guid)
+        // Make sure the file isn't totally empty. If it is, we'll treat the file
+        // like it doesn't exist at all.
+        const bool fileHasData = foundFile && !fileData.value().empty();
+        bool needToWriteFile = false;
+        if (fileHasData)
         {
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "CustomDefaultProfile",
-                TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
-                TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            resultPtr->_ParseJsonString(fileData.value(), false);
         }
 
-        // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-        auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
-        if (!userKeybindings.empty())
+        // Load profiles from dynamic profile generators. _userSettings should be
+        // created by now, because we're going to check in there for any generators
+        // that should be disabled (if the user had any settings.)
+        resultPtr->_LoadDynamicProfiles();
+
+        if (!fileHasData)
         {
-            // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
-
-            // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
-            // and avoid extraneous data.
-            auto akb = winrt::make_self<implementation::AppKeyBindings>();
-            akb->LayerJson(userKeybindings);
-            auto value = akb->ToJson();
-
-            // Reserialize the keybindings
-            Json::StreamWriterBuilder wbuilder;
-            // Use 4 spaces to indent instead of \t
-            wbuilder.settings_["indentation"] = "    ";
-            wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
-
-            const auto keybindingsString = Json::writeString(wbuilder, value);
-
-            TraceLoggingWrite(
-                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                "CustomKeybindings",
-                TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
-                TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            // We didn't find the user settings. We'll need to create a file
+            // to use as the user defaults.
+            // For now, just parse our user settings template as their user settings.
+            auto userSettings{ resultPtr->_ApplyFirstRunChangesToSettingsTemplate(UserSettingsJson) };
+            resultPtr->_ParseJsonString(userSettings, false);
+            needToWriteFile = true;
         }
-    }
 
-    return resultPtr;
+        try
+        {
+            // See microsoft/terminal#2325: find the defaultSettings from the user's
+            // settings. Layer those settings upon all the existing profiles we have
+            // (defaults and dynamic profiles). We'll also set
+            // _userDefaultProfileSettings here. When we LayerJson below to apply the
+            // user settings, we'll make sure to use these defaultSettings _before_ any
+            // profiles the user might have.
+            resultPtr->_ApplyDefaultsFromUserSettings();
+
+            // Apply the user's settings
+            resultPtr->LayerJson(resultPtr->_userSettings);
+        }
+        catch (...)
+        {
+            _CatchRethrowSerializationExceptionWithLocationInfo(resultPtr->_userSettingsString);
+        }
+
+        // After layering the user settings, check if there are any new profiles
+        // that need to be inserted into their user settings file.
+        needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
+
+        if (needToWriteFile)
+        {
+            // For safety's sake, we need to re-parse the JSON document to ensure that
+            // all future patches are applied with updated object offsets.
+            resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+        }
+
+        // Make sure there's a $schema at the top of the file.
+        needToWriteFile = resultPtr->_PrependSchemaDirective() || needToWriteFile;
+
+        // TODO:GH#2721 If powershell core is installed, we need to set that to the
+        // default profile, but only when the settings file was newly created. We'll
+        // re-write the segment of the user settings for "default profile" to have
+        // the powershell core GUID instead.
+
+        // If we created the file, or found new dynamic profiles, write the user
+        // settings string back to the file.
+        if (needToWriteFile)
+        {
+            // If AppendDynamicProfilesToUserSettings (or the pwsh check above)
+            // changed the file, then our local settings JSON is no longer accurate.
+            // We should re-parse, but not re-layer
+            resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+
+            _WriteSettings(resultPtr->_userSettingsString);
+        }
+
+        // If this throws, the app will catch it and use the default settings
+        resultPtr->_ValidateSettings();
+
+        // GH 3855 - Gathering Data on custom profiles to inform better defaults
+        // Do it after everything else so it won't happen unless validation passed.
+        // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
+        // is a lot of computation we can skip if no one cares.
+        if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+        {
+            const auto guid = resultPtr->GlobalSettings().DefaultProfile();
+
+            // Compare to the defaults.json one that we set on install.
+            // If it's different, log what the user chose.
+            if (hardcodedDefaultGuid != guid)
+            {
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    "CustomDefaultProfile",
+                    TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
+                    TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            }
+
+            // If the user had keybinding settings preferences, we want to learn from them to make better defaults
+            auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
+            if (!userKeybindings.empty())
+            {
+                // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
+
+                // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
+                // and avoid extraneous data.
+                auto km = winrt::make_self<implementation::KeyMapping>();
+                km->LayerJson(userKeybindings);
+                auto value = km->ToJson();
+
+                // Reserialize the keybindings
+                Json::StreamWriterBuilder wbuilder;
+                // Use 4 spaces to indent instead of \t
+                wbuilder.settings_["indentation"] = "    ";
+                wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+
+                const auto keybindingsString = Json::writeString(wbuilder, value);
+
+                TraceLoggingWrite(
+                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    "CustomKeybindings",
+                    TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
+                    TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
+                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+            }
+        }
+
+        return *resultPtr;
+    }
+    catch (const SettingsException& ex)
+    {
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+        settings->_loadError = ex.Error();
+        return *settings;
+    }
+    catch (const SettingsTypedDeserializationException& e)
+    {
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+        std::string_view what{ e.what() };
+        settings->_deserializationErrorMessage = til::u8u16(what);
+        return *settings;
+    }
 }
 
 // Function Description:
@@ -249,21 +265,37 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 // - <none>
 // Return Value:
 // - a unique_ptr to a CascadiaSettings with the connection types and settings for Universal terminal
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
+winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadUniversal()
 {
     // We're going to do this ourselves because we want to exclude almost everything
     // from the special Universal-for-developers configuration
 
-    // Create settings and get the universal defaults loaded up.
-    auto resultPtr = std::make_unique<CascadiaSettings>();
-    resultPtr->_ParseJsonString(DefaultUniversalJson, true);
-    resultPtr->LayerJson(resultPtr->_defaultSettings);
+    try
+    {
+        // Create settings and get the universal defaults loaded up.
+        auto resultPtr = winrt::make_self<CascadiaSettings>();
+        resultPtr->_ParseJsonString(DefaultUniversalJson, true);
+        resultPtr->LayerJson(resultPtr->_defaultSettings);
 
-    // Now validate.
-    // If this throws, the app will catch it and use the default settings
-    resultPtr->_ValidateSettings();
+        // Now validate.
+        // If this throws, the app will catch it and use the default settings
+        resultPtr->_ValidateSettings();
 
-    return resultPtr;
+        return *resultPtr;
+    }
+    catch (const SettingsException& ex)
+    {
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+        settings->_loadError = ex.Error();
+        return *settings;
+    }
+    catch (const SettingsTypedDeserializationException& e)
+    {
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+        std::string_view what{ e.what() };
+        settings->_deserializationErrorMessage = til::u8u16(what);
+        return *settings;
+    }
 }
 
 // Function Description:
@@ -273,9 +305,9 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadUniversal()
 // - <none>
 // Return Value:
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
+winrt::TerminalApp::CascadiaSettings CascadiaSettings::LoadDefaults()
 {
-    auto resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr{ winrt::make_self<CascadiaSettings>() };
 
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
@@ -284,7 +316,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     resultPtr->LayerJson(resultPtr->_defaultSettings);
     resultPtr->_ResolveDefaultProfile();
 
-    return resultPtr;
+    return *resultPtr;
 }
 
 // Method Description:
@@ -327,9 +359,9 @@ void CascadiaSettings::_LoadDynamicProfiles()
                 {
                     // If the profile did not have a GUID when it was generated,
                     // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
-                    profile.SetSource(generatorNamespace);
+                    profile.Source(generatorNamespace);
 
-                    _profiles.emplace_back(profile);
+                    _profiles.Append(profile);
                 }
             }
             CATCH_LOG_MSG("Dynamic Profile Namespace: \"%ls\"", generatorNamespace.data());
@@ -452,7 +484,8 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         {
             if (profileJson.isObject())
             {
-                if (profile.ShouldBeLayered(profileJson))
+                const auto profileImpl = winrt::get_self<winrt::TerminalApp::implementation::Profile>(profile);
+                if (profileImpl->ShouldBeLayered(profileJson))
                 {
                     return true;
                 }
@@ -502,7 +535,8 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
         // Generate a diff for the profile, that contains the minimal set of
         // changes to re-create this profile.
-        const auto diff = profile.GenerateStub();
+        const auto profileImpl = winrt::get_self<winrt::TerminalApp::implementation::Profile>(profile);
+        const auto diff = profileImpl->GenerateStub();
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
         // Add the user's indent to the start of each line
@@ -558,7 +592,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 // <none>
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
-    _globals.LayerJson(json);
+    _globals->LayerJson(json);
 
     if (auto schemes{ json[SchemesKey.data()] })
     {
@@ -607,17 +641,17 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            Profile profile{};
+            auto profile = winrt::make_self<Profile>();
 
             // GH#2325: If we have a set of default profile settings, apply them here.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
             {
-                profile.LayerJson(_userDefaultProfileSettings);
+                profile->LayerJson(_userDefaultProfileSettings);
             }
 
-            profile.LayerJson(profileJson);
-            _profiles.emplace_back(profile);
+            profile->LayerJson(profileJson);
+            _profiles.Append(*profile);
         }
     }
 }
@@ -633,17 +667,14 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 // Return Value:
 // - a Profile that can be layered with the given json object, iff such a
 //   profile exists.
-Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
+winrt::com_ptr<Profile> CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
 {
-    for (auto& profile : _profiles)
+    for (auto profile : _profiles)
     {
-        if (profile.ShouldBeLayered(profileJson))
+        auto profileImpl = winrt::get_self<Profile>(profile);
+        if (profileImpl->ShouldBeLayered(profileJson))
         {
-            // HERE BE DRAGONS: Returning a pointer to a type in the vector is
-            // maybe not the _safest_ thing, but we have a mind to make Profile
-            // and ColorScheme winrt types in the future, so this will be safer
-            // then.
-            return &profile;
+            return profileImpl->get_strong();
         }
     }
     return nullptr;
@@ -683,9 +714,10 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         // hyper-explode, so just don't let them do that.
         _userDefaultProfileSettings.removeMember({ "guid" });
 
-        for (auto& profile : _profiles)
+        for (auto profile : _profiles)
         {
-            profile.LayerJson(_userDefaultProfileSettings);
+            auto profileImpl = winrt::get_self<Profile>(profile);
+            profileImpl->LayerJson(_userDefaultProfileSettings);
         }
     }
 }
@@ -708,8 +740,8 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
     else
     {
-        const auto scheme = implementation::ColorScheme::FromJson(schemeJson);
-        _globals.AddColorScheme(*scheme);
+        const auto scheme = ColorScheme::FromJson(schemeJson);
+        _globals->AddColorScheme(*scheme);
     }
 }
 
@@ -724,15 +756,13 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 // Return Value:
 // - a ColorScheme that can be layered with the given json object, iff such a
 //   color scheme exists.
-winrt::com_ptr<implementation::ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
+winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
-    if (auto schemeName = implementation::ColorScheme::GetNameFromJson(schemeJson))
+    if (auto schemeName = ColorScheme::GetNameFromJson(schemeJson))
     {
-        auto& schemes = _globals.GetColorSchemes();
-        auto iterator = schemes.find(*schemeName);
-        if (iterator != schemes.end())
+        if (auto scheme{ _globals->ColorSchemes().TryLookup(*schemeName) })
         {
-            return winrt::get_self<implementation::ColorScheme>(iterator->second)->get_strong();
+            return winrt::get_self<ColorScheme>(scheme)->get_strong();
         }
     }
     return nullptr;

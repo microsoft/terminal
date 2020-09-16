@@ -29,16 +29,16 @@ public:
 
     std::wstring_view GetNamespace() override { return _namespace; };
 
-    std::vector<TerminalApp::Profile> GenerateProfiles() override
+    std::vector<winrt::TerminalApp::Profile> GenerateProfiles() override
     {
         if (pfnGenerate)
         {
             return pfnGenerate();
         }
-        return std::vector<TerminalApp::Profile>{};
+        return std::vector<winrt::TerminalApp::Profile>{};
     }
 
     std::wstring _namespace;
 
-    std::function<std::vector<TerminalApp::Profile>()> pfnGenerate{ nullptr };
+    std::function<std::vector<winrt::TerminalApp::Profile>()> pfnGenerate{ nullptr };
 };

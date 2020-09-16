@@ -187,7 +187,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - the newly constructed Command object.
     winrt::com_ptr<Command> Command::FromJson(const Json::Value& json,
-                                              std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                              std::vector<SettingsLoadWarnings>& warnings)
     {
         auto result = winrt::make_self<Command>();
 
@@ -280,10 +280,10 @@ namespace winrt::TerminalApp::implementation
     // - json: A Json::Value containing an array of serialized commands
     // Return Value:
     // - A vector containing any warnings detected while parsing
-    std::vector<::TerminalApp::SettingsLoadWarnings> Command::LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                                                        const Json::Value& json)
+    std::vector<SettingsLoadWarnings> Command::LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
+                                                         const Json::Value& json)
     {
-        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        std::vector<SettingsLoadWarnings> warnings;
 
         for (const auto& value : json)
         {
@@ -353,9 +353,9 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void Command::ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& commands,
-                                 gsl::span<const ::TerminalApp::Profile> profiles,
+                                 Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                  gsl::span<winrt::TerminalApp::ColorScheme> schemes,
-                                 std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                 std::vector<SettingsLoadWarnings>& warnings)
     {
         std::vector<winrt::hstring> commandsToRemove;
         std::vector<winrt::TerminalApp::Command> commandsToAdd;
@@ -409,9 +409,9 @@ namespace winrt::TerminalApp::implementation
     // - and empty vector if the command wasn't expandable, otherwise a list of
     //   the newly-created commands.
     std::vector<winrt::TerminalApp::Command> Command::_expandCommand(Command* const expandable,
-                                                                     gsl::span<const ::TerminalApp::Profile> profiles,
+                                                                     Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                      gsl::span<winrt::TerminalApp::ColorScheme> schemes,
-                                                                     std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                                                     std::vector<SettingsLoadWarnings>& warnings)
     {
         std::vector<winrt::TerminalApp::Command> newCommands;
 
@@ -438,7 +438,7 @@ namespace winrt::TerminalApp::implementation
             const auto actualDataEnd = newJsonString.data() + newJsonString.size();
             if (!reader->parse(actualDataStart, actualDataEnd, &newJsonValue, &errs))
             {
-                warnings.push_back(::TerminalApp::SettingsLoadWarnings::FailedToParseCommandJson);
+                warnings.push_back(SettingsLoadWarnings::FailedToParseCommandJson);
                 // If we encounter a re-parsing error, just stop processing the rest of the commands.
                 return false;
             }
@@ -466,8 +466,8 @@ namespace winrt::TerminalApp::implementation
                 // Replace all the keywords in the original json, and try and parse that
 
                 // - Escape the profile name for JSON appropriately
-                auto escapedProfileName = _escapeForJson(til::u16u8(p.GetName()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.GetExpandedIconPath()));
+                auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.ExpandedIconPath()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);

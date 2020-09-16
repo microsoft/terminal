@@ -50,5 +50,6 @@ syscall
 tmp
 tx
 userenv
+wcstoui
 XDocument
 XElement
