@@ -156,7 +156,17 @@ try
     if (stringSize > 4)
     {
         auto prefix = std::wstring(string.substr(0, 4));
-        std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::towlower);
+        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
+            // Replace characters beyond ASCII range with space to prevent possible issues
+            // with towlower under different locales.
+            if (x > 0x7f)
+            {
+                return 0x20ui16; // Space
+            }
+
+            return ::towlower(x);
+        });
+
         if (prefix.compare(L"rgb:") == 0)
         {
             // If all the components have the same digit count, we can have one of the following formats:

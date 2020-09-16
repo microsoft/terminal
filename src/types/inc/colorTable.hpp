@@ -17,7 +17,7 @@ namespace Microsoft::Console::Utils
     void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
     void Initialize256ColorTable(const gsl::span<COLORREF> table);
 
-    std::optional<til::color> ColorFromXOrgAppColorName(const std::wstring_view wstr);
+    std::optional<til::color> ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept;
 
     // Function Description:
     // - Fill the alpha byte of the colors in a given color table with the given value.

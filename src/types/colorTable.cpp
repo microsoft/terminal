@@ -1028,7 +1028,8 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 // - str: a string representation of the color name to parse
 // Return Value:
 // - An optional color which contains value if a color was successfully parsed
-std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr)
+std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept
+try
 {
     std::wstring key(wstr);
     std::transform(key.begin(), key.end(), key.begin(), std::towlower);
@@ -1041,3 +1042,4 @@ std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_vi
 
     return iter->second;
 }
+CATCH_FAIL_FAST()
