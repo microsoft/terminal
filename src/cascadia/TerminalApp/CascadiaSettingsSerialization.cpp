@@ -33,6 +33,8 @@ static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view CommandLineKey{ "commandline" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
@@ -471,16 +473,17 @@ void CascadiaSettings::_AddOrModifyProfiles(std::unordered_set<std::string> stub
         else
         {
             // This is a new profile
-            // TODO: make sure the new profile meets our minimum requirements -
-            //       it should at least have a name and a commandline argument
-            auto profile = winrt::make_self<Profile>();
-            if (_userDefaultProfileSettings)
+            if (res.isMember(JsonKey(NameKey)) && res.isMember(JsonKey(CommandLineKey)))
             {
-                profile->LayerJson(_userDefaultProfileSettings);
+                auto profile = winrt::make_self<Profile>();
+                if (_userDefaultProfileSettings)
+                {
+                    profile->LayerJson(_userDefaultProfileSettings);
+                }
+                profile->LayerJson(res);
+                profile->Source(source);
+                _profiles.Append(*profile);
             }
-            profile->LayerJson(res);
-            profile->Source(source);
-            _profiles.Append(*profile);
         }
     }
 }
