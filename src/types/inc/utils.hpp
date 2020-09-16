@@ -45,6 +45,9 @@ namespace Microsoft::Console::Utils
 
     std::string ColorToHexString(const til::color color);
     til::color ColorFromHexString(const std::string_view wstr);
+    std::optional<til::color> ColorForXParseColorSpec(const std::wstring_view wstr) noexcept;
+
+    bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {

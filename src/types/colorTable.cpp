@@ -1026,10 +1026,9 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 // - Parses a color from a string based on the XOrg app color name table.
 // Arguments:
 // - str: a string representation of the color name to parse
-// - color: a color to write the result to
 // Return Value:
-// - True if the string is successfully parsed. False otherwise.
-bool Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr, til::color& color)
+// - An optional color which contains value if a color was successfully parsed
+std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr)
 {
     std::wstring key(wstr);
     std::transform(key.begin(), key.end(), key.begin(), std::towlower);
@@ -1037,9 +1036,8 @@ bool Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr, til::color& 
     const auto iter = xorgAppColorTable.find(key);
     if (iter == xorgAppColorTable.end())
     {
-        return false;
+        return std::nullopt;
     }
 
-    color = iter->second;
-    return true;
+    return iter->second;
 }

@@ -8,7 +8,7 @@
 #include "base64.hpp"
 
 #include "ascii.hpp"
-#include "../../types/inc/colorTable.hpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -1348,36 +1348,6 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
     return false;
 }
 
-// Routine Description:
-// - Converts a hex character to its equivalent integer value.
-// Arguments:
-// - wch - Character to convert.
-// - value - receives the int value of the char
-// Return Value:
-// - true iff the character is a hex character.
-bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
-                                           unsigned int& value) noexcept
-{
-    value = 0;
-    bool success = false;
-    if (wch >= L'0' && wch <= L'9')
-    {
-        value = wch - L'0';
-        success = true;
-    }
-    else if (wch >= L'A' && wch <= L'F')
-    {
-        value = (wch - L'A') + 10;
-        success = true;
-    }
-    else if (wch >= L'a' && wch <= L'f')
-    {
-        value = (wch - L'a') + 10;
-        success = true;
-    }
-    return success;
-}
-
 #pragma warning(push)
 #pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
 
@@ -1392,207 +1362,7 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
     return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
 }
 
-// Routine Description:
-// - Determines if a character is a valid hex character, 0-9a-fA-F.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isHexNumber(const wchar_t wch) noexcept
-{
-    return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
-           (wch >= L'A' && wch <= L'F') ||
-           (wch >= L'a' && wch <= L'f');
-}
-
 #pragma warning(pop)
-
-// Routine Description:
-// - Given a color spec string, attempts to parse the color that's encoded.
-//   The supported specs currently are the following:
-//      spec1: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//      spec2: a color in the following format:
-//          "#<red><green><blue>"
-//
-//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
-// Arguments:
-// - string - The string containing the color spec string to parse.
-// - rgb - receives the color that we parsed
-// Return Value:
-// - True if a color was successfully parsed
-bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
-                                                DWORD& rgb) noexcept
-try
-{
-    bool foundRGBColorSpec = false;
-    bool foundValidColorSpec = false;
-
-    bool isSharpSignFormat = false;
-    size_t rgbHexDigitCount = 0;
-    std::array<unsigned int, 3> colorValues = { 0 };
-    std::array<unsigned int, 3> parameterValues = { 0 };
-    bool success = false;
-    const auto stringSize = string.size();
-
-    // First we look for "rgb:"
-    // Other colorspaces are theoretically possible, but we don't support them.
-    auto curr = string.cbegin();
-    if (stringSize > 4)
-    {
-        auto prefix = std::wstring(string.substr(0, 4));
-        std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::towlower);
-        if (prefix.compare(L"rgb:") == 0)
-        {
-            // If all the components have the same digit count, we can have one of the following formats:
-            // 9 "rgb:h/h/h"
-            // 12 "rgb:hh/hh/hh"
-            // 15 "rgb:hhh/hhh/hhh"
-            // 18 "rgb:hhhh/hhhh/hhhh"
-            // Note that the component sizes aren't required to be the same.
-            // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
-            // Any fewer cannot be valid, and any more will be too many. Return early in this case.
-            if (stringSize < 9 || stringSize > 18)
-            {
-                return false;
-            }
-
-            foundRGBColorSpec = true;
-
-            std::advance(curr, 4);
-        }
-    }
-
-    // Try the sharp sign format.
-    if (!foundRGBColorSpec && stringSize > 1)
-    {
-        const auto prefix = string.substr(0, 1);
-        if (prefix.compare(L"#") == 0)
-        {
-            // We can have one of the following formats:
-            // 4 "#hhh"
-            // 7 "#hhhhhh"
-            // 10 "#hhhhhhhhh"
-            // 13 "#hhhhhhhhhhhh"
-            // Any other cases will be invalid. Return early in this case.
-            if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
-            {
-                return false;
-            }
-
-            isSharpSignFormat = true;
-            foundRGBColorSpec = true;
-            rgbHexDigitCount = (stringSize - 1) / 3;
-
-            std::advance(curr, 1);
-        }
-    }
-
-    // Try the XOrg app color name.
-    if (!foundRGBColorSpec)
-    {
-        til::color color;
-        success = Utils::ColorFromXOrgAppColorName(string, color);
-        if (success)
-        {
-            rgb = color;
-        }
-    }
-
-    if (foundRGBColorSpec)
-    {
-        for (size_t component = 0; component < 3; component++)
-        {
-            bool foundColor = false;
-            auto& parameterValue = til::at(parameterValues, component);
-            // For "sharp sign" format, the rgbHexDigitCount is known.
-            // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
-            const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
-            for (size_t i = 0; i < iteration && curr < string.cend(); i++)
-            {
-                const wchar_t wch = *curr++;
-
-                parameterValue *= 16;
-                unsigned int intVal = 0;
-                const auto ret = s_HexToUint(wch, intVal);
-                if (!ret)
-                {
-                    // Encountered something weird oh no
-                    return false;
-                }
-
-                parameterValue += intVal;
-
-                if (isSharpSignFormat)
-                {
-                    // If we get this far, any number can be seen as a valid part
-                    // of this component.
-                    foundColor = true;
-
-                    if (i >= rgbHexDigitCount)
-                    {
-                        // Successfully parsed this component. Start the next one.
-                        break;
-                    }
-                }
-                else
-                {
-                    // Record the hex digit count of the current component.
-                    rgbHexDigitCount = i + 1;
-
-                    // If this is the first 2 component...
-                    if (component < 2 && curr < string.cend() && *curr == L'/')
-                    {
-                        // ...and we have successfully parsed this component, we need
-                        // to skip the delimiter before starting the next one.
-                        curr++;
-                        foundColor = true;
-                        break;
-                    }
-                    // Or we have reached the end of the string...
-                    else if (curr >= string.cend())
-                    {
-                        // ...meaning that this is the last component. We're not going to
-                        // see any delimiter. We can just break out.
-                        foundColor = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!foundColor)
-            {
-                // Indicates there was some error parsing color.
-                return false;
-            }
-
-            // Calculate the actual color value based on the hex digit count.
-            auto& colorValue = til::at(colorValues, component);
-            const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
-            const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
-            colorValue = parameterValue * scaleMultiplier / scaleDivisor;
-        }
-
-        if (curr >= string.cend())
-        {
-            // We're at the end of the string and we have successfully parsed the color.
-            foundValidColorSpec = true;
-        }
-    }
-
-    // Only if we find a valid colorspec can we pass it out successfully.
-    if (foundValidColorSpec)
-    {
-        DWORD color = RGB(LOBYTE(colorValues.at(0)),
-                          LOBYTE(colorValues.at(1)),
-                          LOBYTE(colorValues.at(2)));
-
-        rgb = color;
-        success = true;
-    }
-    return success;
-}
-CATCH_LOG_RETURN_FALSE()
 
 // Routine Description:
 // - OSC 4 ; c ; spec ST
@@ -1647,13 +1417,13 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
     // Other colorspaces are theoretically possible, but we don't support them.
     if (foundTableIndex)
     {
-        DWORD color = 0;
-        success = s_ParseColorSpec(string.substr(current), color);
+        std::optional<til::color> colorOptional = Utils::ColorForXParseColorSpec(string.substr(current));
 
-        if (success)
+        if (colorOptional.has_value())
         {
             tableIndex = _TableIndex;
-            rgb = color;
+            rgb = colorOptional.value();
+            success = true;
         }
     }
 
@@ -1715,12 +1485,12 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 
     bool success = false;
 
-    DWORD color = 0;
-    success = s_ParseColorSpec(string, color);
+    std::optional<til::color> colorOptional = Utils::ColorForXParseColorSpec(string);
 
-    if (success)
+    if (colorOptional.has_value())
     {
-        rgb = color;
+        rgb = colorOptional.value();
+        success = true;
     }
 
     return success;

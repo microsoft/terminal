@@ -2,7 +2,7 @@
 Copyright (c) Microsoft Corporation
 
 Module Name:
-- viewport.hpp
+- colorTable.hpp
 
 Abstract:
 - Helper for color tables
@@ -17,7 +17,7 @@ namespace Microsoft::Console::Utils
     void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
     void Initialize256ColorTable(const gsl::span<COLORREF> table);
 
-    bool ColorFromXOrgAppColorName(const std::wstring_view wstr, til::color& color);
+    std::optional<til::color> ColorFromXOrgAppColorName(const std::wstring_view wstr);
 
     // Function Description:
     // - Fill the alpha byte of the colors in a given color table with the given value.
