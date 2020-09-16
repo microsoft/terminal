@@ -408,14 +408,12 @@ void CascadiaSettings::_LoadProtoExtensions()
 
     if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal")))
     {
-        std::unordered_set<std::string> jsonFiles;
-        _AccumulateJsonFilesInDirectory(LocalAppDataFolder, jsonFiles);
+        const auto jsonFiles = _AccumulateJsonFilesInDirectory(LocalAppDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(LocalSource));
     }
     if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramData%\\Microsoft\\Windows\\Terminal")))
     {
-        std::unordered_set<std::string> jsonFiles;
-        _AccumulateJsonFilesInDirectory(ProgramDataFolder, jsonFiles);
+        const auto jsonFiles = _AccumulateJsonFilesInDirectory(ProgramDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(GlobalSource));
     }
 }
@@ -425,8 +423,9 @@ void CascadiaSettings::_LoadProtoExtensions()
 // Arguments:
 // - directory: the directory to search
 // - out: pointer to the set where we should add the files found
-void CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory, std::unordered_set<std::string>& out)
+std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory)
 {
+    std::unordered_set<std::string> jsonFiles;
     const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
     for (auto& protoExt : std::filesystem::directory_iterator(root))
     {
@@ -443,10 +442,11 @@ void CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view d
             if (hFile)
             {
                 const auto fileData = _ReadFile(hFile.get()).value();
-                out.emplace(fileData);
+                jsonFiles.emplace(fileData);
             }
         }
     }
+    return jsonFiles;
 }
 
 // Method Description:
@@ -455,7 +455,7 @@ void CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view d
 // Arguments:
 // - stubs: the set of json files
 // - source: the location the files came from
-void CascadiaSettings::_AddOrModifyProfiles(std::unordered_set<std::string> files, const winrt::hstring source)
+void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string> files, const winrt::hstring source)
 {
     for (const auto file : files)
     {
