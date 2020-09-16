@@ -57,6 +57,8 @@ these stubs should be put into lists in the json file: one list named ```profile
 }
 ```
 
+An example of a full json file with these fields filled out is shown at the end of this section. 
+
 #### Modifications to existing profiles
 
 The main thing to note for modification of existing profiles is that this will only be used for modifying the
@@ -176,6 +178,37 @@ Here is an example of a json stub that contains a colour scheme:
 ```
 
 This stub will *not* show up in the users settings file, similar to the way our default colour schemes do not show up.
+
+#### Example of a full json file
+This is an example of a json file that combines all the above examples. Thus, this json file modifies the Azure Cloud
+Shell profile, creates a new profile called 'Cool Profile' and creates a new colour scheme called 'Postmodern Tango Light'.
+
+```js
+{
+  "profiles": [
+    {
+      "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+      "fontSize": 16,
+      "fontWeight": "thin"
+    },
+    {
+      "guid": "{a821ae62-9d4a-3e34-b989-0a998ec283e6}",
+      "name": "Cool Profile",
+      "commandline": "powershell.exe",
+      "antialiasingMode": "aliased",
+      "fontWeight": "bold",
+      "scrollbarState": "hidden"
+    }
+  ],
+  "schemes": [
+    {
+      "name": "Postmodern Tango Light",
+      "background": "#61D6D6",
+      "foreground": "#E74856"
+    }
+  ]
+}
+```
 
 ### Creation and location(s) of the json files
 
