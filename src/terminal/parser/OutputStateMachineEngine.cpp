@@ -735,7 +735,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     std::wstring params;
     std::wstring uri;
     bool queryClipboard = false;
-    size_t tableIndex = 0;
+    std::vector<size_t> tableIndexes;
+    std::vector<DWORD> colors;
     DWORD color = 0;
 
     switch (parameter)
@@ -746,12 +747,12 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscTitle(string, title);
         break;
     case OscActionCodes::SetColor:
-        success = _GetOscSetColorTable(string, tableIndex, color);
+        success = _GetOscSetColorTable(string, tableIndexes, colors);
         break;
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
-        success = _GetOscSetColor(string, color);
+        success = _GetOscSetColor(string, colors);
         break;
     case OscActionCodes::SetClipboard:
         success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
@@ -780,19 +781,33 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
             break;
         case OscActionCodes::SetColor:
-            success = _dispatch->SetColorTableEntry(tableIndex, color);
+            for (size_t i = 0; i < tableIndexes.size(); i++)
+            {
+                auto tableIndex = tableIndexes.at(i);
+                auto rgb = colors.at(i);
+                success = _dispatch->SetColorTableEntry(tableIndex, rgb);
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
             break;
         case OscActionCodes::SetForegroundColor:
-            success = _dispatch->SetDefaultForeground(color);
+            if (colors.size() > 0)
+            {
+                success = _dispatch->SetDefaultForeground(colors.at(0));
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
             break;
         case OscActionCodes::SetBackgroundColor:
-            success = _dispatch->SetDefaultBackground(color);
+            if (colors.size() > 0)
+            {
+                success = _dispatch->SetDefaultBackground(colors.at(0));
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
             break;
         case OscActionCodes::SetCursorColor:
-            success = _dispatch->SetCursorColor(color);
+            if (colors.size() > 0)
+            {
+                success = _dispatch->SetCursorColor(color);
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
         case OscActionCodes::SetClipboard:
@@ -1368,6 +1383,9 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table
 //      spec: The colors are specified by name or RGB specification as per XParseColor
+//
+//   It's possible to have multiple "c ; spec" pairs, which will set the index "c" of the color table
+//   with color parsed from "spec".
 // Arguments:
 // - string - the Osc String to parse
 // - tableIndex - receives the table index
@@ -1375,20 +1393,18 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
-                                                    size_t& tableIndex,
-                                                    DWORD& rgb) const noexcept
+                                                    std::vector<size_t>& tableIndexes,
+                                                    std::vector<DWORD>& rgbs) const noexcept
+try
 {
-    tableIndex = 0;
-    rgb = 0;
+    tableIndexes.clear();
+    rgbs.clear();
     size_t _TableIndex = 0;
 
-    bool foundTableIndex = false;
-    bool success = false;
-
-    // First try to get the table index, a number between [0,256]
     size_t current = 0;
     while (current < string.size())
     {
+        // First try to get the table index, a number between [0,256]
         const wchar_t wch = string.at(current);
         if (_isNumber(wch))
         {
@@ -1402,8 +1418,37 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
             // We need to explicitly pass in a number, we can't default to 0 if
             //  there's no param
             ++current;
-            foundTableIndex = true;
-            break;
+
+            // Now we try to parse the RGB color value from the string.
+            std::optional<til::color> colorOptional;
+
+            // Find the next ';' to determine how to substr.
+            // For example if the string is '0;rgb:1/1/1;1;rgb/2/2/2', we will need
+            // to correctly recognize both "rgb:1/1/1;1" and "rgb/2/2/2".
+            const auto nextDelimiter = string.find(L";", current);
+            if (nextDelimiter == std::wstring::npos)
+            {
+                colorOptional = Utils::ColorFromXTermColor(string.substr(current));
+                // No more delimiter means no more left for parsing. This will effectively break out the loop.
+                current = string.size();
+            }
+            else
+            {
+                // Substr until the delimiter.
+                const auto length = nextDelimiter - current;
+                colorOptional = Utils::ColorFromXTermColor(string.substr(current, length));
+                // Skip this color and the delimiter. Start the next one.
+                current += length + 1;
+            }
+
+            if (colorOptional.has_value())
+            {
+                tableIndexes.push_back(_TableIndex);
+                rgbs.push_back(colorOptional.value());
+            }
+
+            // Reset the state.
+            _TableIndex = 0;
         }
         else
         {
@@ -1411,21 +1456,10 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
             break;
         }
     }
-    // Now we try to parse the RGB color value from the string.
-    if (foundTableIndex)
-    {
-        std::optional<til::color> colorOptional = Utils::ColorFromXTermColor(string.substr(current));
 
-        if (colorOptional.has_value())
-        {
-            tableIndex = _TableIndex;
-            rgb = colorOptional.value();
-            success = true;
-        }
-    }
-
-    return success;
+    return tableIndexes.size() > 0 && rgbs.size() > 0;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
@@ -1467,26 +1501,59 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST
-//      spec: The colors are specified by name or RGB specification as per XParseColor
+//      spec: The colors are specified by name or RGB specification as per
 //
+//   It's possible to have multiple "spec", which by design equals to a series of OSC command
+//   with accumulated Ps. For example "OSC 10;color1;11;color2" is effectively an "OSC 10;color1"
+//   and an "OSC 11;color2".
+//
+//   However, we do not support the chaining of OSC 10-17 yet. Right now only the first parameter
+//   will take effect.
 // Arguments:
 // - string - the Osc String to parse
 // - rgb - receives the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
-                                               DWORD& rgb) const noexcept
+                                               std::vector<DWORD>& rgbs) const noexcept
 {
-    rgb = 0;
+    rgbs.clear();
 
     bool success = false;
 
-    std::optional<til::color> colorOptional = Utils::ColorFromXTermColor(string);
+    size_t current = 0;
+    size_t expectedColorCount = 0;
 
-    if (colorOptional.has_value())
+    while (current < string.size())
     {
-        rgb = colorOptional.value();
-        success = true;
+        std::optional<til::color> colorOptional;
+        const auto nextDelimiter = string.find(L";", current);
+        if (nextDelimiter == std::wstring::npos)
+        {
+            colorOptional = Utils::ColorFromXTermColor(string.substr(current));
+            // No more delimiter means no more left for parsing. This will effectively break out the loop.
+            current = string.size();
+        }
+        else
+        {
+            // Substr until the delimiter.
+            const auto length = nextDelimiter - current;
+            colorOptional = Utils::ColorFromXTermColor(string.substr(current, length));
+            // Skip this color and the delimiter. Start the next one.
+            current += length + 1;
+        }
+
+        expectedColorCount++;
+
+        if (colorOptional.has_value())
+        {
+            rgbs.push_back(colorOptional.value());
+            // Only mark the parsing as a success iff the first color is a success.
+            if (expectedColorCount == 1)
+            {
+                success = true;
+            }
+        }
     }
 
     return success;

@@ -228,11 +228,11 @@ namespace Microsoft::Console::VirtualTerminal
                                         unsigned int& function) const noexcept;
 
         bool _GetOscSetColorTable(const std::wstring_view string,
-                                  size_t& tableIndex,
-                                  DWORD& rgb) const noexcept;
+                                  std::vector<size_t>& tableIndexes,
+                                  std::vector<DWORD>& rgbs) const noexcept;
 
         bool _GetOscSetColor(const std::wstring_view string,
-                             DWORD& rgb) const noexcept;
+                             std::vector<DWORD>& rgbs) const noexcept;
 
         static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::UserDefault;
         bool _GetCursorStyle(const gsl::span<const size_t> parameters,

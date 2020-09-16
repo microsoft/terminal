@@ -2487,12 +2487,50 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Multiple params.
+        mach.ProcessString(L"\033]10;#111;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#111;DarkOrange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        // Partially valid sequences. Only the first color works.
+        mach.ProcessString(L"\033]10;#111;\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#111;rgb:\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#111;#2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+
+        pDispatch->ClearState();
+
+        // Invalid sequences.
         mach.ProcessString(L"\033]10;rgb:1/1/\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
 
         pDispatch->ClearState();
@@ -2535,12 +2573,37 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Partially valid sequences. Only the first color works.
+        mach.ProcessString(L"\033]11;#111;\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;rgb:\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;#2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        // Invalid sequences.
         mach.ProcessString(L"\033]11;rgb:1/1/\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
@@ -2610,6 +2673,61 @@ class StateMachineExternalTest final
 
         mach.ProcessString(L"\033]4;1;rgb:\033\\");
         VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+
+        pDispatch->ClearState();
+
+        // Multiple params.
+        mach.ProcessString(L"\033]4;0;rgb:1/1/1;16;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_colorTable.at(16));
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;0;rgb:1/1/1;16;rgb:2/2/2;64;#111\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_colorTable.at(16));
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_colorTable.at(64));
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;0;rgb:1/1/1;16;rgb:2/2/2;64;#111;128;orange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_colorTable.at(16));
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_colorTable.at(64));
+        VERIFY_ARE_EQUAL(RGB(255, 165, 0), pDispatch->_colorTable.at(128));
+
+        pDispatch->ClearState();
+
+        // Partially valid sequences. Valid colors should not be affected by invalid colors.
+        mach.ProcessString(L"\033]4;0;rgb:1/1/1;1;rgb:2/2/2;2;#111;3;orange;4;111\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_colorTable.at(1));
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_colorTable.at(2));
+        VERIFY_ARE_EQUAL(RGB(255, 165, 0), pDispatch->_colorTable.at(3));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(4));
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]4;0;rgb:1/1/1;1;rgb:2;2;#111;3;orange;4;#222\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(1));
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_colorTable.at(2));
+        VERIFY_ARE_EQUAL(RGB(255, 165, 0), pDispatch->_colorTable.at(3));
+        VERIFY_ARE_EQUAL(RGB(0x20, 0x20, 0x20), pDispatch->_colorTable.at(4));
+
+        pDispatch->ClearState();
+
+        // Invalid sequences.
+        mach.ProcessString(L"\033]4;0;rgb:1/1/;16;rgb:2/2/;64;#11\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setColorTableEntry);
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(0));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(16));
+        VERIFY_ARE_EQUAL(RGB(0, 0, 0), pDispatch->_colorTable.at(64));
 
         pDispatch->ClearState();
     }
