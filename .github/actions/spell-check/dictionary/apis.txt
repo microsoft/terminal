@@ -53,5 +53,4 @@ userenv
 wcstoui
 XDocument
 XElement
-XParseColor
-
+XParse

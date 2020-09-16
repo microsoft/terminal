@@ -101,21 +101,44 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 }
 
 // Routine Description:
+// - Given a color string, attempts to parse the color.
+//   The color are specified by name or RGB specification as per XParseColor.
+// Arguments:
+// - string - The string containing the color spec string to parse.
+// Return Value:
+// - An optional color which contains value if a color was successfully parsed
+std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view string) noexcept
+{
+    std::optional<til::color> color = ColorFromXParseColorSpec(string);
+    if (color.has_value())
+    {
+        return color.value();
+    }
+
+    color = ColorFromXOrgAppColorName(string);
+    if (color.has_value())
+    {
+        return color.value();
+    }
+
+    return std::nullopt;
+}
+
+// Routine Description:
 // - Given a color spec string, attempts to parse the color that's encoded.
+//
 //   Based on the XParseColor documentation, the supported specs currently are the following:
 //      spec1: a color in the following format:
 //          "rgb:<red>/<green>/<blue>"
 //      spec2: a color in the following format:
 //          "#<red><green><blue>"
-//      spec3: The XOrg app color names:
-//          "orange"
 //
-//   In the first two specs, <color> is a value contains up to 4 hex digits, upper or lower case.
+//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
 // Arguments:
 // - string - The string containing the color spec string to parse.
 // Return Value:
 // - An optional color which contains value if a color was successfully parsed
-std::optional<til::color> Utils::ColorForXParseColorSpec(const std::wstring_view string) noexcept
+std::optional<til::color> Utils::ColorFromXParseColorSpec(const std::wstring_view string) noexcept
 try
 {
     bool foundXParseColorSpec = false;
@@ -158,8 +181,7 @@ try
     // Try the sharp sign format.
     if (!foundXParseColorSpec && stringSize > 1)
     {
-        const auto prefix = string.substr(0, 1);
-        if (til::at(prefix, 0) == L'#')
+        if (til::at(string, 0) == L'#')
         {
             // We can have one of the following formats:
             // 4 "#hhh"
@@ -177,16 +199,6 @@ try
             rgbHexDigitCount = (stringSize - 1) / 3;
 
             std::advance(curr, 1);
-        }
-    }
-
-    // Try the XOrg app color name.
-    if (!foundXParseColorSpec)
-    {
-        std::optional<til::color> color = Utils::ColorFromXOrgAppColorName(string);
-        if (color.has_value())
-        {
-            return color.value();
         }
     }
 

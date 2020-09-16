@@ -1367,9 +1367,7 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
 // Routine Description:
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table
-//      spec: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//          where <color> is two hex digits
+//      spec: The colors are specified by name or RGB specification as per XParseColor
 // Arguments:
 // - string - the Osc String to parse
 // - tableIndex - receives the table index
@@ -1413,11 +1411,10 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
             break;
         }
     }
-    // Now we look for the actual RGB value.
-    // Other colorspaces are theoretically possible, but we don't support them.
+    // Now we try to parse the RGB color value from the string.
     if (foundTableIndex)
     {
-        std::optional<til::color> colorOptional = Utils::ColorForXParseColorSpec(string.substr(current));
+        std::optional<til::color> colorOptional = Utils::ColorFromXTermColor(string.substr(current));
 
         if (colorOptional.has_value())
         {
@@ -1470,9 +1467,8 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST
-//      spec: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//          where <color> is two hex digits
+//      spec: The colors are specified by name or RGB specification as per XParseColor
+//
 // Arguments:
 // - string - the Osc String to parse
 // - rgb - receives the color that we parsed in the format: 0x00BBGGRR
@@ -1485,7 +1481,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 
     bool success = false;
 
-    std::optional<til::color> colorOptional = Utils::ColorForXParseColorSpec(string);
+    std::optional<til::color> colorOptional = Utils::ColorFromXTermColor(string);
 
     if (colorOptional.has_value())
     {

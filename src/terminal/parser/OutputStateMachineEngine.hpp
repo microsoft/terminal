@@ -252,9 +252,5 @@ namespace Microsoft::Console::VirtualTerminal
                              std::wstring& uri) const;
 
         void _ClearLastChar() noexcept;
-
-#ifdef UNIT_TESTING
-        friend class OutputEngineTest;
-#endif
     };
 }
