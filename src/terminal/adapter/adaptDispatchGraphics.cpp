@@ -116,7 +116,7 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
             case Off:
                 attr.SetDefaultForeground();
                 attr.SetDefaultBackground();
-                attr.SetStandardErase();
+                attr.SetDefaultMetaAttrs();
                 break;
             case ForegroundDefault:
                 attr.SetDefaultForeground();

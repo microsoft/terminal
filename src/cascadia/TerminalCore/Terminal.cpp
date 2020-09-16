@@ -134,6 +134,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
                                       cursorShape);
     }
 
+    _defaultCursorShape = cursorShape;
+
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = settings.GetColorTableEntry(i);
@@ -407,6 +409,32 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
+// - If the clicked text is a hyperlink, open it
+// Arguments:
+// - The position of the clicked text
+std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
+{
+    auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
+    if (attr.IsHyperlink())
+    {
+        auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return uri;
+    }
+    return {};
+}
+
+// Method Description:
+// - Gets the hyperlink ID of the text at the given terminal position
+// Arguments:
+// - The position of the text
+// Return value:
+// - The hyperlink ID
+uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+{
+    return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+}
+
+// Method Description:
 // - Send this particular (non-character) key event to the terminal.
 // - The terminal will translate the key and the modifiers pressed into the
 //   appropriate VT sequence for that key chord. If we do translate the key,
@@ -457,7 +485,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     }
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
-    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed();
 
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximize, size, move, close.
@@ -477,6 +504,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // as TerminalInput::HandleKey will then fall back to using the vkey which
     // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
     // See GH#5525/GH#6211 for more details
+    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed() && !states.IsAltGrPressed();
     const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
 
     // Delegate it to the character event handler if this key event can be

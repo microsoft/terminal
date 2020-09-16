@@ -7,6 +7,8 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
+#include "AppKeyBindings.h"
+#include "TerminalSettings.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -33,7 +35,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        winrt::fire_and_forget SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(TerminalApp::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -86,7 +88,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
-        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
+        TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
@@ -103,7 +105,8 @@ namespace winrt::TerminalApp::implementation
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
 
-        winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<ShortcutActionDispatch>() };
+        winrt::com_ptr<AppKeyBindings> _bindings{ winrt::make_self<implementation::AppKeyBindings>() };
+        winrt::com_ptr<ShortcutActionDispatch> _actionDispatch{ winrt::make_self<implementation::ShortcutActionDispatch>() };
 
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
@@ -128,7 +131,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
-        void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
+        void _HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const Tab& tab);
@@ -137,8 +140,8 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                                                          gsl::span<const ::TerminalApp::Profile> profiles,
-                                                                                                                          const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& schemes);
+                                                                                                                          Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
+                                                                                                                          Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes);
 
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
@@ -171,7 +174,11 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
+
+        void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
+        void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
+
         void _PasteText();
 
         fire_and_forget _LaunchSettings(const winrt::TerminalApp::SettingsTarget target);
@@ -237,7 +244,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseOtherTabs(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTabsAfter(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleTabSwitcher(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenTabSearch(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

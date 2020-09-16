@@ -55,5 +55,6 @@ tolower
 tx
 userenv
 wcsstr
+wcstoui
 XDocument
 XElement

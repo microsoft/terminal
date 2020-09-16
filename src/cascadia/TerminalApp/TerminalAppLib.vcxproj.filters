@@ -4,174 +4,183 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="..\Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="../init.cpp" />
+    <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="../AzureCloudShellGenerator.cpp">
+    <ClCompile Include="AzureCloudShellGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="../PowershellCoreProfileGenerator.cpp">
+    <ClCompile Include="PowershellCoreProfileGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="../WslDistroGenerator.cpp">
+    <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="../AppKeyBindingsSerialization.cpp">
+    <ClCompile Include="KeyMappingSerialization.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../CascadiaSettings.cpp">
+    <ClCompile Include="CascadiaSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../CascadiaSettingsSerialization.cpp">
+    <ClCompile Include="CascadiaSettingsSerialization.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../GlobalAppSettings.cpp">
+    <ClCompile Include="GlobalAppSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../KeyChordSerialization.cpp">
+    <ClCompile Include="KeyChordSerialization.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../Profile.cpp">
+    <ClCompile Include="Profile.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../ColorScheme.cpp">
+    <ClCompile Include="ColorScheme.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="../Pane.cpp">
+    <ClCompile Include="Pane.cpp">
       <Filter>pane</Filter>
     </ClCompile>
-    <ClCompile Include="../DefaultProfileUtils.cpp">
+    <ClCompile Include="DefaultProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
-    <ClCompile Include="../Tab.cpp">
+    <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
-    <ClCompile Include="../Pane.LayoutSizeNode.cpp">
+    <ClCompile Include="Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
     </ClCompile>
-    <ClCompile Include="../AppCommandlineArgs.cpp" />
-    <ClCompile Include="../Commandline.cpp" />
-    <ClCompile Include="../ColorHelper.cpp" />
-    <ClCompile Include="../DebugTapConnection.cpp" />
-    <ClCompile Include="../Utils.cpp" />
-    <ClCompile Include="../TerminalSettings.cpp">
+    <ClCompile Include="AppCommandlineArgs.cpp" />
+    <ClCompile Include="Commandline.cpp" />
+    <ClCompile Include="ColorHelper.cpp" />
+    <ClCompile Include="DebugTapConnection.cpp" />
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="../Utils.h" />
-    <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="../App.base.h">
+    <ClInclude Include="App.base.h">
       <Filter>app</Filter>
     </ClInclude>
-    <ClInclude Include="../AzureCloudShellGenerator.h">
+    <ClInclude Include="AzureCloudShellGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../IDynamicProfileGenerator.h">
+    <ClInclude Include="IDynamicProfileGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../PowershellCoreProfileGenerator.h">
+    <ClInclude Include="PowershellCoreProfileGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../WslDistroGenerator.h">
+    <ClInclude Include="WslDistroGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../CascadiaSettings.h">
+    <ClInclude Include="CascadiaSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="../GlobalAppSettings.h">
+    <ClInclude Include="GlobalAppSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="../TerminalSettingsSerializationHelpers.h">
+    <ClInclude Include="TerminalSettingsSerializationHelpers.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="../KeyChordSerialization.h">
+    <ClInclude Include="KeyChordSerialization.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="../Profile.h">
+    <ClInclude Include="Profile.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="../ColorScheme.h">
+    <ClInclude Include="ColorScheme.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="../Pane.h">
+    <ClInclude Include="Pane.h">
       <Filter>pane</Filter>
     </ClInclude>
-    <ClInclude Include="../DefaultProfileUtils.h">
+    <ClInclude Include="DefaultProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../JsonUtils.h">
+    <ClInclude Include="JsonUtils.h">
       <Filter>json</Filter>
     </ClInclude>
-    <ClInclude Include="../Tab.h">
+    <ClInclude Include="Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
-    <ClInclude Include="../AppCommandlineArgs.h" />
-    <ClInclude Include="../Commandline.h" />
-    <ClInclude Include="../DebugTapConnection.h" />
-    <ClInclude Include="../ColorHelper.h" />
-    <ClInclude Include="../TelnetGenerator.h">
+    <ClInclude Include="AppCommandlineArgs.h" />
+    <ClInclude Include="Commandline.h" />
+    <ClInclude Include="DebugTapConnection.h" />
+    <ClInclude Include="ColorHelper.h" />
+    <ClInclude Include="TelnetGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
-    <ClInclude Include="../TerminalSettings.h">
+    <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="../AppLogic.idl">
+    <Midl Include="AppLogic.idl">
       <Filter>app</Filter>
     </Midl>
-    <Midl Include="../ActionArgs.idl">
+    <Midl Include="ActionArgs.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="../AppKeyBindings.idl">
+    <Midl Include="AppKeyBindings.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="../ShortcutActionDispatch.idl">
+    <Midl Include="KeyMapping.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="../Tab.idl">
+    <Midl Include="ShortcutActionDispatch.idl">
+      <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="Tab.idl">
       <Filter>tab</Filter>
     </Midl>
-    <Midl Include="../Command.idl">
+    <Midl Include="Command.idl">
       <Filter>commandPalette</Filter>
     </Midl>
-    <Midl Include="../IDirectKeyListener.idl" />
-    <Midl Include="../CommandKeyChordVisibilityConverter.idl" />
-    <Midl Include="../TerminalSettings.idl">
+    <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
+    <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="../ColorScheme.idl">
+    <Midl Include="ColorScheme.idl">
+      <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="Profile.idl">
+      <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="GlobalAppSettings.idl">
       <Filter>settings</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>
-    <None Include="../packages.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="../MinMaxCloseControl.xaml">
+    <Page Include="MinMaxCloseControl.xaml">
       <Filter>controls</Filter>
     </Page>
-    <Page Include="../TabRowControl.xaml">
+    <Page Include="TabRowControl.xaml">
       <Filter>controls</Filter>
     </Page>
-    <Page Include="../TerminalPage.xaml">
+    <Page Include="TerminalPage.xaml">
       <Filter>controls</Filter>
     </Page>
-    <Page Include="../TitlebarControl.xaml">
+    <Page Include="TitlebarControl.xaml">
       <Filter>controls</Filter>
     </Page>
-    <Page Include="../ColorPickupFlyout.xaml">
+    <Page Include="ColorPickupFlyout.xaml">
       <Filter>controls</Filter>
     </Page>
-    <Page Include="../CommandPalette.xaml">
+    <Page Include="CommandPalette.xaml">
       <Filter>commandPalette</Filter>
     </Page>
   </ItemGroup>
@@ -202,7 +211,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ApplicationDefinition Include="..\App.xaml">
+    <ApplicationDefinition Include="App.xaml">
       <Filter>app</Filter>
     </ApplicationDefinition>
   </ItemGroup>

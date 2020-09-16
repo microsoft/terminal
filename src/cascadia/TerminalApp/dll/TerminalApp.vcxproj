@@ -17,9 +17,9 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+  <Import Project="$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
@@ -28,15 +28,15 @@
   <ItemGroup>
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in TerminalAppLib.vcxproj instead! -->
-    <ClInclude Include="AppLogic.h" />
+    <ClInclude Include="../AppLogic.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="TerminalPage.h" />
-    <ClInclude Include="MinMaxCloseControl.h" />
-    <ClInclude Include="AppKeyBindings.h" />
-    <ClInclude Include="TitlebarControl.h" />
-    <ClInclude Include="TabRowControl.h" />
-    <ClInclude Include="App.h" />
-    <ClInclude Include="Tab.h" />
+    <ClInclude Include="../TerminalPage.h" />
+    <ClInclude Include="../MinMaxCloseControl.h" />
+    <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../TitlebarControl.h" />
+    <ClInclude Include="../TabRowControl.h" />
+    <ClInclude Include="../App.h" />
+    <ClInclude Include="../Tab.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -72,14 +72,14 @@
     <!-- Reference TerminalAppLib here, so we can use it's TerminalApp.winmd as
     our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalAppLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
   </ItemGroup>
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>

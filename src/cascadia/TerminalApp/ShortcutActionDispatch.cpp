@@ -226,9 +226,9 @@ namespace winrt::TerminalApp::implementation
             _CloseTabsAfterHandlers(*this, *eventArgs);
             break;
         }
-        case ShortcutAction::ToggleTabSwitcher:
+        case ShortcutAction::TabSearch:
         {
-            _ToggleTabSwitcherHandlers(*this, *eventArgs);
+            _TabSearchHandlers(*this, *eventArgs);
             break;
         }
         default:

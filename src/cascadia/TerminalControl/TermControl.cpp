@@ -156,6 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     scrollBar.Maximum(update.newMaximum);
                     scrollBar.Minimum(update.newMinimum);
                     scrollBar.ViewportSize(update.newViewportSize);
+                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.)); // scroll one "screenful" at a time when the scroll bar is clicked
 
                     control->_isInternalScrollBarUpdate = false;
                 }
@@ -699,6 +700,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBar().Minimum(0);
             ScrollBar().Value(0);
             ScrollBar().ViewportSize(bufferHeight);
+            ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
             localPointerToThread->EnablePainting();
 
@@ -1081,6 +1083,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+            const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
             if (_CanSendVTMouseInput())
             {
@@ -1121,7 +1124,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 // Update the selection appropriately
-                if (shiftEnabled && _terminal->IsSelectionActive())
+                if (ctrlEnabled && multiClickMapper == 1 &&
+                    !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+                {
+                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                }
+                else if (shiftEnabled && _terminal->IsSelectionActive())
                 {
                     // Shift+Click: only set expand on the "end" selection point
                     _terminal->SetSelectionEnd(terminalPosition, mode);
@@ -1244,6 +1252,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 else
                 {
                     _TryStopAutoScroll(ptr.PointerId());
+                }
+            }
+            const auto terminalPos = _GetTerminalPosition(point.Position());
+            if (terminalPos != _lastHoveredCell)
+            {
+                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
+                if (!uri.empty())
+                {
+                    // Update the tooltip with the URI
+                    HoveredUri().Text(uri);
+
+                    // Set the border thickness so it covers the entire cell
+                    const auto charSizeInPixels = CharacterDimensions();
+                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                    HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                    // Compute the location of the top left corner of the cell in DIPS
+                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                    const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::size fontSize{ _actualFont.GetSize() };
+                    const til::point posInPixels{ startPos * fontSize };
+                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                    // Move the border to the top left corner of the cell
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                }
+                _lastHoveredCell = terminalPos;
+
+                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
+                // If the hyperlink ID changed, trigger a redraw all (so this will happen both when we move
+                // onto a link and when we move off a link)
+                if (newId != _lastHoveredId)
+                {
+                    _renderEngine->UpdateHyperlinkHoveredId(newId);
+                    _renderer->TriggerRedrawAll();
+                    _lastHoveredId = newId;
                 }
             }
         }
@@ -2837,6 +2885,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsGlyphVisible(false);
     }
 
+    // Method description:
+    // - Checks if the uri is valid and sends an event if so
+    // Arguments:
+    // - The uri
+    void TermControl::_HyperlinkHandler(const std::wstring_view uri)
+    {
+        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring{ uri });
+        _openHyperlinkHandlers(*this, *hyperlinkArgs);
+    }
+
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
     winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
@@ -2882,5 +2940,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
     // clang-format on
 }

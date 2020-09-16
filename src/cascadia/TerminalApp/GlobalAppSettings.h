@@ -14,11 +14,12 @@ Author(s):
 
 --*/
 #pragma once
-#include "AppKeyBindings.h"
-#include "Command.h"
-#include "SettingsTypes.h"
 
-#include "ColorScheme.g.h"
+#include "GlobalAppSettings.g.h"
+
+#include "KeyMapping.h"
+#include "Command.h"
+#include "ColorScheme.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -27,72 +28,66 @@ namespace TerminalAppLocalTests
     class ColorSchemeTests;
 };
 
-namespace TerminalApp
+namespace winrt::TerminalApp::implementation
 {
-    class GlobalAppSettings;
-};
+    struct GlobalAppSettings : GlobalAppSettingsT<GlobalAppSettings>
+    {
+    public:
+        GlobalAppSettings();
 
-class TerminalApp::GlobalAppSettings final
-{
-public:
-    GlobalAppSettings();
-    ~GlobalAppSettings();
+        Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme> ColorSchemes() noexcept;
+        void AddColorScheme(const TerminalApp::ColorScheme& scheme);
 
-    std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& GetColorSchemes() noexcept;
-    const std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme>& GetColorSchemes() const noexcept;
-    void AddColorScheme(winrt::TerminalApp::ColorScheme scheme);
+        TerminalApp::KeyMapping KeyMap() const noexcept;
 
-    winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+        static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
+        void LayerJson(const Json::Value& json);
 
-    static GlobalAppSettings FromJson(const Json::Value& json);
-    void LayerJson(const Json::Value& json);
+        std::vector<TerminalApp::SettingsLoadWarnings> KeybindingsWarnings() const;
 
-    void ApplyToSettings(winrt::TerminalApp::TerminalSettings& settings) const noexcept;
+        Windows::Foundation::Collections::IMapView<hstring, TerminalApp::Command> Commands() noexcept;
 
-    std::vector<TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
+        // These are implemented manually to handle the string/GUID exchange
+        // by higher layers in the app.
+        void DefaultProfile(const guid& defaultProfile) noexcept;
+        guid DefaultProfile() const;
+        hstring UnparsedDefaultProfile() const;
 
-    const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() const noexcept;
-    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command>& GetCommands() noexcept;
+        GETSET_PROPERTY(int32_t, InitialRows, DEFAULT_ROWS);
+        GETSET_PROPERTY(int32_t, InitialCols, DEFAULT_COLS);
+        GETSET_PROPERTY(bool, AlwaysShowTabs, true);
+        GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
+        GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
+        GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
+        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+        GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
+        GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
+        GETSET_PROPERTY(bool, CopyOnSelect, false);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
+        GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
+        GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
+        GETSET_PROPERTY(winrt::TerminalApp::LaunchPosition, InitialPosition, nullptr, nullptr);
+        GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
+        GETSET_PROPERTY(bool, SnapToGridOnResize, true);
+        GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
+        GETSET_PROPERTY(bool, SoftwareRendering, false);
+        GETSET_PROPERTY(bool, ForceVTInput, false);
+        GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
+        GETSET_PROPERTY(bool, StartOnUserLogin, false);
+        GETSET_PROPERTY(bool, AlwaysOnTop, false);
+        GETSET_PROPERTY(bool, UseTabSwitcher, true);
 
-    // These are implemented manually to handle the string/GUID exchange
-    // by higher layers in the app.
-    void DefaultProfile(const GUID defaultProfile) noexcept;
-    GUID DefaultProfile() const;
-    std::optional<std::wstring> UnparsedDefaultProfile() const;
+    private:
+        hstring _unparsedDefaultProfile;
+        guid _defaultProfile;
 
-    GETSET_PROPERTY(int32_t, InitialRows); // default value set in constructor
-    GETSET_PROPERTY(int32_t, InitialCols); // default value set in constructor
-    GETSET_PROPERTY(bool, AlwaysShowTabs, true);
-    GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
-    GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
-    GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-    GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-    GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
-    GETSET_PROPERTY(std::wstring, WordDelimiters); // default value set in constructor
-    GETSET_PROPERTY(bool, CopyOnSelect, false);
-    GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
-    GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
-    GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
-    GETSET_PROPERTY(LaunchPosition, InitialPosition);
-    GETSET_PROPERTY(winrt::TerminalApp::LaunchMode, LaunchMode, winrt::TerminalApp::LaunchMode::DefaultMode);
-    GETSET_PROPERTY(bool, SnapToGridOnResize, true);
-    GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
-    GETSET_PROPERTY(bool, SoftwareRendering, false);
-    GETSET_PROPERTY(bool, ForceVTInput, false);
-    GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
-    GETSET_PROPERTY(bool, StartOnUserLogin, false);
-    GETSET_PROPERTY(bool, AlwaysOnTop, false);
+        com_ptr<KeyMapping> _keymap;
+        std::vector<TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
-private:
-    std::optional<std::wstring> _unparsedDefaultProfile;
-    GUID _defaultProfile;
+        Windows::Foundation::Collections::IMap<hstring, TerminalApp::ColorScheme> _colorSchemes;
+        Windows::Foundation::Collections::IMap<hstring, TerminalApp::Command> _commands;
 
-    winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
-    std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
-
-    std::unordered_map<std::wstring, winrt::TerminalApp::ColorScheme> _colorSchemes;
-    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _commands;
-
-    friend class TerminalAppLocalTests::SettingsTests;
-    friend class TerminalAppLocalTests::ColorSchemeTests;
-};
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::ColorSchemeTests;
+    };
+}

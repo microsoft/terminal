@@ -134,16 +134,11 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
     {
-        UInt32 Index { get; };
+        Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
     [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
     {
-        UInt32 Index { get; };
-    };
-
-    [default_interface] runtimeclass ToggleTabSwitcherArgs : IActionArgs
-    {
-        Windows.System.VirtualKey AnchorKey { get; };
+        Windows.Foundation.IReference<UInt32> Index { get; };
     };
 }

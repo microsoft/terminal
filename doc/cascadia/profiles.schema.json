@@ -63,7 +63,7 @@
         "setTabColor",
         "splitPane",
         "switchToTab",
-        "tabSwitcher",
+        "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
         "toggleFullscreen",
@@ -370,7 +370,7 @@
           }
         }
       ],
-      "required": [ "name" ]
+      "required": [ "colorScheme" ]
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
@@ -397,14 +397,16 @@
           "properties": {
             "action": { "type": "string", "pattern": "closeOtherTabs" },
             "index": {
-              "type": "integer",
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
               "default": "",
-              "description": "close the tabs following the tab at this index"
+              "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
-      ],
-      "required": [ "index" ]
+      ]
     },
     "CloseTabsAfterAction": {
       "description": "Arguments for a closeTabsAfter action",
@@ -414,26 +416,12 @@
           "properties": {
             "action": { "type": "string", "pattern": "closeTabsAfter" },
             "index": {
-              "type": "integer",
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
               "default": "",
-              "description": "close the tabs other than the one at this index"
-            }
-          }
-        }
-      ],
-      "required": [ "index" ]
-    },
-    "TabSwitcherAction": {
-      "description": "Arguments corresponding to a Tab Switcher Action",
-      "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        {
-          "properties": {
-            "action": { "type": "string", "pattern": "tabSwitcher" },
-            "anchorKey": {
-              "$ref": "#/definitions/AnchorKey",
-              "default": null,
-              "description": "If provided, the tab switcher will stay open as long as the anchor key is held down. The anchor key should be part of the keybinding that opens the switcher."
+              "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
@@ -460,7 +448,6 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
-              { "$ref": "#/definitions/TabSwitcherAction" },
               { "type": "null" }
             ]
         },
@@ -630,6 +617,11 @@
         "confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
+          "type": "boolean"
+        },
+        "useTabSwitcher": {
+          "default": true,
+          "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
           "type": "boolean"
         }
       },

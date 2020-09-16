@@ -22,7 +22,6 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::TerminalApp::implementation
 {
     CommandPalette::CommandPalette() :
-        _anchorKey{ VirtualKey::None },
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
@@ -51,20 +50,16 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
-                if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+                if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
-                    if (_anchorKey != VirtualKey::None)
-                    {
-                        _searchBox().Visibility(Visibility::Collapsed);
-                        _filteredActionsView().Focus(FocusState::Keyboard);
-                    }
-                    else
-                    {
-                        _searchBox().Focus(FocusState::Programmatic);
-                    }
-
+                    _searchBox().Visibility(Visibility::Collapsed);
+                    _filteredActionsView().Focus(FocusState::Keyboard);
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+
+                    // Do this right after becoming visible so we can quickly catch scenarios where
+                    // modifiers aren't held down (e.g. command palette invocation).
+                    _anchorKeyUpHandler();
                 }
                 else
                 {
@@ -94,7 +89,7 @@ namespace winrt::TerminalApp::implementation
         // when the ListView has been measured out and is ready, and we'll immediately
         // revoke the handler because we only needed to handle it once on initialization.
         _sizeChangedRevoker = _filteredActionsView().SizeChanged(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
-            if (_currentMode == CommandPaletteMode::TabSwitcherMode && _anchorKey != VirtualKey::None)
+            if (_currentMode == CommandPaletteMode::TabSwitchMode)
             {
                 _filteredActionsView().Focus(FocusState::Keyboard);
             }
@@ -110,7 +105,7 @@ namespace winrt::TerminalApp::implementation
     //   list. Otherwise, we're attempting to move to the previous.
     // Return Value:
     // - <none>
-    void CommandPalette::_selectNextItem(const bool moveDown)
+    void CommandPalette::SelectNextItem(const bool moveDown)
     {
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
@@ -134,19 +129,17 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode &&
-            key == VirtualKey::Tab &&
-            _anchorKey != VirtualKey::None)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && key == VirtualKey::Tab)
         {
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                _selectNextItem(false);
+                SelectNextItem(false);
                 e.Handled(true);
             }
             else
             {
-                _selectNextItem(true);
+                SelectNextItem(true);
                 e.Handled(true);
             }
         }
@@ -168,66 +161,149 @@ namespace winrt::TerminalApp::implementation
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
-            _selectNextItem(false);
+            SelectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
             // Action Mode: Move focus to the previous item in the list.
-            _selectNextItem(true);
+            SelectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
         {
-            // Action Mode: Dispatch the action of the selected command.
-
-            if (const auto selectedItem = _filteredActionsView().SelectedItem())
+            // Action, TabSwitch or TabSearchMode Mode: Dispatch the action of the selected command.
+            if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                {
+                    _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                }
+            }
+            // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
+            else if (_currentMode == CommandPaletteMode::CommandlineMode)
+            {
+                _dispatchCommandline();
             }
 
             e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
         {
-            // Action Mode: Dismiss the palette if the text is empty, otherwise clear the search string.
-            if (_searchBox().Text().empty())
+            // Action, TabSearch, TabSwitch Mode: Dismiss the palette if the
+            // text is empty, otherwise clear the search string.
+            if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                _dismissPalette();
+                if (_searchBox().Text().empty())
+                {
+                    _dismissPalette();
+                }
+                else
+                {
+                    _searchBox().Text(L"");
+                }
             }
-            else
+            else if (_currentMode == CommandPaletteMode::CommandlineMode)
             {
-                _searchBox().Text(L"");
+                const auto currentInput = _getPostPrefixInput();
+                if (currentInput.empty())
+                {
+                    // The user's only input "> " so far. We should just dismiss
+                    // the palette. This is like dismissing the Action mode with
+                    // empty input.
+                    _dismissPalette();
+                }
+                else
+                {
+                    // Clear out the current input. We'll leave a ">" in the
+                    // input (to stay in commandline mode), and a leading space
+                    // (if they currently had one).
+                    const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
+                    _searchBox().Text(hasLeadingSpace ? L"> " : L">");
+
+                    // This will conveniently move the cursor to the end of the
+                    // text input for us.
+                    _searchBox().Select(_searchBox().Text().size(), 0);
+                }
             }
 
             e.Handled(true);
         }
+        else
+        {
+            const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
+
+            // In the interest of not telling all modes to check for keybindings, limit to TabSwitch mode for now.
+            if (_currentMode == CommandPaletteMode::TabSwitchMode)
+            {
+                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+                auto success = _bindings.TryKeyChord({
+                    ctrlDown,
+                    altDown,
+                    shiftDown,
+                    vkey,
+                });
+
+                if (success)
+                {
+                    e.Handled(true);
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - Implements the Alt handler
+    // Return value:
+    // - whether the key was handled
+    bool CommandPalette::OnDirectKeyEvent(const uint32_t vkey, const uint8_t /*scanCode*/, const bool down)
+    {
+        auto handled = false;
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            if (vkey == VK_MENU && !down)
+            {
+                _anchorKeyUpHandler();
+                handled = true;
+            }
+        }
+        return handled;
     }
 
     void CommandPalette::_keyUpHandler(IInspectable const& /*sender*/,
                                        Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        auto key = e.OriginalKey();
-
-        if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
-            if (_anchorKey && key == _anchorKey.value())
+            _anchorKeyUpHandler();
+            e.Handled(true);
+        }
+    }
+
+    // Method Description:
+    // - Handles anchor key ups during TabSwitchMode.
+    //   We assume that at least one modifier key should be held down in order to "anchor"
+    //   the ATS UI in place. So this function is called to check if any modifiers are
+    //   still held down, and if not, dispatch the selected tab action and close the ATS.
+    // Return value:
+    // - <none>
+    void CommandPalette::_anchorKeyUpHandler()
+    {
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+        if (!ctrlDown && !altDown && !shiftDown)
+        {
+            if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                // Once the user lifts the anchor key, we'll switch to the currently selected tab
-                // then close the tab switcher.
-
-                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                if (const auto data = selectedItem.try_as<TerminalApp::Command>())
                 {
-                    if (const auto data = selectedItem.try_as<TerminalApp::Command>())
-                    {
-                        const auto actionAndArgs = data.Action();
-                        _dispatch.DoAction(actionAndArgs);
-                        _updateFilteredActions();
-                        _dismissPalette();
-                    }
+                    _dispatchCommand(data);
                 }
-
-                e.Handled(true);
             }
         }
     }
@@ -317,8 +393,11 @@ namespace winrt::TerminalApp::implementation
             }
 
             return _allCommands;
-        case CommandPaletteMode::TabSwitcherMode:
+        case CommandPaletteMode::TabSearchMode:
+        case CommandPaletteMode::TabSwitchMode:
             return _allTabActions;
+        case CommandPaletteMode::CommandlineMode:
+            return winrt::single_threaded_vector<TerminalApp::Command>();
         default:
             return _allCommands;
         }
@@ -380,6 +459,72 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get all the input text in _searchBox that follows the prefix character
+    //   and any whitespace following that prefix character. This can be used in
+    //   commandline mode to get all the useful input that the user input after
+    //   the leading ">" prefix.
+    // - Note that this will behave unexpectedly in Action Mode.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the string of input following the prefix character.
+    std::wstring CommandPalette::_getPostPrefixInput()
+    {
+        const std::wstring input{ _searchBox().Text() };
+        if (input.empty())
+        {
+            return input;
+        }
+
+        const auto rawCmdline{ input.substr(1) };
+
+        // Trim leading whitespace
+        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
+        if (firstNonSpace == std::wstring::npos)
+        {
+            // All the following characters are whitespace.
+            return L"";
+        }
+
+        return rawCmdline.substr(firstNonSpace);
+    }
+
+    // Method Description:
+    // - Dispatch the current search text as a ExecuteCommandline action.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_dispatchCommandline()
+    {
+        const auto input = _getPostPrefixInput();
+        if (input.empty())
+        {
+            return;
+        }
+        winrt::hstring cmdline{ input };
+
+        // Build the ExecuteCommandline action from the values we've parsed on the commandline.
+        auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+        executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        args->Commandline(cmdline);
+        executeActionAndArgs->Args(*args);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "CommandPaletteDispatchedCommandline",
+            TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        if (_dispatch.DoAction(*executeActionAndArgs))
+        {
+            _close();
+        }
+    }
+
+    // Method Description:
     // - Helper method for closing the command palette, when the user has _not_
     //   selected an action. Also fires a tracelogging event indicating that the
     //   user closed the palette without running a command.
@@ -409,15 +554,44 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
+        if (_currentMode == CommandPaletteMode::CommandlineMode || _currentMode == CommandPaletteMode::ActionMode)
+        {
+            _evaluatePrefix();
+        }
+
         _updateFilteredActions();
         _filteredActionsView().SelectedIndex(0);
 
         _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
     }
 
+    void CommandPalette::_evaluatePrefix()
+    {
+        auto newMode = CommandPaletteMode::ActionMode;
+
+        auto inputText = _searchBox().Text();
+        if (inputText.size() > 0)
+        {
+            if (inputText[0] == L'>')
+            {
+                newMode = CommandPaletteMode::CommandlineMode;
+            }
+        }
+
+        if (newMode != _currentMode)
+        {
+            _switchToMode(newMode);
+        }
+    }
+
     Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
     {
         return _filteredActions;
+    }
+
+    void CommandPalette::SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
+    {
+        _bindings = bindings;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<TerminalApp::Command> const& actions)
@@ -455,13 +629,18 @@ namespace winrt::TerminalApp::implementation
         // whenever _switchToMode is called.
         switch (_currentMode)
         {
-        case CommandPaletteMode::TabSwitcherMode:
+        case CommandPaletteMode::TabSearchMode:
+        case CommandPaletteMode::TabSwitchMode:
         {
             SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
             NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
             ControlName(RS_(L"TabSwitcherControlName"));
             break;
         }
+        case CommandPaletteMode::CommandlineMode:
+            NoMatchesText(RS_(L"CmdPalCommandlinePrompt"));
+            ControlName(RS_(L"CommandPaletteControlName"));
+            break;
         case CommandPaletteMode::ActionMode:
         default:
             SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
@@ -530,7 +709,7 @@ namespace winrt::TerminalApp::implementation
         {
             // If TabSwitcherMode, just add all as is. We don't want
             // them to be sorted alphabetically.
-            if (_currentMode == CommandPaletteMode::TabSwitcherMode)
+            if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::TabSwitchMode)
             {
                 for (auto action : commandsToFilter)
                 {
@@ -617,6 +796,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_updateFilteredActions()
     {
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            _filteredActions.Clear();
+            return;
+        }
+
         auto actions = _collectFilteredActions();
 
         // Make _filteredActions look identical to actions, using only Insert and Remove.
@@ -899,11 +1084,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const VirtualKey& anchorKey, const uint32_t startIdx)
+    void CommandPalette::EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx)
     {
         _switcherStartIdx = startIdx;
-        _anchorKey = anchorKey;
-        _switchToMode(CommandPaletteMode::TabSwitcherMode);
+
+        if (searchMode)
+        {
+            _switchToMode(CommandPaletteMode::TabSearchMode);
+        }
+        else
+        {
+            _switchToMode(CommandPaletteMode::TabSwitchMode);
+        }
+
         _updateFilteredActions();
     }
 }

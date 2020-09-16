@@ -1562,6 +1562,24 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetColor(cursorColor);
 }
 
+void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
+                       const std::wstring_view uri,
+                       const std::wstring_view params)
+{
+    auto attr = screenInfo.GetAttributes();
+    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(params);
+    attr.SetHyperlinkId(id);
+    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+    screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
+}
+
+void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
+{
+    auto attr = screenInfo.GetAttributes();
+    attr.SetHyperlinkId(0);
+    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+}
+
 // Routine Description:
 // - A private API call for forcing the renderer to repaint the screen. If the
 //      input screen buffer is not the active one, then just do nothing. We only

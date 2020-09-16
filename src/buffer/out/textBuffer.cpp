@@ -34,7 +34,8 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _storage{},
     _unicodeStorage{},
     _renderTarget{ renderTarget },
-    _size{}
+    _size{},
+    _currentHyperlinkId{ 1 }
 {
     // initialize ROWs
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
@@ -551,7 +552,10 @@ bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     _renderTarget.TriggerCircling();
 
-    // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
+    // Prune hyperlinks to delete obsolete references
+    _PruneHyperlinks();
+
+    // Second, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
     auto fillAttributes = _currentAttributes;
     if (inVtMode)
     {
@@ -1183,6 +1187,46 @@ const COORD TextBuffer::_GetWordEndForSelection(const COORD target, const std::w
     }
 
     return result;
+}
+
+void TextBuffer::_PruneHyperlinks()
+{
+    // Check the old first row for hyperlink references
+    // If there are any, search the entire buffer for the same reference
+    // If the buffer does not contain the same reference, we can remove that hyperlink from our map
+    // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
+    // Get all the hyperlink references in the row we're erasing
+    auto firstRowRefs = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
+    if (!firstRowRefs.empty())
+    {
+        const auto total = TotalRowCount();
+        // Loop through all the rows in the buffer except the first row -
+        // we have found all hyperlink references in the first row and put them in refs,
+        // now we need to search the rest of the buffer (i.e. all the rows except the first)
+        // to see if those references are anywhere else
+        for (size_t i = 1; i != total; ++i)
+        {
+            const auto nextRowRefs = GetRowByOffset(i).GetAttrRow().GetHyperlinks();
+            for (auto id : nextRowRefs)
+            {
+                if (firstRowRefs.find(id) != firstRowRefs.end())
+                {
+                    firstRowRefs.erase(id);
+                }
+            }
+            if (firstRowRefs.empty())
+            {
+                // No more hyperlink references left to search for, terminate early
+                break;
+            }
+        }
+    }
+
+    // Now delete obsolete references from our map
+    for (auto hyperlinkReference : firstRowRefs)
+    {
+        RemoveHyperlinkFromMap(hyperlinkReference);
+    }
 }
 
 // Method Description:
@@ -2142,6 +2186,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     {
         // Finish copying remaining parameters from the old text buffer to the new one
         newBuffer.CopyProperties(oldBuffer);
+        newBuffer.CopyHyperlinkMaps(oldBuffer);
 
         // If we found where to put the cursor while placing characters into the buffer,
         //   just put the cursor there. Otherwise we have to advance manually.
@@ -2206,4 +2251,105 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     }
 
     return hr;
+}
+
+// Method Description:
+// - Adds or updates a hyperlink in our hyperlink table
+// Arguments:
+// - The hyperlink URI, the hyperlink id (could be new or old)
+void TextBuffer::AddHyperlinkToMap(std::wstring_view uri, uint16_t id)
+{
+    _hyperlinkMap[id] = uri;
+}
+
+// Method Description:
+// - Retrieves the URI associated with a particular hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The URI
+std::wstring TextBuffer::GetHyperlinkUriFromId(uint16_t id) const
+{
+    return _hyperlinkMap.at(id);
+}
+
+// Method description:
+// - Provides the hyperlink ID to be assigned as a text attribute, based on the optional custom id provided
+// Arguments:
+// - The user-defined id
+// Return value:
+// - The internal hyperlink ID
+uint16_t TextBuffer::GetHyperlinkId(std::wstring_view params)
+{
+    uint16_t id = 0;
+    if (params.empty())
+    {
+        // no custom id specified, return our internal count
+        id = _currentHyperlinkId;
+        ++_currentHyperlinkId;
+    }
+    else
+    {
+        // assign _currentHyperlinkId if the custom id does not already exist
+        const auto result = _hyperlinkCustomIdMap.emplace(params, _currentHyperlinkId);
+        if (result.second)
+        {
+            // the custom id did not already exist
+            ++_currentHyperlinkId;
+        }
+        id = (*(result.first)).second;
+    }
+    // _currentHyperlinkId could overflow, make sure its not 0
+    if (_currentHyperlinkId == 0)
+    {
+        ++_currentHyperlinkId;
+    }
+    return id;
+}
+
+// Method Description:
+// - Removes a hyperlink from the hyperlink map and the associated
+//   user defined id from the custom id map (if there is one)
+// Arguments:
+// - The ID of the hyperlink to be removed
+void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
+{
+    _hyperlinkMap.erase(id);
+    for (const auto& customIdPair : _hyperlinkCustomIdMap)
+    {
+        if (customIdPair.second == id)
+        {
+            _hyperlinkCustomIdMap.erase(customIdPair.first);
+            break;
+        }
+    }
+}
+
+// Method Description:
+// - Obtains the custom ID, if there was one, associated with the
+//   uint16_t id of a hyperlink
+// Arguments:
+// - The uint16_t id of the hyperlink
+// Return Value:
+// - The custom ID if there was one, empty string otherwise
+std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
+{
+    for (auto customIdPair : _hyperlinkCustomIdMap)
+    {
+        if (customIdPair.second == id)
+        {
+            return customIdPair.first;
+        }
+    }
+    return {};
+}
+
+// Method Description:
+// - Copies the hyperlink/customID maps of the old buffer into this one
+// Arguments:
+// - The other buffer
+void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
+{
+    _hyperlinkMap = other._hyperlinkMap;
+    _hyperlinkCustomIdMap = other._hyperlinkCustomIdMap;
 }

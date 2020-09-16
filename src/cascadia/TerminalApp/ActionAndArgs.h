@@ -9,7 +9,7 @@ namespace winrt::TerminalApp::implementation
     {
         static const std::map<std::string_view, ShortcutAction, std::less<>> ActionKeyNamesMap;
         static winrt::com_ptr<ActionAndArgs> FromJson(const Json::Value& json,
-                                                      std::vector<::TerminalApp::SettingsLoadWarnings>& warnings);
+                                                      std::vector<TerminalApp::SettingsLoadWarnings>& warnings);
 
         ActionAndArgs() = default;
         hstring GenerateName() const;

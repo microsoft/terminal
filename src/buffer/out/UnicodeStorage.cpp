@@ -35,12 +35,7 @@ void UnicodeStorage::StoreGlyph(const key_type key, const mapped_type& glyph)
 // - erases key and its associated data from the storage
 // Arguments:
 // - key - the key to remove
-// ~~~~~~~~~~~~~~
-// NOTE: VS 16.7 changes std::map::erase to noexcept, but the build agents are still 16.6.5.
-// Ignore this audit warning on your dev box until the build starts failing. Then fix it
-// and remove this comment.
-// ~~~~~~~~~~~~~
-void UnicodeStorage::Erase(const key_type key)
+void UnicodeStorage::Erase(const key_type key) noexcept
 {
     _map.erase(key);
 }

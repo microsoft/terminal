@@ -618,7 +618,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                                   &_d2dBrushForeground));
 
-        const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
+        _strokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
             D2D1_CAP_STYLE_SQUARE, // dashCap
@@ -627,7 +627,19 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
             D2D1_DASH_STYLE_SOLID, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_strokeStyle));
+
+        _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
+            D2D1_CAP_STYLE_SQUARE, // startCap
+            D2D1_CAP_STYLE_SQUARE, // endCap
+            D2D1_CAP_STYLE_SQUARE, // dashCap
+            D2D1_LINE_JOIN_MITER, // lineJoin
+            0.f, // miterLimit
+            D2D1_DASH_STYLE_DASH, // dashStyle
+            0.f, // dashOffset
+        };
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1488,9 +1500,12 @@ try
     const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
     const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept
-    {
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
         _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
+    };
+
+    const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
     };
 
     // NOTE: Line coordinates are centered within the line, so they need to be
@@ -1544,17 +1559,26 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline))
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + _lineMetrics.underlineOffset;
 
-        DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        if (lines & GridLines::Underline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::HyperlinkUnderline)
+        {
+            DrawHyperlinkLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
 
         if (lines & GridLines::DoubleUnderline)
         {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
             const auto y2 = target.y + _lineMetrics.underlineOffset2;
             DrawLine(startX, y2, endX, y2, _lineMetrics.underlineWidth);
         }
@@ -1714,6 +1738,11 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+    }
+
+    if (textAttributes.IsHyperlink())
+    {
+        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
     }
 
     return S_OK;
@@ -2403,6 +2432,16 @@ try
     LOG_IF_FAILED(InvalidateAll());
 }
 CATCH_LOG()
+
+// Method Description:
+// - Updates our internal tracker for which hyperlink ID we are hovering over
+//   This is needed for UpdateDrawingBrushes to know where we need to set a different style
+// Arguments:
+// - The new link ID we are hovering over
+void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
+{
+    _hyperlinkHoveredId = hoveredId;
+}
 
 // Method Description:
 // - Informs this render engine about certain state for this frame at the

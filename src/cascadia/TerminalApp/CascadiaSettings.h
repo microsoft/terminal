@@ -16,12 +16,15 @@ Author(s):
 
 --*/
 #pragma once
+
+#include "CascadiaSettings.g.h"
+
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
-#include "Profile.h"
 #include "IDynamicProfileGenerator.h"
 
+#include "Profile.h"
 #include "ColorScheme.h"
 
 // fwdecl unittest classes
@@ -42,7 +45,6 @@ namespace TerminalAppUnitTests
 namespace TerminalApp
 {
     class SettingsTypedDeserializationException;
-    class CascadiaSettings;
 };
 
 class TerminalApp::SettingsTypedDeserializationException final : public std::runtime_error
@@ -52,94 +54,100 @@ public:
         runtime_error(description.data()) {}
 };
 
-class TerminalApp::CascadiaSettings final
+namespace winrt::TerminalApp::implementation
 {
-public:
-    CascadiaSettings();
-    explicit CascadiaSettings(const bool addDynamicProfiles);
+    struct CascadiaSettings : CascadiaSettingsT<CascadiaSettings>
+    {
+    public:
+        CascadiaSettings();
+        explicit CascadiaSettings(const bool addDynamicProfiles);
 
-    static std::unique_ptr<CascadiaSettings> LoadDefaults();
-    static std::unique_ptr<CascadiaSettings> LoadAll();
-    static std::unique_ptr<CascadiaSettings> LoadUniversal();
+        static TerminalApp::CascadiaSettings LoadDefaults();
+        static TerminalApp::CascadiaSettings LoadAll();
+        static TerminalApp::CascadiaSettings LoadUniversal();
 
-    static const CascadiaSettings& GetCurrentAppSettings();
+        TerminalApp::GlobalAppSettings GlobalSettings() const;
 
-    std::tuple<GUID, winrt::TerminalApp::TerminalSettings> BuildSettings(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
-    winrt::TerminalApp::TerminalSettings BuildSettings(GUID profileGuid) const;
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::Profile> Profiles() const noexcept;
 
-    GlobalAppSettings& GlobalSettings();
+        TerminalApp::KeyMapping KeyMap() const noexcept;
 
-    gsl::span<const Profile> GetProfiles() const noexcept;
+        static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
+        void LayerJson(const Json::Value& json);
 
-    winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+        static std::filesystem::path GetSettingsPath();
+        static std::filesystem::path GetDefaultSettingsPath();
 
-    static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
-    void LayerJson(const Json::Value& json);
+        TerminalApp::Profile FindProfile(guid profileGuid) const noexcept;
+        TerminalApp::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 
-    static std::filesystem::path GetSettingsPath();
-    static std::filesystem::path GetDefaultSettingsPath();
+        Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
+        Windows::Foundation::IReference<SettingsLoadErrors> GetLoadingError();
+        hstring GetSerializationErrorMessage();
 
-    const Profile* FindProfile(GUID profileGuid) const noexcept;
-    const winrt::TerminalApp::ColorScheme GetColorSchemeForProfile(const GUID profileGuid) const;
+        winrt::guid GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
-    std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
+    private:
+        com_ptr<GlobalAppSettings> _globals;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Profile> _profiles;
+        Windows::Foundation::Collections::IVector<TerminalApp::SettingsLoadWarnings> _warnings;
+        Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
+        hstring _deserializationErrorMessage;
 
-    bool ApplyColorScheme(winrt::Microsoft::Terminal::TerminalControl::IControlSettings& settings, std::wstring_view schemeName);
+        std::vector<std::unique_ptr<::TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
 
-private:
-    GlobalAppSettings _globals;
-    std::vector<Profile> _profiles;
-    std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
+        std::string _userSettingsString;
+        Json::Value _userSettings;
+        Json::Value _defaultSettings;
+        Json::Value _userDefaultProfileSettings{ Json::Value::null };
 
-    std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
+        void _LayerOrCreateProfile(const Json::Value& profileJson);
+        winrt::com_ptr<winrt::TerminalApp::implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
+        void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
+        winrt::com_ptr<winrt::TerminalApp::implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
+        void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
+        static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
+        static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
+        bool _PrependSchemaDirective();
+        bool _AppendDynamicProfilesToUserSettings();
+        std::string _ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const;
 
-    std::string _userSettingsString;
-    Json::Value _userSettings;
-    Json::Value _defaultSettings;
-    Json::Value _userDefaultProfileSettings{ Json::Value::null };
+        void _ApplyDefaultsFromUserSettings();
 
-    void _LayerOrCreateProfile(const Json::Value& profileJson);
-    Profile* _FindMatchingProfile(const Json::Value& profileJson);
-    void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
-    winrt::com_ptr<winrt::TerminalApp::implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
-    void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
-    static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
-    static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
-    bool _PrependSchemaDirective();
-    bool _AppendDynamicProfilesToUserSettings();
-    std::string _ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const;
+        void _LoadDynamicProfiles();
 
-    void _ApplyDefaultsFromUserSettings();
+        static bool _IsPackaged();
+        static void _WriteSettings(const std::string_view content);
+        static std::optional<std::string> _ReadUserSettings();
+        static std::optional<std::string> _ReadFile(HANDLE hFile);
 
-    void _LoadDynamicProfiles();
+        std::optional<guid> _GetProfileGuidByName(const hstring) const;
+        std::optional<guid> _GetProfileGuidByIndex(std::optional<int> index) const;
 
-    static bool _IsPackaged();
-    static void _WriteSettings(const std::string_view content);
-    static std::optional<std::string> _ReadUserSettings();
-    static std::optional<std::string> _ReadFile(HANDLE hFile);
+        void _ValidateSettings();
+        void _ValidateProfilesExist();
+        void _ValidateProfilesHaveGuid();
+        void _ValidateDefaultProfileExists();
+        void _ValidateNoDuplicateProfiles();
+        void _ResolveDefaultProfile();
+        void _ReorderProfilesToMatchUserSettingsOrder();
+        void _RemoveHiddenProfiles();
+        void _ValidateAllSchemesExist();
+        void _ValidateMediaResources();
+        void _ValidateKeybindings();
+        void _ValidateNoGlobalsKey();
 
-    std::optional<GUID> _GetProfileGuidByName(const std::wstring_view) const;
-    std::optional<GUID> _GetProfileGuidByIndex(std::optional<int> index) const;
-    GUID _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::ProfileTests;
+        friend class TerminalAppLocalTests::ColorSchemeTests;
+        friend class TerminalAppLocalTests::KeyBindingsTests;
+        friend class TerminalAppLocalTests::TabTests;
+        friend class TerminalAppUnitTests::DynamicProfileTests;
+        friend class TerminalAppUnitTests::JsonTests;
+    };
+}
 
-    void _ValidateSettings();
-    void _ValidateProfilesExist();
-    void _ValidateProfilesHaveGuid();
-    void _ValidateDefaultProfileExists();
-    void _ValidateNoDuplicateProfiles();
-    void _ResolveDefaultProfile();
-    void _ReorderProfilesToMatchUserSettingsOrder();
-    void _RemoveHiddenProfiles();
-    void _ValidateAllSchemesExist();
-    void _ValidateMediaResources();
-    void _ValidateKeybindings();
-    void _ValidateNoGlobalsKey();
-
-    friend class TerminalAppLocalTests::SettingsTests;
-    friend class TerminalAppLocalTests::ProfileTests;
-    friend class TerminalAppLocalTests::ColorSchemeTests;
-    friend class TerminalAppLocalTests::KeyBindingsTests;
-    friend class TerminalAppLocalTests::TabTests;
-    friend class TerminalAppUnitTests::DynamicProfileTests;
-    friend class TerminalAppUnitTests::JsonTests;
-};
+namespace winrt::TerminalApp::factory_implementation
+{
+    BASIC_FACTORY(CascadiaSettings);
+}

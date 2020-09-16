@@ -176,6 +176,23 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
 }
 
 // Routine Description:
+// - Finds the hyperlink IDs present in this row and returns them
+// Return value:
+// - An unordered set containing the hyperlink IDs present in this row
+std::unordered_set<uint16_t> ATTR_ROW::GetHyperlinks()
+{
+    std::unordered_set<uint16_t> ids;
+    for (const auto& run : _list)
+    {
+        if (run.GetAttributes().IsHyperlink())
+        {
+            ids.emplace(run.GetAttributes().GetHyperlinkId());
+        }
+    }
+    return ids;
+}
+
+// Routine Description:
 // - Sets the attributes (colors) of all character positions from the given position through the end of the row.
 // Arguments:
 // - iStart - Starting index position within the row

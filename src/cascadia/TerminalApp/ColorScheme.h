@@ -15,8 +15,8 @@ Author(s):
 
 --*/
 #pragma once
-#include "TerminalSettings.h"
 #include "../../inc/conattrs.hpp"
+#include "inc/cppwinrt_utils.h"
 
 #include "ColorScheme.g.h"
 
@@ -35,8 +35,6 @@ namespace winrt::TerminalApp::implementation
         ColorScheme();
         ColorScheme(hstring name, Windows::UI::Color defaultFg, Windows::UI::Color defaultBg, Windows::UI::Color cursorColor);
         ~ColorScheme();
-
-        void ApplyScheme(const winrt::Microsoft::Terminal::TerminalControl::IControlSettings& terminalSettings) const;
 
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         bool ShouldBeLayered(const Json::Value& json) const;

@@ -583,7 +583,7 @@ class UiaTextRangeTests
                 {
                     5,
                     {4 , 0 + 1},
-                    {5 , 0 + 1}
+                    {4 , 0 + 1}
                 }
             },
 
@@ -693,6 +693,30 @@ class UiaTextRangeTests
                     0,
                     {0, bottomRow},
                     {0, bottomRow}
+                }
+            },
+
+            MoveTest{
+                L"can move to a new row when necessary when moving forward",
+                { lastColumnIndex, 0 },
+                { lastColumnIndex, 0 },
+                5,
+                {
+                    5,
+                    {0, 0 + 5},
+                    {0, 0 + 5}
+                }
+            },
+
+            MoveTest{
+                L"can move to a new row when necessary when moving backward",
+                { 0, 7 },
+                { 0, 7 },
+                -5,
+                {
+                    -5,
+                    {0, 7 - 5},
+                    {0, 7 - 5}
                 }
             }
         };

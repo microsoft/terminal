@@ -37,9 +37,8 @@ static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
-static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
-static constexpr std::string_view TabSwitcherKey{ "tabSwitcher" };
+static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
@@ -96,7 +95,7 @@ namespace winrt::TerminalApp::implementation
         { SetTabColorKey, ShortcutAction::SetTabColor },
         { SplitPaneKey, ShortcutAction::SplitPane },
         { SwitchToTabKey, ShortcutAction::SwitchToTab },
-        { TabSwitcherKey, ShortcutAction::ToggleTabSwitcher },
+        { TabSearchKey, ShortcutAction::TabSearch },
         { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
@@ -106,7 +105,7 @@ namespace winrt::TerminalApp::implementation
         { UnboundKey, ShortcutAction::Invalid },
     };
 
-    using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+    using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
     using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
     // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
@@ -130,7 +129,6 @@ namespace winrt::TerminalApp::implementation
         { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
         { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
         { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
-        { ShortcutAction::ToggleTabSwitcher, ToggleTabSwitcherArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -171,7 +169,7 @@ namespace winrt::TerminalApp::implementation
     // - a deserialized ActionAndArgs corresponding to the values in json, or
     //   null if we failed to deserialize an action.
     winrt::com_ptr<ActionAndArgs> ActionAndArgs::FromJson(const Json::Value& json,
-                                                          std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                                          std::vector<TerminalApp::SettingsLoadWarnings>& warnings)
     {
         // Invalid is our placeholder that the action was not parsed.
         ShortcutAction action = ShortcutAction::Invalid;
@@ -210,7 +208,7 @@ namespace winrt::TerminalApp::implementation
         // does, we'll try to deserialize any "args" that were provided with
         // the binding.
         IActionArgs args{ nullptr };
-        std::vector<::TerminalApp::SettingsLoadWarnings> parseWarnings;
+        std::vector<TerminalApp::SettingsLoadWarnings> parseWarnings;
         const auto deserializersIter = argParsers.find(action);
         if (deserializersIter != argParsers.end())
         {
@@ -280,6 +278,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
