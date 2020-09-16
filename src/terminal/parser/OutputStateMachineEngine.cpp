@@ -737,7 +737,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     bool queryClipboard = false;
     std::vector<size_t> tableIndexes;
     std::vector<DWORD> colors;
-    DWORD color = 0;
 
     switch (parameter)
     {
@@ -758,8 +757,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         break;
     case OscActionCodes::ResetCursorColor:
-        // the console uses 0xffffffff as an "invalid color" value
-        color = 0xffffffff;
         success = true;
         break;
     case OscActionCodes::Hyperlink:
@@ -806,7 +803,7 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetCursorColor:
             if (colors.size() > 0)
             {
-                success = _dispatch->SetCursorColor(color);
+                success = _dispatch->SetCursorColor(colors.at(0));
             }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
@@ -818,6 +815,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
             break;
         case OscActionCodes::ResetCursorColor:
+            // the console uses 0xffffffff as an "invalid color" value
+            DWORD color = 0xffffffff;
             success = _dispatch->SetCursorColor(color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
@@ -1516,6 +1515,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 // - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const noexcept
+try
 {
     rgbs.clear();
 
@@ -1558,6 +1558,7 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
 
     return success;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
