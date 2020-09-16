@@ -406,15 +406,15 @@ void CascadiaSettings::_LoadProtoExtensions()
 
     if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal")))
     {
-        std::unordered_set<std::string> jsonStubs;
-        _AccumulateJsonStubsInDirectory(LocalAppDataFolder, jsonStubs);
-        _AddOrModifyProfiles(jsonStubs, winrt::to_hstring(LocalSource));
+        std::unordered_set<std::string> jsonFiles;
+        _AccumulateJsonFilesInDirectory(LocalAppDataFolder, jsonFiles);
+        _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(LocalSource));
     }
     if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramData%\\Microsoft\\Windows\\Terminal")))
     {
-        std::unordered_set<std::string> jsonStubs;
-        _AccumulateJsonStubsInDirectory(ProgramDataFolder, jsonStubs);
-        _AddOrModifyProfiles(jsonStubs, winrt::to_hstring(GlobalSource));
+        std::unordered_set<std::string> jsonFiles;
+        _AccumulateJsonFilesInDirectory(ProgramDataFolder, jsonFiles);
+        _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(GlobalSource));
     }
 }
 
@@ -423,7 +423,7 @@ void CascadiaSettings::_LoadProtoExtensions()
 // Arguments:
 // - directory: the directory to search
 // - out: pointer to the set where we should add the files found
-void CascadiaSettings::_AccumulateJsonStubsInDirectory(const std::wstring_view directory, std::unordered_set<std::string>& out)
+void CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory, std::unordered_set<std::string>& out)
 {
     const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
     for (auto& protoExt : std::filesystem::directory_iterator(root))
@@ -448,41 +448,48 @@ void CascadiaSettings::_AccumulateJsonStubsInDirectory(const std::wstring_view d
 }
 
 // Method Description:
-// - Given a set of json stubs, uses them to modify existing profiles or
+// - Given a set of json files, uses them to modify existing profiles or
 //   create new ones
 // Arguments:
-// - stubs: the set of json stubs
-// - source: the location the stubs came from (to add to newly created profiles)
-void CascadiaSettings::_AddOrModifyProfiles(std::unordered_set<std::string> stubs, const winrt::hstring source)
+// - stubs: the set of json files
+// - source: the location the files came from (to add to newly created profiles)
+void CascadiaSettings::_AddOrModifyProfiles(std::unordered_set<std::string> files, const winrt::hstring source)
 {
-    for (auto stub : stubs)
+    for (auto file : files)
     {
-        Json::Value res;
+        Json::Value fullFile;
 
         // Note: we don't use _ParseJsonString because it wants to write into the user settings or default settings,
         // but we don't want to do either here - we just want to append to our profiles vector and let the
         // _AppendDynamicProfilesToUserSettings function that gets called later handle the writeback
-        _ParseJsonInto(stub.data(), res);
+        _ParseJsonInto(file.data(), fullFile);
 
-        auto pProfile = _FindMatchingProfile(res);
-        if (pProfile)
+        if (fullFile.isMember(JsonKey("profiles")))
         {
-            // We found a matching profile, so this is just a modification that we should layer
-            pProfile->LayerJson(res);
-        }
-        else
-        {
-            // This is a new profile
-            if (res.isMember(JsonKey(NameKey)) && res.isMember(JsonKey(CommandLineKey)))
+            const auto list = fullFile[JsonKey("profiles")];
+            for (const auto stub : list)
             {
-                auto profile = winrt::make_self<Profile>();
-                if (_userDefaultProfileSettings)
+                auto pProfile = _FindMatchingProfile(stub);
+                if (pProfile)
                 {
-                    profile->LayerJson(_userDefaultProfileSettings);
+                    // We found a matching profile, so this is just a modification that we should layer
+                    pProfile->LayerJson(stub);
                 }
-                profile->LayerJson(res);
-                profile->Source(source);
-                _profiles.Append(*profile);
+                else
+                {
+                    // This is a new profile
+                    if (stub.isMember(JsonKey(NameKey)) && stub.isMember(JsonKey(CommandLineKey)))
+                    {
+                        auto profile = winrt::make_self<Profile>();
+                        if (_userDefaultProfileSettings)
+                        {
+                            profile->LayerJson(_userDefaultProfileSettings);
+                        }
+                        profile->LayerJson(stub);
+                        profile->Source(source);
+                        _profiles.Append(*profile);
+                    }
+                }
             }
         }
     }
