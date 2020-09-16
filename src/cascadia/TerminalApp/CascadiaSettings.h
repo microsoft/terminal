@@ -108,6 +108,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<winrt::TerminalApp::implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
         void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
         winrt::com_ptr<winrt::TerminalApp::implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
+        void _ParseJsonInto(std::string_view fileData, Json::Value& result);
         void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
         static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
         static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
@@ -120,7 +121,7 @@ namespace winrt::TerminalApp::implementation
         void _LoadDynamicProfiles();
         void _LoadProtoExtensions();
         void _AccumulateJsonStubsInDirectory(const std::wstring_view directory, std::unordered_set<std::string>& out);
-        void _AddOrModifyProfiles(std::unordered_set<std::string> stubs, winrt::hstring source);
+        void _AddOrModifyProfiles(std::unordered_set<std::string> stubs, const winrt::hstring source);
 
         static bool _IsPackaged();
         static void _WriteSettings(const std::string_view content);
