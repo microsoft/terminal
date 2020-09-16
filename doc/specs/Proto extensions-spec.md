@@ -234,7 +234,9 @@ that apps should be able to access. It will be on us to create the folder `Termi
 In the second case, the installation is only for the current user. For this case, the installer should add the
 json files to the local folder:
 
-```C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal```
+```
+C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal
+```
 
 This is also where independent users will add their own json files for Terminal to generate/modify profiles.
 
