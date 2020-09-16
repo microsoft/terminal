@@ -46,7 +46,6 @@ static constexpr std::string_view GlobalSource{ "global" };
 static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal" };
 static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows\\Terminal" };
 
-
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
     size_t line = 1, column = position + 1;
@@ -418,7 +417,7 @@ void CascadiaSettings::_LoadProtoExtensions()
 }
 
 // Method Description:
-// - Finds all the json files within the given directory 
+// - Finds all the json files within the given directory
 // Arguments:
 // - directory: the directory to search
 // - out: pointer to the set where we should add the files found
@@ -538,7 +537,7 @@ void CascadiaSettings::_ParseJsonInto(std::string_view fileData, Json::Value& re
 
     std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-    
+
     // `parse` will return false if it fails.
     if (!reader->parse(actualDataStart, actualDataEnd, &result, &errs))
     {
