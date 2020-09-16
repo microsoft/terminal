@@ -1417,12 +1417,12 @@ try
             //  there's no param
             ++current;
 
-            // Now we try to parse the RGB color value from the string.
+            // We have found the table index. Now we need to parse the RGB color value from the string.
             std::optional<til::color> colorOptional;
 
             // Find the next ';' to determine how to substr.
             // For example if the string is '0;rgb:1/1/1;1;rgb/2/2/2', we will need
-            // to correctly recognize both "rgb:1/1/1;1" and "rgb/2/2/2".
+            // to correctly recognize both "0;rgb:1/1/1;" and "1;rgb/2/2/2".
             const auto nextDelimiter = string.find(L";", current);
             if (nextDelimiter == std::wstring::npos)
             {
