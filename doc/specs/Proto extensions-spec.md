@@ -47,6 +47,16 @@ in between 2 and 3:
 
 As written above, the json stubs could be modifications to existing profiles, additions to full profiles, or additions of colour schemes.
 
+To allow modifications/additions of several profiles in one file and to allow the addition of several colour schemes in one json file,
+these stubs should be put into lists in the json file: one list named ```profiles``` and the other list named ```schemes```. For example:
+
+```js
+{
+    "profiles": [ modifications and additions of profiles go here ],
+    "schemes": [ additions of colour schemes go here ]
+}
+```
+
 #### Modifications to existing profiles
 
 The main thing to note for modification of existing profiles is that this will only be used for modifying the
@@ -66,13 +76,17 @@ We might run into the case where multiple json stubs modify the same profile and
 are simply going to apply _all_ the changes. Eventually, we will probably want some sort of hierarchy to determine
 an order to which changes are applied.
 
-Here is an example of a json stub that modifies an existing profile (specifically the Azure cloud shell profile):
+Here is an example of a json file that modifies an existing profile (specifically the Azure cloud shell profile):
 
 ```js
 {
-    "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
-    "fontSize": 16,
-    "fontWeight": "thin"
+    "profiles": [
+        {
+            "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+            "fontSize": 16,
+            "fontWeight": "thin"
+        }
+    ]
 }
 ```
 
@@ -105,16 +119,20 @@ Furthermore, we will add a source field to profiles created this way (again, sim
 The source field value is dependent on how we obtained this json file, and will be touched on in more detail later in the
 spec (see "Creation and location(s) of the json files" - "The source field"). 
 
-Here is an example of a json stub that contains a full profile:
+Here is an example of a json file that contains a full profile:
 
 ```js
 {
-    "guid": "{a821ae62-9d4a-3e34-b989-0a998ec283e6}",
-    "name": "Cool Profile",
-    "commandline": "powershell.exe",
-    "antialiasingMode": "aliased",
-    "fontWeight": "bold",
-    "scrollbarState": "hidden"
+    "profiles": [
+        {
+            "guid": "{a821ae62-9d4a-3e34-b989-0a998ec283e6}",
+            "name": "Cool Profile",
+            "commandline": "powershell.exe",
+            "antialiasingMode": "aliased",
+            "fontWeight": "bold",
+            "scrollbarState": "hidden"
+        }
+    ]
 }
 ```
 
@@ -147,9 +165,13 @@ Here is an example of a json stub that contains a colour scheme:
 
 ```js
 {
-    "name": "Postmodern Tango Light",
-    "background": '#61D6D6',
-    "foreground": '#E74856'
+    "schemes": [
+        {
+            "name": "Postmodern Tango Light",
+            "background": '#61D6D6',
+            "foreground": '#E74856'
+        }
+    ]
 }
 ```
 
