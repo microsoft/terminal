@@ -35,6 +35,8 @@ static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view CommandLineKey{ "commandline" };
+static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view ForegroundKey{ "foreground" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
@@ -380,8 +382,8 @@ void CascadiaSettings::_LoadDynamicProfiles()
 
 // Method Description:
 // - Searches the local app data folder, global app data folder and app
-//   extensions for json stubs we should use to create new profiles or
-//   modify existing ones
+//   extensions for json stubs we should use to create new profiles,
+//   modify existing profiles or add new colour schemes
 // - If the user settings has any namespaces in the "disabledProfileSources"
 //   property, we'll ensure that the corresponding folders do not get searched
 void CascadiaSettings::_LoadProtoExtensions()
@@ -448,46 +450,62 @@ void CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view d
 }
 
 // Method Description:
-// - Given a set of json files, uses them to modify existing profiles or
-//   create new ones
+// - Given a set of json files, uses them to modify existing profiles,
+//   create new profiles, and create new colour schemes
 // Arguments:
 // - stubs: the set of json files
-// - source: the location the files came from (to add to newly created profiles)
+// - source: the location the files came from
 void CascadiaSettings::_AddOrModifyProfiles(std::unordered_set<std::string> files, const winrt::hstring source)
 {
-    for (auto file : files)
+    for (const auto file : files)
     {
         Json::Value fullFile;
 
-        // Note: we don't use _ParseJsonString because it wants to write into the user settings or default settings,
-        // but we don't want to do either here - we just want to append to our profiles vector and let the
-        // _AppendDynamicProfilesToUserSettings function that gets called later handle the writeback
         _ParseJsonInto(file.data(), fullFile);
 
-        if (fullFile.isMember(JsonKey("profiles")))
+        if (fullFile.isMember(JsonKey(ProfilesKey)))
         {
-            const auto list = fullFile[JsonKey("profiles")];
-            for (const auto stub : list)
+            for (const auto profileStub : fullFile[JsonKey(ProfilesKey)])
             {
-                auto pProfile = _FindMatchingProfile(stub);
-                if (pProfile)
+                auto matchingProfile = _FindMatchingProfile(profileStub);
+                if (matchingProfile)
                 {
                     // We found a matching profile, so this is just a modification that we should layer
-                    pProfile->LayerJson(stub);
+                    matchingProfile->LayerJson(profileStub);
                 }
                 else
                 {
                     // This is a new profile
-                    if (stub.isMember(JsonKey(NameKey)) && stub.isMember(JsonKey(CommandLineKey)))
+                    if (profileStub.isMember(JsonKey(NameKey)) && profileStub.isMember(JsonKey(CommandLineKey)))
                     {
-                        auto profile = winrt::make_self<Profile>();
+                        auto newProfile = winrt::make_self<Profile>();
                         if (_userDefaultProfileSettings)
                         {
-                            profile->LayerJson(_userDefaultProfileSettings);
+                            newProfile->LayerJson(_userDefaultProfileSettings);
                         }
-                        profile->LayerJson(stub);
-                        profile->Source(source);
-                        _profiles.Append(*profile);
+                        newProfile->LayerJson(profileStub);
+                        newProfile->Source(source);
+                        _profiles.Append(*newProfile);
+                    }
+                }
+            }
+        }
+
+        if (fullFile.isMember(JsonKey(SchemesKey)))
+        {
+            for (const auto schemeStub : fullFile[JsonKey(SchemesKey)])
+            {
+                auto matchingScheme = _FindMatchingColorScheme(schemeStub);
+                if (matchingScheme)
+                {
+                    // we do not allow modifications to existing colour schemes
+                }
+                else
+                {
+                    if (schemeStub.isMember(JsonKey(NameKey)) && schemeStub.isMember(JsonKey(BackgroundKey)) && schemeStub.isMember(JsonKey(ForegroundKey)))
+                    {
+                        const auto newScheme = ColorScheme::FromJson(schemeStub);
+                        _globals->AddColorScheme(*newScheme);
                     }
                 }
             }
