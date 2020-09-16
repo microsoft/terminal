@@ -1383,13 +1383,13 @@ static constexpr bool _isNumber(const wchar_t wch) noexcept
 //      spec: The colors are specified by name or RGB specification as per XParseColor
 //
 //   It's possible to have multiple "c ; spec" pairs, which will set the index "c" of the color table
-//   with color parsed from "spec".
+//   with color parsed from "spec" for each pair respectively.
 // Arguments:
 // - string - the Osc String to parse
-// - tableIndex - receives the table index
-// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
+// - tableIndexes - receives the table indexes
+// - rgbs - receives the colors that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if a table index and color was parsed successfully. False otherwise.
+// - True if at least one table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
                                                     std::vector<size_t>& tableIndexes,
                                                     std::vector<DWORD>& rgbs) const noexcept
@@ -1413,11 +1413,12 @@ try
         }
         else if (wch == L';' && current > 0)
         {
-            // We need to explicitly pass in a number, we can't default to 0 if
+            // We have found the table index and can move on.
+            // We need to explicitly know the table index, we can't default to 0 if
             //  there's no param
             ++current;
 
-            // We have found the table index. Now we need to parse the RGB color value from the string.
+            // Now we need to parse the RGB color value from the string.
             std::optional<til::color> colorOptional;
 
             // Find the next ';' to determine how to substr.
@@ -1499,19 +1500,19 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST
-//      spec: The colors are specified by name or RGB specification as per
+//      spec: The colors are specified by name or RGB specification as per XParseColor
 //
 //   It's possible to have multiple "spec", which by design equals to a series of OSC command
-//   with accumulated Ps. For example "OSC 10;color1;11;color2" is effectively an "OSC 10;color1"
+//   with accumulated Ps. For example "OSC 10;color1;color2" is effectively an "OSC 10;color1"
 //   and an "OSC 11;color2".
 //
 //   However, we do not support the chaining of OSC 10-17 yet. Right now only the first parameter
 //   will take effect.
 // Arguments:
 // - string - the Osc String to parse
-// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
+// - rgbs - receives the colors that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if a table index and color was parsed successfully. False otherwise.
+// - True if the first table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const noexcept
 try

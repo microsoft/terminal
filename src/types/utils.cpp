@@ -156,15 +156,11 @@ try
     if (stringSize > 4)
     {
         auto prefix = std::wstring(string.substr(0, 4));
-        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
-            // Replace characters beyond ASCII range with space to prevent possible issues
-            // with towlower under different locales.
-            if (x > 0x7f)
-            {
-                return 0x20ui16; // Space
-            }
 
-            return ::towlower(x);
+        // The "rgb:" indicator should be case insensitive. To prevent possible issues under
+        // different locales, transform only ASCII range latin characters.
+        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
+            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(x - L'A' + L'a') : x;
         });
 
         if (prefix.compare(L"rgb:") == 0)
@@ -212,85 +208,89 @@ try
         }
     }
 
-    if (foundXParseColorSpec)
+    // No valid spec is found. Return early.
+    if (!foundXParseColorSpec)
     {
-        for (size_t component = 0; component < 3; component++)
+        return std::nullopt;
+    }
+
+    // Try to parse the actual color value of each component.
+    for (size_t component = 0; component < 3; component++)
+    {
+        bool foundColor = false;
+        auto& parameterValue = til::at(parameterValues, component);
+        // For "sharp sign" format, the rgbHexDigitCount is known.
+        // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
+        const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
+        for (size_t i = 0; i < iteration && curr < string.cend(); i++)
         {
-            bool foundColor = false;
-            auto& parameterValue = til::at(parameterValues, component);
-            // For "sharp sign" format, the rgbHexDigitCount is known.
-            // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
-            const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
-            for (size_t i = 0; i < iteration && curr < string.cend(); i++)
+            const wchar_t wch = *curr++;
+
+            parameterValue *= 16;
+            unsigned int intVal = 0;
+            const auto ret = HexToUint(wch, intVal);
+            if (!ret)
             {
-                const wchar_t wch = *curr++;
-
-                parameterValue *= 16;
-                unsigned int intVal = 0;
-                const auto ret = HexToUint(wch, intVal);
-                if (!ret)
-                {
-                    // Encountered something weird oh no
-                    return std::nullopt;
-                }
-
-                parameterValue += intVal;
-
-                if (isSharpSignFormat)
-                {
-                    // If we get this far, any number can be seen as a valid part
-                    // of this component.
-                    foundColor = true;
-
-                    if (i >= rgbHexDigitCount)
-                    {
-                        // Successfully parsed this component. Start the next one.
-                        break;
-                    }
-                }
-                else
-                {
-                    // Record the hex digit count of the current component.
-                    rgbHexDigitCount = i + 1;
-
-                    // If this is the first 2 component...
-                    if (component < 2 && curr < string.cend() && *curr == L'/')
-                    {
-                        // ...and we have successfully parsed this component, we need
-                        // to skip the delimiter before starting the next one.
-                        curr++;
-                        foundColor = true;
-                        break;
-                    }
-                    // Or we have reached the end of the string...
-                    else if (curr >= string.cend())
-                    {
-                        // ...meaning that this is the last component. We're not going to
-                        // see any delimiter. We can just break out.
-                        foundColor = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!foundColor)
-            {
-                // Indicates there was some error parsing color.
+                // Encountered something weird oh no
                 return std::nullopt;
             }
 
-            // Calculate the actual color value based on the hex digit count.
-            auto& colorValue = til::at(colorValues, component);
-            const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
-            const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
-            colorValue = parameterValue * scaleMultiplier / scaleDivisor;
+            parameterValue += intVal;
+
+            if (isSharpSignFormat)
+            {
+                // If we get this far, any number can be seen as a valid part
+                // of this component.
+                foundColor = true;
+
+                if (i >= rgbHexDigitCount)
+                {
+                    // Successfully parsed this component. Start the next one.
+                    break;
+                }
+            }
+            else
+            {
+                // Record the hex digit count of the current component.
+                rgbHexDigitCount = i + 1;
+
+                // If this is the first 2 component...
+                if (component < 2 && curr < string.cend() && *curr == L'/')
+                {
+                    // ...and we have successfully parsed this component, we need
+                    // to skip the delimiter before starting the next one.
+                    curr++;
+                    foundColor = true;
+                    break;
+                }
+                // Or we have reached the end of the string...
+                else if (curr >= string.cend())
+                {
+                    // ...meaning that this is the last component. We're not going to
+                    // see any delimiter. We can just break out.
+                    foundColor = true;
+                    break;
+                }
+            }
         }
 
-        if (curr >= string.cend())
+        if (!foundColor)
         {
-            // We're at the end of the string and we have successfully parsed the color.
-            foundValidColorSpec = true;
+            // Indicates there was some error parsing color.
+            return std::nullopt;
         }
+
+        // Calculate the actual color value based on the hex digit count.
+        auto& colorValue = til::at(colorValues, component);
+        const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
+        const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
+        colorValue = parameterValue * scaleMultiplier / scaleDivisor;
+    }
+
+    if (curr >= string.cend())
+    {
+        // We're at the end of the string and we have successfully parsed the color.
+        foundValidColorSpec = true;
     }
 
     // Only if we find a valid colorspec can we pass it out successfully.
