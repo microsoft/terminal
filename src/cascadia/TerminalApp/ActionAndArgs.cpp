@@ -22,7 +22,7 @@ static constexpr std::string_view NewTabKey{ "newTab" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
-static constexpr std::string_view OpenSettingsKey{ "openSettings" };
+static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
 static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
@@ -43,7 +43,7 @@ static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
-//static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" }; // TODO GH#7252: Re-enable pane zooming
+static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
 static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
 
 static constexpr std::string_view ActionKey{ "action" };
@@ -283,7 +283,7 @@ namespace winrt::TerminalApp::implementation
                 { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
-                // { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") }, // TODO GH#7252: Re-enable pane zooming
+                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
             };
         }();
