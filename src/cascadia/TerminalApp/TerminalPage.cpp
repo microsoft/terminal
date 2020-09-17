@@ -2524,7 +2524,13 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    void TerminalPage::_UpdateSwitchToTabCommandIndices()
+    // Method Description:
+    // - Updates all tabs with their current index in _tabs.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateTabIndices()
     {
         for (uint32_t i = 0; i < _tabs.Size(); ++i)
         {

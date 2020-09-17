@@ -1035,6 +1035,12 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    // Method Description:
+    // - Initializes a SwitchToTab command object for this Tab instance.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void Tab::_MakeSwitchToTabCommand()
     {
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();

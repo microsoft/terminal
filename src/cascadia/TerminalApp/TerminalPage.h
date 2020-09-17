@@ -93,7 +93,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
-        void _UpdateSwitchToTabCommandIndices();
+        void _UpdateTabIndices();
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
