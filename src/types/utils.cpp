@@ -160,7 +160,7 @@ try
         // The "rgb:" indicator should be case insensitive. To prevent possible issues under
         // different locales, transform only ASCII range latin characters.
         std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
-            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(x - L'A' + L'a') : x;
+            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(std::towlower(x)) : x;
         });
 
         if (prefix.compare(L"rgb:") == 0)

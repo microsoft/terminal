@@ -98,6 +98,7 @@ void UtilsTests::TestGuidToString()
 void UtilsTests::TestColorFromXTermColor()
 {
     _VerifyXTermColorResult(L"rgb:1/1/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rGb:1/1/1", RGB(0x11, 0x11, 0x11));
     _VerifyXTermColorResult(L"RGB:1/1/1", RGB(0x11, 0x11, 0x11));
     _VerifyXTermColorResult(L"rgb:111/1/1", RGB(0x11, 0x11, 0x11));
     _VerifyXTermColorResult(L"rgb:1111/1/1", RGB(0x11, 0x11, 0x11));
@@ -152,6 +153,8 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorInvalid(L"cmyk:1/1/1/1");
     _VerifyXTermColorInvalid(L"rgb#111");
     _VerifyXTermColorInvalid(L"rgb:#111");
+    _VerifyXTermColorInvalid(L"rgb:rgb:1/1/1");
+    _VerifyXTermColorInvalid(L"rgb:rgb:#111");
     _VerifyXTermColorInvalid(L"#");
     _VerifyXTermColorInvalid(L"#1");
     _VerifyXTermColorInvalid(L"#1111");
@@ -162,16 +165,19 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorInvalid(L"#/1/1/1");
     _VerifyXTermColorInvalid(L"#rgb:1/1/1");
     _VerifyXTermColorInvalid(L"#111invalid");
-    _VerifyXTermColorInvalid(L"#1111111111111111");
     _VerifyXTermColorInvalid(L"#invalid111");
+    _VerifyXTermColorInvalid(L"#1111111111111111");
     _VerifyXTermColorInvalid(L"12/34/56");
     _VerifyXTermColorInvalid(L"123456");
     _VerifyXTermColorInvalid(L"rgb：1/1/1");
     _VerifyXTermColorInvalid(L"中文rgb:1/1/1");
     _VerifyXTermColorInvalid(L"rgb中文:1/1/1");
+    _VerifyXTermColorInvalid(L"这是一句中文");
     _VerifyXTermColorInvalid(L"RGBİ1/1/1");
     _VerifyXTermColorInvalid(L"rgbİ1/1/1");
     _VerifyXTermColorInvalid(L"rgbİ:1/1/1");
+    _VerifyXTermColorInvalid(L"rgß:1/1/1");
+    _VerifyXTermColorInvalid(L"rgẞ:1/1/1");
 }
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
