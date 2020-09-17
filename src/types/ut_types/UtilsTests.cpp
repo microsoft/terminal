@@ -168,6 +168,10 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorInvalid(L"123456");
     _VerifyXTermColorInvalid(L"rgb：1/1/1");
     _VerifyXTermColorInvalid(L"中文rgb:1/1/1");
+    _VerifyXTermColorInvalid(L"rgb中文:1/1/1");
+    _VerifyXTermColorInvalid(L"RGBİ1/1/1");
+    _VerifyXTermColorInvalid(L"rgbİ1/1/1");
+    _VerifyXTermColorInvalid(L"rgbİ:1/1/1");
 }
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
