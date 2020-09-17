@@ -10,5 +10,6 @@ namespace TerminalApp
         String Title { get; };
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
         Command SwitchToTabCommand { get; };
+        UInt32 TabViewIndex { get; };
     }
 }

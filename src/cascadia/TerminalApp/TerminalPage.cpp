@@ -166,6 +166,7 @@ namespace winrt::TerminalApp::implementation
                     auto tab = tabs.GetAt(from.value());
                     tabs.RemoveAt(from.value());
                     tabs.InsertAt(to.value(), tab);
+                    page->_UpdateSwitchToTabCommandIndices();
                 }
 
                 page->_rearranging = false;
@@ -687,6 +688,9 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
+        // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
+        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
 
@@ -1066,6 +1070,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
+        _UpdateSwitchToTabCommandIndices();
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
@@ -2517,6 +2522,14 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwaysOnTop;
+    }
+
+    void TerminalPage::_UpdateSwitchToTabCommandIndices()
+    {
+        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        {
+            _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------
