@@ -90,6 +90,7 @@ public:
     bool EraseCharacters(const size_t numChars) noexcept override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool WarningBell() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;

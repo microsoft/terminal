@@ -345,6 +345,22 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+// Method Description:
+// - Plays a warning note, using the sound configured for the "Critical Stop"
+//   system event. This matches the behavior of the Windows Console host.
+// Arguments:
+// - <none>
+// Return Value:
+// - true if succeeded, false otherwise
+bool Terminal::WarningBell() noexcept
+try
+{
+    const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC);
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
 try
 {
