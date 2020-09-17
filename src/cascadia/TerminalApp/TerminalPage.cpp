@@ -166,7 +166,7 @@ namespace winrt::TerminalApp::implementation
                     auto tab = tabs.GetAt(from.value());
                     tabs.RemoveAt(from.value());
                     tabs.InsertAt(to.value(), tab);
-                    page->_UpdateSwitchToTabCommandIndices();
+                    page->_UpdateTabIndices();
                 }
 
                 page->_rearranging = false;
@@ -1070,7 +1070,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
-        _UpdateSwitchToTabCommandIndices();
+        _UpdateTabIndices();
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
