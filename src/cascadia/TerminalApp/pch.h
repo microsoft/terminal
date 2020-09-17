@@ -44,6 +44,8 @@
 #include "winrt/Windows.UI.Xaml.Automation.h"
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
+#include <winrt/Windows.ApplicationModel.AppExtensions.h>
+#include <winrt/Windows.Storage.h>
 
 #include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.h>

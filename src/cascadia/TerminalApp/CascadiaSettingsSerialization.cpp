@@ -47,8 +47,11 @@ static constexpr std::string_view SettingsSchemaFragment{ "\n"
 static constexpr std::string_view jsonExtension{ ".json" };
 static constexpr std::string_view LocalSource{ "local" };
 static constexpr std::string_view GlobalSource{ "global" };
+static constexpr std::string_view AppSource{ "app" };
 static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal" };
 static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows\\Terminal" };
+
+static constexpr std::string_view AppExtensionHostName{ "Microsoft.com.Terminal" };
 
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
@@ -398,14 +401,6 @@ void CascadiaSettings::_LoadProtoExtensions()
         }
     }
 
-    // TODO: Create the folders
-    //                  %ProgramData%\\Microsoft\\Windows\\Terminal
-    //                  %LOCALAPPDATA%\\Microsoft\\Windows\\Terminal
-    // if they did not already exist
-    // QUESTION: should these folder creations happen during installation?
-
-    // TODO: accumulate json stubs from app extensions
-
     if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal")))
     {
         const auto jsonFiles = _AccumulateJsonFilesInDirectory(LocalAppDataFolder);
@@ -415,6 +410,55 @@ void CascadiaSettings::_LoadProtoExtensions()
     {
         const auto jsonFiles = _AccumulateJsonFilesInDirectory(ProgramDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(GlobalSource));
+    }
+    if (ignoredNamespaces.find(L"app") == ignoredNamespaces.end())
+    {
+        const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
+
+        std::condition_variable cv;
+        std::mutex mtx;
+        Windows::Foundation::Collections::IVectorView<Windows::ApplicationModel::AppExtensions::AppExtension> extensions;
+
+        auto lambda = [&]() -> winrt::fire_and_forget {
+            co_await resume_background();
+            const auto localExtensions = catalog.FindAllAsync().get();
+
+            std::unique_lock<std::mutex> lock{ mtx };
+            extensions = localExtensions;
+            cv.notify_all();
+        };
+
+        std::unique_lock<std::mutex> lock{ mtx };
+        lambda();
+        cv.wait(lock);
+
+        for (auto ext : extensions)
+        {
+            std::condition_variable cv2;
+            std::mutex mtx2;
+            Windows::Storage::StorageFolder foundFolder{ nullptr };
+
+            auto lambda2 = [&]() -> winrt::fire_and_forget {
+                co_await resume_background();
+                const auto localFolder = ext.GetPublicFolderAsync().get();
+                std::unique_lock<std::mutex> lock{ mtx2 };
+                foundFolder = localFolder;
+                cv2.notify_all();
+            };
+
+            std::unique_lock<std::mutex> lock2{ mtx2 };
+            lambda2();
+            cv2.wait(lock2);
+
+            // the StorageFolder class has its own methods for obtaining the files within the folder
+            // however, all those methods are Async methods
+            // you may have noticed that we need to resort to clunky implementations for async operations
+            // (they're right above)
+            // so for now we will just take the folder path and access the files that way
+            const auto path = foundFolder.Path();
+            const auto jsonFiles = _AccumulateJsonFilesInDirectory(path);
+            _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(AppSource));
+        }
     }
 }
 
