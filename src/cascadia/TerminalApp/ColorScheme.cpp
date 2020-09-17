@@ -20,6 +20,7 @@ static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
+
 static constexpr std::array<std::string_view, 16> TableColors = {
     "black",
     "red",
@@ -40,26 +41,19 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 };
 
 ColorScheme::ColorScheme() :
-    _schemeName{ L"" },
-    _table{},
-    _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
-    _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
-    _selectionBackground{ DEFAULT_FOREGROUND },
-    _cursorColor{ DEFAULT_CURSOR_COLOR }
+    _Foreground{ DEFAULT_FOREGROUND_WITH_ALPHA },
+    _Background{ DEFAULT_BACKGROUND_WITH_ALPHA },
+    _SelectionBackground{ DEFAULT_FOREGROUND },
+    _CursorColor{ DEFAULT_CURSOR_COLOR }
 {
 }
 
 ColorScheme::ColorScheme(winrt::hstring name, Color defaultFg, Color defaultBg, Color cursorColor) :
-    _schemeName{ name },
-    _table{},
-    _defaultForeground{ defaultFg },
-    _defaultBackground{ defaultBg },
-    _selectionBackground{ DEFAULT_FOREGROUND },
-    _cursorColor{ cursorColor }
-{
-}
-
-ColorScheme::~ColorScheme()
+    _Name{ name },
+    _Foreground{ defaultFg },
+    _Background{ defaultBg },
+    _SelectionBackground{ DEFAULT_FOREGROUND },
+    _CursorColor{ cursorColor }
 {
 }
 
@@ -89,7 +83,7 @@ bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
     std::wstring nameFromJson{};
     if (JsonUtils::GetValueForKey(json, NameKey, nameFromJson))
     {
-        return nameFromJson == _schemeName;
+        return nameFromJson == _Name;
     }
     return false;
 }
@@ -106,50 +100,60 @@ bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void ColorScheme::LayerJson(const Json::Value& json)
 {
-    JsonUtils::GetValueForKey(json, NameKey, _schemeName);
-    JsonUtils::GetValueForKey(json, ForegroundKey, _defaultForeground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _defaultBackground);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _selectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _cursorColor);
+    JsonUtils::GetValueForKey(json, NameKey, _Name);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
-    int i = 0;
-    for (const auto& current : TableColors)
+    for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
-        JsonUtils::GetValueForKey(json, current, _table.at(i));
-        i++;
+        JsonUtils::GetValueForKey(json, til::at(TableColors, i), _table.at(i));
     }
 }
 
-winrt::hstring ColorScheme::Name() const noexcept
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// <none>
+Json::Value ColorScheme::ToJson()
 {
-    return _schemeName;
+    Json::Value json{ Json::ValueType::objectValue };
+
+    JsonUtils::SetValueForKey(json, NameKey, _Name);
+    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
+
+    for (unsigned int i = 0; i < TableColors.size(); ++i)
+    {
+        JsonUtils::SetValueForKey(json, til::at(TableColors, i), _table.at(i));
+    }
+
+    return json;
 }
 
 winrt::com_array<Color> ColorScheme::Table() const noexcept
 {
-    winrt::com_array<Color> result{ COLOR_TABLE_SIZE };
+    winrt::com_array<Color> result{ base::checked_cast<uint32_t>(_table.size()) };
     std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> Color { return c; });
     return result;
 }
 
-Color ColorScheme::Foreground() const noexcept
+// Method Description:
+// - Set a color in the color table
+// Arguments:
+// - index: the index of the desired color within the table
+// - value: the color value we are setting the color table color to
+// Return Value:
+// - none
+void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept
 {
-    return _defaultForeground;
-}
-
-Color ColorScheme::Background() const noexcept
-{
-    return _defaultBackground;
-}
-
-Color ColorScheme::SelectionBackground() const noexcept
-{
-    return _selectionBackground;
-}
-
-Color ColorScheme::CursorColor() const noexcept
-{
-    return _cursorColor;
+    THROW_HR_IF(E_INVALIDARG, index > _table.size() - 1);
+    _table[index] = value;
 }
 
 // Method Description:
