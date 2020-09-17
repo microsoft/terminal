@@ -106,7 +106,7 @@ void ColorScheme::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
-    for (unsigned int i=0; i<TableColors.size(); ++i)
+    for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
         JsonUtils::GetValueForKey(json, til::at(TableColors, i), _table.at(i));
     }
