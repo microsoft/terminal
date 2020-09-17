@@ -1,0 +1,153 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Keybindings"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+        <StackPanel>
+            <TextBlock x:Name="TitleTextBox" 
+                   Text="Keyboard"
+                   Style="{StaticResource HeaderTextBlockStyle}"
+                   Margin="0,0,0,8" />
+
+            <Button Click="Button_Click">Open Window</Button>
+
+            <Popup VerticalOffset="10" HorizontalOffset="200" x:Name="StandardPopup">
+                <Border BorderBrush="{StaticResource ApplicationForegroundThemeBrush}" 
+                Background="{StaticResource ApplicationPageBackgroundThemeBrush}"
+                BorderThickness="1" MinWidth="600" MinHeight="300" MaxHeight="700" Margin="10">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Padding="20">
+                        <TextBlock x:Name="PopupTitleTextBox" Text="Edit" Style="{StaticResource HeaderTextBlockStyle}" Margin="0,8,0,0" />
+                        <TextBlock Text="Command" HorizontalAlignment="Left" Margin="0,8,0,0" />
+                        <ComboBox HorizontalAlignment="Stretch" Name="CommandComboBox" SelectionChanged="CommandComboBox_SelectionChanged" Margin="0,8,0,0">
+                            <!-- Application-level commands -->
+                            <ComboBoxItem Content="Close the window" Tag="closeWindow"/>
+                            <ComboBoxItem Content="Find" Tag="find"/>
+                            <ComboBoxItem Content="Open the new tab dropdown menu" Tag="openNewTabDropdown"/>
+                            <ComboBoxItem Content="Open settings files" Tag="openSettings"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Toggle full screen" Tag="toggleFullscreen"/>
+                            <ComboBoxItem Content="Toggle focus mode" Tag="toggleFocusMode"/>
+                            <ComboBoxItem Content="Toggle always on top mode" Tag="toggleAlwaysOnTop"/>
+
+                            <!-- Tab management commands -->
+                            <ComboBoxItem Content="Close the tab" Tag="closeTab"/>
+                            <ComboBoxItem Content="Duplicate tab" Tag="duplicateTab"/>
+                            <ComboBoxItem Content="New tab" Tag="newTab"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Open next tab" Tag="nextTab"/>
+                            <ComboBoxItem Content="Open previous tab" Tag="prevTab"/>
+                            <ComboBoxItem Content="Open a specific tab" Tag="switchToTab"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Rename tab" Tag="renameTab"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Change tab color" Tag="setTabColor"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Open tab color picker" Tag="openTabColorPicker"/>
+
+                            <!-- Pane management commands -->
+                            <ComboBoxItem Content="Close pane" Tag="closePane"/>
+                            <ComboBoxItem Content="Move pane focus" Tag="moveFocus"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Resize pane" Tag="resizePane"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Split a pane" Tag="splitPane"/> <!-- Can have opt values -->
+
+                            <!-- Clipboard integration commands -->
+                            <ComboBoxItem Content="Copy" Tag="copy"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Paste" Tag="paste"/>
+                            <ComboBoxItem Content="Scroll up" Tag="scrollUp"/>
+                            <ComboBoxItem Content="Scroll down" Tag="scrollDown"/>
+                            <ComboBoxItem Content="Scroll up a whole page" Tag="scrollUpPage"/>
+                            <ComboBoxItem Content="Scroll down a whole page" Tag="scrollDownPage"/>
+
+                            <!-- Visual adjustment commands -->
+                            <ComboBoxItem Content="Adjust font size" Tag="adjustFontSize"/> <!-- Can have opt values -->
+                            <ComboBoxItem Content="Reset font size" Tag="resetFontSize"/>
+                            <ComboBoxItem Content="Toggle retro terminal effects" Tag="toggleRetroEffect"/>
+                        </ComboBox>
+
+                        <StackPanel Visibility="Collapsed" Name="OptionalSettingsPanel">
+                            <TextBlock Text="Arguments" Style="{StaticResource SubheaderTextBlockStyle}" Margin="0,8,0,0"/>
+
+                            <!-- Args for Open Settings -->
+                            <StackPanel x:Name="openSettingsOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Target" />
+                                <TextBox Name="OpenSettingsTarget"/>
+                            </StackPanel>
+
+                            <!-- Args for New Tab -->
+                            <StackPanel x:Name="newTabOptionPanel" Visibility="Collapsed" Orientation="Vertical" Margin="0,8,0,0">
+                            </StackPanel>
+
+                            <!-- Args for Switch To Tab -->
+                            <StackPanel x:Name="switchToTabOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Target" />
+                                <TextBox Name="switchToTabIndex"/>
+                            </StackPanel>
+
+                            <!-- Args for Rename Tab -->
+                            <StackPanel x:Name="renameTabOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Title" />
+                                <TextBox Name="renameTabTextBox"/>
+                            </StackPanel>
+
+                            <!-- Args for Set Tab Color -->
+                            <StackPanel x:Name="setTabColorOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Color" />
+                                <ColorPicker Name="setTabColorTextBox"/>
+                            </StackPanel>
+
+                            <!-- Args for Move Focus and Resize -->
+                            <StackPanel x:Name="moveResizeFocusOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Direction"/>
+                                <ComboBox>
+                                    <ComboBoxItem Content="Left" Tag="left"/>
+                                    <ComboBoxItem Content="Right" Tag="right"/>
+                                    <ComboBoxItem Content="Up" Tag="up"/>
+                                    <ComboBoxItem Content="Down" Tag="down"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Args for Split Pane -->
+                            <StackPanel x:Name="splitPaneOptionPanel" Visibility="Collapsed" Orientation="Vertical" Margin="0,8,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Split" VerticalAlignment="Center" Grid.Column="0"/>
+                                    <ComboBox Name="SplitComboBox" HorizontalAlignment="Stretch" Grid.Column="1">
+                                        <ComboBoxItem Content="Vertical" Tag="vertical"/>
+                                        <ComboBoxItem Content="Horizontal" Tag="horizontal"/>
+                                        <ComboBoxItem Content="Auto" Tag="auto"/>
+                                    </ComboBox>                                    
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Args for Copy -->
+                            <StackPanel x:Name="copyOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <CheckBox x:Name="copyCheckBox" Content="Copy text as a single line" />
+                            </StackPanel>
+
+                            <!-- Args for Adjust Font Size -->
+                            <StackPanel x:Name="adjustFontSizeOptionPanel" Visibility="Collapsed" Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Delta" />
+                                <TextBox Name="deltaTextBox"/>
+                            </StackPanel>
+
+                            <HyperlinkButton Content="+ Add new" Click="AddNewButton_Click" Name="AddNewLink" />
+                        </StackPanel>
+
+                        <TextBlock Text="Keys" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+                        <TextBox Name="KeyBindTextBox" TextChanging="KeyBindTextBox_TextChanging" Margin="0,8,0,0"/>
+
+                        <Button Content="Save" Click="SaveButton_Click" HorizontalAlignment="Right" Margin="0,12,0,0"/>
+                    </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Popup>
+        </StackPanel>
+    </Grid>
+</Page>

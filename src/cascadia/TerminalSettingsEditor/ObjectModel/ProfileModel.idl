@@ -1,0 +1,9 @@
+import "ObjectModel/Profile.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    runtimeclass ProfileModel
+    {
+        Profile Profile { get; };
+    }
+}

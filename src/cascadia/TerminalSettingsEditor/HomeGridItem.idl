@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass HomeGridItem : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Title;
+        String PageTag;
+    }
+}

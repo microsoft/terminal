@@ -1,0 +1,60 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Launch"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Startup"
+                   Style="{StaticResource SubheaderTextBlockStyle}"
+                   Margin="0,0,0,20" />
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+            <TextBox Text="{x:Bind GlobalSettingsModel.GlobalSettings.DefaultProfile}" Header="Default profile" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Profile that opens when clicking the '+' icon or typing the key binding assigned to 'newTab'." ToolTipService.Placement="Mouse" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Content="Launch on machine startup" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, this enables the launch of Windows Terminal at machine startup." ToolTipService.Placement="Mouse" />
+            <Controls:RadioButtons Header="Launch size" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Defines whether the terminal will launch in a window, maximized, or full screen." ToolTipService.Placement="Mouse">
+                <RadioButton x:Name="DefaultLaunchSize" Content="Default"/>
+                <RadioButton x:Name="MaximizedLaunchSize" Content="Maximized"/>
+                <RadioButton x:Name="FullscreenLaunchSize" Content="Full screen"/>
+            </Controls:RadioButtons>
+            <TextBox Text="{x:Bind GlobalSettingsModel.GlobalSettings.LaunchPosition, Mode=TwoWay}" Header="Launch position" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display." ToolTipService.Placement="Mouse"/>
+            <Controls:NumberBox x:Name="InitialCols"
+                                    Header="Columns on first launch" 
+                                    Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialCols, Mode=TwoWay}"
+                                    Margin="0,0,0,20"
+                                    FontSize="15"
+                                    SpinButtonPlacementMode="Compact" 
+                                    SmallChange="10"
+                                    LargeChange="100"
+                                    ToolTipService.ToolTip="The number of columns displayed in the window upon first load."
+                                    ToolTipService.Placement="Mouse"/>
+            <Controls:NumberBox x:Name="InitialRows"
+                                    Header="Rows on first launch" 
+                                    Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialRows, Mode=TwoWay}"
+                                    Margin="0,0,0,20"
+                                    FontSize="15"
+                                    SpinButtonPlacementMode="Compact" 
+                                    SmallChange="10"
+                                    LargeChange="100"
+                                    ToolTipService.ToolTip="The number of rows displayed in the window upon first load."
+                                    ToolTipService.Placement="Mouse"/>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.DisableDynamicProfiles, Mode=TwoWay}" Content="Automatically create new profiles when new shells are installed" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup." ToolTipService.Placement="Mouse" />
+        </StackPanel>
+    </Grid>
+</Page>

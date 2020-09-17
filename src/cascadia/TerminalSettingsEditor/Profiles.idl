@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ObjectModel/ProfileModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
+    {
+        Profiles();
+        Microsoft.Terminal.Settings.Model.ProfileModel ProfileModel { get; };
+    }
+}

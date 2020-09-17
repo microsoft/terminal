@@ -1,0 +1,82 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Globals"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Globals"
+                   Style="{StaticResource HeaderTextBlockStyle}"
+                   Margin="0,0,0,10" />
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+            <TextBlock Text="Appearance"
+                   Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,10" />
+            <Controls:RadioButtons Header="Requested Theme" Margin="0,0,0,10">
+                <RadioButton x:Name="SystemTheme" Content="System"/>
+                <RadioButton x:Name="DarkTheme" Content="Dark"/>
+                <RadioButton x:Name="LightTheme" Content="Light"/>
+            </Controls:RadioButtons>
+            <Controls:RadioButtons Header="Launch mode" Margin="0,0,0,10">
+                <RadioButton x:Name="DefaultLaunchMode" Content="Default"/>
+                <RadioButton x:Name="MaximizedLaunchMode" Content="Maximized"/>
+            </Controls:RadioButtons>
+            <RelativePanel Margin="0,0,0,10">
+                <Controls:NumberBox x:Name="InitialCols"
+                                    Header="Initial Columns" 
+                                    Value="120" 
+                                    SpinButtonPlacementMode="Compact" 
+                                    SmallChange="10"
+                                    LargeChange="100"
+                                    Margin="0,0,20,0"/>
+                <Controls:NumberBox x:Name="InitialRows"
+                                    Header="Initial Rows" 
+                                    Value="30" 
+                                    SpinButtonPlacementMode="Compact" 
+                                    SmallChange="10"
+                                    LargeChange="100"
+                                    Margin="0,0,20,0"
+                                    RelativePanel.RightOf="InitialCols"/>
+                <TextBox Header="Initial position"
+                         RelativePanel.RightOf="InitialRows"/>
+            </RelativePanel>
+            <CheckBox Content="Always show tabs" />
+            <CheckBox Content="Show Terminal title in titlebar" />
+            <CheckBox Content="Show tabs in titlebar" Margin="0,0,0,10" />
+            <Controls:RadioButtons Header="Tab width mode">
+                <RadioButton x:Name="EqualTabWidthMode" Content="Equal"/>
+                <RadioButton x:Name="TitleLengthTabWidthMode" Content="Title length"/>
+            </Controls:RadioButtons>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
+            <TextBlock Text="Interaction"
+                   Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,10" />
+            <TextBox Header="Default profile" Margin="0,0,0,10" />
+            <TextBox Header="Word delimiters" Margin="0,0,0,10" />
+            <CheckBox Content="Confirm close all tabs" />
+            <CheckBox Content="Copy on select" />
+            <CheckBox Content="Snap to grid on resize" Margin="0,0,0,10" />
+            <Controls:NumberBox x:Name="RowsToScroll"
+                                Header="Rows to scroll" 
+                                Value="30" 
+                                SpinButtonPlacementMode="Compact" 
+                                SmallChange="10"
+                                LargeChange="100"
+                                Width="100" HorizontalAlignment="Left"/>
+        </StackPanel>
+    </Grid>
+</Page>

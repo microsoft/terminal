@@ -1,0 +1,31 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Rendering"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Rendering"
+                   Style="{StaticResource SubheaderTextBlockStyle}"
+                   Margin="0,0,0,20" />
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Content="Screen redrawing" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames." ToolTipService.Placement="Mouse" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.SoftwareRendering, Mode=TwoWay}" Content="Software rendering" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one." ToolTipService.Placement="Mouse" />
+        </StackPanel>
+    </Grid>
+</Page>

@@ -1,0 +1,35 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "SettingsTypes.idl";
+
+namespace SettingsControl
+{
+    [default_interface] runtimeclass GlobalSettings {
+        GlobalSettings();
+
+        String UnparsedDefaultProfile();
+
+        Guid DefaultProfile;
+        Int32 InitialRows;
+        Int32 InitialCols;
+        Boolean AlwaysShowTabs;
+        Boolean ShowTitleInTitlebar;
+        Boolean ConfirmCloseAllTabs;
+        Windows.UI.Xaml.ElementTheme Theme;
+        TabWidthMode TabWidth;
+        Boolean ShowTabsInTitlebar;
+        String WordDelimiters;
+        Boolean CopyOnSelect;
+        Boolean CopyFormatting;
+        Boolean WarnAboutLargePaste;
+        Boolean WarnAboutMultiLinePaste;
+        Boolean SnapToGridOnResize;
+        Boolean ForceFullRepaintRendering;
+        Boolean SoftwareRendering;
+        Boolean ForceVTInput;
+        Boolean DebugFeaturesEnabled;
+        Boolean StartOnUserLogin;
+        Boolean AlwaysOnTop;
+    }
+}
