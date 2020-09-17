@@ -21,40 +21,23 @@ static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 
-static constexpr std::string_view BlackKey{ "black" };
-static constexpr std::string_view RedKey{ "red" };
-static constexpr std::string_view GreenKey{ "green" };
-static constexpr std::string_view YellowKey{ "yellow" };
-static constexpr std::string_view BlueKey{ "blue" };
-static constexpr std::string_view PurpleKey{ "purple" };
-static constexpr std::string_view CyanKey{ "cyan" };
-static constexpr std::string_view WhiteKey{ "white" };
-static constexpr std::string_view BrightBlackKey{ "brightBlack" };
-static constexpr std::string_view BrightRedKey{ "brightRed" };
-static constexpr std::string_view BrightGreenKey{ "brightGreen" };
-static constexpr std::string_view BrightYellowKey{ "brightYellow" };
-static constexpr std::string_view BrightBlueKey{ "brightBlue" };
-static constexpr std::string_view BrightPurpleKey{ "brightPurple" };
-static constexpr std::string_view BrightCyanKey{ "brightCyan" };
-static constexpr std::string_view BrightWhiteKey{ "brightWhite" };
-
 static constexpr std::array<std::string_view, 16> TableColors = {
-    BlackKey,
-    RedKey,
-    GreenKey,
-    YellowKey,
-    BlueKey,
-    PurpleKey,
-    CyanKey,
-    WhiteKey,
-    BrightBlackKey,
-    BrightRedKey,
-    BrightGreenKey,
-    BrightYellowKey,
-    BrightBlueKey,
-    BrightPurpleKey,
-    BrightCyanKey,
-    BrightWhiteKey,
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "purple",
+    "cyan",
+    "white",
+    "brightBlack",
+    "brightRed",
+    "brightGreen",
+    "brightYellow",
+    "brightBlue",
+    "brightPurple",
+    "brightCyan",
+    "brightWhite"
 };
 
 ColorScheme::ColorScheme() :
@@ -123,26 +106,10 @@ void ColorScheme::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
-    int i = 0;
-    for (const auto& current : TableColors)
+    for (unsigned int i=0; i<TableColors.size(); ++i)
     {
-        JsonUtils::GetValueForKey(json, current, _table.at(i));
-        i++;
+        JsonUtils::GetValueForKey(json, til::at(TableColors, i), _table.at(i));
     }
-}
-
-// Method Description:
-// - Create a new serialized JsonObject from an instance of this class
-// Arguments:
-// - scheme: a ColorScheme object that will be converted into a serialized JsonObject
-// Return Value:
-// - a serialized JsonObject from the values in scheme
-Json::Value ColorScheme::ToJson(const TerminalApp::ColorScheme& scheme)
-{
-    Json::Value json{ Json::ValueType::objectValue };
-    const auto schemeImpl{ winrt::get_self<implementation::ColorScheme>(scheme) };
-    schemeImpl->UpdateJson(json);
-    return json;
 }
 
 // Method Description:
@@ -159,17 +126,15 @@ void ColorScheme::UpdateJson(Json::Value& json)
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
 
-    int i = 0;
-    for (const auto& current : TableColors)
+    for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
-        JsonUtils::SetValueForKey(json, current, _table.at(i));
-        i++;
+        JsonUtils::SetValueForKey(json, til::at(TableColors, i), _table.at(i));
     }
 }
 
 winrt::com_array<Color> ColorScheme::Table() const noexcept
 {
-    winrt::com_array<Color> result{ COLOR_TABLE_SIZE };
+    winrt::com_array<Color> result{ base::checked_cast<uint32_t>(_table.size()) };
     std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> Color { return c; });
     return result;
 }
@@ -183,7 +148,7 @@ winrt::com_array<Color> ColorScheme::Table() const noexcept
 // - none
 void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept
 {
-    THROW_HR_IF(E_INVALIDARG, index > COLOR_TABLE_SIZE - 1);
+    THROW_HR_IF(E_INVALIDARG, index > _table.size() - 1);
     _table[index] = value;
 }
 

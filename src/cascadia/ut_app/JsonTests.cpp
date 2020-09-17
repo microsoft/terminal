@@ -112,7 +112,8 @@ namespace TerminalAppUnitTests
         }
 
         Log::Comment(L"Roundtrip Test for Color Scheme");
-        const auto outJson = implementation::ColorScheme::ToJson(*scheme);
+        Json::Value outJson{ Json::ValueType::objectValue };
+        scheme->UpdateJson(outJson);
         VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 

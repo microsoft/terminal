@@ -293,7 +293,7 @@ namespace TerminalAppUnitTests
     // versions.
 
     template<typename TExpected, typename TJson>
-    static void TryBasicType(TExpected&& expected, TJson&& json)
+    static void TryBasicType(TExpected&& expected, TJson&& json, std::optional<std::string> overrideToJsonOutput = std::nullopt)
     {
         // test FromJson
         Json::Value jsonObject{ json };
@@ -305,11 +305,18 @@ namespace TerminalAppUnitTests
             const std::string key{ "myKey" };
 
             Json::Value expectedJson{};
-            expectedJson[key] = json;
+            if (overrideToJsonOutput.has_value())
+            {
+                expectedJson[key] = *overrideToJsonOutput;
+            }
+            else
+            {
+                expectedJson[key] = jsonObject;
+            }
 
-            jsonObject = {};
-            SetValueForKey<TExpected>(jsonObject, key, expected);
-            VERIFY_ARE_EQUAL(expectedJson, jsonObject);
+            Json::Value toJsonResult{};
+            SetValueForKey(toJsonResult, key, expected);
+            VERIFY_ARE_EQUAL(expectedJson, toJsonResult);
         }
     }
 
@@ -332,6 +339,7 @@ namespace TerminalAppUnitTests
         TryBasicType(1.0f, 1.0);
 
         TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#ABCDEF");
+        TryBasicType(til::color{ 0xcc, 0xcc, 0xcc }, "#CCC", "#CCCCCC");
 
         static const std::string testGuidString{ "{aa8147aa-e289-4508-be83-fb68361ef2f3}" }; // can't use a string_view; jsoncpp hates it
         static const GUID testGuid{ 0xaa8147aa, 0xe289, 0x4508, { 0xbe, 0x83, 0xfb, 0x68, 0x36, 0x1e, 0xf2, 0xf3 } };

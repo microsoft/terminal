@@ -4,7 +4,6 @@ alignof
 bitfield
 bitfields
 COLORPROPERTY
-COLORTABLEPROPERTY
 CLASSNOTAVAILABLE
 environstrings
 EXPCMDFLAGS

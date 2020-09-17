@@ -39,7 +39,6 @@ namespace winrt::TerminalApp::implementation
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
 
-        static Json::Value ToJson(const TerminalApp::ColorScheme& scheme);
         void UpdateJson(Json::Value& json);
 
         static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
@@ -47,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         com_array<Windows::UI::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
 
-        GETSET_PROPERTY(winrt::hstring, Name, L"");
+        GETSET_PROPERTY(winrt::hstring, Name);
         GETSET_COLORPROPERTY(Foreground); // defined in constructor
         GETSET_COLORPROPERTY(Background); // defined in constructor
         GETSET_COLORPROPERTY(SelectionBackground); // defined in constructor
