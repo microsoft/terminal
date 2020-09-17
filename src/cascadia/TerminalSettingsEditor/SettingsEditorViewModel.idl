@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "HomeGridItem.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass SettingsEditorViewModel
+    {
+        HomeGridItem HomeGridItem { get; };
+        Windows.Foundation.Collections.IObservableVector<HomeGridItem> HomeGridItems { get; };
+    }
+}

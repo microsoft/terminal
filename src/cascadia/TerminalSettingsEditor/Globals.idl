@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface]
+    runtimeclass Globals : Windows.UI.Xaml.Controls.Page
+    {
+        Globals();
+    }
+}

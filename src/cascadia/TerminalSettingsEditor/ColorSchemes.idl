@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ObjectModel/ColorSchemeModel.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
+    {
+        ColorSchemes();
+        Microsoft.Terminal.Settings.Model.ColorSchemeModel ColorSchemeModel { get; };
+    }
+}

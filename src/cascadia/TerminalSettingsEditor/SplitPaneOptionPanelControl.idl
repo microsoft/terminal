@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass SplitPaneOptionPanelControl : Windows.UI.Xaml.Controls.UserControl
+    {
+        SplitPaneOptionPanelControl();
+
+        String Argument();
+        String InputValue();
+    }
+}

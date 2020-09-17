@@ -1,0 +1,33 @@
+﻿<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Page
+    x:Class="Microsoft.Terminal.Settings.Editor.Interaction"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Interaction"
+                   Style="{StaticResource SubheaderTextBlockStyle}"
+                   Margin="0,0,0,20" />
+        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.CopyOnSelect, Mode=TwoWay}" Content="Copy after selection is made" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, a selection is immediately copied to your clipboard upon creation. When unchecked, the selection persists and awaits further action." ToolTipService.Placement="Mouse" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.CopyFormatting, Mode=TwoWay}" Content="Copy formatting" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the color and font formatting of selected text is also copied to your clipboard. When unchecked, only plain text is copied to your clipboard." ToolTipService.Placement="Mouse" />
+            <TextBox Header="Word delimiters" Text="{x:Bind GlobalSettingsModel.GlobalSettings.WordDelimiters, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Determines the delimiters used in a double click selection." ToolTipService.Placement="Mouse" />
+            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.SnapToGridOnResize, Mode=TwoWay}" Content="Window resize behavior" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the window will snap to the nearest character boundary on resize. When unchecked, the window will resize smoothly." ToolTipService.Placement="Mouse" />
+        </StackPanel>
+    </Grid>
+</Page>
