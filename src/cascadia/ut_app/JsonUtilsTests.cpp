@@ -293,7 +293,7 @@ namespace TerminalAppUnitTests
     // versions.
 
     template<typename TExpected, typename TJson>
-    static void TryBasicType(TExpected&& expected, TJson&& json, std::optional<std::string> overrideToJsonOutput = std::nullopt)
+    static void TryBasicType(TExpected&& expected, TJson&& json, std::optional<Json::Value> overrideToJsonOutput = std::nullopt)
     {
         // test FromJson
         Json::Value jsonObject{ json };
@@ -305,14 +305,7 @@ namespace TerminalAppUnitTests
             const std::string key{ "myKey" };
 
             Json::Value expectedJson{};
-            if (overrideToJsonOutput.has_value())
-            {
-                expectedJson[key] = *overrideToJsonOutput;
-            }
-            else
-            {
-                expectedJson[key] = jsonObject;
-            }
+            expectedJson[key] = til::coalesce_value(overrideToJsonOutput, jsonObject);
 
             Json::Value toJsonResult{};
             SetValueForKey(toJsonResult, key, expected);

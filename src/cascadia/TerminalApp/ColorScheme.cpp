@@ -113,13 +113,15 @@ void ColorScheme::LayerJson(const Json::Value& json)
 }
 
 // Method Description:
-// - Update the given json object with values from this object.
+// - Create a new serialized JsonObject from an instance of this class
 // Arguments:
-// - json: an object which will be a serialization of a ColorScheme object.
+// - <none>
 // Return Value:
 // <none>
-void ColorScheme::UpdateJson(Json::Value& json)
+Json::Value ColorScheme::ToJson()
 {
+    Json::Value json{ Json::ValueType::objectValue };
+
     JsonUtils::SetValueForKey(json, NameKey, _Name);
     JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
     JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
@@ -130,6 +132,8 @@ void ColorScheme::UpdateJson(Json::Value& json)
     {
         JsonUtils::SetValueForKey(json, til::at(TableColors, i), _table.at(i));
     }
+
+    return json;
 }
 
 winrt::com_array<Color> ColorScheme::Table() const noexcept
