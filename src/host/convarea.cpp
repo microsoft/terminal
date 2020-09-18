@@ -109,6 +109,8 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     // have come to rely on the cursor that conhost
     // traditionally left on until a composition
     // string showed up.
+    // One such IME is WNWB's "Universal Wubi input
+    // method" from wnwb.com (version 10+).
     // We shouldn't hide the cursor here so as to not
     // break those IMEs.
     //
