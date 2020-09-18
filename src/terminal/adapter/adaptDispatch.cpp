@@ -2372,6 +2372,16 @@ bool AdaptDispatch::EndHyperlink()
     return _pConApi->PrivateEndHyperlink();
 }
 
+bool AdaptDispatch::SetWorkingDirectory(const std::wstring_view /*uri*/)
+{
+    if (_pConApi->IsConsolePty())
+    {
+        return false;
+    }
+
+    return true;
+}
+
 // Routine Description:
 // - Determines whether we should pass any sequence that manipulates
 //   TerminalInput's input generator through the PTY. It encapsulates

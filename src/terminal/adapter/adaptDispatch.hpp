@@ -121,6 +121,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 
+        bool SetWorkingDirectory(const std::wstring_view uri) override;
+
     private:
         enum class ScrollDirection
         {

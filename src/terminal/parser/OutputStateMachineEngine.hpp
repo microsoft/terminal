@@ -160,6 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowTitle = 2,
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
+            SetWorkingDirectory = 7,
             Hyperlink = 8,
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
@@ -254,6 +255,9 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr std::wstring_view hyperlinkIDParameter{ L"id=" };
         bool _ParseHyperlink(const std::wstring_view string,
                              std::wstring& params,
+                             std::wstring& uri) const;
+
+        bool _ParseDirectory(const std::wstring_view string,
                              std::wstring& uri) const;
 
         void _ClearLastChar() noexcept;

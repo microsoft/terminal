@@ -592,3 +592,14 @@ bool Terminal::EndHyperlink() noexcept
     _buffer->SetCurrentAttributes(attr);
     return true;
 }
+
+bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
+{
+    _workingDirectory = std::wstring(uri);
+    return true;
+}
+
+std::wstring_view Terminal::GetWorkingDirectory() noexcept
+{
+    return _workingDirectory;
+}

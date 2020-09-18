@@ -747,6 +747,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetColor:
         success = _GetOscSetColorTable(string, tableIndex, color);
         break;
+    case OscActionCodes::SetWorkingDirectory:
+        success = _ParseDirectory(string, uri);
+        break;
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
@@ -781,6 +784,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetColor:
             success = _dispatch->SetColorTableEntry(tableIndex, color);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
+        case OscActionCodes::SetWorkingDirectory:
+            success = _dispatch->SetWorkingDirectory(uri);
             break;
         case OscActionCodes::SetForegroundColor:
             success = _dispatch->SetDefaultForeground(color);
@@ -1626,6 +1632,24 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
         return true;
     }
     return false;
+}
+
+bool OutputStateMachineEngine::_ParseDirectory(const std::wstring_view string,
+                                               std::wstring& uri) const
+{
+    if (string.length() <= 8)
+    {
+        return false;
+    }
+
+    const auto prefix = string.substr(0, 7);
+    if (!prefix.compare(L"file://") == 0)
+    {
+        return false;
+    }
+
+    uri = std::wstring(string.substr(7, string.length() - 7));
+    return true;
 }
 
 // Routine Description:

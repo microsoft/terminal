@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "Shlwapi.h"
 #include "TerminalPage.h"
 #include "ActionAndArgs.h"
 #include "Utils.h"
@@ -664,7 +665,29 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
 
+        // Try to find a recently used working directory for this profile.
+        Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Tab> view{ _tabs.GetView() };
+
+        for (auto const& tab : view)
+        {
+            const auto tabImpl = winrt::get_self<winrt::TerminalApp::implementation::Tab>(tab);
+            if (tabImpl)
+            {
+                auto focuesdProfileGuid = tabImpl->GetFocusedProfile();
+                if (profileGuid == focuesdProfileGuid)
+                {
+                    auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
+                    auto validWorkingDirectory = !workingDirectory.empty() && ::PathFileExists(workingDirectory.data());
+                    if (validWorkingDirectory)
+                    {
+                        settings.StartingDirectory(workingDirectory);
+                    }
+                }
+            }
+        }
+
         // Create a connection based on the values in our settings object.
+
         auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };

@@ -114,4 +114,6 @@ public:
 
     bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
     bool EndHyperlink() noexcept override { return false; }
+
+    bool SetWorkingDirectory(std::wstring_view /*content*/) noexcept override { return false; }
 };

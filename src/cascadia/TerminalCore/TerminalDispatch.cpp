@@ -392,6 +392,11 @@ bool TerminalDispatch::EndHyperlink() noexcept
     return _terminalApi.EndHyperlink();
 }
 
+bool TerminalDispatch::SetWorkingDirectory(const std::wstring_view uri) noexcept
+{
+    return _terminalApi.SetWorkingDirectory(uri);
+}
+
 // Routine Description:
 // - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
 //     All params in the rgParams will attempt to be executed, even if one

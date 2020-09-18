@@ -114,6 +114,8 @@ public:
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
+    std::wstring_view GetWorkingDirectory() noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -223,6 +225,7 @@ private:
     COLORREF _defaultFg;
     COLORREF _defaultBg;
     CursorType _defaultCursorShape;
+    std::wstring _workingDirectory;
     bool _screenReversed;
 
     bool _snapOnInput;
