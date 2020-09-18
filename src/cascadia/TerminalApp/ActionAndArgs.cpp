@@ -100,7 +100,7 @@ namespace winrt::TerminalApp::implementation
         { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
         { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
-        { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
+        // { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom }, // TODO GH#7252: Re-enable pane zooming
         { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { UnboundKey, ShortcutAction::Invalid },
     };
