@@ -214,10 +214,51 @@ Shell profile, creates a new profile called 'Cool Profile' and creates a new col
 
 #### For apps installed through Microsoft store (or similar)
 
-For apps that are installed through something like the Microsoft Store, they should add their json file(s) to
-an app extension. During our profile generation, we will probe the OS for app extensions of this type that it
-knows about and obtain the json files or objects. These apps should should use msappx for us to know about
-their extensions.
+For apps that are installed through something like the Microsoft Store, they will need to declare themselves to
+be an app extension or write a separate app extension. In the app extension, they will need to create a public
+folder and insert their json files into it. The specifics of how they can do this are provided in the
+[Microsoft Docs](https://docs.microsoft.com/en-us/windows/uwp/launch-resume/how-to-create-an-extension) for how
+to create an app extension, and I will replicate the necessary section here. 
+
+In the appxmanifest file of the package:
+
+```
+<Package
+  ...
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  IgnorableNamespaces="uap uap3 mp">
+  ...
+    <Applications>
+      <Application Id="App" ... >
+        ...
+        <Extensions>
+          ...
+          <uap3:Extension Category="windows.appExtension">
+            <uap3:AppExtension Name="Microsoft.com.Terminal"
+                               Id="<id>"
+                               DisplayName="<displayName>"
+                               Description="<description>"
+                               PublicFolder="Public">
+              <uap3:Properties>
+                <Service>com.microsoft.powservice</Service>
+              </uap3:Properties>
+              </uap3:AppExtension>
+          </uap3:Extension>
+        </Extensions>
+      </Application>
+    </Applications>
+    ...
+</Package>
+```
+
+Note that the name field **must** be `Microsoft.com.Terminal` for us to detect this extension. The `Id`,
+`DisplayName` and `Description` fields can be filled out as the app wishes. The `PublicFolder` field
+should have the name of the folder, relative to the package root, where the `json` files they wish to share
+with us are stored (this folder is typically named `Public` but can be renamed as long as it matches the
+relevant folder).
+
+During our profile generation, we will probe the OS for app extensions with the name `Microsoft.com.Terminal`
+and obtain the json files stored in the public folders of those app extensions.
 
 #### For apps installed 'traditionally' and third parties/independent users
 
@@ -229,7 +270,8 @@ C:\ProgramData\Microsoft\Windows Terminal\Fragments
 ```
 
 Note: `C:\ProgramData` is a [known folder](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776911(v=vs.85))
-that apps should be able to access. It will be on us to create the folder `Terminal` in `C:\ProgramData\Microsoft\Windows` for this to happen. 
+that apps should be able to access. It will be on us to create the folder `Windows Terminal` in `C:\ProgramData\Microsoft\Windows`
+for this to happen. 
 
 In the second case, the installation is only for the current user. For this case, the installer should add the
 json files to the local folder:
@@ -238,7 +280,7 @@ json files to the local folder:
 C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments
 ```
 
-This is also where independent users will add their own json files for Terminal to generate/modify profiles.
+This is also where independent users should add their own json files for Terminal to generate/modify profiles.
 
 We will look through both folders mentioned above during profile generation. 
 
@@ -294,9 +336,8 @@ Looking through the additional json files could negatively impact startup time.
 
 ## Potential Issues
 
-Cases which would likely be frustrating:
-
 * An installer dumps a _lot_ of json files into the folder which we need to look through.
+* When a `.json` files is deleted, any new profiles that were generated from it remain in the user's settings file (though they no longer appear in the tab dropdown).
 
 ## Future considerations
 
