@@ -104,8 +104,16 @@ void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
     gci.LockConsole();
     auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
 
-    ConsoleImeInfo* const pIme = &gci.ConsoleIme;
-    pIme->SaveCursorVisibility();
+    // MSFT:29219348 Some IME implementations do not
+    // produce composition strings, and their users
+    // have come to rely on the cursor that conhost
+    // traditionally left on until a composition
+    // string showed up.
+    // We shouldn't hide the cursor here so as to not
+    // break those IMEs.
+    //
+    // ConsoleImeInfo* const pIme = &gci.ConsoleIme;
+    // pIme->SaveCursorVisibility();
 
     gci.pInputBuffer->fInComposition = true;
     return S_OK;
