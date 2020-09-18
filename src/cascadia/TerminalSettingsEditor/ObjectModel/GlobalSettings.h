@@ -1,9 +1,9 @@
 #pragma once
-#include "Microsoft.Terminal.Settings.Model.GlobalSettings.g.h"
+#include "Model.GlobalSettings.g.h"
 #include <winrt/Windows.UI.h>
 #include "../Utils.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     struct GlobalSettings : GlobalSettingsT<GlobalSettings>
     {

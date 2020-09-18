@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "ColorScheme.h"
-#include "Microsoft.Terminal.Settings.Model.ColorScheme.g.cpp"
+#include "Model.ColorScheme.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
@@ -8,7 +8,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Media;
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     ColorScheme::ColorScheme()
     {

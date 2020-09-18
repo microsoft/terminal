@@ -1,6 +1,6 @@
 import "ObjectModel/Profile.idl";
 
-namespace Microsoft.Terminal.Settings.Model
+namespace Microsoft.Terminal.Settings.Editor.Model
 {
     runtimeclass ProfileModel
     {
