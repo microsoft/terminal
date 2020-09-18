@@ -1315,7 +1315,7 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
     // that it actually points to a space in the buffer
     if (pos == bufferSize.EndExclusive())
     {
-        copy = { bufferSize.RightExclusive(), bufferSize.BottomInclusive() };
+        copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
     }
 
     // started on whitespace/delimiter, continue until the end of the previous word
