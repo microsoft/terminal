@@ -28,7 +28,7 @@ EXPORTS
 DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
 DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 ```
-- For a bit more context on this whole process, the `AppXManifest.xml` file in `casc_package` defines which classes belong to which DLLs. So if your project wants class `X.Y.Z`, it can look it up in the manifest and see that it came from `X.Y.dll`. Then it'll load up the dll, and call a particular function called `GetActivationFactory(L"X.Y.Z")` to get the class it wants. 
+- For a bit more context on this whole process, the `AppXManifest.xml` file defines which classes belong to which DLLs. So if your project wants class `X.Y.Z`, it can look it up in the manifest and see that it came from `X.Y.dll`. Then it'll load up the dll, and call a particular function called `GetActivationFactory(L"X.Y.Z")` to get the class it wants. 
 
 ### Troubleshooting
 - If you hit an error that looks like this: 
