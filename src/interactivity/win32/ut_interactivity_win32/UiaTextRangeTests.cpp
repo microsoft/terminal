@@ -1146,7 +1146,7 @@ class UiaTextRangeTests
         int moveAmt;
         for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
         {
-            Log::Comment(NoThrowString().Format(L"%s", toString(static_cast<TextUnit>(unit))));
+            Log::Comment(NoThrowString().Format(L"Forward by %s", toString(static_cast<TextUnit>(unit))));
 
             // Create a degenerate UTR at EndExclusive
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
@@ -1154,6 +1154,40 @@ class UiaTextRangeTests
 
             VERIFY_ARE_EQUAL(endExclusive, utr->_end);
             VERIFY_ARE_EQUAL(0, moveAmt);
+        }
+
+        // Verify that moving backwards still works properly
+        const COORD writeTarget{2,2};
+        _pTextBuffer->Write({ L"temp" }, writeTarget);
+        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        {
+            COORD expectedEnd;
+            switch (static_cast<TextUnit>(unit))
+            {
+            case TextUnit::TextUnit_Character:
+                expectedEnd = endInclusive;
+                break;
+            case TextUnit::TextUnit_Word:
+                expectedEnd = writeTarget;
+                break;
+            case TextUnit::TextUnit_Line:
+                expectedEnd = endExclusive;
+                break;
+            case TextUnit::TextUnit_Document:
+                expectedEnd = bufferSize.Origin();
+                break;
+            default:
+                continue;
+            }
+
+            Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(static_cast<TextUnit>(unit))));
+
+            // Create a degenerate UTR at EndExclusive
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), -1, &moveAmt));
+
+            VERIFY_ARE_EQUAL(expectedEnd, utr->_end);
+            VERIFY_ARE_EQUAL(-1, moveAmt);
         }
     }
 };

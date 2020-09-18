@@ -996,10 +996,11 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     //  so the words in the example include ["word   ", "other  "]
     // NOTE: the start anchor (this one) is inclusive, whereas the end anchor (GetWordEnd) is exclusive
 
+#pragma warning(suppress : 26496)
     // GH#7664: Treat EndExclusive as EndInclusive so
     // that it actually points to a space in the buffer
-    auto copy = target;
-    auto bufferSize = GetSize();
+    auto copy{ target };
+    const auto bufferSize{ GetSize() };
     if (target == bufferSize.Origin())
     {
         // can't expand left
@@ -1308,7 +1309,7 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
 bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const
 {
     auto copy = pos;
-    auto bufferSize = GetSize();
+    const auto bufferSize{ GetSize() };
 
     // GH#7663: Treat EndExclusive as EndInclusive so
     // that it actually points to a space in the buffer
