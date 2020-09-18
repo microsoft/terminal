@@ -236,8 +236,6 @@ In the appxmanifest file of the package:
           <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="Microsoft.com.Terminal"
                                Id="<id>"
-                               DisplayName="<displayName>"
-                               Description="<description>"
                                PublicFolder="Public">
             </uap3:AppExtension>
           </uap3:Extension>
@@ -248,11 +246,10 @@ In the appxmanifest file of the package:
 </Package>
 ```
 
-Note that the name field **must** be `Microsoft.com.Terminal` for us to detect this extension. The `Id`,
-`DisplayName` and `Description` fields can be filled out as the app wishes. The `PublicFolder` field
-should have the name of the folder, relative to the package root, where the `json` files they wish to share
-with us are stored (this folder is typically named `Public` but can be renamed as long as it matches the
-relevant folder).
+Note that the name field **must** be `Microsoft.com.Terminal` for us to detect this extension. The `Id` field
+can be filled out as the app wishes. The `PublicFolder` field should have the name of the folder, relative to
+the package root, where the `json` files they wish to share with us are stored (this folder is typically named
+`Public` but can be renamed as long as it matches the relevant folder).
 
 During our profile generation, we will probe the OS for app extensions with the name `Microsoft.com.Terminal`
 and obtain the json files stored in the public folders of those app extensions.
