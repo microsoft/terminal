@@ -48,8 +48,8 @@ static constexpr std::string_view jsonExtension{ ".json" };
 static constexpr std::string_view LocalSource{ "local" };
 static constexpr std::string_view GlobalSource{ "global" };
 static constexpr std::string_view AppSource{ "app" };
-static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal" };
-static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows\\Terminal" };
+static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments" };
+static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows Terminal\\Fragments" };
 
 static constexpr std::string_view AppExtensionHostName{ "Microsoft.com.Terminal" };
 
