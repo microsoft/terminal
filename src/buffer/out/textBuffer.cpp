@@ -996,19 +996,28 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     //  so the words in the example include ["word   ", "other  "]
     // NOTE: the start anchor (this one) is inclusive, whereas the end anchor (GetWordEnd) is exclusive
 
-    // can't expand left
-    if (target.X == GetSize().Left())
+    // GH#7664: Treat EndExclusive as EndInclusive so
+    // that it actually points to a space in the buffer
+    auto copy = target;
+    auto bufferSize = GetSize();
+    if (target == bufferSize.Origin())
     {
+        // can't expand left
         return target;
+    }
+    else if (target == bufferSize.EndExclusive())
+    {
+        // treat EndExclusive as EndInclusive
+        copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
     }
 
     if (accessibilityMode)
     {
-        return _GetWordStartForAccessibility(target, wordDelimiters);
+        return _GetWordStartForAccessibility(copy, wordDelimiters);
     }
     else
     {
-        return _GetWordStartForSelection(target, wordDelimiters);
+        return _GetWordStartForSelection(copy, wordDelimiters);
     }
 }
 
@@ -1107,6 +1116,12 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
     //  a "word" includes the delimiters after a range of readable characters
     //  so the words in the example include ["word   ", "other  "]
     // NOTE: the end anchor (this one) is exclusive, whereas the start anchor (GetWordStart) is inclusive
+
+    // Already at the end. Can't move forward.
+    if (target == GetSize().EndExclusive())
+    {
+        return target;
+    }
 
     if (accessibilityMode)
     {
@@ -1243,6 +1258,12 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
     auto copy = pos;
     const auto bufferSize = GetSize();
 
+    // Already at the end. Can't move forward.
+    if (pos == bufferSize.EndExclusive())
+    {
+        return false;
+    }
+
     // started on a word, continue until the end of the word
     while (_GetDelimiterClassAt(copy, wordDelimiters) == DelimiterClass::RegularChar)
     {
@@ -1288,6 +1309,13 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 {
     auto copy = pos;
     auto bufferSize = GetSize();
+
+    // GH#7663: Treat EndExclusive as EndInclusive so
+    // that it actually points to a space in the buffer
+    if (pos == bufferSize.EndExclusive())
+    {
+        copy = { bufferSize.RightExclusive(), bufferSize.BottomInclusive() };
+    }
 
     // started on whitespace/delimiter, continue until the end of the previous word
     while (_GetDelimiterClassAt(copy, wordDelimiters) != DelimiterClass::RegularChar)
