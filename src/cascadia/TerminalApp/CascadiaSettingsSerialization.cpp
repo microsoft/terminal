@@ -391,6 +391,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
 //   property, we'll ensure that the corresponding folders do not get searched
 void CascadiaSettings::_LoadProtoExtensions()
 {
+    // First, accumulate the namespaces the user wants to ignore
     std::unordered_set<std::wstring> ignoredNamespaces;
     const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
     if (disabledProfileSources.isArray())
@@ -401,20 +402,29 @@ void CascadiaSettings::_LoadProtoExtensions()
         }
     }
 
+    // Search through the local app data folder if its not in ignoredNamespaces
     if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal")))
     {
         const auto jsonFiles = _AccumulateJsonFilesInDirectory(LocalAppDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(LocalSource));
     }
+
+    // Search through the global app data folder if its not in ignoredNamespaces
     if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramData%\\Microsoft\\Windows\\Terminal")))
     {
         const auto jsonFiles = _AccumulateJsonFilesInDirectory(ProgramDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(GlobalSource));
     }
+
+    // Search through app extensions if its not in ignoredNamespaces
     if (ignoredNamespaces.find(L"app") == ignoredNamespaces.end())
     {
+        // Gets the catalog of extensions with the name "Microsoft.com.Terminal"
         const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
 
+        // Extracting the list of extensions from the catalog is an async operation, but since
+        // we are on a UI thread - and so cannot call a blocking operation like .get() - we use
+        // a mutex and condition variable
         std::condition_variable cv;
         std::mutex mtx;
         Windows::Foundation::Collections::IVectorView<Windows::ApplicationModel::AppExtensions::AppExtension> extensions;
@@ -434,6 +444,8 @@ void CascadiaSettings::_LoadProtoExtensions()
 
         for (auto ext : extensions)
         {
+            // Likewise, getting the public folder from an extension is an async operation
+            // So we use another mutex and condition variable
             std::condition_variable cv2;
             std::mutex mtx2;
             Windows::Storage::StorageFolder foundFolder{ nullptr };
@@ -470,7 +482,10 @@ void CascadiaSettings::_LoadProtoExtensions()
 std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory)
 {
     std::unordered_set<std::string> jsonFiles;
+
+    // Expand out environment strings like %LOCALAPPDATA% and %ProgramData%
     const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
+
     for (auto& protoExt : std::filesystem::directory_iterator(root))
     {
         if (protoExt.path().extension() == jsonExtension)
@@ -503,12 +518,15 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
 {
     for (const auto file : files)
     {
+        // A file could have many new profiles/many profiles it wants to modify/many new colour schemes
+        // so we first parse the entire file into one json object
         Json::Value fullFile;
 
         _ParseJsonInto(file.data(), fullFile);
 
         if (fullFile.isMember(JsonKey(ProfilesKey)))
         {
+            // Now we separately get each stub that modifies/adds a profile
             for (const auto profileStub : fullFile[JsonKey(ProfilesKey)])
             {
                 auto matchingProfile = _FindMatchingProfile(profileStub);
@@ -519,7 +537,8 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                 }
                 else
                 {
-                    // This is a new profile
+                    // This is a new profile, check that it meets our minmum requirements first
+                    // (it must have at least a name and a commandline)
                     if (profileStub.isMember(JsonKey(NameKey)) && profileStub.isMember(JsonKey(CommandLineKey)))
                     {
                         auto newProfile = winrt::make_self<Profile>();
@@ -527,6 +546,10 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                         {
                             newProfile->LayerJson(_userDefaultProfileSettings);
                         }
+
+                        // Make sure to give the new profile a source, then we add it to our list of profiles
+                        // We don't make modifications to the user profiles yet, that will happen when
+                        // _AppendDynamicProfilesToUserSettings() is called later
                         newProfile->LayerJson(profileStub);
                         newProfile->Source(source);
                         _profiles.Append(*newProfile);
@@ -537,15 +560,17 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
 
         if (fullFile.isMember(JsonKey(SchemesKey)))
         {
+            // Now we separately get each stub that adds a colour scheme
             for (const auto schemeStub : fullFile[JsonKey(SchemesKey)])
             {
                 auto matchingScheme = _FindMatchingColorScheme(schemeStub);
                 if (matchingScheme)
                 {
-                    // we do not allow modifications to existing colour schemes
+                    // We do not allow modifications to existing colour schemes
                 }
                 else
                 {
+                    // This is a new colour scheme, make sure it meets our minimum requirements
                     if (schemeStub.isMember(JsonKey(NameKey)) && schemeStub.isMember(JsonKey(BackgroundKey)) && schemeStub.isMember(JsonKey(ForegroundKey)))
                     {
                         const auto newScheme = ColorScheme::FromJson(schemeStub);
