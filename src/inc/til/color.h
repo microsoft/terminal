@@ -42,7 +42,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             r{ 0 },
             g{ 0 },
             b{ 0 },
-            a{ 0 } {}
+            a{ 0 }
+        {
+        }
 
         constexpr color(uint8_t _r, uint8_t _g, uint8_t _b) noexcept :
             r{ _r },

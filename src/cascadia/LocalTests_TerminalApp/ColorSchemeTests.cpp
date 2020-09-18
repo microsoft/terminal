@@ -131,11 +131,11 @@ namespace TerminalAppLocalTests
         const auto scheme2Json = VerifyParseSucceeded(scheme2String);
 
         auto scheme0 = ColorScheme::FromJson(scheme0Json);
-        VERIFY_ARE_EQUAL(L"scheme0", scheme0->_schemeName);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 0), scheme0->_selectionBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 1), scheme0->_cursorColor);
+        VERIFY_ARE_EQUAL(L"scheme0", scheme0->_Name);
+        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_Foreground);
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_Background);
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 0), scheme0->_SelectionBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 1), scheme0->_CursorColor);
         VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 0), scheme0->_table[XTERM_RED_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 1, 0), scheme0->_table[XTERM_GREEN_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 1), scheme0->_table[XTERM_BLUE_ATTR]);
@@ -144,10 +144,10 @@ namespace TerminalAppLocalTests
             L"Layering scheme1 on top of scheme0"));
         scheme0->LayerJson(scheme1Json);
 
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme0->_defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme0->_defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 0), scheme0->_selectionBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 4, 0, 4), scheme0->_cursorColor);
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme0->_Foreground);
+        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme0->_Background);
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 0), scheme0->_SelectionBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 4, 0, 4), scheme0->_CursorColor);
         VERIFY_ARE_EQUAL(ARGB(0, 2, 0, 0), scheme0->_table[XTERM_RED_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 1, 0), scheme0->_table[XTERM_GREEN_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 2), scheme0->_table[XTERM_BLUE_ATTR]);
@@ -156,10 +156,10 @@ namespace TerminalAppLocalTests
             L"Layering scheme2Json on top of (scheme0+scheme1)"));
         scheme0->LayerJson(scheme2Json);
 
-        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 0), scheme0->_selectionBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 6, 0, 6), scheme0->_cursorColor);
+        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_Foreground);
+        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_Background);
+        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 0), scheme0->_SelectionBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 6, 0, 6), scheme0->_CursorColor);
         VERIFY_ARE_EQUAL(ARGB(0, 3, 0, 0), scheme0->_table[XTERM_RED_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 3, 0), scheme0->_table[XTERM_GREEN_ATTR]);
         VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 2), scheme0->_table[XTERM_BLUE_ATTR]);
@@ -218,8 +218,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme1Json));
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
             VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_Background);
         }
 
         settings->_LayerOrCreateColorScheme(scheme1Json);
@@ -238,10 +238,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme1Json));
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
             VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_defaultBackground);
-            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_Background);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
         }
         settings->_LayerOrCreateColorScheme(scheme2Json);
 
@@ -259,10 +259,10 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme1Json));
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
             VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_defaultBackground);
-            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_Background);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
         }
         settings->_LayerOrCreateColorScheme(scheme3Json);
 
@@ -283,12 +283,12 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme1Json));
             VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
             VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_defaultBackground);
-            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_defaultBackground);
-            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2->_defaultForeground);
-            VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2->_defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_Background);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
+            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2->_Foreground);
+            VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2->_Background);
         }
     }
 }
