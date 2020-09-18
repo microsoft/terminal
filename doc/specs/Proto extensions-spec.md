@@ -1,7 +1,7 @@
 ---
 author: <Pankaj> <Bhojwani> <@PankajBhojwani>
 created on: <2020-9-9>
-last updated: <2020-9-9>
+last updated: <2020-9-17>
 ---
 
 # Proto extensions
@@ -239,10 +239,7 @@ In the appxmanifest file of the package:
                                DisplayName="<displayName>"
                                Description="<description>"
                                PublicFolder="Public">
-              <uap3:Properties>
-                <Service>com.microsoft.powservice</Service>
-              </uap3:Properties>
-              </uap3:AppExtension>
+            </uap3:AppExtension>
           </uap3:Extension>
         </Extensions>
       </Application>
