@@ -1157,7 +1157,7 @@ class UiaTextRangeTests
         }
 
         // Verify that moving backwards still works properly
-        const COORD writeTarget{2,2};
+        const COORD writeTarget{ 2, 2 };
         _pTextBuffer->Write({ L"temp" }, writeTarget);
         for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
         {
