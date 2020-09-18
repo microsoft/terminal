@@ -723,7 +723,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             // Set up blinking attributes
-            BOOL animationsEnabled = true;
+            BOOL animationsEnabled = TRUE;
             SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
             if (animationsEnabled && blinkTime != INFINITE)
             {

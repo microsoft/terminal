@@ -30,7 +30,7 @@ void CursorBlinker::UpdateSystemMetrics()
     _uCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
 
     // If animations are disabled, or the blink rate is infinite, blinking is not allowed.
-    BOOL animationsEnabled = true;
+    BOOL animationsEnabled = TRUE;
     SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
     auto& blinkingState = ServiceLocator::LocateGlobals().getConsoleInformation().GetBlinkingState();
     blinkingState.SetBlinkingAllowed(animationsEnabled && _uCaretBlinkTime != INFINITE);

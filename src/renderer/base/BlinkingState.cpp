@@ -61,7 +61,7 @@ try
 {
     if (_blinkingAllowed)
     {
-        // This method is called with the frequence of the cursor blink rate,
+        // This method is called with the frequency of the cursor blink rate,
         // but we only want our cells to blink at half that frequency. We thus
         // have a blinking cycle that loops through four phases...
         _blinkingCycle = (_blinkingCycle + 1) % 4;
