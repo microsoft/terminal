@@ -537,7 +537,7 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                 }
                 else
                 {
-                    // This is a new profile, check that it meets our minmum requirements first
+                    // This is a new profile, check that it meets our minimum requirements first
                     // (it must have at least a name and a commandline)
                     if (profileStub.isMember(JsonKey(NameKey)) && profileStub.isMember(JsonKey(CommandLineKey)))
                     {
