@@ -192,12 +192,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetPrivateModeParams(const gsl::span<const size_t> parameters,
                                    std::vector<DispatchTypes::PrivateModeParams>& privateModes) const;
 
-        static constexpr size_t DefaultTopMargin = 0;
-        static constexpr size_t DefaultBottomMargin = 0;
-        bool _GetTopBottomMargins(const gsl::span<const size_t> parameters,
-                                  size_t& topMargin,
-                                  size_t& bottomMargin) const noexcept;
-
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 

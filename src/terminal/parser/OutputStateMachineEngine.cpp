@@ -407,8 +407,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
 {
     bool success = false;
     const VTParameters params{ parameters.data(), parameters.size() };
-    size_t topMargin = 0;
-    size_t bottomMargin = 0;
     DispatchTypes::TabClearType clearType = DefaultTabClearType;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
@@ -424,9 +422,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     // fill params
     switch (id)
     {
-    case CsiActionCodes::DECSTBM_SetScrollingRegion:
-        success = _GetTopBottomMargins(parameters, topMargin, bottomMargin);
-        break;
     case CsiActionCodes::ED_EraseDisplay:
     case CsiActionCodes::EL_EraseLine:
         success = _GetEraseOperation(parameters, eraseType);
@@ -517,7 +512,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
             break;
         case CsiActionCodes::DECSTBM_SetScrollingRegion:
-            success = _dispatch->SetTopBottomScrollingMargins(topMargin, bottomMargin);
+            success = _dispatch->SetTopBottomScrollingMargins(params.at(0).value_or(0), params.at(1).value_or(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
             break;
         case CsiActionCodes::ICH_InsertCharacter:
@@ -936,52 +931,6 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> pa
     return success;
 }
 
-// Routine Description:
-// - Retrieves a top and bottom pair for setting the margins from the parameter pool stored during Param actions
-// Arguments:
-// - parameters - The parameters to parse
-// - topMargin - Receives the top margin
-// - bottomMargin - Receives the bottom margin
-// Return Value:
-// - True if we successfully pulled the margin settings from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTopBottomMargins(const gsl::span<const size_t> parameters,
-                                                    size_t& topMargin,
-                                                    size_t& bottomMargin) const noexcept
-{
-    // Notes:                           (input -> state machine out)
-    // having only a top param is legal         ([3;r   -> 3,0)
-    // having only a bottom param is legal      ([;3r   -> 0,3)
-    // having neither uses the defaults         ([;r [r -> 0,0)
-    // an illegal combo (eg, 3;2r) is ignored
-
-    bool success = false;
-    topMargin = DefaultTopMargin;
-    bottomMargin = DefaultBottomMargin;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        topMargin = til::at(parameters, 0);
-        success = true;
-    }
-    else if (parameters.size() == 2)
-    {
-        // If there are exactly two parameters, use them.
-        topMargin = til::at(parameters, 0);
-        bottomMargin = til::at(parameters, 1);
-        success = true;
-    }
-
-    if (bottomMargin > 0 && bottomMargin < topMargin)
-    {
-        success = false;
-    }
-    return success;
-}
 // Routine Description:
 // - Retrieves the status type parameter for an upcoming device query operation
 // Arguments:
