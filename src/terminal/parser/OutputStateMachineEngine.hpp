@@ -178,23 +178,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetEraseOperation(const gsl::span<const size_t> parameters,
                                 DispatchTypes::EraseType& eraseType) const noexcept;
 
-        static constexpr size_t DefaultCursorDistance = 1;
-        bool _GetCursorDistance(const gsl::span<const size_t> parameters,
-                                size_t& distance) const noexcept;
-
-        static constexpr size_t DefaultScrollDistance = 1;
-        bool _GetScrollDistance(const gsl::span<const size_t> parameters,
-                                size_t& distance) const noexcept;
-
         static constexpr size_t DefaultConsoleWidth = 80;
         bool _GetConsoleWidth(const gsl::span<const size_t> parameters,
                               size_t& consoleWidth) const noexcept;
-
-        static constexpr size_t DefaultLine = 1;
-        static constexpr size_t DefaultColumn = 1;
-        bool _GetXYPosition(const gsl::span<const size_t> parameters,
-                            size_t& line,
-                            size_t& column) const noexcept;
 
         bool _GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
                                        DispatchTypes::AnsiStatusType& statusType) const noexcept;
@@ -215,10 +201,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 
-        static constexpr size_t DefaultTabDistance = 1;
-        bool _GetTabDistance(const gsl::span<const size_t> parameters,
-                             size_t& distance) const noexcept;
-
         static constexpr DispatchTypes::TabClearType DefaultTabClearType = DispatchTypes::TabClearType::ClearCurrentColumn;
         bool _GetTabClearType(const gsl::span<const size_t> parameters,
                               DispatchTypes::TabClearType& clearType) const noexcept;
@@ -237,10 +219,6 @@ namespace Microsoft::Console::VirtualTerminal
         static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::UserDefault;
         bool _GetCursorStyle(const gsl::span<const size_t> parameters,
                              DispatchTypes::CursorStyle& cursorStyle) const noexcept;
-
-        static constexpr size_t DefaultRepeatCount = 1;
-        bool _GetRepeatCount(const gsl::span<const size_t> parameters,
-                             size_t& repeatCount) const noexcept;
 
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,

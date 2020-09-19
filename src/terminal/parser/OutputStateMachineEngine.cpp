@@ -406,12 +406,9 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
 bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const size_t> parameters)
 {
     bool success = false;
-    size_t distance = 0;
-    size_t line = 0;
-    size_t column = 0;
+    const VTParameters params{ parameters.data(), parameters.size() };
     size_t topMargin = 0;
     size_t bottomMargin = 0;
-    size_t numTabs = 0;
     DispatchTypes::TabClearType clearType = DefaultTabClearType;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
@@ -420,7 +417,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     // would spend a lot of time reallocating/resizing the vector.
     _graphicsOptions.clear();
     DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
-    size_t repeatCount = 0;
     DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
@@ -428,26 +424,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     // fill params
     switch (id)
     {
-    case CsiActionCodes::CUU_CursorUp:
-    case CsiActionCodes::CUD_CursorDown:
-    case CsiActionCodes::CUF_CursorForward:
-    case CsiActionCodes::CUB_CursorBackward:
-    case CsiActionCodes::CNL_CursorNextLine:
-    case CsiActionCodes::CPL_CursorPrevLine:
-    case CsiActionCodes::CHA_CursorHorizontalAbsolute:
-    case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-    case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-    case CsiActionCodes::HPR_HorizontalPositionRelative:
-    case CsiActionCodes::VPR_VerticalPositionRelative:
-    case CsiActionCodes::ICH_InsertCharacter:
-    case CsiActionCodes::DCH_DeleteCharacter:
-    case CsiActionCodes::ECH_EraseCharacters:
-        success = _GetCursorDistance(parameters, distance);
-        break;
-    case CsiActionCodes::HVP_HorizontalVerticalPosition:
-    case CsiActionCodes::CUP_CursorPosition:
-        success = _GetXYPosition(parameters, line, column);
-        break;
     case CsiActionCodes::DECSTBM_SetScrollingRegion:
         success = _GetTopBottomMargins(parameters, topMargin, bottomMargin);
         break;
@@ -470,30 +446,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     case CsiActionCodes::DA3_TertiaryDeviceAttributes:
         success = _VerifyDeviceAttributesParams(parameters);
         break;
-    case CsiActionCodes::SU_ScrollUp:
-    case CsiActionCodes::SD_ScrollDown:
-        success = _GetScrollDistance(parameters, distance);
-        break;
     case CsiActionCodes::ANSISYSSC_CursorSave:
     case CsiActionCodes::ANSISYSRC_CursorRestore:
         success = _VerifyHasNoParameters(parameters);
-        break;
-    case CsiActionCodes::IL_InsertLine:
-    case CsiActionCodes::DL_DeleteLine:
-        success = _GetScrollDistance(parameters, distance);
-        break;
-    case CsiActionCodes::CHT_CursorForwardTab:
-    case CsiActionCodes::CBT_CursorBackTab:
-        success = _GetTabDistance(parameters, numTabs);
         break;
     case CsiActionCodes::TBC_TabClear:
         success = _GetTabClearType(parameters, clearType);
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _GetWindowManipulationType(parameters, function);
-        break;
-    case CsiActionCodes::REP_RepeatCharacter:
-        success = _GetRepeatCount(parameters, repeatCount);
         break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
         success = _GetCursorStyle(parameters, cursorStyle);
@@ -510,49 +471,49 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
         switch (id)
         {
         case CsiActionCodes::CUU_CursorUp:
-            success = _dispatch->CursorUp(distance);
+            success = _dispatch->CursorUp(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
             break;
         case CsiActionCodes::CUD_CursorDown:
-            success = _dispatch->CursorDown(distance);
+            success = _dispatch->CursorDown(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
             break;
         case CsiActionCodes::CUF_CursorForward:
-            success = _dispatch->CursorForward(distance);
+            success = _dispatch->CursorForward(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
             break;
         case CsiActionCodes::CUB_CursorBackward:
-            success = _dispatch->CursorBackward(distance);
+            success = _dispatch->CursorBackward(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
             break;
         case CsiActionCodes::CNL_CursorNextLine:
-            success = _dispatch->CursorNextLine(distance);
+            success = _dispatch->CursorNextLine(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
             break;
         case CsiActionCodes::CPL_CursorPrevLine:
-            success = _dispatch->CursorPrevLine(distance);
+            success = _dispatch->CursorPrevLine(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
             break;
         case CsiActionCodes::CHA_CursorHorizontalAbsolute:
         case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-            success = _dispatch->CursorHorizontalPositionAbsolute(distance);
+            success = _dispatch->CursorHorizontalPositionAbsolute(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
             break;
         case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-            success = _dispatch->VerticalLinePositionAbsolute(distance);
+            success = _dispatch->VerticalLinePositionAbsolute(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
             break;
         case CsiActionCodes::HPR_HorizontalPositionRelative:
-            success = _dispatch->HorizontalPositionRelative(distance);
+            success = _dispatch->HorizontalPositionRelative(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
             break;
         case CsiActionCodes::VPR_VerticalPositionRelative:
-            success = _dispatch->VerticalPositionRelative(distance);
+            success = _dispatch->VerticalPositionRelative(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
             break;
         case CsiActionCodes::CUP_CursorPosition:
         case CsiActionCodes::HVP_HorizontalVerticalPosition:
-            success = _dispatch->CursorPosition(line, column);
+            success = _dispatch->CursorPosition(params.at(0), params.at(1));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
             break;
         case CsiActionCodes::DECSTBM_SetScrollingRegion:
@@ -560,11 +521,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
             break;
         case CsiActionCodes::ICH_InsertCharacter:
-            success = _dispatch->InsertCharacter(distance);
+            success = _dispatch->InsertCharacter(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
             break;
         case CsiActionCodes::DCH_DeleteCharacter:
-            success = _dispatch->DeleteCharacter(distance);
+            success = _dispatch->DeleteCharacter(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
             break;
         case CsiActionCodes::ED_EraseDisplay:
@@ -605,11 +566,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
             break;
         case CsiActionCodes::SU_ScrollUp:
-            success = _dispatch->ScrollUp(distance);
+            success = _dispatch->ScrollUp(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
             break;
         case CsiActionCodes::SD_ScrollDown:
-            success = _dispatch->ScrollDown(distance);
+            success = _dispatch->ScrollDown(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
             break;
         case CsiActionCodes::ANSISYSSC_CursorSave:
@@ -621,19 +582,19 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
             break;
         case CsiActionCodes::IL_InsertLine:
-            success = _dispatch->InsertLine(distance);
+            success = _dispatch->InsertLine(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
             break;
         case CsiActionCodes::DL_DeleteLine:
-            success = _dispatch->DeleteLine(distance);
+            success = _dispatch->DeleteLine(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
             break;
         case CsiActionCodes::CHT_CursorForwardTab:
-            success = _dispatch->ForwardTab(numTabs);
+            success = _dispatch->ForwardTab(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
             break;
         case CsiActionCodes::CBT_CursorBackTab:
-            success = _dispatch->BackwardsTab(numTabs);
+            success = _dispatch->BackwardsTab(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
             break;
         case CsiActionCodes::TBC_TabClear:
@@ -641,7 +602,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
             break;
         case CsiActionCodes::ECH_EraseCharacters:
-            success = _dispatch->EraseCharacters(distance);
+            success = _dispatch->EraseCharacters(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
             break;
         case CsiActionCodes::DTTERM_WindowManipulation:
@@ -657,6 +618,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             // Print the last graphical character a number of times.
             if (_lastPrintedChar != AsciiChars::NUL)
             {
+                const size_t repeatCount = params.at(0);
                 std::wstring wstr(repeatCount, _lastPrintedChar);
                 _dispatch->PrintString(wstr);
             }
@@ -941,74 +903,6 @@ bool OutputStateMachineEngine::_GetEraseOperation(const gsl::span<const size_t> 
 }
 
 // Routine Description:
-// - Retrieves a distance for a cursor operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - distance - Receives the distance
-// Return Value:
-// - True if we successfully pulled the cursor distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorDistance(const gsl::span<const size_t> parameters,
-                                                  size_t& distance) const noexcept
-{
-    bool success = false;
-    distance = DefaultCursorDistance;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        distance = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (distance == 0)
-    {
-        distance = DefaultCursorDistance;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves a distance for a scroll operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - distance - Receives the distance
-// Return Value:
-// - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetScrollDistance(const gsl::span<const size_t> parameters,
-                                                  size_t& distance) const noexcept
-{
-    bool success = false;
-    distance = DefaultScrollDistance;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        distance = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (distance == 0)
-    {
-        distance = DefaultScrollDistance;
-    }
-
-    return success;
-}
-
-// Routine Description:
 // - Retrieves a width for the console window from the parameter pool stored during Param actions.
 // Arguments:
 // - parameters - The parameters to parse
@@ -1037,55 +931,6 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> pa
     if (consoleWidth == 0)
     {
         consoleWidth = DefaultConsoleWidth;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - line - Receives the Y/Line/Row position
-// - column - Receives the X/Column position
-// Return Value:
-// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetXYPosition(const gsl::span<const size_t> parameters,
-                                              size_t& line,
-                                              size_t& column) const noexcept
-{
-    bool success = false;
-    line = DefaultLine;
-    column = DefaultColumn;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's only one param, leave the default for the column, and retrieve the specified row.
-        line = til::at(parameters, 0);
-        success = true;
-    }
-    else if (parameters.size() == 2)
-    {
-        // If there are exactly two parameters, use them.
-        line = til::at(parameters, 0);
-        column = til::at(parameters, 1);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (line == 0)
-    {
-        line = DefaultLine;
-    }
-
-    if (column == 0)
-    {
-        column = DefaultColumn;
     }
 
     return success;
@@ -1247,40 +1092,6 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
     title = string;
 
     return !string.empty();
-}
-
-// Routine Description:
-// - Retrieves a distance for a tab operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - distance - Receives the distance
-// Return Value:
-// - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabDistance(const gsl::span<const size_t> parameters,
-                                               size_t& distance) const noexcept
-{
-    bool success = false;
-    distance = DefaultTabDistance;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        distance = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (distance == 0)
-    {
-        distance = DefaultTabDistance;
-    }
-
-    return success;
 }
 
 // Routine Description:
@@ -1576,41 +1387,6 @@ void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* 
 {
     this->_pTtyConnection = pTtyConnection;
     this->_pfnFlushToTerminal = pfnFlushToTerminal;
-}
-
-// Routine Description:
-// - Retrieves a number of times to repeat the last graphical character
-// Arguments:
-// - parameters - The parameters to parse
-// - repeatCount - Receives the repeat count
-// Return Value:
-// - True if we successfully pulled the repeat count from the parameters.
-//   False otherwise.
-bool OutputStateMachineEngine::_GetRepeatCount(gsl::span<const size_t> parameters,
-                                               size_t& repeatCount) const noexcept
-{
-    bool success = false;
-    repeatCount = DefaultRepeatCount;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        repeatCount = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (repeatCount == 0)
-    {
-        repeatCount = DefaultRepeatCount;
-    }
-
-    return success;
 }
 
 // Routine Description:
