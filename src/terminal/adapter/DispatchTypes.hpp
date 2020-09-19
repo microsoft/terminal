@@ -89,6 +89,80 @@ namespace Microsoft::Console::VirtualTerminal
         uint64_t _idAccumulator = 0;
         size_t _idShift = 0;
     };
+
+    class VTParameter
+    {
+    public:
+        constexpr VTParameter() noexcept :
+            _value{ -1 }
+        {
+        }
+
+        constexpr VTParameter(const size_t rhs) noexcept :
+            _value{ gsl::narrow_cast<decltype(_value)>(rhs) }
+        {
+        }
+
+        constexpr bool has_value() const noexcept
+        {
+            // A negative value indicates that the parameter was omitted.
+            return _value >= 0;
+        }
+
+        constexpr size_t value() const noexcept
+        {
+            return _value;
+        }
+
+        constexpr size_t value_or(size_t defaultValue) const noexcept
+        {
+            return has_value() ? _value : defaultValue;
+        }
+
+        template<typename T, std::enable_if_t<sizeof(T) == sizeof(size_t), int> = 0>
+        constexpr operator T() const noexcept
+        {
+            // For most selective parameters, omitted values will default to 0.
+            return static_cast<T>(value_or(0));
+        }
+
+        constexpr operator size_t() const noexcept
+        {
+            // For numeric parameters, both 0 and omitted values will default to 1.
+            return has_value() && _value != 0 ? _value : 1;
+        }
+
+    private:
+        std::make_signed<size_t>::type _value;
+    };
+
+    class VTParameters
+    {
+    public:
+        constexpr VTParameters() noexcept
+        {
+        }
+
+        constexpr VTParameters(const VTParameter* ptr, const size_t count) noexcept :
+            _values{ ptr, count }
+        {
+        }
+
+        template<typename T, std::enable_if_t<sizeof(T) == sizeof(VTParameter), int> = 0>
+        constexpr VTParameters(const T* ptr, const size_t count) noexcept :
+            _values{ reinterpret_cast<const VTParameter*>(ptr), count }
+        {
+        }
+
+        constexpr VTParameter at(const size_t index) const noexcept
+        {
+            // If the index is out of range, we return a parameter with no value.
+            return index < _values.size() ? _values[index] : VTParameter{};
+        }
+
+    private:
+        gsl::span<const VTParameter> _values;
+    };
 }
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
