@@ -88,7 +88,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const size_t numTabs) override; // CHT, HT
         bool BackwardsTab(const size_t numTabs) override; // CBT
-        bool TabClear(const size_t clearType) override; // TBC
+        bool TabClear(const DispatchTypes::TabClearType clearType) override; // TBC
         bool DesignateCodingSystem(const VTID codingSystem) override; // DOCS
         bool Designate94Charset(const size_t gsetNumber, const VTID charset) override; // SCS
         bool Designate96Charset(const size_t gsetNumber, const VTID charset) override; // SCS

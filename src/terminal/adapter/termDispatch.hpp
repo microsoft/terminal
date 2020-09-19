@@ -64,7 +64,7 @@ public:
     bool HorizontalTabSet() noexcept override { return false; } // HTS
     bool ForwardTab(const size_t /*numTabs*/) noexcept override { return false; } // CHT, HT
     bool BackwardsTab(const size_t /*numTabs*/) noexcept override { return false; } // CBT
-    bool TabClear(const size_t /*clearType*/) noexcept override { return false; } // TBC
+    bool TabClear(const DispatchTypes::TabClearType /*clearType*/) noexcept override { return false; } // TBC
     bool EnableDECCOLMSupport(const bool /*enabled*/) noexcept override { return false; } // ?40
     bool EnableVT200MouseMode(const bool /*enabled*/) noexcept override { return false; } // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool /*enabled*/) noexcept override { return false; } // ?1005

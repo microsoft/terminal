@@ -70,7 +70,7 @@ public:
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const size_t numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const size_t numTabs) = 0; // CBT
-    virtual bool TabClear(const size_t clearType) = 0; // TBC
+    virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
     virtual bool EnableDECCOLMSupport(const bool enabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool enabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) = 0; // ?1005

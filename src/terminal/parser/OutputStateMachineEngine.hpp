@@ -219,9 +219,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetTabDistance(const gsl::span<const size_t> parameters,
                              size_t& distance) const noexcept;
 
-        static constexpr size_t DefaultTabClearType = 0;
+        static constexpr DispatchTypes::TabClearType DefaultTabClearType = DispatchTypes::TabClearType::ClearCurrentColumn;
         bool _GetTabClearType(const gsl::span<const size_t> parameters,
-                              size_t& clearType) const noexcept;
+                              DispatchTypes::TabClearType& clearType) const noexcept;
 
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,

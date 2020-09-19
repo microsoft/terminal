@@ -1571,7 +1571,7 @@ bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 // - clearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::TabClear(const size_t clearType)
+bool AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 {
     bool success = false;
     switch (clearType)

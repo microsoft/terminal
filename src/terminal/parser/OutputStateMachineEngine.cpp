@@ -412,7 +412,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     size_t topMargin = 0;
     size_t bottomMargin = 0;
     size_t numTabs = 0;
-    size_t clearType = 0;
+    DispatchTypes::TabClearType clearType = DefaultTabClearType;
     unsigned int function = 0;
     DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
     std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
@@ -1291,7 +1291,7 @@ bool OutputStateMachineEngine::_GetTabDistance(const gsl::span<const size_t> par
 // Return Value:
 // - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
 bool OutputStateMachineEngine::_GetTabClearType(const gsl::span<const size_t> parameters,
-                                                size_t& clearType) const noexcept
+                                                DispatchTypes::TabClearType& clearType) const noexcept
 {
     bool success = false;
     clearType = DefaultTabClearType;
@@ -1304,7 +1304,7 @@ bool OutputStateMachineEngine::_GetTabClearType(const gsl::span<const size_t> pa
     else if (parameters.size() == 1)
     {
         // If there's one parameter, use it.
-        clearType = til::at(parameters, 0);
+        clearType = static_cast<DispatchTypes::TabClearType>(til::at(parameters, 0));
         success = true;
     }
     return success;
