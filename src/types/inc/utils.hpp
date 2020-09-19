@@ -49,6 +49,8 @@ namespace Microsoft::Console::Utils
     std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
 
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
+    bool StringToUint(const std::wstring_view wstr, unsigned int& value);
+    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimeter);
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {

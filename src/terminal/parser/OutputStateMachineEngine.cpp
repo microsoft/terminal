@@ -780,8 +780,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetColor:
             for (size_t i = 0; i < tableIndexes.size(); i++)
             {
-                auto tableIndex = tableIndexes.at(i);
-                auto rgb = colors.at(i);
+                const auto tableIndex = til::at(tableIndexes, i);
+                const auto rgb = til::at(colors, i);
                 success = _dispatch->SetColorTableEntry(tableIndex, rgb);
             }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
@@ -789,21 +789,21 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetForegroundColor:
             if (colors.size() > 0)
             {
-                success = _dispatch->SetDefaultForeground(colors.at(0));
+                success = _dispatch->SetDefaultForeground(til::at(colors, 0));
             }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
             break;
         case OscActionCodes::SetBackgroundColor:
             if (colors.size() > 0)
             {
-                success = _dispatch->SetDefaultBackground(colors.at(0));
+                success = _dispatch->SetDefaultBackground(til::at(colors, 0));
             }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
             break;
         case OscActionCodes::SetCursorColor:
             if (colors.size() > 0)
             {
-                success = _dispatch->SetCursorColor(colors.at(0));
+                success = _dispatch->SetCursorColor(til::at(colors, 0));
             }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
@@ -1364,17 +1364,6 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 #pragma warning(push)
 #pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
 
-// Routine Description:
-// - Determines if a character is a valid number character, 0-9.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isNumber(const wchar_t wch) noexcept
-{
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
-}
-
 #pragma warning(pop)
 
 // Routine Description:
@@ -1395,66 +1384,29 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
                                                     std::vector<DWORD>& rgbs) const noexcept
 try
 {
-    tableIndexes.clear();
-    rgbs.clear();
-    size_t _TableIndex = 0;
+    std::vector<size_t> newTableIndexes;
+    std::vector<DWORD> newRgbs;
 
-    size_t current = 0;
-    while (current < string.size())
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() <= 1)
     {
-        // First try to get the table index, a number between [0,256]
-        const wchar_t wch = string.at(current);
-        if (_isNumber(wch))
+        return false;
+    }
+
+    for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
+    {
+        unsigned int tableIndex = 0;
+        const bool indexSuccess = Utils::StringToUint(parts.at(i), tableIndex);
+        const auto colorOptional = Utils::ColorFromXTermColor(parts.at(j));
+        if (indexSuccess && colorOptional.has_value())
         {
-            _TableIndex *= 10;
-            _TableIndex += wch - L'0';
-
-            ++current;
-        }
-        else if (wch == L';' && current > 0)
-        {
-            // We have found the table index and can move on.
-            // We need to explicitly know the table index, we can't default to 0 if
-            //  there's no param
-            ++current;
-
-            // Now we need to parse the RGB color value from the string.
-            std::optional<til::color> colorOptional;
-
-            // Find the next ';' to determine how to substr.
-            // For example if the string is '0;rgb:1/1/1;1;rgb/2/2/2', we will need
-            // to correctly recognize both "0;rgb:1/1/1;" and "1;rgb/2/2/2".
-            const auto nextDelimiter = string.find(L";", current);
-            if (nextDelimiter == std::wstring::npos)
-            {
-                colorOptional = Utils::ColorFromXTermColor(string.substr(current));
-                // No more delimiter means no more left for parsing. This will effectively break out the loop.
-                current = string.size();
-            }
-            else
-            {
-                // Substr until the delimiter.
-                const auto length = nextDelimiter - current;
-                colorOptional = Utils::ColorFromXTermColor(string.substr(current, length));
-                // Skip this color and the delimiter. Start the next one.
-                current += length + 1;
-            }
-
-            if (colorOptional.has_value())
-            {
-                tableIndexes.push_back(_TableIndex);
-                rgbs.push_back(colorOptional.value());
-            }
-
-            // Reset the state.
-            _TableIndex = 0;
-        }
-        else
-        {
-            // Found an unexpected character, fail.
-            break;
+            newTableIndexes.push_back(tableIndex);
+            newRgbs.push_back(colorOptional.value());
         }
     }
+
+    tableIndexes.swap(newTableIndexes);
+    rgbs.swap(newRgbs);
 
     return tableIndexes.size() > 0 && rgbs.size() > 0;
 }
@@ -1517,44 +1469,30 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const noexcept
 try
 {
-    rgbs.clear();
-
+    std::vector<DWORD> newRgbs;
     bool success = false;
 
-    size_t current = 0;
-    size_t expectedColorCount = 0;
-
-    while (current < string.size())
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() < 1)
     {
-        std::optional<til::color> colorOptional;
-        const auto nextDelimiter = string.find(L";", current);
-        if (nextDelimiter == std::wstring::npos)
-        {
-            colorOptional = Utils::ColorFromXTermColor(string.substr(current));
-            // No more delimiter means no more left for parsing. This will effectively break out the loop.
-            current = string.size();
-        }
-        else
-        {
-            // Substr until the delimiter.
-            const auto length = nextDelimiter - current;
-            colorOptional = Utils::ColorFromXTermColor(string.substr(current, length));
-            // Skip this color and the delimiter. Start the next one.
-            current += length + 1;
-        }
+        return false;
+    }
 
-        expectedColorCount++;
-
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        const auto colorOptional = Utils::ColorFromXTermColor(parts.at(i));
         if (colorOptional.has_value())
         {
-            rgbs.push_back(colorOptional.value());
+            newRgbs.push_back(colorOptional.value());
             // Only mark the parsing as a success iff the first color is a success.
-            if (expectedColorCount == 1)
+            if (i == 0)
             {
                 success = true;
             }
         }
     }
+
+    rgbs.swap(newRgbs);
 
     return success;
 }

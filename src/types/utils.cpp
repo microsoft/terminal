@@ -7,6 +7,17 @@
 
 using namespace Microsoft::Console;
 
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isNumber(const wchar_t wch) noexcept
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+}
+
 // Function Description:
 // - Creates a String representation of a guid, in the format
 //      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
@@ -333,6 +344,72 @@ bool Utils::HexToUint(const wchar_t wch,
         success = true;
     }
     return success;
+}
+
+// Routine Description:
+// - Converts a number string to its equivalent integer value.
+// Arguments:
+// - wstr - String to convert.
+// - value - receives the int value of the string
+// Return Value:
+// - true iff the string is a number string.
+bool Utils::StringToUint(const std::wstring_view wstr,
+                         unsigned int& value)
+{
+    unsigned int result = 0;
+    size_t current = 0;
+    while (current < wstr.size())
+    {
+        const wchar_t wch = wstr.at(current);
+        if (_isNumber(wch))
+        {
+            result *= 10;
+            result += wch - L'0';
+
+            ++current;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    value = result;
+
+    return true;
+}
+
+
+// Routine Description:
+// - Split a string into different parts using the delimeter provided.
+// Arguments:
+// - wstr - String to split.
+// - delimeter - delimeter to use.
+// Return Value:
+// - a vector containing the result string parts.
+std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
+                                                  const wchar_t delimeter)
+{
+    std::vector<std::wstring_view> result;
+    size_t current = 0;
+    while (current < wstr.size())
+    {
+        const auto nextDelimiter = wstr.find(delimeter, current);
+        if (nextDelimiter == std::wstring::npos)
+        {
+            result.push_back(wstr.substr(current));
+            break;
+        }
+        else
+        {
+            const auto length = nextDelimiter - current;
+            result.push_back(wstr.substr(current, length));
+            // Skip this part and the delimiter. Start the next one
+            current += length + 1;
+        }
+    }
+
+    return result;
 }
 
 // Routine Description:
