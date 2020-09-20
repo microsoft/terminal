@@ -668,22 +668,19 @@ namespace winrt::TerminalApp::implementation
         // Try to find a recently used working directory for this profile.
         Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Tab> view{ _tabs.GetView() };
 
-        for (auto const& tab : view)
+        if (auto index{ _GetFocusedTabIndex() })
         {
-            const auto tabImpl = winrt::get_self<winrt::TerminalApp::implementation::Tab>(tab);
-            if (tabImpl)
+            try
             {
-                auto focuesdProfileGuid = tabImpl->GetFocusedProfile();
-                if (profileGuid == focuesdProfileGuid)
+                auto focusedTab = _GetStrongTabImpl(*index);
+                auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                auto validWorkingDirectory = !workingDirectory.empty() && ::PathFileExists(workingDirectory.data());
+                if (validWorkingDirectory)
                 {
-                    auto workingDirectory = tabImpl->GetActiveTerminalControl().WorkingDirectory();
-                    auto validWorkingDirectory = !workingDirectory.empty() && ::PathFileExists(workingDirectory.data());
-                    if (validWorkingDirectory)
-                    {
-                        settings.StartingDirectory(workingDirectory);
-                    }
+                    settings.StartingDirectory(workingDirectory);
                 }
             }
+            CATCH_LOG();
         }
 
         // Create a connection based on the values in our settings object.

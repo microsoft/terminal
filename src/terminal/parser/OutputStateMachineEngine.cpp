@@ -1648,7 +1648,17 @@ bool OutputStateMachineEngine::_ParseDirectory(const std::wstring_view string,
         return false;
     }
 
-    uri = std::wstring(string.substr(7, string.length() - 7));
+    size_t current = 7;
+    const auto nextSlash = string.find(L"/", current);
+    if (nextSlash == std::wstring::npos)
+    {
+        return false;
+    }
+
+    // Hostname is ignored.
+    current = nextSlash + 1;
+    uri = std::wstring(string.substr(current, std::wstring::npos));
+
     return true;
 }
 
