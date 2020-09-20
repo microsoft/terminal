@@ -430,10 +430,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     case CsiActionCodes::DA3_TertiaryDeviceAttributes:
         success = _VerifyDeviceAttributesParams(parameters);
         break;
-    case CsiActionCodes::ANSISYSSC_CursorSave:
-    case CsiActionCodes::ANSISYSRC_CursorRestore:
-        success = _VerifyHasNoParameters(parameters);
-        break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _GetWindowManipulationType(parameters, function);
         break;
@@ -552,11 +548,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
             break;
         case CsiActionCodes::ANSISYSSC_CursorSave:
-            success = _dispatch->CursorSaveState();
+            success = params.empty() && _dispatch->CursorSaveState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
             break;
         case CsiActionCodes::ANSISYSRC_CursorRestore:
-            success = _dispatch->CursorRestoreState();
+            success = params.empty() && _dispatch->CursorRestoreState();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
             break;
         case CsiActionCodes::IL_InsertLine:
@@ -896,16 +892,6 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const gsl::span<const size_
         success = true;
     }
     return success;
-}
-
-// - Verifies that no parameters were parsed for the current CSI sequence
-// Arguments:
-// - parameters - The parameters to parse
-// Return Value:
-// - True if there were no parameters. False otherwise.
-bool OutputStateMachineEngine::_VerifyHasNoParameters(const gsl::span<const size_t> parameters) const noexcept
-{
-    return parameters.empty();
 }
 
 // Routine Description:

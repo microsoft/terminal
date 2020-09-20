@@ -160,6 +160,11 @@ namespace Microsoft::Console::VirtualTerminal
             return index < _values.size() ? _values[index] : VTParameter{};
         }
 
+        constexpr bool empty() const noexcept
+        {
+            return _values.empty();
+        }
+
     private:
         gsl::span<const VTParameter> _values;
     };
