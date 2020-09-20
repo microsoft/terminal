@@ -665,9 +665,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
 
-        // Try to find a recently used working directory for this profile.
-        Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Tab> view{ _tabs.GetView() };
-
+        // Try to find a recently used working directory of the current focused tab.
         if (auto index{ _GetFocusedTabIndex() })
         {
             try

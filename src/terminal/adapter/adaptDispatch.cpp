@@ -2374,12 +2374,7 @@ bool AdaptDispatch::EndHyperlink()
 
 bool AdaptDispatch::SetWorkingDirectory(const std::wstring_view /*uri*/)
 {
-    if (_pConApi->IsConsolePty())
-    {
-        return false;
-    }
-
-    return true;
+    return NoOp();
 }
 
 // Routine Description:

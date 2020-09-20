@@ -990,6 +990,9 @@ Horiz
 HORZ
 hostable
 hostlib
+hostname
+Hostname
+HOSTNAME
 HPA
 HPAINTBUFFER
 HPCON
