@@ -584,6 +584,8 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
+    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::Scrollback);
+
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
     //      Everything that's scrolled off the screen so far.
@@ -681,6 +683,8 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
+    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::All);
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
