@@ -178,8 +178,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetConsoleWidth(const gsl::span<const size_t> parameters,
                               size_t& consoleWidth) const noexcept;
 
-        bool _VerifyDeviceAttributesParams(const gsl::span<const size_t> parameters) const noexcept;
-
         bool _GetPrivateModeParams(const gsl::span<const size_t> parameters,
                                    std::vector<DispatchTypes::PrivateModeParams>& privateModes) const;
 

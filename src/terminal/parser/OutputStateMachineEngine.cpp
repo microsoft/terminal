@@ -425,11 +425,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     case CsiActionCodes::SGR_SetGraphicsRendition:
         success = _GetGraphicsOptions(parameters, _graphicsOptions);
         break;
-    case CsiActionCodes::DA_DeviceAttributes:
-    case CsiActionCodes::DA2_SecondaryDeviceAttributes:
-    case CsiActionCodes::DA3_TertiaryDeviceAttributes:
-        success = _VerifyDeviceAttributesParams(parameters);
-        break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _GetWindowManipulationType(parameters, function);
         break;
@@ -528,15 +523,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
             break;
         case CsiActionCodes::DA_DeviceAttributes:
-            success = _dispatch->DeviceAttributes();
+            success = params.at(0).value_or(0) == 0 && _dispatch->DeviceAttributes();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
             break;
         case CsiActionCodes::DA2_SecondaryDeviceAttributes:
-            success = _dispatch->SecondaryDeviceAttributes();
+            success = params.at(0).value_or(0) == 0 && _dispatch->SecondaryDeviceAttributes();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
             break;
         case CsiActionCodes::DA3_TertiaryDeviceAttributes:
-            success = _dispatch->TertiaryDeviceAttributes();
+            success = params.at(0).value_or(0) == 0 && _dispatch->TertiaryDeviceAttributes();
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
             break;
         case CsiActionCodes::SU_ScrollUp:
@@ -891,32 +886,6 @@ bool OutputStateMachineEngine::_GetPrivateModeParams(const gsl::span<const size_
         }
         success = true;
     }
-    return success;
-}
-
-// Routine Description:
-// - Validates that we received the correct parameter sequence for the Device Attributes command.
-// - For DA, we should have received either NO parameters or just one 0 parameter. Anything else is not acceptable.
-// Arguments:
-// - parameters - The parameters to parse
-// Return Value:
-// - True if the DA params were valid. False otherwise.
-bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const gsl::span<const size_t> parameters) const noexcept
-{
-    bool success = false;
-
-    if (parameters.empty())
-    {
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        if (til::at(parameters, 0) == 0)
-        {
-            success = true;
-        }
-    }
-
     return success;
 }
 
