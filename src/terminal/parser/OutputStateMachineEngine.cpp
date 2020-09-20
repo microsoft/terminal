@@ -1384,14 +1384,14 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view stri
                                                     std::vector<DWORD>& rgbs) const noexcept
 try
 {
-    std::vector<size_t> newTableIndexes;
-    std::vector<DWORD> newRgbs;
-
     const auto parts = Utils::SplitString(string, L';');
-    if (parts.size() <= 1)
+    if (parts.size() < 2)
     {
         return false;
     }
+
+    std::vector<size_t> newTableIndexes;
+    std::vector<DWORD> newRgbs;
 
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
@@ -1469,7 +1469,6 @@ bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
                                                std::vector<DWORD>& rgbs) const noexcept
 try
 {
-    std::vector<DWORD> newRgbs;
     bool success = false;
 
     const auto parts = Utils::SplitString(string, L';');
@@ -1478,6 +1477,7 @@ try
         return false;
     }
 
+    std::vector<DWORD> newRgbs;
     for (size_t i = 0; i < parts.size(); i++)
     {
         const auto colorOptional = Utils::ColorFromXTermColor(parts.at(i));

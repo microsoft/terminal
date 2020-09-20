@@ -379,22 +379,21 @@ bool Utils::StringToUint(const std::wstring_view wstr,
     return true;
 }
 
-
 // Routine Description:
 // - Split a string into different parts using the delimeter provided.
 // Arguments:
 // - wstr - String to split.
-// - delimeter - delimeter to use.
+// - delimiter - delimiter to use.
 // Return Value:
 // - a vector containing the result string parts.
 std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
-                                                  const wchar_t delimeter)
+                                                  const wchar_t delimiter)
 {
     std::vector<std::wstring_view> result;
     size_t current = 0;
     while (current < wstr.size())
     {
-        const auto nextDelimiter = wstr.find(delimeter, current);
+        const auto nextDelimiter = wstr.find(delimiter, current);
         if (nextDelimiter == std::wstring::npos)
         {
             result.push_back(wstr.substr(current));
