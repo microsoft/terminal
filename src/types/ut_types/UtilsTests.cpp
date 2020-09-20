@@ -22,6 +22,8 @@ class UtilsTests
     TEST_METHOD(TestClampToShortMax);
     TEST_METHOD(TestSwapColorPalette);
     TEST_METHOD(TestGuidToString);
+    TEST_METHOD(TestSplitString);
+    TEST_METHOD(TestStringToUint);
     TEST_METHOD(TestColorFromXTermColor);
 
     void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
@@ -93,6 +95,62 @@ void UtilsTests::TestGuidToString()
 
     VERIFY_ARE_EQUAL(constantGuidString.size(), generatedGuid.size());
     VERIFY_ARE_EQUAL(constantGuidString, generatedGuid);
+}
+
+void UtilsTests::TestSplitString()
+{
+    std::vector<std::wstring_view> result;
+    result = SplitString(L"", L';');
+    VERIFY_ARE_EQUAL(0, result.size());
+    result = SplitString(L"1", L';');
+    VERIFY_ARE_EQUAL(1, result.size());
+    result = SplitString(L"123", L';');
+    VERIFY_ARE_EQUAL(1, result.size());
+
+    result = SplitString(L";123", L';');
+    VERIFY_ARE_EQUAL(2, result.size());
+    VERIFY_ARE_EQUAL(L"", result.at(0));
+    VERIFY_ARE_EQUAL(L"123", result.at(1));
+
+    result = SplitString(L"123;", L';');
+    VERIFY_ARE_EQUAL(2, result.size());
+    VERIFY_ARE_EQUAL(L"123", result.at(0));
+    VERIFY_ARE_EQUAL(L"", result.at(1));
+
+    result = SplitString(L"123;456", L';');
+    VERIFY_ARE_EQUAL(2, result.size());
+    VERIFY_ARE_EQUAL(L"123", result.at(0));
+    VERIFY_ARE_EQUAL(L"456", result.at(1));
+
+    result = SplitString(L"123;456;789", L';');
+    VERIFY_ARE_EQUAL(3, result.size());
+    VERIFY_ARE_EQUAL(L"123", result.at(0));
+    VERIFY_ARE_EQUAL(L"456", result.at(1));
+    VERIFY_ARE_EQUAL(L"789", result.at(2));
+}
+
+void UtilsTests::TestStringToUint()
+{
+    bool success = false;
+    unsigned int value = 0;
+    success = StringToUint(L"", value);
+    VERIFY_IS_FALSE(success);
+    success = StringToUint(L"xyz", value);
+    VERIFY_IS_FALSE(success);
+    success = StringToUint(L";", value);
+    VERIFY_IS_FALSE(success);
+
+    success = StringToUint(L"1", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(1u, value);
+
+    success = StringToUint(L"123", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(123u, value);
+
+    success = StringToUint(L"123456789", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(123456789u, value);
 }
 
 void UtilsTests::TestColorFromXTermColor()
@@ -184,7 +242,7 @@ void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD col
 {
     std::optional<til::color> color = ColorFromXTermColor(wstr);
     VERIFY_IS_TRUE(color.has_value());
-    VERIFY_ARE_EQUAL((COLORREF)color.value(), colorValue);
+    VERIFY_ARE_EQUAL(colorValue, (COLORREF)color.value());
 }
 
 void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)

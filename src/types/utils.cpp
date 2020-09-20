@@ -347,15 +347,20 @@ bool Utils::HexToUint(const wchar_t wch,
 }
 
 // Routine Description:
-// - Converts a number string to its equivalent integer value.
+// - Converts a number string to its equivalent unsigned integer value.
 // Arguments:
 // - wstr - String to convert.
 // - value - receives the int value of the string
 // Return Value:
-// - true iff the string is a number string.
+// - true iff the string is a unsigned integer string.
 bool Utils::StringToUint(const std::wstring_view wstr,
                          unsigned int& value)
 {
+    if (wstr.size() < 1)
+    {
+        return false;
+    }
+
     unsigned int result = 0;
     size_t current = 0;
     while (current < wstr.size())
@@ -380,7 +385,7 @@ bool Utils::StringToUint(const std::wstring_view wstr,
 }
 
 // Routine Description:
-// - Split a string into different parts using the delimeter provided.
+// - Split a string into different parts using the delimiter provided.
 // Arguments:
 // - wstr - String to split.
 // - delimiter - delimiter to use.
@@ -405,6 +410,13 @@ std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
             result.push_back(wstr.substr(current, length));
             // Skip this part and the delimiter. Start the next one
             current += length + 1;
+            // The next index is larger than string size, which means the string
+            // is in the format of "part1;part2;" (assuming use ';' as delimiter).
+            // Add the last part which is an empty string.
+            if (current >= wstr.size())
+            {
+                result.push_back(L"");
+            }
         }
     }
 
