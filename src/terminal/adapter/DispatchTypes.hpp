@@ -167,7 +167,7 @@ namespace Microsoft::Console::VirtualTerminal
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
-    enum class EraseType : unsigned int
+    enum class EraseType : size_t
     {
         ToEnd = 0,
         FromBeginning = 1,
@@ -237,7 +237,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundWhite = 107,
     };
 
-    enum class AnsiStatusType : unsigned int
+    enum class AnsiStatusType : size_t
     {
         OS_OperatingStatus = 5,
         CPR_CursorPositionReport = 6,
@@ -276,7 +276,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8 = VTID("G")
     };
 
-    enum TabClearType : unsigned short
+    enum TabClearType : size_t
     {
         ClearCurrentColumn = 0,
         ClearAllColumns = 3
@@ -289,7 +289,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ResizeWindowInCharacters = 8,
     };
 
-    enum class CursorStyle : unsigned int
+    enum class CursorStyle : size_t
     {
         UserDefault = 0, // Implemented as "restore cursor to user default".
         BlinkingBlock = 1,

@@ -174,16 +174,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetGraphicsOptions(const gsl::span<const size_t> parameters,
                                  std::vector<DispatchTypes::GraphicsOptions>& options) const;
 
-        static constexpr DispatchTypes::EraseType DefaultEraseType = DispatchTypes::EraseType::ToEnd;
-        bool _GetEraseOperation(const gsl::span<const size_t> parameters,
-                                DispatchTypes::EraseType& eraseType) const noexcept;
-
         static constexpr size_t DefaultConsoleWidth = 80;
         bool _GetConsoleWidth(const gsl::span<const size_t> parameters,
                               size_t& consoleWidth) const noexcept;
-
-        bool _GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
-                                       DispatchTypes::AnsiStatusType& statusType) const noexcept;
 
         bool _VerifyHasNoParameters(const gsl::span<const size_t> parameters) const noexcept;
 
@@ -195,10 +188,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 
-        static constexpr DispatchTypes::TabClearType DefaultTabClearType = DispatchTypes::TabClearType::ClearCurrentColumn;
-        bool _GetTabClearType(const gsl::span<const size_t> parameters,
-                              DispatchTypes::TabClearType& clearType) const noexcept;
-
         static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
         bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
@@ -209,10 +198,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _GetOscSetColor(const std::wstring_view string,
                              std::vector<DWORD>& rgbs) const noexcept;
-
-        static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::UserDefault;
-        bool _GetCursorStyle(const gsl::span<const size_t> parameters,
-                             DispatchTypes::CursorStyle& cursorStyle) const noexcept;
 
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,

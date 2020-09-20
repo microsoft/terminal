@@ -407,34 +407,23 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
 {
     bool success = false;
     const VTParameters params{ parameters.data(), parameters.size() };
-    DispatchTypes::TabClearType clearType = DefaultTabClearType;
     unsigned int function = 0;
-    DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
     std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
     // We hold the vector in the class because client applications that do a lot of color work
     // would spend a lot of time reallocating/resizing the vector.
     _graphicsOptions.clear();
-    DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
-    DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
     // fill params
     switch (id)
     {
-    case CsiActionCodes::ED_EraseDisplay:
-    case CsiActionCodes::EL_EraseLine:
-        success = _GetEraseOperation(parameters, eraseType);
-        break;
     case CsiActionCodes::DECSET_PrivateModeSet:
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = _GetPrivateModeParams(parameters, privateModeParams);
         break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
         success = _GetGraphicsOptions(parameters, _graphicsOptions);
-        break;
-    case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _GetDeviceStatusOperation(parameters, deviceStatusType);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
     case CsiActionCodes::DA2_SecondaryDeviceAttributes:
@@ -445,14 +434,8 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     case CsiActionCodes::ANSISYSRC_CursorRestore:
         success = _VerifyHasNoParameters(parameters);
         break;
-    case CsiActionCodes::TBC_TabClear:
-        success = _GetTabClearType(parameters, clearType);
-        break;
     case CsiActionCodes::DTTERM_WindowManipulation:
         success = _GetWindowManipulationType(parameters, function);
-        break;
-    case CsiActionCodes::DECSCUSR_SetCursorStyle:
-        success = _GetCursorStyle(parameters, cursorStyle);
         break;
     default:
         // If no params to fill, param filling was successful.
@@ -524,11 +507,11 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
             break;
         case CsiActionCodes::ED_EraseDisplay:
-            success = _dispatch->EraseInDisplay(eraseType);
+            success = _dispatch->EraseInDisplay(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
             break;
         case CsiActionCodes::EL_EraseLine:
-            success = _dispatch->EraseInLine(eraseType);
+            success = _dispatch->EraseInLine(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
             break;
         case CsiActionCodes::DECSET_PrivateModeSet:
@@ -545,7 +528,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
             break;
         case CsiActionCodes::DSR_DeviceStatusReport:
-            success = _dispatch->DeviceStatusReport(deviceStatusType);
+            success = _dispatch->DeviceStatusReport(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
             break;
         case CsiActionCodes::DA_DeviceAttributes:
@@ -593,7 +576,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
             break;
         case CsiActionCodes::TBC_TabClear:
-            success = _dispatch->TabClear(clearType);
+            success = _dispatch->TabClear(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
             break;
         case CsiActionCodes::ECH_EraseCharacters:
@@ -621,7 +604,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
             break;
         case CsiActionCodes::DECSCUSR_SetCursorStyle:
-            success = _dispatch->SetCursorStyle(cursorStyle);
+            success = _dispatch->SetCursorStyle(params.at(0));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
             break;
         case CsiActionCodes::DECSTR_SoftReset:
@@ -859,45 +842,6 @@ bool OutputStateMachineEngine::_GetGraphicsOptions(const gsl::span<const size_t>
 }
 
 // Routine Description:
-// - Retrieves the erase type parameter for an upcoming operation.
-// Arguments:
-// - parameters - The parameters to parse
-// - eraseType - Receives the erase type parameter
-// Return Value:
-// - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetEraseOperation(const gsl::span<const size_t> parameters,
-                                                  DispatchTypes::EraseType& eraseType) const noexcept
-{
-    bool success = false; // If we have too many parameters or don't know what to do with the given value, return false.
-    eraseType = DefaultEraseType; // if we fail, just put the default type in.
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        eraseType = DefaultEraseType;
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, attempt to match it to the values we accept.
-        const auto param = static_cast<DispatchTypes::EraseType>(til::at(parameters, 0));
-
-        switch (param)
-        {
-        case DispatchTypes::EraseType::ToEnd:
-        case DispatchTypes::EraseType::FromBeginning:
-        case DispatchTypes::EraseType::All:
-        case DispatchTypes::EraseType::Scrollback:
-            eraseType = param;
-            success = true;
-            break;
-        }
-    }
-
-    return success;
-}
-
-// Routine Description:
 // - Retrieves a width for the console window from the parameter pool stored during Param actions.
 // Arguments:
 // - parameters - The parameters to parse
@@ -926,44 +870,6 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> pa
     if (consoleWidth == 0)
     {
         consoleWidth = DefaultConsoleWidth;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the status type parameter for an upcoming device query operation
-// Arguments:
-// - parameters - The parameters to parse
-// - statusType - Receives the Status Type parameter
-// Return Value:
-// - True if we successfully found a device operation in the parameters stored. False otherwise.
-bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
-                                                         DispatchTypes::AnsiStatusType& statusType) const noexcept
-{
-    bool success = false;
-    statusType = static_cast<DispatchTypes::AnsiStatusType>(0);
-
-    if (parameters.size() == 1)
-    {
-        // If there's one parameter, attempt to match it to the values we accept.
-        const auto param = til::at(parameters, 0);
-
-        switch (param)
-        {
-        // This looks kinda silly, but I want the parser to reject (success = false) any status types we haven't put here.
-        case (unsigned short)DispatchTypes::AnsiStatusType::OS_OperatingStatus:
-            statusType = DispatchTypes::AnsiStatusType::OS_OperatingStatus;
-            success = true;
-            break;
-        case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-            statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
-            success = true;
-            break;
-        default:
-            success = false;
-            break;
-        }
     }
 
     return success;
@@ -1041,33 +947,6 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
     title = string;
 
     return !string.empty();
-}
-
-// Routine Description:
-// - Retrieves the type of tab clearing operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - clearType - Receives the clear type
-// Return Value:
-// - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabClearType(const gsl::span<const size_t> parameters,
-                                                DispatchTypes::TabClearType& clearType) const noexcept
-{
-    bool success = false;
-    clearType = DefaultTabClearType;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        clearType = static_cast<DispatchTypes::TabClearType>(til::at(parameters, 0));
-        success = true;
-    }
-    return success;
 }
 
 // Method Description:
@@ -1285,34 +1164,6 @@ bool OutputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const 
             success = false;
             break;
         }
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the cursor style from the parameter list
-// Arguments:
-// - parameters - The parameters to parse
-// - cursorStyle - Receives the cursorStyle
-// Return Value:
-// - True if we successfully pulled the cursor style from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorStyle(const gsl::span<const size_t> parameters,
-                                               DispatchTypes::CursorStyle& cursorStyle) const noexcept
-{
-    bool success = false;
-    cursorStyle = DefaultCursorStyle;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        cursorStyle = (DispatchTypes::CursorStyle)til::at(parameters, 0);
-        success = true;
     }
 
     return success;
