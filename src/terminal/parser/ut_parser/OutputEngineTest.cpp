@@ -2194,16 +2194,7 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        Log::Comment(L"Test 1: Check empty case. Should fail.");
-        mach.ProcessCharacter(AsciiChars::ESC);
-        mach.ProcessCharacter(L'[');
-        mach.ProcessCharacter(L'n');
-
-        VERIFY_IS_FALSE(pDispatch->_deviceStatusReport);
-
-        pDispatch->ClearState();
-
-        Log::Comment(L"Test 2: Check OS (operating status) case 5. Should succeed.");
+        Log::Comment(L"Test 1: Check OS (operating status) case 5. Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'5');
@@ -2214,7 +2205,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        Log::Comment(L"Test 3: Check CPR (cursor position report) case 6. Should succeed.");
+        Log::Comment(L"Test 2: Check CPR (cursor position report) case 6. Should succeed.");
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'[');
         mach.ProcessCharacter(L'6');
@@ -2222,16 +2213,6 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_deviceStatusReport);
         VERIFY_ARE_EQUAL(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport, pDispatch->_statusReportType);
-
-        pDispatch->ClearState();
-
-        Log::Comment(L"Test 4: Check unimplemented case 1. Should fail.");
-        mach.ProcessCharacter(AsciiChars::ESC);
-        mach.ProcessCharacter(L'[');
-        mach.ProcessCharacter(L'1');
-        mach.ProcessCharacter(L'n');
-
-        VERIFY_IS_FALSE(pDispatch->_deviceStatusReport);
 
         pDispatch->ClearState();
     }
