@@ -6,7 +6,6 @@
 #include "ConptyConnection.h"
 
 #include <windows.h>
-#include <userenv.h>
 
 #include "ConptyConnection.g.cpp"
 
@@ -94,11 +93,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.clear();
         });
 
-        {
-            const auto newEnvironmentBlock{ Utils::CreateEnvironmentBlock() };
-            // Populate the environment map with the current environment.
-            RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment, newEnvironmentBlock.get()));
-        }
+        // Populate the environment map with the current environment.
+        RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
