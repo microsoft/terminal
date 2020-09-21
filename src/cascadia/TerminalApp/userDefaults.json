@@ -52,9 +52,9 @@
     // To learn more about color schemes, visit https://aka.ms/terminal-color-schemes
     "schemes": [],
 
-    // Add custom keybindings to this array.
+    // Add custom actions and keybindings to this array.
     // To unbind a key combination from your defaults.json, set the command to "unbound".
-    // To learn more about keybindings, visit https://aka.ms/terminal-keybindings
+    // To learn more about actions and keybindings, visit https://aka.ms/terminal-keybindings
     "actions":
     [
         // Copy and paste are bound to Ctrl+Shift+C and Ctrl+Shift+V in your defaults.json.
