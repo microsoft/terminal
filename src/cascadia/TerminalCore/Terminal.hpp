@@ -6,7 +6,7 @@
 #include <conattrs.hpp>
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../renderer/inc/IRenderData.hpp"
+#include "../../renderer/inc/BlinkingState.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 
@@ -187,6 +187,8 @@ public:
 
     const std::optional<til::color> GetTabColor() const noexcept;
 
+    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     enum class SelectionExpansionMode
@@ -224,6 +226,7 @@ private:
     COLORREF _defaultBg;
     CursorType _defaultCursorShape;
     bool _screenReversed;
+    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
 
     bool _snapOnInput;
     bool _altGrAliasing;
