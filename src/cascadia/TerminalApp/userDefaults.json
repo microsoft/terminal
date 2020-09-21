@@ -55,7 +55,7 @@
     // Add custom keybindings to this array.
     // To unbind a key combination from your defaults.json, set the command to "unbound".
     // To learn more about keybindings, visit https://aka.ms/terminal-keybindings
-    "keybindings":
+    "actions":
     [
         // Copy and paste are bound to Ctrl+Shift+C and Ctrl+Shift+V in your defaults.json.
         // These two lines additionally bind them to Ctrl+C and Ctrl+V.
