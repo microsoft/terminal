@@ -307,14 +307,73 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
 // - givenIt - Iterator representing output cell data to write
 // Return Value:
 // - The final position of the iterator
-OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
+OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
 {
     const auto& cursor = GetCursor();
     const auto target = cursor.GetPosition();
 
-    const auto finalIt = Write(givenIt, target);
+    // the regex object we will use to match URIs
+    std::regex uri(R"([a-z]+[:.].*?(?=\s))");
 
-    return finalIt;
+    // get the text from the iterator we are about to write
+    auto run = til::u16u8(givenIt.returnRun());
+
+    // search through the run with our regex object
+    auto words_begin = std::sregex_iterator(run.begin(), run.end(), uri);
+    auto words_end = std::sregex_iterator();
+    if (words_begin != words_end)
+    {
+        // we found some matches
+        std::wstring sufStr;
+
+        // get a mutable target coord
+        auto target2 = target;
+        for (auto i = words_begin; i != words_end; ++i)
+        {
+            // for each match, we write the prefix (which is everything between the last match and
+            // this match) with the current attributes, then set the hyperlink attribute to write the URI,
+            // then we set the attributes back
+
+            // get the URI and prefix strings
+            const auto uriStr = til::u8u16(i->str());
+            const auto preStr = til::u8u16(i->prefix().str());
+
+            // store the suffix string in case this is the last match we've found - once the loop
+            // is done we need to write the suffix of the last match
+            // we only write the suffix of the last match because the suffix of the nth match
+            // is simply the prefix of the (n+1)th match, which we write anyway
+            sufStr = til::u8u16(i->suffix().str());
+
+            // write the prefix string and update the target
+            OutputCellIterator preIter{ preStr, _currentAttributes };
+            Write(preIter, target2);
+            target2.X += (SHORT) preStr.size();
+
+            // update metadata for hyperlinks
+            const auto id = GetHyperlinkId(L"");
+            AddHyperlinkToMap(uriStr, id);
+            const auto oldId = _currentAttributes.GetHyperlinkId();
+            _currentAttributes.SetHyperlinkId(id);
+
+            // write the uri and update the target
+            OutputCellIterator uriIter{ uriStr, _currentAttributes };
+            Write(uriIter, target2);
+            target2.X += (SHORT) uriStr.size();
+
+            // set the attributes back
+            _currentAttributes.SetHyperlinkId(oldId);
+        }
+
+        // write the suffix string of the last match
+        const OutputCellIterator sufIter{ sufStr, _currentAttributes };
+        const auto finalIt = Write(sufIter, target2);
+        return finalIt;
+    }
+    else
+    {
+        const auto finalIt = Write(givenIt, target);
+        return finalIt;
+    }
 }
 
 // Routine Description:

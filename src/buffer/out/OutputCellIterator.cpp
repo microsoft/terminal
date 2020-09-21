@@ -197,6 +197,11 @@ OutputCellIterator::operator bool() const noexcept
     CATCH_FAIL_FAST();
 }
 
+std::wstring_view OutputCellIterator::returnRun()
+{
+    return std::get<std::wstring_view>(_run);
+}
+
 // Routine Description:
 // - Advances the iterator one position over the underlying data source.
 // Return Value:

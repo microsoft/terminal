@@ -48,6 +48,8 @@ public:
 
     operator bool() const noexcept;
 
+    std::wstring_view returnRun();
+
     ptrdiff_t GetCellDistance(OutputCellIterator other) const noexcept;
     ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
     friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;

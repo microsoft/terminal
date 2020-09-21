@@ -60,6 +60,8 @@ filling in the last row, and updating the screen.
 
 #include "../renderer/inc/IRenderTarget.hpp"
 
+#include <regex>
+
 class TextBuffer final
 {
 public:
