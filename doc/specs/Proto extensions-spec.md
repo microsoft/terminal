@@ -64,7 +64,9 @@ An example of a full json file with these fields filled out is shown at the end 
 The main thing to note for modification of existing profiles is that this will only be used for modifying the
 default profiles (cmd/powershell) or the dynamically generated profiles. 
 
-For modifications to existing profiles, the json stub would need to indicate which profile it wishes to modify.
+For modifications to existing profiles, the json stub would need to indicate which profile it wishes to modify. It will
+do this by providing the corresponding guid in the `"updates"` field of the json stub.
+
 Note that currently, we generate a GUID for dynamic profiles using the "initial" name of the profile (i.e. before
 any user changes are applied). For example, the "initial" name of a WSL profile is the \<name\> argument to
 "wsl.exe -d \<name\>", and the "initial" name of a Powershell profile is something like "Powershell (ARM)" - depending
@@ -84,7 +86,7 @@ Here is an example of a json file that modifies an existing profile (specificall
 {
     "profiles": [
         {
-            "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+            "updates": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
             "fontSize": 16,
             "fontWeight": "thin"
         }
@@ -112,7 +114,6 @@ have some qualifying minimum criteria before we accept a stub as a full profile.
 new profile objects from stubs that contain at least the following
 
 * A name
-* A commandline argument
 
 As in the case of the dynamic profile generator, if we create a profile that did not exist before (i.e. does not
 exist in the user settings), we need to add the profile to the user settings file and re-save that file.
@@ -155,12 +156,11 @@ Again, the user will be able to make changes to it as they do for all other prof
 #### Creation of colour schemes
 
 As with full profiles, we will have some qualifying criteria for what we accept as full colour schemes: color schemes
-must have
-* A name
-* A background
-* A foreground
+must have _all_ the fields that define a colour scheme - see the
+[docs](https://docs.microsoft.com/en-us/windows/terminal/customize-settings/color-schemes)
+on creating new colour schemes for what this means. 
 
-This will cause the issue of colour schemes being overridden if there are many creations of a colour scheme with the
+This may cause the issue of colour schemes being overridden if there are many creations of a colour scheme with the
 same name. Since for now all we have to uniquely identify colour schemes *is* the name, we will just let this be.
 
 Here is an example of a json stub that contains a colour scheme:
@@ -170,8 +170,29 @@ Here is an example of a json stub that contains a colour scheme:
     "schemes": [
         {
             "name": "Postmodern Tango Light",
+
+            "cursorColor": "#FFFFFF",
+            "selectionBackground": "#FFFFFF",
+
             "background": '#61D6D6',
-            "foreground": '#E74856'
+            "foreground": '#E74856',
+
+            "black" : "#0C0C0C",
+            "blue" : "#0037DA",
+            "cyan" : "#3A96DD",
+            "green" : "#13A10E",
+            "purple" : "#881798",
+            "red" : "#C50F1F",
+            "white" : "#CCCCCC",
+            "yellow" : "#C19C00",
+            "brightBlack" : "#767676",
+            "brightBlue" : "#3B78FF",
+            "brightCyan" : "#61D6D6",
+            "brightGreen" : "#16C60C",
+            "brightPurple" : "#B4009E",
+            "brightRed" : "#E74856",
+            "brightWhite" : "#F2F2F2",
+            "brightYellow" : "#F9F1A5"
         }
     ]
 }
@@ -187,7 +208,7 @@ Shell profile, creates a new profile called 'Cool Profile' and creates a new col
 {
   "profiles": [
     {
-      "guid": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
+      "updates": "{b453ae62-4e3d-5e58-b989-0a998ec441b8}",
       "fontSize": 16,
       "fontWeight": "thin"
     },
@@ -202,9 +223,30 @@ Shell profile, creates a new profile called 'Cool Profile' and creates a new col
   ],
   "schemes": [
     {
-      "name": "Postmodern Tango Light",
-      "background": "#61D6D6",
-      "foreground": "#E74856"
+        "name": "Postmodern Tango Light",
+
+        "cursorColor": "#FFFFFF",
+        "selectionBackground": "#FFFFFF",
+
+        "background": '#61D6D6',
+        "foreground": '#E74856',
+
+        "black" : "#0C0C0C",
+        "blue" : "#0037DA",
+        "cyan" : "#3A96DD",
+        "green" : "#13A10E",
+        "purple" : "#881798",
+        "red" : "#C50F1F",
+        "white" : "#CCCCCC",
+        "yellow" : "#C19C00",
+        "brightBlack" : "#767676",
+        "brightBlue" : "#3B78FF",
+        "brightCyan" : "#61D6D6",
+        "brightGreen" : "#16C60C",
+        "brightPurple" : "#B4009E",
+        "brightRed" : "#E74856",
+        "brightWhite" : "#F2F2F2",
+        "brightYellow" : "#F9F1A5"
     }
   ]
 }
@@ -254,7 +296,7 @@ the package root, where the `json` files they wish to share with us are stored (
 During our profile generation, we will probe the OS for app extensions with the name `Microsoft.com.Terminal`
 and obtain the json files stored in the public folders of those app extensions.
 
-#### For apps installed 'traditionally' and third parties/independent users
+#### For apps installed 'traditionally' 
 
 For apps that are installed 'traditionally', there are 2 cases. The first is that this installation is for all
 the users of the system - in this case, the installer should add their json files to the global folder:
@@ -273,8 +315,6 @@ json files to the local folder:
 ```
 C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments
 ```
-
-This is also where independent users should add their own json files for Terminal to generate/modify profiles.
 
 We will look through both folders mentioned above during profile generation. 
 
@@ -298,10 +338,6 @@ For full profiles that came from app extensions, we will give the value `app` to
 
 This feature will allow other installations a level of control over how their profiles look in Terminal. For example,
 if Ubuntu gets a new icon or a new font they can have those changes be reflected in Terminal users' Ubuntu profiles.
-
-Furthermore, this allows users an easy way to share profiles they have created - instead of needing to modify their
-settings file directly they could simply download a json file into the folder
-`C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal`.
 
 ## Capabilities
 
@@ -335,7 +371,7 @@ Looking through the additional json files could negatively impact startup time.
 
 ## Future considerations
 
-How will this affect the settings UI?
+This will likely be a stepping stone for the theme marketplace. 
 
 ## Resources
 
