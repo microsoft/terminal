@@ -1637,28 +1637,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 bool OutputStateMachineEngine::_ParseDirectory(const std::wstring_view string,
                                                std::wstring& uri) const
 {
-    if (string.length() <= 8)
-    {
-        return false;
-    }
-
-    const auto prefix = string.substr(0, 7);
-    if (!prefix.compare(L"file://") == 0)
-    {
-        return false;
-    }
-
-    size_t current = 7;
-    const auto nextSlash = string.find(L"/", current);
-    if (nextSlash == std::wstring::npos)
-    {
-        return false;
-    }
-
-    // Hostname is ignored.
-    current = nextSlash + 1;
-    uri = std::wstring(string.substr(current, std::wstring::npos));
-
+    uri = string;
     return true;
 }
 

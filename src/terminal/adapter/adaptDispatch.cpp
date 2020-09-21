@@ -2372,7 +2372,7 @@ bool AdaptDispatch::EndHyperlink()
     return _pConApi->PrivateEndHyperlink();
 }
 
-bool AdaptDispatch::SetWorkingDirectory(const std::wstring_view /*uri*/)
+bool AdaptDispatch::SetWorkingDirectory(const std::wstring_view /*uri*/) noexcept
 {
     return NoOp();
 }

@@ -683,7 +683,6 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Create a connection based on the values in our settings object.
-
         auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };

@@ -5,6 +5,8 @@
 #include "Terminal.hpp"
 #include "../src/inc/unicode.hpp"
 
+#include <Shlwapi.h>
+
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -595,7 +597,48 @@ bool Terminal::EndHyperlink() noexcept
 
 bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
 {
-    _workingDirectory = std::wstring(uri);
+    if (uri.size() < 8)
+    {
+        return false;
+    }
+
+    const auto prefix = uri.substr(0, 7);
+    if (!prefix.compare(L"file://") == 0)
+    {
+        // We don't support URI format other than "file://".
+        return false;
+    }
+
+    size_t current = 7;
+    const auto nextSlash = uri.find(L"/", current);
+    if (nextSlash == std::wstring::npos)
+    {
+        // Invalid URI. Ignore it.
+        return false;
+    }
+
+    const auto hostName = uri.substr(current, nextSlash - current);
+
+    DWORD computerNameSize = 256;
+    wistd::unique_ptr<wchar_t[]> computerNameMutable = wil::make_unique_nothrow<wchar_t[]>(computerNameSize);
+    bool success = ::GetComputerNameW(computerNameMutable.get(), &computerNameSize);
+    if (!success)
+    {
+        return false;
+    }
+
+    const std::wstring computerName(computerNameMutable.get());
+    if (hostName.size() > 0 && hostName.compare(computerName) != 0)
+    {
+        // This is likely a path that does not belong to this computer. Ignore it.
+        return false;
+    }
+
+    current = nextSlash + 1;
+    std::wstring path = std::wstring(uri.substr(current, std::wstring::npos));
+    UrlUnescapeInPlace(path.data(), NULL);
+    _workingDirectory = path;
+
     return true;
 }
 
