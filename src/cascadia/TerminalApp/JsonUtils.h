@@ -103,6 +103,8 @@ namespace TerminalApp::JsonUtils
         T FromJson(const Json::Value&);
         bool CanConvert(const Json::Value& json);
 
+        Json::Value ToJson(const T& val);
+
         std::string TypeDescription() const { return "<unknown>"; }
     };
 
@@ -117,6 +119,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isString();
+        }
+
+        Json::Value ToJson(const std::string& val)
+        {
+            return val;
         }
 
         std::string TypeDescription() const
@@ -138,6 +145,11 @@ namespace TerminalApp::JsonUtils
             return json.isString();
         }
 
+        Json::Value ToJson(const std::wstring& val)
+        {
+            return til::u16u8(val);
+        }
+
         std::string TypeDescription() const
         {
             return "string";
@@ -153,6 +165,11 @@ namespace TerminalApp::JsonUtils
         {
             return winrt::hstring{ til::u8u16(Detail::GetStringView(json)) };
         }
+
+        Json::Value ToJson(const winrt::hstring& val)
+        {
+            return til::u16u8(val);
+        }
     };
 #endif
 
@@ -167,6 +184,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isBool();
+        }
+
+        Json::Value ToJson(const bool val)
+        {
+            return val;
         }
 
         std::string TypeDescription() const
@@ -188,6 +210,11 @@ namespace TerminalApp::JsonUtils
             return json.isInt();
         }
 
+        Json::Value ToJson(const int& val)
+        {
+            return val;
+        }
+
         std::string TypeDescription() const
         {
             return "number";
@@ -205,6 +232,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isUInt();
+        }
+
+        Json::Value ToJson(const unsigned int& val)
+        {
+            return val;
         }
 
         std::string TypeDescription() const
@@ -226,6 +258,11 @@ namespace TerminalApp::JsonUtils
             return json.isNumeric();
         }
 
+        Json::Value ToJson(const float& val)
+        {
+            return val;
+        }
+
         std::string TypeDescription() const
         {
             return "number";
@@ -243,6 +280,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isNumeric();
+        }
+
+        Json::Value ToJson(const double& val)
+        {
+            return val;
         }
 
         std::string TypeDescription() const
@@ -270,6 +312,11 @@ namespace TerminalApp::JsonUtils
             return string.length() == 38 && string.front() == '{' && string.back() == '}';
         }
 
+        Json::Value ToJson(const GUID& val)
+        {
+            return til::u16u8(::Microsoft::Console::Utils::GuidToString(val));
+        }
+
         std::string TypeDescription() const
         {
             return "guid";
@@ -289,6 +336,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json) const
         {
             return ConversionTrait<GUID>{}.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::guid& val)
+        {
+            return ConversionTrait<GUID>{}.ToJson(val);
         }
 
         std::string TypeDescription() const
@@ -316,6 +368,11 @@ namespace TerminalApp::JsonUtils
             return (string.length() == 7 || string.length() == 4) && string.front() == '#';
         }
 
+        Json::Value ToJson(const til::color& val)
+        {
+            return til::u16u8(val.ToHexString(true));
+        }
+
         std::string TypeDescription() const
         {
             return "color (#rrggbb, #rgb)";
@@ -334,6 +391,11 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json) const
         {
             return ConversionTrait<til::color>{}.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::Windows::UI::Color& val)
+        {
+            return ConversionTrait<til::color>{}.ToJson(val);
         }
 
         std::string TypeDescription() const
@@ -368,6 +430,18 @@ namespace TerminalApp::JsonUtils
         bool CanConvert(const Json::Value& json)
         {
             return json.isString();
+        }
+
+        Json::Value ToJson(const T& val)
+        {
+            for (const auto& pair : TBase::mappings)
+            {
+                if (pair.second == val)
+                {
+                    return { pair.first.data() };
+                }
+            }
+            FAIL_FAST();
         }
 
         std::string TypeDescription() const
@@ -425,6 +499,35 @@ namespace TerminalApp::JsonUtils
 
             // We'll only get here if CanConvert has failed us.
             return AllClear;
+        }
+
+        Json::Value ToJson(const T& val)
+        {
+            if (val == AllClear)
+            {
+                return BaseEnumMapper::ToJson(AllClear);
+            }
+            else if (val == AllSet)
+            {
+                return BaseEnumMapper::ToJson(AllSet);
+            }
+            else if (WI_IsSingleFlagSet(val))
+            {
+                return BaseEnumMapper::ToJson(val);
+            }
+            else
+            {
+                Json::Value json{ Json::ValueType::arrayValue };
+                for (const auto& pair : TBase::mappings)
+                {
+                    if (pair.second != AllClear &&
+                        (val & pair.second) == pair.second)
+                    {
+                        json.append(BaseEnumMapper::ToJson(pair.second));
+                    }
+                }
+                return json;
+            }
         }
 
         bool CanConvert(const Json::Value& json)
@@ -573,6 +676,21 @@ namespace TerminalApp::JsonUtils
     {
         GetValueForKey(json, key1, val1);
         GetValuesForKeys(json, std::forward<Args>(args)...);
+    }
+
+    // SetValueForKey, type-deduced, manual converter
+    template<typename T, typename Converter>
+    void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
+    {
+        // demand guarantees that it will return a value or throw an exception
+        *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
+    }
+
+    // SetValueForKey, type-deduced, with automatic converter
+    template<typename T>
+    void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
+    {
+        SetValueForKey(json, key, target, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
     }
 };
 
