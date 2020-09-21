@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 #include "inc/Environment.hpp"
-#include "wil/token_helpers.h"
 
 using namespace ::Microsoft::Console::Utils;
 
@@ -11,42 +10,29 @@ using namespace ::Microsoft::Console::Utils;
 #pragma warning(disable : 26481 26429)
 
 // Function Description:
-// - Wraps win32's CreateEnvironmentBlock to return a smart pointer.
-EnvironmentBlockPtr Microsoft::Console::Utils::CreateEnvironmentBlock()
-{
-    void* newEnvironmentBlock{ nullptr };
-    auto processToken{ wil::open_current_access_token(TOKEN_QUERY | TOKEN_DUPLICATE) };
-    if (!::CreateEnvironmentBlock(&newEnvironmentBlock, processToken.get(), FALSE))
-    {
-        return nullptr;
-    }
-    return EnvironmentBlockPtr{ newEnvironmentBlock };
-}
-
-// Function Description:
 // - Updates an EnvironmentVariableMapW with the current process's unicode
 //   environment variables ignoring ones already set in the provided map.
 // Arguments:
 // - map: The map to populate with the current processes's environment variables.
-// - environmentBlock: Optional environment block to use when filling map. If omitted,
-//   defaults to the current environment.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing
-HRESULT Microsoft::Console::Utils::UpdateEnvironmentMapW(EnvironmentVariableMapW& map, void* environmentBlock) noexcept
+HRESULT Microsoft::Console::Utils::UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
 try
 {
-    wchar_t const* activeEnvironmentBlock{ static_cast<wchar_t const*>(environmentBlock) };
+    LPWCH currentEnvVars{};
+    auto freeCurrentEnv = wil::scope_exit([&] {
+        if (currentEnvVars)
+        {
+            FreeEnvironmentStringsW(currentEnvVars);
+            currentEnvVars = nullptr;
+        }
+    });
 
-    wil::unique_environstrings_ptr currentEnvVars;
-    if (!activeEnvironmentBlock)
-    {
-        currentEnvVars.reset(::GetEnvironmentStringsW());
-        RETURN_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
-        activeEnvironmentBlock = currentEnvVars.get();
-    }
+    currentEnvVars = ::GetEnvironmentStringsW();
+    RETURN_HR_IF_NULL(E_OUTOFMEMORY, currentEnvVars);
 
     // Each entry is NULL-terminated; block is guaranteed to be double-NULL terminated at a minimum.
-    for (wchar_t const* lastCh{ activeEnvironmentBlock }; *lastCh != '\0'; ++lastCh)
+    for (wchar_t const* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
     {
         // Copy current entry into temporary map.
         const size_t cchEntry{ ::wcslen(lastCh) };
