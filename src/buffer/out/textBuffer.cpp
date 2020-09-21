@@ -325,6 +325,7 @@ OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
     {
         // we found some matches
         std::wstring sufStr;
+        SHORT inc;
 
         // get a mutable target coord
         auto target2 = target;
@@ -345,9 +346,10 @@ OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
             sufStr = til::u8u16(i->suffix().str());
 
             // write the prefix string and update the target
-            OutputCellIterator preIter{ preStr, _currentAttributes };
+            const OutputCellIterator preIter{ preStr, _currentAttributes };
             Write(preIter, target2);
-            target2.X += (SHORT)preStr.size();
+            UInt64ToShort(preStr.size(), &inc);
+            target2.X += inc;
 
             // update metadata for hyperlinks
             const auto id = GetHyperlinkId(L"");
@@ -356,9 +358,10 @@ OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
             _currentAttributes.SetHyperlinkId(id);
 
             // write the uri and update the target
-            OutputCellIterator uriIter{ uriStr, _currentAttributes };
+            const OutputCellIterator uriIter{ uriStr, _currentAttributes };
             Write(uriIter, target2);
-            target2.X += (SHORT)uriStr.size();
+            UInt64ToShort(uriStr.size(), &inc);
+            target2.X += inc;
 
             // set the attributes back
             _currentAttributes.SetHyperlinkId(oldId);
