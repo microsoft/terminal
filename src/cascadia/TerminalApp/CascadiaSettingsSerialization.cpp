@@ -35,8 +35,8 @@ static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view CommandLineKey{ "commandline" };
-static constexpr std::string_view BackgroundKey{ "background" };
-static constexpr std::string_view ForegroundKey{ "foreground" };
+static constexpr std::string_view UpdatesKey{ "updates" };
+static constexpr std::string_view GuidKey{ "guid" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
@@ -527,19 +527,25 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
         if (fullFile.isMember(JsonKey(ProfilesKey)))
         {
             // Now we separately get each stub that modifies/adds a profile
-            for (const auto profileStub : fullFile[JsonKey(ProfilesKey)])
+            for (auto profileStub : fullFile[JsonKey(ProfilesKey)])
             {
-                auto matchingProfile = _FindMatchingProfile(profileStub);
-                if (matchingProfile)
+                if (profileStub.isMember(JsonKey(UpdatesKey)))
                 {
-                    // We found a matching profile, so this is just a modification that we should layer
-                    matchingProfile->LayerJson(profileStub);
+                    // This stub is meant to be a modification to an existing profile,
+                    // try to find the matching profile
+                    profileStub[JsonKey(GuidKey)] = profileStub[JsonKey(UpdatesKey)];
+                    auto matchingProfile = _FindMatchingProfile(profileStub);
+                    if (matchingProfile)
+                    {
+                        // We found a matching profile, so layer the modification on top of it
+                        matchingProfile->LayerJson(profileStub);
+                    }
                 }
                 else
                 {
                     // This is a new profile, check that it meets our minimum requirements first
-                    // (it must have at least a name and a commandline)
-                    if (profileStub.isMember(JsonKey(NameKey)) && profileStub.isMember(JsonKey(CommandLineKey)))
+                    // (it must have at least a name)
+                    if (profileStub.isMember(JsonKey(NameKey)))
                     {
                         auto newProfile = winrt::make_self<Profile>();
                         if (_userDefaultProfileSettings)
@@ -570,8 +576,8 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                 }
                 else
                 {
-                    // This is a new colour scheme, make sure it meets our minimum requirements
-                    if (schemeStub.isMember(JsonKey(NameKey)) && schemeStub.isMember(JsonKey(BackgroundKey)) && schemeStub.isMember(JsonKey(ForegroundKey)))
+                    // This is a new colour scheme, add it only if it specifies _all_ the fields
+                    if (_ValidateColorScheme(schemeStub))
                     {
                         const auto newScheme = ColorScheme::FromJson(schemeStub);
                         _globals->AddColorScheme(*newScheme);

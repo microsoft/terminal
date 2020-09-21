@@ -132,6 +132,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<guid> _GetProfileGuidByIndex(std::optional<int> index) const;
         guid _GetProfileForArgs(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs) const;
 
+        bool _ValidateColorScheme(const Json::Value scheme);
+
         void _ValidateSettings();
         void _ValidateProfilesExist();
         void _ValidateProfilesHaveGuid();
