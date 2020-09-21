@@ -101,29 +101,29 @@ void UtilsTests::TestSplitString()
 {
     std::vector<std::wstring_view> result;
     result = SplitString(L"", L';');
-    VERIFY_ARE_EQUAL(0, result.size());
+    VERIFY_ARE_EQUAL(0u, result.size());
     result = SplitString(L"1", L';');
-    VERIFY_ARE_EQUAL(1, result.size());
+    VERIFY_ARE_EQUAL(1u, result.size());
     result = SplitString(L"123", L';');
-    VERIFY_ARE_EQUAL(1, result.size());
+    VERIFY_ARE_EQUAL(1u, result.size());
 
     result = SplitString(L";123", L';');
-    VERIFY_ARE_EQUAL(2, result.size());
+    VERIFY_ARE_EQUAL(2u, result.size());
     VERIFY_ARE_EQUAL(L"", result.at(0));
     VERIFY_ARE_EQUAL(L"123", result.at(1));
 
     result = SplitString(L"123;", L';');
-    VERIFY_ARE_EQUAL(2, result.size());
+    VERIFY_ARE_EQUAL(2u, result.size());
     VERIFY_ARE_EQUAL(L"123", result.at(0));
     VERIFY_ARE_EQUAL(L"", result.at(1));
 
     result = SplitString(L"123;456", L';');
-    VERIFY_ARE_EQUAL(2, result.size());
+    VERIFY_ARE_EQUAL(2u, result.size());
     VERIFY_ARE_EQUAL(L"123", result.at(0));
     VERIFY_ARE_EQUAL(L"456", result.at(1));
 
     result = SplitString(L"123;456;789", L';');
-    VERIFY_ARE_EQUAL(3, result.size());
+    VERIFY_ARE_EQUAL(3u, result.size());
     VERIFY_ARE_EQUAL(L"123", result.at(0));
     VERIFY_ARE_EQUAL(L"456", result.at(1));
     VERIFY_ARE_EQUAL(L"789", result.at(2));
