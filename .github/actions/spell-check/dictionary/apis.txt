@@ -45,6 +45,7 @@ rx
 serializer
 SIZENS
 spsc
+sregex
 STDCPP
 syscall
 tmp

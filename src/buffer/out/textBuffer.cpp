@@ -347,7 +347,7 @@ OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
             // write the prefix string and update the target
             OutputCellIterator preIter{ preStr, _currentAttributes };
             Write(preIter, target2);
-            target2.X += (SHORT) preStr.size();
+            target2.X += (SHORT)preStr.size();
 
             // update metadata for hyperlinks
             const auto id = GetHyperlinkId(L"");
@@ -358,7 +358,7 @@ OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
             // write the uri and update the target
             OutputCellIterator uriIter{ uriStr, _currentAttributes };
             Write(uriIter, target2);
-            target2.X += (SHORT) uriStr.size();
+            target2.X += (SHORT)uriStr.size();
 
             // set the attributes back
             _currentAttributes.SetHyperlinkId(oldId);
