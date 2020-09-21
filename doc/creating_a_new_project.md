@@ -1,6 +1,6 @@
 # Creating a New Project
 
-## Creating a new DLL and referencing it in another project
+## Creating a new WinRT Component DLL and referencing it in another project
 
 When creating a new DLL, it was really helpful to reference an existing DLL's `.vcxproj` like `TerminalControl.vcxproj`. While you should mostly try to copy what the existing `.vcxproj` has, here's a handful of things to double check for as you go along.
 
