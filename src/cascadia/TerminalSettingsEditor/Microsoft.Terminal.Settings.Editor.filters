@@ -97,9 +97,4 @@
   <ItemGroup>
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
-  <ItemGroup>
-    <Image Include="Assets\Square150x150Logo.png" />
-    <Image Include="Assets\Square44x44Logo.png" />
-    <Image Include="Assets\StoreLogo.png" />
-  </ItemGroup>
 </Project>

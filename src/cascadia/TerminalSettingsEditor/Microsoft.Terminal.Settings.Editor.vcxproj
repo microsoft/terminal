@@ -1,5 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- 
+    We're explicitly telling our references to be non-private so that they won't
+    be copied into our folder. In the case of Microsoft.Ui.Xaml, it seems to copy
+    literally everything EXCEPT its .winmd file, which allows us to keep building.
+    -->
   <ItemDefinitionGroup>
     <Reference>
       <Private>false</Private>
@@ -7,7 +12,7 @@
   </ItemDefinitionGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
-    <ProjectName>TerminalSettingsEditor</ProjectName>
+    <ProjectName>Microsoft.Terminal.Settings.Editor</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Editor</RootNamespace>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
@@ -272,13 +277,8 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="TerminalSettingsEditor.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Assets\Square150x150Logo.png" />
-    <Image Include="Assets\Square44x44Logo.png" />
-    <Image Include="Assets\StoreLogo.png" />
+    <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />

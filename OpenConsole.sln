@@ -307,7 +307,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalTestNetCore", "s
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wt", "src\cascadia\wt\wt.vcxproj", "{506FD703-BAA7-4F6E-9361-64F550EC8FCA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalSettingsEditor", "src\cascadia\TerminalSettingsEditor\TerminalSettingsEditor.vcxproj", "{CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.Terminal.Settings.Editor", "src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj", "{CA5CAD1A-0B5E-45C3-96A8-BB496BFE4E32}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
