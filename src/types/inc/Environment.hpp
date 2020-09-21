@@ -21,12 +21,9 @@ namespace Microsoft::Console::Utils
         }
     };
 
-    using EnvironmentBlockPtr = wil::unique_any<void*, decltype(::DestroyEnvironmentBlock), ::DestroyEnvironmentBlock>;
-    [[nodiscard]] EnvironmentBlockPtr CreateEnvironmentBlock();
-
     using EnvironmentVariableMapW = std::map<std::wstring, std::wstring, WStringCaseInsensitiveCompare>;
 
-    [[nodiscard]] HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map, void* environmentBlock = nullptr) noexcept;
+    [[nodiscard]] HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept;
 
     [[nodiscard]] HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map,
                                                               std::vector<wchar_t>& newEnvVars) noexcept;
