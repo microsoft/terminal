@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 #include "inc/Environment.hpp"
-#include "wil/token_helpers.h"
 
 using namespace ::Microsoft::Console::Utils;
 
@@ -15,8 +14,7 @@ using namespace ::Microsoft::Console::Utils;
 EnvironmentBlockPtr Microsoft::Console::Utils::CreateEnvironmentBlock()
 {
     void* newEnvironmentBlock{ nullptr };
-    auto processToken{ wil::open_current_access_token(TOKEN_QUERY | TOKEN_DUPLICATE) };
-    if (!::CreateEnvironmentBlock(&newEnvironmentBlock, processToken.get(), FALSE))
+    if (!::CreateEnvironmentBlock(&newEnvironmentBlock, GetCurrentProcessToken(), FALSE))
     {
         return nullptr;
     }
