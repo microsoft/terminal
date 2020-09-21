@@ -45,6 +45,6 @@ DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
     ```
     This will make all references non-private, meaning "don't copy it into my folder" by default.
 
-- If you hit a `Class not Registered` error, this might be because a class isn't getting registered in the app manifest. You can go check `src/cascadia/casc_package/bin/x64/debug/appx/appxmanifest.xml` to see if there exist entries to the classes of your newly created DLL. If the references aren't there, double check that you've added `<ProjectReference>` blocks to both `WindowsTerminal.vcxproj` and `TerminalApp.vcxproj`.
+- If you hit a `Class not Registered` error, this might be because a class isn't getting registered in the app manifest. You can go check `src/cascadia/CascadiaPackage/bin/x64/Debug/AppX/AppXManifest.xml` to see if there exist entries to the classes of your newly created DLL. If the references aren't there, double check that you've added `<ProjectReference>` blocks to both `WindowsTerminal.vcxproj` and `TerminalApp.vcxproj`.
 
 - If you hit an extremely vague error along the lines of `Error in the DLL`, and right before that line you notice that your new DLL is loaded and unloaded right after each other, double check that you've created a `.def` file for the project. You might be running into the issue where the program is looking for a class in the error'd DLL, can't call its `GetActivationFactory` function because it's not exposed, and it'll just fall on its face.
