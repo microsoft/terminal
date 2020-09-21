@@ -325,7 +325,7 @@ OutputCellIterator TextBuffer::Write(OutputCellIterator givenIt)
     {
         // we found some matches
         std::wstring sufStr;
-        SHORT inc;
+        SHORT inc = 0;
 
         // get a mutable target coord
         auto target2 = target;
