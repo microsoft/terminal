@@ -4,6 +4,7 @@
 #pragma once
 
 #include "KeyChordSerialization.g.h"
+#include "../inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -18,7 +19,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
-    struct KeyChordSerialization : KeyChordSerializationT<KeyChordSerialization, implementation::KeyChordSerialization>
-    {
-    };
+    BASIC_FACTORY(KeyChordSerialization);
 }

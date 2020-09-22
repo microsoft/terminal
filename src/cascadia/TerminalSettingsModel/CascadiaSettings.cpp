@@ -395,7 +395,7 @@ void CascadiaSettings::_RemoveHiddenProfiles()
     {
         // Throw an exception. This is an invalid state, and we want the app to
         // be able to gracefully use the default settings.
-        throw SettingsException(Microsoft::Terminal::Settings::Model::SettingsLoadErrors::AllProfilesHidden);
+        throw SettingsException(SettingsLoadErrors::AllProfilesHidden);
     }
 }
 
@@ -479,12 +479,12 @@ void CascadiaSettings::_ValidateMediaResources()
 
     if (invalidBackground)
     {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::InvalidBackgroundImage);
+        _warnings.Append(SettingsLoadWarnings::InvalidBackgroundImage);
     }
 
     if (invalidIcon)
     {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::InvalidIcon);
+        _warnings.Append(SettingsLoadWarnings::InvalidIcon);
     }
 }
 
@@ -504,7 +504,7 @@ void CascadiaSettings::_ValidateMediaResources()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-winrt::guid CascadiaSettings::GetProfileForArgs(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs) const
+winrt::guid CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
 {
     std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)
@@ -608,7 +608,7 @@ void CascadiaSettings::_ValidateKeybindings()
 
     if (!keybindingWarnings.empty())
     {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::AtLeastOneKeybindingWarning);
+        _warnings.Append(SettingsLoadWarnings::AtLeastOneKeybindingWarning);
         for (auto warning : keybindingWarnings)
         {
             _warnings.Append(warning);
@@ -631,7 +631,7 @@ void CascadiaSettings::_ValidateNoGlobalsKey()
 {
     if (auto oldGlobalsProperty{ _userSettings["globals"] })
     {
-        _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::LegacyGlobalsProperty);
+        _warnings.Append(SettingsLoadWarnings::LegacyGlobalsProperty);
     }
 }
 

@@ -6,7 +6,7 @@
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "Tab.g.cpp"
-#include "Utils.h"
+#include "../inc/Utils.h"
 #include "ColorHelper.h"
 
 using namespace winrt;
@@ -1043,7 +1043,7 @@ namespace winrt::TerminalApp::implementation
     void Tab::_MakeSwitchToTabCommand()
     {
         SwitchToTabArgs args{ _TabViewIndex };
-        ActionAndArgs focusTabAction{ShortcutAction::SwitchToTab, args};
+        ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
 
         Command command;
         command.Action(focusTabAction);

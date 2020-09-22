@@ -102,7 +102,7 @@
       <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="Utils.h" />
+    <ClInclude Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
@@ -160,7 +160,7 @@
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.cpp" />
     <ClCompile Include="TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>

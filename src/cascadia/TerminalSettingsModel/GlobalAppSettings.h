@@ -35,17 +35,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         GlobalAppSettings();
 
-        Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme> ColorSchemes() noexcept;
-        void AddColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
+        void AddColorScheme(const Model::ColorScheme& scheme);
 
-        Microsoft::Terminal::Settings::Model::KeyMapping KeyMap() const noexcept;
+        Model::KeyMapping KeyMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
-        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> KeybindingsWarnings() const;
+        std::vector<SettingsLoadWarnings> KeybindingsWarnings() const;
 
-        Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::Command> Commands() noexcept;
+        Windows::Foundation::Collections::IMapView<hstring, Model::Command> Commands() noexcept;
 
         // These are implemented manually to handle the string/GUID exchange
         // by higher layers in the app.
@@ -66,8 +66,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
         GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
         GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::LaunchPosition, InitialPosition, nullptr, nullptr);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::LaunchMode, LaunchMode, winrt::Microsoft::Terminal::Settings::Model::LaunchMode::DefaultMode);
+        GETSET_PROPERTY(Model::LaunchPosition, InitialPosition, nullptr, nullptr);
+        GETSET_PROPERTY(Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
         GETSET_PROPERTY(bool, SnapToGridOnResize, true);
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
@@ -82,10 +82,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         guid _defaultProfile;
 
         com_ptr<KeyMapping> _keymap;
-        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _keybindingsWarnings;
+        std::vector<SettingsLoadWarnings> _keybindingsWarnings;
 
-        Windows::Foundation::Collections::IMap<hstring, Microsoft::Terminal::Settings::Model::ColorScheme> _colorSchemes;
-        Windows::Foundation::Collections::IMap<hstring, Microsoft::Terminal::Settings::Model::Command> _commands;
+        Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
+        Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::ColorSchemeTests;

@@ -38,17 +38,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Command();
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
-                                                std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+                                                std::vector<SettingsLoadWarnings>& warnings);
 
-        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commands,
-                                   Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
-                                   Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::ColorScheme> schemes,
-                                   Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> warnings);
+        static void ExpandCommands(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> commands,
+                                   Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
+                                   Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
+                                   Windows::Foundation::Collections::IVector<SettingsLoadWarnings> warnings);
 
-        static std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Command>& commands,
-                                                                                                 const Json::Value& json);
+        static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
+                                                           const Json::Value& json);
         bool HasNestedCommands();
-        Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> NestedCommands();
+        Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands();
 
         void RefreshIcon();
 
@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs, Action, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
 
@@ -64,14 +64,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Json::Value _originalJson;
-        Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Command> _subcommands{ nullptr };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
 
         winrt::hstring _lastIconPath{};
 
-        static std::vector<winrt::Microsoft::Terminal::Settings::Model::Command> _expandCommand(Command* const expandable,
-                                                                                                Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
-                                                                                                Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::ColorScheme> schemes,
-                                                                                                Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& warnings);
+        static std::vector<Model::Command> _expandCommand(Command* const expandable,
+                                                          Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
+                                                          Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
+                                                          Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings);
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::CommandTests;
     };

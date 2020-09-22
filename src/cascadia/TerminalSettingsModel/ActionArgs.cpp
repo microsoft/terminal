@@ -21,7 +21,7 @@
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
 
-#include "..\TerminalApp\Utils.h"
+#include "../inc/Utils.h"
 
 #include <LibraryResources.h>
 

@@ -5,7 +5,7 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "../TerminalApp/Utils.h"
+#include "../inc/Utils.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
@@ -59,8 +59,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _defaultProfile{},
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
-    _commands = winrt::single_threaded_map<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Command>();
-    _colorSchemes = winrt::single_threaded_map<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme>();
+    _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+    _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
 }
 
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
@@ -170,7 +170,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
 
             // Now parse the array again, but this time as a list of commands.
-            warnings = winrt::Microsoft::Terminal::Settings::Model::implementation::Command::LayerJson(_commands, bindings);
+            warnings = implementation::Command::LayerJson(_commands, bindings);
         }
     };
     parseBindings(LegacyKeybindingsKey);
@@ -183,7 +183,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 // - scheme: the color scheme to add
 // Return Value:
 // - <none>
-void GlobalAppSettings::AddColorScheme(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& scheme)
+void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
 {
     _colorSchemes.Insert(scheme.Name(), scheme);
 }

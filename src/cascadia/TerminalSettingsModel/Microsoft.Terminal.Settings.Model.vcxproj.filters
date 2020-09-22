@@ -28,7 +28,7 @@
     <ClCompile Include="DefaultProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Utils.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
@@ -56,7 +56,7 @@
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Utils.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="DefaultProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>

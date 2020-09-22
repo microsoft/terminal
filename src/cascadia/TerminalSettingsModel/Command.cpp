@@ -5,7 +5,7 @@
 #include "Command.h"
 #include "Command.g.cpp"
 
-#include "..\TerminalApp\Utils.h"
+#include "../inc/Utils.h"
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include <LibraryResources.h>
@@ -358,7 +358,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                  IVector<SettingsLoadWarnings> warnings)
     {
         std::vector<winrt::hstring> commandsToRemove;
-        std::vector<winrt::Microsoft::Terminal::Settings::Model::Command> commandsToAdd;
+        std::vector<Model::Command> commandsToAdd;
 
         // First, collect up all the commands that need replacing.
         for (const auto& nameAndCmd : commands)
@@ -413,7 +413,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                         IVectorView<Model::ColorScheme> schemes,
                                                         IVector<SettingsLoadWarnings>& warnings)
     {
-        std::vector<winrt::Microsoft::Terminal::Settings::Model::Command> newCommands;
+        std::vector<Model::Command> newCommands;
 
         if (expandable->HasNestedCommands())
         {

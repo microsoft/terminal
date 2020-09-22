@@ -10,7 +10,7 @@
 #include "KeyMapping.h"
 #include "ActionAndArgs.h"
 #include "KeyChordSerialization.h"
-#include "..\TerminalApp\Utils.h"
+#include "../inc/Utils.h"
 #include "JsonUtils.h"
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;

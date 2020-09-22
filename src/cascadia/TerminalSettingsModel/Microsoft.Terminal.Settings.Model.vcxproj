@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-d7ec-4107-b7c6-79cb77ae2907}</ProjectGuid>
-    <ProjectName>TerminalSettingsModel</ProjectName>
+    <ProjectName>Microsoft.Terminal.Settings.Model</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Model</RootNamespace>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
@@ -60,7 +60,7 @@
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Utils.h" />
+    <ClInclude Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.h" />
     <ClInclude Include="WslDistroGenerator.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -105,7 +105,7 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)src\cascadia\TerminalApp\Utils.cpp" />
+    <ClCompile Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->

@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "Profile.h"
-#include "..\TerminalApp\Utils.h"
+#include "../inc/Utils.h"
 #include "JsonUtils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
@@ -323,7 +323,7 @@ void Profile::GenerateGuidIfNecessary() noexcept
         _Guid = Profile::_GenerateGuidForProfile(_Name, _Source);
 
         TraceLoggingWrite(
-            g_hTerminalAppProvider,
+            g_hSettingsModelProvider,
             "SynthesizedGuidForProfile",
             TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),

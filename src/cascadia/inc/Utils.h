@@ -13,20 +13,6 @@ Author(s):
 --*/
 #pragma once
 
-// Method Description:
-// - Create a std::string from a string_view. We do this because we can't look
-//   up a key in a Json::Value with a string_view directly, so instead we'll use
-//   this helper. Should a string_view lookup ever be added to jsoncpp, we can
-//   remove this entirely.
-// Arguments:
-// - key: the string_view to build a string from
-// Return Value:
-// - a std::string to use for looking up a value from a Json::Value
-inline std::string JsonKey(const std::string_view key)
-{
-    return static_cast<std::string>(key);
-}
-
 // This is a pair of helpers for determining if a pair of guids are equal, and
 // establishing an ordering on GUIDs (via std::less).
 namespace std

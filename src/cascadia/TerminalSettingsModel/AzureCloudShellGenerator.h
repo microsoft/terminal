@@ -20,7 +20,7 @@ Author(s):
 
 namespace Microsoft::Terminal::Settings::Model
 {
-    class AzureCloudShellGenerator : public Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator
+    class AzureCloudShellGenerator : public IDynamicProfileGenerator
     {
     public:
         AzureCloudShellGenerator() = default;

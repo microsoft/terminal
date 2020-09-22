@@ -39,13 +39,13 @@
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
-    using FromJsonResult = std::tuple<winrt::Microsoft::Terminal::Settings::Model::IActionArgs, std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>>;
+    using FromJsonResult = std::tuple<Model::IActionArgs, std::vector<SettingsLoadWarnings>>;
 
     struct ActionEventArgs : public ActionEventArgsT<ActionEventArgs>
     {
         ActionEventArgs() = default;
 
-        explicit ActionEventArgs(const Microsoft::Terminal::Settings::Model::IActionArgs& args) :
+        explicit ActionEventArgs(const Model::IActionArgs& args) :
             _ActionArgs{ args } {};
         GETSET_PROPERTY(IActionArgs, ActionArgs, nullptr);
         GETSET_PROPERTY(bool, Handled, false);
@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
     {
         NewTerminalArgs() = default;
-        NewTerminalArgs(int32_t profileIndex) :
+        NewTerminalArgs(int32_t& profileIndex) :
             _ProfileIndex{ profileIndex } {};
         GETSET_PROPERTY(winrt::hstring, Commandline, L"");
         GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         hstring GenerateName() const;
 
-        bool Equals(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& other)
+        bool Equals(const Model::NewTerminalArgs& other)
         {
             return other.Commandline() == _Commandline &&
                    other.StartingDirectory() == _StartingDirectory &&
@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                    other.ProfileIndex() == _ProfileIndex &&
                    other.Profile() == _Profile;
         };
-        static winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs FromJson(const Json::Value& json)
+        static Model::NewTerminalArgs FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<NewTerminalArgs>();
@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         CopyTextArgs() = default;
         GETSET_PROPERTY(bool, SingleLine, false);
-        GETSET_PROPERTY(Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>, CopyFormatting, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<TerminalControl::CopyFormat>, CopyFormatting, nullptr);
 
         static constexpr std::string_view SingleLineKey{ "singleLine" };
         static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
@@ -127,9 +127,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
         NewTabArgs() = default;
-        NewTabArgs(Model::NewTerminalArgs terminalArgs) :
+        NewTabArgs(const Model::NewTerminalArgs& terminalArgs) :
             _TerminalArgs{ terminalArgs } {};
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
 
     public:
         hstring GenerateName() const;
@@ -155,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
     {
         SwitchToTabArgs() = default;
-        SwitchToTabArgs(uint32_t tabIndex) :
+        SwitchToTabArgs(uint32_t& tabIndex) :
             _TabIndex{ tabIndex } {};
         GETSET_PROPERTY(uint32_t, TabIndex, 0);
 
@@ -185,7 +185,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
         ResizePaneArgs() = default;
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Direction, Direction, Microsoft::Terminal::Settings::Model::Direction::None);
+        GETSET_PROPERTY(Model::Direction, Direction, Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -206,9 +206,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<ResizePaneArgs>();
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            if (args->_Direction == Microsoft::Terminal::Settings::Model::Direction::None)
+            if (args->_Direction == Direction::None)
             {
-                return { nullptr, { Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
             else
             {
@@ -220,7 +220,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Direction, Direction, Microsoft::Terminal::Settings::Model::Direction::None);
+        GETSET_PROPERTY(Model::Direction, Direction, Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -241,9 +241,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MoveFocusArgs>();
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            if (args->_Direction == Microsoft::Terminal::Settings::Model::Direction::None)
+            if (args->_Direction == Direction::None)
             {
-                return { nullptr, { Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
             else
             {
@@ -305,7 +305,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, InputKey, args->_Input);
             if (args->_Input.empty())
             {
-                return { nullptr, { Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
         }
@@ -314,12 +314,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        SplitPaneArgs(SplitState style, Model::NewTerminalArgs terminalArgs) :
+        SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _TerminalArgs{ terminalArgs } {};
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::SplitState, SplitStyle, winrt::Microsoft::Terminal::Settings::Model::SplitState::Automatic);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs, TerminalArgs, nullptr);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::SplitType, SplitMode, winrt::Microsoft::Terminal::Settings::Model::SplitType::Manual);
+        GETSET_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
+        GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
+        GETSET_PROPERTY(SplitType, SplitMode, SplitType::Manual);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
@@ -353,7 +353,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
     {
         OpenSettingsArgs() = default;
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::SettingsTarget, Target, Microsoft::Terminal::Settings::Model::SettingsTarget::SettingsFile);
+        GETSET_PROPERTY(SettingsTarget, Target, SettingsTarget::SettingsFile);
 
         static constexpr std::string_view TargetKey{ "target" };
 
@@ -404,7 +404,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, NameKey, args->_SchemeName);
             if (args->_SchemeName.empty())
             {
-                return { nullptr, { Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
         }
@@ -497,7 +497,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, CommandlineKey, args->_Commandline);
             if (args->_Commandline.empty())
             {
-                return { nullptr, { Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingRequiredParameter } };
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
         }
@@ -506,7 +506,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
     {
         CloseOtherTabsArgs() = default;
-        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, Index, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 
@@ -534,7 +534,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
     {
         CloseTabsAfterArgs() = default;
-        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, Index, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
 

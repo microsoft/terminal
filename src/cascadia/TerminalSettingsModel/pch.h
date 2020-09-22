@@ -38,7 +38,7 @@
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
-TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
+TRACELOGGING_DECLARE_PROVIDER(g_hSettingsModelProvider);
 #include <telemetry\ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 

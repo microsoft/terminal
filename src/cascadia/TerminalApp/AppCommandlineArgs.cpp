@@ -327,7 +327,7 @@ void AppCommandlineArgs::_buildFocusTabParser()
             else if (_focusNextTab || _focusPrevTab)
             {
                 focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
-                _startupActions.push_back(focusTabAction);
+                _startupActions.push_back(std::move(focusTabAction));
             }
         });
     };

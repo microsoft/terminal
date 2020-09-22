@@ -6,10 +6,10 @@
 
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
-    g_hTerminalAppProvider,
-    "Microsoft.Windows.Terminal.App",
-    // {24a1622f-7da7-5c77-3303-d850bd1ab2ed}
-    (0x24a1622f, 0x7da7, 0x5c77, 0x33, 0x03, 0xd8, 0x50, 0xbd, 0x1a, 0xb2, 0xed),
+    g_hSettingsModelProvider,
+    "Microsoft.Windows.Terminal.Setting.Model",
+    // {be579944-4d33-5202-e5d6-a7a57f1935cb}
+    (0xbe579944, 0x4d33, 0x5202, 0xe5, 0xd6, 0xa7, 0xa5, 0x7f, 0x19, 0x35, 0xcb),
     TraceLoggingOptionMicrosoftTelemetry());
 
 BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
@@ -18,12 +18,12 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
     {
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hInstDll);
-        TraceLoggingRegister(g_hTerminalAppProvider);
+        TraceLoggingRegister(g_hSettingsModelProvider);
         break;
     case DLL_PROCESS_DETACH:
-        if (g_hTerminalAppProvider)
+        if (g_hSettingsModelProvider)
         {
-            TraceLoggingUnregister(g_hTerminalAppProvider);
+            TraceLoggingUnregister(g_hSettingsModelProvider);
         }
         break;
     }

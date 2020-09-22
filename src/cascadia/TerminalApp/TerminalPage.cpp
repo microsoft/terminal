@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
-#include "Utils.h"
+#include "../inc/Utils.h"
 #include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 

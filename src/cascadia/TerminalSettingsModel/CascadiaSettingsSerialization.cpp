@@ -5,7 +5,7 @@
 #include <argb.h>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
-#include "..\TerminalApp\Utils.h"
+#include "Utils.h"
 #include "JsonUtils.h"
 #include <appmodel.h>
 #include <shlobj.h>
@@ -195,7 +195,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         // Do it after everything else so it won't happen unless validation passed.
         // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
         // is a lot of computation we can skip if no one cares.
-        if (TraceLoggingProviderEnabled(g_hTerminalAppProvider, 0, MICROSOFT_KEYWORD_MEASURES))
+        if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
         {
             const auto guid = resultPtr->GlobalSettings().DefaultProfile();
 
@@ -204,7 +204,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             if (hardcodedDefaultGuid != guid)
             {
                 TraceLoggingWrite(
-                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
                     "CustomDefaultProfile",
                     TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
                     TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
@@ -233,7 +233,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
                 const auto keybindingsString = Json::writeString(wbuilder, value);
 
                 TraceLoggingWrite(
-                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
                     "CustomKeybindings",
                     TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
                     TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
@@ -482,7 +482,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         {
             if (profileJson.isObject())
             {
-                const auto profileImpl = winrt::get_self<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profile);
+                const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
                 if (profileImpl->ShouldBeLayered(profileJson))
                 {
                     return true;
@@ -533,7 +533,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
         // Generate a diff for the profile, that contains the minimal set of
         // changes to re-create this profile.
-        const auto profileImpl = winrt::get_self<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profile);
+        const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
         const auto diff = profileImpl->GenerateStub();
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
@@ -832,7 +832,7 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
         // GH#5186 - We moved from profiles.json to settings.json; we want to
         // migrate any file we find. We're using MoveFile in case their settings.json
         // is a symbolic link.
-        std::filesystem::path pathToLegacySettingsFile{ pathToSettingsFile.c_str() };
+        std::filesystem::path pathToLegacySettingsFile{ std::wstring_view{ pathToSettingsFile } };
         pathToLegacySettingsFile.replace_filename(LegacySettingsFilename);
 
         wil::unique_hfile hLegacyFile{ CreateFileW(pathToLegacySettingsFile.c_str(),
