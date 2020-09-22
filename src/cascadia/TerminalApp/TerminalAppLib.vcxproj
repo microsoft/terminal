@@ -359,7 +359,7 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Editor">
-      <HintPath>$(_BinRoot)TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
+      <HintPath>$(_BinRoot)Microsoft.Terminal.Settings.Editor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
