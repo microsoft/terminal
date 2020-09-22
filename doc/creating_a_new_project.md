@@ -4,11 +4,14 @@
 
 When creating a new DLL, it was really helpful to reference an existing DLL's `.vcxproj` like `TerminalControl.vcxproj`. While you should mostly try to copy what the existing `.vcxproj` has, here's a handful of things to double check for as you go along.
 
-- [ ] Make sure to `<Import>` our pre and post build props in your `NewDLL.vcxproj`
+- [ ] Make sure to `<Import>` our pre props at the _top_ of the vcxproj, and our post props at the _bottom_ of the vcxproj.
 ```
 <!-- pre props --> 
 <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+<!-- everything else -->
+
 <!-- post props -->
 <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 ```
@@ -28,7 +31,8 @@ EXPORTS
 DllCanUnloadNow = WINRT_CanUnloadNow                    PRIVATE
 DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 ```
-- For a bit more context on this whole process, the `AppXManifest.xml` file defines which classes belong to which DLLs. So if your project wants class `X.Y.Z`, it can look it up in the manifest and see that it came from `X.Y.dll`. Then it'll load up the dll, and call a particular function called `GetActivationFactory(L"X.Y.Z")` to get the class it wants. 
+- For a bit more context on this whole process, the `AppXManifest.xml` file defines which classes belong to which DLLs. If your project wants class `X.Y.Z`, it can look it up in the manifest's definitions and see that it came from `X.Y.dll`. Then it'll load up the DLL, and call a particular function called `GetActivationFactory(L"X.Y.Z")` to get the class it wants. So, the definitions in `AppXManifest` are _required_ for this activation to work properly, and I found myself double checking the file to see that the definitions I expect are there.
+- _Note_: If your new library eventually rolls up as a reference to our Centennial Packaging project `CascadiaPackage`, you don't have to worry about manually adding your definitions to the `AppXManifest.xml` because the Centennial Packaging project automatically enumerates the reference tree of WinMDs and stitches that information into the `AppXManifest.xml`. However, if your new project does _not_ ultimately roll up to a packaging project that will automatically put the references into `AppXManifest`, you will have to add them in manually.
 
 ### Troubleshooting
 - If you hit an error that looks like this: 
@@ -47,4 +51,4 @@ DllGetActivationFactory = WINRT_GetActivationFactory    PRIVATE
 
 - If you hit a `Class not Registered` error, this might be because a class isn't getting registered in the app manifest. You can go check `src/cascadia/casc_package/bin/x64/debug/appx/appxmanifest.xml` to see if there exist entries to the classes of your newly created DLL. If the references aren't there, double check that you've added `<ProjectReference>` blocks to both `WindowsTerminal.vcxproj` and `TerminalApp.vcxproj`.
 
-- If you hit an extremely vague error along the lines of `Error in the DLL`, and right before that line you notice that your new DLL is loaded and unloaded right after each other, double check that you've created a `.def` file for the project. You might be running into the issue where the program is looking for a class in the error'd DLL, can't call its `GetActivationFactory` function because it's not exposed, and it'll just fall on its face.
+- If you hit an extremely vague error along the lines of `Error in the DLL`, and right before that line you notice that your new DLL is loaded and unloaded right after each other, double check that your new DLL's definitions show up in the `AppXManifest.xml` file. If your new DLL is included as a reference to a project that rolls up to `CascadiaPackage`, double check that you've created a `.def` file for the project. Otherwise if your new project _does not_ roll up to a package that populates the `AppXManifest` references for you, you'll have to add those references yourself.
