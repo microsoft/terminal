@@ -3,7 +3,7 @@
 #include "GlobalSettings.h"
 #include "Profile.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     enum class Modifiers
     {

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Microsoft.Terminal.Settings.Model.Profile.g.h"
+#include "Model.Profile.g.h"
 #include "Utils.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     struct Profile : ProfileT<Profile>
     {

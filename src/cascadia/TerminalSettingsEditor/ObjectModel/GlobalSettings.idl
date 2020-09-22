@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace Microsoft.Terminal.Settings.Model
+namespace Microsoft.Terminal.Settings.Editor.Model
 {
     enum TabViewWidthMode
     {

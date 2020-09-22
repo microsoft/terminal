@@ -1,4 +1,4 @@
-namespace Microsoft.Terminal.Settings.Model
+namespace Microsoft.Terminal.Settings.Editor.Model
 {
     enum CloseOnExitMode
     {
