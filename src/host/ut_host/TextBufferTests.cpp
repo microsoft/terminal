@@ -2464,7 +2464,7 @@ void TextBufferTests::HyperlinkTrim()
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
-    const auto id = _buffer->GetHyperlinkId(customId);
+    const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
     _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
@@ -2472,7 +2472,7 @@ void TextBufferTests::HyperlinkTrim()
 
     // Set a different hyperlink id somewhere else in the buffer
     const COORD otherPos{ 70, 5 };
-    const auto otherId = _buffer->GetHyperlinkId(otherCustomId);
+    const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
     _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
     _buffer->AddHyperlinkToMap(otherUrl, otherId);
@@ -2505,7 +2505,7 @@ void TextBufferTests::NoHyperlinkTrim()
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
-    const auto id = _buffer->GetHyperlinkId(customId);
+    const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
     _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
