@@ -86,7 +86,7 @@ public:
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
-    virtual bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) = 0; // SGR
+    virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
     virtual bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECSET
 

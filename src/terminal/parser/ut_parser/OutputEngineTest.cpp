@@ -1149,10 +1149,14 @@ public:
         return true;
     }
 
-    bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) noexcept override
+    bool SetGraphicsRendition(const VTParameters options) noexcept override
     try
     {
-        _options.assign(options.begin(), options.end());
+        _options.clear();
+        for (size_t i = 0; i < options.size(); i++)
+        {
+            _options.push_back(options.at(i));
+        }
         _setGraphics = true;
         return true;
     }

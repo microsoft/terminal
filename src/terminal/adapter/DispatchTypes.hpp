@@ -165,6 +165,19 @@ namespace Microsoft::Console::VirtualTerminal
             return _values.empty();
         }
 
+        constexpr size_t size() const noexcept
+        {
+            // We always return a size of at least 1, since an empty parameter
+            // list is the equivalent of a single "default" parameter.
+            return std::max<size_t>(_values.size(), 1);
+        }
+
+        VTParameters subspan(const size_t offset) const noexcept
+        {
+            const auto subValues = _values.subspan(offset);
+            return { subValues.data(), subValues.size() };
+        }
+
         bool for_each(const std::function<bool(const VTParameter)> predicate) const
         {
             // We always return at least 1 value here, since an empty parameter
@@ -192,7 +205,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
-    enum GraphicsOptions : unsigned int
+    enum GraphicsOptions : size_t
     {
         Off = 0,
         BoldBright = 1,

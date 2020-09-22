@@ -1803,8 +1803,7 @@ bool AdaptDispatch::SoftReset()
         success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
 
-    const auto opt = DispatchTypes::GraphicsOptions::Off;
-    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+    success = SetGraphicsRendition({}) && success; // Normal rendition.
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that

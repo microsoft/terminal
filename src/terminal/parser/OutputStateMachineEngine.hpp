@@ -66,7 +66,6 @@ namespace Microsoft::Console::VirtualTerminal
         Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
         std::function<bool()> _pfnFlushToTerminal;
         wchar_t _lastPrintedChar;
-        std::vector<DispatchTypes::GraphicsOptions> _graphicsOptions;
 
         enum EscActionCodes : uint64_t
         {
@@ -169,10 +168,6 @@ namespace Microsoft::Console::VirtualTerminal
             ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112
         };
-
-        static constexpr DispatchTypes::GraphicsOptions DefaultGraphicsOption = DispatchTypes::GraphicsOptions::Off;
-        bool _GetGraphicsOptions(const gsl::span<const size_t> parameters,
-                                 std::vector<DispatchTypes::GraphicsOptions>& options) const;
 
         static constexpr size_t DefaultConsoleWidth = 80;
         bool _GetConsoleWidth(const gsl::span<const size_t> parameters,

@@ -1255,7 +1255,7 @@ public:
 
         _testGetSet->PrepData();
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 0;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
@@ -1292,7 +1292,7 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
         graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
@@ -1605,7 +1605,7 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
@@ -2094,7 +2094,7 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 3;
 
         _testGetSet->_privateGetColorTableEntryResult = true;

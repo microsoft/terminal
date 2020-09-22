@@ -80,7 +80,7 @@ public:
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) noexcept override { return false; } // EL
     bool EraseCharacters(const size_t /*numChars*/) noexcept override { return false; } // ECH
 
-    bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
+    bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
 
     bool SetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECSET
 

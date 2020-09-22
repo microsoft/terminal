@@ -55,7 +55,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseCharacters(const size_t numChars) override; // ECH
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
-        bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) override; // SGR
+        bool SetGraphicsRendition(const VTParameters options) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
@@ -195,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _isDECCOLMAllowed;
 
-        size_t _SetRgbColorsHelper(const gsl::span<const DispatchTypes::GraphicsOptions> options,
+        size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
     };

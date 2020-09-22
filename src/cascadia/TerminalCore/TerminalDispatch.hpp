@@ -13,7 +13,7 @@ public:
     void Print(const wchar_t wchPrintable) noexcept override;
     void PrintString(const std::wstring_view string) noexcept override;
 
-    bool SetGraphicsRendition(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions> options) noexcept override;
+    bool SetGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
 
     bool CursorPosition(const size_t line,
                         const size_t column) noexcept override; // CUP
@@ -70,7 +70,7 @@ public:
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 
-    size_t _SetRgbColorsHelper(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions> options,
+    size_t _SetRgbColorsHelper(const ::Microsoft::Console::VirtualTerminal::VTParameters options,
                                TextAttribute& attr,
                                const bool isForeground) noexcept;
 
