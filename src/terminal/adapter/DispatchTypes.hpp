@@ -165,6 +165,18 @@ namespace Microsoft::Console::VirtualTerminal
             return _values.empty();
         }
 
+        bool for_each(const std::function<bool(const VTParameter)> predicate) const
+        {
+            // We always return at least 1 value here, since an empty parameter
+            // list is the equivalent of a single "default" parameter.
+            auto success = predicate(at(0));
+            for (auto i = 1u; i < _values.size(); i++)
+            {
+                success = predicate(_values[i]) && success;
+            }
+            return success;
+        }
+
     private:
         gsl::span<const VTParameter> _values;
     };
@@ -248,7 +260,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         CPR_CursorPositionReport = 6,
     };
 
-    enum PrivateModeParams : unsigned short
+    enum PrivateModeParams : size_t
     {
         DECCKM_CursorKeysMode = 1,
         DECANM_AnsiMode = 2,

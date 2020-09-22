@@ -66,8 +66,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
         bool SetColumns(const size_t columns) override; // DECCOLM
-        bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) override; // DECSET
-        bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) override; // DECRST
+        bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECSET
+        bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
@@ -163,7 +163,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
-        bool _SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable);
         bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 

@@ -378,11 +378,8 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
         success = _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-    {
-        const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };
-        success = _dispatch->SetPrivateModes(mode);
+        success = _dispatch->SetPrivateMode(DispatchTypes::PrivateModeParams::DECANM_AnsiMode);
         break;
-    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -407,7 +404,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
 {
     bool success = false;
     const VTParameters params{ parameters.data(), parameters.size() };
-    std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
     // We hold the vector in the class because client applications that do a lot of color work
     // would spend a lot of time reallocating/resizing the vector.
     _graphicsOptions.clear();
@@ -415,10 +411,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     // fill params
     switch (id)
     {
-    case CsiActionCodes::DECSET_PrivateModeSet:
-    case CsiActionCodes::DECRST_PrivateModeReset:
-        success = _GetPrivateModeParams(parameters, privateModeParams);
-        break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
         success = _GetGraphicsOptions(parameters, _graphicsOptions);
         break;
@@ -500,12 +492,16 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
             break;
         case CsiActionCodes::DECSET_PrivateModeSet:
-            success = _dispatch->SetPrivateModes({ privateModeParams.data(), privateModeParams.size() });
+            success = params.for_each([&](const auto mode) {
+                return _dispatch->SetPrivateMode(mode);
+            });
             //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
             break;
         case CsiActionCodes::DECRST_PrivateModeReset:
-            success = _dispatch->ResetPrivateModes({ privateModeParams.data(), privateModeParams.size() });
+            success = params.for_each([&](const auto mode) {
+                return _dispatch->ResetPrivateMode(mode);
+            });
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
             break;
         case CsiActionCodes::SGR_SetGraphicsRendition:
@@ -856,29 +852,6 @@ bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> pa
         consoleWidth = DefaultConsoleWidth;
     }
 
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the listed private mode params be set/reset by DECSET/DECRST
-// Arguments:
-// - parameters - The parameters to parse
-// - privateModes - Space that will be filled with valid params from the PrivateModeParams enum
-// Return Value:
-// - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetPrivateModeParams(const gsl::span<const size_t> parameters,
-                                                     std::vector<DispatchTypes::PrivateModeParams>& privateModes) const
-{
-    bool success = false;
-    // Can't just set nothing at all
-    if (parameters.size() > 0)
-    {
-        for (const auto& p : parameters)
-        {
-            privateModes.push_back((DispatchTypes::PrivateModeParams)p);
-        }
-        success = true;
-    }
     return success;
 }
 

@@ -1242,25 +1242,14 @@ public:
         return fSuccess;
     }
 
-    bool _SetResetPrivateModesHelper(const gsl::span<const DispatchTypes::PrivateModeParams> params,
-                                     const bool enable)
+    bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
     {
-        size_t cFailures = 0;
-        for (const auto& p : params)
-        {
-            cFailures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
-        }
-        return cFailures == 0;
+        return _PrivateModeParamsHelper(param, true);
     }
 
-    bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept override
+    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
     {
-        return _SetResetPrivateModesHelper(params, true);
-    }
-
-    bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept override
-    {
-        return _SetResetPrivateModesHelper(params, false);
+        return _PrivateModeParamsHelper(param, false);
     }
 
     bool SetColumns(_In_ size_t const uiColumns) noexcept override

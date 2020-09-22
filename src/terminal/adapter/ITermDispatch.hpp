@@ -88,9 +88,9 @@ public:
 
     virtual bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) = 0; // SGR
 
-    virtual bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECSET
+    virtual bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECSET
 
-    virtual bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECRST
+    virtual bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1

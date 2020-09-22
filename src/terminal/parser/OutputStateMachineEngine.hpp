@@ -178,9 +178,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetConsoleWidth(const gsl::span<const size_t> parameters,
                               size_t& consoleWidth) const noexcept;
 
-        bool _GetPrivateModeParams(const gsl::span<const size_t> parameters,
-                                   std::vector<DispatchTypes::PrivateModeParams>& privateModes) const;
-
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 

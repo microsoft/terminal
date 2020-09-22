@@ -82,9 +82,9 @@ public:
 
     bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECSET
+    bool SetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
+    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
