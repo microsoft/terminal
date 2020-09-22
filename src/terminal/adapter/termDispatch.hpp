@@ -110,7 +110,8 @@ public:
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
-                            const gsl::span<const size_t> /*params*/) noexcept override { return false; }
+                            const VTParameter /*parameter1*/,
+                            const VTParameter /*parameter2*/) noexcept override { return false; }
 
     bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
     bool EndHyperlink() noexcept override { return false; }

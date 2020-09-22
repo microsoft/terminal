@@ -184,10 +184,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 
-        static constexpr DispatchTypes::WindowManipulationType DefaultWindowManipulationType = DispatchTypes::WindowManipulationType::Invalid;
-        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
-                                        unsigned int& function) const noexcept;
-
         bool _GetOscSetColorTable(const std::wstring_view string,
                                   std::vector<size_t>& tableIndexes,
                                   std::vector<DWORD>& rgbs) const noexcept;

@@ -287,7 +287,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         ClearAllColumns = 3
     };
 
-    enum WindowManipulationType : unsigned int
+    enum WindowManipulationType : size_t
     {
         Invalid = 0,
         RefreshWindow = 7,

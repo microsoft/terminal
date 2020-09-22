@@ -407,13 +407,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
 {
     bool success = false;
     const VTParameters params{ parameters.data(), parameters.size() };
-    unsigned int function = 0;
     std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
     // We hold the vector in the class because client applications that do a lot of color work
     // would spend a lot of time reallocating/resizing the vector.
     _graphicsOptions.clear();
-    // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
     // fill params
     switch (id)
@@ -424,9 +421,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
         break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
         success = _GetGraphicsOptions(parameters, _graphicsOptions);
-        break;
-    case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _GetWindowManipulationType(parameters, function);
         break;
     default:
         // If no params to fill, param filling was successful.
@@ -575,8 +569,7 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
             TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
             break;
         case CsiActionCodes::DTTERM_WindowManipulation:
-            success = _dispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
-                                                    remainingParams);
+            success = _dispatch->WindowManipulation(params.at(0), params.at(1), params.at(2));
             TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
             break;
         case CsiActionCodes::REP_RepeatCharacter:
@@ -1086,43 +1079,6 @@ try
     return success;
 }
 CATCH_LOG_RETURN_FALSE()
-
-// Method Description:
-// - Retrieves the type of window manipulation operation from the parameter pool
-//      stored during Param actions.
-//  This is kept separate from the input version, as there may be
-//      codes that are supported in one direction but not the other.
-// Arguments:
-// - parameters - The parameters to parse
-// - function - Receives the function type
-// Return Value:
-// - True iff we successfully pulled the function type from the parameters
-bool OutputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
-                                                          unsigned int& function) const noexcept
-{
-    bool success = false;
-    function = DefaultWindowManipulationType;
-
-    if (parameters.size() > 0)
-    {
-        switch (til::at(parameters, 0))
-        {
-        case DispatchTypes::WindowManipulationType::RefreshWindow:
-            function = DispatchTypes::WindowManipulationType::RefreshWindow;
-            success = true;
-            break;
-        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-            function = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
-            success = true;
-            break;
-        default:
-            success = false;
-            break;
-        }
-    }
-
-    return success;
-}
 
 // Method Description:
 // - Sets us up to have another terminal acting as the tty instead of conhost.

@@ -116,7 +116,8 @@ public:
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const gsl::span<const size_t> parameters) = 0;
+                                    const VTParameter parameter1,
+                                    const VTParameter parameter2) = 0;
 
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;
