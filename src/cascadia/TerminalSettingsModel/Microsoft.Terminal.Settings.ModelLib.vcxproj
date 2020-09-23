@@ -2,13 +2,13 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-d7ec-4107-b7c6-79cb77ae2907}</ProjectGuid>
-    <ProjectName>Microsoft.Terminal.Settings.Model</ProjectName>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectName>Microsoft.Terminal.Settings.Model.Lib</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Model</RootNamespace>
-    <!-- cppwinrt.build.pre.props depends on these settings: -->
-    <!-- build a dll, not exe (Application) -->
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <TargetName>Microsoft.Terminal.Settings.Model.Lib</TargetName>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
-    <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -131,7 +131,6 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
     <None Include="packages.config" />
-    <None Include="TerminalSettingsModel.def" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
