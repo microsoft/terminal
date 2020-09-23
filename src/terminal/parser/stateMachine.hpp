@@ -27,6 +27,8 @@ namespace Microsoft::Console::VirtualTerminal
     // but for now 32767 is the safest limit for our existing code base.
     constexpr size_t MAX_PARAMETER_VALUE = 32767;
 
+    constexpr size_t MAX_PARAMETER_COUNT = 16384;
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING

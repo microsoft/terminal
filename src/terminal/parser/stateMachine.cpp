@@ -513,10 +513,16 @@ void StateMachine::_ActionParam(const wchar_t wch)
         _parameters.push_back(0);
     }
 
+    // Refuse to add more parameters when the size hits the limit.
+    if (_parameters.size() >= MAX_PARAMETER_COUNT)
+    {
+        return;
+    }
+
     // On a delimiter, increase the number of params we've seen.
     // "Empty" params should still count as a param -
     //      eg "\x1b[0;;m" should be three "0" params
-    if (wch == L';')
+    if (_isParameterDelimiter(wch))
     {
         // Move to next param.
         _parameters.push_back(0);
