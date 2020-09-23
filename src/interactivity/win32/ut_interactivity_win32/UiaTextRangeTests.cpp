@@ -106,6 +106,26 @@ class UiaTextRangeTests
         ExpectedResult expected;
     };
 
+    static constexpr wchar_t* toString(TextUnit unit) noexcept
+    {
+        // if a format is not supported, it goes to the next largest text unit
+        switch (unit)
+        {
+        case TextUnit_Character:
+            return L"Character";
+        case TextUnit_Format:
+        case TextUnit_Word:
+            return L"Word";
+        case TextUnit_Line:
+            return L"Line";
+        case TextUnit_Paragraph:
+        case TextUnit_Page:
+        case TextUnit_Document:
+        default:
+            return L"Document";
+        }
+    };
+
     TEST_METHOD_SETUP(MethodSetup)
     {
         CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -303,26 +323,6 @@ class UiaTextRangeTests
         // We will abstract these tests so that we can define the beginning and end of a text unit boundary,
         // based on the text unit we are testing
         constexpr TextUnit supportedUnits[] = { TextUnit_Character, TextUnit_Word, TextUnit_Line, TextUnit_Document };
-
-        auto toString = [&](TextUnit unit) {
-            // if a format is not supported, it goes to the next largest text unit
-            switch (unit)
-            {
-            case TextUnit_Character:
-                return L"Character";
-            case TextUnit_Format:
-            case TextUnit_Word:
-                return L"Word";
-            case TextUnit_Line:
-                return L"Line";
-            case TextUnit_Paragraph:
-            case TextUnit_Page:
-            case TextUnit_Document:
-                return L"Document";
-            default:
-                throw E_INVALIDARG;
-            }
-        };
 
         struct TextUnitBoundaries
         {
@@ -1101,6 +1101,93 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(test.expected.moveAmt, amountMoved);
             VERIFY_ARE_EQUAL(test.expected.start, utr->_start);
             VERIFY_ARE_EQUAL(test.expected.end, utr->_end);
+        }
+    }
+
+    TEST_METHOD(ExpansionAtExclusiveEnd)
+    {
+        // GH#7664: When attempting to expand to an enclosing unit
+        // at the end exclusive, the UTR should refuse to move past
+        // the end.
+
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const til::point endInclusive{ bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        const auto endExclusive{ bufferSize.EndExclusive() };
+
+        // Iterate over each TextUnit. If the we don't support
+        // the given TextUnit, we're supposed to fallback
+        // to the last one that was defined anyways.
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        {
+            Log::Comment(NoThrowString().Format(L"%s", toString(static_cast<TextUnit>(unit))));
+
+            // Create a degenerate UTR at EndExclusive
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+            THROW_IF_FAILED(utr->ExpandToEnclosingUnit(static_cast<TextUnit>(unit)));
+
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+    }
+
+    TEST_METHOD(MovementAtExclusiveEnd)
+    {
+        // GH#7663: When attempting to move from end exclusive,
+        // the UTR should refuse to move past the end.
+
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const til::point endInclusive = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        const auto endExclusive{ bufferSize.EndExclusive() };
+
+        // Iterate over each TextUnit. If the we don't support
+        // the given TextUnit, we're supposed to fallback
+        // to the last one that was defined anyways.
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        int moveAmt;
+        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        {
+            Log::Comment(NoThrowString().Format(L"Forward by %s", toString(static_cast<TextUnit>(unit))));
+
+            // Create a degenerate UTR at EndExclusive
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), 1, &moveAmt));
+
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(0, moveAmt);
+        }
+
+        // Verify that moving backwards still works properly
+        const COORD writeTarget{ 2, 2 };
+        _pTextBuffer->Write({ L"temp" }, writeTarget);
+        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        {
+            COORD expectedEnd;
+            switch (static_cast<TextUnit>(unit))
+            {
+            case TextUnit::TextUnit_Character:
+                expectedEnd = endInclusive;
+                break;
+            case TextUnit::TextUnit_Word:
+                expectedEnd = writeTarget;
+                break;
+            case TextUnit::TextUnit_Line:
+                expectedEnd = endExclusive;
+                break;
+            case TextUnit::TextUnit_Document:
+                expectedEnd = bufferSize.Origin();
+                break;
+            default:
+                continue;
+            }
+
+            Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(static_cast<TextUnit>(unit))));
+
+            // Create a degenerate UTR at EndExclusive
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), -1, &moveAmt));
+
+            VERIFY_ARE_EQUAL(expectedEnd, utr->_end);
+            VERIFY_ARE_EQUAL(-1, moveAmt);
         }
     }
 };
