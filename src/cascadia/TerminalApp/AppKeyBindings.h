@@ -11,8 +11,6 @@
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
-    class KeyBindingsTests;
-    class TestUtils;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -32,8 +30,6 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
 
         friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::KeyBindingsTests;
-        friend class TerminalAppLocalTests::TestUtils;
     };
 }
 

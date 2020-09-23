@@ -12,7 +12,7 @@ Author(s):
     Mike Griese (migrie) December-2019
 --*/
 
-class TerminalAppLocalTests::TestUtils
+class TestUtils
 {
 public:
     // Function Description:
@@ -23,8 +23,8 @@ public:
     // - kc: The key chord to look up the bound ActionAndArgs for.
     // Return Value:
     // - The ActionAndArgs bound to the given key, or nullptr if nothing is bound to it.
-    static const winrt::TerminalApp::ActionAndArgs GetActionAndArgs(const winrt::TerminalApp::implementation::KeyMapping& keymap,
-                                                                    const winrt::Microsoft::Terminal::TerminalControl::KeyChord& kc)
+    static const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs GetActionAndArgs(const winrt::Microsoft::Terminal::Settings::Model::KeyMapping& keymap,
+                                                                                             const winrt::Microsoft::Terminal::TerminalControl::KeyChord& kc)
     {
         std::wstring buffer{ L"" };
         if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::TerminalControl::KeyModifiers::Ctrl))

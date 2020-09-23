@@ -3,20 +3,19 @@
 
 #include "pch.h"
 
-#include "../TerminalApp/CascadiaSettings.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
     // TODO:microsoft/terminal#3838:
     // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
@@ -62,7 +61,7 @@ namespace TerminalAppLocalTests
         const auto commands1Json = VerifyParseSucceeded(commands1String);
         const auto commands2Json = VerifyParseSucceeded(commands2String);
 
-        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -96,7 +95,7 @@ namespace TerminalAppLocalTests
         const auto commands2Json = VerifyParseSucceeded(commands2String);
         const auto commands3Json = VerifyParseSucceeded(commands3String);
 
-        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -154,7 +153,7 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -168,7 +167,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
         {
             auto command = commands.Lookup(L"command1");
@@ -178,7 +177,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
         }
         {
             auto command = commands.Lookup(L"command2");
@@ -188,7 +187,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
         }
         {
             auto command = commands.Lookup(L"command4");
@@ -198,7 +197,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
         {
             auto command = commands.Lookup(L"command5");
@@ -208,7 +207,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
     }
     void CommandTests::TestResourceKeyName()
@@ -218,7 +217,7 @@ namespace TerminalAppLocalTests
         const std::string commands0String{ R"([ { "name": { "key": "DuplicateTabCommandKey"}, "command": "copy" } ])" };
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         {
             auto warnings = implementation::Command::LayerJson(commands, commands0Json);
@@ -266,7 +265,7 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -284,7 +283,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
         {
             auto command = commands.Lookup(L"Split pane, split: vertical");
@@ -294,7 +293,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
         }
         {
             auto command = commands.Lookup(L"Split pane, split: horizontal");
@@ -304,7 +303,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
         }
     }
     void CommandTests::TestLayerOnAutogeneratedName()
@@ -316,7 +315,7 @@ namespace TerminalAppLocalTests
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
 
-        IMap<winrt::hstring, winrt::TerminalApp::Command> commands = winrt::single_threaded_map<winrt::hstring, winrt::TerminalApp::Command>();
+        IMap<winrt::hstring, Command> commands = winrt::single_threaded_map<winrt::hstring, Command>();
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
@@ -330,7 +329,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
         }
     }
 }

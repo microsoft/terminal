@@ -20,9 +20,9 @@ Author(s):
 #include "..\inc\cppwinrt_utils.h"
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
-    class SettingsTests;
+    class SerializationTests;
     class KeyBindingsTests;
     class TestUtils;
 }
@@ -54,6 +54,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         KeyMapping() = default;
 
         Model::ActionAndArgs TryLookup(TerminalControl::KeyChord const& chord) const;
+        uint64_t Size() const;
 
         void SetKeyBinding(Model::ActionAndArgs const& actionAndArgs,
                            TerminalControl::KeyChord const& chord);
@@ -70,8 +71,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::unordered_map<TerminalControl::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
 
-        friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::KeyBindingsTests;
-        friend class TerminalAppLocalTests::TestUtils;
+        friend class SettingsModelLocalTests::SerializationTests;
+        friend class SettingsModelLocalTests::KeyBindingsTests;
+        friend class SettingsModelLocalTests::TestUtils;
     };
 }

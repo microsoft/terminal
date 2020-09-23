@@ -275,7 +275,7 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Model">
-      <HintPath>$(_BinRoot)TerminalSettingsModel\Microsoft.Terminal.Settings.Model.winmd</HintPath>
+      <HintPath>$(_BinRoot)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

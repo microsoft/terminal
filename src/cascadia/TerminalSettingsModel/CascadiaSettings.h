@@ -27,13 +27,12 @@ Author(s):
 #include "ColorScheme.h"
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
-    class SettingsTests;
+    class SerializationTests;
     class ProfileTests;
     class ColorSchemeTests;
     class KeyBindingsTests;
-    class TabTests;
 };
 namespace TerminalAppUnitTests
 {
@@ -60,6 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         CascadiaSettings();
         explicit CascadiaSettings(const bool addDynamicProfiles);
+        CascadiaSettings(hstring json);
 
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
@@ -139,11 +139,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateKeybindings();
         void _ValidateNoGlobalsKey();
 
-        friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::ProfileTests;
-        friend class TerminalAppLocalTests::ColorSchemeTests;
-        friend class TerminalAppLocalTests::KeyBindingsTests;
-        friend class TerminalAppLocalTests::TabTests;
+        friend class SettingsModelLocalTests::SerializationTests;
+        friend class SettingsModelLocalTests::ProfileTests;
+        friend class SettingsModelLocalTests::ColorSchemeTests;
+        friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
         friend class TerminalAppUnitTests::JsonTests;
     };

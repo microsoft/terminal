@@ -3,18 +3,17 @@
 
 #include "pch.h"
 
-#include "../TerminalApp/ColorScheme.h"
-#include "../TerminalApp/CascadiaSettings.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
-using namespace winrt::TerminalApp::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
     // TODO:microsoft/terminal#3838:
     // Unfortunately, these tests _WILL NOT_ work in our CI. We're waiting for
@@ -193,7 +192,7 @@ namespace TerminalAppLocalTests
         const auto scheme2Json = VerifyParseSucceeded(scheme2String);
         const auto scheme3Json = VerifyParseSucceeded(scheme3String);
 
-        auto settings = winrt::make_self<winrt::TerminalApp::implementation::CascadiaSettings>();
+        auto settings = winrt::make_self<CascadiaSettings>();
 
         VERIFY_ARE_EQUAL(0u, settings->_globals->ColorSchemes().Size());
         VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme0Json));

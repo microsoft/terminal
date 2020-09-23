@@ -21,7 +21,7 @@ Author(s):
 #include "ColorScheme.g.h"
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
     class SettingsTests;
     class ColorSchemeTests;
@@ -55,8 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::array<til::color, COLOR_TABLE_SIZE> _table;
 
-        friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::ColorSchemeTests;
+        friend class SettingsModelLocalTests::SettingsTests;
+        friend class SettingsModelLocalTests::ColorSchemeTests;
     };
 }
 

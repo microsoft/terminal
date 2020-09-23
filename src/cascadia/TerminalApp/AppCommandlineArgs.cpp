@@ -647,7 +647,7 @@ void AppCommandlineArgs::ValidateStartupCommands()
         _startupActions.front().Action() != ShortcutAction::NewTab)
     {
         // Build the NewTab action from the values we've parsed on the commandline.
-        NewTerminalArgs newTerminalArgs{ newTerminalArgs };
+        NewTerminalArgs newTerminalArgs{};
         NewTabArgs args{ newTerminalArgs };
         ActionAndArgs newTabAction{ ShortcutAction::NewTab, args };
         // push the arg onto the front

@@ -53,13 +53,7 @@ Author(s):
 
 #include <winrt/windows.applicationmodel.core.h>
 
-#include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.Terminal.Settings.Model.h>
-
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
-
-#include <regex>
-#include <CLI11/CLI11.hpp>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

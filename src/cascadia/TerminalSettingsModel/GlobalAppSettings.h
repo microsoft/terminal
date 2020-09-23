@@ -22,9 +22,9 @@ Author(s):
 #include "ColorScheme.h"
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
-    class SettingsTests;
+    class SerializationTests;
     class ColorSchemeTests;
 };
 
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
-        friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::ColorSchemeTests;
+        friend class SettingsModelLocalTests::SerializationTests;
+        friend class SettingsModelLocalTests::ColorSchemeTests;
     };
 }

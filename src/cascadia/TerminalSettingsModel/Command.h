@@ -25,9 +25,9 @@ Author(s):
 #include "SettingsTypes.h"
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
-    class SettingsTests;
+    class SerializationTests;
     class CommandTests;
 };
 
@@ -72,8 +72,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
                                                           Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
                                                           Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings);
-        friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::CommandTests;
+        friend class SettingsModelLocalTests::SerializationTests;
+        friend class SettingsModelLocalTests::CommandTests;
     };
 }
 

@@ -8,6 +8,8 @@ import "TerminalWarnings.idl";
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass CascadiaSettings {
+        CascadiaSettings(String json);
+
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
         static CascadiaSettings LoadUniversal();

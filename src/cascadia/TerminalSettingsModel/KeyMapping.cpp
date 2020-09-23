@@ -22,6 +22,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
+    uint64_t KeyMapping::Size() const
+    {
+        return _keyShortcuts.size();
+    }
+
     void KeyMapping::SetKeyBinding(const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs,
                                    const KeyChord& chord)
     {
