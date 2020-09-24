@@ -11,5 +11,7 @@ namespace TerminalApp
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
         Command SwitchToTabCommand { get; };
         UInt32 TabViewIndex { get; };
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

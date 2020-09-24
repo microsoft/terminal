@@ -588,14 +588,56 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Icon(renameTabSymbol);
         }
 
+        // Close...
+        Controls::MenuFlyoutSubItem closeSubMenu = _CreateCloseSubMenu();
+
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
+        newTabFlyout.Items().Append(closeSubMenu);
         newTabFlyout.Items().Append(closeTabMenuItem);
         _tabViewItem.ContextFlyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // - Creates a sub-menu containing menu items to close multiple tabs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the created MenuFlyoutSubItem
+    Controls::MenuFlyoutSubItem Tab::_CreateCloseSubMenu()
+    {
+        auto weakThis{ get_weak() };
+
+        // Close tabs after
+        Controls::MenuFlyoutItem closeTabsAfterMenuItem;
+        closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseTabsAfter();
+            }
+        });
+        closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
+
+        // Close other tabs
+        Controls::MenuFlyoutItem closeOtherTabsMenuItem;
+        closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseOtherTabs();
+            }
+        });
+        closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
+
+        Controls::MenuFlyoutSubItem closeSubMenu;
+        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        closeSubMenu.Items().Append(closeTabsAfterMenuItem);
+        closeSubMenu.Items().Append(closeOtherTabsMenuItem);
+
+        return closeSubMenu;
     }
 
     // Method Description:
@@ -1058,10 +1100,39 @@ namespace winrt::TerminalApp::implementation
         SwitchToTabCommand(command);
     }
 
+    void Tab::_CloseTabsAfter()
+    {
+        auto actionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+        actionAndArgs->Action(ShortcutAction::CloseTabsAfter);
+
+        auto args = winrt::make_self<implementation::CloseTabsAfterArgs>();
+        args->Index(TabViewIndex());
+        actionAndArgs->Args(*args);
+
+        _dispatch.DoAction(*actionAndArgs);
+    }
+
+    void Tab::_CloseOtherTabs()
+    {
+        auto actionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
+        actionAndArgs->Action(ShortcutAction::CloseOtherTabs);
+
+        auto args = winrt::make_self<implementation::CloseOtherTabsArgs>();
+        args->Index(TabViewIndex());
+        actionAndArgs->Args(*args);
+
+        _dispatch.DoAction(*actionAndArgs);
+    }
+
     void Tab::UpdateTabViewIndex(const uint32_t idx)
     {
         TabViewIndex(idx);
         SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
+    }
+
+    void Tab::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    {
+        _dispatch = dispatch;
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

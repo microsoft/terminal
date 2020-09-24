@@ -70,6 +70,8 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateTabViewIndex(const uint32_t idx);
 
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -100,10 +102,14 @@ namespace winrt::TerminalApp::implementation
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
+        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+
         void _MakeTabViewItem();
         void _Focus();
 
         void _CreateContextMenu();
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();        
+
         void _RefreshVisualState();
 
         void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
@@ -122,6 +128,9 @@ namespace winrt::TerminalApp::implementation
         void _ClearTabBackgroundColor();
 
         void _MakeSwitchToTabCommand();
+
+        void _CloseTabsAfter();
+        void _CloseOtherTabs();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

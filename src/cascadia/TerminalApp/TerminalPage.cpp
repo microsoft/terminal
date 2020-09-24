@@ -688,6 +688,8 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
+        newTabImpl->SetDispatch(*_actionDispatch);
+
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
 
