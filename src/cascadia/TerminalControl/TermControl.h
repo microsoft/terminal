@@ -201,6 +201,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<wchar_t> _leadingSurrogate;
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
@@ -251,6 +252,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _HyperlinkHandler(const std::wstring_view uri);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const winrt::hstring& wstr);
         void _SendInputToConnection(std::wstring_view wstr);

@@ -67,6 +67,8 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
+        void UpdateTabViewIndex(const uint32_t idx);
+
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -75,6 +77,11 @@ namespace winrt::TerminalApp::implementation
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
+        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
+
+        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
+        // This is needed since Tab is going to be managing its own SwitchToTab command.
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -112,6 +119,8 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
+
+        void _MakeSwitchToTabCommand();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

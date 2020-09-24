@@ -1036,3 +1036,8 @@ const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
     return _tabColor;
 }
+
+BlinkingState& Terminal::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
+}

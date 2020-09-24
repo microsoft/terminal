@@ -18,6 +18,40 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39
     }
 
 // Function Description:
+// - This function guesses whether a string is a file path.
+static constexpr bool _isProbableFilePath(std::wstring_view path)
+{
+    // "C:X", "C:\X", "\\?", "\\."
+    // _this function rejects \??\ as a path_
+    if (path.size() >= 3)
+    {
+        const auto firstColon{ path.find(L':') };
+        if (firstColon == 1)
+        {
+            return true;
+        }
+
+        const auto prefix{ path.substr(0, 2) };
+        return prefix == LR"(//)" || prefix == LR"(\\)";
+    }
+    return false;
+}
+
+// Function Description:
+// - DestListLogoUri cannot take paths that are separated by / unless they're URLs.
+//   This function uses std::filesystem to normalize strings that appear to be file
+//   paths to have the "correct" slash direction.
+static std::wstring _normalizeIconPath(std::wstring_view path)
+{
+    if (_isProbableFilePath(path))
+    {
+        std::filesystem::path asPath{ path };
+        return asPath.make_preferred().wstring();
+    }
+    return std::wstring{ path };
+}
+
+// Function Description:
 // - Helper function for getting the path to the appropriate executable to use
 //   for this instance of the jumplist. For the dev build, it should be `wtd.exe`,
 //   but if we're preview or release, we want to make sure to get the correct
@@ -134,7 +168,8 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 
             // Create the shell link object for the profile
             winrt::com_ptr<IShellLinkW> shLink;
-            RETURN_IF_FAILED(_createShellLink(profile.Name(), profile.ExpandedIconPath(), args, shLink.put()));
+            const auto normalizedIconPath{ _normalizeIconPath(profile.ExpandedIconPath()) };
+            RETURN_IF_FAILED(_createShellLink(profile.Name(), normalizedIconPath, args, shLink.put()));
 
             RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));
         }
