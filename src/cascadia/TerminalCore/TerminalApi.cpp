@@ -356,7 +356,7 @@ bool Terminal::WarningBell() noexcept
 try
 {
     const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC);
+    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
