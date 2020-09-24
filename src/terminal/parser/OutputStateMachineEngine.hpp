@@ -169,10 +169,6 @@ namespace Microsoft::Console::VirtualTerminal
             ResetCursorColor = 112
         };
 
-        static constexpr size_t DefaultConsoleWidth = 80;
-        bool _GetConsoleWidth(const gsl::span<const size_t> parameters,
-                              size_t& consoleWidth) const noexcept;
-
         bool _GetOscTitle(const std::wstring_view string,
                           std::wstring& title) const;
 

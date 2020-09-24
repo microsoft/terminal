@@ -767,40 +767,6 @@ bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
 }
 
 // Routine Description:
-// - Retrieves a width for the console window from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - consoleWidth - Receives the width
-// Return Value:
-// - True if we successfully pulled the width from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> parameters,
-                                                size_t& consoleWidth) const noexcept
-{
-    bool success = false;
-    consoleWidth = DefaultConsoleWidth;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        consoleWidth = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 80.
-    if (consoleWidth == 0)
-    {
-        consoleWidth = DefaultConsoleWidth;
-    }
-
-    return success;
-}
-
-// Routine Description:
 // - Null terminates, then returns, the string that we've collected as part of the OSC string.
 // Arguments:
 // - string - Osc String input
