@@ -45,9 +45,6 @@
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="ColorHelper.h" />
-    <ClInclude Include="TelnetGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
