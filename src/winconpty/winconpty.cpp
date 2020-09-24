@@ -27,23 +27,36 @@
 //   module is building with Windows.
 // Return Value:
 // - A pointer to permanent storage containing the path to the console host.
-static wchar_t* _ConsoleHostPath()
+static wchar_t* _InboxConsoleHostPath()
 {
-    // Use the magic of magic statics to only calculate this once.
     static wil::unique_process_heap_string consoleHostPath = []() {
-#ifdef __INSIDE_WINDOWS
         wil::unique_process_heap_string systemDirectory;
         wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
         return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+    }();
+    return consoleHostPath.get();
+}
+
+// Function Description:
+// - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
+//   module is building with Windows.
+// Return Value:
+// - A pointer to permanent storage containing the path to the console host.
+static wchar_t* _ConsoleHostPath()
+{
+#if defined(__INSIDE_WINDOWS)
+    return _InboxConsoleHostPath();
 #else
+    // Use the magic of magic statics to only calculate this once.
+    static wil::unique_process_heap_string consoleHostPath = []() {
         // Use the STL only if we're not building in Windows.
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         modulePath.replace_filename(L"OpenConsole.exe");
         auto modulePathAsString{ modulePath.wstring() };
         return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
-#endif // __INSIDE_WINDOWS
     }();
     return consoleHostPath.get();
+#endif
 }
 
 static bool _HandleIsValid(HANDLE h) noexcept
@@ -89,10 +102,11 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     const BOOL bResizeQuirk = (dwFlags & PSEUDOCONSOLE_RESIZE_QUIRK) == PSEUDOCONSOLE_RESIZE_QUIRK;
     const BOOL bWin32InputMode = (dwFlags & PSEUDOCONSOLE_WIN32_INPUT_MODE) == PSEUDOCONSOLE_WIN32_INPUT_MODE;
+    const auto consoleHostPath = WI_IsFlagSet(dwFlags, PSEUDOCONSOLE_UNDOCKED_PREFER_INBOX_CONHOST) ? _InboxConsoleHostPath() : _ConsoleHostPath();
     swprintf_s(cmd,
                MAX_PATH,
                pwszFormat,
-               _ConsoleHostPath(),
+               consoleHostPath,
                bInheritCursor ? L"--inheritcursor " : L"",
                bWin32InputMode ? L"--win32input " : L"",
                bResizeQuirk ? L"--resizeQuirk " : L"",
@@ -154,7 +168,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         if (hToken == INVALID_HANDLE_VALUE || hToken == nullptr)
         {
             // Call create process
-            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(_ConsoleHostPath(),
+            RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(consoleHostPath,
                                                       cmd,
                                                       nullptr,
                                                       nullptr,
@@ -169,7 +183,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
         {
             // Call create process
             RETURN_IF_WIN32_BOOL_FALSE(CreateProcessAsUserW(hToken,
-                                                            _ConsoleHostPath(),
+                                                            consoleHostPath,
                                                             cmd,
                                                             nullptr,
                                                             nullptr,
