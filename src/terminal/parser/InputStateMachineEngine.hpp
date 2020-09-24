@@ -172,14 +172,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         DWORD _GetCursorKeysModifierState(const gsl::span<const size_t> parameters, const VTID id) noexcept;
         DWORD _GetGenericKeysModifierState(const gsl::span<const size_t> parameters) noexcept;
-        DWORD _GetSGRMouseModifierState(const gsl::span<const size_t> parameters) noexcept;
+        DWORD _GetSGRMouseModifierState(const size_t modifierParam) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
         bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
 
         bool _UpdateSGRMouseButtonState(const VTID id,
-                                        const gsl::span<const size_t> parameters,
+                                        const size_t sgrEncoding,
                                         DWORD& buttonState,
                                         DWORD& eventFlags) noexcept;
         bool _GetGenericVkey(const gsl::span<const size_t> parameters,
@@ -206,12 +206,6 @@ namespace Microsoft::Console::VirtualTerminal
                                         unsigned int& function) const noexcept;
 
         bool _GenerateWin32Key(const gsl::span<const size_t> parameters, KeyEvent& key);
-
-        static constexpr size_t DefaultLine = 1;
-        static constexpr size_t DefaultColumn = 1;
-        bool _GetSGRXYPosition(const gsl::span<const size_t> parameters,
-                               size_t& line,
-                               size_t& column) const noexcept;
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 

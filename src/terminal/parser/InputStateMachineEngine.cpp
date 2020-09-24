@@ -393,13 +393,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     {
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
-        modifierState = _GetSGRMouseModifierState(parameters);
-        success = _GetSGRXYPosition(parameters, row, col);
-
-        // we need _UpdateSGRMouseButtonState() on the left side here because we _always_ should be updating our state
-        // even if we failed to parse a portion of this sequence.
-        success = _UpdateSGRMouseButtonState(id, parameters, buttonState, eventFlags) && success;
-        success = success && _WriteMouseEvent(col, row, buttonState, modifierState, eventFlags);
+        const size_t firstParameter = params.at(0).value_or(0);
+        modifierState = _GetSGRMouseModifierState(firstParameter);
+        success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags);
+        success = success && _WriteMouseEvent(params.at(1), params.at(2), buttonState, modifierState, eventFlags);
         return success;
     }
     case CsiActionCodes::Generic:
@@ -839,29 +836,25 @@ DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const gsl::span<cons
 }
 
 // Method Description:
-// - Retrieves the modifier state from a set of parameters for an SGR
+// - Retrieves the modifier state from the first parameter of an SGR
 //      Mouse Sequence - one who's sequence is terminated with an 'M' or 'm'.
 // Arguments:
-// - parameters - the set of parameters to get the modifier state from.
+// - modifierParam - the first parameter to get the modifier state from.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const gsl::span<const size_t> parameters) noexcept
+DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const size_t modifierParam) noexcept
 {
     DWORD modifiers = 0;
-    if (parameters.size() == 3)
-    {
-        // The first parameter of mouse events is encoded as the following two bytes:
-        // BBDM'MMBB
-        // Where each of the bits mean the following
-        //   BB__'__BB - which button was pressed/released
-        //   MMM - Control, Alt, Shift state (respectively)
-        //   D - flag signifying a drag event
-        // This retrieves the modifier state from bits [5..3] ('M' above)
-        const auto modifierParam = til::at(parameters, 0);
-        WI_SetFlagIf(modifiers, SHIFT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Shift));
-        WI_SetFlagIf(modifiers, LEFT_ALT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Meta));
-        WI_SetFlagIf(modifiers, LEFT_CTRL_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Ctrl));
-    }
+    // The first parameter of mouse events is encoded as the following two bytes:
+    // BBDM'MMBB
+    // Where each of the bits mean the following
+    //   BB__'__BB - which button was pressed/released
+    //   MMM - Control, Alt, Shift state (respectively)
+    //   D - flag signifying a drag event
+    // This retrieves the modifier state from bits [5..3] ('M' above)
+    WI_SetFlagIf(modifiers, SHIFT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Shift));
+    WI_SetFlagIf(modifiers, LEFT_ALT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Meta));
+    WI_SetFlagIf(modifiers, LEFT_CTRL_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Ctrl));
     return modifiers;
 }
 
@@ -903,21 +896,16 @@ DWORD InputStateMachineEngine::_GetModifier(const size_t modifierParam) noexcept
 // - Mouse wheel events are added at the end to keep them out of the global state
 // Arguments:
 // - id: the sequence identifier representing whether the button was pressed or released
-// - parameters: the wchar_t to get the mapped vkey of. Represents the direction of the button (down vs up)
+// - sgrEncoding: the first parameter, encoding the button and drag state
 // - buttonState: Receives the button state for the record
 // - eventFlags: Receives the special mouse events for the record
 // Return Value:
 // true iff we were able to synthesize buttonState
 bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
-                                                         const gsl::span<const size_t> parameters,
+                                                         const size_t sgrEncoding,
                                                          DWORD& buttonState,
                                                          DWORD& eventFlags) noexcept
 {
-    if (parameters.empty())
-    {
-        return false;
-    }
-
     // Starting with the state from the last mouse event we received
     buttonState = _mouseButtonState;
     eventFlags = 0;
@@ -928,7 +916,6 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
     //   BB__'__BB - which button was pressed/released
     //   MMM - Control, Alt, Shift state (respectively)
     //   D - flag signifying a drag event
-    const auto sgrEncoding = til::at(parameters, 0);
 
     // This retrieves the 2 MSBs and concatenates them to the 2 LSBs to create BBBB in binary
     // This represents which button had a change in state
@@ -1211,46 +1198,6 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const s
     }
 
     return success;
-}
-
-// Routine Description:
-// - Retrieves an X/Y coordinate pair for an SGR Mouse sequence from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - set of numeric parameters collected while parsing the sequence.
-// - line - Receives the Y/Line/Row position
-// - column - Receives the X/Column position
-// Return Value:
-// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool InputStateMachineEngine::_GetSGRXYPosition(const gsl::span<const size_t> parameters,
-                                                size_t& line,
-                                                size_t& column) const noexcept
-{
-    line = DefaultLine;
-    column = DefaultColumn;
-
-    // SGR Mouse sequences have exactly 3 parameters
-    if (parameters.size() == 3)
-    {
-        column = til::at(parameters, 1);
-        line = til::at(parameters, 2);
-    }
-    else
-    {
-        return false;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (line == 0)
-    {
-        line = DefaultLine;
-    }
-
-    if (column == 0)
-    {
-        column = DefaultColumn;
-    }
-
-    return true;
 }
 
 // Method Description:
