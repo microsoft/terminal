@@ -209,9 +209,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         static constexpr size_t DefaultLine = 1;
         static constexpr size_t DefaultColumn = 1;
-        bool _GetXYPosition(const gsl::span<const size_t> parameters,
-                            size_t& line,
-                            size_t& column) const noexcept;
         bool _GetSGRXYPosition(const gsl::span<const size_t> parameters,
                                size_t& line,
                                size_t& column) const noexcept;

@@ -374,6 +374,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         return _pfnFlushToInputQueue();
     }
 
+    const VTParameters params{ parameters.data(), parameters.size() };
     DWORD modifierState = 0;
     short vkey = 0;
     unsigned int function = 0;
@@ -413,7 +414,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         if (_lookingForDSR)
         {
             success = true;
-            success = _GetXYPosition(parameters, row, col);
+            row = params.at(0);
+            col = params.at(1);
             break;
         }
         [[fallthrough]];
@@ -1209,55 +1211,6 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const s
     }
 
     return success;
-}
-
-// Routine Description:
-// - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - set of numeric parameters collected while parsing the sequence.
-// - line - Receives the Y/Line/Row position
-// - column - Receives the X/Column position
-// Return Value:
-// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool InputStateMachineEngine::_GetXYPosition(const gsl::span<const size_t> parameters,
-                                             size_t& line,
-                                             size_t& column) const noexcept
-{
-    line = DefaultLine;
-    column = DefaultColumn;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's only one param, leave the default for the column, and retrieve the specified row.
-        line = til::at(parameters, 0);
-    }
-    else if (parameters.size() == 2)
-    {
-        // If there are exactly two parameters, use them.
-        line = til::at(parameters, 0);
-        column = til::at(parameters, 1);
-    }
-    else
-    {
-        return false;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (line == 0)
-    {
-        line = DefaultLine;
-    }
-
-    if (column == 0)
-    {
-        column = DefaultColumn;
-    }
-
-    return true;
 }
 
 // Routine Description:
