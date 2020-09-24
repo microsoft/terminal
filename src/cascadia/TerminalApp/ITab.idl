@@ -1,14 +1,25 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace TerminalApp
 {
     interface ITab
     {
         String Title { get; };
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+        Command SwitchToTabCommand { get; };
 
         Microsoft.UI.Xaml.Controls.TabViewItem GetTabViewItem();
         Windows.UI.Xaml.UIElement GetRootElement();
+
+        Boolean IsFocused();
+        void SetFocused(Boolean focused);
+
+        String GetActiveTitle();
+
+        void UpdateTabViewIndex(UInt32 idx);
+        void Shutdown();
     }
 }

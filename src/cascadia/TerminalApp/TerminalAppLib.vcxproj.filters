@@ -67,6 +67,9 @@
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
+    <ClCompile Include="SettingsTab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils.h" />
@@ -129,6 +132,9 @@
     </ClInclude>
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="Tab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingsTab.h">
       <Filter>tab</Filter>
     </ClInclude>
   </ItemGroup>

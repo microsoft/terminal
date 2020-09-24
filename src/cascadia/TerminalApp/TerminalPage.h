@@ -91,8 +91,8 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::ITab> _tabs;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
+        //winrt::com_ptr<ITab> _GetStrongTabImpl(const uint32_t index) const;
+        //winrt::com_ptr<ITab> _GetStrongTabImpl(const ::winrt::TerminalApp::ITab& tab) const;
         void _UpdateTabIndices();
 
         bool _isInFocusMode{ false };
@@ -156,7 +156,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        winrt::com_ptr<Tab> _GetFocusedTab();
+        ITab _GetFocusedTab();
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
