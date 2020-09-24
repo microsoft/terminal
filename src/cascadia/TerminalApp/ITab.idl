@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    interface ITab
+    {
+        String Title { get; };
+        Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+
+        Microsoft.UI.Xaml.Controls.TabViewItem GetTabViewItem();
+        Windows.UI.Xaml.UIElement GetRootElement();
+    }
+}

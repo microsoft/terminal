@@ -63,6 +63,10 @@
     <ClCompile Include="TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
+    <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="Tab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils.h" />
@@ -123,6 +127,10 @@
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
+    <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="Tab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -140,14 +148,10 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="Tab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="Command.idl">
       <Filter>commandPalette</Filter>
     </Midl>
     <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
     </Midl>
@@ -159,6 +163,13 @@
     </Midl>
     <Midl Include="GlobalAppSettings.idl">
       <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="EmptyStringVisibilityConverter.idl" />
+    <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
+    <Midl Include="CascadiaSettings.idl" />
+    <Midl Include="TerminalWarnings.idl" />
+    <Midl Include="ITab.idl">
+      <Filter>tab</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>

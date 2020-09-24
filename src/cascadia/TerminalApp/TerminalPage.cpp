@@ -45,7 +45,7 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::ITab>() },
         _startupActions{ winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>() }
     {
         InitializeComponent();
@@ -2284,7 +2284,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the projected type of a Tab
     // Return Value:
     // - a com_ptr to the implementation type of the Tab
-    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const
+    winrt::com_ptr<Tab> TerminalPage::_GetStrongTabImpl(const ::winrt::TerminalApp::ITab& tab) const
     {
         winrt::com_ptr<Tab> tabImpl;
         tabImpl.copy_from(winrt::get_self<Tab>(tab));

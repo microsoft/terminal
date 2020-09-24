@@ -4,7 +4,6 @@
 #pragma once
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
-#include "Tab.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -14,7 +13,7 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct Tab : public TabT<Tab>
+    struct Tab : public winrt::implements<Tab, ITab>
     {
     public:
         Tab() = delete;

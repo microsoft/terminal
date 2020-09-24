@@ -90,9 +90,9 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::ITab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
+        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::ITab& tab) const;
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };

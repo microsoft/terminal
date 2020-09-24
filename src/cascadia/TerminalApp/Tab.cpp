@@ -5,7 +5,6 @@
 #include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
-#include "Tab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
 

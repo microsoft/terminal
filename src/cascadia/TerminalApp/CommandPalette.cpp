@@ -966,7 +966,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::OnTabsChanged(const IInspectable& s, const IVectorChangedEventArgs& e)
     {
-        if (auto tabList = s.try_as<IObservableVector<TerminalApp::Tab>>())
+        if (auto tabList = s.try_as<IObservableVector<TerminalApp::ITab>>())
         {
             auto idx = e.Index();
             auto changedEvent = e.CollectionChange();
@@ -1034,7 +1034,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: The tab object to refer to when creating the tab switch command.
     // Return Value:
     // - <none>
-    void CommandPalette::GenerateCommandForTab(const uint32_t idx, bool inserted, TerminalApp::Tab& tab)
+    void CommandPalette::GenerateCommandForTab(const uint32_t idx, bool inserted, TerminalApp::ITab& tab)
     {
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
         auto args = winrt::make_self<implementation::SwitchToTabArgs>();
