@@ -2,8 +2,6 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "Pane.h"
-#include "ColorPickupFlyout.h"
 
 namespace winrt::TerminalApp::implementation
 {

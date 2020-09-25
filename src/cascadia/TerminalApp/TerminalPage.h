@@ -5,6 +5,7 @@
 
 #include "TerminalPage.g.h"
 #include "Tab.h"
+#include "SettingsTab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
 #include "AppKeyBindings.h"
@@ -206,6 +207,8 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        void _OpenSettingsUI();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
