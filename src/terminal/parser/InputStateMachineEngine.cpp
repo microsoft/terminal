@@ -380,7 +380,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     unsigned int function = 0;
     size_t col = 0;
     size_t row = 0;
-    KeyEvent key;
 
     // This is all the args after the first arg, and the count of args not including the first one.
     const auto remainingArgs = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
@@ -437,7 +436,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         success = _GetWindowManipulationType(parameters, function);
         break;
     case CsiActionCodes::Win32KeyboardInput:
-        success = _GenerateWin32Key(parameters, key);
+        success = true;
         break;
     default:
         success = false;
@@ -484,6 +483,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
             // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
             // because that will take extra steps to make sure things like
             // Ctrl+C, Ctrl+Break are handled correctly.
+            const auto key = _GenerateWin32Key(params);
             success = _pDispatch->WriteCtrlKey(key);
             break;
         }
@@ -1204,11 +1204,9 @@ bool InputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const s
 // - Attempt to parse our parameters into a win32-input-mode serialized KeyEvent.
 // Arguments:
 // - parameters: the list of numbers to parse into values for the KeyEvent.
-// - key: receives the values of the deserialized KeyEvent.
 // Return Value:
-// - true if we successfully parsed the key event.
-bool InputStateMachineEngine::_GenerateWin32Key(const gsl::span<const size_t> parameters,
-                                                KeyEvent& key)
+// - The deserialized KeyEvent.
+KeyEvent InputStateMachineEngine::_GenerateWin32Key(const VTParameters parameters)
 {
     // Sequences are formatted as follows:
     //
@@ -1222,36 +1220,12 @@ bool InputStateMachineEngine::_GenerateWin32Key(const gsl::span<const size_t> pa
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
 
-    if (parameters.size() > 6)
-    {
-        return false;
-    }
-
-    key = KeyEvent();
-    key.SetRepeatCount(1);
-    switch (parameters.size())
-    {
-    case 6:
-        key.SetRepeatCount(::base::saturated_cast<WORD>(til::at(parameters, 5)));
-        [[fallthrough]];
-    case 5:
-        key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(til::at(parameters, 4)));
-        [[fallthrough]];
-    case 4:
-        key.SetKeyDown(static_cast<bool>(til::at(parameters, 3)));
-        [[fallthrough]];
-    case 3:
-        key.SetCharData(static_cast<wchar_t>(til::at(parameters, 2)));
-        [[fallthrough]];
-    case 2:
-        key.SetVirtualScanCode(::base::saturated_cast<WORD>(til::at(parameters, 1)));
-        [[fallthrough]];
-    case 1:
-        key.SetVirtualKeyCode(::base::saturated_cast<WORD>(til::at(parameters, 0)));
-        break;
-    default:
-        break;
-    }
-
-    return true;
+    auto key = KeyEvent();
+    key.SetVirtualKeyCode(::base::saturated_cast<WORD>(parameters.at(0).value_or(0)));
+    key.SetVirtualScanCode(::base::saturated_cast<WORD>(parameters.at(1).value_or(0)));
+    key.SetCharData(::base::saturated_cast<wchar_t>(parameters.at(2).value_or(0)));
+    key.SetKeyDown(parameters.at(3).value_or(0));
+    key.SetActiveModifierKeys(::base::saturated_cast<DWORD>(parameters.at(4).value_or(0)));
+    key.SetRepeatCount(::base::saturated_cast<WORD>(parameters.at(5).value_or(1)));
+    return key;
 }

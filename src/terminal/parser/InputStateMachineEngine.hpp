@@ -205,7 +205,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        bool _GenerateWin32Key(const gsl::span<const size_t> parameters, KeyEvent& key);
+        KeyEvent _GenerateWin32Key(const VTParameters parameters);
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 
