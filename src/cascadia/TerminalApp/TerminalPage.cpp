@@ -2572,12 +2572,8 @@ namespace winrt::TerminalApp::implementation
             _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
         }
 
-        // TODO: Set this icon to a Settings UI Icon
-        //const auto profile = _settings.FindProfile(profileGuid);
-        //if (profile != nullptr && !profile.IconPath().empty())
-        //{
-        //    newTabImpl->UpdateIcon(profile.ExpandedIconPath());
-        //}
+        // The settings ui tab has a fixed font icon.
+        newTabImpl->UpdateIcon();
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 

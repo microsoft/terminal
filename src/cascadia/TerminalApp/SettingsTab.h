@@ -17,7 +17,7 @@ namespace winrt::TerminalApp::implementation
         bool IsFocused() const noexcept;
         void SetFocused(const bool focused);
 
-        winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
+        winrt::fire_and_forget UpdateIcon();
 
         winrt::hstring GetActiveTitle() const;
 

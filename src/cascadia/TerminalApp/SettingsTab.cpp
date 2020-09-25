@@ -106,7 +106,7 @@ namespace winrt::TerminalApp::implementation
     void SettingsTab::_Focus()
     {
         _focused = true;
-        // TODO: LEON: FOCUS THE SETTINGS UI MAYBE?
+        // TODO: Focus the settings ui, however you can. grid can't be focused, gotta focus something in it.
     }
 
     // Method Description:
@@ -115,15 +115,10 @@ namespace winrt::TerminalApp::implementation
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
     // Return Value:
     // - <none>
-    winrt::fire_and_forget SettingsTab::UpdateIcon(const winrt::hstring iconPath)
+    winrt::fire_and_forget SettingsTab::UpdateIcon()
     {
-        // Don't reload our icon if it hasn't changed.
-        if (iconPath == _lastIconPath)
-        {
-            return;
-        }
-
-        _lastIconPath = iconPath;
+        auto fontFamily = Windows::UI::Xaml::Media::FontFamily(L"Segoe MDL2 Assets");
+        auto glyph = L"\xE713";
 
         auto weakThis{ get_weak() };
 
@@ -132,11 +127,11 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
-            IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(_lastIconPath));
-            _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+            IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
+            _tabViewItem.IconSource(GetFontIcon<winrt::MUX::Controls::IconSource>(fontFamily, 12, glyph));
 
             // Update SwitchToTab command's icon
-            SwitchToTabCommand().IconSource(IconSource());
+            SwitchToTabCommand().IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
         }
     }
 
@@ -169,6 +164,8 @@ namespace winrt::TerminalApp::implementation
         {
             // Bubble our current tab text to anyone who's listening for changes.
             Title(GetActiveTitle());
+
+            _tabViewItem.Header(winrt::box_value(Title()));
 
             // Update SwitchToTab command's name
             SwitchToTabCommand().Name(Title());
