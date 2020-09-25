@@ -160,6 +160,7 @@ public:
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
+    const size_t GetPatternId(const COORD location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -184,6 +185,8 @@ public:
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
+
+    void UpdatePatterns() noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
 
@@ -228,6 +231,9 @@ private:
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
+
+    size_t _hyperlinkPatternId;
+    std::vector<std::tuple<size_t, COORD, COORD>> _patternsAndLocations;
 
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
@@ -301,6 +307,8 @@ private:
     void _NotifyScrollEvent() noexcept;
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
+
+    bool _IsLocationWithinCoordinates(const COORD location, const COORD first, const COORD second) const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

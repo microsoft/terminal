@@ -131,6 +131,24 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
     return _buffer->GetCustomIdFromId(id);
 }
 
+// Method Description:
+// - Gets the regex pattern id of a location
+// Arguments:
+// - The location
+// Return value:
+// - The pattern ID of the location
+const size_t Microsoft::Terminal::Core::Terminal::GetPatternId(const COORD location) const noexcept
+{
+    for (auto found : _patternsAndLocations)
+    {
+        if (_IsLocationWithinCoordinates(location, std::get<1>(found), std::get<2>(found)))
+        {
+            return std::get<0>(found);
+        }
+    }
+    return 0;
+}
+
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
 try
 {

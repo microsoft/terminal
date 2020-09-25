@@ -348,6 +348,12 @@ const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
+// For now, we ignore regex patterns in conhost
+const size_t RenderData::GetPatternId(const COORD /*location*/) const noexcept
+{
+    return 0;
+}
+
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.

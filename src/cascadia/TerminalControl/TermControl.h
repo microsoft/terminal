@@ -118,6 +118,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
+        void UpdatePatternLocations();
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -178,6 +180,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo _actualFont;
 
         std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
+
+        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
 
         struct ScrollBarUpdate
         {

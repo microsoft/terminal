@@ -35,6 +35,9 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
+// The minimum delay between updating the locations of regex patterns
+constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(50);
+
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
@@ -103,6 +106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
+            _updatePatternLocations->Run();
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
@@ -137,6 +141,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 if (auto control{ weakThis.get() })
                 {
                     control->TSFInputControl().TryRedrawCanvas();
+                }
+            },
+            TsfRedrawInterval,
+            Dispatcher());
+
+        _updatePatternLocations = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    control->UpdatePatternLocations();
                 }
             },
             TsfRedrawInterval,
@@ -1475,6 +1489,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto modifiers = _GetPressedModifierKeys();
         TerminalInput::MouseButtonState state{ leftButtonDown, midButtonDown, rightButtonDown };
         return _DoMouseWheel(location, modifiers, delta, state);
+    }
+
+    // Method Description:
+    // - Tell TerminalCore to update its knowledge about the locations of visible regex patterns
+    // - We should call this (through the throttled function) when something causes the visible
+    //   region to change, such as when new text enters the buffer or the viewport is scrolled
+    void TermControl::UpdatePatternLocations()
+    {
+        _terminal->UpdatePatterns();
     }
 
     // Method Description:

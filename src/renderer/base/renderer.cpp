@@ -693,6 +693,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
         // Retrieve the first color.
         auto color = it->TextAttr();
+        // Retrieve the first pattern id
+        auto patternId = _pData->GetPatternId(target);
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -704,7 +706,16 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // We'll be changing the persistent one as we run through the inner loops to detect
             // when a run changes, but we will still need to know this color at the bottom
             // when we go to draw gridlines for the length of the run.
-            const auto currentRunColor = color;
+            auto currentRunColor = color;
+
+            // Hold onto the current pattern id as well
+            const auto currentPatternId = patternId;
+
+            // For now, we underline all patterns so adjust the currentRunColor if this run is a pattern
+            if (currentPatternId != 0)
+            {
+                currentRunColor.SetUnderlined(true);
+            }
 
             // Update the drawing brushes with our color.
             THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
@@ -731,16 +742,20 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
+            // We also accumulate clusters according to regex patterns
             do
             {
-                if (color != it->TextAttr())
+                COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+                const auto thisPointPattern = _pData->GetPatternId(thisPoint);
+                if (color != it->TextAttr() || patternId != thisPointPattern)
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || patternId != thisPointPattern)
                     {
                         color = newAttr;
+                        patternId = thisPointPattern;
                         break; // vend this run
                     }
                 }

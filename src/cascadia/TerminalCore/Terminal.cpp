@@ -77,6 +77,9 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
+    // Add regex pattern recognizers to the buffer
+    // For now, we only add the URI regex pattern
+    _hyperlinkPatternId = _buffer->AddPatternRecognizer(R"([a-z]+[:.].*?(?=\s))");
 }
 
 // Method Description:
@@ -960,6 +963,45 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
     }
 }
 
+// Method Description:
+// - Implements the logic to determine if a location is in a given region
+// Arguments:
+// - The location
+// - The start and end coordinates of the region
+// Return value:
+// - True if the location is within those coordinates, false otherwise
+bool Microsoft::Terminal::Core::Terminal::_IsLocationWithinCoordinates(const COORD location, const COORD first, const COORD second) const noexcept
+{
+    if (first.Y == second.Y)
+    {
+        const auto sameRow = location.Y == first.Y;
+        const auto inRange = (first.X <= location.X && location.X < second.X);
+        return (sameRow && inRange);
+    }
+    else
+    {
+        // check first row
+        if (location.Y == first.Y && (first.X <= location.X))
+        {
+            return true;
+        }
+        // check rows in between first row and last row
+        for (auto curRow = first.Y + 1; curRow < second.Y; ++curRow)
+        {
+            if (location.Y == curRow)
+            {
+                return true;
+            }
+        }
+        // check last row
+        if (location.Y == second.Y && location.X < second.X)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
@@ -1030,6 +1072,15 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
     return cursor.IsBlinkingAllowed();
+}
+
+// Method Description:
+// - Update our internal knowledge about where regex patterns are on the screen
+// - This is called by TerminalControl (through a throttled function) when the visible
+//   region changes (for example by text entering the buffer or scrolling)
+void Microsoft::Terminal::Core::Terminal::UpdatePatterns() noexcept
+{
+    _patternsAndLocations = _buffer->UpdatePatterns(_VisibleStartIndex(), _VisibleEndIndex());
 }
 
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
