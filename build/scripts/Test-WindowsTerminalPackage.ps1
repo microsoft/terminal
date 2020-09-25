@@ -106,6 +106,10 @@ Try {
         Throw "Failed to find wt.exe/wtd.exe -- check the WAP packaging project"
     }
 
+    If ($null -eq (Get-Item "$AppxPackageRootPath\OpenConsole.exe" -EA:Ignore)) {
+        Throw "Failed to find OpenConsole.exe -- check the WAP packaging project"
+    }
+
 } Finally {
     Remove-Item -Recurse -Force $AppxPackageRootPath
 }
