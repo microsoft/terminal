@@ -412,9 +412,9 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
-// - If the clicked text is a hyperlink, open it
+// - Given a coord, get the URI at that location
 // Arguments:
-// - The position of the clicked text
+// - The position
 std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 {
     auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
@@ -422,6 +422,26 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
     {
         auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
         return uri;
+    }
+    // also look through our known pattern locations
+    for (auto pattern : _patternsAndLocations)
+    {
+        if (std::get<0>(pattern) == _hyperlinkPatternId)
+        {
+            const auto start = std::get<1>(pattern);
+            const auto end = std::get<2>(pattern);
+            if (_IsLocationWithinCoordinates(position, start, end))
+            {
+                std::wstring uri;
+                const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+                const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+                for (auto iter = startIter; iter != endIter; ++iter)
+                {
+                    uri += iter->Chars();
+                }
+                return uri;
+            }
+        }
     }
     return {};
 }

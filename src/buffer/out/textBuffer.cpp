@@ -2362,7 +2362,7 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 // - The regex pattern
 // Return value:
 // - An ID that the caller should associate with the given pattern
-const size_t TextBuffer::AddPatternRecognizer(const std::string regexString)
+const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString)
 {
     ++_currentPatternId;
     _IdsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));

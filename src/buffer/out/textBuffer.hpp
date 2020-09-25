@@ -60,8 +60,6 @@ filling in the last row, and updating the screen.
 
 #include "../renderer/inc/IRenderTarget.hpp"
 
-#include <regex>
-
 class TextBuffer final
 {
 public:
@@ -184,7 +182,7 @@ public:
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
-    const size_t AddPatternRecognizer(const std::string regexString);
+    const size_t AddPatternRecognizer(const std::string_view regexString);
     const std::vector<std::tuple<size_t, COORD, COORD>> UpdatePatterns(const size_t firstRow, const size_t lastRow) const;
 
 private:
