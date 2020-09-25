@@ -68,7 +68,7 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
-        void UpdateTabViewIndex(const uint32_t idx);
+        void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
@@ -85,6 +85,8 @@ namespace winrt::TerminalApp::implementation
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
         // This is needed since Tab is going to be managing its own SwitchToTab command.
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
+        // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewNumTabs, _PropertyChangedHandlers, 0);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -94,6 +96,8 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
@@ -108,7 +112,8 @@ namespace winrt::TerminalApp::implementation
         void _Focus();
 
         void _CreateContextMenu();
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();        
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
+        void _EnableCloseMenuItems();
 
         void _RefreshVisualState();
 

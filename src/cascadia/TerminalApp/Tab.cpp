@@ -588,16 +588,13 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Icon(renameTabSymbol);
         }
 
-        // Close...
-        Controls::MenuFlyoutSubItem closeSubMenu = _CreateCloseSubMenu();
-
         // Build the menu
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
-        newTabFlyout.Items().Append(closeSubMenu);
+        newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         _tabViewItem.ContextFlyout(newTabFlyout);
     }
@@ -613,31 +610,43 @@ namespace winrt::TerminalApp::implementation
         auto weakThis{ get_weak() };
 
         // Close tabs after
-        Controls::MenuFlyoutItem closeTabsAfterMenuItem;
-        closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
+        _closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_CloseTabsAfter();
             }
         });
-        closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
+        _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
 
         // Close other tabs
-        Controls::MenuFlyoutItem closeOtherTabsMenuItem;
-        closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
+        _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_CloseOtherTabs();
             }
         });
-        closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
+        _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
 
         Controls::MenuFlyoutSubItem closeSubMenu;
         closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
-        closeSubMenu.Items().Append(closeTabsAfterMenuItem);
-        closeSubMenu.Items().Append(closeOtherTabsMenuItem);
+        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
 
         return closeSubMenu;
+    }
+
+    // Method Description:
+    // - Enable the Close menu items based on tab index and total number of tabs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_EnableCloseMenuItems()
+    {
+        // close other tabs is enabled only if there are other tabs
+        _closeOtherTabsMenuItem.IsEnabled(TabViewNumTabs() > 1);
+        // close tabs after is enabled only if there are other tabs on the right
+        _closeTabsAfterMenuItem.IsEnabled(TabViewIndex() < TabViewNumTabs() - 1);
     }
 
     // Method Description:
@@ -1124,9 +1133,11 @@ namespace winrt::TerminalApp::implementation
         _dispatch.DoAction(*actionAndArgs);
     }
 
-    void Tab::UpdateTabViewIndex(const uint32_t idx)
+    void Tab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
     {
         TabViewIndex(idx);
+        TabViewNumTabs(numTabs);
+        _EnableCloseMenuItems();
         SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
     }
 
