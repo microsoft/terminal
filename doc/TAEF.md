@@ -16,7 +16,7 @@ If you have Visual Studio and related C++ components installed, and you have suc
 
 > Note that you can not run TAEF tests directly through Visual Studio. The `Taef.Redist.Wlk` NuGet package has a MSTest/TAEF adapter inside of it that will let you browse and execute TAEF tests inside of Visual Studio. But the performance and reliability of this approach prevent us from recommending it here.
 
-In a "normal" command line environment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
+In a "normal" CMD environment, `te.exe` may not be directly available. Try the following command to set up the development enviroment first:
 
 ```shell
 .\tools\razzle.cmd
@@ -39,7 +39,6 @@ Any pattern of class/method names can be specified after the */name:* flag with 
 For any further details on the functionality of the TAEF test runner, please see the [Executing Tests](https://docs.microsoft.com/en-us/windows-hardware/drivers/taef/executing-tests) section in the official documentation. Or run the embedded help with
 
 	te.exe /!
-
 
 If you use PowerShell, try the following command:
 
