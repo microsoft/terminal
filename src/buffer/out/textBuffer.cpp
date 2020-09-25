@@ -2426,12 +2426,12 @@ const std::vector<std::tuple<size_t, COORD, COORD>> TextBuffer::UpdatePatterns(c
             // NOTE: these are VIEWPORT coordinates, not buffer coordinates
             // Keeping these as viewport coordinates for now because its the renderer
             // that actually uses these coordinates and the renderer works in viewport coords
-            SHORT startRow = gsl::narrow<SHORT>(start / rowSize);
-            SHORT startCol = gsl::narrow<SHORT>(start % rowSize);
-            SHORT endRow = gsl::narrow<SHORT>(end / rowSize);
-            SHORT endCol = gsl::narrow<SHORT>(end % rowSize);
-            COORD startCoord{ startCol, startRow };
-            COORD endCoord{ endCol, endRow };
+            const auto startRow = gsl::narrow<SHORT>(start / rowSize);
+            const auto startCol = gsl::narrow<SHORT>(start % rowSize);
+            const auto endRow = gsl::narrow<SHORT>(end / rowSize);
+            const auto endCol = gsl::narrow<SHORT>(end % rowSize);
+            const COORD startCoord{ startCol, startRow };
+            const COORD endCoord{ endCol, endRow };
             result.push_back(std::make_tuple(idAndPattern.first, startCoord, endCoord));
         }
     }
