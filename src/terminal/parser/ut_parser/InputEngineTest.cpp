@@ -73,8 +73,7 @@ public:
         _expectSendCtrlC{ false },
         _expectCursorPosition{ false },
         _expectedCursor{ -1, -1 },
-        _expectedWindowManipulation{ DispatchTypes::WindowManipulationType::Invalid },
-        _expectedCParams{ 0 }
+        _expectedWindowManipulation{ DispatchTypes::WindowManipulationType::Invalid }
     {
         std::fill_n(_expectedParams, ARRAYSIZE(_expectedParams), gsl::narrow<short>(0));
     }
@@ -207,7 +206,6 @@ public:
     COORD _expectedCursor;
     DispatchTypes::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
-    size_t _expectedCParams;
 };
 
 class Microsoft::Console::VirtualTerminal::InputEngineTest
@@ -327,7 +325,8 @@ public:
 
     virtual bool WriteCtrlKey(const KeyEvent& event) override;
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
+                                    const VTParameter parameter1,
+                                    const VTParameter parameter2) override; // DTTERM_WindowManipulation
     virtual bool WriteString(const std::wstring_view string) override;
 
     virtual bool MoveCursor(const size_t row,
@@ -362,16 +361,13 @@ bool TestInteractDispatch::WriteCtrlKey(const KeyEvent& event)
 }
 
 bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                              const gsl::span<const size_t> parameters)
+                                              const VTParameter parameter1,
+                                              const VTParameter parameter2)
 {
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
-    for (size_t i = 0; i < parameters.size(); i++)
-    {
-        unsigned short actual;
-        VERIFY_SUCCEEDED(SizeTToUShort(til::at(parameters, i), &actual));
-        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
-    }
+    VERIFY_ARE_EQUAL(_testState->_expectedParams[0], parameter1.value_or(0));
+    VERIFY_ARE_EQUAL(_testState->_expectedParams[1], parameter2.value_or(0));
     return true;
 }
 
@@ -634,8 +630,6 @@ void InputEngineTest::WindowManipulationTest()
         L"Only the valid ones should call the "
         L"TestInteractDispatch::WindowManipulation callback."));
 
-    bool fValidType = false;
-
     const unsigned short param1 = 123;
     const unsigned short param2 = 456;
     const wchar_t* const wszParam1 = L"123";
@@ -643,11 +637,6 @@ void InputEngineTest::WindowManipulationTest()
 
     for (unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
     {
-        if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
-        {
-            fValidType = true;
-        }
-
         std::wstringstream seqBuilder;
         seqBuilder << L"\x1b[" << i;
 
@@ -659,24 +648,18 @@ void InputEngineTest::WindowManipulationTest()
             seqBuilder << L";" << wszParam1 << L";" << wszParam2;
 
             testState._expectedToCallWindowManipulation = true;
-            testState._expectedCParams = 2;
             testState._expectedParams[0] = param1;
             testState._expectedParams[1] = param2;
             testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
-        else if (i == DispatchTypes::WindowManipulationType::RefreshWindow)
-        {
-            // refresh window doesn't expect any params.
-
-            testState._expectedToCallWindowManipulation = true;
-            testState._expectedCParams = 0;
-            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
-        }
         else
         {
-            testState._expectedToCallWindowManipulation = false;
-            testState._expectedCParams = 0;
-            testState._expectedWindowManipulation = DispatchTypes::WindowManipulationType::Invalid;
+            // other operations don't expect any params.
+
+            testState._expectedToCallWindowManipulation = true;
+            testState._expectedParams[0] = 0;
+            testState._expectedParams[1] = 0;
+            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
         seqBuilder << L"t";
         std::wstring seq = seqBuilder.str();
