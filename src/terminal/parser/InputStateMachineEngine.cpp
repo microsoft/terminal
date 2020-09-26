@@ -377,12 +377,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     const VTParameters params{ parameters.data(), parameters.size() };
     DWORD modifierState = 0;
     short vkey = 0;
-    unsigned int function = 0;
     size_t col = 0;
     size_t row = 0;
-
-    // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingArgs = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
     bool success = false;
     switch (id)
@@ -433,7 +429,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         success = true;
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _GetWindowManipulationType(parameters, function);
+        success = true;
         break;
     case CsiActionCodes::Win32KeyboardInput:
         success = true;
@@ -475,8 +471,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
             success = _WriteSingleKey(vkey, modifierState);
             break;
         case CsiActionCodes::DTTERM_WindowManipulation:
-            success = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
-                                                     remainingArgs);
+            success = _pDispatch->WindowManipulation(params.at(0), params.at(1), params.at(2));
             break;
         case CsiActionCodes::Win32KeyboardInput:
         {
