@@ -377,8 +377,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     const VTParameters params{ parameters.data(), parameters.size() };
     DWORD modifierState = 0;
     short vkey = 0;
-    size_t col = 0;
-    size_t row = 0;
 
     bool success = false;
     switch (id)
@@ -392,12 +390,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         modifierState = _GetSGRMouseModifierState(firstParameter);
         success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags);
         success = success && _WriteMouseEvent(params.at(1), params.at(2), buttonState, modifierState, eventFlags);
-        return success;
-    }
-    case CsiActionCodes::Generic:
-        modifierState = _GetGenericKeysModifierState(params);
-        success = _GetGenericVkey(params.at(0), vkey);
         break;
+    }
     // case CsiActionCodes::DSR_DeviceStatusReportResponse:
     case CsiActionCodes::CSI_F3:
         // The F3 case is special - it shares a code with the DeviceStatusResponse.
@@ -405,9 +399,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         // Else, fall though to the _GetCursorKeysModifierState handler.
         if (_lookingForDSR)
         {
-            success = true;
-            row = params.at(0);
-            col = params.at(1);
+            success = _pDispatch->MoveCursor(params.at(0), params.at(1));
+            // Right now we're only looking for on initial cursor
+            //      position response. After that, only look for F3.
+            _lookingForDSR = false;
             break;
         }
         [[fallthrough]];
@@ -422,70 +417,31 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     case CsiActionCodes::CSI_F4:
         success = _GetCursorKeysVkey(id, vkey);
         modifierState = _GetCursorKeysModifierState(params, id);
+        success = success && _WriteSingleKey(vkey, modifierState);
+        break;
+    case CsiActionCodes::Generic:
+        success = _GetGenericVkey(params.at(0), vkey);
+        modifierState = _GetGenericKeysModifierState(params);
+        success = success && _WriteSingleKey(vkey, modifierState);
         break;
     case CsiActionCodes::CursorBackTab:
-        modifierState = SHIFT_PRESSED;
-        vkey = VK_TAB;
-        success = true;
+        success = _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        success = true;
+        success = _pDispatch->WindowManipulation(params.at(0), params.at(1), params.at(2));
         break;
     case CsiActionCodes::Win32KeyboardInput:
-        success = true;
+    {
+        // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
+        // because that will take extra steps to make sure things like
+        // Ctrl+C, Ctrl+Break are handled correctly.
+        const auto key = _GenerateWin32Key(params);
+        success = _pDispatch->WriteCtrlKey(key);
         break;
+    }
     default:
         success = false;
         break;
-    }
-
-    if (success)
-    {
-        switch (id)
-        {
-        // case CsiActionCodes::DSR_DeviceStatusReportResponse:
-        case CsiActionCodes::CSI_F3:
-            // The F3 case is special - it shares a code with the DeviceStatusResponse.
-            // If we're looking for that response, then do that, and break out.
-            // Else, fall though to the _GetCursorKeysModifierState handler.
-            if (_lookingForDSR)
-            {
-                success = _pDispatch->MoveCursor(row, col);
-                // Right now we're only looking for on initial cursor
-                //      position response. After that, only look for F3.
-                _lookingForDSR = false;
-                break;
-            }
-            [[fallthrough]];
-        case CsiActionCodes::Generic:
-        case CsiActionCodes::ArrowUp:
-        case CsiActionCodes::ArrowDown:
-        case CsiActionCodes::ArrowRight:
-        case CsiActionCodes::ArrowLeft:
-        case CsiActionCodes::Home:
-        case CsiActionCodes::End:
-        case CsiActionCodes::CSI_F1:
-        case CsiActionCodes::CSI_F2:
-        case CsiActionCodes::CSI_F4:
-        case CsiActionCodes::CursorBackTab:
-            success = _WriteSingleKey(vkey, modifierState);
-            break;
-        case CsiActionCodes::DTTERM_WindowManipulation:
-            success = _pDispatch->WindowManipulation(params.at(0), params.at(1), params.at(2));
-            break;
-        case CsiActionCodes::Win32KeyboardInput:
-        {
-            // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
-            // because that will take extra steps to make sure things like
-            // Ctrl+C, Ctrl+Break are handled correctly.
-            const auto key = _GenerateWin32Key(params);
-            success = _pDispatch->WriteCtrlKey(key);
-            break;
-        }
-        default:
-            success = false;
-            break;
-        }
     }
 
     return success;
