@@ -35,7 +35,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionEscDispatch(const VTID id) override;
 
-        bool ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters) override;
+        bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) override;
 
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 

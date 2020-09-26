@@ -344,7 +344,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - parameters - Set of parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionVt52EscDispatch(const VTID /*id*/, const gsl::span<const size_t> /*parameters*/) noexcept
+bool InputStateMachineEngine::ActionVt52EscDispatch(const VTID /*id*/, const VTParameters /*parameters*/) noexcept
 {
     // VT52 escape sequences are not used in the input state machine.
     return false;

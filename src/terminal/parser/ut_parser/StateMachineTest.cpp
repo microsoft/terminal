@@ -52,7 +52,7 @@ public:
 
     bool ActionEscDispatch(const VTID /* id */) override { return true; };
 
-    bool ActionVt52EscDispatch(const VTID /*id*/, const gsl::span<const size_t> /*parameters*/) override { return true; };
+    bool ActionVt52EscDispatch(const VTID /*id*/, const VTParameters /*parameters*/) override { return true; };
 
     bool ActionClear() override { return true; };
 

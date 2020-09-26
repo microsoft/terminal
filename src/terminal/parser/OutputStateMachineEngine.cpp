@@ -327,7 +327,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - parameters - Set of parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters)
+bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTParameters parameters)
 {
     bool success = false;
 
@@ -366,7 +366,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
     case Vt52ActionCodes::DirectCursorAddress:
         // VT52 cursor addresses are provided as ASCII characters, with
         // the lowest value being a space, representing an address of 1.
-        success = _dispatch->CursorPosition(gsl::at(parameters, 0) - ' ' + 1, gsl::at(parameters, 1) - ' ' + 1);
+        success = _dispatch->CursorPosition(parameters.at(0).value() - ' ' + 1, parameters.at(1).value() - ' ' + 1);
         break;
     case Vt52ActionCodes::Identify:
         success = _dispatch->Vt52DeviceAttributes();
