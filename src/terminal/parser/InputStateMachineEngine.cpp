@@ -399,8 +399,8 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         return success;
     }
     case CsiActionCodes::Generic:
-        modifierState = _GetGenericKeysModifierState(parameters);
-        success = _GetGenericVkey(parameters, vkey);
+        modifierState = _GetGenericKeysModifierState(params);
+        success = _GetGenericVkey(params.at(0), vkey);
         break;
     // case CsiActionCodes::DSR_DeviceStatusReportResponse:
     case CsiActionCodes::CSI_F3:
@@ -425,7 +425,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
         success = _GetCursorKeysVkey(id, vkey);
-        modifierState = _GetCursorKeysModifierState(parameters, id);
+        modifierState = _GetCursorKeysModifierState(params, id);
         break;
     case CsiActionCodes::CursorBackTab:
         modifierState = SHIFT_PRESSED;
@@ -784,13 +784,9 @@ bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t
 // - id - the identifier for the sequence we're operating on.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const gsl::span<const size_t> parameters, const VTID id) noexcept
+DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept
 {
-    DWORD modifiers = 0;
-    if (_IsModified(parameters.size()) && parameters.size() >= 2)
-    {
-        modifiers = _GetModifier(til::at(parameters, 1));
-    }
+    DWORD modifiers = _GetModifier(parameters.at(1));
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
     //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
@@ -813,20 +809,16 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(const gsl::span<const
 // - parameters - the set of parameters to get the modifier state from.
 // Return Value:
 // - the INPUT_RECORD compatible modifier state.
-DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const gsl::span<const size_t> parameters) noexcept
+DWORD InputStateMachineEngine::_GetGenericKeysModifierState(const VTParameters parameters) noexcept
 {
-    DWORD modifiers = 0;
-    if (_IsModified(parameters.size()) && parameters.size() >= 2)
-    {
-        modifiers = _GetModifier(til::at(parameters, 1));
-    }
+    DWORD modifiers = _GetModifier(parameters.at(1));
 
     // Enhanced Keys (from https://docs.microsoft.com/en-us/windows/console/key-event-record-str):
     //   Enhanced keys for the IBM 101- and 102-key keyboards are the INS, DEL,
     //   HOME, END, PAGE UP, PAGE DOWN, and direction keys in the clusters to the left
     //   of the keypad; and the divide (/) and ENTER keys in the keypad.
     // This snippet detects the non-direction keys
-    const auto identifier = static_cast<GenericKeyIdentifiers>(til::at(parameters, 0));
+    const GenericKeyIdentifiers identifier = parameters.at(0);
     if (identifier <= GenericKeyIdentifiers::Next)
     {
         modifiers = WI_SetFlag(modifiers, ENHANCED_KEY);
@@ -856,20 +848,6 @@ DWORD InputStateMachineEngine::_GetSGRMouseModifierState(const size_t modifierPa
     WI_SetFlagIf(modifiers, LEFT_ALT_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Meta));
     WI_SetFlagIf(modifiers, LEFT_CTRL_PRESSED, WI_IsFlagSet(modifierParam, CsiMouseModifierCodes::Ctrl));
     return modifiers;
-}
-
-// Method Description:
-// - Determines if a set of parameters indicates a modified keypress
-// Arguments:
-// - paramCount - the number of parameters we've collected in this sequence
-// Return Value:
-// - true iff the sequence is a modified sequence.
-bool InputStateMachineEngine::_IsModified(const size_t paramCount) noexcept
-{
-    // modified input either looks like
-    // \x1b[1;mA or \x1b[17;m~
-    // Both have two parameters
-    return paramCount == 2;
 }
 
 // Method Description:
@@ -991,22 +969,15 @@ bool InputStateMachineEngine::_UpdateSGRMouseButtonState(const VTID id,
 
 // Method Description:
 // - Gets the Vkey form the generic keys table associated with a particular
-//   identifier code. The identifier code will be the first param in rgusParams.
+//   identifier code.
 // Arguments:
-// - parameters: an array of shorts where the first is the identifier of the key
-//      we're looking for.
+// - identifier: the identifier of the key we're looking for.
 // - vkey: Receives the vkey
 // Return Value:
 // true iff we found the key
-bool InputStateMachineEngine::_GetGenericVkey(const gsl::span<const size_t> parameters, short& vkey) const
+bool InputStateMachineEngine::_GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const
 {
     vkey = 0;
-    if (parameters.empty())
-    {
-        return false;
-    }
-
-    const auto identifier = (GenericKeyIdentifiers)til::at(parameters, 0);
 
     const auto mapping = std::find(s_genericMap.cbegin(), s_genericMap.cend(), identifier);
     if (mapping != s_genericMap.end())

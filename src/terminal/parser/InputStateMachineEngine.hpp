@@ -92,7 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
     };
 
     // Sequences ending in '~' use these numbers as identifiers.
-    enum class GenericKeyIdentifiers : unsigned short
+    enum class GenericKeyIdentifiers : size_t
     {
         GenericHome = 1,
         Insert = 2,
@@ -170,20 +170,18 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
 
-        DWORD _GetCursorKeysModifierState(const gsl::span<const size_t> parameters, const VTID id) noexcept;
-        DWORD _GetGenericKeysModifierState(const gsl::span<const size_t> parameters) noexcept;
+        DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
+        DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;
         DWORD _GetSGRMouseModifierState(const size_t modifierParam) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
-        bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
 
         bool _UpdateSGRMouseButtonState(const VTID id,
                                         const size_t sgrEncoding,
                                         DWORD& buttonState,
                                         DWORD& eventFlags) noexcept;
-        bool _GetGenericVkey(const gsl::span<const size_t> parameters,
-                             short& vkey) const;
+        bool _GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const;
         bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
 
