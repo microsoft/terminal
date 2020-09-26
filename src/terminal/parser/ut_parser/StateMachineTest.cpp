@@ -32,7 +32,7 @@ public:
     {
         printed.clear();
         passedThrough.clear();
-        csiParams.reset();
+        csiParams.clear();
     }
 
     bool ActionExecute(const wchar_t /* wch */) override { return true; };
@@ -79,7 +79,7 @@ public:
     bool DispatchIntermediatesFromEscape() const override { return false; };
 
     // ActionCsiDispatch is the only method that's actually implemented.
-    bool ActionCsiDispatch(const VTID /*id*/, const gsl::span<const size_t> parameters) override
+    bool ActionCsiDispatch(const VTID /*id*/, const VTParameters parameters) override
     {
         // If flush to terminal is registered for a test, then use it.
         if (pfnFlushToTerminal)
@@ -89,13 +89,16 @@ public:
         }
         else
         {
-            csiParams.emplace(parameters.begin(), parameters.end());
+            for (size_t i = 0; i < parameters.size(); i++)
+            {
+                csiParams.push_back(parameters.at(i).value_or(0));
+            }
             return true;
         }
     }
 
     // This will only be populated if ActionCsiDispatch is called.
-    std::optional<std::vector<size_t>> csiParams;
+    std::vector<size_t> csiParams;
 
     // Flush function for pass-through test.
     std::function<bool()> pfnFlushToTerminal;

@@ -359,7 +359,7 @@ bool InputStateMachineEngine::ActionVt52EscDispatch(const VTID /*id*/, const gsl
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<const size_t> parameters)
+bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
     // GH#4999 - If the client was in VT input mode, but we received a
     // win32-input-mode sequence, then _don't_ passthrough the sequence to the
@@ -374,7 +374,6 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         return _pfnFlushToInputQueue();
     }
 
-    const VTParameters params{ parameters.data(), parameters.size() };
     DWORD modifierState = 0;
     short vkey = 0;
 
@@ -386,10 +385,10 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     {
         DWORD buttonState = 0;
         DWORD eventFlags = 0;
-        const size_t firstParameter = params.at(0).value_or(0);
+        const size_t firstParameter = parameters.at(0).value_or(0);
         modifierState = _GetSGRMouseModifierState(firstParameter);
         success = _UpdateSGRMouseButtonState(id, firstParameter, buttonState, eventFlags);
-        success = success && _WriteMouseEvent(params.at(1), params.at(2), buttonState, modifierState, eventFlags);
+        success = success && _WriteMouseEvent(parameters.at(1), parameters.at(2), buttonState, modifierState, eventFlags);
         break;
     }
     // case CsiActionCodes::DSR_DeviceStatusReportResponse:
@@ -399,7 +398,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
         // Else, fall though to the _GetCursorKeysModifierState handler.
         if (_lookingForDSR)
         {
-            success = _pDispatch->MoveCursor(params.at(0), params.at(1));
+            success = _pDispatch->MoveCursor(parameters.at(0), parameters.at(1));
             // Right now we're only looking for on initial cursor
             //      position response. After that, only look for F3.
             _lookingForDSR = false;
@@ -416,26 +415,26 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const gsl::span<c
     case CsiActionCodes::CSI_F2:
     case CsiActionCodes::CSI_F4:
         success = _GetCursorKeysVkey(id, vkey);
-        modifierState = _GetCursorKeysModifierState(params, id);
+        modifierState = _GetCursorKeysModifierState(parameters, id);
         success = success && _WriteSingleKey(vkey, modifierState);
         break;
     case CsiActionCodes::Generic:
-        success = _GetGenericVkey(params.at(0), vkey);
-        modifierState = _GetGenericKeysModifierState(params);
+        success = _GetGenericVkey(parameters.at(0), vkey);
+        modifierState = _GetGenericKeysModifierState(parameters);
         success = success && _WriteSingleKey(vkey, modifierState);
         break;
     case CsiActionCodes::CursorBackTab:
         success = _WriteSingleKey(VK_TAB, SHIFT_PRESSED);
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _pDispatch->WindowManipulation(params.at(0), params.at(1), params.at(2));
+        success = _pDispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
         break;
     case CsiActionCodes::Win32KeyboardInput:
     {
         // Use WriteCtrlKey here, even for keys that _aren't_ control keys,
         // because that will take extra steps to make sure things like
         // Ctrl+C, Ctrl+Break are handled correctly.
-        const auto key = _GenerateWin32Key(params);
+        const auto key = _GenerateWin32Key(parameters);
         success = _pDispatch->WriteCtrlKey(key);
         break;
     }
