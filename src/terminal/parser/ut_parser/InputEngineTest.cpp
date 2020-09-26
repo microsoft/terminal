@@ -1422,9 +1422,8 @@ void InputEngineTest::TestWin32InputParsing()
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
 
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(0, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
@@ -1433,9 +1432,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
@@ -1444,9 +1442,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1455,9 +1452,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 4 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1466,9 +1462,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 1 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 1 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1477,9 +1472,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4, 5 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 4, 5 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1488,20 +1482,14 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4, 5, 6 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 4, 5, 6 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
         VERIFY_ARE_EQUAL(true, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
         VERIFY_ARE_EQUAL(6, key.GetRepeatCount());
-    }
-    {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4, 5, 6, 7 };
-        VERIFY_IS_FALSE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
     }
 }
 
@@ -1532,8 +1520,7 @@ void InputEngineTest::TestWin32InputOptionals()
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
 
     {
-        KeyEvent key{};
-        std::vector<size_t> params{
+        std::vector<VTParameter> params{
             ::base::saturated_cast<size_t>(provideVirtualKeyCode ? 1 : 0),
             ::base::saturated_cast<size_t>(provideVirtualScanCode ? 2 : 0),
             ::base::saturated_cast<size_t>(provideCharData ? 3 : 0),
@@ -1542,7 +1529,7 @@ void InputEngineTest::TestWin32InputOptionals()
             ::base::saturated_cast<size_t>(provideRepeatCount ? 6 : 0)
         };
 
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), static_cast<size_t>(numParams) }, key));
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), static_cast<size_t>(numParams) });
         VERIFY_ARE_EQUAL((provideVirtualKeyCode && numParams > 0) ? 1 : 0,
                          key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL((provideVirtualScanCode && numParams > 1) ? 2 : 0,
