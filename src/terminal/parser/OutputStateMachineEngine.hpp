@@ -47,8 +47,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const size_t parameter,
                                const std::wstring_view string) override;
 
-        bool ActionSs3Dispatch(const wchar_t wch,
-                               const gsl::span<const size_t> parameters) noexcept override;
+        bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
         bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;

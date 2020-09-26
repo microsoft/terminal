@@ -455,8 +455,7 @@ bool InputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameter
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch,
-                                                const gsl::span<const size_t> /*parameters*/)
+bool InputStateMachineEngine::ActionSs3Dispatch(const wchar_t wch, const VTParameters /*parameters*/)
 {
     if (_pDispatch->IsVtInputEnabled() && _pfnFlushToInputQueue)
     {

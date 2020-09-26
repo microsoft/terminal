@@ -70,8 +70,7 @@ public:
         return true;
     };
 
-    bool ActionSs3Dispatch(const wchar_t /* wch */,
-                           const gsl::span<const size_t> /* parameters */) override { return true; };
+    bool ActionSs3Dispatch(const wchar_t /* wch */, const VTParameters /* parameters */) override { return true; };
 
     bool ParseControlSequenceAfterSs3() const override { return false; }
     bool FlushAtEndOfString() const override { return false; };
