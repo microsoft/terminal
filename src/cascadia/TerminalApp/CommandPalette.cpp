@@ -117,6 +117,19 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
+    void CommandPalette::SelectSeveralNextItem(const bool moveDown)
+    {
+        const auto selected = _filteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+        // Wraparound math. By adding numItems and then calculating modulo numItems,
+        // we clamp the values to the range [0, numItems) while still supporting moving
+        // upward from 0 to numItems - 1.
+        const auto newIndex = ((numItems + selected + (moveDown ? 10 : -10)) % numItems);
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
@@ -168,6 +181,18 @@ namespace winrt::TerminalApp::implementation
         {
             // Action Mode: Move focus to the previous item in the list.
             SelectNextItem(true);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::PageUp)
+        {
+            // Action Mode: Move focus to the several items next in the list.
+            SelectSeveralNextItem(false);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::PageDown)
+        {
+            // Action Mode: Move focus to the several previous items in the list.
+            SelectSeveralNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
