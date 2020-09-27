@@ -148,12 +148,6 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        template<typename T, std::enable_if_t<sizeof(T) == sizeof(VTParameter), int> = 0>
-        constexpr VTParameters(const T* ptr, const size_t count) noexcept :
-            _values{ reinterpret_cast<const VTParameter*>(ptr), count }
-        {
-        }
-
         constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.

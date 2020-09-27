@@ -337,9 +337,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
-        VERIFY_ARE_EQUAL(mach._parameters.at(0), 0u);
+        VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
         VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
-        VERIFY_ARE_EQUAL(mach._parameters.at(2), 0u);
+        VERIFY_IS_FALSE(mach._parameters.at(2).has_value());
         VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
     }
 
@@ -748,9 +748,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsParam);
 
         VERIFY_ARE_EQUAL(mach._parameters.size(), 4u);
-        VERIFY_ARE_EQUAL(mach._parameters.at(0), 0u);
+        VERIFY_IS_FALSE(mach._parameters.at(0).has_value());
         VERIFY_ARE_EQUAL(mach._parameters.at(1), 324u);
-        VERIFY_ARE_EQUAL(mach._parameters.at(2), 0u);
+        VERIFY_IS_FALSE(mach._parameters.at(2).has_value());
         VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
 
         mach.ProcessCharacter(AsciiChars::ESC);

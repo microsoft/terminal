@@ -148,7 +148,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring_view _run;
 
         VTIDBuilder _identifier;
-        std::vector<size_t> _parameters;
+        std::vector<VTParameter> _parameters;
 
         std::wstring _oscString;
         size_t _oscParameter;

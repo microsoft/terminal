@@ -507,24 +507,27 @@ void StateMachine::_ActionParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Param");
 
-    // If we have no parameters and we're about to add one, get the 0 value ready here.
+    // If we have no parameters and we're about to add one, get the next value ready here.
     if (_parameters.empty())
     {
-        _parameters.push_back(0);
+        _parameters.push_back({});
     }
 
     // On a delimiter, increase the number of params we've seen.
     // "Empty" params should still count as a param -
-    //      eg "\x1b[0;;m" should be three "0" params
+    //      eg "\x1b[0;;m" should be three params
     if (wch == L';')
     {
         // Move to next param.
-        _parameters.push_back(0);
+        _parameters.push_back({});
     }
     else
     {
-        // Accumulate the character given into the last (current) parameter
-        _AccumulateTo(wch, _parameters.back());
+        // Accumulate the character given into the last (current) parameter.
+        // If the value hasn't been initialized yet, it'll start as 0.
+        auto currentParameter = _parameters.back().value_or(0);
+        _AccumulateTo(wch, currentParameter);
+        _parameters.back() = currentParameter;
     }
 }
 
