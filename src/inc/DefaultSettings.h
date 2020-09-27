@@ -2,6 +2,9 @@
 Copyright (c) Microsoft Corporation.
 Licensed under the MIT license.
 
+This is for terminal settings
+Default setting file is what you are editing/viewing right now.
+
 Module Name:
 - DefaultSettings.h
 
