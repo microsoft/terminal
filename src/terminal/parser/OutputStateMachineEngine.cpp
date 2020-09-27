@@ -465,11 +465,15 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
         break;
     case CsiActionCodes::ED_EraseDisplay:
-        success = _dispatch->EraseInDisplay(parameters.at(0));
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->EraseInDisplay(eraseType);
+        });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
         break;
     case CsiActionCodes::EL_EraseLine:
-        success = _dispatch->EraseInLine(parameters.at(0));
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->EraseInLine(eraseType);
+        });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
@@ -538,7 +542,9 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
         break;
     case CsiActionCodes::TBC_TabClear:
-        success = _dispatch->TabClear(parameters.at(0));
+        success = parameters.for_each([&](const auto clearType) {
+            return _dispatch->TabClear(clearType);
+        });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
         break;
     case CsiActionCodes::ECH_EraseCharacters:
