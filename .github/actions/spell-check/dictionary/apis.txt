@@ -52,5 +52,6 @@ tmp
 tx
 userenv
 wcstoui
+wsregex
 XDocument
 XElement

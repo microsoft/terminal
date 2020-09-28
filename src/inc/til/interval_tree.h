@@ -1,4 +1,4 @@
-// Code here is taken from https://www.geeksforgeeks.org/interval-tree/ and edited
+// Code here is taken from the Geeks for Geeks website and edited
 
 #pragma once
 
