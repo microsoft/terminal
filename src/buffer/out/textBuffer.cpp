@@ -2379,9 +2379,11 @@ const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString
 //      tuple<0>: ID of the pattern
 //      tuple<1>: start coordinate of the pattern
 //      tuple<2>: end coordinate of the pattern
-const std::vector<std::tuple<size_t, COORD, COORD>> TextBuffer::UpdatePatterns(const size_t firstRow, const size_t lastRow) const
+
+til::IntervalTree::ITNode* TextBuffer::UpdatePatterns(const size_t firstRow, const size_t lastRow) const
 {
-    std::vector<std::tuple<size_t, COORD, COORD>> result;
+    til::IntervalTree tree;
+    til::IntervalTree::ITNode* result = NULL;
 
     std::wstring concatAll;
     const auto rowSize = GetRowByOffset(0).size();
@@ -2396,17 +2398,14 @@ const std::vector<std::tuple<size_t, COORD, COORD>> TextBuffer::UpdatePatterns(c
         concatAll += row.GetCharRow().GetText();
     }
 
-    // convert the string into something the regex iterator can work with
-    const auto constAll = til::u16u8(concatAll);
-
     // for each pattern we know of, iterate through the string
     for (auto idAndPattern : _IdsAndPatterns)
     {
-        std::regex regexObj{ idAndPattern.second };
+        std::wregex regexObj{ til::u8u16(idAndPattern.second) };
 
         // search through the run with our regex object
-        auto words_begin = std::sregex_iterator(constAll.begin(), constAll.end(), regexObj);
-        auto words_end = std::sregex_iterator();
+        auto words_begin = std::wsregex_iterator(concatAll.begin(), concatAll.end(), regexObj);
+        auto words_end = std::wsregex_iterator();
 
         size_t lenUpToThis = 0;
         for (auto i = words_begin; i != words_end; ++i)
@@ -2432,7 +2431,7 @@ const std::vector<std::tuple<size_t, COORD, COORD>> TextBuffer::UpdatePatterns(c
             const auto endCol = gsl::narrow<SHORT>(end % rowSize);
             const COORD startCoord{ startCol, startRow };
             const COORD endCoord{ endCol, endRow };
-            result.push_back(std::make_tuple(idAndPattern.first, startCoord, endCoord));
+            result = tree.insert(result, til::IntervalTree::Interval{ startCoord, endCoord }, idAndPattern.first);
         }
     }
     return result;

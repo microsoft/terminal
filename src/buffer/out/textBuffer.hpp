@@ -183,7 +183,7 @@ public:
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
     const size_t AddPatternRecognizer(const std::string_view regexString);
-    const std::vector<std::tuple<size_t, COORD, COORD>> UpdatePatterns(const size_t firstRow, const size_t lastRow) const;
+    til::IntervalTree::ITNode* UpdatePatterns(const size_t firstRow, const size_t lastRow) const;
 
 private:
     void _UpdateSize();

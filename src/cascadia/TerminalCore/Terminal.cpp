@@ -424,24 +424,20 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         return uri;
     }
     // also look through our known pattern locations
-    for (auto pattern : _patternsAndLocations)
+    const auto found = _tree.overlapSearch(_patternsAndLocations, til::IntervalTree::Interval{ position, position });
+    if (found != NULL && found->patternId == _hyperlinkPatternId)
     {
-        if (std::get<0>(pattern) == _hyperlinkPatternId)
+        const auto start = found->i->low;
+        const auto end = found->i->high;
+        std::wstring uri;
+
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        for (auto iter = startIter; iter != endIter; ++iter)
         {
-            const auto start = std::get<1>(pattern);
-            const auto end = std::get<2>(pattern);
-            if (_IsLocationWithinCoordinates(position, start, end))
-            {
-                std::wstring uri;
-                const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
-                const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
-                for (auto iter = startIter; iter != endIter; ++iter)
-                {
-                    uri += iter->Chars();
-                }
-                return uri;
-            }
+            uri += iter->Chars();
         }
+        return uri;
     }
     return {};
 }
@@ -981,45 +977,6 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
         }
         CATCH_LOG();
     }
-}
-
-// Method Description:
-// - Implements the logic to determine if a location is in a given region
-// Arguments:
-// - The location
-// - The start and end coordinates of the region
-// Return value:
-// - True if the location is within those coordinates, false otherwise
-bool Microsoft::Terminal::Core::Terminal::_IsLocationWithinCoordinates(const COORD location, const COORD first, const COORD second) const noexcept
-{
-    if (first.Y == second.Y)
-    {
-        const auto sameRow = location.Y == first.Y;
-        const auto inRange = (first.X <= location.X && location.X < second.X);
-        return (sameRow && inRange);
-    }
-    else
-    {
-        // check first row
-        if (location.Y == first.Y && (first.X <= location.X))
-        {
-            return true;
-        }
-        // check rows in between first row and last row
-        for (auto curRow = first.Y + 1; curRow < second.Y; ++curRow)
-        {
-            if (location.Y == curRow)
-            {
-                return true;
-            }
-        }
-        // check last row
-        if (location.Y == second.Y && location.X < second.X)
-        {
-            return true;
-        }
-    }
-    return false;
 }
 
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept

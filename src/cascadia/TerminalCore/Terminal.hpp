@@ -233,7 +233,8 @@ private:
     bool _suppressApplicationTitle;
 
     size_t _hyperlinkPatternId;
-    std::vector<std::tuple<size_t, COORD, COORD>> _patternsAndLocations;
+    til::IntervalTree _tree;
+    til::IntervalTree::ITNode* _patternsAndLocations;
 
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
@@ -307,8 +308,6 @@ private:
     void _NotifyScrollEvent() noexcept;
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
-
-    bool _IsLocationWithinCoordinates(const COORD location, const COORD first, const COORD second) const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp

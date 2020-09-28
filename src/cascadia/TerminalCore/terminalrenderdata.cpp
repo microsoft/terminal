@@ -139,12 +139,10 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The pattern ID of the location
 const size_t Microsoft::Terminal::Core::Terminal::GetPatternId(const COORD location) const noexcept
 {
-    for (auto found : _patternsAndLocations)
+    const auto found = _tree.overlapSearch(_patternsAndLocations, til::IntervalTree::Interval{ location, location });
+    if (found != NULL)
     {
-        if (_IsLocationWithinCoordinates(location, std::get<1>(found), std::get<2>(found)))
-        {
-            return std::get<0>(found);
-        }
+        return found->patternId;
     }
     return 0;
 }
