@@ -105,7 +105,6 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->

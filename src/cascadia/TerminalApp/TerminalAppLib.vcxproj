@@ -160,7 +160,6 @@
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.cpp" />
     <ClCompile Include="TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>

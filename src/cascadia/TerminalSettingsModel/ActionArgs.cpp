@@ -212,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // The string will be similar to the following:
         // * "Send Input: ...input..."
 
-        auto escapedInput = VisualizeControlCodes(_Input);
+        auto escapedInput = til::visualize_control_codes(_Input);
         auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
         return winrt::hstring{ name };
     }
