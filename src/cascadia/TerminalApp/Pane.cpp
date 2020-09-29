@@ -867,7 +867,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
             _root.RowDefinitions().Append(secondRowDef);
         }
 
-        // Animate the dummy grid from it's current size down to 0
+        // Animate the dummy grid from its current size down to 0
         Media::Animation::DoubleAnimation animation{};
         animation.Duration(AnimationDuration);
         animation.From(splitWidth ? removedOriginalSize.Width : removedOriginalSize.Height);
@@ -1077,8 +1077,8 @@ void Pane::_SetupEntranceAnimation()
         animation.Duration(AnimationDuration);
         if (isFirstChild)
         {
-            // If we're animating the first pane, the size should decrease, form the
-            // full size down to the given size.
+            // If we're animating the first pane, the size should decrease, from
+            // the full size down to the given size.
             animation.From(totalSize);
             animation.To(size);
         }
