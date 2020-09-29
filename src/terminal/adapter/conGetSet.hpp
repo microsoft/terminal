@@ -70,10 +70,9 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateEnableAnyEventMouseMode(const bool enabled) = 0;
         virtual bool PrivateEnableAlternateScroll(const bool enabled) = 0;
         virtual bool PrivateEraseAll() = 0;
+        virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;
         virtual bool SetCursorStyle(const CursorType style) = 0;
         virtual bool SetCursorColor(const COLORREF color) = 0;
-        virtual bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                size_t& eventsWritten) = 0;
         virtual bool PrivateWriteConsoleControlInput(const KeyEvent key) = 0;
         virtual bool PrivateRefreshWindow() = 0;
 
@@ -102,5 +101,8 @@ namespace Microsoft::Console::VirtualTerminal
                                          const std::optional<SMALL_RECT> clipRect,
                                          const COORD destinationOrigin,
                                          const bool standardFillAttrs) = 0;
+
+        virtual bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const = 0;
+        virtual bool PrivateEndHyperlink() const = 0;
     };
 }

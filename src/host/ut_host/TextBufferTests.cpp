@@ -152,6 +152,9 @@ class TextBufferTests
 
     TEST_METHOD(GetTextRects);
     TEST_METHOD(GetText);
+
+    TEST_METHOD(HyperlinkTrim);
+    TEST_METHOD(NoHyperlinkTrim);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2062,7 +2065,7 @@ void TextBufferTests::GetWordBoundaries()
         { { 79, 0 },    {{ 10, 0 },      { 5, 0 }} },
 
         // tests for second line of text
-        { {  0, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  0, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  1, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
         { {  3, 1 },     {{ 2, 1 },       { 2, 1 }} },
@@ -2442,4 +2445,80 @@ void TextBufferTests::GetText()
         // Verify expected output and actual output are the same
         VERIFY_ARE_EQUAL(expectedText, result);
     }
+}
+
+// This tests that when we increment the circular buffer, obsolete hyperlink references
+// are removed from the hyperlink map
+void TextBufferTests::HyperlinkTrim()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    const auto url = L"test.url";
+    const auto otherUrl = L"other.url";
+    const auto customId = L"CustomId";
+    const auto otherCustomId = L"OtherCustomId";
+
+    // Set a hyperlink id in the first row and add a hyperlink to our map
+    const COORD pos{ 70, 0 };
+    const auto id = _buffer->GetHyperlinkId(customId);
+    TextAttribute newAttr{ 0x7f };
+    newAttr.SetHyperlinkId(id);
+    _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
+    _buffer->AddHyperlinkToMap(url, id);
+
+    // Set a different hyperlink id somewhere else in the buffer
+    const COORD otherPos{ 70, 5 };
+    const auto otherId = _buffer->GetHyperlinkId(otherCustomId);
+    newAttr.SetHyperlinkId(otherId);
+    _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
+    _buffer->AddHyperlinkToMap(otherUrl, otherId);
+
+    // Increment the circular buffer
+    _buffer->IncrementCircularBuffer();
+
+    // The hyperlink reference that was only in the first row should be deleted from the map
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
+    // Since there was a custom id, that should be deleted as well
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(customId), _buffer->_hyperlinkCustomIdMap.end());
+
+    // The other hyperlink reference should not be deleted
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap[otherId], otherUrl);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[otherCustomId], otherId);
+}
+
+// This tests that when we increment the circular buffer, non-obsolete hyperlink references
+// do not get removed from the hyperlink map
+void TextBufferTests::NoHyperlinkTrim()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    const auto url = L"test.url";
+    const auto customId = L"CustomId";
+
+    // Set a hyperlink id in the first row and add a hyperlink to our map
+    const COORD pos{ 70, 0 };
+    const auto id = _buffer->GetHyperlinkId(customId);
+    TextAttribute newAttr{ 0x7f };
+    newAttr.SetHyperlinkId(id);
+    _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
+    _buffer->AddHyperlinkToMap(url, id);
+
+    // Set the same hyperlink id somewhere else in the buffer
+    const COORD otherPos{ 70, 5 };
+    _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
+
+    // Increment the circular buffer
+    _buffer->IncrementCircularBuffer();
+
+    // The hyperlink reference should not be deleted from the map since it is still present in the buffer
+    VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[customId], id);
 }

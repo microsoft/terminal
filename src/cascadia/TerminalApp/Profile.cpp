@@ -69,108 +69,6 @@ Profile::Profile(guid guid) :
 }
 
 // Method Description:
-// - Create a TerminalSettings from this object. Apply our settings, as well as
-//      any colors from our color scheme, if we have one.
-// Arguments:
-// - schemes: a list of schemes to look for our color scheme in, if we have one.
-// Return Value:
-// - a new TerminalSettings object with our settings in it.
-winrt::TerminalApp::TerminalSettings Profile::CreateTerminalSettings(const Collections::IMapView<winrt::hstring, TerminalApp::ColorScheme>& schemes) const
-{
-    auto terminalSettings = winrt::make<TerminalSettings>();
-
-    // Fill in the Terminal Setting's CoreSettings from the profile
-    terminalSettings.HistorySize(_HistorySize);
-    terminalSettings.SnapOnInput(_SnapOnInput);
-    terminalSettings.AltGrAliasing(_AltGrAliasing);
-    terminalSettings.CursorHeight(_CursorHeight);
-    terminalSettings.CursorShape(_CursorShape);
-
-    // Fill in the remaining properties from the profile
-    terminalSettings.ProfileName(_Name);
-    terminalSettings.UseAcrylic(_UseAcrylic);
-    terminalSettings.TintOpacity(_AcrylicOpacity);
-
-    terminalSettings.FontFace(_FontFace);
-    terminalSettings.FontSize(_FontSize);
-    terminalSettings.FontWeight(_FontWeight);
-    terminalSettings.Padding(_Padding);
-
-    terminalSettings.Commandline(_Commandline);
-
-    if (!_StartingDirectory.empty())
-    {
-        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_StartingDirectory.c_str());
-        terminalSettings.StartingDirectory(evaluatedDirectory);
-    }
-
-    // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
-    // use the profile name
-    terminalSettings.StartingTitle(!_TabTitle.empty() ? _TabTitle : _Name);
-
-    if (_SuppressApplicationTitle)
-    {
-        terminalSettings.SuppressApplicationTitle(_SuppressApplicationTitle);
-    }
-
-    if (!_ColorSchemeName.empty())
-    {
-        if (const auto found{ schemes.TryLookup(_ColorSchemeName) })
-        {
-            found.ApplyScheme(terminalSettings);
-        }
-    }
-    if (_Foreground)
-    {
-        const til::color colorRef{ _Foreground.Value() };
-        terminalSettings.DefaultForeground(static_cast<uint32_t>(colorRef));
-    }
-    if (_Background)
-    {
-        const til::color colorRef{ _Background.Value() };
-        terminalSettings.DefaultBackground(static_cast<uint32_t>(colorRef));
-    }
-    if (_SelectionBackground)
-    {
-        const til::color colorRef{ _SelectionBackground.Value() };
-        terminalSettings.SelectionBackground(static_cast<uint32_t>(colorRef));
-    }
-    if (_CursorColor)
-    {
-        const til::color colorRef{ _CursorColor.Value() };
-        terminalSettings.CursorColor(static_cast<uint32_t>(colorRef));
-    }
-
-    terminalSettings.ScrollState(_ScrollState);
-
-    if (!_BackgroundImagePath.empty())
-    {
-        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath());
-    }
-
-    terminalSettings.BackgroundImageOpacity(_BackgroundImageOpacity);
-    terminalSettings.BackgroundImageStretchMode(_BackgroundImageStretchMode);
-
-    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_BackgroundImageAlignment);
-    terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
-
-    const auto imageVerticalAlignment = std::get<VerticalAlignment>(_BackgroundImageAlignment);
-    terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
-
-    terminalSettings.RetroTerminalEffect(_RetroTerminalEffect);
-
-    terminalSettings.AntialiasingMode(_AntialiasingMode);
-
-    if (_TabColor)
-    {
-        const til::color colorRef{ _TabColor.Value() };
-        terminalSettings.TabColor(static_cast<uint32_t>(colorRef));
-    }
-
-    return terminalSettings;
-}
-
-// Method Description:
 // - Generates a Json::Value which is a "stub" of this profile. This stub will
 //   have enough information that it could be layered with this profile.
 // - This method is used during dynamic profile generation - if a profile is
@@ -352,7 +250,7 @@ void Profile::LayerJson(const Json::Value& json)
 //   path, if there are any.
 // Return Value:
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
-winrt::hstring Profile::GetExpandedIconPath() const
+winrt::hstring Profile::ExpandedIconPath() const
 {
     if (_IconPath.empty())
     {
@@ -367,13 +265,18 @@ winrt::hstring Profile::GetExpandedIconPath() const
 //   any environment variables in the path, if there are any.
 // Return Value:
 // - This profile's expanded background image path / the empty string.
-winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
     if (_BackgroundImagePath.empty())
     {
         return _BackgroundImagePath;
     }
     return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+}
+
+winrt::hstring Profile::EvaluatedStartingDirectory() const
+{
+    return winrt::hstring{ Profile::EvaluateStartingDirectory(_StartingDirectory.c_str()) };
 }
 
 // Method Description:

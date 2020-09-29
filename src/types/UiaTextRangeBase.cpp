@@ -579,6 +579,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     // We can abstract this movement by moving _start, but disallowing moving to the end of the buffer
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     constexpr auto preventBufferEnd = true;
+    const auto wasDegenerate = IsDegenerate();
     try
     {
         if (unit == TextUnit::TextUnit_Character)
@@ -603,8 +604,17 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     // If we actually moved...
     if (*pRetVal != 0)
     {
-        // then just expand to get our _end
-        ExpandToEnclosingUnit(unit);
+        if (wasDegenerate)
+        {
+            // GH#7342: The range was degenerate before the move.
+            // To keep it that way, move _end to the new _start.
+            _end = _start;
+        }
+        else
+        {
+            // then just expand to get our _end
+            ExpandToEnclosingUnit(unit);
+        }
     }
 
     UiaTracing::TextRange::Move(unit, count, *pRetVal, *this);
@@ -702,8 +712,13 @@ try
     }
     else
     {
+        const auto bufferSize = _pData->GetTextBuffer().GetSize();
+        if (!bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true))
+        {
+            return E_FAIL;
+        }
         auto inclusiveEnd = _end;
-        _pData->GetTextBuffer().GetSize().DecrementInBounds(inclusiveEnd);
+        bufferSize.DecrementInBounds(inclusiveEnd);
         _pData->SelectNewRegion(_start, inclusiveEnd);
     }
 

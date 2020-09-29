@@ -52,10 +52,12 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
+    _blinkingState.RecordBlinkingUsage(attr);
     auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
                                           _defaultFg,
                                           _defaultBg,
-                                          _screenReversed);
+                                          _screenReversed,
+                                          _blinkingState.IsBlinkingFaint());
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -119,6 +121,16 @@ const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
 const bool Terminal::IsGridLineDrawingAllowed() noexcept
 {
     return true;
+}
+
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
+{
+    return _buffer->GetHyperlinkUriFromId(id);
+}
+
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
+{
+    return _buffer->GetCustomIdFromId(id);
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept

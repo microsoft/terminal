@@ -293,11 +293,24 @@ namespace TerminalAppUnitTests
     // versions.
 
     template<typename TExpected, typename TJson>
-    static void TryBasicType(TExpected&& expected, TJson&& json)
+    static void TryBasicType(TExpected&& expected, TJson&& json, std::optional<Json::Value> overrideToJsonOutput = std::nullopt)
     {
+        // test FromJson
         Json::Value jsonObject{ json };
         const auto value{ GetValue<TExpected>(jsonObject) };
         VERIFY_ARE_EQUAL(expected, value, NoThrowString{}.Format(L"(type: %hs)", typeid(TExpected).name()));
+
+        // test ToJson
+        {
+            const std::string key{ "myKey" };
+
+            Json::Value expectedJson{};
+            expectedJson[key] = til::coalesce_value(overrideToJsonOutput, jsonObject);
+
+            Json::Value toJsonResult{};
+            SetValueForKey(toJsonResult, key, expected);
+            VERIFY_ARE_EQUAL(expectedJson, toJsonResult);
+        }
     }
 
     void JsonUtilsTests::BasicTypeConversion()
@@ -305,7 +318,7 @@ namespace TerminalAppUnitTests
         // Battery of all basic types ;P
         TryBasicType(std::string{ "hello" }, "hello");
         TryBasicType(int{ -1024 }, -1024);
-        TryBasicType(unsigned int{ 1024 }, 1024);
+        TryBasicType(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
         TryBasicType(false, false);
         TryBasicType(1.0f, 1.0f);
 
@@ -318,9 +331,10 @@ namespace TerminalAppUnitTests
         // double -> float
         TryBasicType(1.0f, 1.0);
 
-        TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#abcdef");
+        TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#ABCDEF");
+        TryBasicType(til::color{ 0xcc, 0xcc, 0xcc }, "#CCC", "#CCCCCC");
 
-        static const std::string testGuidString{ "{AA8147AA-E289-4508-BE83-FB68361EF2F3}" }; // can't use a string_view; jsoncpp hates it
+        static const std::string testGuidString{ "{aa8147aa-e289-4508-be83-fb68361ef2f3}" }; // can't use a string_view; jsoncpp hates it
         static const GUID testGuid{ 0xaa8147aa, 0xe289, 0x4508, { 0xbe, 0x83, 0xfb, 0x68, 0x36, 0x1e, 0xf2, 0xf3 } };
 
         TryBasicType(testGuid, testGuidString);
@@ -371,6 +385,19 @@ namespace TerminalAppUnitTests
         // Unknown value should produce something?
         Json::Value stringUnknown{ "unknown" };
         VERIFY_THROWS_SPECIFIC(GetValue<JsonTestEnum>(stringUnknown), DeserializationError, _ReturnTrueForException);
+
+        // SetValueForKey
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestEnum::Third };
+
+            Json::Value expected{};
+            expected[key] = "third";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
     }
 
     void JsonUtilsTests::FlagMapper()
@@ -385,15 +412,63 @@ namespace TerminalAppUnitTests
         Json::Value stringAll{ "all" };
         VERIFY_ARE_EQUAL(JsonTestFlags::All, GetValue<JsonTestFlags>(stringAll));
 
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::Third };
+
+            Json::Value expected{};
+            expected[key] = "third";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
+
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::All };
+
+            Json::Value expected{};
+            expected[key] = "all";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
+
         // Multiple flags
         Json::Value arrayFirstSecond{ Json::arrayValue };
         arrayFirstSecond.append({ "first" });
         arrayFirstSecond.append({ "second" });
         VERIFY_ARE_EQUAL(JsonTestFlags::First | JsonTestFlags::Second, GetValue<JsonTestFlags>(arrayFirstSecond));
 
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::First | JsonTestFlags::Second };
+
+            Json::Value expected{};
+            expected[key] = arrayFirstSecond;
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
+
         // No flags
         Json::Value emptyArray{ Json::arrayValue };
         VERIFY_ARE_EQUAL(JsonTestFlags::None, GetValue<JsonTestFlags>(emptyArray));
+
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::None };
+
+            Json::Value expected{};
+            expected[key] = "none";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
 
         // Stacking Always + Any
         Json::Value arrayAllFirst{ Json::arrayValue };

@@ -3,9 +3,8 @@
 
 import "AppLogic.idl";
 import "ColorScheme.idl";
-import "AppKeybindings.idl";
+import "KeyMapping.idl";
 import "Command.idl";
-import "TerminalSettings.idl";
 
 namespace TerminalApp
 {
@@ -48,13 +47,11 @@ namespace TerminalApp
         Boolean UseTabSwitcher;
         Boolean DisableAnimations;
 
-        Windows.Foundation.Collections.IMapView<String, ColorScheme> GetColorSchemes();
+        Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 
-        AppKeyBindings GetKeybindings();
+        KeyMapping KeyMap();
 
-        Windows.Foundation.Collections.IMapView<String, Command> GetCommands();
-
-        void ApplyToSettings(TerminalSettings settings);
+        Windows.Foundation.Collections.IMapView<String, Command> Commands();
     }
 }

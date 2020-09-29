@@ -119,13 +119,13 @@ namespace TerminalAppLocalTests
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
         VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(0, 0, 0, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_ARE_EQUAL(til::color(0, 0, 0), til::color{ profile0->Foreground().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->SelectionBackground().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->SelectionBackground().Value() });
 
         VERIFY_ARE_EQUAL(L"profile0", profile0->Name());
 
@@ -136,13 +136,13 @@ namespace TerminalAppLocalTests
         profile0->LayerJson(profile1Json);
 
         VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(2, 2, 2, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile0->Foreground().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_ARE_EQUAL(L"profile1", profile0->Name());
 
@@ -154,13 +154,13 @@ namespace TerminalAppLocalTests
         profile0->LayerJson(profile2Json);
 
         VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(3, 3, 3, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_ARE_EQUAL(til::color(3, 3, 3), til::color{ profile0->Foreground().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1, 0), til::color{ profile0->Background().Value() });
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
 
         VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(2, 2, 2, 0), til::color{ profile0->SelectionBackground().Value() });
+        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile0->SelectionBackground().Value() });
 
         VERIFY_ARE_EQUAL(L"profile2", profile0->Name());
 
@@ -253,57 +253,57 @@ namespace TerminalAppLocalTests
         const auto profile3Json = VerifyParseSucceeded(profile3String);
         const auto profile4Json = VerifyParseSucceeded(profile4String);
 
-        CascadiaSettings settings;
+        auto settings = winrt::make_self<winrt::TerminalApp::implementation::CascadiaSettings>();
 
-        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile0Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile1Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile3Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size());
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile0Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile1Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile2Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile3Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile4Json));
 
-        settings._LayerOrCreateProfile(profile0Json);
-        VERIFY_ARE_EQUAL(1u, settings._profiles.size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile1Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        settings->_LayerOrCreateProfile(profile0Json);
+        VERIFY_ARE_EQUAL(1u, settings->_profiles.Size());
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile1Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
 
-        settings._LayerOrCreateProfile(profile1Json);
-        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        settings->_LayerOrCreateProfile(profile1Json);
+        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
+        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
 
-        settings._LayerOrCreateProfile(profile2Json);
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).Name());
+        settings->_LayerOrCreateProfile(profile2Json);
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
 
-        settings._LayerOrCreateProfile(profile3Json);
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
-        VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(0).Name());
+        settings->_LayerOrCreateProfile(profile3Json);
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(0).Name());
 
-        settings._LayerOrCreateProfile(profile4Json);
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
-        VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0).Name());
+        settings->_LayerOrCreateProfile(profile4Json);
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(0).Name());
     }
 
 }

@@ -59,7 +59,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - settings: The settings who's keybindings we should use to look up the key chords from
     // - commands: The list of commands to label.
-    static void _recursiveUpdateCommandKeybindingLabels(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
+    static void _recursiveUpdateCommandKeybindingLabels(TerminalApp::CascadiaSettings settings,
                                                         IMapView<winrt::hstring, winrt::TerminalApp::Command> commands)
     {
         for (const auto& nameAndCmd : commands)
@@ -70,7 +70,7 @@ namespace winrt::TerminalApp::implementation
             // part of the command in the UI. Each Command's KeyChordText is
             // unset by default, so we don't need to worry about clearing it
             // if there isn't a key associated with it.
-            auto keyChord{ settings->GetKeybindings().GetKeyBindingForActionWithArgs(command.Action()) };
+            auto keyChord{ settings.KeyMap().GetKeyBindingForActionWithArgs(command.Action()) };
 
             if (keyChord)
             {
@@ -101,8 +101,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings,
-                                                     bool needRefreshUI)
+    winrt::fire_and_forget TerminalPage::SetSettings(TerminalApp::CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
         if (needRefreshUI)
@@ -115,14 +114,14 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyBindings(_settings->GetKeybindings());
+            CommandPalette().SetKeyBindings(*_bindings);
         }
     }
 
     void TerminalPage::Create()
     {
         // Hookup the key bindings
-        _HookupKeyBindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings.KeyMap());
 
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
@@ -167,6 +166,7 @@ namespace winrt::TerminalApp::implementation
                     auto tab = tabs.GetAt(from.value());
                     tabs.RemoveAt(from.value());
                     tabs.InsertAt(to.value(), tab);
+                    page->_UpdateTabIndices();
                 }
 
                 page->_rearranging = false;
@@ -178,7 +178,7 @@ namespace winrt::TerminalApp::implementation
         auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
         _newTabButton = tabRowImpl->NewTabButton();
 
-        if (_settings->GlobalSettings().ShowTabsInTitlebar())
+        if (_settings.GlobalSettings().ShowTabsInTitlebar())
         {
             // Remove the TabView from the page. We'll hang on to it, we need to
             // put it in the titlebar.
@@ -207,7 +207,7 @@ namespace winrt::TerminalApp::implementation
                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
                 // Check for DebugTap
-                bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                 WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
@@ -454,14 +454,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CreateNewTabFlyout()
     {
         auto newTabFlyout = WUX::Controls::MenuFlyout{};
-        auto keyBindings = _settings->GetKeybindings();
+        auto keyBindings = _settings.KeyMap();
 
-        const GUID defaultProfileGuid = _settings->GlobalSettings().DefaultProfile();
+        const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
-        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
+        auto const profileCount = gsl::narrow_cast<int>(_settings.Profiles().Size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
-            const auto& profile = _settings->GetProfiles()[profileIndex];
+            const auto profile = _settings.Profiles().GetAt(profileIndex);
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
             // Add the keyboard shortcuts based on the number of profiles defined
@@ -489,7 +489,7 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (!profile.IconPath().empty())
             {
-                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.GetExpandedIconPath());
+                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.ExpandedIconPath());
 
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
@@ -497,7 +497,7 @@ namespace winrt::TerminalApp::implementation
                 Automation::AutomationProperties::SetAccessibilityView(iconElement, Automation::Peers::AccessibilityView::Raw);
             }
 
-            if (profile.Guid() == winrt::guid{ defaultProfileGuid })
+            if (profile.Guid() == defaultProfileGuid)
             {
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
@@ -517,7 +517,7 @@ namespace winrt::TerminalApp::implementation
                                             WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
                     // Check for DebugTap
-                    bool debugTap = page->_settings->GlobalSettings().DebugFeaturesEnabled() &&
+                    bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
                                     WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                                     WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
@@ -618,11 +618,11 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
-    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    //   configurations. See TerminalSettings::BuildSettings for more details.
     void TerminalPage::_OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs)
     try
     {
-        const auto [profileGuid, settings] = _settings->BuildSettings(newTerminalArgs);
+        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -632,7 +632,7 @@ namespace winrt::TerminalApp::implementation
                                         newTerminalArgs.Profile().empty());
 
         // Lookup the name of the color scheme used by this profile.
-        const auto scheme = _settings->GetColorSchemeForProfile(profileGuid);
+        const auto scheme = _settings.GetColorSchemeForProfile(profileGuid);
         // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
         // that as the empty string.
         const auto schemeName = scheme ? scheme.Name() : L"\0";
@@ -674,7 +674,7 @@ namespace winrt::TerminalApp::implementation
         auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
-        if (_settings->GlobalSettings().DebugFeaturesEnabled())
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
         {
             const CoreWindow window = CoreWindow::GetForCurrentThread();
             const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
@@ -692,6 +692,9 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
+
+        // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
+        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -730,10 +733,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Set this tab's icon to the icon from the user's profile
-        const auto profile = _settings->FindProfile(profileGuid);
+        const auto profile = _settings.FindProfile(profileGuid);
         if (profile != nullptr && !profile.IconPath().empty())
         {
-            newTabImpl->UpdateIcon(profile.GetExpandedIconPath());
+            newTabImpl->UpdateIcon(profile.ExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -769,7 +772,7 @@ namespace winrt::TerminalApp::implementation
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
                                                                                         TerminalApp::TerminalSettings settings)
     {
-        const auto profile = _settings->FindProfile(profileGuid);
+        const auto profile = _settings.FindProfile(profileGuid);
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -883,13 +886,14 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Configure the AppKeyBindings to use our ShortcutActionDispatch as the
-    //   object to handle dispatching ShortcutAction events.
+    // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated KeyMapping
+    // as the object to handle dispatching ShortcutAction events.
     // Arguments:
     // - bindings: A AppKeyBindings object to wire up with our event handlers
-    void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
+    void TerminalPage::_HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept
     {
-        bindings.SetDispatch(*_actionDispatch);
+        _bindings->SetDispatch(*_actionDispatch);
+        _bindings->SetKeyMapping(keymap);
     }
 
     // Method Description:
@@ -953,7 +957,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.GetActiveTitle();
 
-        if (_settings->GlobalSettings().ShowTitleInTitlebar() &&
+        if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
             tab.IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
@@ -971,10 +975,10 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            const auto matchingProfile = _settings.FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile.GetExpandedIconPath());
+                tab.UpdateIcon(matchingProfile.ExpandedIconPath());
             }
             else
             {
@@ -987,7 +991,7 @@ namespace winrt::TerminalApp::implementation
     // - Handle changes to the tab width set by the user
     void TerminalPage::_UpdateTabWidthMode()
     {
-        _tabView.TabWidthMode(_settings->GlobalSettings().TabWidthMode());
+        _tabView.TabWidthMode(_settings.GlobalSettings().TabWidthMode());
     }
 
     // Method Description:
@@ -998,9 +1002,9 @@ namespace winrt::TerminalApp::implementation
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
         const bool isVisible = (!_isFullscreen && !_isInFocusMode) &&
-                               (_settings->GlobalSettings().ShowTabsInTitlebar() ||
+                               (_settings.GlobalSettings().ShowTabsInTitlebar() ||
                                 (_tabs.Size() > 1) ||
-                                _settings->GlobalSettings().AlwaysShowTabs());
+                                _settings.GlobalSettings().AlwaysShowTabs());
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -1035,7 +1039,7 @@ namespace winrt::TerminalApp::implementation
                 const auto& profileGuid = focusedTab->GetFocusedProfile();
                 if (profileGuid.has_value())
                 {
-                    const auto settings = _settings->BuildSettings(profileGuid.value());
+                    const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
                     _CreateNewTabFromSettings(profileGuid.value(), settings);
                 }
             }
@@ -1071,6 +1075,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
+        _UpdateTabIndices();
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
@@ -1141,6 +1146,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
+        term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
+
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
@@ -1202,7 +1209,7 @@ namespace winrt::TerminalApp::implementation
             // leftward from 0 to tabCount - 1.
             const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
 
-            if (_settings->GlobalSettings().UseTabSwitcher())
+            if (_settings.GlobalSettings().UseTabSwitcher())
             {
                 if (CommandPalette().Visibility() == Visibility::Visible)
                 {
@@ -1390,7 +1397,7 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.Size() > 1 && _settings->GlobalSettings().ConfirmCloseAllTabs())
+        if (_tabs.Size() > 1 && _settings.GlobalSettings().ConfirmCloseAllTabs())
         {
             _ShowCloseWarningDialog();
         }
@@ -1468,7 +1475,7 @@ namespace winrt::TerminalApp::implementation
                 if (current_guid)
                 {
                     profileFound = true;
-                    controlSettings = _settings->BuildSettings(current_guid.value());
+                    controlSettings = { winrt::make<TerminalSettings>(_settings, current_guid.value(), *_bindings) };
                     realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
@@ -1486,7 +1493,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profileFound)
             {
-                std::tie(realGuid, controlSettings) = _settings->BuildSettings(newTerminalArgs);
+                std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
@@ -1570,7 +1577,7 @@ namespace winrt::TerminalApp::implementation
     // - the title of the focused control if there is one, else "Windows Terminal"
     hstring TerminalPage::Title()
     {
-        if (_settings->GlobalSettings().ShowTitleInTitlebar())
+        if (_settings.GlobalSettings().ShowTitleInTitlebar())
         {
             auto selectedIndex = _tabView.SelectedIndex();
             if (selectedIndex >= 0)
@@ -1665,7 +1672,7 @@ namespace winrt::TerminalApp::implementation
     // - See Pane::CalcSnappedDimension
     float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        if (_settings->GlobalSettings().SnapToGridOnResize())
+        if (_settings.GlobalSettings().SnapToGridOnResize())
         {
             if (auto index{ _GetFocusedTabIndex() })
             {
@@ -1693,7 +1700,7 @@ namespace winrt::TerminalApp::implementation
         //   iff it is set
         bool useGlobal = copiedData.Formats() == nullptr;
         auto copyFormats = useGlobal ?
-                               _settings->GlobalSettings().CopyFormatting() :
+                               _settings.GlobalSettings().CopyFormatting() :
                                copiedData.Formats().Value();
 
         // copy text to dataPack
@@ -1767,11 +1774,11 @@ namespace winrt::TerminalApp::implementation
             }
 
             const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
-            const bool warnMultiLine = hasNewLine && _settings->GlobalSettings().WarnAboutMultiLinePaste();
+            const bool warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
-                                       _settings->GlobalSettings().WarnAboutLargePaste();
+                                       _settings.GlobalSettings().WarnAboutLargePaste();
 
             if (warnMultiLine || warnLargeText)
             {
@@ -1797,6 +1804,48 @@ namespace winrt::TerminalApp::implementation
             eventArgs.HandleClipboardData(text);
         }
         CATCH_LOG();
+    }
+
+    void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
+    {
+        try
+        {
+            auto parsed = winrt::Windows::Foundation::Uri(eventArgs.Uri().c_str());
+            if (parsed.SchemeName() == L"http" || parsed.SchemeName() == L"https")
+            {
+                ShellExecute(nullptr, L"open", eventArgs.Uri().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+            }
+            else
+            {
+                _ShowCouldNotOpenDialog(RS_(L"UnsupportedSchemeText"), eventArgs.Uri());
+            }
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            _ShowCouldNotOpenDialog(RS_(L"InvalidUriText"), eventArgs.Uri());
+        }
+    }
+
+    // Method Description:
+    // - Opens up a dialog box explaining why we could not open a URI
+    // Arguments:
+    // - The reason (unsupported scheme, invalid uri, potentially more in the future)
+    // - The uri
+    void TerminalPage::_ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            // FindName needs to be called first to actually load the xaml object
+            auto unopenedUriDialog = FindName(L"CouldNotOpenUriDialog").try_as<WUX::Controls::ContentDialog>();
+
+            // Insert the reason and the URI
+            CouldNotOpenUriReason().Text(reason);
+            UnopenedUri().Text(uri);
+
+            // Show the dialog
+            presenter.ShowDialog(unopenedUriDialog);
+        }
     }
 
     // Method Description:
@@ -2003,19 +2052,19 @@ namespace winrt::TerminalApp::implementation
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
-        _HookupKeyBindings(_settings->GetKeybindings());
+        _HookupKeyBindings(_settings.KeyMap());
 
         // Refresh UI elements
-        auto profiles = _settings->GetProfiles();
-        for (auto& profile : profiles)
+        auto profiles = _settings.Profiles();
+        for (const auto& profile : profiles)
         {
             const auto profileGuid = profile.Guid();
 
             try
             {
-                // BuildSettings can throw an exception if the profileGuid does
+                // This can throw an exception if the profileGuid does
                 // not belong to an actual profile in the list of profiles.
-                const auto settings = _settings->BuildSettings(profileGuid);
+                auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid, *_bindings) };
 
                 for (auto tab : _tabs)
                 {
@@ -2055,7 +2104,7 @@ namespace winrt::TerminalApp::implementation
         // Reload the current value of alwaysOnTop from the settings file. This
         // will let the user hot-reload this setting, but any runtime changes to
         // the alwaysOnTop setting will be lost.
-        _isAlwaysOnTop = _settings->GlobalSettings().AlwaysOnTop();
+        _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
 
         // Settings AllowDependentAnimations will affect whether animations are
@@ -2079,10 +2128,10 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     IMap<winrt::hstring, winrt::TerminalApp::Command> TerminalPage::_ExpandCommands(IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                    gsl::span<const winrt::TerminalApp::Profile> profiles,
+                                                                                    IVectorView<winrt::TerminalApp::Profile> profiles,
                                                                                     IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes)
     {
-        std::vector<::TerminalApp::SettingsLoadWarnings> warnings;
+        std::vector<TerminalApp::SettingsLoadWarnings> warnings;
 
         std::vector<winrt::TerminalApp::ColorScheme> sortedSchemes;
         sortedSchemes.reserve(schemes.Size());
@@ -2118,9 +2167,9 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateCommandsForPalette()
     {
-        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings->GlobalSettings().GetCommands(),
-                                                                                           _settings->GetProfiles(),
-                                                                                           _settings->GlobalSettings().GetColorSchemes());
+        IMap<winrt::hstring, winrt::TerminalApp::Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().Commands(),
+                                                                                           _settings.Profiles().GetView(),
+                                                                                           _settings.GlobalSettings().ColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
         _recursiveUpdateCommandIcons(copyOfCommands.GetView());
@@ -2483,6 +2532,20 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwaysOnTop;
+    }
+
+    // Method Description:
+    // - Updates all tabs with their current index in _tabs.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateTabIndices()
+    {
+        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        {
+            _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

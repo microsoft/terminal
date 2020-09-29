@@ -134,6 +134,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
                                       cursorShape);
     }
 
+    _defaultCursorShape = cursorShape;
+
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = settings.GetColorTableEntry(i);
@@ -404,6 +406,32 @@ void Terminal::TrySnapOnInput()
 bool Terminal::IsTrackingMouseInput() const noexcept
 {
     return _terminalInput->IsTrackingMouseInput();
+}
+
+// Method Description:
+// - If the clicked text is a hyperlink, open it
+// Arguments:
+// - The position of the clicked text
+std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
+{
+    auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
+    if (attr.IsHyperlink())
+    {
+        auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return uri;
+    }
+    return {};
+}
+
+// Method Description:
+// - Gets the hyperlink ID of the text at the given terminal position
+// Arguments:
+// - The position of the text
+// Return value:
+// - The hyperlink ID
+uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+{
+    return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
 
 // Method Description:
@@ -1007,4 +1035,9 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
     return _tabColor;
+}
+
+BlinkingState& Terminal::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
 }

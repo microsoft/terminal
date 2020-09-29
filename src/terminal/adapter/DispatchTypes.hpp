@@ -111,6 +111,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Italics = 3,
         Underline = 4,
         BlinkOrXterm256Index = 5, // 5 is also Blink (appears as Bold).
+        RapidBlink = 6,
         Negative = 7,
         Invisible = 8,
         CrossedOut = 9,
@@ -216,8 +217,8 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum class CursorStyle : unsigned int
     {
-        BlinkingBlock = 0,
-        BlinkingBlockDefault = 1,
+        UserDefault = 0, // Implemented as "restore cursor to user default".
+        BlinkingBlock = 1,
         SteadyBlock = 2,
         BlinkingUnderline = 3,
         SteadyUnderline = 4,

@@ -38,7 +38,8 @@ namespace Microsoft::Console::Render
             Right = 0x8,
             Underline = 0x10,
             DoubleUnderline = 0x20,
-            Strikethrough = 0x40
+            Strikethrough = 0x40,
+            HyperlinkUnderline = 0x80
         };
 
         virtual ~IRenderEngine() = 0;

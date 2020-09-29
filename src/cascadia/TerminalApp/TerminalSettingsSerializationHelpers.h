@@ -268,6 +268,21 @@ struct ::TerminalApp::JsonUtils::ConversionTrait<::winrt::TerminalApp::LaunchPos
         return json.isString();
     }
 
+    Json::Value ToJson(const ::winrt::TerminalApp::LaunchPosition& val)
+    {
+        std::stringstream ss;
+        if (val.X)
+        {
+            ss << val.X.Value();
+        }
+        ss << ",";
+        if (val.Y)
+        {
+            ss << val.Y.Value();
+        }
+        return ss.str();
+    }
+
     std::string TypeDescription() const
     {
         return "x, y";

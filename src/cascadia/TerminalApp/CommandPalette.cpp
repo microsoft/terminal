@@ -975,112 +975,22 @@ namespace winrt::TerminalApp::implementation
             {
             case CollectionChange::ItemChanged:
             {
-                winrt::com_ptr<Command> item;
-                item.copy_from(winrt::get_self<Command>(_allTabActions.GetAt(idx)));
-                item->propertyChangedRevoker.revoke();
-
-                auto tab = tabList.GetAt(idx);
-                GenerateCommandForTab(idx, false, tab);
-                UpdateTabIndices(idx);
                 break;
             }
             case CollectionChange::ItemInserted:
             {
                 auto tab = tabList.GetAt(idx);
-                GenerateCommandForTab(idx, true, tab);
-                UpdateTabIndices(idx);
+                _allTabActions.InsertAt(idx, tab.SwitchToTabCommand());
                 break;
             }
             case CollectionChange::ItemRemoved:
             {
-                winrt::com_ptr<Command> item;
-                item.copy_from(winrt::get_self<Command>(_allTabActions.GetAt(idx)));
-                item->propertyChangedRevoker.revoke();
-
                 _allTabActions.RemoveAt(idx);
-                UpdateTabIndices(idx);
                 break;
             }
             }
 
             _updateFilteredActions();
-        }
-    }
-
-    // Method Description:
-    // - In the case where a tab is removed or reordered, the given indices of
-    //   the tab switch commands following the removed/reordered tab will get out of sync by 1
-    //   (e.g. if tab 1 is removed, tabs 2,3,4,... need to become tabs 1,2,3,...)
-    //   This function just loops through the tabs following startIdx and adjusts their given indices.
-    // Arguments:
-    // - startIdx: The index to start the update loop at.
-    // Return Value:
-    // - <none>
-    void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
-    {
-        for (auto i = startIdx; i < _allTabActions.Size(); ++i)
-        {
-            auto command = _allTabActions.GetAt(i);
-
-            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-        }
-    }
-
-    // Method Description:
-    // - Create a tab switching command based on the given tab object and insert/update the command
-    //   at the given index. The command will call a SwitchToTab action on the given idx.
-    // Arguments:
-    // - idx: The index to insert or update the tab switch command.
-    // - tab: The tab object to refer to when creating the tab switch command.
-    // Return Value:
-    // - <none>
-    void CommandPalette::GenerateCommandForTab(const uint32_t idx, bool inserted, TerminalApp::Tab& tab)
-    {
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-        args->TabIndex(idx);
-
-        focusTabAction->Action(ShortcutAction::SwitchToTab);
-        focusTabAction->Args(*args);
-
-        auto command = winrt::make_self<implementation::Command>();
-        command->Action(*focusTabAction);
-        command->Name(tab.Title());
-        command->IconSource(tab.IconSource());
-
-        // Listen for changes to the Tab so we can update this Command's attributes accordingly.
-        auto weakThis{ get_weak() };
-        auto weakCommand{ command->get_weak() };
-        command->propertyChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
-            auto palette{ weakThis.get() };
-            auto command{ weakCommand.get() };
-
-            if (palette && command)
-            {
-                if (args.PropertyName() == L"Title")
-                {
-                    if (command->Name() != tab.Title())
-                    {
-                        command->Name(tab.Title());
-                    }
-                }
-                if (args.PropertyName() == L"IconSource")
-                {
-                    if (command->IconSource() != tab.IconSource())
-                    {
-                        command->IconSource(tab.IconSource());
-                    }
-                }
-            }
-        });
-
-        if (inserted)
-        {
-            _allTabActions.InsertAt(idx, *command);
-        }
-        else
-        {
-            _allTabActions.SetAt(idx, *command);
         }
     }
 

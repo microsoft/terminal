@@ -324,6 +324,30 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
     return gci.GetTitleAndPrefix();
 }
 
+// Method Description:
+// - Get the hyperlink URI associated with a hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The URI
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
+}
+
+// Method Description:
+// - Get the custom ID associated with a hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The custom ID if there was one, empty string otherwise
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
+}
+
 // Routine Description:
 // - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.

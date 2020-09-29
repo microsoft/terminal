@@ -3,6 +3,7 @@ ACCESSDENIED
 alignof
 bitfield
 bitfields
+COLORPROPERTY
 CLASSNOTAVAILABLE
 environstrings
 EXPCMDFLAGS
@@ -50,5 +51,6 @@ syscall
 tmp
 tx
 userenv
+wcstoui
 XDocument
 XElement

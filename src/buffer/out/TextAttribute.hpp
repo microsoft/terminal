@@ -36,7 +36,8 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{},
         _background{},
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _extendedAttrs{ ExtendedAttributes::Normal },
+        _hyperlinkId{ 0 }
     {
     }
 
@@ -44,7 +45,8 @@ public:
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
         _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
         _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _extendedAttrs{ ExtendedAttributes::Normal },
+        _hyperlinkId{ 0 }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
         WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
@@ -55,7 +57,8 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        _extendedAttrs{ ExtendedAttributes::Normal }
+        _extendedAttrs{ ExtendedAttributes::Normal },
+        _hyperlinkId{ 0 }
     {
     }
 
@@ -66,7 +69,8 @@ public:
     std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false) const noexcept;
+                                                     const bool reverseScreenMode = false,
+                                                     const bool blinkingIsFaint = false) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -112,8 +116,11 @@ public:
 
     ExtendedAttributes GetExtendedAttributes() const noexcept;
 
+    bool IsHyperlink() const noexcept;
+
     TextColor GetForeground() const noexcept;
     TextColor GetBackground() const noexcept;
+    uint16_t GetHyperlinkId() const noexcept;
     void SetForeground(const TextColor foreground) noexcept;
     void SetBackground(const TextColor background) noexcept;
     void SetForeground(const COLORREF rgbForeground) noexcept;
@@ -123,9 +130,11 @@ public:
     void SetIndexedForeground256(const BYTE fgIndex) noexcept;
     void SetIndexedBackground256(const BYTE bgIndex) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
+    void SetHyperlinkId(uint16_t id) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
+    void SetDefaultMetaAttrs() noexcept;
 
     bool BackgroundIsDefault() const noexcept;
 
@@ -143,11 +152,14 @@ public:
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
                WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // hyperlinks have a visual representation
+               !IsHyperlink() &&
                // all other attributes do not have a visual representation
                (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||
                 (!checkForeground && _background == other._background)) &&
-               _extendedAttrs == other._extendedAttrs;
+               _extendedAttrs == other._extendedAttrs &&
+               IsHyperlink() == other.IsHyperlink();
     }
 
     constexpr bool IsAnyGridLineEnabled() const noexcept
@@ -169,6 +181,8 @@ private:
     TextColor _background;
     ExtendedAttributes _extendedAttrs;
 
+    uint16_t _hyperlinkId;
+
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
     friend class TextAttributeTests;
@@ -182,7 +196,7 @@ private:
 // 4 for _foreground
 // 4 for _background
 // 1 for _extendedAttrs
-static_assert(sizeof(TextAttribute) <= 11 * sizeof(BYTE), "We should only need 11B for an entire TextColor. Any more than that is just waste");
+static_assert(sizeof(TextAttribute) <= 13 * sizeof(BYTE), "We should only need 13B for an entire TextAttribute. We may need to increment this in the future as we add additional attributes");
 
 enum class TextAttributeBehavior
 {
@@ -196,7 +210,8 @@ constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexce
     return a._wAttrLegacy == b._wAttrLegacy &&
            a._foreground == b._foreground &&
            a._background == b._background &&
-           a._extendedAttrs == b._extendedAttrs;
+           a._extendedAttrs == b._extendedAttrs &&
+           a._hyperlinkId == b._hyperlinkId;
 }
 
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept

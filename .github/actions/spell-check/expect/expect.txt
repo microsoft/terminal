@@ -6,6 +6,7 @@ ABANDONFONT
 ABCDEFGHIJKLMNO
 ABCG
 abf
+abgr
 abi
 ACCESSTOKEN
 acec
@@ -856,6 +857,7 @@ GETAUTOHIDEBAREX
 GETCARETWIDTH
 getch
 getchar
+GETCLIENTAREAANIMATION
 GETCOMMANDHISTORY
 GETCOMMANDHISTORYLENGTH
 GETCONSOLEINPUT
@@ -2714,6 +2716,7 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wnwb
 workarea
 workaround
 workflow
@@ -2761,6 +2764,7 @@ wtof
 wtoi
 wtw
 wtypes
+Wubi
 WUX
 WVerify
 wwaproj

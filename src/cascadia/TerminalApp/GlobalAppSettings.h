@@ -17,7 +17,7 @@ Author(s):
 
 #include "GlobalAppSettings.g.h"
 
-#include "AppKeyBindings.h"
+#include "KeyMapping.h"
 #include "Command.h"
 #include "ColorScheme.h"
 
@@ -35,19 +35,17 @@ namespace winrt::TerminalApp::implementation
     public:
         GlobalAppSettings();
 
-        Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme> GetColorSchemes() noexcept;
+        Windows::Foundation::Collections::IMapView<hstring, TerminalApp::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const TerminalApp::ColorScheme& scheme);
 
-        TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+        TerminalApp::KeyMapping KeyMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
-        void ApplyToSettings(const TerminalApp::TerminalSettings& settings) const noexcept;
+        std::vector<TerminalApp::SettingsLoadWarnings> KeybindingsWarnings() const;
 
-        std::vector<::TerminalApp::SettingsLoadWarnings> GetKeybindingsWarnings() const;
-
-        Windows::Foundation::Collections::IMapView<hstring, TerminalApp::Command> GetCommands() noexcept;
+        Windows::Foundation::Collections::IMapView<hstring, TerminalApp::Command> Commands() noexcept;
 
         // These are implemented manually to handle the string/GUID exchange
         // by higher layers in the app.
@@ -84,8 +82,8 @@ namespace winrt::TerminalApp::implementation
         hstring _unparsedDefaultProfile;
         guid _defaultProfile;
 
-        com_ptr<AppKeyBindings> _keybindings;
-        std::vector<::TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
+        com_ptr<KeyMapping> _keymap;
+        std::vector<TerminalApp::SettingsLoadWarnings> _keybindingsWarnings;
 
         Windows::Foundation::Collections::IMap<hstring, TerminalApp::ColorScheme> _colorSchemes;
         Windows::Foundation::Collections::IMap<hstring, TerminalApp::Command> _commands;

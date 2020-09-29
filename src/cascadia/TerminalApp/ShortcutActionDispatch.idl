@@ -1,60 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import "ActionArgs.idl";
+import "KeyMapping.idl";
 
 namespace TerminalApp
 {
-    enum ShortcutAction
-    {
-        Invalid = 0,
-        CopyText,
-        PasteText,
-        OpenNewTabDropdown,
-        DuplicateTab,
-        NewTab,
-        NewWindow,
-        CloseWindow,
-        CloseTab,
-        ClosePane,
-        NextTab,
-        PrevTab,
-        SplitVertical,
-        SplitHorizontal,
-        SendInput,
-        SplitPane,
-        TogglePaneZoom,
-        SwitchToTab,
-        AdjustFontSize,
-        ResetFontSize,
-        ScrollUp,
-        ScrollDown,
-        ScrollUpPage,
-        ScrollDownPage,
-        ResizePane,
-        MoveFocus,
-        Find,
-        ToggleRetroEffect,
-        ToggleFocusMode,
-        ToggleFullscreen,
-        ToggleAlwaysOnTop,
-        OpenSettings,
-        SetColorScheme,
-        SetTabColor,
-        OpenTabColorPicker,
-        RenameTab,
-        ExecuteCommandline,
-        ToggleCommandPalette,
-        CloseOtherTabs,
-        CloseTabsAfter,
-        TabSearch
-    };
-
-    [default_interface] runtimeclass ActionAndArgs {
-        ActionAndArgs();
-        IActionArgs Args;
-        ShortcutAction Action;
-    };
-
     [default_interface] runtimeclass ShortcutActionDispatch {
         ShortcutActionDispatch();
 

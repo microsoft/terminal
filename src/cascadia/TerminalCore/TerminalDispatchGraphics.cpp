@@ -107,7 +107,7 @@ bool TerminalDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes:
         case Off:
             attr.SetDefaultForeground();
             attr.SetDefaultBackground();
-            attr.SetStandardErase();
+            attr.SetDefaultMetaAttrs();
             break;
         case ForegroundDefault:
             attr.SetDefaultForeground();
@@ -132,6 +132,7 @@ bool TerminalDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes:
             attr.SetItalic(false);
             break;
         case BlinkOrXterm256Index:
+        case RapidBlink: // We just interpret rapid blink as an alias of blink.
             attr.SetBlinking(true);
             break;
         case Steady:

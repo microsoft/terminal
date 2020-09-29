@@ -12,13 +12,39 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma warning(disable : 26472)
     struct color
     {
-        uint8_t r, g, b, a;
+        // Clang (10) has no trouble optimizing the COLORREF conversion operator, below, to a
+        // simple 32-bit load with mask (!) even though it's a series of bit shifts across
+        // multiple struct members.
+        // CL (19.24) doesn't make the same optimization decision, and it emits three 8-bit loads
+        // and some shifting.
+        // In any case, the optimization only applies at -O2 (clang) and above.
+        // Here, we leverage the spec-legality of using unions for type conversions and the
+        // overlap of four uint8_ts and a uint32_t to make the conversion very obvious to
+        // both compilers.
+#pragma warning(push)
+        // CL will complain about the both nameless and anonymous struct.
+#pragma warning(disable : 4201)
+        union
+        {
+            struct
+            {
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ // Clang, GCC
+                uint8_t a, b, g, r;
+#else
+                uint8_t r, g, b, a;
+#endif
+            };
+            uint32_t abgr;
+        };
+#pragma warning(pop)
 
         constexpr color() noexcept :
             r{ 0 },
             g{ 0 },
             b{ 0 },
-            a{ 0 } {}
+            a{ 0 }
+        {
+        }
 
         constexpr color(uint8_t _r, uint8_t _g, uint8_t _b) noexcept :
             r{ _r },
@@ -40,16 +66,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #ifdef _WINDEF_
         constexpr color(COLORREF c) :
-            r{ static_cast<uint8_t>(c & 0xFF) },
-            g{ static_cast<uint8_t>((c & 0xFF00) >> 8) },
-            b{ static_cast<uint8_t>((c & 0xFF0000) >> 16) },
-            a{ 255 }
+            abgr{ static_cast<uint32_t>(c | 0xFF000000u) }
         {
         }
 
         operator COLORREF() const noexcept
         {
-            return static_cast<COLORREF>(r) | (static_cast<COLORREF>(g) << 8) | (static_cast<COLORREF>(b) << 16);
+            return static_cast<COLORREF>(abgr & 0x00FFFFFFu);
         }
 #endif
 
@@ -137,7 +160,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool operator==(const til::color& other) const
         {
-            return r == other.r && g == other.g && b == other.b && a == other.a;
+            return abgr == other.abgr;
         }
 
         constexpr bool operator!=(const til::color& other) const
@@ -170,6 +193,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 #pragma warning(pop)
 }
+
+static_assert(sizeof(til::color) == sizeof(uint32_t));
 
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution

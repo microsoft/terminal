@@ -116,7 +116,7 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
             case Off:
                 attr.SetDefaultForeground();
                 attr.SetDefaultBackground();
-                attr.SetStandardErase();
+                attr.SetDefaultMetaAttrs();
                 break;
             case ForegroundDefault:
                 attr.SetDefaultForeground();
@@ -141,6 +141,7 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
                 attr.SetItalic(false);
                 break;
             case BlinkOrXterm256Index:
+            case RapidBlink: // We just interpret rapid blink as an alias of blink.
                 attr.SetBlinking(true);
                 break;
             case Steady:
