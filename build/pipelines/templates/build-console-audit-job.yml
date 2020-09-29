@@ -8,7 +8,7 @@ jobs:
   variables:
     BuildConfiguration: AuditMode
     BuildPlatform: ${{ parameters.platform }}
-  pool: { vmImage: windows-2019 }
+  pool: "winuibuildagents"
 
   steps:
   - checkout: self
