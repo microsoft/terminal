@@ -221,7 +221,7 @@ without including the above copyright and permission notices.
 
 ## interval_tree
 
-**Source**: https://github.com/ekg/intervaltree
+**Source**: https://github.com/ekg/IntervalTree
 
 ### License
 
