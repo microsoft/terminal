@@ -224,7 +224,7 @@ private:
     const DelimiterClass _GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
-    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
     void _PruneHyperlinks();
