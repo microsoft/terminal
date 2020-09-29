@@ -5,6 +5,7 @@
 #include "TermControl.h"
 #include <argb.h>
 #include <DefaultSettings.h>
+#include <Mmsystem.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
 #include <Utils.h>
@@ -81,6 +82,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         InitializeComponent();
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+
+        auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
+        _terminal->SetWarningBellCallback(pfnWarningBell);
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -2125,6 +2129,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
+    }
+
+    // Method Description:
+    // - Plays a warning note when triggered by the BEL control character,
+    //   using the sound configured for the "Critical Stop" system event.
+    //   This matches the behavior of the Windows Console host.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_TerminalWarningBell()
+    {
+        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
     }
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)

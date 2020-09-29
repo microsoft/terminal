@@ -259,6 +259,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResizeUnderLock(const double newWidth, const double newHeight);
         void _RefreshSizeUnderLock();
+        void _TerminalWarningBell();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalTabColorChanged(const std::optional<til::color> color);
         void _CopyToClipboard(const std::wstring_view& wstr);
