@@ -5,7 +5,6 @@
 #include "TermControl.h"
 #include <argb.h>
 #include <DefaultSettings.h>
-#include <Mmsystem.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
 #include <Utils.h>
@@ -2131,18 +2130,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    // Method Description:
-    // - Plays a warning note when triggered by the BEL control character,
-    //   using the sound configured for the "Critical Stop" system event.
-    //   This matches the behavior of the Windows Console host.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void TermControl::_TerminalWarningBell()
     {
-        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+        _WarningBellHandlers(*this, nullptr);
     }
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
