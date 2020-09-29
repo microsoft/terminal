@@ -50,8 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasNestedCommands();
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands();
 
-        void RefreshIcon();
-
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -59,14 +57,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         OBSERVABLE_GETSET_PROPERTY(Model::ActionAndArgs, Action, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
+        GETSET_PROPERTY(winrt::hstring, IconPath);
 
         GETSET_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
 
     private:
         Json::Value _originalJson;
         Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
-
-        winrt::hstring _lastIconPath{};
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,

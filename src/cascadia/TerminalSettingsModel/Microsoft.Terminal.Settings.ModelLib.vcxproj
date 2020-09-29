@@ -60,7 +60,6 @@
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.h" />
     <ClInclude Include="WslDistroGenerator.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->

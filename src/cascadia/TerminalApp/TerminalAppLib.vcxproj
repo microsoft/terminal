@@ -102,7 +102,7 @@
       <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="$(OpenConsoleDir)\src\cascadia\inc\Utils.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>

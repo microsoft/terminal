@@ -5,7 +5,6 @@
 #include "Command.h"
 #include "Command.g.cpp"
 
-#include "../inc/Utils.h"
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include <LibraryResources.h>
@@ -108,70 +107,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Actually initialize our IconSource for our _lastIconPath. Supports a variety of icons:
-    //    * If the icon is a path to an image, we'll use that.
-    //    * If it isn't, then we'll try and use the text as a FontIcon. If the
-    //      character is in the range of symbols reserved for the Segoe MDL2
-    //      Asserts, well treat it as such. Otherwise, we'll default to a Sego
-    //      UI icon, so things like emoji will work.
-    // - MUST BE CALLED ON THE UI THREAD.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void Command::RefreshIcon()
-    {
-        if (!_lastIconPath.empty())
-        {
-            _setIconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(_lastIconPath));
-
-            // If we fail to set the icon source using the "icon" as a path,
-            // let's try it as a symbol/emoji.
-            //
-            // Anything longer that 2 wchar_t's _isn't_ an emoji or symbol, so
-            // don't do this if it's just an invalid path.
-            if (IconSource() == nullptr && _lastIconPath.size() <= 2)
-            {
-                try
-                {
-                    WUX::Controls::FontIconSource icon;
-                    const wchar_t ch = _lastIconPath[0];
-
-                    // The range of MDL2 Icons isn't explicitly defined, but
-                    // we're using this based off the table on:
-                    // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
-                    const bool isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
-                    if (isMDL2Icon)
-                    {
-                        icon.FontFamily(WUX::Media::FontFamily{ L"Segoe MDL2 Assets" });
-                    }
-                    else
-                    {
-                        // Note: you _do_ need to manually set the font here.
-                        icon.FontFamily(WUX::Media::FontFamily{ L"Segoe UI" });
-                    }
-                    icon.FontSize(12);
-                    icon.Glyph(_lastIconPath);
-                    _setIconSource(icon);
-                }
-                CATCH_LOG();
-            }
-        }
-        if (IconSource() == nullptr)
-        {
-            // Set the default IconSource to a BitmapIconSource with a null source
-            // (instead of just nullptr) because there's a really weird crash when swapping
-            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-            // Swapping between nullptr IconSources and non-null IconSources causes a crash
-            // to occur, but swapping between IconSources with a null source and non-null IconSources
-            // work perfectly fine :shrug:.
-            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-            icon.UriSource(nullptr);
-            _setIconSource(icon);
-        }
-    }
-
-    // Method Description:
     // - Deserialize a Command from the `json` object. The json object should
     //   contain a "name" and "action", and optionally an "icon".
     //   * "name": string|object - the name of the command to display in the
@@ -216,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Only get the icon path right now. The icon needs to be resolved into
         // an IconSource on the UI thread, which will be done by RefreshIcon.
-        JsonUtils::GetValueForKey(json, IconKey, result->_lastIconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)

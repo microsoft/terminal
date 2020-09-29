@@ -6,7 +6,7 @@
 #include "ColorPickupFlyout.h"
 #include "Tab.h"
 #include "Tab.g.cpp"
-#include "../inc/Utils.h"
+#include "Utils.h"
 #include "ColorHelper.h"
 
 using namespace winrt;
