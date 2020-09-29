@@ -63,6 +63,19 @@
     <ClCompile Include="TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
+    <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="VsSetupConfiguration.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsDevShellGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsDevCmdGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseVisualStudioGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils.h" />
@@ -123,6 +136,19 @@
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
+    <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="VsSetupConfiguration.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevShellGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseVisualStudioGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevCmdGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -147,7 +173,6 @@
       <Filter>commandPalette</Filter>
     </Midl>
     <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
     </Midl>
@@ -160,6 +185,10 @@
     <Midl Include="GlobalAppSettings.idl">
       <Filter>settings</Filter>
     </Midl>
+    <Midl Include="EmptyStringVisibilityConverter.idl" />
+    <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
+    <Midl Include="CascadiaSettings.idl" />
+    <Midl Include="TerminalWarnings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
