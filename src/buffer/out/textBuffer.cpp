@@ -1254,7 +1254,7 @@ void TextBuffer::_PruneHyperlinks()
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first character on the "word" (inclusive)
-bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, const COORD lastCharPos) const
+bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const
 {
     auto copy = pos;
     const auto bufferSize = GetSize();
