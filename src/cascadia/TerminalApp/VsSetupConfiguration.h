@@ -20,7 +20,7 @@ Author(s):
 
 namespace TerminalApp
 {
-    class VsSetupConfiguration 
+    class VsSetupConfiguration
     {
     private:
         typedef wil::com_ptr<ISetupConfiguration2> ComPtrSetupQuery;
