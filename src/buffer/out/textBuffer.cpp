@@ -2375,15 +2375,11 @@ const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString
 // - The firstRow to start searching from
 // - The lastRow to search
 // Return value:
-// - A vector containing 3-element tuples where
-//      tuple<0>: ID of the pattern
-//      tuple<1>: start coordinate of the pattern
-//      tuple<2>: end coordinate of the pattern
-
-til::IntervalTree::ITNode* TextBuffer::UpdatePatterns(const size_t firstRow, const size_t lastRow) const
+// - An interval tree containing the patterns found
+interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const size_t firstRow, const size_t lastRow) const
 {
-    til::IntervalTree tree;
-    til::IntervalTree::ITNode* result = NULL;
+    typedef interval_tree::IntervalTree<size_t, size_t> ITree;
+    ITree::interval_vector intervals;
 
     std::wstring concatAll;
     const auto rowSize = GetRowByOffset(0).size();
@@ -2421,18 +2417,13 @@ til::IntervalTree::ITNode* TextBuffer::UpdatePatterns(const size_t firstRow, con
             const auto end = start + i->str().size();
             lenUpToThis = end;
 
-            // store the locations as (col, row) coordinates
-            // NOTE: these are VIEWPORT coordinates, not buffer coordinates
+            // store the intervals
+            // NOTE: these intervals are relative to the VIEWPORT not the buffer
             // Keeping these as viewport coordinates for now because its the renderer
             // that actually uses these coordinates and the renderer works in viewport coords
-            const auto startRow = gsl::narrow<SHORT>(start / rowSize);
-            const auto startCol = gsl::narrow<SHORT>(start % rowSize);
-            const auto endRow = gsl::narrow<SHORT>(end / rowSize);
-            const auto endCol = gsl::narrow<SHORT>(end % rowSize);
-            const COORD startCoord{ startCol, startRow };
-            const COORD endCoord{ endCol, endRow };
-            result = tree.insert(result, til::IntervalTree::Interval{ startCoord, endCoord }, idAndPattern.first);
+            intervals.push_back(ITree::interval(start, end, idAndPattern.first));
         }
     }
+    ITree result(std::move(intervals));
     return result;
 }

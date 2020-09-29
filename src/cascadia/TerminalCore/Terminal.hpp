@@ -233,8 +233,6 @@ private:
     bool _suppressApplicationTitle;
 
     size_t _hyperlinkPatternId;
-    til::IntervalTree _tree;
-    til::IntervalTree::ITNode* _patternsAndLocations;
 
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
@@ -276,6 +274,8 @@ private:
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we should make this behavior controlled by a setting.
+
+    interval_tree::IntervalTree<size_t, size_t> _patternIntervalTree;
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
     struct KeyEventCodes

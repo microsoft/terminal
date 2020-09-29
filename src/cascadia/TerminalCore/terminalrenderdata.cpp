@@ -139,12 +139,18 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The pattern ID of the location
 const size_t Microsoft::Terminal::Core::Terminal::GetPatternId(const COORD location) const noexcept
 {
-    const auto found = _tree.overlapSearch(_patternsAndLocations, til::IntervalTree::Interval{ location, location });
-    if (found != NULL)
+    // Convert the location into its 1-d location because the interval tree stores locations that way
+    const auto absLoc = (_buffer->GetRowByOffset(0).size() * location.Y) + location.X;
+    const auto results = _patternIntervalTree.findOverlapping(absLoc + 1, absLoc);
+    if (results.size() == 0)
     {
-        return found->patternId;
+        return 0;
     }
-    return 0;
+    else
+    {
+        // At some point, this should be updated to return a vector of IDs
+        return results.at(0).value;
+    }
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept

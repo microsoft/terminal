@@ -424,20 +424,30 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         return uri;
     }
     // also look through our known pattern locations
-    const auto found = _tree.overlapSearch(_patternsAndLocations, til::IntervalTree::Interval{ position, position });
-    if (found != NULL && found->patternId == _hyperlinkPatternId)
+    const auto absLoc = (_buffer->GetRowByOffset(0).size() * position.Y) + position.X;
+    const auto results = _patternIntervalTree.findOverlapping(absLoc + 1, absLoc);
+    if (results.size() > 0)
     {
-        const auto start = found->i->low;
-        const auto end = found->i->high;
-        std::wstring uri;
-
-        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
-        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
-        for (auto iter = startIter; iter != endIter; ++iter)
+        const auto rowSize = _buffer->GetRowByOffset(0).size();
+        for (auto result : results)
         {
-            uri += iter->Chars();
+            if (result.value == _hyperlinkPatternId)
+            {
+                const auto start = results.at(0).start;
+                const auto end = results.at(0).stop;
+                COORD startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };
+                COORD endCoord{ gsl::narrow<SHORT>(end % rowSize), gsl::narrow<SHORT>(end / rowSize) };
+                std::wstring uri;
+
+                const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(startCoord));
+                const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(endCoord));
+                for (auto iter = startIter; iter != endIter; ++iter)
+                {
+                    uri += iter->Chars();
+                }
+                return uri;
+            }
         }
-        return uri;
     }
     return {};
 }
@@ -1057,7 +1067,7 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 //   region changes (for example by text entering the buffer or scrolling)
 void Microsoft::Terminal::Core::Terminal::UpdatePatterns() noexcept
 {
-    _patternsAndLocations = _buffer->UpdatePatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _patternIntervalTree = _buffer->UpdatePatterns(_VisibleStartIndex(), _VisibleEndIndex());
 }
 
 const std::optional<til::color> Terminal::GetTabColor() const noexcept

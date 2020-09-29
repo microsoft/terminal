@@ -18,7 +18,6 @@
 #include "til/spsc.h"
 #include "til/coalesce.h"
 #include "til/replace.h"
-#include "til/interval_tree.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
