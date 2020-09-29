@@ -2378,8 +2378,8 @@ const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString
 // - An interval tree containing the patterns found
 interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const size_t firstRow, const size_t lastRow) const
 {
-    typedef interval_tree::IntervalTree<size_t, size_t> ITree;
-    ITree::interval_vector intervals;
+    typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
+    ThisTree::interval_vector intervals;
 
     std::wstring concatAll;
     const auto rowSize = GetRowByOffset(0).size();
@@ -2421,9 +2421,9 @@ interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const siz
             // NOTE: these intervals are relative to the VIEWPORT not the buffer
             // Keeping these as viewport coordinates for now because its the renderer
             // that actually uses these coordinates and the renderer works in viewport coords
-            intervals.push_back(ITree::interval(start, end, idAndPattern.first));
+            intervals.push_back(ThisTree::interval(start, end, idAndPattern.first));
         }
     }
-    ITree result(std::move(intervals));
+    ThisTree result(std::move(intervals));
     return result;
 }
