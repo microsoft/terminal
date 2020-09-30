@@ -2,11 +2,9 @@
 // Licensed under the MIT license.
 
 #pragma once
-
-#include "TerminalTab.g.h"
-
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
+#include "TerminalTab.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests

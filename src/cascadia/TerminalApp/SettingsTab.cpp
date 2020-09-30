@@ -103,14 +103,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void SettingsTab::_Focus()
     {
+        // TODO: Focus the settings UI
         _focused = true;
-        // TODO: Focus the settings ui, however you can. grid can't be focused, gotta focus something in it.
     }
 
     // Method Description:
     // - Set the icon on the TabViewItem for this tab.
     // Arguments:
-    // - iconPath: The new path string to use as the IconPath for our TabViewItem
+    // - <none>
     // Return Value:
     // - <none>
     winrt::fire_and_forget SettingsTab::UpdateIcon()
@@ -122,7 +122,7 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             auto fontFamily = winrt::WUX::Media::FontFamily(L"Segoe MDL2 Assets");
-            auto glyph = L"\xE713";
+            auto glyph = L"\xE713"; // This is the Setting icon (looks like a gear)
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
@@ -134,28 +134,27 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets the title string of the last focused terminal control in our tree.
-    //   Returns the empty string if there is no such control.
+    // - Gets the title string of the settings UI
     // Arguments:
     // - <none>
     // Return Value:
     // - the title string of the last focused terminal control in our tree.
     winrt::hstring SettingsTab::GetActiveTitle() const
     {
+        // TODO: This _could_ change depending on what page of the settings UI is open/focused?
         return Title();
     }
 
     // Method Description:
-    // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
+    // - Prepares this tab for being removed from the UI hierarchy
     void SettingsTab::Shutdown()
     {
-        // TODO: LEON: Does the settings UI need any shutdown?
+        // TODO: Does/Will the settings UI need some shutdown procedures?
     }
 
     // Method Description:
     // - Creates a context menu attached to the tab.
-    // Currently contains elements allowing to select or
-    // to close the current tab
+    // Currently contains elements allowing the user to close the selected tab
     // Arguments:
     // - <none>
     // Return Value:
