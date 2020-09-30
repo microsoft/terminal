@@ -21,8 +21,6 @@
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
 
-#include "../inc/Utils.h"
-
 #include <LibraryResources.h>
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;

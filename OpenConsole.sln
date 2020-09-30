@@ -326,6 +326,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Microsoft.Terminal.Settings
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LocalTests_SettingsModel", "src\cascadia\LocalTests_SettingsModel\SettingsModel.LocalTests.vcxproj", "{CA5CAD1A-9B68-456A-B13E-C8218070DC42}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-082C-4476-9F33-94B339494076} = {CA5CAD1A-082C-4476-9F33-94B339494076}
+		{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B} = {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}
+		{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED} = {CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}
+		{CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907} = {CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

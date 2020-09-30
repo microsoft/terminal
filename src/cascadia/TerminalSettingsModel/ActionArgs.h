@@ -24,7 +24,6 @@
 #include "CloseTabsAfterArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
-#include "../inc/Utils.h"
 #include "JsonUtils.h"
 #include "TerminalWarnings.h"
 
