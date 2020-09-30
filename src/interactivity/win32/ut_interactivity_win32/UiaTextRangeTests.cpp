@@ -1190,4 +1190,46 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(-1, moveAmt);
         }
     }
+
+    TEST_METHOD(MoveToPreviousWord)
+    {
+        // See GH#7742 for more details.
+
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const COORD origin{ bufferSize.Origin() };
+        const COORD originExclusive{ origin.X, origin.Y + 1 };
+
+        _pTextBuffer->Write({ L"My name is Carlos" }, origin);
+
+        // Create degenerate UTR at origin
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, origin, origin));
+
+        // move forward by a word
+        int moveAmt;
+        THROW_IF_FAILED(utr->Move(TextUnit::TextUnit_Word, 1, &moveAmt));
+        VERIFY_ARE_EQUAL(1, moveAmt);
+        VERIFY_IS_TRUE(utr->IsDegenerate());
+
+        // Expand by word
+        BSTR text;
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Word));
+        THROW_IF_FAILED(utr->GetText(-1, &text));
+        VERIFY_ARE_EQUAL(L"name ", std::wstring_view{ text });
+
+        // Collapse utr (move end to start)
+        const COORD expectedStart{ 3, 0 };
+        THROW_IF_FAILED(utr->MoveEndpointByRange(TextPatternRangeEndpoint::TextPatternRangeEndpoint_End, utr.Get(), TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start));
+        VERIFY_ARE_EQUAL(expectedStart, utr->_start);
+        VERIFY_IS_TRUE(utr->IsDegenerate());
+
+        // Move back by a word
+        THROW_IF_FAILED(utr->Move(TextUnit::TextUnit_Word, -1, &moveAmt));
+        VERIFY_ARE_EQUAL(-1, moveAmt);
+
+        // Expand by character
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Character));
+        THROW_IF_FAILED(utr->GetText(-1, &text));
+        VERIFY_ARE_EQUAL(L"M", std::wstring_view{ text });
+    }
 };
