@@ -42,15 +42,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     LargeChange="100"
                                     ToolTipService.ToolTip="The number of columns displayed in the window upon first load."
                                     ToolTipService.Placement="Mouse"/>
-            <Controls:NumberBox x:Name="InitialRows"
-                                    Header="Rows on first launch" 
+            <Controls:NumberBox x:Uid="Globals_InitialRows"
+                                x:Name="InitialRows"
                                     Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialRows, Mode=TwoWay}"
                                     Margin="0,0,0,20"
                                     FontSize="15"
                                     SpinButtonPlacementMode="Compact" 
                                     SmallChange="10"
                                     LargeChange="100"
-                                    ToolTipService.ToolTip="The number of rows displayed in the window upon first load."
                                     ToolTipService.Placement="Mouse"/>
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">

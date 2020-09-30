@@ -272,6 +272,8 @@
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <ItemGroup>
