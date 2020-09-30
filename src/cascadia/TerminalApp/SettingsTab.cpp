@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The UIElement acting as root of the Tab's root pane.
-    UIElement SettingsTab::GetRootElement()
+    UIElement SettingsTab::GetTabContent()
     {
         return _settingsUI;
     }

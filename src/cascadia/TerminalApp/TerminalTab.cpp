@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The UIElement acting as root of the Tab's root pane.
-    UIElement TerminalTab::GetRootElement()
+    UIElement TerminalTab::GetTabContent()
     {
         if (_zoomedPane)
         {
@@ -998,7 +998,7 @@ namespace winrt::TerminalApp::implementation
     // - Toggle our zoom state.
     //   * If we're not zoomed, then zoom the active pane, making it take the
     //     full size of the tab. We'll achieve this by changing our response to
-    //     Tab::GetRootElement, so that it'll return the zoomed pane only.
+    //     Tab::GetTabContent, so that it'll return the zoomed pane only.
     //   *  If we're currently zoomed on a pane, un-zoom that pane.
     // Arguments:
     // - <none>

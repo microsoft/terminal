@@ -15,7 +15,7 @@ namespace winrt::TerminalApp::implementation
         SettingsTab(winrt::Windows::UI::Xaml::UIElement settingsUI);
 
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-        winrt::Windows::UI::Xaml::UIElement GetRootElement();
+        winrt::Windows::UI::Xaml::UIElement GetTabContent();
 
         bool IsFocused() const noexcept;
         void SetFocused(const bool focused);

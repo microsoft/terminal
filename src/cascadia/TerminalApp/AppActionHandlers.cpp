@@ -121,25 +121,27 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
                                              const TerminalApp::ActionEventArgs& args)
     {
-        auto focusedTab = _GetFocusedTab();
-
-        if (auto activeTab = focusedTab.try_as<TerminalTab>())
+        if (auto focusedTab = _GetFocusedTab())
         {
-            // Don't do anything if there's only one pane. It's already zoomed.
-            if (activeTab && activeTab->GetLeafPaneCount() > 1)
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                // First thing's first, remove the current content from the UI
-                // tree. This is important, because we might be leaving zoom, and if
-                // a pane is zoomed, then it's currently in the UI tree, and should
-                // be removed before it's re-added in Pane::Restore
-                _tabContent.Children().Clear();
+                // Don't do anything if there's only one pane. It's already zoomed.
+                if (activeTab && activeTab->GetLeafPaneCount() > 1)
+                {
+                    // First thing's first, remove the current content from the UI
+                    // tree. This is important, because we might be leaving zoom, and if
+                    // a pane is zoomed, then it's currently in the UI tree, and should
+                    // be removed before it's re-added in Pane::Restore
+                    _tabContent.Children().Clear();
 
-                activeTab->ToggleZoom();
+                    activeTab->ToggleZoom();
 
-                // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
-                _UpdatedSelectedTab(_tabView.SelectedIndex());
+                    // Update the selected tab, to trigger us to re-add the tab's tab content to the UI tree
+                    _UpdatedSelectedTab(_tabView.SelectedIndex());
+                }
             }
         }
+
         args.Handled(true);
     }
 
@@ -327,7 +329,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (auto focusedTab = _GetFocusedTab())
             {
-                if (auto activeTab = focusedTab.try_as<TerminalTab>())
+                if (auto activeTab = _GetTerminalTabImpl(focusedTab))
                 {
                     if (auto activeControl = activeTab->GetActiveTerminalControl())
                     {
@@ -359,7 +361,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<TerminalTab>())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
                 if (tabColor.has_value())
                 {
@@ -379,7 +381,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<TerminalTab>())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
                 activeTab->ActivateColorPicker();
             }
@@ -399,7 +401,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<TerminalTab>())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
                 if (title.has_value())
                 {

@@ -12,7 +12,7 @@ namespace TerminalApp
         Command SwitchToTabCommand { get; };
 
         Microsoft.UI.Xaml.Controls.TabViewItem GetTabViewItem();
-        Windows.UI.Xaml.UIElement GetRootElement();
+        Windows.UI.Xaml.UIElement GetTabContent();
 
         Boolean IsFocused();
         void SetFocused(Boolean focused);

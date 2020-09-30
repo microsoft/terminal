@@ -1270,7 +1270,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<TerminalTab>())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
                 if (activeTab->IsZoomed())
                 {
@@ -1279,7 +1279,7 @@ namespace winrt::TerminalApp::implementation
                     _tabContent.Children().Clear();
                     activeTab->ExitZoom();
                     // Re-attach the tab's content to the UI tree.
-                    _tabContent.Children().Append(activeTab->GetRootElement());
+                    _tabContent.Children().Append(activeTab->GetTabContent());
                 }
             }
         }
@@ -1989,7 +1989,7 @@ namespace winrt::TerminalApp::implementation
                 auto tab{ _tabs.GetAt(index) };
 
                 _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab.GetRootElement());
+                _tabContent.Children().Append(tab.GetTabContent());
 
                 tab.SetFocused(true);
 
@@ -2029,7 +2029,7 @@ namespace winrt::TerminalApp::implementation
         const auto newSize = e.NewSize();
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = tab.try_as<TerminalTab>())
+            if (auto terminalTab = _GetTerminalTabImpl(tab))
             {
                 terminalTab->ResizeContent(newSize);
             }
@@ -2089,7 +2089,7 @@ namespace winrt::TerminalApp::implementation
 
                 for (auto tab : _tabs)
                 {
-                    if (auto terminalTab = tab.try_as<TerminalTab>())
+                    if (auto terminalTab = _GetTerminalTabImpl(tab))
                     {
                         terminalTab->UpdateSettings(settings, profileGuid);
                     }
@@ -2108,7 +2108,7 @@ namespace winrt::TerminalApp::implementation
         // and profiles so the Title and Icon will be set once and only once on init.
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = tab.try_as<TerminalTab>())
+            if (auto terminalTab = _GetTerminalTabImpl(tab))
             {
                 _UpdateTabIcon(*terminalTab);
                 _UpdateTitle(*terminalTab);
