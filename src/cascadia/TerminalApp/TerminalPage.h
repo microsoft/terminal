@@ -92,6 +92,8 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::ITab> _tabs;
+        winrt::com_ptr<TerminalTab> _GetStrongTabImpl(const uint32_t index) const;
+        winrt::com_ptr<TerminalTab> _GetStrongTabImpl(const ::winrt::TerminalApp::TerminalTab& tab) const;
         void _UpdateTabIndices();
 
         bool _isInFocusMode{ false };
