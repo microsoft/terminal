@@ -23,7 +23,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SettingsTab::SettingsTab(winrt::Windows::UI::Xaml::UIElement settingsUI):
+    SettingsTab::SettingsTab(winrt::Windows::UI::Xaml::UIElement settingsUI) :
         _settingsUI{ settingsUI }
     {
         _MakeTabViewItem();
