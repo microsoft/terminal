@@ -98,11 +98,13 @@ public:
     [[nodiscard]] HRESULT WriteConsoleAImpl(IConsoleOutputObject& context,
                                             const std::string_view buffer,
                                             size_t& read,
+                                            bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleWImpl(IConsoleOutputObject& context,
                                             const std::wstring_view buffer,
                                             size_t& read,
+                                            bool requiresVtQuirk,
                                             std::unique_ptr<IWaitRoutine>& waiter) noexcept override;
 
 #pragma region ThreadCreationInfo
@@ -206,12 +208,12 @@ public:
                                                           size_t& written) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleInputAImpl(InputBuffer& context,
-                                                 const std::basic_string_view<INPUT_RECORD> buffer,
+                                                 const gsl::span<const INPUT_RECORD> buffer,
                                                  size_t& written,
                                                  const bool append) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleInputWImpl(InputBuffer& context,
-                                                 const std::basic_string_view<INPUT_RECORD> buffer,
+                                                 const gsl::span<const INPUT_RECORD> buffer,
                                                  size_t& written,
                                                  const bool append) noexcept override;
 
@@ -226,7 +228,7 @@ public:
                                                   Microsoft::Console::Types::Viewport& writtenRectangle) noexcept override;
 
     [[nodiscard]] HRESULT WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                          const std::basic_string_view<WORD> attrs,
+                                                          const gsl::span<const WORD> attrs,
                                                           const COORD target,
                                                           size_t& used) noexcept override;
 

@@ -47,7 +47,7 @@ const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // - isForeground - Whether or not the parsed color is for the foreground.
 // Return Value:
 // - The number of options consumed, not including the initial 38/48.
-size_t AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+size_t AdaptDispatch::_SetRgbColorsHelper(const gsl::span<const DispatchTypes::GraphicsOptions> options,
                                           TextAttribute& attr,
                                           const bool isForeground) noexcept
 {
@@ -100,7 +100,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchT
 //   one at a time by setting or removing flags in the font style properties.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options)
+bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options)
 {
     TextAttribute attr;
     bool success = _pConApi->PrivateGetTextAttributes(attr);
@@ -116,7 +116,7 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             case Off:
                 attr.SetDefaultForeground();
                 attr.SetDefaultBackground();
-                attr.SetStandardErase();
+                attr.SetDefaultMetaAttrs();
                 break;
             case ForegroundDefault:
                 attr.SetDefaultForeground();
@@ -127,16 +127,21 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
             case BoldBright:
                 attr.SetBold(true);
                 break;
-            case UnBold:
+            case RGBColorOrFaint:
+                attr.SetFaint(true);
+                break;
+            case NotBoldOrFaint:
                 attr.SetBold(false);
+                attr.SetFaint(false);
                 break;
             case Italics:
-                attr.SetItalics(true);
+                attr.SetItalic(true);
                 break;
             case NotItalics:
-                attr.SetItalics(false);
+                attr.SetItalic(false);
                 break;
             case BlinkOrXterm256Index:
+            case RapidBlink: // We just interpret rapid blink as an alias of blink.
                 attr.SetBlinking(true);
                 break;
             case Steady:
@@ -161,10 +166,20 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
                 attr.SetReverseVideo(false);
                 break;
             case Underline:
-                attr.SetUnderline(true);
+                attr.SetUnderlined(true);
+                break;
+            case DoublyUnderlined:
+                attr.SetDoublyUnderlined(true);
                 break;
             case NoUnderline:
-                attr.SetUnderline(false);
+                attr.SetUnderlined(false);
+                attr.SetDoublyUnderlined(false);
+                break;
+            case Overline:
+                attr.SetOverlined(true);
+                break;
+            case NoOverline:
+                attr.SetOverlined(false);
                 break;
             case ForegroundBlack:
                 attr.SetIndexedForeground(DARK_BLACK);
@@ -263,10 +278,10 @@ bool AdaptDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTy
                 attr.SetIndexedBackground(BRIGHT_WHITE);
                 break;
             case ForegroundExtended:
-                i += _SetRgbColorsHelper(options.substr(i + 1), attr, true);
+                i += _SetRgbColorsHelper(options.subspan(i + 1), attr, true);
                 break;
             case BackgroundExtended:
-                i += _SetRgbColorsHelper(options.substr(i + 1), attr, false);
+                i += _SetRgbColorsHelper(options.subspan(i + 1), attr, false);
                 break;
             }
         }

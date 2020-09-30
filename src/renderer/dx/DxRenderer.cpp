@@ -68,6 +68,7 @@ DxEngine::DxEngine() :
     _invalidateFullRows{ true },
     _invalidMap{},
     _invalidScroll{},
+    _allInvalid{ false },
     _firstFrame{ true },
     _presentParams{ 0 },
     _presentReady{ false },
@@ -83,6 +84,9 @@ DxEngine::DxEngine() :
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
+    _swapChainDesc{ 0 },
+    _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
+    _recreateDeviceRequested{ false },
     _retroTerminalEffects{ false },
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
@@ -94,7 +98,9 @@ DxEngine::DxEngine() :
     _scale{ 1.0f },
     _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
-    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
+    _customLayout{},
+    _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
+    _drawingContext{}
 {
     const auto was = _tracelogCount.fetch_add(1);
     if (0 == was)
@@ -423,16 +429,30 @@ try
 
     _displaySizePixels = _GetClientSize();
 
+    // Get the other device types so we have deeper access to more functionality
+    // in our pipeline than by just walking straight from the D3D device.
+
+    RETURN_IF_FAILED(_d3dDevice.As(&_dxgiDevice));
+    RETURN_IF_FAILED(_d2dFactory->CreateDevice(_dxgiDevice.Get(), _d2dDevice.ReleaseAndGetAddressOf()));
+
+    // Create a device context out of it (supercedes render targets)
+    RETURN_IF_FAILED(_d2dDevice->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &_d2dDeviceContext));
+
     if (createSwapChain)
     {
-        DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = { 0 };
-        SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        SwapChainDesc.BufferCount = 2;
-        SwapChainDesc.SampleDesc.Count = 1;
-        SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+        _swapChainDesc = { 0 };
+        _swapChainDesc.Flags = 0;
+
+        // requires DXGI 1.3 which was introduced in Windows 8.1
+        WI_SetFlagIf(_swapChainDesc.Flags, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT, IsWindows8Point1OrGreater());
+
+        _swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        _swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        _swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        _swapChainDesc.BufferCount = 2;
+        _swapChainDesc.SampleDesc.Count = 1;
+        _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
+        _swapChainDesc.Scaling = DXGI_SCALING_NONE;
 
         switch (_chainMode)
         {
@@ -442,23 +462,23 @@ try
             RECT rect = { 0 };
             RETURN_IF_WIN32_BOOL_FALSE(GetClientRect(_hwndTarget, &rect));
 
-            SwapChainDesc.Width = rect.right - rect.left;
-            SwapChainDesc.Height = rect.bottom - rect.top;
+            _swapChainDesc.Width = rect.right - rect.left;
+            _swapChainDesc.Height = rect.bottom - rect.top;
 
             // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
-            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
             const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
                                                                                      _hwndTarget,
-                                                                                     &SwapChainDesc,
+                                                                                     &_swapChainDesc,
                                                                                      nullptr,
                                                                                      nullptr,
                                                                                      &_dxgiSwapChain);
             if (FAILED(createSwapChainResult))
             {
-                SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+                _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
                 RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
                                                                        _hwndTarget,
-                                                                       &SwapChainDesc,
+                                                                       &_swapChainDesc,
                                                                        nullptr,
                                                                        nullptr,
                                                                        &_dxgiSwapChain));
@@ -469,22 +489,36 @@ try
         case SwapChainMode::ForComposition:
         {
             // Use the given target size for compositions.
-            SwapChainDesc.Width = _displaySizePixels.width<UINT>();
-            SwapChainDesc.Height = _displaySizePixels.height<UINT>();
+            _swapChainDesc.Width = _displaySizePixels.width<UINT>();
+            _swapChainDesc.Height = _displaySizePixels.height<UINT>();
 
             // We're doing advanced composition pretty much for the purpose of pretty alpha, so turn it on.
-            SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
+            _swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
             // It's 100% required to use scaling mode stretch for composition. There is no other choice.
-            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+            _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
             RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
-                                                                          &SwapChainDesc,
+                                                                          &_swapChainDesc,
                                                                           nullptr,
                                                                           &_dxgiSwapChain));
             break;
         }
         default:
             THROW_HR(E_NOTIMPL);
+        }
+
+        if (IsWindows8Point1OrGreater())
+        {
+            ::Microsoft::WRL::ComPtr<IDXGISwapChain2> swapChain2;
+            const HRESULT asResult = _dxgiSwapChain.As(&swapChain2);
+            if (SUCCEEDED(asResult))
+            {
+                _swapChainFrameLatencyWaitableObject = wil::unique_handle{ swapChain2->GetFrameLatencyWaitableObject() };
+            }
+            else
+            {
+                LOG_HR_MSG(asResult, "Failed to obtain IDXGISwapChain2 from swap chain");
+            }
         }
 
         if (_retroTerminalEffects)
@@ -510,7 +544,7 @@ try
     if (_isPainting)
     {
         // TODO: MSFT: 21169176 - remove this or restore the "try a few times to render" code... I think
-        _d2dRenderTarget->BeginDraw();
+        _d2dDeviceContext->BeginDraw();
     }
 
     freeOnFail.release(); // don't need to release if we made it to the bottom and everything was good.
@@ -530,37 +564,61 @@ try
 }
 CATCH_RETURN();
 
+static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noexcept
+{
+    switch (mode)
+    {
+    case DXGI_ALPHA_MODE_PREMULTIPLIED:
+        return D2D1_ALPHA_MODE_PREMULTIPLIED;
+    case DXGI_ALPHA_MODE_STRAIGHT:
+        return D2D1_ALPHA_MODE_STRAIGHT;
+    case DXGI_ALPHA_MODE_IGNORE:
+        return D2D1_ALPHA_MODE_IGNORE;
+    case DXGI_ALPHA_MODE_FORCE_DWORD:
+        return D2D1_ALPHA_MODE_FORCE_DWORD;
+    default:
+    case DXGI_ALPHA_MODE_UNSPECIFIED:
+        return D2D1_ALPHA_MODE_UNKNOWN;
+    }
+}
+
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
     try
     {
+        // Pull surface out of swap chain.
         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
 
-        const D2D1_RENDER_TARGET_PROPERTIES props =
-            D2D1::RenderTargetProperties(
-                D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-                0.0f,
-                0.0f);
+        // Make a bitmap and bind it to the swap chain surface
+        const auto bitmapProperties = D2D1::BitmapProperties1(
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(_swapChainDesc.Format, _dxgiAlphaToD2d1Alpha(_swapChainDesc.AlphaMode)));
 
-        RETURN_IF_FAILED(_d2dFactory->CreateDxgiSurfaceRenderTarget(_dxgiSurface.Get(),
-                                                                    &props,
-                                                                    &_d2dRenderTarget));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &_d2dBitmap));
+
+        // Assign that bitmap as the target of the D2D device context. Draw commands hit the context
+        // and are backed by the bitmap which is bound to the swap chain which goes on to be presented.
+        // (The foot bone connected to the leg bone,
+        //  The leg bone connected to the knee bone,
+        //  The knee bone connected to the thigh bone
+        //  ... and so on)
+
+        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
 
         // We need the AntialiasMode for non-text object to be Aliased to ensure
         //  that background boxes line up with each other and don't leave behind
         //  stray colors.
         // See GH#3626 for more details.
-        _d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-        _d2dRenderTarget->SetTextAntialiasMode(_antialiasingMode);
+        _d2dDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        _d2dDeviceContext->SetTextAntialiasMode(_antialiasingMode);
 
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
-                                                                 &_d2dBrushBackground));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
+                                                                  &_d2dBrushBackground));
 
-        RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
-                                                                 &_d2dBrushForeground));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
+                                                                  &_d2dBrushForeground));
 
-        const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
+        _strokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
             D2D1_CAP_STYLE_SQUARE, // dashCap
@@ -569,7 +627,19 @@ CATCH_RETURN();
             D2D1_DASH_STYLE_SOLID, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_strokeStyle));
+
+        _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
+            D2D1_CAP_STYLE_SQUARE, // startCap
+            D2D1_CAP_STYLE_SQUARE, // endCap
+            D2D1_CAP_STYLE_SQUARE, // dashCap
+            D2D1_LINE_JOIN_MITER, // lineJoin
+            0.f, // miterLimit
+            D2D1_DASH_STYLE_DASH, // dashStyle
+            0.f, // dashOffset
+        };
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -600,18 +670,27 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     try
     {
         _haveDeviceResources = false;
+
+        _pixelShaderSettingsBuffer.Reset();
+
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
 
-        if (nullptr != _d2dRenderTarget.Get() && _isPainting)
+        _d2dBitmap.Reset();
+
+        if (nullptr != _d2dDeviceContext.Get() && _isPainting)
         {
-            _d2dRenderTarget->EndDraw();
+            _d2dDeviceContext->EndDraw();
         }
 
-        _d2dRenderTarget.Reset();
+        _d2dDeviceContext.Reset();
 
         _dxgiSurface.Reset();
         _dxgiSwapChain.Reset();
+        _swapChainFrameLatencyWaitableObject.reset();
+
+        _d2dDevice.Reset();
+        _dxgiDevice.Reset();
 
         if (nullptr != _d3dDeviceContext.Get())
         {
@@ -626,6 +705,44 @@ void DxEngine::_ReleaseDeviceResources() noexcept
         _dxgiFactory2.Reset();
     }
     CATCH_LOG();
+}
+
+// Routine Description:
+// - Calculates whether or not we should force grayscale AA based on the
+//   current renderer state.
+// Arguments:
+// - <none> - Uses internal state of _antialiasingMode, _defaultTextBackgroundOpacity,
+//            _backgroundColor, and _defaultBackgroundColor.
+// Return Value:
+// - True if we must render this text in grayscale AA as cleartype simply won't work. False otherwise.
+[[nodiscard]] bool DxEngine::_ShouldForceGrayscaleAA() noexcept
+{
+    // GH#5098: If we're rendering with cleartype text, we need to always
+    // render onto an opaque background. If our background's opacity is
+    // 1.0f, that's great, we can use that. Otherwise, we need to force the
+    // text renderer to render this text in grayscale. In
+    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
+    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
+    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
+    //
+    // Currently, only text with the default background color uses an alpha
+    // of 0, every other background uses 1.0
+    //
+    // DANGER: Layers slow us down. Only do this in the specific case where
+    // someone has chosen the slower ClearType antialiasing (versus the faster
+    // grayscale antialiasing)
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    // Another way of naming "bgIsDefault" is "bgHasTransparency"
+    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
+                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
+                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
+                             (_backgroundColor.b == _defaultBackgroundColor.b);
+    const bool forceGrayscaleAA = usingCleartype &&
+                                  usingTransparency &&
+                                  bgIsDefault;
+
+    return forceGrayscaleAA;
 }
 
 // Routine Description:
@@ -670,6 +787,7 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
+
     _invalidMap.resize(_sizeTarget / _glyphCell, true);
     return S_OK;
 }
@@ -680,20 +798,45 @@ void DxEngine::SetCallback(std::function<void()> pfn)
     _pfn = pfn;
 }
 
-void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+bool DxEngine::GetRetroTerminalEffects() const noexcept
 {
-    _retroTerminalEffects = enable;
+    return _retroTerminalEffects;
 }
+
+void DxEngine::SetRetroTerminalEffects(bool enable) noexcept
+try
+{
+    if (_retroTerminalEffects != enable)
+    {
+        _retroTerminalEffects = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
+}
+CATCH_LOG()
 
 void DxEngine::SetForceFullRepaintRendering(bool enable) noexcept
+try
 {
-    _forceFullRepaintRendering = enable;
+    if (_forceFullRepaintRendering != enable)
+    {
+        _forceFullRepaintRendering = enable;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 void DxEngine::SetSoftwareRendering(bool enable) noexcept
+try
 {
-    _softwareRendering = enable;
+    if (_softwareRendering != enable)
+    {
+        _softwareRendering = enable;
+        _recreateDeviceRequested = true;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 {
@@ -717,6 +860,11 @@ void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
     _invalidMap.set(invalidate);
 }
 
+bool DxEngine::_IsAllInvalid() const noexcept
+{
+    return std::llabs(_invalidScroll.y()) >= _invalidMap.size().height();
+}
+
 // Routine Description:
 // - Invalidates a rectangle described in characters
 // Arguments:
@@ -728,7 +876,10 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
 
-    _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    if (!_allInvalid)
+    {
+        _InvalidateRectangle(Viewport::FromExclusive(*psrRegion).ToInclusive());
+    }
 
     return S_OK;
 }
@@ -745,7 +896,10 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
 
-    _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+    if (!_allInvalid)
+    {
+        _InvalidateRectangle(til::rectangle{ *pcoordCursor, til::size{ 1, 1 } });
+    }
 
     return S_OK;
 }
@@ -762,9 +916,12 @@ try
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
 
-    // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
-    // to cells.
-    _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+    if (!_allInvalid)
+    {
+        // Dirty client is in pixels. Use divide specialization against glyph factor to make conversion
+        // to cells.
+        _InvalidateRectangle(til::rectangle{ *prcDirtyClient }.scale_down(_glyphCell));
+    }
 
     return S_OK;
 }
@@ -778,9 +935,12 @@ CATCH_RETURN();
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
-    for (const auto& rect : rectangles)
+    if (!_allInvalid)
     {
-        RETURN_IF_FAILED(Invalidate(&rect));
+        for (const auto& rect : rectangles)
+        {
+            RETURN_IF_FAILED(Invalidate(&rect));
+        }
     }
     return S_OK;
 }
@@ -800,11 +960,15 @@ try
 
     const til::point deltaCells{ *pcoordDelta };
 
-    if (deltaCells != til::point{ 0, 0 })
+    if (!_allInvalid)
     {
-        // Shift the contents of the map and fill in revealed area.
-        _invalidMap.translate(deltaCells, true);
-        _invalidScroll += deltaCells;
+        if (deltaCells != til::point{ 0, 0 })
+        {
+            // Shift the contents of the map and fill in revealed area.
+            _invalidMap.translate(deltaCells, true);
+            _invalidScroll += deltaCells;
+            _allInvalid = _IsAllInvalid();
+        }
     }
 
     return S_OK;
@@ -821,6 +985,7 @@ CATCH_RETURN();
 try
 {
     _invalidMap.set_all();
+    _allInvalid = true;
 
     // Since everything is invalidated here, mark this as a "first frame", so
     // that we won't use incremental drawing on it. The caller of this intended
@@ -943,9 +1108,13 @@ try
     if (_isEnabled)
     {
         const auto clientSize = _GetClientSize();
-        if (!_haveDeviceResources)
+
+        // If we don't have device resources or if someone has requested that we
+        // recreate the device... then make new resources. (Create will dump the old ones.)
+        if (!_haveDeviceResources || _recreateDeviceRequested)
         {
             RETURN_IF_FAILED(_CreateDeviceResources(true));
+            _recreateDeviceRequested = false;
         }
         else if (_displaySizePixels != clientSize || _prevScale != _scale)
         {
@@ -957,10 +1126,11 @@ try
 
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
-            _d2dRenderTarget.Reset();
+            _d2dDeviceContext->SetTarget(nullptr);
+            _d2dBitmap.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
-            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), DXGI_FORMAT_B8G8R8A8_UNORM, 0));
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), _swapChainDesc.Format, _swapChainDesc.Flags));
             RETURN_IF_FAILED(_PrepareRenderTarget());
 
             // OK we made it past the parts that can cause errors. We can release our failure handler.
@@ -973,8 +1143,26 @@ try
             _firstFrame = true;
         }
 
-        _d2dRenderTarget->BeginDraw();
+        _d2dDeviceContext->BeginDraw();
         _isPainting = true;
+
+        {
+            // Get the baseline for this font as that's where we draw from
+            DWRITE_LINE_SPACING spacing;
+            RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
+
+            // Assemble the drawing context information
+            _drawingContext = std::make_unique<DrawingContext>(_d2dDeviceContext.Get(),
+                                                               _d2dBrushForeground.Get(),
+                                                               _d2dBrushBackground.Get(),
+                                                               _ShouldForceGrayscaleAA(),
+                                                               _dwriteFactory.Get(),
+                                                               spacing,
+                                                               _glyphCell,
+                                                               _d2dDeviceContext->GetSize(),
+                                                               std::nullopt,
+                                                               D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+        }
     }
 
     return S_OK;
@@ -998,7 +1186,10 @@ try
     {
         _isPainting = false;
 
-        hr = _d2dRenderTarget->EndDraw();
+        // If there's still a clip hanging around, remove it. We're all done.
+        LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+
+        hr = _d2dDeviceContext->EndDraw();
 
         if (SUCCEEDED(hr))
         {
@@ -1053,6 +1244,7 @@ try
     }
 
     _invalidMap.reset_all();
+    _allInvalid = false;
 
     _invalidScroll = {};
 
@@ -1083,6 +1275,26 @@ CATCH_RETURN()
     CATCH_RETURN();
 
     return S_OK;
+}
+
+// Method Description:
+// - Blocks until the engine is able to render without blocking.
+// - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
+void DxEngine::WaitUntilCanRender() noexcept
+{
+    if (!_swapChainFrameLatencyWaitableObject)
+    {
+        return;
+    }
+
+    const auto ret = WaitForSingleObjectEx(
+        _swapChainFrameLatencyWaitableObject.get(),
+        1000, // 1 second timeout (shouldn't ever occur)
+        true);
+    if (ret != WAIT_OBJECT_0)
+    {
+        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+    }
 }
 
 // Routine Description:
@@ -1209,26 +1421,26 @@ try
     // If the entire thing is invalid, just use one big clear operation.
     if (_invalidMap.all())
     {
-        _d2dRenderTarget->Clear(nothing);
+        _d2dDeviceContext->Clear(nothing);
     }
     else
     {
         // Runs are counts of cells.
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
-        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
-        for (const auto rect : _invalidMap.runs())
+        _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
+        for (const auto& rect : _invalidMap.runs())
         {
             // Use aliased.
             // For graphics reasons, it'll look better because it will ensure that
             // the edges are cut nice and sharp (not blended by anti-aliasing).
             // For performance reasons, it takes a lot less work to not
             // do anti-alias blending.
-            _d2dRenderTarget->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-            _d2dRenderTarget->Clear(nothing);
-            _d2dRenderTarget->PopAxisAlignedClip();
+            _d2dDeviceContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _d2dDeviceContext->Clear(nothing);
+            _d2dDeviceContext->PopAxisAlignedClip();
         }
-        _d2dRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+        _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
     }
 
     return S_OK;
@@ -1243,7 +1455,7 @@ CATCH_RETURN()
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                 COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -1253,56 +1465,11 @@ try
     const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
     // Create the text layout
-    CustomTextLayout layout(_dwriteFactory.Get(),
-                            _dwriteTextAnalyzer.Get(),
-                            _dwriteTextFormat.Get(),
-                            _dwriteFontFace.Get(),
-                            clusters,
-                            _glyphCell.width(),
-                            _boxDrawingEffect.Get());
-
-    // Get the baseline for this font as that's where we draw from
-    DWRITE_LINE_SPACING spacing;
-    RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
-
-    // GH#5098: If we're rendering with cleartype text, we need to always
-    // render onto an opaque background. If our background's opacity is
-    // 1.0f, that's great, we can use that. Otherwise, we need to force the
-    // text renderer to render this text in grayscale. In
-    // UpdateDrawingBrushes, we'll set the backgroundColor's a channel to
-    // 1.0 if we're in cleartype mode and the background's opacity is 1.0.
-    // Otherwise, at this point, the _backgroundColor's alpha is <1.0.
-    //
-    // Currently, only text with the default background color uses an alpha
-    // of 0, every other background uses 1.0
-    //
-    // DANGER: Layers slow us down. Only do this in the specific case where
-    // someone has chosen the slower ClearType antialiasing (versus the faster
-    // grayscale antialiasing)
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
-    // Another way of naming "bgIsDefault" is "bgHasTransparency"
-    const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
-                             (_backgroundColor.r == _defaultBackgroundColor.r) &&
-                             (_backgroundColor.g == _defaultBackgroundColor.g) &&
-                             (_backgroundColor.b == _defaultBackgroundColor.b);
-    const bool forceGrayscaleAA = usingCleartype &&
-                                  usingTransparency &&
-                                  bgIsDefault;
-
-    // Assemble the drawing context information
-    DrawingContext context(_d2dRenderTarget.Get(),
-                           _d2dBrushForeground.Get(),
-                           _d2dBrushBackground.Get(),
-                           forceGrayscaleAA,
-                           _dwriteFactory.Get(),
-                           spacing,
-                           _glyphCell,
-                           _frameInfo.cursorInfo,
-                           D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
     // Layout then render the text
-    RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
+    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
@@ -1329,63 +1496,102 @@ try
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
-    const auto font = _glyphCell;
-    D2D_POINT_2F target = til::point{ coordTarget } * font;
+    const D2D1_SIZE_F font = _glyphCell;
+    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    D2D_POINT_2F start = { 0 };
-    D2D_POINT_2F end = { 0 };
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
+    };
 
-    for (size_t i = 0; i < cchLine; i++)
+    const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
+    };
+
+    // NOTE: Line coordinates are centered within the line, so they need to be
+    // offset by half the stroke width. For the start coordinate we add half
+    // the stroke width, and for the end coordinate we subtract half the width.
+
+    if (lines & (GridLines::Left | GridLines::Right))
     {
-        // 0.5 pixel offset for crisp lines
-        start = { target.x + 0.5f, target.y + 0.5f };
-
-        if (lines & GridLines::Top)
-        {
-            end = start;
-            end.x += font.width();
-
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startY = target.y + halfGridlineWidth;
+        const auto endY = target.y + font.height - halfGridlineWidth;
 
         if (lines & GridLines::Left)
         {
-            end = start;
-            end.y += font.height();
-
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            auto x = target.x + halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
         }
-
-        // NOTE: Watch out for inclusive/exclusive rectangles here.
-        // We have to remove 1 from the font size for the bottom and right lines to ensure that the
-        // starting point remains within the clipping rectangle.
-        // For example, if we're drawing a letter at 0,0 and the font size is 8x16....
-        // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
-        // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
-
-        // 0.5 pixel offset for crisp lines; -0.5 on the Y to fit _in_ the cell, not outside it.
-        start = { target.x + 0.5f, target.y + font.height() - 0.5f };
-
-        if (lines & GridLines::Bottom)
-        {
-            end = start;
-            end.x += font.width() - 1.f;
-
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
-
-        start = { target.x + font.width() - 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Right)
         {
-            end = start;
-            end.y += font.height() - 1.f;
+            auto x = target.x + font.width - halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
+        }
+    }
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+    if (lines & (GridLines::Top | GridLines::Bottom))
+    {
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startX = target.x + halfGridlineWidth;
+        const auto endX = target.x + fullRunWidth - halfGridlineWidth;
+
+        if (lines & GridLines::Top)
+        {
+            const auto y = target.y + halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
         }
 
-        // Move to the next character in this run.
-        target.x += font.width();
+        if (lines & GridLines::Bottom)
+        {
+            const auto y = target.y + font.height - halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
+        }
+    }
+
+    // In the case of the underline and strikethrough offsets, the stroke width
+    // is already accounted for, so they don't require further adjustments.
+
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
+    {
+        const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
+        const auto startX = target.x + halfUnderlineWidth;
+        const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
+        const auto y = target.y + _lineMetrics.underlineOffset;
+
+        if (lines & GridLines::Underline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::HyperlinkUnderline)
+        {
+            DrawHyperlinkLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::DoubleUnderline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+            const auto y2 = target.y + _lineMetrics.underlineOffset2;
+            DrawLine(startX, y2, endX, y2, _lineMetrics.underlineWidth);
+        }
+    }
+
+    if (lines & GridLines::Strikethrough)
+    {
+        const auto halfStrikethroughWidth = _lineMetrics.strikethroughWidth / 2.0f;
+        const auto startX = target.x + halfStrikethroughWidth;
+        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
+        const auto y = target.y + _lineMetrics.strikethroughOffset;
+
+        DrawLine(startX, y, endX, y, _lineMetrics.strikethroughWidth);
     }
 
     return S_OK;
@@ -1401,6 +1607,9 @@ CATCH_RETURN()
 [[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 try
 {
+    // If a clip rectangle is in place from drawing the text layer, remove it here.
+    LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
+
     const auto existingColor = _d2dBrushForeground->GetColor();
 
     _d2dBrushForeground->SetColor(_selectionBackground);
@@ -1408,7 +1617,7 @@ try
 
     const D2D1_RECT_F draw = til::rectangle{ Viewport::FromExclusive(rect).ToInclusive() }.scale_up(_glyphCell);
 
-    _d2dRenderTarget->FillRectangle(draw, _d2dBrushForeground.Get());
+    _d2dDeviceContext->FillRectangle(draw, _d2dBrushForeground.Get());
 
     return S_OK;
 }
@@ -1477,18 +1686,14 @@ CATCH_RETURN()
 // Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
-// - colorForeground - Foreground brush color
-// - colorBackground - Background brush color
-// - legacyColorAttribute - <unused>
-// - extendedAttrs - <unused>
+// - textAttributes - Text attributes to use for the brush color
+// - pData - The interface to console data structures required for rendering
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
-                                                     COLORREF const colorBackground,
-                                                     const WORD /*legacyColorAttribute*/,
-                                                     const ExtendedAttributes /*extendedAttrs*/,
-                                                     bool const isSettingDefaultBrushes) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                     const gsl::not_null<IRenderData*> pData,
+                                                     const bool isSettingDefaultBrushes) noexcept
 {
     // GH#5098: If we're rendering with cleartype text, we need to always render
     // onto an opaque background. If our background's opacity is 1.0f, that's
@@ -1500,6 +1705,8 @@ CATCH_RETURN()
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
     const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+
+    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
@@ -1522,6 +1729,22 @@ CATCH_RETURN()
         }*/
     }
 
+    // If we have a drawing context, it may be choosing its antialiasing based
+    // on the colors. Update it if it exists.
+    // We only need to do this here because this is called all the time on painting frames
+    // and will update it in a timely fashion. Changing the AA mode or opacity do affect
+    // it, but we will always hit updating the drawing brushes so we don't
+    // need to update this in those locations.
+    if (_drawingContext)
+    {
+        _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+    }
+
+    if (textAttributes.IsHyperlink())
+    {
+        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
+    }
+
     return S_OK;
 }
 
@@ -1540,12 +1763,16 @@ try
                                       _dpi,
                                       _dwriteTextFormat,
                                       _dwriteTextAnalyzer,
-                                      _dwriteFontFace));
+                                      _dwriteFontFace,
+                                      _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
 
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
+
+    // Prepare the text layout
+    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
 
     return S_OK;
 }
@@ -1626,13 +1853,15 @@ float DxEngine::GetScaling() const noexcept
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
                             analyzer,
-                            face);
+                            face,
+                            lineMetrics);
 }
 
 // Routine Description:
@@ -1674,17 +1903,11 @@ try
 
     const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
-    // Create the text layout
-    CustomTextLayout layout(_dwriteFactory.Get(),
-                            _dwriteTextAnalyzer.Get(),
-                            _dwriteTextFormat.Get(),
-                            _dwriteFontFace.Get(),
-                            { &cluster, 1 },
-                            _glyphCell.width(),
-                            _boxDrawingEffect.Get());
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters({ &cluster, 1 }));
 
     UINT32 columns = 0;
-    RETURN_IF_FAILED(layout.GetColumns(&columns));
+    RETURN_IF_FAILED(_customLayout->GetColumns(&columns));
 
     *pResult = columns != 1;
 
@@ -1907,7 +2130,8 @@ CATCH_RETURN();
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 LineMetrics& lineMetrics) const noexcept
 {
     try
     {
@@ -2070,6 +2294,53 @@ CATCH_RETURN();
                              false,
                              scaled,
                              unscaled);
+
+        // There is no font metric for the grid line width, so we use a small
+        // multiple of the font size, which typically rounds to a pixel.
+        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+
+        // All other line metrics are in design units, so to get a pixel value,
+        // we scale by the font size divided by the design-units-per-em.
+        const auto scale = fontSize / fontMetrics.designUnitsPerEm;
+        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+
+        // We always want the lines to be visible, so if a stroke width ends up
+        // at zero after rounding, we need to make it at least 1 pixel.
+        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+
+        // Offsets are relative to the base line of the font, so we subtract
+        // from the ascent to get an offset relative to the top of the cell.
+        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+
+        // For double underlines we need a second offset, just below the first,
+        // but with a bit of a gap (about double the grid line width).
+        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
+                                       lineMetrics.underlineWidth +
+                                       std::round(fontSize * 0.05f);
+
+        // However, we don't want the underline to extend past the bottom of the
+        // cell, so we clamp the offset to fit just inside.
+        const auto maxUnderlineOffset = lineSpacing.height - _lineMetrics.underlineWidth;
+        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+        // But if the resulting gap isn't big enough even to register as a thicker
+        // line, it's better to place the second line slightly above the first.
+        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
+        {
+            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
+        }
+
+        // We also add half the stroke width to the offsets, since the line
+        // coordinates designate the center of the line.
+        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
     }
     CATCH_RETURN();
 
@@ -2112,12 +2383,12 @@ CATCH_RETURN();
 // - color - GDI Color
 // Return Value:
 // - N/A
-void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+void DxEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
     _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
-                                        0.5f);
+                                        alpha);
 }
 
 // Routine Description:
@@ -2130,9 +2401,15 @@ void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
 // Return Value:
 // - N/A
 void DxEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
+try
 {
-    _antialiasingMode = antialiasingMode;
+    if (_antialiasingMode != antialiasingMode)
+    {
+        _antialiasingMode = antialiasingMode;
+        LOG_IF_FAILED(InvalidateAll());
+    }
 }
+CATCH_LOG()
 
 // Method Description:
 // - Update our tracker of the opacity of our background. We can only
@@ -2157,6 +2434,16 @@ try
 CATCH_LOG()
 
 // Method Description:
+// - Updates our internal tracker for which hyperlink ID we are hovering over
+//   This is needed for UpdateDrawingBrushes to know where we need to set a different style
+// Arguments:
+// - The new link ID we are hovering over
+void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
+{
+    _hyperlinkHoveredId = hoveredId;
+}
+
+// Method Description:
 // - Informs this render engine about certain state for this frame at the
 //   beginning of this frame. We'll use it to get information about the cursor
 //   before PaintCursor is called. This enables the DX renderer to draw the
@@ -2169,6 +2456,6 @@ CATCH_LOG()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PrepareRenderInfo(const RenderFrameInfo& info) noexcept
 {
-    _frameInfo = info;
+    _drawingContext->cursorInfo = info.cursorInfo;
     return S_OK;
 }

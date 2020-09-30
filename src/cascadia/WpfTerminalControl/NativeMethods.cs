@@ -37,6 +37,9 @@ namespace Microsoft.Terminal.Wpf
             /// </summary>
             WM_MOUSEACTIVATE = 0x0021,
 
+            /// <summary>
+            /// The WM_GETOBJECT message is sent by Active Accessibility when a client calls AccessibleObjectFromWindow or any of the other AccessibleObjectFromX APIs that retrieve an interface to an object.
+            /// </summary>
             WM_GETOBJECT = 0x003D,
 
             /// <summary>
@@ -58,6 +61,16 @@ namespace Microsoft.Terminal.Wpf
             /// The WM_CHAR message is posted to the window with the keyboard focus when a WM_KEYDOWN message is translated by the TranslateMessage function. The WM_CHAR message contains the character code of the key that was pressed.
             /// </summary>
             WM_CHAR = 0x0102,
+
+            /// <summary>
+            /// The WM_SYSKEYDOWN message is posted to the window with the keyboard focus when a system key is pressed. A system key is F10 or Alt+Something.
+            /// </summary>
+            WM_SYSKEYDOWN = 0x0104,
+
+            /// <summary>
+            /// The WM_SYSKEYDOWN message is posted to the window with the keyboard focus when a system key is released. A system key is F10 or Alt+Something.
+            /// </summary>
+            WM_SYSKEYUP = 0x0105,
 
             /// <summary>
             /// The WM_MOUSEMOVE message is posted to a window when the cursor moves. If the mouse is not captured, the message is posted to the window that contains the cursor. Otherwise, the message is posted to the window that has captured the mouse.
@@ -212,10 +225,10 @@ namespace Microsoft.Terminal.Wpf
         public static extern void DestroyTerminal(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode, bool keyDown);
+        public static extern void TerminalSendKeyEvent(IntPtr terminal, ushort vkey, ushort scanCode, ushort flags, bool keyDown);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode);
+        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch, ushort scanCode, ushort flags);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);

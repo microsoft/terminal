@@ -104,9 +104,7 @@ public:
     bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
 
-    bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                    size_t& eventsWritten) override;
-
+    bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;
     bool SetCursorColor(COLORREF const color) override;
 
@@ -144,6 +142,9 @@ public:
                              const bool standardFillAttrs) noexcept override;
 
     bool PrivateIsVtInputEnabled() const override;
+
+    bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
+    bool PrivateEndHyperlink() const override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

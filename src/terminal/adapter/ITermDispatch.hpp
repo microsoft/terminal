@@ -86,19 +86,21 @@ public:
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
-    virtual bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) = 0; // SGR
+    virtual bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) = 0; // SGR
 
-    virtual bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECSET
+    virtual bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECSET
 
-    virtual bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) = 0; // DECRST
+    virtual bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
+    virtual bool SecondaryDeviceAttributes() = 0; // DA2
+    virtual bool TertiaryDeviceAttributes() = 0; // DA3
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
 
-    virtual bool DesignateCodingSystem(const wchar_t codingSystem) = 0; // DOCS
-    virtual bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
-    virtual bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) = 0; // SCS
+    virtual bool DesignateCodingSystem(const VTID codingSystem) = 0; // DOCS
+    virtual bool Designate94Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
+    virtual bool Designate96Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
     virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
     virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual bool SingleShift(const size_t gsetNumber) = 0; // SS2, SS3
@@ -110,9 +112,14 @@ public:
     virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) = 0; // DECSCUSR
     virtual bool SetCursorColor(const COLORREF color) = 0; // OSCSetCursorColor, OSCResetCursorColor
 
+    virtual bool SetClipboard(std::wstring_view content) = 0; // OSCSetClipboard
+
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const std::basic_string_view<size_t> parameters) = 0;
+                                    const gsl::span<const size_t> parameters) = 0;
+
+    virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
+    virtual bool EndHyperlink() = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

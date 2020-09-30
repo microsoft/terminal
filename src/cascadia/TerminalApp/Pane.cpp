@@ -4,14 +4,14 @@
 #include "pch.h"
 #include "Pane.h"
 #include "Profile.h"
-#include "CascadiaSettings.h"
+#include "AppLogic.h"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
@@ -319,13 +319,13 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
         return;
     }
 
-    const auto& settings = CascadiaSettings::GetCurrentAppSettings();
+    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        auto mode = paneProfile->GetCloseOnExitMode();
-        if ((mode == CloseOnExitMode::Always) ||
-            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        auto mode = paneProfile.CloseOnExit();
+        if ((mode == winrt::TerminalApp::CloseOnExitMode::Always) ||
+            (mode == winrt::TerminalApp::CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
             _ClosedHandlers(nullptr, nullptr);
         }
@@ -840,21 +840,29 @@ void Pane::_UpdateBorders()
     double top = 0, bottom = 0, left = 0, right = 0;
 
     Thickness newBorders{ 0 };
-    if (WI_IsFlagSet(_borders, Borders::Top))
+    if (_zoomed)
     {
-        top = PaneBorderSize;
+        // When the pane is zoomed, manually show all the borders around the window.
+        top = bottom = right = left = PaneBorderSize;
     }
-    if (WI_IsFlagSet(_borders, Borders::Bottom))
+    else
     {
-        bottom = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Left))
-    {
-        left = PaneBorderSize;
-    }
-    if (WI_IsFlagSet(_borders, Borders::Right))
-    {
-        right = PaneBorderSize;
+        if (WI_IsFlagSet(_borders, Borders::Top))
+        {
+            top = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Bottom))
+        {
+            bottom = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Left))
+        {
+            left = PaneBorderSize;
+        }
+        if (WI_IsFlagSet(_borders, Borders::Right))
+        {
+            right = PaneBorderSize;
+        }
     }
     _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
@@ -919,6 +927,102 @@ bool Pane::CanSplit(SplitState splitType)
     }
 
     return false;
+}
+
+// Method Description:
+// - This is a helper to determine if a given Pane can be split, but without
+//   using the ActualWidth() and ActualHeight() methods. This is used during
+//   processing of many "split-pane" commands, which could happen _before_ we've
+//   laid out a Pane for the first time. When this happens, the Pane's don't
+//   have an actual size yet. However, we'd still like to figure out if the pane
+//   could be split, once they're all laid out.
+// - This method assumes that the Pane we're attempting to split is `target`,
+//   and this method should be called on the root of a tree of Panes.
+// - We'll walk down the tree attempting to find `target`. As we traverse the
+//   tree, we'll reduce the size passed to each subsequent recursive call. The
+//   size passed to this method represents how much space this Pane _will_ have
+//   to use.
+//   * If this pane is a leaf, and it's the pane we're looking for, use the
+//     available space to calculate which direction to split in.
+//   * If this pane is _any other leaf_, then just return nullopt, to indicate
+//     that the `target` Pane is not down this branch.
+//   * If this pane is a parent, calculate how much space our children will be
+//     able to use, and recurse into them.
+// Arguments:
+// - target: The Pane we're attempting to split.
+// - splitType: The direction we're attempting to split in.
+// - availableSpace: The theoretical space that's available for this pane to be able to split.
+// Return Value:
+// - nullopt if `target` is not this pane or a child of this pane, otherwise
+//   true iff we could split this pane, given `availableSpace`
+// Note:
+// - This method is highly similar to Pane::PreCalculateAutoSplit
+std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                               SplitState splitType,
+                                               const winrt::Windows::Foundation::Size availableSpace) const
+{
+    if (_IsLeaf())
+    {
+        if (target.get() == this)
+        {
+            // If this pane is a leaf, and it's the pane we're looking for, use
+            // the available space to calculate which direction to split in.
+            const Size minSize = _GetMinSize();
+
+            if (splitType == SplitState::None)
+            {
+                return { false };
+            }
+
+            else if (splitType == SplitState::Vertical)
+            {
+                const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
+                const auto newWidth = widthMinusSeparator * Half;
+
+                return { newWidth > minSize.Width };
+            }
+
+            else if (splitType == SplitState::Horizontal)
+            {
+                const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
+                const auto newHeight = heightMinusSeparator * Half;
+
+                return { newHeight > minSize.Height };
+            }
+        }
+        else
+        {
+            // If this pane is _any other leaf_, then just return nullopt, to
+            // indicate that the `target` Pane is not down this branch.
+            return std::nullopt;
+        }
+    }
+    else
+    {
+        // If this pane is a parent, calculate how much space our children will
+        // be able to use, and recurse into them.
+
+        const bool isVerticalSplit = _splitState == SplitState::Vertical;
+        const float firstWidth = isVerticalSplit ?
+                                     (availableSpace.Width * _desiredSplitPosition) - PaneBorderSize :
+                                     availableSpace.Width;
+        const float secondWidth = isVerticalSplit ?
+                                      (availableSpace.Width - firstWidth) - PaneBorderSize :
+                                      availableSpace.Width;
+        const float firstHeight = !isVerticalSplit ?
+                                      (availableSpace.Height * _desiredSplitPosition) - PaneBorderSize :
+                                      availableSpace.Height;
+        const float secondHeight = !isVerticalSplit ?
+                                       (availableSpace.Height - firstHeight) - PaneBorderSize :
+                                       availableSpace.Height;
+
+        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, { firstWidth, firstHeight });
+        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, { secondWidth, secondHeight });
+    }
+
+    // We should not possibly be getting here - both the above branches should
+    // return a value.
+    FAIL_FAST();
 }
 
 // Method Description:
@@ -1074,6 +1178,76 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _lastActive = false;
 
     return { _firstChild, _secondChild };
+}
+
+// Method Description:
+// - Recursively attempt to "zoom" the given pane. When the pane is zoomed, it
+//   won't be displayed as part of the tab tree, instead it'll take up the full
+//   content of the tab. When we find the given pane, we'll need to remove it
+//   from the UI tree, so that the caller can re-add it. We'll also set some
+//   internal state, so the pane can display all of its borders.
+// Arguments:
+// - zoomedPane: This is the pane which we're attempting to zoom on.
+// Return Value:
+// - <none>
+void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
+{
+    if (_IsLeaf())
+    {
+        _zoomed = (zoomedPane == shared_from_this());
+        _UpdateBorders();
+    }
+    else
+    {
+        if (zoomedPane == _firstChild || zoomedPane == _secondChild)
+        {
+            // When we're zooming the pane, we'll need to remove it from our UI
+            // tree. Easy way: just remove both children. We'll re-attach both
+            // when we un-zoom.
+            _root.Children().Clear();
+        }
+
+        // Always recurse into both children. If the (un)zoomed pane was one of
+        // our direct children, we'll still want to update it's borders.
+        _firstChild->Maximize(zoomedPane);
+        _secondChild->Maximize(zoomedPane);
+    }
+}
+
+// Method Description:
+// - Recursively attempt to "un-zoom" the given pane. This does the opposite of
+//   Pane::Maximize. When we find the given pane, we should return the pane to our
+//   UI tree. We'll also clear the internal state, so the pane can display its
+//   borders correctly.
+// - The caller should make sure to have removed the zoomed pane from the UI
+//   tree _before_ calling this.
+// Arguments:
+// - zoomedPane: This is the pane which we're attempting to un-zoom.
+// Return Value:
+// - <none>
+void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
+{
+    if (_IsLeaf())
+    {
+        _zoomed = false;
+        _UpdateBorders();
+    }
+    else
+    {
+        if (zoomedPane == _firstChild || zoomedPane == _secondChild)
+        {
+            // When we're un-zooming the pane, we'll need to re-add it to our UI
+            // tree where it originally belonged. easy way: just re-add both.
+            _root.Children().Clear();
+            _root.Children().Append(_firstChild->GetRootElement());
+            _root.Children().Append(_secondChild->GetRootElement());
+        }
+
+        // Always recurse into both children. If the (un)zoomed pane was one of
+        // our direct children, we'll still want to update it's borders.
+        _firstChild->Restore(zoomedPane);
+        _secondChild->Restore(zoomedPane);
+    }
 }
 
 // Method Description:

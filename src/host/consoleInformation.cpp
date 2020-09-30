@@ -12,6 +12,7 @@
 #include "..\types\inc\convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::Render::BlinkingState;
 using Microsoft::Console::VirtualTerminal::VtIo;
 
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
@@ -222,7 +223,8 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 // - the default foreground color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 {
-    return Settings::CalculateDefaultForeground();
+    const auto fg = GetDefaultForegroundColor();
+    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
 }
 
 // Method Description:
@@ -236,7 +238,25 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 // - the default background color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 {
-    return Settings::CalculateDefaultBackground();
+    const auto bg = GetDefaultBackgroundColor();
+    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
+}
+
+// Method Description:
+// - Get the colors of a particular text attribute, using our color table,
+//      and our configured default attributes.
+// Arguments:
+// - attr: the TextAttribute to retrieve the foreground color of.
+// Return Value:
+// - The color values of the attribute's foreground and background.
+std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
+{
+    _blinkingState.RecordBlinkingUsage(attr);
+    return attr.CalculateRgbColors(Get256ColorTable(),
+                                   GetDefaultForeground(),
+                                   GetDefaultBackground(),
+                                   IsScreenReversed(),
+                                   _blinkingState.IsBlinkingFaint());
 }
 
 // Method Description:
@@ -356,8 +376,19 @@ Microsoft::Console::CursorBlinker& CONSOLE_INFORMATION::GetCursorBlinker() noexc
 }
 
 // Method Description:
-// - Generates a CHAR_INFO for this output cell, using our
-//      GenerateLegacyAttributes method to generate the legacy style attributes.
+// - return a reference to the console's blinking state.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the console's blinking state.
+BlinkingState& CONSOLE_INFORMATION::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
+}
+
+// Method Description:
+// - Generates a CHAR_INFO for this output cell, using the TextAttribute
+//      GetLegacyAttributes method to generate the legacy style attributes.
 // Arguments:
 // - cell: The cell to get the CHAR_INFO from
 // Return Value:
@@ -371,8 +402,7 @@ CHAR_INFO CONSOLE_INFORMATION::AsCharInfo(const OutputCellView& cell) const noex
     //    use gci to look up the correct legacy attributes to use
     //    (for mapping RGB values to the nearest table value)
     const auto& attr = cell.TextAttr();
-    ci.Attributes = GenerateLegacyAttributes(attr);
-    ;
+    ci.Attributes = attr.GetLegacyAttributes();
     ci.Attributes |= cell.DbcsAttr().GeneratePublicApiAttributeFormat();
     return ci;
 }

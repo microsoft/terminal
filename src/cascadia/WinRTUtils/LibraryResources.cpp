@@ -94,3 +94,11 @@ try
     return loader.GetLocalizedString(key);
 }
 CATCH_FAIL_FAST()
+
+bool HasLibraryResourceWithName(const std::wstring_view key)
+try
+{
+    static auto loader{ GetLibraryResourceLoader() };
+    return loader.HasResourceWithName(key);
+}
+CATCH_FAIL_FAST()

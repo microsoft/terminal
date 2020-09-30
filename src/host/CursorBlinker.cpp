@@ -28,6 +28,12 @@ void CursorBlinker::UpdateSystemMetrics()
 {
     // This can be -1 in a TS session
     _uCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
+
+    // If animations are disabled, or the blink rate is infinite, blinking is not allowed.
+    BOOL animationsEnabled = TRUE;
+    SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+    auto& blinkingState = ServiceLocator::LocateGlobals().getConsoleInformation().GetBlinkingState();
+    blinkingState.SetBlinkingAllowed(animationsEnabled && _uCaretBlinkTime != INFINITE);
 }
 
 void CursorBlinker::SettingsChanged()
@@ -53,7 +59,8 @@ void CursorBlinker::FocusStart()
 }
 
 // Routine Description:
-// - This routine is called when the timer in the console with the focus goes off.  It blinks the cursor.
+// - This routine is called when the timer in the console with the focus goes off.
+//   It blinks the cursor and also toggles the rendition of any blinking attributes.
 // Arguments:
 // - ScreenInfo - reference to screen info structure.
 // Return Value:
@@ -109,7 +116,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     if (cursor.GetDelay())
     {
         cursor.SetDelay(false);
-        goto DoScroll;
+        goto DoBlinkingRenditionAndScroll;
     }
 
     // Don't blink the cursor for remote sessions.
@@ -118,7 +125,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
          (!cursor.IsBlinkingAllowed())) &&
         cursor.IsOn())
     {
-        goto DoScroll;
+        goto DoBlinkingRenditionAndScroll;
     }
 
     // Blink only if the cursor isn't turned off via the API
@@ -126,6 +133,9 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     {
         cursor.SetIsOn(!cursor.IsOn());
     }
+
+DoBlinkingRenditionAndScroll:
+    gci.GetBlinkingState().ToggleBlinkingRendition(ScreenInfo.GetRenderTarget());
 
 DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);
@@ -218,7 +228,7 @@ void CursorBlinker::KillCaretTimer()
         // A failure to delete the timer with the LastError being ERROR_IO_PENDING means that the timer is
         // currently in use and will get cleaned up when released. Delete should not be called again.
         // We treat that case as a success.
-        if (bRet == false && GetLastError() != ERROR_IO_PENDING)
+        if (!bRet && GetLastError() != ERROR_IO_PENDING)
         {
             LOG_LAST_ERROR();
         }

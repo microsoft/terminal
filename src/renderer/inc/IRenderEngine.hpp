@@ -17,6 +17,7 @@ Author(s):
 #include "CursorOptions.h"
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
+#include "IRenderData.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -34,7 +35,11 @@ namespace Microsoft::Console::Render
             Top = 0x1,
             Bottom = 0x2,
             Left = 0x4,
-            Right = 0x8
+            Right = 0x8,
+            Underline = 0x10,
+            DoubleUnderline = 0x20,
+            Strikethrough = 0x40,
+            HyperlinkUnderline = 0x80
         };
 
         virtual ~IRenderEngine() = 0;
@@ -49,6 +54,8 @@ namespace Microsoft::Console::Render
     public:
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
+
+        virtual void WaitUntilCanRender() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept = 0;
@@ -68,7 +75,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                       const COORD coord,
                                                       const bool fTrimLeft,
                                                       const bool lineWrapped) noexcept = 0;
@@ -80,10 +87,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                           const COLORREF colorBackground,
-                                                           const WORD legacyColorAttribute,
-                                                           const ExtendedAttributes extendedAttrs,
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                           const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                                  _Out_ FontInfo& FontInfo) noexcept = 0;

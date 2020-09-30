@@ -26,12 +26,12 @@ Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
                    std::unique_ptr<IRenderThread> thread) :
-    _pData(pData),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
-    _destructing{ false }
+    _destructing{ false },
+    _clusterBuffer{},
+    _viewport{ pData->GetViewport() }
 {
-    _srViewportPrevious = { 0 };
-
     for (size_t i = 0; i < cEngines; i++)
     {
         IRenderEngine* engine = rgpEngines[i];
@@ -207,7 +207,7 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = _pData->GetViewport();
+    Viewport view = _viewport;
     SMALL_RECT srUpdateRegion = region.ToExclusive();
 
     if (view.TrimToViewport(&srUpdateRegion))
@@ -356,7 +356,7 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    SMALL_RECT const srOldViewport = _srViewportPrevious;
+    SMALL_RECT const srOldViewport = _viewport.ToInclusive();
     SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
 
     COORD coordDelta;
@@ -368,7 +368,13 @@ bool Renderer::_CheckViewportAndScroll()
         LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
     }
 
-    _srViewportPrevious = srNewViewport;
+    _viewport = Viewport::FromInclusive(srNewViewport);
+
+    // If we're keeping some buffers between calls, let them know about the viewport size
+    // so they can prepare the buffers for changes to either preallocate memory at once
+    // (instead of growing naturally) or shrink down to reduce usage as appropriate.
+    const size_t lineLength = gsl::narrow_cast<size_t>(til::rectangle{ srNewViewport }.width());
+    til::manage_vector(_clusterBuffer, lineLength, _shrinkThreshold);
 
     if (coordDelta.X != 0 || coordDelta.Y != 0)
     {
@@ -683,7 +689,6 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // we should have an iterator/view adapter for the rendering.
         // That would probably also eliminate the RenderData needing to give us the entire TextBuffer as well...
         // Retrieve the iterator for one line of information.
-        std::vector<Cluster> clusters;
         size_t cols = 0;
 
         // Retrieve the first color.
@@ -714,7 +719,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             const auto currentRunTargetStart = screenPoint;
 
             // Ensure that our cluster vector is clear.
-            clusters.clear();
+            _clusterBuffer.clear();
 
             // Reset our flag to know when we're in the special circumstance
             // of attempting to draw only the right-half of a two-column character
@@ -746,7 +751,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
                 // If we're on the first cluster to be added and it's marked as "trailing"
                 // (a.k.a. the right half of a two column character), then we need some special handling.
-                if (clusters.empty() && it->DbcsAttr().IsTrailing())
+                if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
                 {
                     // If we have room to move to the left to start drawing...
                     if (screenPoint.X > 0)
@@ -757,7 +762,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                         trimLeft = true;
                         // And add one to the number of columns we expect it to take as we insert it.
                         columnCount = it->Columns() + 1;
-                        clusters.emplace_back(it->Chars(), columnCount);
+                        _clusterBuffer.emplace_back(it->Chars(), columnCount);
                     }
                     else
                     {
@@ -770,7 +775,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 else
                 {
                     columnCount = it->Columns();
-                    clusters.emplace_back(it->Chars(), columnCount);
+                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
                 }
 
                 if (columnCount > 1)
@@ -785,7 +790,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             } while (it);
 
             // Do the painting.
-            THROW_IF_FAILED(pEngine->PaintBufferLine({ clusters.data(), clusters.size() }, screenPoint, trimLeft, lineWrapped));
+            THROW_IF_FAILED(pEngine->PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, lineWrapped));
 
             // If we're allowed to do grid drawing, draw that now too (since it will be coupled with the color data)
             // We're only allowed to draw the grid lines under certain circumstances.
@@ -855,6 +860,26 @@ IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttri
     {
         lines |= IRenderEngine::GridLines::Right;
     }
+
+    if (textAttribute.IsCrossedOut())
+    {
+        lines |= IRenderEngine::GridLines::Strikethrough;
+    }
+
+    if (textAttribute.IsUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::Underline;
+    }
+
+    if (textAttribute.IsDoublyUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::DoubleUnderline;
+    }
+
+    if (textAttribute.IsHyperlink())
+    {
+        lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+    }
     return lines;
 }
 
@@ -873,13 +898,16 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
                                                 const size_t cchLine,
                                                 const COORD coordTarget)
 {
-    const COLORREF rgb = _pData->GetForegroundColor(textAttribute);
-
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
-
-    // Draw the lines
-    LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+    // Return early if there are no lines to paint.
+    if (lines != IRenderEngine::GridLines::None)
+    {
+        // Get the current foreground color to render the lines.
+        const COLORREF rgb = _pData->GetAttributeColors(textAttribute).first;
+        // Draw the lines
+        LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
+    }
 }
 
 // Routine Description:
@@ -1082,16 +1110,9 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - <none>
 [[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
 {
-    const COLORREF rgbForeground = _pData->GetForegroundColor(textAttributes);
-    const COLORREF rgbBackground = _pData->GetBackgroundColor(textAttributes);
-    const WORD legacyAttributes = textAttributes.GetLegacyAttributes();
-    const auto extendedAttrs = textAttributes.GetExtendedAttributes();
-
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, extendedAttrs, isSettingDefaultBrushes));
-
-    return S_OK;
+    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, isSettingDefaultBrushes);
 }
 
 // Routine Description:
@@ -1193,4 +1214,14 @@ void Renderer::ResetErrorStateAndResume()
 {
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
+}
+
+// Method Description:
+// - Blocks until the engines are able to render without blocking.
+void Renderer::WaitUntilCanRender()
+{
+    for (const auto pEngine : _rgpEngines)
+    {
+        pEngine->WaitUntilCanRender();
+    }
 }

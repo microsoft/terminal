@@ -20,14 +20,12 @@ using namespace Microsoft::Console::Render;
 // - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
 // - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
-// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
 // - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
                                    gsl::not_null<IDWriteFontFace1*> const font,
-                                   std::basic_string_view<Cluster> const clusters,
                                    size_t const width,
                                    IBoxDrawingEffect* const boxEffect) :
     _factory{ factory.get() },
@@ -47,8 +45,43 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
+}
 
-    _textClusterColumns.reserve(clusters.size());
+//Routine Description:
+// - Resets this custom text layout to the freshly allocated state in terms of text analysis.
+// Arguments:
+// - <none>, modifies internal state
+// Return Value:
+// - S_OK or suitable memory management issue
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Reset() noexcept
+try
+{
+    _runs.clear();
+    _breakpoints.clear();
+    _runIndex = 0;
+    _isEntireTextSimple = false;
+    _textClusterColumns.clear();
+    _text.clear();
+    _glyphScaleCorrections.clear();
+    _glyphClusters.clear();
+    _glyphIndices.clear();
+    _glyphDesignUnitAdvances.clear();
+    _glyphAdvances.clear();
+    _glyphOffsets.clear();
+    return S_OK;
+}
+CATCH_RETURN()
+
+// Routine Description:
+// - Appends text to this layout for analysis/processing.
+// Arguments:
+// - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
+// Return Value:
+// - S_OK or suitable memory management issue.
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters)
+try
+{
+    _textClusterColumns.reserve(_textClusterColumns.size() + clusters.size());
 
     for (const auto& cluster : clusters)
     {
@@ -64,7 +97,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
 
         _text += text;
     }
+
+    return S_OK;
 }
+CATCH_RETURN()
 
 // Routine Description:
 // - Figures out how many columns this layout should take. This will use the analyze step only.
@@ -182,8 +218,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         // This result will be subdivided by the analysis processes.
         _runs.resize(1);
         auto& initialRun = _runs.front();
-        initialRun.nextRunIndex = 0;
-        initialRun.textStart = 0;
         initialRun.textLength = textLength;
         initialRun.bidiLevel = (_readingDirection == DWRITE_READING_DIRECTION_RIGHT_TO_LEFT);
 
@@ -323,7 +357,6 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             // With simple text, there's only one run. The actual glyph count is the same as textLength.
             _glyphDesignUnitAdvances.resize(textLength);
             _glyphAdvances.resize(textLength);
-            _glyphOffsets.resize(textLength);
 
             USHORT designUnitsPerEm = metrics.designUnitsPerEm;
 
@@ -337,6 +370,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             {
                 _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
             }
+
+            // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
+            // Fill the clusters sequentially from 0 to N-1.
+            std::iota(_glyphClusters.begin(), _glyphClusters.end(), gsl::narrow_cast<unsigned short>(0));
 
             run.glyphCount = textLength;
             glyphStart += textLength;
@@ -560,6 +597,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
             //  1     1    .8 1  1
         }
 
+        // Dump the glyph scale corrections now that we're done with them.
+        _glyphScaleCorrections.clear();
+
+        // Order the runs.
         _OrderRuns();
     }
     CATCH_RETURN();
@@ -806,57 +847,113 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
+        for (INT32 runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
         {
             // Get the run
             const Run& run = _runs.at(runIndex);
 
-            // Prepare the glyph run and description objects by converting our
-            // internal storage representation into something that matches DWrite's structures.
-            DWRITE_GLYPH_RUN glyphRun;
-            glyphRun.bidiLevel = run.bidiLevel;
-            glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
-            glyphRun.fontFace = run.fontFace.Get();
-            glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
-            glyphRun.glyphCount = run.glyphCount;
-            glyphRun.glyphIndices = &_glyphIndices.at(run.glyphStart);
-            glyphRun.glyphOffsets = &_glyphOffsets.at(run.glyphStart);
-            glyphRun.isSideways = false;
-
-            DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
-            glyphRunDescription.clusterMap = _glyphClusters.data();
-            glyphRunDescription.localeName = _localeName.data();
-            glyphRunDescription.string = _text.data();
-            glyphRunDescription.stringLength = run.textLength;
-            glyphRunDescription.textPosition = run.textStart;
-
-            // Calculate the origin for the next run based on the amount of space
-            // that would be consumed. We are doing this calculation now, not after,
-            // because if the text is RTL then we need to advance immediately, before the
-            // write call since DirectX expects the origin to the RIGHT of the text for RTL.
-            const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
-                                                     _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
-                                                     mutableOrigin.x);
-
-            // Check for RTL, if it is, apply space adjustment.
-            if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
+            if (!WI_IsFlagSet(run.bidiLevel, 1))
             {
-                mutableOrigin.x = postOriginX;
+                RETURN_IF_FAILED(_DrawGlyphRun(clientDrawingContext, renderer, mutableOrigin, run));
             }
+            // This is the RTL behavior. We will advance to the last contiguous RTL run, draw that,
+            // and then keep on going backwards from there, and then move runIndex beyond.
+            // Let's say we have runs abcdEFGh, where runs EFG are RTL.
+            // Then we will draw them in the order abcdGFEh
+            else
+            {
+                const INT32 originalRunIndex = runIndex;
+                INT32 lastIndexRTL = runIndex;
 
-            // Try to draw it
-            RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
-                                                    mutableOrigin.x,
-                                                    mutableOrigin.y,
-                                                    DWRITE_MEASURING_MODE_NATURAL,
-                                                    &glyphRun,
-                                                    &glyphRunDescription,
-                                                    run.drawingEffect.Get()));
+                // Step 1: Get to the last contiguous RTL run from here
+                while (lastIndexRTL < gsl::narrow<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
+                {
+                    const Run& nextRun = _runs.at(gsl::narrow_cast<size_t>(lastIndexRTL + 1));
+                    if (WI_IsFlagSet(nextRun.bidiLevel, 1))
+                    {
+                        lastIndexRTL++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
-            // Either way, we should be at this point by the end of writing this sequence,
-            // whether it was LTR or RTL.
+                // Go from the last to the first and draw
+                for (runIndex = lastIndexRTL; runIndex >= originalRunIndex; runIndex--)
+                {
+                    const Run& currentRun = _runs.at(runIndex);
+                    RETURN_IF_FAILED(_DrawGlyphRun(clientDrawingContext, renderer, mutableOrigin, currentRun));
+                }
+                runIndex = lastIndexRTL; // and the for loop will take the increment to the last one
+            }
+        }
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+// Routine Description:
+// - Draw the given run
+// - The origin is updated to be after the run.
+// Arguments:
+// - clientDrawingContext - Optional pointer to information that the renderer might need
+//                          while attempting to graphically place the text onto the screen
+// - renderer - The interface to be used for actually putting text onto the screen
+// - origin - pixel point of top left corner on final surface for drawing
+// - run - the run to be drawn
+[[nodiscard]] HRESULT CustomTextLayout::_DrawGlyphRun(_In_opt_ void* clientDrawingContext,
+                                                      gsl::not_null<IDWriteTextRenderer*> renderer,
+                                                      D2D_POINT_2F& mutableOrigin,
+                                                      const Run& run) noexcept
+{
+    try
+    {
+        // Prepare the glyph run and description objects by converting our
+        // internal storage representation into something that matches DWrite's structures.
+        DWRITE_GLYPH_RUN glyphRun;
+        glyphRun.bidiLevel = run.bidiLevel;
+        glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
+        glyphRun.fontFace = run.fontFace.Get();
+        glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
+        glyphRun.glyphCount = run.glyphCount;
+        glyphRun.glyphIndices = &_glyphIndices.at(run.glyphStart);
+        glyphRun.glyphOffsets = &_glyphOffsets.at(run.glyphStart);
+        glyphRun.isSideways = false;
+
+        DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
+        glyphRunDescription.clusterMap = _glyphClusters.data();
+        glyphRunDescription.localeName = _localeName.data();
+        glyphRunDescription.string = _text.data();
+        glyphRunDescription.stringLength = run.textLength;
+        glyphRunDescription.textPosition = run.textStart;
+
+        // Calculate the origin for the next run based on the amount of space
+        // that would be consumed. We are doing this calculation now, not after,
+        // because if the text is RTL then we need to advance immediately, before the
+        // write call since DirectX expects the origin to the RIGHT of the text for RTL.
+        const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
+                                                 _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
+                                                 mutableOrigin.x);
+
+        // Check for RTL, if it is, apply space adjustment.
+        if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
+        {
             mutableOrigin.x = postOriginX;
         }
+
+        // Try to draw it
+        RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
+                                                mutableOrigin.x,
+                                                mutableOrigin.y,
+                                                DWRITE_MEASURING_MODE_NATURAL,
+                                                &glyphRun,
+                                                &glyphRunDescription,
+                                                run.drawingEffect.Get()));
+
+        // Either way, we should be at this point by the end of writing this sequence,
+        // whether it was LTR or RTL.
+        mutableOrigin.x = postOriginX;
     }
     CATCH_RETURN();
     return S_OK;
@@ -1827,21 +1924,13 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 // - <none>
 void CustomTextLayout::_OrderRuns()
 {
-    const size_t totalRuns = _runs.size();
-    std::vector<LinkedRun> runs;
-    runs.resize(totalRuns);
-
-    UINT32 nextRunIndex = 0;
-    for (UINT32 i = 0; i < totalRuns; ++i)
+    std::sort(_runs.begin(), _runs.end(), [](auto& a, auto& b) { return a.textStart < b.textStart; });
+    for (UINT32 i = 0; i < _runs.size() - 1; ++i)
     {
-        runs.at(i) = _runs.at(nextRunIndex);
-        runs.at(i).nextRunIndex = i + 1;
-        nextRunIndex = _runs.at(nextRunIndex).nextRunIndex;
+        til::at(_runs, i).nextRunIndex = i + 1;
     }
 
-    runs.back().nextRunIndex = 0;
-
-    _runs.swap(runs);
+    _runs.back().nextRunIndex = 0;
 }
 
 #pragma endregion

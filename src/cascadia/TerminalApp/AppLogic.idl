@@ -1,12 +1,18 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../TerminalPage.idl";
-import "../ShortcutActionDispatch.idl";
-import "../IF7Listener.idl";
+import "TerminalPage.idl";
+import "ShortcutActionDispatch.idl";
+import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
+    struct InitialPosition
+    {
+        Int64 X;
+        Int64 Y;
+    };
+
     enum LaunchMode
     {
         DefaultMode,
@@ -14,7 +20,7 @@ namespace TerminalApp
         FullscreenMode,
     };
 
-    [default_interface] runtimeclass AppLogic : IF7Listener
+    [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
 
@@ -41,8 +47,13 @@ namespace TerminalApp
         String ApplicationDisplayName { get; };
         String ApplicationVersion { get; };
 
-        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
-        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        Boolean FocusMode { get; };
+        Boolean Fullscreen { get; };
+        Boolean AlwaysOnTop { get; };
+
+        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+
+        InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
@@ -50,10 +61,16 @@ namespace TerminalApp
         void TitlebarClicked();
         void WindowCloseButtonClicked();
 
+        // See IDialogPresenter and TerminalPage's DialogPresenter for more
+        // information.
+        Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
     }
 }

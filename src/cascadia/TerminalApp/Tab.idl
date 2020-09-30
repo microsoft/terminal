@@ -1,11 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace TerminalApp
 {
     [default_interface] runtimeclass Tab : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Title { get; };
-        String IconPath { get; };
+        Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+        Command SwitchToTabCommand { get; };
+        UInt32 TabViewIndex { get; };
     }
 }

@@ -11,9 +11,9 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
-using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
@@ -89,6 +89,21 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSendInput(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SendInputArgs>())
+        {
+            const auto termControl = _GetActiveControl();
+            termControl.SendInput(realArgs.Input());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const TerminalApp::ActionEventArgs& args)
     {
@@ -101,6 +116,28 @@ namespace winrt::TerminalApp::implementation
             _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
             args.Handled(true);
         }
+    }
+
+    void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+
+        // Don't do anything if there's only one pane. It's already zoomed.
+        if (activeTab && activeTab->GetLeafPaneCount() > 1)
+        {
+            // First thing's first, remove the current content from the UI
+            // tree. This is important, because we might be leaving zoom, and if
+            // a pane is zoomed, then it's currently in the UI tree, and should
+            // be removed before it's re-added in Pane::Restore
+            _tabContent.Children().Clear();
+
+            activeTab->ToggleZoom();
+
+            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
+            _UpdatedSelectedTab(_tabView.SelectedIndex());
+        }
+        args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
@@ -120,9 +157,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const TerminalApp::ActionEventArgs& args)
     {
-        // TODO:GH#2557 Add an optional arg for opening the defaults here
-        _LaunchSettings(false);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::OpenSettingsArgs>())
+        {
+            _LaunchSettings(realArgs.Target());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
@@ -198,7 +237,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            const auto handled = _CopyText(realArgs.SingleLine());
+            const auto handled = _CopyText(realArgs.SingleLine(), realArgs.CopyFormatting());
             args.Handled(handled);
         }
     }
@@ -229,10 +268,232 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleToggleRetroEffect(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.ToggleRetroEffect();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
+                                              const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleFocusMode();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const TerminalApp::ActionEventArgs& args)
     {
         ToggleFullscreen();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
+    {
+        ToggleAlwaysOnTop();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
+                                                   const TerminalApp::ActionEventArgs& args)
+    {
+        // TODO GH#6677: When we add support for commandline mode, first set the
+        // mode that the command palette should be in, before making it visible.
+        CommandPalette().EnableCommandPaletteMode();
+        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                        Visibility::Collapsed :
+                                        Visibility::Visible);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        args.Handled(false);
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetColorSchemeArgs>())
+        {
+            if (auto activeTab = _GetFocusedTab())
+            {
+                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                {
+                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
+                    {
+                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                        controlSettings->ApplyColorScheme(scheme);
+                        activeControl.UpdateSettings(*controlSettings);
+                        args.Handled(true);
+                    }
+                }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<til::color> tabColor;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SetTabColorArgs>())
+        {
+            if (realArgs.TabColor() != nullptr)
+            {
+                tabColor = realArgs.TabColor().Value();
+            }
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (tabColor.has_value())
+            {
+                activeTab->SetRuntimeTabColor(tabColor.value());
+            }
+            else
+            {
+                activeTab->ResetRuntimeTabColor();
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
+    {
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            activeTab->ActivateColorPicker();
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleRenameTab(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        std::optional<winrt::hstring> title;
+
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::RenameTabArgs>())
+        {
+            title = realArgs.Title();
+        }
+
+        auto activeTab = _GetFocusedTab();
+        if (activeTab)
+        {
+            if (title.has_value())
+            {
+                activeTab->SetTabText(title.value());
+            }
+            else
+            {
+                activeTab->ResetTabText();
+            }
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleExecuteCommandline(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::ExecuteCommandlineArgs>())
+        {
+            auto actions = winrt::single_threaded_vector<winrt::TerminalApp::ActionAndArgs>(std::move(
+                TerminalPage::ConvertExecuteCommandlineToActions(realArgs)));
+
+            if (_startupActions.Size() != 0)
+            {
+                actionArgs.Handled(true);
+                _ProcessStartupActions(actions, false);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseOtherTabsArgs>())
+        {
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                // Do nothing
+                actionArgs.Handled(false);
+                return;
+            }
+
+            // Remove tabs after the current one
+            while (_tabs.Size() > index + 1)
+            {
+                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+            }
+
+            // Remove all of them leading up to the selected tab
+            while (_tabs.Size() > 1)
+            {
+                _RemoveTabViewItemByIndex(0);
+            }
+
+            actionArgs.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<TerminalApp::CloseTabsAfterArgs>())
+        {
+            uint32_t index;
+            if (realArgs.Index())
+            {
+                index = realArgs.Index().Value();
+            }
+            else if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                index = *focusedTabIndex;
+            }
+            else
+            {
+                // Do nothing
+                actionArgs.Handled(false);
+                return;
+            }
+
+            // Remove tabs after the current one
+            while (_tabs.Size() > index + 1)
+            {
+                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
+            }
+
+            // TODO:GH#7182 For whatever reason, if you run this action
+            // when the tab that's currently focused is _before_ the `index`
+            // param, then the tabs will expand to fill the entire width of the
+            // tab row, until you mouse over them. Probably has something to do
+            // with tabs not resizing down until there's a mouse exit event.
+
+            actionArgs.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
+                                            const TerminalApp::ActionEventArgs& args)
+    {
+        auto opt = _GetFocusedTabIndex();
+        uint32_t startIdx = opt.value_or(0);
+
+        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().Visibility(Visibility::Visible);
+
         args.Handled(true);
     }
 }

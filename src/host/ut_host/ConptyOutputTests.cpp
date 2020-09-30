@@ -9,7 +9,6 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/vt/Xterm256Engine.hpp"
 #include "../../renderer/vt/XtermEngine.hpp"
-#include "../../renderer/vt/WinTelnetEngine.hpp"
 #include "../Settings.hpp"
 
 #include "CommonState.hpp"
@@ -86,9 +85,7 @@ class ConptyOutputTests
         Viewport initialViewport = currentBuffer.GetViewport();
 
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
-                                                               gci,
-                                                               initialViewport,
-                                                               gci.Get16ColorTable());
+                                                               initialViewport);
         auto pfn = std::bind(&ConptyOutputTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         vtRenderEngine->SetTestCallback(pfn);
 

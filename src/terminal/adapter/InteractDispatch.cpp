@@ -96,7 +96,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 // Return value:
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                          const std::basic_string_view<size_t> parameters)
+                                          const gsl::span<const size_t> parameters)
 {
     bool success = false;
     // Other Window Manipulation functions:

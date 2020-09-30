@@ -367,9 +367,9 @@ class OutputCellIteratorTests
         SetVerifyOutput settings(VerifyOutputSettings::LogOnlyFailures);
 
         const std::vector<WORD> colors{ FOREGROUND_GREEN, FOREGROUND_RED | BACKGROUND_BLUE, FOREGROUND_BLUE | FOREGROUND_INTENSITY, BACKGROUND_GREEN };
-        const std::basic_string_view<WORD> view{ colors.data(), colors.size() };
+        const gsl::span<const WORD> view{ colors.data(), colors.size() };
 
-        OutputCellIterator it(view, false);
+        OutputCellIterator it(view);
 
         for (const auto& color : colors)
         {
@@ -401,7 +401,7 @@ class OutputCellIteratorTests
             charInfos.push_back(ci);
         }
 
-        const std::basic_string_view<CHAR_INFO> view{ charInfos.data(), charInfos.size() };
+        const gsl::span<const CHAR_INFO> view{ charInfos.data(), charInfos.size() };
 
         OutputCellIterator it(view);
 
@@ -433,7 +433,7 @@ class OutputCellIteratorTests
             cells.push_back(cell);
         }
 
-        const std::basic_string_view<OutputCell> view{ cells.data(), cells.size() };
+        const gsl::span<const OutputCell> view{ cells.data(), cells.size() };
 
         OutputCellIterator it(view);
 

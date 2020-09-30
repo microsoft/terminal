@@ -25,8 +25,8 @@ Abstract:
 
 #include <windows.h>
 #include <UIAutomation.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <shellscalingapi.h>
 #include <windowsx.h>
 

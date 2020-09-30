@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../../terminal/adapter/DispatchTypes.hpp"
+#include "../../buffer/out/TextAttribute.hpp"
 
 namespace Microsoft::Terminal::Core
 {
@@ -18,15 +19,8 @@ namespace Microsoft::Terminal::Core
         virtual bool PrintString(std::wstring_view string) noexcept = 0;
         virtual bool ExecuteChar(wchar_t wch) noexcept = 0;
 
-        virtual bool SetTextToDefaults(bool foreground, bool background) noexcept = 0;
-        virtual bool SetTextForegroundIndex(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextBackgroundIndex(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextForegroundIndex256(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextBackgroundIndex256(BYTE colorIndex) noexcept = 0;
-        virtual bool SetTextRgbColor(COLORREF color, bool foreground) noexcept = 0;
-        virtual bool BoldText(bool boldOn) noexcept = 0;
-        virtual bool UnderlineText(bool underlineOn) noexcept = 0;
-        virtual bool ReverseText(bool reversed) noexcept = 0;
+        virtual TextAttribute GetTextAttributes() const noexcept = 0;
+        virtual void SetTextAttributes(const TextAttribute& attrs) noexcept = 0;
 
         virtual bool SetCursorPosition(short x, short y) noexcept = 0;
         virtual COORD GetCursorPosition() noexcept = 0;
@@ -45,6 +39,7 @@ namespace Microsoft::Terminal::Core
         virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept = 0;
 
         virtual bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept = 0;
+        virtual bool SetCursorColor(const DWORD color) noexcept = 0;
 
         virtual bool SetDefaultForeground(const DWORD color) noexcept = 0;
         virtual bool SetDefaultBackground(const DWORD color) noexcept = 0;
@@ -52,6 +47,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EnableWin32InputMode(const bool win32InputMode) noexcept = 0;
         virtual bool SetCursorKeysMode(const bool applicationMode) noexcept = 0;
         virtual bool SetKeypadMode(const bool applicationMode) noexcept = 0;
+        virtual bool SetScreenMode(const bool reverseMode) noexcept = 0;
         virtual bool EnableVT200MouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept = 0;
         virtual bool EnableSGRExtendedMouseMode(const bool enabled) noexcept = 0;
@@ -60,6 +56,11 @@ namespace Microsoft::Terminal::Core
         virtual bool EnableAlternateScrollMode(const bool enabled) noexcept = 0;
 
         virtual bool IsVtInputEnabled() const = 0;
+
+        virtual bool CopyToClipboard(std::wstring_view content) noexcept = 0;
+
+        virtual bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept = 0;
+        virtual bool EndHyperlink() noexcept = 0;
 
     protected:
         ITerminalApi() = default;

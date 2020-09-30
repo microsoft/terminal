@@ -10,9 +10,13 @@
     <ClCompile Include="SizeTests.cpp" />
     <ClCompile Include="ColorTests.cpp" />
     <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="StaticMapTests.cpp" />
     <ClCompile Include="RectangleTests.cpp" />
     <ClCompile Include="BitmapTests.cpp" />
     <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="MathTests.cpp" />
+    <ClCompile Include="BaseTests.cpp" />
+    <ClCompile Include="SPSCTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />

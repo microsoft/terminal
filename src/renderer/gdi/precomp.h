@@ -10,7 +10,7 @@ Abstract:
 - Avoid including internal project headers. Instead include them only in the classes that need them (helps with test project building).
 --*/
 
-#include <wchar.h>
+#include <cwchar>
 #include <sal.h>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL

@@ -16,7 +16,6 @@
     <ClCompile Include="..\state.cpp" />
     <ClCompile Include="..\tracing.cpp" />
     <ClCompile Include="..\VtSequences.cpp" />
-    <ClCompile Include="..\WinTelnetEngine.cpp" />
     <ClCompile Include="..\XtermEngine.cpp" />
     <ClCompile Include="..\Xterm256Engine.cpp" />
   </ItemGroup>
@@ -24,7 +23,6 @@
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\tracing.hpp" />
     <ClInclude Include="..\vtrenderer.hpp" />
-    <ClInclude Include="..\WinTelnetEngine.hpp" />
     <ClInclude Include="..\XtermEngine.hpp" />
     <ClInclude Include="..\Xterm256Engine.hpp" />
   </ItemGroup>

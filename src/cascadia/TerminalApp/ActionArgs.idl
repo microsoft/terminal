@@ -6,6 +6,7 @@ namespace TerminalApp
     interface IActionArgs
     {
         Boolean Equals(IActionArgs other);
+        String GenerateName();
     };
 
     interface IActionEventArgs
@@ -37,6 +38,13 @@ namespace TerminalApp
         Duplicate = 1
     };
 
+    enum SettingsTarget
+    {
+        SettingsFile = 0,
+        DefaultsFile,
+        AllFiles
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         String Commandline;
@@ -46,7 +54,9 @@ namespace TerminalApp
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+
         Boolean Equals(NewTerminalArgs other);
+        String GenerateName();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -57,6 +67,7 @@ namespace TerminalApp
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
         Boolean SingleLine { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
@@ -84,10 +95,50 @@ namespace TerminalApp
         Int32 Delta { get; };
     };
 
+    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    {
+        String Input { get; };
+    };
+
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
+    };
+
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
+    {
+        SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
+    {
+        String SchemeName { get; };
+    };
+
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> TabColor { get; };
+    };
+
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs
+    {
+        String Title { get; };
+    };
+
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    {
+        String Commandline;
+    };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> Index { get; };
     };
 }

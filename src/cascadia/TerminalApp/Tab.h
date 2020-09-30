@@ -40,18 +40,35 @@ namespace winrt::TerminalApp::implementation
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
+        bool PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::TerminalApp::Direction& direction);
         void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-        void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::hstring GetActiveTitle() const;
 
         void Shutdown();
         void ClosePane();
 
+        void SetTabText(winrt::hstring title);
+        void ResetTabText();
+
         std::optional<winrt::Windows::UI::Color> GetTabColor();
+
+        void SetRuntimeTabColor(const winrt::Windows::UI::Color& color);
+        void ResetRuntimeTabColor();
+        void ActivateColorPicker();
+
+        void ToggleZoom();
+        bool IsZoomed();
+        void EnterZoom();
+        void ExitZoom();
+
+        int GetLeafPaneCount() const noexcept;
+
+        void UpdateTabViewIndex(const uint32_t idx);
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -60,14 +77,21 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, IconPath, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
+        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
+
+        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
+        // This is needed since Tab is going to be managing its own SwitchToTab command.
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
+        std::shared_ptr<Pane> _zoomedPane{ nullptr };
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
-        std::optional<winrt::Windows::UI::Color> _tabColor{};
+        std::optional<winrt::Windows::UI::Color> _themeTabColor{};
+        std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
 
         bool _focused{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
@@ -80,8 +104,6 @@ namespace winrt::TerminalApp::implementation
         void _Focus();
 
         void _CreateContextMenu();
-        void _SetTabColor(const winrt::Windows::UI::Color& color);
-        void _ResetTabColor();
         void _RefreshVisualState();
 
         void _BindEventHandlers(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control) noexcept;
@@ -89,12 +111,17 @@ namespace winrt::TerminalApp::implementation
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
-        int _GetLeafPaneCount() const noexcept;
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         void _UpdateTabHeader();
         winrt::fire_and_forget _UpdateTitle();
         void _ConstructTabRenameBox(const winrt::hstring& tabText);
+
+        void _RecalculateAndApplyTabColor();
+        void _ApplyTabColor(const winrt::Windows::UI::Color& color);
+        void _ClearTabBackgroundColor();
+
+        void _MakeSwitchToTabCommand();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };

@@ -20,6 +20,20 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
+        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
+        {
+            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
+            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
+            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
+            vkey = (ushort)wParam;
+        }
+
+        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
+        {
+            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
+            character = (char)vKey;
+        }
+
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
@@ -72,6 +86,9 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         internal int Columns { get; private set; }
 
+        /// <summary>
+        /// Gets the window handle of the terminal.
+        /// </summary>
         internal IntPtr Hwnd => this.hwnd;
 
         /// <summary>
@@ -119,6 +136,20 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
 
             this.TriggerResize(this.RenderSize);
+        }
+
+        /// <summary>
+        /// Gets the selected text from the terminal renderer and clears the selection.
+        /// </summary>
+        /// <returns>The selected text, empty if no text is selected.</returns>
+        internal string GetSelectedText()
+        {
+            if (NativeMethods.TerminalIsSelectionActive(this.terminal))
+            {
+                return NativeMethods.TerminalGetSelection(this.terminal);
+            }
+
+            return string.Empty;
         }
 
         /// <summary>
@@ -232,20 +263,35 @@ namespace Microsoft.Terminal.Wpf
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
                         break;
+                    case NativeMethods.WindowMessage.WM_SYSKEYDOWN: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
-                        // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
-                        NativeMethods.TerminalSetCursorVisible(this.terminal, true);
-                        NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)((uint)lParam >> 16), true);
-                        this.blinkTimer?.Start();
-                        break;
+                        {
+                            // WM_KEYDOWN lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keydown
+                            NativeMethods.TerminalSetCursorVisible(this.terminal, true);
+
+                            UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, vkey, scanCode, flags, true);
+                            this.blinkTimer?.Start();
+                            break;
+                        }
+
+                    case NativeMethods.WindowMessage.WM_SYSKEYUP: // fallthrough
                     case NativeMethods.WindowMessage.WM_KEYUP:
-                        // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
-                        NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, (ushort)((uint)lParam >> 16), false);
-                        break;
+                        {
+                            // WM_KEYUP lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-keyup
+                            UnpackKeyMessage(wParam, lParam, out ushort vkey, out ushort scanCode, out ushort flags);
+                            NativeMethods.TerminalSendKeyEvent(this.terminal, (ushort)wParam, scanCode, flags, false);
+                            break;
+                        }
+
                     case NativeMethods.WindowMessage.WM_CHAR:
-                        // WM_CHAR lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
-                        NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam, (ushort)((uint)lParam >> 16));
-                        break;
+                        {
+                            // WM_CHAR lParam layout documentation: https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
+                            UnpackCharMessage(wParam, lParam, out char character, out ushort scanCode, out ushort flags);
+                            NativeMethods.TerminalSendCharEvent(this.terminal, character, scanCode, flags);
+                            break;
+                        }
+
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
                         if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE))

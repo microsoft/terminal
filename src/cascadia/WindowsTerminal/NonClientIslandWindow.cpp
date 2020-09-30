@@ -124,10 +124,11 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         {
             auto parentWindow{ GetHandle() };
 
+            const LPARAM newLparam = MAKELPARAM(screenPt.x, screenPt.y);
             // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
             // then pass that click through as an NC click in that location.
-            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, MAKELPARAM(screenPt.x, screenPt.y)) };
-            SendMessage(parentWindow, nonClientMessage.value(), hitTest, 0);
+            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, newLparam) };
+            SendMessage(parentWindow, nonClientMessage.value(), hitTest, newLparam);
 
             return 0;
         }
@@ -262,9 +263,10 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
-    if (_isMaximized || _fullscreen)
+    // No border when maximized, or when the titlebar is invisible (by being in
+    // fullscreen or focus mode).
+    if (_isMaximized || (!_IsTitlebarVisible()))
     {
-        // no border when maximized
         return 0;
     }
 
@@ -402,7 +404,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 //   window frame.
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept
 {
-    if (wParam == false)
+    if (!wParam)
     {
         return 0;
     }
@@ -416,7 +418,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     const auto originalSize = params->rgrc[0];
 
     // apply the default frame
-    auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
+    const auto ret = DefWindowProc(_window.get(), WM_NCCALCSIZE, wParam, lParam);
     if (ret != 0)
     {
         return ret;
@@ -691,6 +693,14 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
+    case WM_NCRBUTTONUP:
+        // The `DefWindowProc` function doesn't open the system menu for some
+        // reason so we have to do it ourselves.
+        if (wParam == HTCAPTION)
+        {
+            _OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        }
+        break;
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);
@@ -774,42 +784,18 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 [[nodiscard]] LRESULT NonClientIslandWindow::_OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept
 {
     const auto ret = IslandWindow::_OnNcCreate(wParam, lParam);
-    if (ret == FALSE)
+    if (!ret)
     {
-        return ret;
+        return FALSE;
     }
 
-    // Set the frame's theme before it is rendered (WM_NCPAINT) so that it is
-    // rendered with the correct theme.
-    _UpdateFrameTheme();
+    // This is a hack to make the window borders dark instead of light.
+    // It must be done before WM_NCPAINT so that the borders are rendered with
+    // the correct theme.
+    // For more information, see GH#6620.
+    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), true));
 
     return TRUE;
-}
-
-// Method Description:
-// - Updates the window frame's theme depending on the application theme (light
-//   or dark). This doesn't invalidate the old frame so it will not be
-//   rerendered until the user resizes or focuses/unfocuses the window.
-// Return Value:
-// - <none>
-void NonClientIslandWindow::_UpdateFrameTheme() const
-{
-    bool isDarkMode;
-
-    switch (_theme)
-    {
-    case ElementTheme::Light:
-        isDarkMode = false;
-        break;
-    case ElementTheme::Dark:
-        isDarkMode = true;
-        break;
-    default:
-        isDarkMode = Application::Current().RequestedTheme() == ApplicationTheme::Dark;
-        break;
-    }
-
-    LOG_IF_FAILED(TerminalTrySetDarkTheme(_window.get(), isDarkMode));
 }
 
 // Method Description:
@@ -824,7 +810,46 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
     IslandWindow::OnApplicationThemeChanged(requestedTheme);
 
     _theme = requestedTheme;
-    _UpdateFrameTheme();
+}
+
+// Method Description:
+// - Enable or disable borderless mode. When entering borderless mode, we'll
+//   need to manually hide the entire titlebar.
+// - See also IslandWindow::_SetIsBorderless, which does similar, but different work.
+// Arguments:
+// - borderlessEnabled: If true, we're entering borderless mode. If false, we're leaving.
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
+{
+    _borderless = borderlessEnabled;
+
+    // Explicitly _don't_ call IslandWindow::_SetIsBorderless. That version will
+    // change the window styles appropriately for the window with the default
+    // titlebar, but for the tabs-in-titlebar mode, we can just get rid of the
+    // title bar entirely.
+
+    if (_titlebar)
+    {
+        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
+    }
+
+    // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
+    // always get another window message to trigger us to remove the drag bar.
+    // So, make sure to update the size of the drag region here, so that it
+    // _definitely_ goes away.
+    _ResizeDragBarWindow();
+
+    // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
+    // recalculate the non/client areas
+    const til::rectangle windowPos{ GetWindowRect() };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 windowPos.left<int>(),
+                 windowPos.top<int>(),
+                 windowPos.width<int>(),
+                 windowPos.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
 }
 
 // Method Description:
@@ -840,7 +865,7 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
     if (_titlebar)
     {
-        _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
     }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
@@ -851,14 +876,56 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 
 // Method Description:
 // - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   borderless mode, this will return false.
+//   borderless mode (aka "focus mode"), this will return false.
 // Arguments:
 // - <none>
 // Return Value:
 // - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
-    // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
-    // updated to include that mode.
-    return !_fullscreen;
+    return !(_fullscreen || _borderless);
+}
+
+// Method Description:
+// - Opens the window's system menu.
+// - The system menu is the menu that opens when the user presses Alt+Space or
+//   right clicks on the title bar.
+// - Before updating the menu, we update the buttons like "Maximize" and
+//   "Restore" so that they are grayed out depending on the window's state.
+// Arguments:
+// - cursorX: the cursor's X position in screen coordinates
+// - cursorY: the cursor's Y position in screen coordinates
+void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY) const noexcept
+{
+    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+
+    WINDOWPLACEMENT placement;
+    if (!GetWindowPlacement(_window.get(), &placement))
+    {
+        return;
+    }
+    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+
+    // Update the options based on window state.
+    MENUITEMINFO mii;
+    mii.cbSize = sizeof(MENUITEMINFO);
+    mii.fMask = MIIM_STATE;
+    mii.fType = MFT_STRING;
+    auto setState = [&](UINT item, bool enabled) {
+        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
+        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
+    };
+    setState(SC_RESTORE, isMaximized);
+    setState(SC_MOVE, !isMaximized);
+    setState(SC_SIZE, !isMaximized);
+    setState(SC_MINIMIZE, true);
+    setState(SC_MAXIMIZE, !isMaximized);
+    setState(SC_CLOSE, true);
+    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
+
+    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, cursorX, cursorY, 0, _window.get(), nullptr);
+    if (ret != 0)
+    {
+        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
+    }
 }

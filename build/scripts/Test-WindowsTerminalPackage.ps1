@@ -101,6 +101,11 @@ Try {
         Throw "Failed to find cpprest142_2_10.dll -- check the WAP packaging project"
     }
 
+    If (($null -eq (Get-Item "$AppxPackageRootPath\wtd.exe" -EA:Ignore)) -And
+        ($null -eq (Get-Item "$AppxPackageRootPath\wt.exe" -EA:Ignore))) {
+        Throw "Failed to find wt.exe/wtd.exe -- check the WAP packaging project"
+    }
+
 } Finally {
     Remove-Item -Recurse -Force $AppxPackageRootPath
 }

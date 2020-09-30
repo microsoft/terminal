@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>AnyCPU;x64;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,8 +12,13 @@
     <ProjectReference Include="$(SolutionDir)src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <UnreasonablePlatform>$(Platform)</UnreasonablePlatform>
+    <UnreasonablePlatform Condition="'$(UnreasonablePlatform)' == 'x86'">Win32</UnreasonablePlatform>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
-    <Content Include="$(SolutionDir)bin\x64\$(Configuration)\PublicTerminalCore.dll">
+    <Content Include="$(SolutionDir)bin\$(UnreasonablePlatform)\$(Configuration)\PublicTerminalCore.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

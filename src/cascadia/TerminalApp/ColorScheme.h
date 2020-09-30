@@ -15,9 +15,10 @@ Author(s):
 
 --*/
 #pragma once
-#include <winrt/Microsoft.Terminal.Settings.h>
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "../../inc/conattrs.hpp"
+#include "inc/cppwinrt_utils.h"
+
+#include "ColorScheme.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -26,41 +27,40 @@ namespace TerminalAppLocalTests
     class ColorSchemeTests;
 };
 
-namespace TerminalApp
+namespace winrt::TerminalApp::implementation
 {
-    class ColorScheme;
-};
+    struct ColorScheme : ColorSchemeT<ColorScheme>
+    {
+    public:
+        ColorScheme();
+        ColorScheme(hstring name, Windows::UI::Color defaultFg, Windows::UI::Color defaultBg, Windows::UI::Color cursorColor);
 
-class TerminalApp::ColorScheme
+        static com_ptr<ColorScheme> FromJson(const Json::Value& json);
+        bool ShouldBeLayered(const Json::Value& json) const;
+        void LayerJson(const Json::Value& json);
+
+        Json::Value ToJson();
+
+        static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
+
+        com_array<Windows::UI::Color> Table() const noexcept;
+        void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
+
+        GETSET_PROPERTY(winrt::hstring, Name);
+        GETSET_COLORPROPERTY(Foreground); // defined in constructor
+        GETSET_COLORPROPERTY(Background); // defined in constructor
+        GETSET_COLORPROPERTY(SelectionBackground); // defined in constructor
+        GETSET_COLORPROPERTY(CursorColor); // defined in constructor
+
+    private:
+        std::array<til::color, COLOR_TABLE_SIZE> _table;
+
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::ColorSchemeTests;
+    };
+}
+
+namespace winrt::TerminalApp::factory_implementation
 {
-public:
-    ColorScheme();
-    ColorScheme(std::wstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor);
-    ~ColorScheme();
-
-    void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
-
-    static ColorScheme FromJson(const Json::Value& json);
-    bool ShouldBeLayered(const Json::Value& json) const;
-    void LayerJson(const Json::Value& json);
-
-    std::wstring_view GetName() const noexcept;
-    std::array<til::color, COLOR_TABLE_SIZE>& GetTable() noexcept;
-    til::color GetForeground() const noexcept;
-    til::color GetBackground() const noexcept;
-    til::color GetSelectionBackground() const noexcept;
-    til::color GetCursorColor() const noexcept;
-
-    static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
-
-private:
-    std::wstring _schemeName;
-    std::array<til::color, COLOR_TABLE_SIZE> _table;
-    til::color _defaultForeground;
-    til::color _defaultBackground;
-    til::color _selectionBackground;
-    til::color _cursorColor;
-
-    friend class TerminalAppLocalTests::SettingsTests;
-    friend class TerminalAppLocalTests::ColorSchemeTests;
-};
+    BASIC_FACTORY(ColorScheme);
+}

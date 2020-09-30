@@ -26,83 +26,14 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
-bool Terminal::SetTextToDefaults(bool foreground, bool background) noexcept
+TextAttribute Terminal::GetTextAttributes() const noexcept
 {
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    if (foreground)
-    {
-        attrs.SetDefaultForeground();
-    }
-    if (background)
-    {
-        attrs.SetDefaultBackground();
-    }
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
+    return _buffer->GetCurrentAttributes();
 }
 
-bool Terminal::SetTextForegroundIndex(BYTE colorIndex) noexcept
+void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 {
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedForeground(colorIndex);
     _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextBackgroundIndex(BYTE colorIndex) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedBackground(colorIndex);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextForegroundIndex256(BYTE colorIndex) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedForeground256(colorIndex);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextBackgroundIndex256(BYTE colorIndex) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetIndexedBackground256(colorIndex);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::SetTextRgbColor(COLORREF color, bool foreground) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetColor(color, foreground);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::BoldText(bool boldOn) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetBold(boldOn);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::UnderlineText(bool underlineOn) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetUnderline(underlineOn);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
-}
-
-bool Terminal::ReverseText(bool reversed) noexcept
-{
-    TextAttribute attrs = _buffer->GetCurrentAttributes();
-    attrs.SetReverseVideo(reversed);
-    _buffer->SetCurrentAttributes(attrs);
-    return true;
 }
 
 bool Terminal::SetCursorPosition(short x, short y) noexcept
@@ -132,6 +63,14 @@ COORD Terminal::GetCursorPosition() noexcept
     // TODO assert that the coord is > (0, 0) && <(view.W, view.H)
     return newPos;
 }
+
+bool Terminal::SetCursorColor(const COLORREF color) noexcept
+try
+{
+    _buffer->GetCursor().SetColor(color);
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
@@ -450,8 +389,10 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
 
     switch (cursorStyle)
     {
-    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
-        [[fallthrough]];
+    case DispatchTypes::CursorStyle::UserDefault:
+        finalCursorType = _defaultCursorShape;
+        shouldBlink = true;
+        break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
         finalCursorType = CursorType::FullBox;
         shouldBlink = true;
@@ -476,9 +417,10 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
         finalCursorType = CursorType::VerticalBar;
         shouldBlink = false;
         break;
+
     default:
-        finalCursorType = CursorType::Legacy;
-        shouldBlink = false;
+        // Invalid argument should be ignored.
+        return true;
     }
 
     _buffer->GetCursor().SetType(finalCursorType);
@@ -540,6 +482,17 @@ bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
     return true;
 }
 
+bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+try
+{
+    _screenReversed = reverseMode;
+
+    // Repaint everything - the colors will have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 {
     _terminalInput->EnableDefaultTracking(enabled);
@@ -599,5 +552,43 @@ bool Terminal::EnableCursorBlinking(const bool enable) noexcept
     // cursor visibility property controls whether the user can see it or not.
     // (Yes, the cursor can be On and NOT Visible)
     _buffer->GetCursor().SetIsOn(true);
+    return true;
+}
+
+bool Terminal::CopyToClipboard(std::wstring_view content) noexcept
+try
+{
+    _pfnCopyToClipboard(content);
+
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
+// Method Description:
+// - Updates the buffer's current text attributes to start a hyperlink
+// Arguments:
+// - The hyperlink URI
+// - The customID provided (if there was one)
+// Return Value:
+// - true
+bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
+{
+    auto attr = _buffer->GetCurrentAttributes();
+    const auto id = _buffer->GetHyperlinkId(params);
+    attr.SetHyperlinkId(id);
+    _buffer->SetCurrentAttributes(attr);
+    _buffer->AddHyperlinkToMap(uri, id);
+    return true;
+}
+
+// Method Description:
+// - Updates the buffer's current text attributes to end a hyperlink
+// Return Value:
+// - true
+bool Terminal::EndHyperlink() noexcept
+{
+    auto attr = _buffer->GetCurrentAttributes();
+    attr.SetHyperlinkId(0);
+    _buffer->SetCurrentAttributes(attr);
     return true;
 }

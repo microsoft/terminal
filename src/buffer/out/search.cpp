@@ -261,7 +261,7 @@ wchar_t Search::_ApplySensitivity(const wchar_t wch) const noexcept
 // - Helper to increment a coordinate in respect to the associated screen buffer
 // Arguments
 // - coord - Updated by function to increment one position (will wrap X and Y direction)
-void Search::_IncrementCoord(COORD& coord) const
+void Search::_IncrementCoord(COORD& coord) const noexcept
 {
     _uiaData.GetTextBuffer().GetSize().IncrementInBoundsCircular(coord);
 }
@@ -270,7 +270,7 @@ void Search::_IncrementCoord(COORD& coord) const
 // - Helper to decrement a coordinate in respect to the associated screen buffer
 // Arguments
 // - coord - Updated by function to decrement one position (will wrap X and Y direction)
-void Search::_DecrementCoord(COORD& coord) const
+void Search::_DecrementCoord(COORD& coord) const noexcept
 {
     _uiaData.GetTextBuffer().GetSize().DecrementInBoundsCircular(coord);
 }

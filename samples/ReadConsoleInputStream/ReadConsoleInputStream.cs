@@ -37,7 +37,7 @@ namespace Samples.Terminal
         internal ReadConsoleInputStream(HFILE handle,
             BlockingCollection<Kernel32.INPUT_RECORD> nonKeyEvents)
         {
-            Debug.Assert(handle.IsInvalid == false, "handle.IsInvalid == false");
+            Debug.Assert(!handle.IsInvalid, "handle.IsInvalid == false");
 
             _handle = handle.DangerousGetHandle();
             _nonKeyEvents = nonKeyEvents;
@@ -111,7 +111,7 @@ namespace Samples.Terminal
                             if (record.EventType == Kernel32.EVENT_TYPE.KEY_EVENT)
                             {
                                 // skip key up events - if not, every key will be duped in the stream
-                                if (record.Event.KeyEvent.bKeyDown == false) continue;
+                                if (!record.Event.KeyEvent.bKeyDown) continue;
 
                                 // pack ucs-2/utf-16le/unicode chars into position in our byte[] buffer.
                                 var glyph = (ushort) record.Event.KeyEvent.uChar;

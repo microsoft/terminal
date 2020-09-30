@@ -52,8 +52,8 @@ void UtilsTests::TestSwapColorPalette()
     std::array<COLORREF, COLOR_TABLE_SIZE> terminalTable;
     std::array<COLORREF, COLOR_TABLE_SIZE> consoleTable;
 
-    gsl::span<COLORREF> terminalTableView = { &terminalTable[0], gsl::narrow<ptrdiff_t>(terminalTable.size()) };
-    gsl::span<COLORREF> consoleTableView = { &consoleTable[0], gsl::narrow<ptrdiff_t>(consoleTable.size()) };
+    gsl::span<COLORREF> terminalTableView = { &terminalTable[0], terminalTable.size() };
+    gsl::span<COLORREF> consoleTableView = { &consoleTable[0], consoleTable.size() };
 
     // First set up the colors
     InitializeCampbellColorTable(terminalTableView);

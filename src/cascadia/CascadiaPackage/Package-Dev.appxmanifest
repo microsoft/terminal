@@ -58,7 +58,7 @@
       </uap:VisualElements>
 
       <Extensions>
-        <uap3:Extension Category="windows.appExecutionAlias" Executable="WindowsTerminal.exe" EntryPoint="Windows.FullTrustApplication">
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="wtd.exe" EntryPoint="Windows.FullTrustApplication">
           <uap3:AppExecutionAlias>
             <desktop:ExecutionAlias Alias="wtd.exe" />
           </uap3:AppExecutionAlias>

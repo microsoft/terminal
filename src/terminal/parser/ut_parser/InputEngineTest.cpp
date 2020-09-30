@@ -222,7 +222,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     std::wstring GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                           const unsigned short modifiers,
                                           const COORD position,
-                                          const CsiActionCodes direction);
+                                          const VTID direction);
 
     // SGR_PARAMS serves as test input
     // - the state of the buttons (constructed via InputStateMachineEngine::CsiActionMouseCodes)
@@ -327,7 +327,7 @@ public:
 
     virtual bool WriteCtrlKey(const KeyEvent& event) override;
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+                                    const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
     virtual bool WriteString(const std::wstring_view string) override;
 
     virtual bool MoveCursor(const size_t row,
@@ -362,14 +362,14 @@ bool TestInteractDispatch::WriteCtrlKey(const KeyEvent& event)
 }
 
 bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                              const std::basic_string_view<size_t> parameters)
+                                              const gsl::span<const size_t> parameters)
 {
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
     for (size_t i = 0; i < parameters.size(); i++)
     {
         unsigned short actual;
-        VERIFY_SUCCEEDED(SizeTToUShort(parameters.at(i), &actual));
+        VERIFY_SUCCEEDED(SizeTToUShort(til::at(parameters, i), &actual));
         VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
     }
     return true;
@@ -1089,7 +1089,7 @@ void InputEngineTest::AltBackspaceEnterTest()
 std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes button,
                                                        const unsigned short modifiers,
                                                        const COORD position,
-                                                       const CsiActionCodes direction)
+                                                       const VTID direction)
 {
     // we first need to convert "button" and "modifiers" into an 8 bit sequence
     unsigned int actionCode = 0;
@@ -1102,7 +1102,11 @@ std::wstring InputEngineTest::GenerateSgrMouseSequence(const CsiMouseButtonCodes
     // modifiers represents the middle 4 bits
     actionCode |= modifiers;
 
-    return wil::str_printf_failfast<std::wstring>(L"\x1b[<%d;%d;%d%c", static_cast<int>(actionCode), position.X, position.Y, direction);
+    // mouse sequence identifiers consist of a private parameter prefix and a final character
+    const wchar_t prefixChar = direction[0];
+    const wchar_t finalChar = direction[1];
+
+    return wil::str_printf_failfast<std::wstring>(L"\x1b[%c%d;%d;%d%c", prefixChar, static_cast<int>(actionCode), position.X, position.Y, finalChar);
 }
 
 void InputEngineTest::VerifySGRMouseData(const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData)

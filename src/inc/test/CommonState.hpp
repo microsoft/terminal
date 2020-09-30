@@ -22,7 +22,6 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
 
-#include "precomp.h"
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
 #include "../buffer/out/CharRow.hpp"
@@ -100,7 +99,7 @@ public:
         THROW_IF_FAILED(SCREEN_INFORMATION::CreateInstance(coordWindowSize,
                                                            *m_pFontInfo,
                                                            coordScreenBufferSize,
-                                                           gci.GetDefaultAttributes(),
+                                                           TextAttribute{},
                                                            TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY | BACKGROUND_RED },
                                                            uiCursorSize,
                                                            &gci.pCurrentScreenBuffer));
@@ -157,7 +156,7 @@ public:
 
         UINT uiCursorSize = 12;
 
-        auto initialAttributes = useDefaultAttributes ? gci.GetDefaultAttributes() :
+        auto initialAttributes = useDefaultAttributes ? TextAttribute{} :
                                                         TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY };
 
         m_backupTextBufferInfo.swap(gci.pCurrentScreenBuffer->_textBuffer);
@@ -303,7 +302,7 @@ private:
         const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // length 80 string of text with bisecting characters at the beginning and end.
         // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
-        PWCHAR pwszText =
+        auto pwszText =
             L"\x304d"
             L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             L"\x304d\x304d"

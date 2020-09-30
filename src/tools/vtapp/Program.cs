@@ -236,11 +236,11 @@ namespace VTApp
                         break;
                     case 'e':
                         Console.Write(CSI);
-                        Console.Write("4m");
+                        Console.Write("53m");
                         break;
                     case 'd':
                         Console.Write(CSI);
-                        Console.Write("24m");
+                        Console.Write("55m");
                         break;
                     case 'r':
                         Console.Write(CSI);
@@ -260,7 +260,7 @@ namespace VTApp
                         break;
                     case '9':
                         Console.Write(CSI);
-                        Console.Write("1;37;43;4m");
+                        Console.Write("1;37;43;53m");
                         break;
                     case '(':
                         Console.Write(CSI);

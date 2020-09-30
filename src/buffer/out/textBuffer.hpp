@@ -110,7 +110,7 @@ public:
 
     const SHORT GetFirstRowIndex() const noexcept;
 
-    const Microsoft::Console::Types::Viewport GetSize() const;
+    const Microsoft::Console::Types::Viewport GetSize() const noexcept;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
@@ -118,7 +118,7 @@ public:
 
     [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
 
-    void SetCurrentAttributes(const TextAttribute currentAttributes) noexcept;
+    void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
     void Reset();
 
@@ -141,6 +141,13 @@ public:
 
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
+    void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
+    std::wstring GetHyperlinkUriFromId(uint16_t id) const;
+    uint16_t GetHyperlinkId(std::wstring_view params);
+    void RemoveHyperlinkFromMap(uint16_t id);
+    std::wstring GetCustomIdFromId(uint16_t id) const;
+    void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
+
     class TextAndColor
     {
     public:
@@ -152,8 +159,7 @@ public:
     const TextAndColor GetText(const bool lineSelection,
                                const bool trimTrailingWhitespace,
                                const std::vector<SMALL_RECT>& textRects,
-                               std::function<COLORREF(TextAttribute&)> GetForegroundColor = nullptr,
-                               std::function<COLORREF(TextAttribute&)> GetBackgroundColor = nullptr) const;
+                               std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors = nullptr) const;
 
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
@@ -177,6 +183,8 @@ public:
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
 private:
+    void _UpdateSize();
+    Microsoft::Console::Types::Viewport _size;
     std::deque<ROW> _storage;
     Cursor _cursor;
 
@@ -187,13 +195,17 @@ private:
     // storage location for glyphs that can't fit into the buffer normally
     UnicodeStorage _unicodeStorage;
 
+    std::unordered_map<uint16_t, std::wstring> _hyperlinkMap;
+    std::unordered_map<std::wstring, uint16_t> _hyperlinkCustomIdMap;
+    uint16_t _currentHyperlinkId;
+
     void _RefreshRowIDs(std::optional<SHORT> newRowWidth);
 
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const;
+    COORD _GetPreviousFromCursor() const noexcept;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);
@@ -212,8 +224,10 @@ private:
     const DelimiterClass _GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
-    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD lastCharPos) const;
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
+
+    void _PruneHyperlinks();
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;

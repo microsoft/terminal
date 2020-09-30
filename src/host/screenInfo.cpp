@@ -11,7 +11,7 @@
 #include "handle.h"
 #include "../buffer/out/CharRow.hpp"
 
-#include <math.h>
+#include <cmath>
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/GlyphWidth.hpp"
@@ -58,7 +58,8 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     _virtualBottom{ 0 },
     _renderTarget{ *this },
     _currentFont{ fontInfo },
-    _desiredFont{ fontInfo }
+    _desiredFont{ fontInfo },
+    _ignoreLegacyEquivalentVTAttributes{ false }
 {
     // Check if VT mode is enabled. Note that this can be true w/o calling
     // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
@@ -356,8 +357,8 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
 
     *psrWindow = _viewport.ToInclusive();
 
-    *pwAttributes = gci.GenerateLegacyAttributes(GetAttributes());
-    *pwPopupAttributes = gci.GenerateLegacyAttributes(_PopupAttributes);
+    *pwAttributes = GetAttributes().GetLegacyAttributes();
+    *pwPopupAttributes = _PopupAttributes.GetLegacyAttributes();
 
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
@@ -572,8 +573,6 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
@@ -586,7 +585,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
             {
                 const auto cellData = GetCellDataAt({ sStartX, sStartY });
                 const LONG charAndAttr = MAKELONG(Utf16ToUcs2(cellData->Chars()),
-                                                  gci.GenerateLegacyAttributes(cellData->TextAttr()));
+                                                  cellData->TextAttr().GetLegacyAttributes());
                 _pAccessibilityNotifier->NotifyConsoleUpdateSimpleEvent(MAKELONG(sStartX, sStartY),
                                                                         charAndAttr);
             }
@@ -1211,7 +1210,14 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
     }
 
     // Bottom and right cannot pass the final characters in the array.
-    srNewViewport.Right = std::min(srNewViewport.Right, gsl::narrow<SHORT>(coordScreenBufferSize.X - 1));
+    const SHORT offRightDelta = srNewViewport.Right - (coordScreenBufferSize.X - 1);
+    if (offRightDelta > 0) // the viewport was off the right of the buffer...
+    {
+        // ...so slide both left/right back into the buffer. This will prevent us
+        // from having a negative width later.
+        srNewViewport.Right -= offRightDelta;
+        srNewViewport.Left = std::max<SHORT>(0, srNewViewport.Left - offRightDelta);
+    }
     srNewViewport.Bottom = std::min(srNewViewport.Bottom, gsl::narrow<SHORT>(coordScreenBufferSize.Y - 1));
 
     // See MSFT:19917443
@@ -2031,6 +2037,13 @@ TextAttribute SCREEN_INFORMATION::GetPopupAttributes() const
 // <none>
 void SCREEN_INFORMATION::SetAttributes(const TextAttribute& attributes)
 {
+    if (_ignoreLegacyEquivalentVTAttributes)
+    {
+        // See the comment on StripErroneousVT16VersionsOfLegacyDefaults for more info.
+        _textBuffer->SetCurrentAttributes(TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(attributes));
+        return;
+    }
+
     _textBuffer->SetCurrentAttributes(attributes);
 
     // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
@@ -2676,4 +2689,18 @@ Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
                                                   buffer.RightInclusive(),
                                                   marginsSet ? marginRect.Bottom : buffer.BottomInclusive() });
     return margin;
+}
+
+// Routine Description:
+// - Engages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
+void SCREEN_INFORMATION::SetIgnoreLegacyEquivalentVTAttributes() noexcept
+{
+    _ignoreLegacyEquivalentVTAttributes = true;
+}
+
+// Routine Description:
+// - Disengages the legacy VT handling quirk; see TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults
+void SCREEN_INFORMATION::ResetIgnoreLegacyEquivalentVTAttributes() noexcept
+{
+    _ignoreLegacyEquivalentVTAttributes = false;
 }

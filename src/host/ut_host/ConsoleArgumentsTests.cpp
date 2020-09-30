@@ -663,7 +663,7 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     false), // inheritCursor
                    true); // successful parse?
 
-    commandline = L"conhost.exe --vtmode telnet";
+    commandline = L"conhost.exe --vtmode xterm-256color";
     ArgTestsRunner(L"#2 Check that handles with mode is OK",
                    commandline,
                    hInSample,
@@ -672,7 +672,7 @@ void ConsoleArgumentsTests::CombineVtPipeHandleTests()
                                     L"", // clientCommandLine
                                     hInSample,
                                     hOutSample,
-                                    L"telnet", // vtMode
+                                    L"xterm-256color", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1

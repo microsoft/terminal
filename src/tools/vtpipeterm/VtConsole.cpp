@@ -4,15 +4,15 @@
 #include "..\..\inc\conpty.h"
 #include "VtConsole.hpp"
 
-#include <stdlib.h> /* srand, rand */
-#include <time.h> /* time */
+#include <cstdlib> /* srand, rand */
+#include <ctime> /* time */
 
 #include <deque>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <assert.h>
+#include <cassert>
 #include <wincon.h>
 
 VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,

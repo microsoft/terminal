@@ -81,7 +81,7 @@ public:
             VERIFY_ARE_EQUAL(_expectedCursorPos, sbiex.dwCursorPosition);
             VERIFY_ARE_EQUAL(_expectedScreenBufferSize, sbiex.dwSize);
             VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, sbiex.srWindow);
-            VERIFY_ARE_EQUAL(_expectedAttributes, sbiex.wAttributes);
+            VERIFY_ARE_EQUAL(_expectedAttribute, TextAttribute{ sbiex.wAttributes });
         }
         return _setConsoleScreenBufferInfoExResult;
     }
@@ -259,30 +259,19 @@ public:
             // move all the input events we were given into local storage so we can test against them
             Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
 
-            _events.clear();
-            _events.swap(events);
+            if (_retainInput)
+            {
+                std::move(events.begin(), events.end(), std::back_inserter(_events));
+            }
+            else
+            {
+                _events.clear();
+                _events.swap(events);
+            }
             eventsWritten = _events.size();
         }
 
         return _privateWriteConsoleInputWResult;
-    }
-
-    bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                    size_t& eventsWritten) override
-    {
-        Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
-
-        if (_privatePrependConsoleInputResult)
-        {
-            // move all the input events we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
-
-            _events.clear();
-            _events.swap(events);
-            eventsWritten = _events.size();
-        }
-
-        return _privatePrependConsoleInputResult;
     }
 
     bool PrivateWriteConsoleControlInput(_In_ KeyEvent key) override
@@ -432,6 +421,12 @@ public:
     {
         Log::Comment(L"PrivateEraseAll MOCK called...");
         return TRUE;
+    }
+
+    bool GetUserDefaultCursorStyle(CursorType& style) override
+    {
+        style = CursorType::Legacy;
+        return true;
     }
 
     bool SetCursorStyle(const CursorType cursorType) override
@@ -613,7 +608,6 @@ public:
         _privateGetTextAttributesResult = TRUE;
         _privateSetTextAttributesResult = TRUE;
         _privateWriteConsoleInputWResult = TRUE;
-        _privatePrependConsoleInputResult = TRUE;
         _privateWriteConsoleControlInputResult = TRUE;
         _setConsoleWindowInfoResult = TRUE;
         _moveToBottomResult = true;
@@ -639,6 +633,9 @@ public:
         // Attribute default is gray on black.
         _attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
         _expectedAttribute = _attribute;
+
+        _events.clear();
+        _retainInput = false;
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -706,6 +703,20 @@ public:
         }
     }
 
+    bool PrivateAddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) const
+    {
+        Log::Comment(L"PrivateAddHyperlink MOCK called...");
+
+        return TRUE;
+    }
+
+    bool PrivateEndHyperlink() const
+    {
+        Log::Comment(L"PrivateEndHyperlink MOCK called...");
+
+        return TRUE;
+    }
+
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
     {
         rect->Top = top;
@@ -726,6 +737,16 @@ public:
     static const WORD s_defaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
     std::deque<std::unique_ptr<IInputEvent>> _events;
+    bool _retainInput{ false };
+
+    auto EnableInputRetentionInScope()
+    {
+        auto oldRetainValue{ _retainInput };
+        _retainInput = true;
+        return wil::scope_exit([oldRetainValue, this] {
+            _retainInput = oldRetainValue;
+        });
+    }
 
     COORD _bufferSize = { 0, 0 };
     SMALL_RECT _viewport = { 0, 0, 0, 0 };
@@ -755,7 +776,6 @@ public:
     bool _privateGetTextAttributesResult = false;
     bool _privateSetTextAttributesResult = false;
     bool _privateWriteConsoleInputWResult = false;
-    bool _privatePrependConsoleInputResult = false;
     bool _privateWriteConsoleControlInputResult = false;
 
     bool _setConsoleWindowInfoResult = false;
@@ -764,7 +784,6 @@ public:
 
     COORD _expectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    WORD _expectedAttributes = 0;
     bool _privateSetCursorKeysModeResult = false;
     bool _privateSetKeypadModeResult = false;
     bool _cursorKeysApplicationMode = false;
@@ -1261,7 +1280,7 @@ public:
     TEST_METHOD(GraphicsSingleTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 4, 7, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 8, 9, 21, 22, 24, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -1290,24 +1309,80 @@ public:
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetBold(true);
             break;
+        case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
+            Log::Comment(L"Testing graphics 'Faint'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetFaint(true);
+            break;
         case DispatchTypes::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
             _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_UNDERSCORE };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlined(true);
+            break;
+        case DispatchTypes::GraphicsOptions::DoublyUnderlined:
+            Log::Comment(L"Testing graphics 'Doubly Underlined'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+            break;
+        case DispatchTypes::GraphicsOptions::Overline:
+            Log::Comment(L"Testing graphics 'Overline'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_GRID_HORIZONTAL };
             break;
         case DispatchTypes::GraphicsOptions::Negative:
             Log::Comment(L"Testing graphics 'Negative'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
             break;
+        case DispatchTypes::GraphicsOptions::Invisible:
+            Log::Comment(L"Testing graphics 'Invisible'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetInvisible(true);
+            break;
+        case DispatchTypes::GraphicsOptions::CrossedOut:
+            Log::Comment(L"Testing graphics 'Crossed Out'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetCrossedOut(true);
+            break;
+        case DispatchTypes::GraphicsOptions::NotBoldOrFaint:
+            Log::Comment(L"Testing graphics 'No Bold or Faint'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetBold(true);
+            _testGetSet->_attribute.SetFaint(true);
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            break;
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
-            _testGetSet->_attribute = TextAttribute{ COMMON_LVB_UNDERSCORE };
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetUnderlined(true);
+            _testGetSet->_attribute.SetDoublyUnderlined(true);
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            break;
+        case DispatchTypes::GraphicsOptions::NoOverline:
+            Log::Comment(L"Testing graphics 'No Overline'");
+            _testGetSet->_attribute = TextAttribute{ COMMON_LVB_GRID_HORIZONTAL };
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::Positive:
             Log::Comment(L"Testing graphics 'Positive'");
             _testGetSet->_attribute = TextAttribute{ COMMON_LVB_REVERSE_VIDEO };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            break;
+        case DispatchTypes::GraphicsOptions::Visible:
+            Log::Comment(L"Testing graphics 'Visible'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetInvisible(true);
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            break;
+        case DispatchTypes::GraphicsOptions::NotCrossedOut:
+            Log::Comment(L"Testing graphics 'Not Crossed Out'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetCrossedOut(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::ForegroundBlack:
@@ -1639,25 +1714,59 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        Log::Comment(L"Test 1: Verify normal cursor response position.");
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        {
+            Log::Comment(L"Test 1: Verify normal cursor response position.");
+            _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
-        // start with the cursor position in the buffer.
-        COORD coordCursorExpected = _testGetSet->_cursorPos;
+            // start with the cursor position in the buffer.
+            COORD coordCursorExpected = _testGetSet->_cursorPos;
 
-        // to get to VT, we have to adjust it to its position relative to the viewport top.
-        coordCursorExpected.Y -= _testGetSet->_viewport.Top;
+            // to get to VT, we have to adjust it to its position relative to the viewport top.
+            coordCursorExpected.Y -= _testGetSet->_viewport.Top;
 
-        // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
-        coordCursorExpected.X++;
-        coordCursorExpected.Y++;
+            // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
+            coordCursorExpected.X++;
+            coordCursorExpected.Y++;
 
-        VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
 
-        wchar_t pwszBuffer[50];
+            wchar_t pwszBuffer[50];
 
-        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
-        _testGetSet->ValidateInputEvent(pwszBuffer);
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
+            _testGetSet->ValidateInputEvent(pwszBuffer);
+        }
+
+        {
+            Log::Comment(L"Test 2: Verify multiple CPRs with a cursor move between them");
+            _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+            // enable retention so that the two DSR responses don't delete eachother
+            auto retentionScope{ _testGetSet->EnableInputRetentionInScope() };
+
+            // start with the cursor position in the buffer.
+            til::point coordCursorExpectedFirst{ _testGetSet->_cursorPos };
+
+            // to get to VT, we have to adjust it to its position relative to the viewport top.
+            coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.Top };
+
+            // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
+            coordCursorExpectedFirst += til::point{ 1, 1 };
+
+            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+
+            _testGetSet->_cursorPos.X++;
+            _testGetSet->_cursorPos.Y++;
+
+            auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
+            coordCursorExpectedSecond += til::point{ 1, 1 };
+
+            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+
+            wchar_t pwszBuffer[50];
+
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR\x1b[%d;%dR", coordCursorExpectedFirst.y<int>(), coordCursorExpectedFirst.x<int>(), coordCursorExpectedSecond.y<int>(), coordCursorExpectedSecond.x<int>());
+            _testGetSet->ValidateInputEvent(pwszBuffer);
+        }
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -1673,9 +1782,45 @@ public:
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privatePrependConsoleInputResult = FALSE;
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->DeviceAttributes());
+    }
+
+    TEST_METHOD(SecondaryDeviceAttributesTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify normal response.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->SecondaryDeviceAttributes());
+
+        PCWSTR pwszExpectedResponse = L"\x1b[>0;10;1c";
+        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
+
+        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+
+        VERIFY_IS_FALSE(_pDispatch.get()->SecondaryDeviceAttributes());
+    }
+
+    TEST_METHOD(TertiaryDeviceAttributesTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify normal response.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->TertiaryDeviceAttributes());
+
+        PCWSTR pwszExpectedResponse = L"\x1bP!|00000000\x1b\\";
+        _testGetSet->ValidateInputEvent(pwszExpectedResponse);
+
+        Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+
+        VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
     }
 
     TEST_METHOD(CursorKeysModeTest)

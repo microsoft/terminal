@@ -50,12 +50,9 @@ public:
         return true;
     };
 
-    bool ActionEscDispatch(const wchar_t /* wch */,
-                           const std::basic_string_view<wchar_t> /* intermediates */) override { return true; };
+    bool ActionEscDispatch(const VTID /* id */) override { return true; };
 
-    bool ActionVt52EscDispatch(const wchar_t /*wch*/,
-                               const std::basic_string_view<wchar_t> /*intermediates*/,
-                               const std::basic_string_view<size_t> /*parameters*/) override { return true; };
+    bool ActionVt52EscDispatch(const VTID /*id*/, const gsl::span<const size_t> /*parameters*/) override { return true; };
 
     bool ActionClear() override { return true; };
 
@@ -74,7 +71,7 @@ public:
     };
 
     bool ActionSs3Dispatch(const wchar_t /* wch */,
-                           const std::basic_string_view<size_t> /* parameters */) override { return true; };
+                           const gsl::span<const size_t> /* parameters */) override { return true; };
 
     bool ParseControlSequenceAfterSs3() const override { return false; }
     bool FlushAtEndOfString() const override { return false; };
@@ -82,9 +79,7 @@ public:
     bool DispatchIntermediatesFromEscape() const override { return false; };
 
     // ActionCsiDispatch is the only method that's actually implemented.
-    bool ActionCsiDispatch(const wchar_t /*wch*/,
-                           const std::basic_string_view<wchar_t> /*intermediates*/,
-                           const std::basic_string_view<size_t> parameters) override
+    bool ActionCsiDispatch(const VTID /*id*/, const gsl::span<const size_t> parameters) override
     {
         // If flush to terminal is registered for a test, then use it.
         if (pfnFlushToTerminal)
@@ -94,7 +89,7 @@ public:
         }
         else
         {
-            csiParams.emplace(parameters.cbegin(), parameters.cend());
+            csiParams.emplace(parameters.begin(), parameters.end());
             return true;
         }
     }

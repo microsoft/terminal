@@ -3,12 +3,14 @@
 # - Common Project Configuration
 # -------------------------------------
 
+!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------
 
 UNICODE                 = 1
-C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE -DFMT_HEADER_ONLY
 
 # -------------------------------------
 # CRT Configuration
@@ -16,6 +18,7 @@ C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
 
 USE_UNICRT              = 1
 USE_MSVCRT              = 1
+NO_WCHAR_T              = 1 # use native wchar_t
 
 USE_STL                 = 1
 STL_VER                 = STL_VER_CURRENT

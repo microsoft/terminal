@@ -35,7 +35,7 @@ void UnicodeStorage::StoreGlyph(const key_type key, const mapped_type& glyph)
 // - erases key and its associated data from the storage
 // Arguments:
 // - key - the key to remove
-void UnicodeStorage::Erase(const key_type key)
+void UnicodeStorage::Erase(const key_type key) noexcept
 {
     _map.erase(key);
 }
@@ -47,7 +47,7 @@ void UnicodeStorage::Erase(const key_type key)
 // - rowMap - A map of the old row IDs to the new row IDs.
 // - width - The width of the new row. Remove any items that are beyond the row width.
 //         - Use nullopt if we're not resizing the width of the row, just renumbering the rows.
-void UnicodeStorage::Remap(const std::map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width)
+void UnicodeStorage::Remap(const std::unordered_map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width)
 {
     // Make a temporary map to hold all the new row positioning
     std::unordered_map<key_type, mapped_type> newMap;

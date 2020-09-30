@@ -331,7 +331,7 @@ try
         return E_NOTIMPL;
     }
 
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
 
     if (options.fUseColor)
     {
@@ -409,10 +409,44 @@ CATCH_RETURN()
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
+    // Determine clip rectangle
+    D2D1_RECT_F clipRect;
+    clipRect.top = origin.y;
+    clipRect.bottom = clipRect.top + drawingContext->cellSize.height;
+    clipRect.left = 0;
+    clipRect.right = drawingContext->targetSize.width;
+
+    // If we already have a clip rectangle, check if it different than the previous one.
+    if (_clipRect.has_value())
+    {
+        const auto storedVal = _clipRect.value();
+        // If it is different, pop off the old one and push the new one on.
+        if (storedVal.top != clipRect.top || storedVal.bottom != clipRect.bottom ||
+            storedVal.left != clipRect.left || storedVal.right != clipRect.right)
+        {
+            d2dContext->PopAxisAlignedClip();
+
+            // Clip all drawing in this glyph run to where we expect.
+            // We need the AntialiasMode here to be Aliased to ensure
+            //  that background boxes line up with each other and don't leave behind
+            //  stray colors.
+            // See GH#3626 for more details.
+            d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+            _clipRect = clipRect;
+        }
+    }
+    // If we have no clip rectangle, it's easy. Push it on and go.
+    else
+    {
+        // See above for aliased flag explanation.
+        d2dContext->PushAxisAlignedClip(clipRect, D2D1_ANTIALIAS_MODE_ALIASED);
+        _clipRect = clipRect;
+    }
+
     // Draw the background
     // The rectangle needs to be deduced based on the origin and the BidiDirection
     const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
-    const auto totalSpan = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), 0.0f);
+    const auto totalSpan = std::accumulate(advancesSpan.begin(), advancesSpan.end(), 0.0f);
 
     D2D1_RECT_F rect;
     rect.top = origin.y;
@@ -424,18 +458,6 @@ CATCH_RETURN()
         rect.left -= totalSpan;
     }
     rect.right = rect.left + totalSpan;
-
-    // Clip all drawing in this glyph run to where we expect.
-    // We need the AntialiasMode here to be Aliased to ensure
-    //  that background boxes line up with each other and don't leave behind
-    //  stray colors.
-    // See GH#3626 for more details.
-    d2dContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-
-    // Ensure we pop it on the way out
-    auto popclip = wil::scope_exit([&d2dContext]() noexcept {
-        d2dContext->PopAxisAlignedClip();
-    });
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
@@ -634,6 +656,22 @@ CATCH_RETURN()
     return S_OK;
 }
 #pragma endregion
+
+[[nodiscard]] HRESULT CustomTextRenderer::EndClip(void* clientDrawingContext) noexcept
+try
+{
+    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    RETURN_HR_IF(E_INVALIDARG, !drawingContext);
+
+    if (_clipRect.has_value())
+    {
+        drawingContext->renderTarget->PopAxisAlignedClip();
+        _clipRect = std::nullopt;
+    }
+
+    return S_OK;
+}
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
                                                              D2D1_POINT_2F baselineOrigin,

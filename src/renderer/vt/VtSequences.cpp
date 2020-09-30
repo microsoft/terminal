@@ -193,18 +193,6 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence change the boldness of the following text.
-// Arguments:
-// - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
-// Return Value:
-// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetGraphicsBoldness(const bool isBold) noexcept
-{
-    const std::string_view fmt = isBold ? "\x1b[1m" : "\x1b[22m";
-    return _Write(fmt);
-}
-
-// Method Description:
 // - Formats and writes a sequence to change the current text attributes to the default.
 // Arguments:
 // <none>
@@ -247,6 +235,24 @@ using namespace Microsoft::Console::Render;
                         (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
 
     return _WriteFormattedString(&fmt, vtIndex);
+}
+
+// Method Description:
+// - Formats and writes a sequence to change the current text attributes to an
+//      indexed color from the 256-color table.
+// Arguments:
+// - wAttr: Windows color table index to emit as a VT sequence
+// - fIsForeground: true if we should emit the foreground sequence, false for background
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
+                                                              const bool fIsForeground) noexcept
+{
+    const std::string fmt = fIsForeground ?
+                                "\x1b[38;5;%dm" :
+                                "\x1b[48;5;%dm";
+
+    return _WriteFormattedString(&fmt, ::Xterm256ToWindowsIndex(index));
 }
 
 // Method Description:
@@ -328,113 +334,113 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to start underlining text
+// - Formats and writes a sequence to change the boldness of the following text.
 // Arguments:
-// - <none>
+// - isBold: If true, we'll embolden the text. Otherwise we'll debolden the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_BeginUnderline() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetBold(const bool isBold) noexcept
 {
-    return _Write("\x1b[4m");
+    return _Write(isBold ? "\x1b[1m" : "\x1b[22m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to stop underlining text
+// - Formats and writes a sequence to change the faintness of the following text.
 // Arguments:
-// - <none>
+// - isFaint: If true, we'll make the text faint. Otherwise we'll remove the faintness.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EndUnderline() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetFaint(const bool isFaint) noexcept
 {
-    return _Write("\x1b[24m");
+    return _Write(isFaint ? "\x1b[2m" : "\x1b[22m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to start italicizing text
+// - Formats and writes a sequence to change the underline of the following text.
 // Arguments:
-// - <none>
+// - isUnderlined: If true, we'll underline the text. Otherwise we'll remove the underline.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_BeginItalics() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetUnderlined(const bool isUnderlined) noexcept
 {
-    return _Write("\x1b[3m");
+    return _Write(isUnderlined ? "\x1b[4m" : "\x1b[24m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to stop italicizing text
+// - Formats and writes a sequence to change the double underline of the following text.
 // Arguments:
-// - <none>
+// - isUnderlined: If true, we'll doubly underline the text. Otherwise we'll remove the underline.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EndItalics() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetDoublyUnderlined(const bool isUnderlined) noexcept
 {
-    return _Write("\x1b[23m");
+    return _Write(isUnderlined ? "\x1b[21m" : "\x1b[24m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to start blinking text
+// - Formats and writes a sequence to change the overline of the following text.
 // Arguments:
-// - <none>
+// - isOverlined: If true, we'll overline the text. Otherwise we'll remove the overline.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_BeginBlink() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetOverlined(const bool isOverlined) noexcept
 {
-    return _Write("\x1b[5m");
+    return _Write(isOverlined ? "\x1b[53m" : "\x1b[55m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to stop blinking text
+// - Formats and writes a sequence to change the italics of the following text.
 // Arguments:
-// - <none>
+// - isItalic: If true, we'll italicize the text. Otherwise we'll remove the italics.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EndBlink() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetItalic(const bool isItalic) noexcept
 {
-    return _Write("\x1b[25m");
+    return _Write(isItalic ? "\x1b[3m" : "\x1b[23m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to start marking text as invisible
+// - Formats and writes a sequence to change the blinking of the following text.
 // Arguments:
-// - <none>
+// - isBlinking: If true, we'll start the text blinking. Otherwise we'll stop the blinking.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_BeginInvisible() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetBlinking(const bool isBlinking) noexcept
 {
-    return _Write("\x1b[8m");
+    return _Write(isBlinking ? "\x1b[5m" : "\x1b[25m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to stop marking text as invisible
+// - Formats and writes a sequence to change the visibility of the following text.
 // Arguments:
-// - <none>
+// - isInvisible: If true, we'll make the text invisible. Otherwise we'll make it visible.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EndInvisible() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetInvisible(const bool isInvisible) noexcept
 {
-    return _Write("\x1b[28m");
+    return _Write(isInvisible ? "\x1b[8m" : "\x1b[28m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to start crossing-out text
+// - Formats and writes a sequence to change the crossed out state of the following text.
 // Arguments:
-// - <none>
+// - isCrossedOut: If true, we'll cross out the text. Otherwise we'll stop crossing out.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_BeginCrossedOut() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetCrossedOut(const bool isCrossedOut) noexcept
 {
-    return _Write("\x1b[9m");
+    return _Write(isCrossedOut ? "\x1b[9m" : "\x1b[29m");
 }
 
 // Method Description:
-// - Writes a sequence to tell the terminal to stop crossing-out text
+// - Formats and writes a sequence to change the reversed state of the following text.
 // Arguments:
-// - <none>
+// - isReversed: If true, we'll reverse the text. Otherwise we'll remove the reversed state.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_EndCrossedOut() noexcept
+[[nodiscard]] HRESULT VtEngine::_SetReverseVideo(const bool isReversed) noexcept
 {
-    return _Write("\x1b[29m");
+    return _Write(isReversed ? "\x1b[7m" : "\x1b[27m");
 }
 
 // Method Description:
@@ -449,4 +455,47 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT VtEngine::_RequestWin32Input() noexcept
 {
     return _Write("\x1b[?9001h");
+}
+
+// Method Description:
+// - Formats and writes a sequence to add a hyperlink to the terminal buffer
+// Arguments:
+// - The hyperlink URI
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId, const uint16_t& numberId) noexcept
+{
+    // Opening OSC8 sequence
+    if (customId.empty())
+    {
+        // This is the case of auto-assigned IDs:
+        // send the auto-assigned ID, prefixed with the PID of this session
+        // (we do this so different conpty sessions do not overwrite each other's hyperlinks)
+        const auto sessionID = GetCurrentProcessId();
+        const std::string fmt{ "\x1b]8;id={}-{};{}\x1b\\" };
+        const std::string uri_str{ til::u16u8(uri) };
+        auto s = fmt::format(fmt, sessionID, numberId, uri_str);
+        return _Write(s);
+    }
+    else
+    {
+        // This is the case of user-defined IDs:
+        // send the user-defined ID, prefixed with a "u"
+        // (we do this so no application can accidentally override a user defined ID)
+        const std::string fmt{ "\x1b]8;id=u-{};{}\x1b\\" };
+        const std::string uri_str{ til::u16u8(uri) };
+        const std::string customId_str{ til::u16u8(customId) };
+        auto s = fmt::format(fmt, customId_str, uri_str);
+        return _Write(s);
+    }
+}
+
+// Method Description:
+// - Formats and writes a sequence to end a hyperlink to the terminal buffer
+// Return Value:
+// - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
+[[nodiscard]] HRESULT VtEngine::_EndHyperlink() noexcept
+{
+    // Closing OSC8 sequence
+    return _Write("\x1b]8;;\x1b\\");
 }
