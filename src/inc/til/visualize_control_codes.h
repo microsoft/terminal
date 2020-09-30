@@ -25,7 +25,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return str;
     }
 
-    _TIL_INLINEPREFIX std::wstring visualize_control_codes(std::wstring_view str) noexcept
+    _TIL_INLINEPREFIX std::wstring visualize_control_codes(std::wstring_view str)
     {
         return visualize_control_codes(std::wstring{ str });
     }

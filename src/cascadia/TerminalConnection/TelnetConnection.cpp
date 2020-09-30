@@ -19,7 +19,7 @@ static constexpr winrt::guid TelnetConnectionType = { 0x311153fb, 0xd3f0, 0x4ac6
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    winrt::guid TelnetConnection::ConnectionType()
+    winrt::guid TelnetConnection::ConnectionType() noexcept
     {
         return TelnetConnectionType;
     }

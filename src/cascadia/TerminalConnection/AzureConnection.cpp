@@ -62,7 +62,7 @@ static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    winrt::guid AzureConnection::ConnectionType()
+    winrt::guid AzureConnection::ConnectionType() noexcept
     {
         return AzureConnectionType;
     }
