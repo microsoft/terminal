@@ -24,6 +24,7 @@ IExplorer
 IMap
 IObject
 IStorage
+ITab
 llabs
 LCID
 lround
