@@ -423,18 +423,19 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
         return uri;
     }
-    // also look through our known pattern locations
-    const auto absLoc = (_buffer->GetRowByOffset(0).size() * position.Y) + position.X;
+    // also look through our known pattern locations in our pattern interval tree
+    // we need to convert to 1-d coordinates because that is how the tree stores them
+    const auto rowSize = _buffer->GetRowByOffset(0).size();
+    const auto absLoc = (rowSize * position.Y) + position.X;
     const auto results = _patternIntervalTree.findOverlapping(absLoc + 1, absLoc);
     if (results.size() > 0)
     {
-        const auto rowSize = _buffer->GetRowByOffset(0).size();
-        for (auto result : results)
+        for (const auto& result : results)
         {
             if (result.value == _hyperlinkPatternId)
             {
-                const auto start = results.at(0).start;
-                const auto end = results.at(0).stop;
+                const auto start = result.start;
+                const auto end = result.stop;
                 COORD startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };
                 COORD endCoord{ gsl::narrow<SHORT>(end % rowSize), gsl::narrow<SHORT>(end / rowSize) };
                 std::wstring uri;

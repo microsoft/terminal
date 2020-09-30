@@ -2386,8 +2386,7 @@ interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const siz
     concatAll.reserve(rowSize * (lastRow - firstRow + 1));
 
     // to deal with text that spans multiple lines, we will first concatenate
-    // all the text into one string and find the pattern in that string
-    // later, we convert the locations of the patterns back into (row, col) coords
+    // all the text into one string and find the patterns in that string
     for (auto i = firstRow; i <= lastRow; ++i)
     {
         auto row = GetRowByOffset(i);
@@ -2395,7 +2394,7 @@ interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const siz
     }
 
     // for each pattern we know of, iterate through the string
-    for (auto idAndPattern : _IdsAndPatterns)
+    for (const auto& idAndPattern : _IdsAndPatterns)
     {
         std::wregex regexObj{ til::u8u16(idAndPattern.second) };
 
@@ -2406,12 +2405,10 @@ interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const siz
         size_t lenUpToThis = 0;
         for (auto i = words_begin; i != words_end; ++i)
         {
-            // record the locations and convert them back to coords
+            // record the locations -
             // when we find a match, the prefix is text that is between this
-            // match and the previous match, and the suffix is the text that
-            // it between this match and the next match
-            // we will use that, along with the size of the match, to determine
-            // the locations
+            // match and the previous match, so we use the size of the prefix
+            // along with the size of the match to determine the locations
             const auto prefixSize = i->prefix().str().size();
             const auto start = lenUpToThis + prefixSize;
             const auto end = start + i->str().size();
@@ -2419,8 +2416,9 @@ interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const siz
 
             // store the intervals
             // NOTE: these intervals are relative to the VIEWPORT not the buffer
-            // Keeping these as viewport coordinates for now because its the renderer
-            // that actually uses these coordinates and the renderer works in viewport coords
+            // Keeping these relative to the viewport for now because its the renderer
+            // that actually uses these locations and the renderer works relative to
+            // the viewport
             intervals.push_back(ThisTree::interval(start, end, idAndPattern.first));
         }
     }

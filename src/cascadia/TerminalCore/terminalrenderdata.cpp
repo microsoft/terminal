@@ -149,6 +149,7 @@ const size_t Microsoft::Terminal::Core::Terminal::GetPatternId(const COORD locat
     else
     {
         // At some point, this should be updated to return a vector of IDs
+        // which will represent all the patterns this location is a part of
         return results.at(0).value;
     }
 }

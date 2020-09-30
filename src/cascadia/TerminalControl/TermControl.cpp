@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     control->UpdatePatternLocations();
                 }
             },
-            TsfRedrawInterval,
+            UpdatePatternLocationsInterval,
             Dispatcher());
 
         _updateScrollBar = std::make_shared<ThrottledFunc<ScrollBarUpdate>>(
