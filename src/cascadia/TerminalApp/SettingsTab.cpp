@@ -3,10 +3,9 @@
 
 #include "pch.h"
 #include <LibraryResources.h>
-#include "ColorPickupFlyout.h"
 #include "SettingsTab.h"
+#include "SettingsTab.g.cpp"
 #include "Utils.h"
-#include "ColorHelper.h"
 #include "ActionAndArgs.h"
 #include "ActionArgs.h"
 
@@ -41,7 +40,7 @@ namespace winrt::TerminalApp::implementation
     void SettingsTab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
-        _UpdateTitle();
+        _tabViewItem.Header(winrt::box_value(Title()));
     }
 
     // Method Description:
@@ -80,8 +79,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Updates our focus state. If we're gaining focus, make sure to transfer
-    //   focus to the last focused terminal control in our tree of controls.
+    // - Updates our focus state.
     // Arguments:
     // - focused: our new focus state. If true, we should be focused. If false, we
     //   should be unfocused.
@@ -98,7 +96,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Focus the last focused control in our tree of panes.
+    // - Focus the settings UI
     // Arguments:
     // - <none>
     // Return Value:
@@ -117,15 +115,15 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     winrt::fire_and_forget SettingsTab::UpdateIcon()
     {
-        auto fontFamily = Windows::UI::Xaml::Media::FontFamily(L"Segoe MDL2 Assets");
-        auto glyph = L"\xE713";
-
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
+            auto fontFamily = winrt::WUX::Media::FontFamily(L"Segoe MDL2 Assets");
+            auto glyph = L"\xE713";
+
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
             _tabViewItem.IconSource(GetFontIcon<winrt::MUX::Controls::IconSource>(fontFamily, 12, glyph));
@@ -144,32 +142,7 @@ namespace winrt::TerminalApp::implementation
     // - the title string of the last focused terminal control in our tree.
     winrt::hstring SettingsTab::GetActiveTitle() const
     {
-        // TODO: LOCALIZE
-        return L"Settings";
-    }
-
-    // Method Description:
-    // - Set the text on the TabViewItem for this tab, and bubbles the new title
-    //   value up to anyone listening for changes to our title. Callers can
-    //   listen for the title change with a PropertyChanged even handler.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    winrt::fire_and_forget SettingsTab::_UpdateTitle()
-    {
-        auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
-        if (auto tab{ weakThis.get() })
-        {
-            // Bubble our current tab text to anyone who's listening for changes.
-            Title(GetActiveTitle());
-
-            _tabViewItem.Header(winrt::box_value(Title()));
-
-            // Update SwitchToTab command's name
-            SwitchToTabCommand().Name(Title());
-        }
+        return Title();
     }
 
     // Method Description:

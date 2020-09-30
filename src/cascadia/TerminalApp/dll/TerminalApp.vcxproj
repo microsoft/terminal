@@ -37,6 +37,7 @@
     <ClInclude Include="../TabRowControl.h" />
     <ClInclude Include="../App.h" />
     <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../SettingsTab.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>

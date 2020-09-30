@@ -2,6 +2,9 @@
 // Licensed under the MIT license.
 
 #pragma once
+
+#include "TerminalTab.g.h"
+
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
 
@@ -13,11 +16,11 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct Tab : public winrt::implements<Tab, ITab>
+    struct TerminalTab : TerminalTabT<TerminalTab>
     {
     public:
-        Tab() = delete;
-        Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        TerminalTab() = delete;
+        TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);

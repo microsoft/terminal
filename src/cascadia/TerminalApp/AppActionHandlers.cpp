@@ -123,7 +123,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto focusedTab = _GetFocusedTab();
 
-        if (auto activeTab = focusedTab.try_as<Tab>())
+        if (auto activeTab = focusedTab.try_as<TerminalTab>())
         {
             // Don't do anything if there's only one pane. It's already zoomed.
             if (activeTab && activeTab->GetLeafPaneCount() > 1)
@@ -327,7 +327,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (auto focusedTab = _GetFocusedTab())
             {
-                if (auto activeTab = focusedTab.try_as<Tab>())
+                if (auto activeTab = focusedTab.try_as<TerminalTab>())
                 {
                     if (auto activeControl = activeTab->GetActiveTerminalControl())
                     {
@@ -359,7 +359,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<Tab>())
+            if (auto activeTab = focusedTab.try_as<TerminalTab>())
             {
                 if (tabColor.has_value())
                 {
@@ -379,7 +379,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<Tab>())
+            if (auto activeTab = focusedTab.try_as<TerminalTab>())
             {
                 activeTab->ActivateColorPicker();
             }
@@ -399,7 +399,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<Tab>())
+            if (auto activeTab = focusedTab.try_as<TerminalTab>())
             {
                 if (title.has_value())
                 {

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "TerminalPage.g.h"
-#include "Tab.h"
+#include "TerminalTab.h"
 #include "SettingsTab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
@@ -92,8 +92,6 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::ITab> _tabs;
-        //winrt::com_ptr<ITab> _GetStrongTabImpl(const uint32_t index) const;
-        //winrt::com_ptr<ITab> _GetStrongTabImpl(const ::winrt::TerminalApp::ITab& tab) const;
         void _UpdateTabIndices();
 
         bool _isInFocusMode{ false };
@@ -136,8 +134,8 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
-        void _UpdateTitle(const Tab& tab);
-        void _UpdateTabIcon(Tab& tab);
+        void _UpdateTitle(const TerminalTab& tab);
+        void _UpdateTabIcon(TerminalTab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
@@ -149,7 +147,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, Tab& hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, TerminalTab& hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const uint32_t tabIndex);

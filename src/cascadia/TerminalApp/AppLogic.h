@@ -5,7 +5,7 @@
 
 #include "AppLogic.g.h"
 
-#include "Tab.h"
+#include "TerminalTab.h"
 #include "CascadiaSettings.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"

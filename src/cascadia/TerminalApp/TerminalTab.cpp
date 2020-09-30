@@ -4,7 +4,8 @@
 #include "pch.h"
 #include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
-#include "Tab.h"
+#include "TerminalTab.h"
+#include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
 #include "ActionAndArgs.h"
@@ -24,7 +25,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    Tab::Tab(const GUID& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
@@ -44,7 +45,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_MakeTabViewItem()
+    void TerminalTab::_MakeTabViewItem()
     {
         _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
 
@@ -66,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The UIElement acting as root of the Tab's root pane.
-    UIElement Tab::GetRootElement()
+    UIElement TerminalTab::GetRootElement()
     {
         if (_zoomedPane)
         {
@@ -89,7 +90,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - nullptr if no children were marked `_lastFocused`, else the TermControl
     //   that was last focused.
-    TermControl Tab::GetActiveTerminalControl() const
+    TermControl TerminalTab::GetActiveTerminalControl() const
     {
         return _activePane->GetTerminalControl();
     }
@@ -100,7 +101,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The TabViewItem that represents this Tab
-    winrt::MUX::Controls::TabViewItem Tab::GetTabViewItem()
+    winrt::MUX::Controls::TabViewItem TerminalTab::GetTabViewItem()
     {
         return _tabViewItem;
     }
@@ -113,7 +114,7 @@ namespace winrt::TerminalApp::implementation
     // - control: reference to the TermControl object to bind event to
     // Return Value:
     // - <none>
-    void Tab::Initialize(const TermControl& control)
+    void TerminalTab::Initialize(const TermControl& control)
     {
         _BindEventHandlers(control);
         _CreateContextMenu();
@@ -127,7 +128,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - true iff this tab is focused.
-    bool Tab::IsFocused() const noexcept
+    bool TerminalTab::IsFocused() const noexcept
     {
         return _focused;
     }
@@ -140,7 +141,7 @@ namespace winrt::TerminalApp::implementation
     //   should be unfocused.
     // Return Value:
     // - <none>
-    void Tab::SetFocused(const bool focused)
+    void TerminalTab::SetFocused(const bool focused)
     {
         _focused = focused;
 
@@ -159,7 +160,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - nullopt if no children of this tab were the last control to be
     //   focused, else the GUID of the profile of the last control to be focused
-    std::optional<GUID> Tab::GetFocusedProfile() const noexcept
+    std::optional<GUID> TerminalTab::GetFocusedProfile() const noexcept
     {
         return _activePane->GetFocusedProfile();
     }
@@ -171,7 +172,7 @@ namespace winrt::TerminalApp::implementation
     // - control: reference to the TermControl object to bind event to
     // Return Value:
     // - <none>
-    void Tab::_BindEventHandlers(const TermControl& control) noexcept
+    void TerminalTab::_BindEventHandlers(const TermControl& control) noexcept
     {
         _AttachEventHandlersToPane(_rootPane);
         _AttachEventHandlersToControl(control);
@@ -184,7 +185,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void Tab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
     }
@@ -195,7 +196,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_Focus()
+    void TerminalTab::_Focus()
     {
         _focused = true;
 
@@ -212,7 +213,7 @@ namespace winrt::TerminalApp::implementation
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Tab::UpdateIcon(const winrt::hstring iconPath)
+    winrt::fire_and_forget TerminalTab::UpdateIcon(const winrt::hstring iconPath)
     {
         // Don't reload our icon if it hasn't changed.
         if (iconPath == _lastIconPath)
@@ -244,7 +245,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the title string of the last focused terminal control in our tree.
-    winrt::hstring Tab::GetActiveTitle() const
+    winrt::hstring TerminalTab::GetActiveTitle() const
     {
         if (!_runtimeTabText.empty())
         {
@@ -262,7 +263,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Tab::_UpdateTitle()
+    winrt::fire_and_forget TerminalTab::_UpdateTitle()
     {
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
@@ -287,7 +288,7 @@ namespace winrt::TerminalApp::implementation
     // - delta: a number of lines to move the viewport relative to the current viewport.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget Tab::Scroll(const int delta)
+    winrt::fire_and_forget TerminalTab::Scroll(const int delta)
     {
         auto control = GetActiveTerminalControl();
 
@@ -303,7 +304,7 @@ namespace winrt::TerminalApp::implementation
     // - splitType: The type of split we want to create.
     // Return Value:
     // - True if the focused pane can be split. False otherwise.
-    bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
+    bool TerminalTab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
     {
         return _activePane->CanSplit(splitType);
     }
@@ -317,7 +318,7 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
+    void TerminalTab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
     {
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
@@ -337,7 +338,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - See Pane::CalcSnappedDimension
-    float Tab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
+    float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
     }
@@ -349,7 +350,7 @@ namespace winrt::TerminalApp::implementation
     // - newSize: the amount of space that the panes have to fill now.
     // Return Value:
     // - <none>
-    void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
+    void TerminalTab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -363,7 +364,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+    void TerminalTab::ResizePane(const winrt::TerminalApp::Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -377,7 +378,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+    void TerminalTab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -386,7 +387,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy by shutting down all active connections.
-    void Tab::Shutdown()
+    void TerminalTab::Shutdown()
     {
         _rootPane->Shutdown();
     }
@@ -399,18 +400,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::ClosePane()
+    void TerminalTab::ClosePane()
     {
         _activePane->Close();
     }
 
-    void Tab::SetTabText(winrt::hstring title)
+    void TerminalTab::SetTabText(winrt::hstring title)
     {
         _runtimeTabText = title;
         _UpdateTitle();
     }
 
-    void Tab::ResetTabText()
+    void TerminalTab::ResetTabText()
     {
         _runtimeTabText = L"";
         _UpdateTitle();
@@ -426,7 +427,7 @@ namespace winrt::TerminalApp::implementation
     // - control: the TermControl to add events to.
     // Return Value:
     // - <none>
-    void Tab::_AttachEventHandlersToControl(const TermControl& control)
+    void TerminalTab::_AttachEventHandlersToControl(const TermControl& control)
     {
         auto weakThis{ get_weak() };
 
@@ -473,7 +474,7 @@ namespace winrt::TerminalApp::implementation
     // - pane: a Pane to mark as active.
     // Return Value:
     // - <none>
-    void Tab::_UpdateActivePane(std::shared_ptr<Pane> pane)
+    void TerminalTab::_UpdateActivePane(std::shared_ptr<Pane> pane)
     {
         // Clear the active state of the entire tree, and mark only the pane as active.
         _rootPane->ClearActive();
@@ -496,7 +497,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
+    void TerminalTab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
     {
         auto weakThis{ get_weak() };
 
@@ -520,7 +521,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_CreateContextMenu()
+    void TerminalTab::_CreateContextMenu()
     {
         auto weakThis{ get_weak() };
 
@@ -609,7 +610,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_UpdateTabHeader()
+    void TerminalTab::_UpdateTabHeader()
     {
         winrt::hstring tabText{ GetActiveTitle() };
 
@@ -652,7 +653,7 @@ namespace winrt::TerminalApp::implementation
     // - tabText: This should be the text to initialize the rename text box with.
     // Return Value:
     // - <none>
-    void Tab::_ConstructTabRenameBox(const winrt::hstring& tabText)
+    void TerminalTab::_ConstructTabRenameBox(const winrt::hstring& tabText)
     {
         if (_tabViewItem.Header().try_as<Controls::TextBox>())
         {
@@ -753,7 +754,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The tab's color, if any
-    std::optional<winrt::Windows::UI::Color> Tab::GetTabColor()
+    std::optional<winrt::Windows::UI::Color> TerminalTab::GetTabColor()
     {
         const auto currControlColor{ GetActiveTerminalControl().TabColor() };
         std::optional<winrt::Windows::UI::Color> controlTabColor;
@@ -790,7 +791,7 @@ namespace winrt::TerminalApp::implementation
     // - color: the color the user picked for their tab
     // Return Value:
     // - <none>
-    void Tab::SetRuntimeTabColor(const winrt::Windows::UI::Color& color)
+    void TerminalTab::SetRuntimeTabColor(const winrt::Windows::UI::Color& color)
     {
         _runtimeTabColor.emplace(color);
         _RecalculateAndApplyTabColor();
@@ -805,7 +806,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_RecalculateAndApplyTabColor()
+    void TerminalTab::_RecalculateAndApplyTabColor()
     {
         auto weakThis{ get_weak() };
 
@@ -837,7 +838,7 @@ namespace winrt::TerminalApp::implementation
     // - color: the color the user picked for their tab
     // Return Value:
     // - <none>
-    void Tab::_ApplyTabColor(const winrt::Windows::UI::Color& color)
+    void TerminalTab::_ApplyTabColor(const winrt::Windows::UI::Color& color)
     {
         Media::SolidColorBrush selectedTabBrush{};
         Media::SolidColorBrush deselectedTabBrush{};
@@ -889,7 +890,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::ResetRuntimeTabColor()
+    void TerminalTab::ResetRuntimeTabColor()
     {
         _runtimeTabColor.reset();
         _RecalculateAndApplyTabColor();
@@ -902,7 +903,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_ClearTabBackgroundColor()
+    void TerminalTab::_ClearTabBackgroundColor()
     {
         winrt::hstring keys[] = {
             L"TabViewItemHeaderBackground",
@@ -936,7 +937,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::ActivateColorPicker()
+    void TerminalTab::ActivateColorPicker()
     {
         _tabColorPickup.ShowAt(_tabViewItem);
     }
@@ -948,7 +949,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_RefreshVisualState()
+    void TerminalTab::_RefreshVisualState()
     {
         if (_focused)
         {
@@ -968,7 +969,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The total number of leaf panes hosted by this tab.
-    int Tab::GetLeafPaneCount() const noexcept
+    int TerminalTab::GetLeafPaneCount() const noexcept
     {
         return _rootPane->GetLeafPaneCount();
     }
@@ -983,12 +984,12 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - The SplitState that we should use for an `Automatic` split given
     //   `availableSpace`
-    SplitState Tab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    SplitState TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
-    bool Tab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
+    bool TerminalTab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
     {
         return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
     }
@@ -1003,7 +1004,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::ToggleZoom()
+    void TerminalTab::ToggleZoom()
     {
         if (_zoomedPane)
         {
@@ -1014,14 +1015,14 @@ namespace winrt::TerminalApp::implementation
             EnterZoom();
         }
     }
-    void Tab::EnterZoom()
+    void TerminalTab::EnterZoom()
     {
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
     }
-    void Tab::ExitZoom()
+    void TerminalTab::ExitZoom()
     {
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
@@ -1029,7 +1030,7 @@ namespace winrt::TerminalApp::implementation
         _UpdateTabHeader();
     }
 
-    bool Tab::IsZoomed()
+    bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
     }
@@ -1040,7 +1041,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void Tab::_MakeSwitchToTabCommand()
+    void TerminalTab::_MakeSwitchToTabCommand()
     {
         auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
         auto args = winrt::make_self<implementation::SwitchToTabArgs>();
@@ -1057,13 +1058,13 @@ namespace winrt::TerminalApp::implementation
         SwitchToTabCommand(command);
     }
 
-    void Tab::UpdateTabViewIndex(const uint32_t idx)
+    void TerminalTab::UpdateTabViewIndex(const uint32_t idx)
     {
         TabViewIndex(idx);
         SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
     }
 
-    DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
-    DEFINE_EVENT(Tab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
-    DEFINE_EVENT(Tab, ColorCleared, _colorCleared, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+    DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
 }

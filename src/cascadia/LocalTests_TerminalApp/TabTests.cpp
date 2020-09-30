@@ -7,7 +7,7 @@
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
-#include "../TerminalApp/Tab.h"
+#include "../TerminalApp/TerminalTab.h"
 #include "../CppWinrtTailored.h"
 #include "JsonTestClass.h"
 

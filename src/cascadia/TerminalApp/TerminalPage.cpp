@@ -685,7 +685,7 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
-        auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
+        auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
@@ -948,7 +948,7 @@ namespace winrt::TerminalApp::implementation
     //   TitleChanged event.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTitle(const Tab& tab)
+    void TerminalPage::_UpdateTitle(const TerminalTab& tab)
     {
         auto newTabTitle = tab.GetActiveTitle();
 
@@ -964,7 +964,7 @@ namespace winrt::TerminalApp::implementation
     //   tab's icon to that icon.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTabIcon(Tab& tab)
+    void TerminalPage::_UpdateTabIcon(TerminalTab& tab)
     {
         const auto lastFocusedProfileOpt = tab.GetFocusedProfile();
         if (lastFocusedProfileOpt.has_value())
@@ -1015,7 +1015,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+            if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalApp::TerminalTab>())
             {
                 try
                 {
@@ -1134,7 +1134,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTerminalEvents(TermControl term, Tab& hostingTab)
+    void TerminalPage::_RegisterTerminalEvents(TermControl term, TerminalTab& hostingTab)
     {
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
@@ -1270,7 +1270,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto focusedTab = _GetFocusedTab())
         {
-            if (auto activeTab = focusedTab.try_as<Tab>())
+            if (auto activeTab = focusedTab.try_as<TerminalTab>())
             {
                 if (activeTab->IsZoomed())
                 {
@@ -1297,7 +1297,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+            if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalTab>())
             {
                 _UnZoomIfNeeded();
                 terminalTab->NavigateFocus(direction);
@@ -1309,7 +1309,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+            if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalTab>())
             {
                 return terminalTab->GetActiveTerminalControl();
             }
@@ -1389,7 +1389,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+            if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalTab>())
             {
                 _UnZoomIfNeeded();
                 terminalTab->ClosePane();
@@ -1433,7 +1433,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+            if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalTab>())
             {
                 terminalTab->Scroll(delta);
             }
@@ -1469,7 +1469,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedTab = _tabs.GetAt(*indexOpt).try_as<Tab>();
+        auto focusedTab = _tabs.GetAt(*indexOpt).try_as<TerminalTab>();
 
         // Do nothing if the focused tab isn't a TerminalTab
         if (!focusedTab)
@@ -1552,7 +1552,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+            if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalTab>())
             {
                 _UnZoomIfNeeded();
                 terminalTab->ResizePane(direction);
@@ -1577,7 +1577,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (auto terminalTab = _tabs.GetAt(*indexOpt).try_as<Tab>())
+        if (auto terminalTab = _tabs.GetAt(*indexOpt).try_as<TerminalTab>())
         {
             delta = std::clamp(delta, -1, 1);
             const auto control = _GetActiveControl();
@@ -1694,7 +1694,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (auto index{ _GetFocusedTabIndex() })
             {
-                if (auto terminalTab = _tabs.GetAt(*index).try_as<Tab>())
+                if (auto terminalTab = _tabs.GetAt(*index).try_as<TerminalTab>())
                 {
                     return terminalTab->CalcSnappedDimension(widthOrHeight, dimension);
                 }
@@ -2029,7 +2029,7 @@ namespace winrt::TerminalApp::implementation
         const auto newSize = e.NewSize();
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = tab.try_as<Tab>())
+            if (auto terminalTab = tab.try_as<TerminalTab>())
             {
                 terminalTab->ResizeContent(newSize);
             }
@@ -2089,7 +2089,7 @@ namespace winrt::TerminalApp::implementation
 
                 for (auto tab : _tabs)
                 {
-                    if (auto terminalTab = tab.try_as<Tab>())
+                    if (auto terminalTab = tab.try_as<TerminalTab>())
                     {
                         terminalTab->UpdateSettings(settings, profileGuid);
                     }
@@ -2108,7 +2108,7 @@ namespace winrt::TerminalApp::implementation
         // and profiles so the Title and Icon will be set once and only once on init.
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = tab.try_as<Tab>())
+            if (auto terminalTab = tab.try_as<TerminalTab>())
             {
                 _UpdateTabIcon(*terminalTab);
                 _UpdateTitle(*terminalTab);

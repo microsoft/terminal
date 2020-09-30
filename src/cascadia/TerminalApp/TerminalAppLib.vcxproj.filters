@@ -177,6 +177,12 @@
     <Midl Include="ITab.idl">
       <Filter>tab</Filter>
     </Midl>
+    <Midl Include="SettingsTab.idl">
+      <Filter>tab</Filter>
+    </Midl>
+    <Midl Include="TerminalTab.idl">
+      <Filter>tab</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
