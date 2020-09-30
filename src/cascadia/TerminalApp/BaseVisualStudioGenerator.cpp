@@ -9,11 +9,16 @@ std::vector<winrt::TerminalApp::Profile> TerminalApp::BaseVisualStudioGenerator:
 {
     std::vector<winrt::TerminalApp::Profile> profiles;
 
-    for (auto const& instance : VsSetupConfiguration::QueryInstances())
+    if (!BaseVisualStudioGenerator::hasQueried)
+    {
+        instances = VsSetupConfiguration::QueryInstances();
+        hasQueried = true;
+    }
+
+    for (auto const& instance : BaseVisualStudioGenerator::instances)
     {
         try
         {
-            instance.DebugOutputProperties();
             if (!IsInstanceValid(instance))
                 continue;
 

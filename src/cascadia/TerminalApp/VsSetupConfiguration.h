@@ -108,28 +108,6 @@ namespace TerminalApp
                 return VsSetupConfiguration::GetStringProperty(properties, L"productLineVersion");
             }
 
-            inline void DebugOutputProperties() const
-            {
-#ifdef _DEBUG
-                wil::com_ptr<ISetupInstance2> instance2 = mp_inst.query<ISetupInstance2>();
-                ComPtrPropertyStore properties;
-                THROW_IF_FAILED(instance2->GetProperties(&properties));
-                VsSetupConfiguration::DebugOutputProperties(L"Instance2::GetProperties", properties);
-
-                properties = mp_inst.query<ISetupPropertyStore>();
-                VsSetupConfiguration::DebugOutputProperties(L"Instance As PropertyStore", properties);
-
-                ComPtrPackageReference packageReference;
-                THROW_IF_FAILED(instance2->GetProduct(&packageReference));
-                properties = packageReference.query<ISetupPropertyStore>();
-                VsSetupConfiguration::DebugOutputProperties(L"Package Reference", properties);
-
-                ComPtrInstanceCatalog instanceCatalog = mp_inst.query<ISetupInstanceCatalog>();
-                THROW_IF_FAILED(instanceCatalog->GetCatalogInfo(&properties));
-                VsSetupConfiguration::DebugOutputProperties(L"Instance Catalog", properties);
-#endif
-            }
-
         private:
             friend class TerminalApp::VsSetupConfiguration;
 
@@ -157,9 +135,5 @@ namespace TerminalApp
         static std::wstring GetInstallationPath(ComPtrSetupInstance pInst);
         static std::wstring GetInstanceId(ComPtrSetupInstance pInst);
         static std::wstring GetStringProperty(ComPtrPropertyStore pProps, std::wstring_view name);
-
-#ifdef _DEBUG
-        static void DebugOutputProperties(std::wstring_view header, const ComPtrPropertyStore pProps);
-#endif
     };
 };

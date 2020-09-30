@@ -30,5 +30,9 @@ namespace TerminalApp
         // Inherited via IDynamicProfileGenerator
         virtual std::wstring_view GetNamespace() override = 0;
         std::vector<winrt::TerminalApp::Profile> GenerateProfiles() override;
+
+    private:
+        inline static bool hasQueried = false;
+        inline static std::vector<VsSetupConfiguration::VsSetupInstance> instances;
     };
 };
