@@ -33,30 +33,15 @@ steps:
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
 
 - task: VSBuild@1
-  displayName: 'Build solution **\OpenConsole.sln (no packages)'
+  displayName: 'Build solution **\OpenConsole.sln'
   inputs:
     solution: '**\OpenConsole.sln'
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    # Until there is a servicing release of Visual Studio 2019 Update *7*, we must force the values of:
-    # GenerateAppxPackageOnBuild
-    # because otherwise, they will cause a build instability where MSBuild considers all projects
-    # to always be out-of-date.
-    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:GenerateAppxPackageOnBuild=false"
+    msbuildArgs: "${{ parameters.additionalBuildArguments }}"
     clean: true
-    maximumCpuCount: true
-
-- task: VSBuild@1
-  displayName: 'Build solution **\OpenConsole.sln (CascadiaPackage only)'
-  inputs:
-    solution: '**\OpenConsole.sln'
-    vsVersion: 16.0
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:GenerateAppxPackageOnBuild=true /t:Terminal\\CascadiaPackage;Terminal\\WindowsTerminalUniversal"
-    clean: false # we're relying on build output from the previous run
-    maximumCpuCount: true
+    maximumCpuCount: false
 
 - task: PowerShell@2
   displayName: 'Check MSIX for common regressions'
