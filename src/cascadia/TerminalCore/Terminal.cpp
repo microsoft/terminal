@@ -622,6 +622,41 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     return handledDown || handledUp;
 }
 
+void Microsoft::Terminal::Core::Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<size_t, size_t>& tree)
+{
+    typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
+    const auto rowSize = _buffer->GetRowByOffset(0).size();
+    const auto vis = _VisibleStartIndex();
+    auto invalidate = [=](const ThisTree::interval& interval) {
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start % rowSize), gsl::narrow<SHORT>(interval.start / rowSize + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop % rowSize), gsl::narrow<SHORT>(interval.stop / rowSize + vis) };
+        _InvalidateRegion(startCoord, endCoord);
+    };
+    tree.visit_all(invalidate);
+}
+
+void Microsoft::Terminal::Core::Terminal::_InvalidateRegion(const COORD start, const COORD end)
+{
+    if (start.Y == end.Y)
+    {
+        SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
+    else
+    {
+        const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
+        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        for (SHORT row = start.Y + 1; row < end.Y; ++row)
+        {
+            region = til::rectangle(0, row, rowSize - 1, row);
+            _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        }
+        region = til::rectangle(0, end.Y, end.X, end.Y);
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
+}
+
 // Method Description:
 // - Returns the keyboard's scan code for the given virtual key code.
 // Arguments:
@@ -1068,7 +1103,10 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 //   region changes (for example by text entering the buffer or scrolling)
 void Microsoft::Terminal::Core::Terminal::UpdatePatterns() noexcept
 {
+    auto old = _patternIntervalTree;
     _patternIntervalTree = _buffer->UpdatePatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _InvalidatePatternTree(old);
+    _InvalidatePatternTree(_patternIntervalTree);
 }
 
 const std::optional<til::color> Terminal::GetTabColor() const noexcept

@@ -152,6 +152,7 @@ const size_t Microsoft::Terminal::Core::Terminal::GetPatternId(const COORD locat
         // which will represent all the patterns this location is a part of
         return results.at(0).value;
     }
+    return 0;
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
