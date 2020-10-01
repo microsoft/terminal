@@ -47,9 +47,9 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_MakeTabViewItem()
     {
-        _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
+        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
 
-        _tabViewItem.DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
+        TabViewItem().DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_inRename = true;
@@ -93,17 +93,6 @@ namespace winrt::TerminalApp::implementation
     TermControl TerminalTab::GetActiveTerminalControl() const
     {
         return _activePane->GetTerminalControl();
-    }
-
-    // Method Description:
-    // - Gets the TabViewItem that represents this Tab
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The TabViewItem that represents this Tab
-    winrt::MUX::Controls::TabViewItem TerminalTab::GetTabViewItem()
-    {
-        return _tabViewItem;
     }
 
     // Method Description:
@@ -225,13 +214,13 @@ namespace winrt::TerminalApp::implementation
 
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(_lastIconPath));
-            _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+            TabViewItem().IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
 
             // Update SwitchToTab command's icon
             SwitchToTabCommand().IconSource(IconSource());
@@ -266,7 +255,7 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalTab::_UpdateTitle()
     {
         auto weakThis{ get_weak() };
-        co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
         if (auto tab{ weakThis.get() })
         {
             // Bubble our current tab text to anyone who's listening for changes.
@@ -595,7 +584,7 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
         newTabFlyout.Items().Append(closeTabMenuItem);
-        _tabViewItem.ContextFlyout(newTabFlyout);
+        TabViewItem().ContextFlyout(newTabFlyout);
     }
 
     // Method Description:
@@ -630,13 +619,13 @@ namespace winrt::TerminalApp::implementation
                 tb.Text(tabText);
                 sp.Children().Append(tb);
 
-                _tabViewItem.Header(sp);
+                TabViewItem().Header(sp);
             }
             else
             {
                 // If we're not currently in the process of renaming the tab,
                 // then just set the tab's text to whatever our active title is.
-                _tabViewItem.Header(winrt::box_value(tabText));
+                TabViewItem().Header(winrt::box_value(tabText));
             }
         }
         else
@@ -655,7 +644,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_ConstructTabRenameBox(const winrt::hstring& tabText)
     {
-        if (_tabViewItem.Header().try_as<Controls::TextBox>())
+        if (TabViewItem().Header().try_as<Controls::TextBox>())
         {
             return;
         }
@@ -735,7 +724,7 @@ namespace winrt::TerminalApp::implementation
         _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
             // Curiously, the sender for this event is null, so we have to
             // get the TextBox from the Tab's Header().
-            auto textBox{ _tabViewItem.Header().try_as<Controls::TextBox>() };
+            auto textBox{ TabViewItem().Header().try_as<Controls::TextBox>() };
             if (textBox)
             {
                 textBox.SelectAll();
@@ -745,7 +734,7 @@ namespace winrt::TerminalApp::implementation
             _tabRenameBoxLayoutUpdatedRevoker.revoke();
         });
 
-        _tabViewItem.Header(tabTextBox);
+        TabViewItem().Header(tabTextBox);
     }
 
     // Method Description:
@@ -810,7 +799,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
+        TabViewItem().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [weakThis]() {
             auto ptrTab = weakThis.get();
             if (!ptrTab)
                 return;
@@ -867,15 +856,15 @@ namespace winrt::TerminalApp::implementation
 
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit ot transparency
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
-        _tabViewItem.Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
 
         _RefreshVisualState();
 
@@ -921,9 +910,9 @@ namespace winrt::TerminalApp::implementation
         for (auto keyString : keys)
         {
             auto key = winrt::box_value(keyString);
-            if (_tabViewItem.Resources().HasKey(key))
+            if (TabViewItem().Resources().HasKey(key))
             {
-                _tabViewItem.Resources().Remove(key);
+                TabViewItem().Resources().Remove(key);
             }
         }
 
@@ -939,7 +928,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::ActivateColorPicker()
     {
-        _tabColorPickup.ShowAt(_tabViewItem);
+        _tabColorPickup.ShowAt(TabViewItem());
     }
 
     // Method Description:
@@ -953,13 +942,13 @@ namespace winrt::TerminalApp::implementation
     {
         if (_focused)
         {
-            VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
-            VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
+            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
+            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
         }
         else
         {
-            VisualStateManager::GoToState(_tabViewItem, L"Selected", true);
-            VisualStateManager::GoToState(_tabViewItem, L"Normal", true);
+            VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
+            VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
         }
     }
 

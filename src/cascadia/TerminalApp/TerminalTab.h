@@ -23,7 +23,6 @@ namespace winrt::TerminalApp::implementation
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
         winrt::Windows::UI::Xaml::UIElement GetTabContent();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
@@ -79,6 +78,8 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
+
+        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
 
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
         // This is needed since Tab is going to be managing its own SwitchToTab command.

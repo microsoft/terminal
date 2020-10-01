@@ -41,8 +41,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void SettingsTab::_MakeTabViewItem()
     {
-        _tabViewItem = ::winrt::MUX::Controls::TabViewItem{};
-        _tabViewItem.Header(winrt::box_value(Title()));
+        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+        TabViewItem().Header(winrt::box_value(Title()));
     }
 
     // Method Description:
@@ -54,17 +54,6 @@ namespace winrt::TerminalApp::implementation
     UIElement SettingsTab::GetTabContent()
     {
         return _settingsUI;
-    }
-
-    // Method Description:
-    // - Gets the TabViewItem that represents this Tab
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The TabViewItem that represents this Tab
-    winrt::MUX::Controls::TabViewItem SettingsTab::GetTabViewItem()
-    {
-        return _tabViewItem;
     }
 
     // Method Description:
@@ -119,7 +108,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_foreground(_tabViewItem.Dispatcher());
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
 
         if (auto tab{ weakThis.get() })
         {
@@ -128,7 +117,7 @@ namespace winrt::TerminalApp::implementation
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
-            _tabViewItem.IconSource(GetFontIcon<winrt::MUX::Controls::IconSource>(fontFamily, 12, glyph));
+            TabViewItem().IconSource(GetFontIcon<winrt::MUX::Controls::IconSource>(fontFamily, 12, glyph));
 
             // Update SwitchToTab command's icon
             SwitchToTabCommand().IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
@@ -186,7 +175,7 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyout newTabFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(closeTabMenuItem);
-        _tabViewItem.ContextFlyout(newTabFlyout);
+        TabViewItem().ContextFlyout(newTabFlyout);
     }
 
     // Method Description:

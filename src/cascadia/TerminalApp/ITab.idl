@@ -10,8 +10,8 @@ namespace TerminalApp
         String Title { get; };
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
         Command SwitchToTabCommand { get; };
+        Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
 
-        Microsoft.UI.Xaml.Controls.TabViewItem GetTabViewItem();
         Windows.UI.Xaml.UIElement GetTabContent();
         String GetActiveTitle();
 

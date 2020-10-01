@@ -14,7 +14,6 @@ namespace winrt::TerminalApp::implementation
     public:
         SettingsTab();
 
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
         winrt::Windows::UI::Xaml::UIElement GetTabContent();
 
         bool IsFocused() const noexcept;
@@ -27,13 +26,14 @@ namespace winrt::TerminalApp::implementation
         void Shutdown();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+
         GETSET_PROPERTY(winrt::hstring, Title, L"Settings");
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, nullptr);
         GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, nullptr);
         GETSET_PROPERTY(uint32_t, TabViewIndex, 0);
+        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
 
     private:
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
         winrt::Microsoft::Terminal::Settings::Editor::MainPage _settingsUI{ nullptr };
 
         bool _focused{ false };

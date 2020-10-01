@@ -714,7 +714,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        auto tabViewItem = newTabImpl->GetTabViewItem();
+        auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
         // GH#6570
         // The TabView does not apply compact sizing to items added after Compact is enabled.
@@ -1112,7 +1112,7 @@ namespace winrt::TerminalApp::implementation
             // selected item at all, which can make things like ClosePane not
             // work correctly.
             auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
-            _tabView.SelectedItem(newSelectedTab.GetTabViewItem());
+            _tabView.SelectedItem(newSelectedTab.TabViewItem());
         }
 
         // GH#5559 - If we were in the middle of a drag/drop, end it by clearing
@@ -1240,7 +1240,7 @@ namespace winrt::TerminalApp::implementation
             if (_startupState == StartupState::InStartup)
             {
                 auto tab{ _tabs.GetAt(tabIndex) };
-                _tabView.SelectedItem(tab.GetTabViewItem());
+                _tabView.SelectedItem(tab.TabViewItem());
                 _UpdatedSelectedTab(tabIndex);
             }
             else
@@ -1367,7 +1367,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             auto tabToFocus = page->_tabs.GetAt(tabIndex);
-            _tabView.SelectedItem(tabToFocus.GetTabViewItem());
+            _tabView.SelectedItem(tabToFocus.TabViewItem());
         }
     }
 
@@ -2559,7 +2559,7 @@ namespace winrt::TerminalApp::implementation
             // is called, we don't really care anymore about handling the event.
             auto weakTab = make_weak(newTabImpl);
 
-            auto tabViewItem = newTabImpl->GetTabViewItem();
+            auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
 
             // GH#6570
