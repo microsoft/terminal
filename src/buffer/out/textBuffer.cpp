@@ -2415,8 +2415,8 @@ interval_tree::IntervalTree<til::point, size_t> TextBuffer::GetPatterns(const si
             const auto end = start + i->str().size();
             lenUpToThis = end;
 
-            til::point startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };
-            til::point endCoord{ gsl::narrow<SHORT>(end % rowSize), gsl::narrow<SHORT>(end / rowSize) };
+            const til::point startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };
+            const til::point endCoord{ gsl::narrow<SHORT>(end % rowSize), gsl::narrow<SHORT>(end / rowSize) };
 
             // store the intervals
             // NOTE: these intervals are relative to the VIEWPORT not the buffer
