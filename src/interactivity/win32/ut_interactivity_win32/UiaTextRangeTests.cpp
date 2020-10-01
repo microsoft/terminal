@@ -1180,9 +1180,6 @@ class UiaTextRangeTests
         const COORD writeTarget{ 2, 2 };
         _pTextBuffer->Write({ L"temp" }, writeTarget);
 
-        //if (textUnit == TextUnit::TextUnit_Character && !degenerate)
-        //    DebugBreak();
-
         Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(textUnit)));
         THROW_IF_FAILED(utr->Move(textUnit, -1, &moveAmt));
 
