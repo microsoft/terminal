@@ -1174,14 +1174,48 @@ class UiaTextRangeTests
         VERIFY_ARE_EQUAL(endExclusive, utr->_end);
         VERIFY_ARE_EQUAL(0, moveAmt);
 
-        // Verify that moving backwards still works properly
-
         // write "temp" at (2,2)
         const COORD writeTarget{ 2, 2 };
         _pTextBuffer->Write({ L"temp" }, writeTarget);
 
+        // Verify expansion works properly
+        Log::Comment(NoThrowString().Format(L"Expand by %s", toString(textUnit)));
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(textUnit));
+        if (textUnit <= TextUnit::TextUnit_Character)
+        {
+            VERIFY_ARE_EQUAL(endInclusive, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Word)
+        {
+            VERIFY_ARE_EQUAL(writeTarget, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Line)
+        {
+            VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+        else // textUnit <= TextUnit::TextUnit_Document:
+        {
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+
+        // reset the UTR
+        if (degenerate)
+        {
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endExclusive, endExclusive));
+        }
+        else
+        {
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+        }
+
+        // Verify that moving backwards still works properly
         Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(textUnit)));
         THROW_IF_FAILED(utr->Move(textUnit, -1, &moveAmt));
+        VERIFY_ARE_EQUAL(-1, moveAmt);
 
         // NOTE: If the range is degenerate, _start == _end before AND after the move.
         if (textUnit <= TextUnit::TextUnit_Character)
@@ -1191,25 +1225,21 @@ class UiaTextRangeTests
             // - !degenerate --> it excludes the last char, to select the second to last char
             VERIFY_ARE_EQUAL(degenerate ? endInclusive : secondToLastCharacterPos, utr->_start);
             VERIFY_ARE_EQUAL(endInclusive, utr->_end);
-            VERIFY_ARE_EQUAL(-1, moveAmt);
         }
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
             VERIFY_ARE_EQUAL(origin, utr->_start);
             VERIFY_ARE_EQUAL(degenerate ? origin : writeTarget, utr->_end);
-            VERIFY_ARE_EQUAL(-1, moveAmt);
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
             VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
             VERIFY_ARE_EQUAL(degenerate ? lastLineStart : endExclusive, utr->_end);
-            VERIFY_ARE_EQUAL(-1, moveAmt);
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
             VERIFY_ARE_EQUAL(origin, utr->_start);
             VERIFY_ARE_EQUAL(degenerate ? origin : endExclusive, utr->_end);
-            VERIFY_ARE_EQUAL(-1, moveAmt);
         }
     }
 

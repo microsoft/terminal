@@ -279,10 +279,21 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
         }
         else if (unit <= TextUnit_Line)
         {
-            // expand to line
-            _start.X = 0;
-            _end.X = 0;
-            _end.Y = base::ClampAdd(_start.Y, 1);
+            if (_start == bufferEnd)
+            {
+                // Special case: if we are at the bufferEnd,
+                //   move _start back one, instead of _end forward
+                _start.X = 0;
+                _start.Y = base::ClampSub(_start.Y, 1);
+                _end = bufferEnd;
+            }
+            else
+            {
+                // expand to line
+                _start.X = 0;
+                _end.X = 0;
+                _end.Y = base::ClampAdd(_start.Y, 1);
+            }
         }
         else
         {
