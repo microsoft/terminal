@@ -9,6 +9,8 @@ std::vector<winrt::TerminalApp::Profile> TerminalApp::BaseVisualStudioGenerator:
 {
     std::vector<winrt::TerminalApp::Profile> profiles;
 
+    // There's no point in enumerating valid Visual Studio instances more than once,
+    // so cache them for use by both Visual Studio profile generators.
     if (!BaseVisualStudioGenerator::hasQueried)
     {
         instances = VsSetupConfiguration::QueryInstances();

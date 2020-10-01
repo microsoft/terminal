@@ -20,6 +20,9 @@ Author(s):
 
 namespace TerminalApp
 {
+    /// <summary>
+    /// See https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.setup.configuration?view=visualstudiosdk-2019
+    /// </summary>
     class VsSetupConfiguration
     {
     private:
@@ -42,10 +45,10 @@ namespace TerminalApp
 
             inline std::wstring GetDevShellModulePath() const
             {
-                ULONGLONG ullInstanceVersion;
+                unsigned long long ullInstanceVersion{ 0 };
                 THROW_IF_FAILED(mp_helper->ParseVersion(GetVersion().data(), &ullInstanceVersion));
 
-                ULONGLONG ullVersion16_3;
+                unsigned long long ullVersion16_3{ 0 };
                 THROW_IF_FAILED(mp_helper->ParseVersion(kVersion16_3.data(), &ullVersion16_3));
 
                 if (ullInstanceVersion >= ullVersion16_3)

@@ -23,6 +23,7 @@ IDirect
 IExplorer
 IMap
 IObject
+ISetup
 IStorage
 llabs
 LCID

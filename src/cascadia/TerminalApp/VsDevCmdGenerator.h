@@ -6,7 +6,7 @@ Module Name:
 - VsDevCmdGenerator
 
 Abstract:
-- Dyanmic profile generator for Visual Studio Developer Command Prompt
+- Dynamic profile generator for Visual Studio Developer Command Prompt
 
 Author(s):
 - Charles Willis - October 2020

@@ -6,7 +6,7 @@ Module Name:
 - VsDevShellGenerator
 
 Abstract:
-- Dyanmic profile generator for Visual Studio Developer PowerShell
+- Dynamic profile generator for Visual Studio Developer PowerShell
 
 Author(s):
 - Charles Willis - October 2020
