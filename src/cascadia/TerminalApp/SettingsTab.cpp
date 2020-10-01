@@ -23,12 +23,14 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SettingsTab::SettingsTab(winrt::Windows::UI::Xaml::UIElement settingsUI) :
-        _settingsUI{ settingsUI }
+    SettingsTab::SettingsTab()
     {
+        _settingsUI = winrt::Microsoft::Terminal::Settings::Editor::MainPage();
+
         _MakeTabViewItem();
         _MakeSwitchToTabCommand();
         _CreateContextMenu();
+        _CreateIcon();
     }
 
     // Method Description:
@@ -113,7 +115,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget SettingsTab::UpdateIcon()
+    winrt::fire_and_forget SettingsTab::_CreateIcon()
     {
         auto weakThis{ get_weak() };
 
@@ -150,6 +152,8 @@ namespace winrt::TerminalApp::implementation
     void SettingsTab::Shutdown()
     {
         // TODO: Does/Will the settings UI need some shutdown procedures?
+        _settingsUI = nullptr;
+        _ClosedHandlers(nullptr, nullptr);
     }
 
     // Method Description:

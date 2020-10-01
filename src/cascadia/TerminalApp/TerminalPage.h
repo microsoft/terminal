@@ -96,6 +96,8 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const ITab& tab) const;
         void _UpdateTabIndices();
 
+        winrt::TerminalApp::Command _switchToSettingsCommand{ nullptr };
+
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isAlwaysOnTop{ false };

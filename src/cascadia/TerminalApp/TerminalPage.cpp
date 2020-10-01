@@ -2545,49 +2545,55 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_OpenSettingsUI()
     {
-        // TODO: Add an assurance that only one settings UI tab is open at a time.
-
-        // Add the new tab to the list of our tabs.
-        auto newTabImpl = winrt::make_self<SettingsTab>(winrt::Microsoft::Terminal::Settings::Editor::MainPage());
-        _tabs.Append(*newTabImpl);
-
-        // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
-
-        // Don't capture a strong ref to the tab. If the tab is removed as this
-        // is called, we don't really care anymore about handling the event.
-        auto weakTab = make_weak(newTabImpl);
-
-        auto tabViewItem = newTabImpl->GetTabViewItem();
-        _tabView.TabItems().Append(tabViewItem);
-
-        // GH#6570
-        // The TabView does not apply compact sizing to items added after Compact is enabled.
-        // By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
-        // that it works.
-        // Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
-        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
+        // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
+        if (!_switchToSettingsCommand)
         {
-            _tabView.UpdateLayout();
-            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
-        }
+            // Add the new tab to the list of our tabs.
+            auto newTabImpl = winrt::make_self<SettingsTab>();
+            _tabs.Append(*newTabImpl);
 
-        // The settings ui tab has a fixed font icon.
-        newTabImpl->UpdateIcon();
+            // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
+            newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
 
-        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+            // Don't capture a strong ref to the tab. If the tab is removed as this
+            // is called, we don't really care anymore about handling the event.
+            auto weakTab = make_weak(newTabImpl);
 
-        // When the tab is closed, remove it from our list of tabs.
-        newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
-            if (auto page{ weakThis.get() })
+            auto tabViewItem = newTabImpl->GetTabViewItem();
+            _tabView.TabItems().Append(tabViewItem);
+
+            // GH#6570
+            // The TabView does not apply compact sizing to items added after Compact is enabled.
+            // By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
+            // that it works.
+            // Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
+            if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
             {
-                page->_RemoveOnCloseRoutine(tabViewItem, page);
+                _tabView.UpdateLayout();
+                _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
             }
-        });
 
-        // This kicks off TabView::SelectionChanged, in response to which
-        // we'll attach the terminal's Xaml control to the Xaml root.
-        _tabView.SelectedItem(tabViewItem);
+            tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+
+            // When the tab is closed, remove it from our list of tabs.
+            newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+                if (auto page{ weakThis.get() })
+                {
+                    page->_switchToSettingsCommand = nullptr;
+                    page->_RemoveOnCloseRoutine(tabViewItem, page);
+                }
+            });
+
+            _switchToSettingsCommand = newTabImpl->SwitchToTabCommand();
+
+            // This kicks off TabView::SelectionChanged, in response to which
+            // we'll attach the terminal's Xaml control to the Xaml root.
+            _tabView.SelectedItem(tabViewItem);
+        }
+        else
+        {
+            _actionDispatch->DoAction(_switchToSettingsCommand.Action());
+        }
     }
 
     // Method Description:

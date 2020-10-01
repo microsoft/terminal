@@ -13,11 +13,10 @@ namespace TerminalApp
 
         Microsoft.UI.Xaml.Controls.TabViewItem GetTabViewItem();
         Windows.UI.Xaml.UIElement GetTabContent();
+        String GetActiveTitle();
 
         Boolean IsFocused();
         void SetFocused(Boolean focused);
-
-        String GetActiveTitle();
 
         void UpdateTabViewIndex(UInt32 idx);
         void Shutdown();
