@@ -137,7 +137,7 @@ public:
     const til::point GetGlyphStart(const til::point pos) const;
     const til::point GetGlyphEnd(const til::point pos) const;
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
-    bool MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive = false) const;
+    bool MoveToPreviousGlyph(til::point& pos) const;
 
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
 
