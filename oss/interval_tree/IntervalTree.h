@@ -67,7 +67,7 @@ namespace interval_tree
         };
 
         IntervalTree() :
-            left(nullptr), right(nullptr), center(Scalar{})
+            left(nullptr), right(nullptr), center()
         {
         }
 
