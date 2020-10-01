@@ -1139,56 +1139,57 @@ class UiaTextRangeTests
         const til::point endInclusive = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
         const auto endExclusive{ bufferSize.EndExclusive() };
 
-        // Iterate over each TextUnit. If the we don't support
+        // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
         // to the last one that was defined anyways.
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:textUnit", L"{0, 1, 2, 3, 4, 5, 6}")
+        END_TEST_METHOD_PROPERTIES();
+
+        int unit;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"textUnit", unit), L"Get TextUnit variant");
+        TextUnit textUnit{ static_cast<TextUnit>(unit) };
+
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
         int moveAmt;
-        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
-        {
-            Log::Comment(NoThrowString().Format(L"Forward by %s", toString(static_cast<TextUnit>(unit))));
+        Log::Comment(NoThrowString().Format(L"Forward by %s", toString(textUnit)));
 
-            // Create a degenerate UTR at EndExclusive
-            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
-            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), 1, &moveAmt));
+        // Create a non-degenerate UTR at EndExclusive
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+        THROW_IF_FAILED(utr->Move(textUnit, 1, &moveAmt));
 
-            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
-            VERIFY_ARE_EQUAL(0, moveAmt);
-        }
+        VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        VERIFY_ARE_EQUAL(0, moveAmt);
 
         // Verify that moving backwards still works properly
         const COORD writeTarget{ 2, 2 };
         _pTextBuffer->Write({ L"temp" }, writeTarget);
-        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        COORD expectedEnd;
+        if (textUnit <= TextUnit::TextUnit_Character)
         {
-            COORD expectedEnd;
-            switch (static_cast<TextUnit>(unit))
-            {
-            case TextUnit::TextUnit_Character:
-                expectedEnd = endInclusive;
-                break;
-            case TextUnit::TextUnit_Word:
-                expectedEnd = writeTarget;
-                break;
-            case TextUnit::TextUnit_Line:
-                expectedEnd = endExclusive;
-                break;
-            case TextUnit::TextUnit_Document:
-                expectedEnd = bufferSize.Origin();
-                break;
-            default:
-                continue;
-            }
-
-            Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(static_cast<TextUnit>(unit))));
-
-            // Create a degenerate UTR at EndExclusive
-            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
-            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), -1, &moveAmt));
-
-            VERIFY_ARE_EQUAL(expectedEnd, utr->_end);
-            VERIFY_ARE_EQUAL(-1, moveAmt);
+            expectedEnd = endInclusive;
         }
+        else if (textUnit <= TextUnit::TextUnit_Word)
+        {
+            expectedEnd = writeTarget;
+        }
+        else if (textUnit <= TextUnit::TextUnit_Line)
+        {
+            expectedEnd = endExclusive;
+        }
+        else // textUnit <= TextUnit::TextUnit_Document:
+        {
+            expectedEnd = endExclusive;
+        }
+
+        Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(textUnit)));
+
+        // Create a non-degenerate UTR at EndExclusive
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
+        THROW_IF_FAILED(utr->Move(textUnit, -1, &moveAmt));
+
+        VERIFY_ARE_EQUAL(expectedEnd, utr->_end);
+        VERIFY_ARE_EQUAL(-1, moveAmt);
     }
 
     TEST_METHOD(MoveToPreviousWord)
