@@ -14,6 +14,8 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
+typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
+
 // Routine Description:
 // - Creates a new instance of TextBuffer
 // Arguments:
@@ -2378,7 +2380,6 @@ const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString
 // - An interval tree containing the patterns found
 interval_tree::IntervalTree<size_t, size_t> TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) const
 {
-    typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
     ThisTree::interval_vector intervals;
 
     std::wstring concatAll;

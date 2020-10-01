@@ -19,6 +19,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
+typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
+
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
@@ -622,9 +624,12 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     return handledDown || handledUp;
 }
 
-void Microsoft::Terminal::Core::Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<size_t, size_t>& tree)
+// Method Description:
+// - Invalidates the regions described in the given pattern tree for the rendering purposes
+// Arguments:
+// - The interval tree containing regions that need to be invalidated
+void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<size_t, size_t>& tree)
 {
-    typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
     const auto rowSize = _buffer->GetRowByOffset(0).size();
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const ThisTree::interval& interval) {
@@ -635,7 +640,11 @@ void Microsoft::Terminal::Core::Terminal::_InvalidatePatternTree(interval_tree::
     tree.visit_all(invalidate);
 }
 
-void Microsoft::Terminal::Core::Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
+// Method Description:
+// - Given start and end coords, invalidates all the regions between them
+// Arguments:
+// - The start and end coords
+void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
 {
     if (start.Y == end.Y)
     {
@@ -1101,7 +1110,7 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible
 //   region changes (for example by text entering the buffer or scrolling)
-void Microsoft::Terminal::Core::Terminal::UpdatePatterns() noexcept
+void Terminal::UpdatePatterns() noexcept
 {
     auto old = _patternIntervalTree;
     _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());

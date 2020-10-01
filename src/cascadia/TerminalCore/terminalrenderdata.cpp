@@ -137,7 +137,7 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The location
 // Return value:
 // - The pattern ID of the location
-const size_t Microsoft::Terminal::Core::Terminal::GetPatternId(const COORD location) const noexcept
+const size_t Terminal::GetPatternId(const COORD location) const noexcept
 {
     // Convert the location into its 1-d location because the interval tree stores locations that way
     const auto absLoc = (_buffer->GetRowByOffset(0).size() * location.Y) + location.X;
