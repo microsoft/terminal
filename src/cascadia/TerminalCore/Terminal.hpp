@@ -277,7 +277,7 @@ private:
 
     interval_tree::IntervalTree<size_t, size_t> _patternIntervalTree;
     void _InvalidatePatternTree(interval_tree::IntervalTree<size_t, size_t>& tree);
-    void _InvalidateRegion(const COORD start, const COORD end);
+    void _InvalidateFromCoords(const COORD start, const COORD end);
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
     struct KeyEventCodes

@@ -630,12 +630,12 @@ void Microsoft::Terminal::Core::Terminal::_InvalidatePatternTree(interval_tree::
     auto invalidate = [=](const ThisTree::interval& interval) {
         COORD startCoord{ gsl::narrow<SHORT>(interval.start % rowSize), gsl::narrow<SHORT>(interval.start / rowSize + vis) };
         COORD endCoord{ gsl::narrow<SHORT>(interval.stop % rowSize), gsl::narrow<SHORT>(interval.stop / rowSize + vis) };
-        _InvalidateRegion(startCoord, endCoord);
+        _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);
 }
 
-void Microsoft::Terminal::Core::Terminal::_InvalidateRegion(const COORD start, const COORD end)
+void Microsoft::Terminal::Core::Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
 {
     if (start.Y == end.Y)
     {
@@ -1104,7 +1104,7 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 void Microsoft::Terminal::Core::Terminal::UpdatePatterns() noexcept
 {
     auto old = _patternIntervalTree;
-    _patternIntervalTree = _buffer->UpdatePatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
     _InvalidatePatternTree(old);
     _InvalidatePatternTree(_patternIntervalTree);
 }

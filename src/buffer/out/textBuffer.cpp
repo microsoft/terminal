@@ -2376,7 +2376,7 @@ const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString
 // - The lastRow to search
 // Return value:
 // - An interval tree containing the patterns found
-interval_tree::IntervalTree<size_t, size_t> TextBuffer::UpdatePatterns(const size_t firstRow, const size_t lastRow) const
+interval_tree::IntervalTree<size_t, size_t> TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) const
 {
     typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
     ThisTree::interval_vector intervals;
