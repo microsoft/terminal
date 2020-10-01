@@ -18,7 +18,14 @@ namespace TerminalApp
         Windows.Foundation.IReference<Int64> Y;
     };
 
-    [default_interface] runtimeclass GlobalAppSettings {
+    enum BellStyle
+    {
+        None,
+        Audible
+    };
+
+    [default_interface] runtimeclass GlobalAppSettings
+    {
         Guid DefaultProfile;
         String UnparsedDefaultProfile();
 
@@ -45,6 +52,7 @@ namespace TerminalApp
         Boolean StartOnUserLogin;
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
+        BellStyle BellStyle;
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

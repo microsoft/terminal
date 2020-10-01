@@ -76,6 +76,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
         GETSET_PROPERTY(bool, UseTabSwitcher, true);
+        GETSET_PROPERTY(winrt::TerminalApp::BellStyle, BellStyle, winrt::TerminalApp::BellStyle::Audible);
 
     private:
         hstring _unparsedDefaultProfile;

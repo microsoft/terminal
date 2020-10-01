@@ -1812,8 +1812,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_WarningBellHandler(const IInspectable sender, const IInspectable eventArgs)
     {
-        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+        if (_settings.GlobalSettings().BellStyle() == winrt::TerminalApp::BellStyle::Audible)
+        {
+            const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+            PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+        }
     }
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
