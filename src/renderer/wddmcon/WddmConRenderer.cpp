@@ -258,7 +258,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                      const COORD coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept
@@ -278,7 +278,7 @@ bool WddmConEngine::IsInitialized()
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
 
-            NewChar->Character = clusters.at(i).GetTextAsSingle();
+            NewChar->Character = til::at(clusters, i).GetTextAsSingle();
             NewChar->Attribute = _currentLegacyColorAttribute;
         }
 
@@ -305,13 +305,11 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
-                                                          COLORREF const /*colorBackground*/,
-                                                          const WORD legacyColorAttribute,
-                                                          const ExtendedAttributes /*extendedAttrs*/,
+[[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                          const gsl::not_null<IRenderData*> /*pData*/,
                                                           bool const /*isSettingDefaultBrushes*/) noexcept
 {
-    _currentLegacyColorAttribute = legacyColorAttribute;
+    _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
 
     return S_OK;
 }

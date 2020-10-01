@@ -4,7 +4,9 @@
 #include "pch.h"
 #include <WexTestClass.h>
 
+#include "../TerminalApp/TerminalPage.h"
 #include "../TerminalApp/AppCommandlineArgs.h"
+#include "../TerminalApp/ActionArgs.h"
 
 using namespace WEX::Logging;
 using namespace WEX::Common;
@@ -52,6 +54,10 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateFirstCommandIsNewTab);
 
         TEST_METHOD(CheckTypos);
+
+        TEST_METHOD(TestSimpleExecuteCommandlineAction);
+        TEST_METHOD(TestMultipleCommandExecuteCommandlineAction);
+        TEST_METHOD(TestInvalidExecuteCommandlineAction);
 
     private:
         void _buildCommandlinesHelper(AppCommandlineArgs& appArgs,
@@ -1202,5 +1208,67 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"wsl -d Alpine -- sleep 10", myArgs.TerminalArgs().Commandline());
             VERIFY_ARE_EQUAL(L"C:\\", myArgs.TerminalArgs().StartingDirectory());
         }
+    }
+
+    void CommandlineTest::TestSimpleExecuteCommandlineAction()
+    {
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        args->Commandline(L"new-tab");
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        VERIFY_ARE_EQUAL(1u, actions.size());
+        auto actionAndArgs = actions.at(0);
+        VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+        VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+        auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+        VERIFY_IS_NOT_NULL(myArgs);
+        VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+    }
+
+    void CommandlineTest::TestMultipleCommandExecuteCommandlineAction()
+    {
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        args->Commandline(L"new-tab ; split-pane");
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        VERIFY_ARE_EQUAL(2u, actions.size());
+        {
+            auto actionAndArgs = actions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+        }
+        {
+            auto actionAndArgs = actions.at(1);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+        }
+    }
+
+    void CommandlineTest::TestInvalidExecuteCommandlineAction()
+    {
+        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
+        // -H and -V cannot be combined.
+        args->Commandline(L"split-pane -H -V");
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        VERIFY_ARE_EQUAL(0u, actions.size());
     }
 }

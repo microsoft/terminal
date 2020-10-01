@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2020-06-10
+last updated: 2020-06-16
 issue id: 2046
 ---
 
@@ -521,6 +521,13 @@ default. These are largely the actions that are bound by default.
     { "icon": null, "name": { "key": "ScrollUpPageCommandKey" }, "action": "scrollUpPage" }
 ]
 ```
+
+## Addenda
+
+This spec also has a follow-up spec which introduces further changes upon this
+original draft. Please also refer to:
+
+* June 2020: Unified keybindings and commands, and synthesized action names.
 
 ## Future considerations
 

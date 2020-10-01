@@ -1,12 +1,12 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "pattern": "^(?<modifier>(ctrl|alt|shift)(?:\\+(ctrl|alt|shift)(?<!\\2))?(?:\\+(ctrl|alt|shift)(?<!\\2|\\3))?\\+)?(?<key>[^\\s+]|app|menu|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
       "type": "string",
-      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\napp, menu\tMENU key\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
     },
     "Color": {
       "default": "#",
@@ -34,28 +34,42 @@
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
+        "closeOtherTabs",
         "closePane",
         "closeTab",
+        "closeTabsAfter",
         "closeWindow",
+        "commandPalette",
         "copy",
         "duplicateTab",
+        "find",
         "moveFocus",
         "newTab",
         "nextTab",
         "openNewTabDropdown",
         "openSettings",
+        "openTabColorPicker",
         "paste",
         "prevTab",
+        "renameTab",
         "resetFontSize",
         "resizePane",
         "scrollDown",
         "scrollDownPage",
         "scrollUp",
         "scrollUpPage",
+        "sendInput",
+        "setColorScheme",
+        "setTabColor",
         "splitPane",
         "switchToTab",
+        "tabSearch",
+        "toggleAlwaysOnTop",
+        "toggleFocusMode",
         "toggleFullscreen",
-        "find",
+        "togglePaneZoom",
+        "toggleRetroEffect",
+        "wt",
         "unbound"
       ],
       "type": "string"
@@ -74,6 +88,40 @@
         "vertical",
         "horizontal",
         "auto"
+      ],
+      "type": "string"
+    },
+    "CopyFormat": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "html",
+              "rtf"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "html",
+            "rtf",
+            "all",
+            "none"
+          ]
+        }
+      ]
+    },
+    "AnchorKey": {
+      "enum": [
+        "ctrl",
+        "alt",
+        "shift"
       ],
       "type": "string"
     },
@@ -142,6 +190,18 @@
               "type": "boolean",
               "default": false,
               "description": "If true, the copied content will be copied as a single line (even if there are hard line breaks present in the text). If false, newlines persist from the selected text."
+            },
+            "copyFormatting": {
+              "default": null,
+              "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting.",
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/CopyFormat"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           }
         }
@@ -210,6 +270,28 @@
       ],
       "required": [ "direction" ]
     },
+    "SendInputAction": {
+      "description": "Arguments corresponding to a Send Input Action",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "pattern": "sendInput"
+            },
+            "input": {
+              "type": "string",
+              "default": "",
+              "description": "The text input to feed into the shell. ANSI escape sequences may be used. Escape codes like \\x1b must be written as \\u001b."
+            }
+          }
+        }
+      ],
+      "required": [ "input" ]
+    },
     "SplitPaneAction": {
       "description": "Arguments corresponding to a Split Pane Action",
       "allOf": [
@@ -257,6 +339,94 @@
         }
       ]
     },
+    "SetTabColorAction": {
+      "description": "Arguments corresponding to a Set Tab Color Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setTabColor" },
+            "color": {
+              "$ref": "#/definitions/Color",
+              "default": null,
+              "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
+            }
+          }
+        }
+      ]
+    },
+    "SetColorSchemeAction": {
+      "description": "Arguments corresponding to a Set Color Scheme Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "setColorScheme" },
+            "colorScheme": {
+              "type": "string",
+              "default": "",
+              "description": "the name of the scheme to apply to the active pane"
+            }
+          }
+        }
+      ],
+      "required": [ "colorScheme" ]
+    },
+    "WtAction": {
+      "description": "Arguments corresponding to a wt Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "wt" },
+            "commandline": {
+              "type": "string",
+              "default": "",
+              "description": "a `wt` commandline to run in the current window"
+            }
+          }
+        }
+      ],
+      "required": [ "commandline" ]
+    },
+    "CloseOtherTabsAction": {
+      "description": "Arguments for a closeOtherTabs action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeOtherTabs" },
+            "index": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
+              "default": "",
+              "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
+            }
+          }
+        }
+      ]
+    },
+    "CloseTabsAfterAction": {
+      "description": "Arguments for a closeTabsAfter action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTabsAfter" },
+            "index": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": null }
+              ],
+              "default": "",
+              "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -270,8 +440,14 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
+              { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
               { "$ref": "#/definitions/OpenSettingsAction" },
+              { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/SetColorSchemeAction" },
+              { "$ref": "#/definitions/WtAction" },
+              { "$ref": "#/definitions/CloseOtherTabsAction" },
+              { "$ref": "#/definitions/CloseTabsAfterAction" },
               { "type": "null" }
             ]
         },
@@ -301,6 +477,11 @@
       "additionalProperties": true,
       "description": "Properties that affect the entire window, regardless of the profile settings.",
       "properties": {
+        "alwaysOnTop": {
+          "default": false,
+          "description": "When set to true, the window is created on top of all other windows. If multiple windows are all \"always on top\", the most recently focused one will be the topmost",
+          "type": "boolean"
+        },
         "alwaysShowTabs": {
           "default": true,
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
@@ -313,7 +494,17 @@
         },
         "copyFormatting": {
           "default": true,
-          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard.",
+          "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
+          "$ref": "#/definitions/CopyFormat"
+        },
+        "largePasteWarning": {
+          "default": true,
+          "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
+          "type": "boolean"
+        },
+        "multiLinePasteWarning": {
+          "default": true,
+          "description": "When set to true, trying to paste text with a \"new line\" character will display a warning asking you whether to continue or not with the paste.",
           "type": "boolean"
         },
         "defaultProfile": {
@@ -353,10 +544,16 @@
           "minimum": 1,
           "type": "integer"
         },
+        "startOnUserLogin": {
+          "default": false,
+          "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
+          "type": "boolean"
+        },
         "launchMode": {
           "default": "default",
-          "description": "Defines whether the Terminal will launch as maximized or not.",
+          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window.",
           "enum": [
+            "fullscreen",
             "maximized",
             "default"
           ],
@@ -364,10 +561,11 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "The number of rows to scroll at a time with the mouse wheel. This will override the system setting if the value is not zero or \"system\".",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
           "maximum": 999,
           "minimum": 0,
-          "type": [ "integer", "string" ]
+          "type": [ "integer", "string" ],
+          "deprecated": true
         },
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
@@ -419,6 +617,11 @@
         "confirmCloseAllTabs": {
           "default": true,
           "description": "When set to \"true\" closing a window with multiple tabs open will require confirmation.  When set to \"false\", the confirmation dialog will not appear.",
+          "type": "boolean"
+        },
+        "useTabSwitcher": {
+          "default": true,
+          "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
           "type": "boolean"
         }
       },
@@ -619,8 +822,15 @@
         "padding": {
           "default": "8, 8, 8, 8",
           "description": "Sets the padding around the text within the window. Can have three different formats:\n -\"#\" sets the same padding for all sides \n -\"#, #\" sets the same padding for left-right and top-bottom\n -\"#, #, #, #\" sets the padding individually for left, top, right, and bottom.",
-          "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
-          "type": "string"
+          "oneOf": [
+            {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?( *, *-?[0-9]+(\\.[0-9]+)?|( *, *-?[0-9]+(\\.[0-9]+)?){3})?$",
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ]
         },
         "scrollbarState": {
           "default": "visible",

@@ -16,6 +16,7 @@
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 
 using namespace ::TerminalApp;
+using namespace winrt::TerminalApp;
 
 // Legacy GUIDs:
 //   - Debian       58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530
@@ -34,9 +35,9 @@ std::wstring_view WslDistroGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with all distros for all the installed WSL distros
-std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
+std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 {
-    std::vector<TerminalApp::Profile> profiles;
+    std::vector<Profile> profiles;
 
     wil::unique_handle readPipe;
     wil::unique_handle writePipe;
@@ -76,7 +77,7 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
     }
     DWORD exitCode;
-    if (GetExitCodeProcess(pi.hProcess, &exitCode) == false)
+    if (!GetExitCodeProcess(pi.hProcess, &exitCode))
     {
         THROW_HR(E_INVALIDARG);
     }
@@ -116,7 +117,7 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
                 continue;
             }
 
-            size_t firstChar = distName.find_first_of(L"( ");
+            const size_t firstChar = distName.find_first_of(L"( ");
             // Some localizations don't have a space between the name and "(Default)"
             // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
             if (firstChar < distName.size())
@@ -125,10 +126,10 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
             }
             auto WSLDistro{ CreateDefaultProfile(distName) };
 
-            WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
-            WSLDistro.SetColorScheme({ L"Campbell" });
-            WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-            WSLDistro.SetIconPath(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+            WSLDistro.Commandline(L"wsl.exe -d " + distName);
+            WSLDistro.ColorSchemeName(L"Campbell");
+            WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
+            WSLDistro.IconPath(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
             profiles.emplace_back(WSLDistro);
         }
     }

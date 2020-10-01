@@ -28,13 +28,15 @@ public:
 
     AppCommandlineArgs();
     ~AppCommandlineArgs() = default;
+
     int ParseCommand(const Commandline& command);
+    int ParseArgs(winrt::array_view<const winrt::hstring>& args);
 
     static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     void ValidateStartupCommands();
-    std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
+    std::vector<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
@@ -71,6 +73,7 @@ private:
     CLI::App* _focusTabShort;
     CLI::App* _moveFocusCommand;
     CLI::App* _moveFocusShort;
+
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
     std::string _profileName;
@@ -93,7 +96,7 @@ private:
     std::optional<winrt::TerminalApp::LaunchMode> _launchMode{ std::nullopt };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
-    std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
+    std::vector<winrt::TerminalApp::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
 

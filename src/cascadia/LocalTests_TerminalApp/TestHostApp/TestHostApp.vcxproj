@@ -6,6 +6,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
+    <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
@@ -44,11 +45,11 @@
     "taef.png" is actually in the package. taef.png will get copied to the
     OutputPath when taef is run, but if this isn't set to false, then the CI
     will try and make sure taef.png is in the OutputPath at build time.-->
-  
+
   <PropertyGroup Label="UserMacros">
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
   </PropertyGroup>
-  
+
   <ItemDefinitionGroup>
     <ClCompile>
       <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -93,10 +94,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj">
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
     </ProjectReference>
 
@@ -113,7 +113,7 @@
 
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
-      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.51.200127004\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
 
       <!-- This path is _relative to the .winmd_ -->
@@ -121,7 +121,7 @@
     </Reference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.4.2-prerelease.200604001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 

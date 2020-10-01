@@ -238,6 +238,9 @@ public:
 
     void InitializeCursorRowAttributes();
 
+    void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
+    void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
                        _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
@@ -299,6 +302,8 @@ private:
     short _virtualBottom;
 
     ScreenBufferRenderTarget _renderTarget;
+
+    bool _ignoreLegacyEquivalentVTAttributes;
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

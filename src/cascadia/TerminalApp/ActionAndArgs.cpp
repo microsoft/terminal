@@ -3,39 +3,58 @@
 #include "ActionAndArgs.h"
 #include "ActionAndArgs.g.cpp"
 
+#include "JsonUtils.h"
+
+#include <LibraryResources.h>
+
+static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
+static constexpr std::string_view CloseOtherTabsKey{ "closeOtherTabs" };
+static constexpr std::string_view ClosePaneKey{ "closePane" };
+static constexpr std::string_view CloseTabKey{ "closeTab" };
+static constexpr std::string_view CloseTabsAfterKey{ "closeTabsAfter" };
+static constexpr std::string_view CloseWindowKey{ "closeWindow" };
+static constexpr std::string_view CopyTextKey{ "copy" };
+static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
+static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
+static constexpr std::string_view FindKey{ "find" };
+static constexpr std::string_view MoveFocusKey{ "moveFocus" };
+static constexpr std::string_view NewTabKey{ "newTab" };
+static constexpr std::string_view NewWindowKey{ "newWindow" };
+static constexpr std::string_view NextTabKey{ "nextTab" };
+static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
+static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
+static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
+static constexpr std::string_view PasteTextKey{ "paste" };
+static constexpr std::string_view PrevTabKey{ "prevTab" };
+static constexpr std::string_view RenameTabKey{ "renameTab" };
+static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
+static constexpr std::string_view ResizePaneKey{ "resizePane" };
+static constexpr std::string_view ScrolldownKey{ "scrollDown" };
+static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
+static constexpr std::string_view ScrollupKey{ "scrollUp" };
+static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
+static constexpr std::string_view SendInputKey{ "sendInput" };
+static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
+static constexpr std::string_view SetTabColorKey{ "setTabColor" };
+static constexpr std::string_view SplitPaneKey{ "splitPane" };
+static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
+static constexpr std::string_view TabSearchKey{ "tabSearch" };
+static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
+static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
+static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
+static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
+static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
+
 static constexpr std::string_view ActionKey{ "action" };
 
 // This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
 
-static constexpr std::string_view CopyTextKey{ "copy" };
-static constexpr std::string_view PasteTextKey{ "paste" };
-static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
-static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
-static constexpr std::string_view NewTabKey{ "newTab" };
-static constexpr std::string_view NewWindowKey{ "newWindow" };
-static constexpr std::string_view CloseWindowKey{ "closeWindow" };
-static constexpr std::string_view CloseTabKey{ "closeTab" };
-static constexpr std::string_view ClosePaneKey{ "closePane" };
-static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
-static constexpr std::string_view NextTabKey{ "nextTab" };
-static constexpr std::string_view PrevTabKey{ "prevTab" };
-static constexpr std::string_view AdjustFontSizeKey{ "adjustFontSize" };
-static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
-static constexpr std::string_view ScrollupKey{ "scrollUp" };
-static constexpr std::string_view ScrolldownKey{ "scrollDown" };
-static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
-static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
-static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
-static constexpr std::string_view OpenSettingsKey{ "openSettings" }; // TODO GH#2557: Add args for OpenSettings
-static constexpr std::string_view SplitPaneKey{ "splitPane" };
-static constexpr std::string_view ResizePaneKey{ "resizePane" };
-static constexpr std::string_view MoveFocusKey{ "moveFocus" };
-static constexpr std::string_view FindKey{ "find" };
-static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
-
 namespace winrt::TerminalApp::implementation
 {
+    using namespace ::TerminalApp;
+
     // Specifically use a map here over an unordered_map. We want to be able to
     // iterate over these entries in-order when we're serializing the keybindings.
     // HERE BE DRAGONS:
@@ -44,35 +63,49 @@ namespace winrt::TerminalApp::implementation
     // the actual strings being pointed to. However, since both these strings and
     // the map are all const for the lifetime of the app, we have nothing to worry
     // about here.
-    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionNamesMap{
+    const std::map<std::string_view, ShortcutAction, std::less<>> ActionAndArgs::ActionKeyNamesMap{
+        { AdjustFontSizeKey, ShortcutAction::AdjustFontSize },
+        { CloseOtherTabsKey, ShortcutAction::CloseOtherTabs },
+        { ClosePaneKey, ShortcutAction::ClosePane },
+        { CloseTabKey, ShortcutAction::CloseTab },
+        { CloseTabsAfterKey, ShortcutAction::CloseTabsAfter },
+        { CloseWindowKey, ShortcutAction::CloseWindow },
         { CopyTextKey, ShortcutAction::CopyText },
-        { PasteTextKey, ShortcutAction::PasteText },
-        { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
         { DuplicateTabKey, ShortcutAction::DuplicateTab },
+        { ExecuteCommandlineKey, ShortcutAction::ExecuteCommandline },
+        { FindKey, ShortcutAction::Find },
+        { MoveFocusKey, ShortcutAction::MoveFocus },
         { NewTabKey, ShortcutAction::NewTab },
         { NewWindowKey, ShortcutAction::NewWindow },
-        { CloseWindowKey, ShortcutAction::CloseWindow },
-        { CloseTabKey, ShortcutAction::CloseTab },
-        { ClosePaneKey, ShortcutAction::ClosePane },
         { NextTabKey, ShortcutAction::NextTab },
-        { PrevTabKey, ShortcutAction::PrevTab },
-        { AdjustFontSizeKey, ShortcutAction::AdjustFontSize },
-        { ResetFontSizeKey, ShortcutAction::ResetFontSize },
-        { ScrollupKey, ShortcutAction::ScrollUp },
-        { ScrolldownKey, ShortcutAction::ScrollDown },
-        { ScrolluppageKey, ShortcutAction::ScrollUpPage },
-        { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
-        { SwitchToTabKey, ShortcutAction::SwitchToTab },
-        { ResizePaneKey, ShortcutAction::ResizePane },
-        { MoveFocusKey, ShortcutAction::MoveFocus },
+        { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
         { OpenSettingsKey, ShortcutAction::OpenSettings },
-        { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
+        { OpenTabColorPickerKey, ShortcutAction::OpenTabColorPicker },
+        { PasteTextKey, ShortcutAction::PasteText },
+        { PrevTabKey, ShortcutAction::PrevTab },
+        { RenameTabKey, ShortcutAction::RenameTab },
+        { ResetFontSizeKey, ShortcutAction::ResetFontSize },
+        { ResizePaneKey, ShortcutAction::ResizePane },
+        { ScrolldownKey, ShortcutAction::ScrollDown },
+        { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
+        { ScrollupKey, ShortcutAction::ScrollUp },
+        { ScrolluppageKey, ShortcutAction::ScrollUpPage },
+        { SendInputKey, ShortcutAction::SendInput },
+        { SetColorSchemeKey, ShortcutAction::SetColorScheme },
+        { SetTabColorKey, ShortcutAction::SetTabColor },
         { SplitPaneKey, ShortcutAction::SplitPane },
+        { SwitchToTabKey, ShortcutAction::SwitchToTab },
+        { TabSearchKey, ShortcutAction::TabSearch },
+        { ToggleAlwaysOnTopKey, ShortcutAction::ToggleAlwaysOnTop },
+        { ToggleCommandPaletteKey, ShortcutAction::ToggleCommandPalette },
+        { ToggleFocusModeKey, ShortcutAction::ToggleFocusMode },
+        { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
+        { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
+        { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
         { UnboundKey, ShortcutAction::Invalid },
-        { FindKey, ShortcutAction::Find }
     };
 
-    using ParseResult = std::tuple<IActionArgs, std::vector<::TerminalApp::SettingsLoadWarnings>>;
+    using ParseResult = std::tuple<IActionArgs, std::vector<TerminalApp::SettingsLoadWarnings>>;
     using ParseActionFunction = std::function<ParseResult(const Json::Value&)>;
 
     // This is a map of ShortcutAction->function<IActionArgs(Json::Value)>. It holds
@@ -81,21 +114,21 @@ namespace winrt::TerminalApp::implementation
     // placed into this map, with the corresponding deserializer function as the
     // value.
     static const std::map<ShortcutAction, ParseActionFunction, std::less<>> argParsers{
-        { ShortcutAction::CopyText, winrt::TerminalApp::implementation::CopyTextArgs::FromJson },
-
-        { ShortcutAction::NewTab, winrt::TerminalApp::implementation::NewTabArgs::FromJson },
-
-        { ShortcutAction::SwitchToTab, winrt::TerminalApp::implementation::SwitchToTabArgs::FromJson },
-
-        { ShortcutAction::ResizePane, winrt::TerminalApp::implementation::ResizePaneArgs::FromJson },
-
-        { ShortcutAction::MoveFocus, winrt::TerminalApp::implementation::MoveFocusArgs::FromJson },
-
-        { ShortcutAction::AdjustFontSize, winrt::TerminalApp::implementation::AdjustFontSizeArgs::FromJson },
-
-        { ShortcutAction::SplitPane, winrt::TerminalApp::implementation::SplitPaneArgs::FromJson },
-
-        { ShortcutAction::OpenSettings, winrt::TerminalApp::implementation::OpenSettingsArgs::FromJson },
+        { ShortcutAction::AdjustFontSize, AdjustFontSizeArgs::FromJson },
+        { ShortcutAction::CloseOtherTabs, CloseOtherTabsArgs::FromJson },
+        { ShortcutAction::CloseTabsAfter, CloseTabsAfterArgs::FromJson },
+        { ShortcutAction::CopyText, CopyTextArgs::FromJson },
+        { ShortcutAction::ExecuteCommandline, ExecuteCommandlineArgs::FromJson },
+        { ShortcutAction::MoveFocus, MoveFocusArgs::FromJson },
+        { ShortcutAction::NewTab, NewTabArgs::FromJson },
+        { ShortcutAction::OpenSettings, OpenSettingsArgs::FromJson },
+        { ShortcutAction::RenameTab, RenameTabArgs::FromJson },
+        { ShortcutAction::ResizePane, ResizePaneArgs::FromJson },
+        { ShortcutAction::SendInput, SendInputArgs::FromJson },
+        { ShortcutAction::SetColorScheme, SetColorSchemeArgs::FromJson },
+        { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
+        { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
+        { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -111,8 +144,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
-        const auto found = ActionAndArgs::ActionNamesMap.find(actionString);
-        return found != ActionAndArgs::ActionNamesMap.end() ? found->second : ShortcutAction::Invalid;
+        const auto found = ActionAndArgs::ActionKeyNamesMap.find(actionString);
+        return found != ActionAndArgs::ActionKeyNamesMap.end() ? found->second : ShortcutAction::Invalid;
     }
 
     // Method Description:
@@ -136,7 +169,7 @@ namespace winrt::TerminalApp::implementation
     // - a deserialized ActionAndArgs corresponding to the values in json, or
     //   null if we failed to deserialize an action.
     winrt::com_ptr<ActionAndArgs> ActionAndArgs::FromJson(const Json::Value& json,
-                                                          std::vector<::TerminalApp::SettingsLoadWarnings>& warnings)
+                                                          std::vector<TerminalApp::SettingsLoadWarnings>& warnings)
     {
         // Invalid is our placeholder that the action was not parsed.
         ShortcutAction action = ShortcutAction::Invalid;
@@ -164,11 +197,9 @@ namespace winrt::TerminalApp::implementation
         }
         else if (json.isObject())
         {
-            const auto actionVal = json[JsonKey(ActionKey)];
-            if (actionVal.isString())
+            if (const auto actionString{ JsonUtils::GetValueForKey<std::optional<std::string>>(json, ActionKey) })
             {
-                auto actionString = actionVal.asString();
-                action = GetActionFromString(actionString);
+                action = GetActionFromString(*actionString);
                 argsVal = json;
             }
         }
@@ -177,7 +208,7 @@ namespace winrt::TerminalApp::implementation
         // does, we'll try to deserialize any "args" that were provided with
         // the binding.
         IActionArgs args{ nullptr };
-        std::vector<::TerminalApp::SettingsLoadWarnings> parseWarnings;
+        std::vector<TerminalApp::SettingsLoadWarnings> parseWarnings;
         const auto deserializersIter = argParsers.find(action);
         if (deserializersIter != argParsers.end())
         {
@@ -209,4 +240,64 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::hstring ActionAndArgs::GenerateName() const
+    {
+        // Use a magic static to initialize this map, because we won't be able
+        // to load the resources at _init_, only at runtime.
+        static const auto GeneratedActionNames = []() {
+            return std::unordered_map<ShortcutAction, winrt::hstring>{
+                { ShortcutAction::AdjustFontSize, RS_(L"AdjustFontSizeCommandKey") },
+                { ShortcutAction::CloseOtherTabs, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::ClosePane, RS_(L"ClosePaneCommandKey") },
+                { ShortcutAction::CloseTab, RS_(L"CloseTabCommandKey") },
+                { ShortcutAction::CloseTabsAfter, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::CloseWindow, RS_(L"CloseWindowCommandKey") },
+                { ShortcutAction::CopyText, RS_(L"CopyTextCommandKey") },
+                { ShortcutAction::DuplicateTab, RS_(L"DuplicateTabCommandKey") },
+                { ShortcutAction::ExecuteCommandline, RS_(L"ExecuteCommandlineCommandKey") },
+                { ShortcutAction::Find, RS_(L"FindCommandKey") },
+                { ShortcutAction::Invalid, L"" },
+                { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
+                { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
+                { ShortcutAction::NewWindow, RS_(L"NewWindowCommandKey") },
+                { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
+                { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },
+                { ShortcutAction::OpenSettings, RS_(L"OpenSettingsCommandKey") },
+                { ShortcutAction::OpenTabColorPicker, RS_(L"OpenTabColorPickerCommandKey") },
+                { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
+                { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
+                { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
+                { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
+                { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
+                { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
+                { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
+                { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::SendInput, L"" },
+                { ShortcutAction::SetColorScheme, L"" },
+                { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
+                { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
+                { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
+                { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
+                { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
+                { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
+                { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
+            };
+        }();
+
+        if (_Args)
+        {
+            auto nameFromArgs = _Args.GenerateName();
+            if (!nameFromArgs.empty())
+            {
+                return nameFromArgs;
+            }
+        }
+
+        const auto found = GeneratedActionNames.find(_Action);
+        return found != GeneratedActionNames.end() ? found->second : L"";
+    }
 }

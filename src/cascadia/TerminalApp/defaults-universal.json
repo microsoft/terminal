@@ -21,7 +21,6 @@
     // Miscellaneous
     "confirmCloseAllTabs": true,
     "theme": "system",
-    "rowsToScroll": "system",
     "snapToGridOnResize": true,
 
     "profiles":
@@ -73,7 +72,7 @@
             "brightWhite": "#FFFFFF"
         }
     ],
-    "keybindings":
+    "actions":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
@@ -82,6 +81,7 @@
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.

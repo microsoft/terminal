@@ -13,6 +13,7 @@
 
 #include <d3d11.h>
 #include <d2d1.h>
+#include <d2d1_1.h>
 #include <d2d1helper.h>
 #include <dwrite.h>
 #include <dwrite_1.h>
@@ -22,6 +23,7 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
+#include "CustomTextLayout.h"
 #include "CustomTextRenderer.h"
 
 #include "../../types/inc/Viewport.hpp"
@@ -54,6 +56,7 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
+        bool GetRetroTerminalEffects() const noexcept;
         void SetRetroTerminalEffects(bool enable) noexcept;
 
         void SetForceFullRepaintRendering(bool enable) noexcept;
@@ -83,7 +86,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               COORD const coord,
                                               bool const fTrimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -93,11 +96,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(COLORREF const colorForeground,
-                                                   COLORREF const colorBackground,
-                                                   const WORD legacyColorAttribute,
-                                                   const ExtendedAttributes extendedAttrs,
-                                                   bool const isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const gsl::not_null<IRenderData*> pData,
+                                                   const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
@@ -113,9 +114,11 @@ namespace Microsoft::Console::Render
 
         float GetScaling() const noexcept;
 
-        void SetSelectionBackground(const COLORREF color) noexcept;
+        void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
+
+        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -141,6 +144,17 @@ namespace Microsoft::Console::Render
         bool _isEnabled;
         bool _isPainting;
 
+        struct LineMetrics
+        {
+            float gridlineWidth;
+            float underlineOffset;
+            float underlineOffset2;
+            float underlineWidth;
+            float strikethroughOffset;
+            float strikethroughWidth;
+        };
+
+        LineMetrics _lineMetrics;
         til::size _displaySizePixels;
         til::size _glyphCell;
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
@@ -152,10 +166,13 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
 
+        uint16_t _hyperlinkHoveredId;
+
         bool _firstFrame;
         bool _invalidateFullRows;
         til::bitmap _invalidMap;
         til::point _invalidScroll;
+        bool _allInvalid;
 
         bool _presentReady;
         std::vector<RECT> _presentDirty;
@@ -166,26 +183,41 @@ namespace Microsoft::Console::Render
         static std::atomic<size_t> _tracelogCount;
 
         // Device-Independent Resources
-        ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
+        ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
+
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+        ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
+        ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
+        ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _hyperlinkStrokeStyle;
+
+        D2D1_STROKE_STYLE_PROPERTIES _strokeStyleProperties;
+        D2D1_STROKE_STYLE_PROPERTIES _dashStrokeStyleProperties;
 
         // Device-Dependent Resources
+        bool _recreateDeviceRequested;
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
         ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
-        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
-        ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
+
+        ::Microsoft::WRL::ComPtr<ID2D1Device> _d2dDevice;
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> _d2dDeviceContext;
+        ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> _d2dBitmap;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
-        UINT _swapChainFlags;
+
+        ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
+        ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
+
+        DXGI_SWAP_CHAIN_DESC1 _swapChainDesc;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
+        std::unique_ptr<DrawingContext> _drawingContext;
 
         // Terminal effects resources.
         bool _retroTerminalEffects;
@@ -206,8 +238,6 @@ namespace Microsoft::Console::Render
 
         float _defaultTextBackgroundOpacity;
 
-        RenderFrameInfo _frameInfo;
-
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct
         {
@@ -223,6 +253,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
 
         void _ReleaseDeviceResources() noexcept;
+
+        bool _ShouldForceGrayscaleAA() noexcept;
 
         [[nodiscard]] HRESULT _CreateTextLayout(
             _In_reads_(StringLength) PCWCHAR String,
@@ -255,11 +287,13 @@ namespace Microsoft::Console::Render
                                                const int dpi,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                               LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;
 
         void _InvalidateRectangle(const til::rectangle& rc);
+        bool _IsAllInvalid() const noexcept;
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 

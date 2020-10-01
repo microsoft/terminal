@@ -11,19 +11,11 @@
     <OpenConsoleUniversalApp>false</OpenConsoleUniversalApp>
     <ApplicationType>Windows Store</ApplicationType>
     <NoOutputRedirection>true</NoOutputRedirection>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <SDLCheck>true</SDLCheck>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-    </Link>
-  </ItemDefinitionGroup>
 
   <PropertyGroup>
     <GenerateManifest>true</GenerateManifest>
@@ -66,6 +58,16 @@
   </PropertyGroup>
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- These have to come after post.props because the Cpp common targets will inexplicably overwrite them. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
 
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
 </Project>

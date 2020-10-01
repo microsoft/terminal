@@ -141,7 +141,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         // been handled we can discard the message before we even translate it.
         if (_messageIsF7Keypress(message))
         {
-            if (host.OnDirectKeyEvent(VK_F7, true))
+            if (host.OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
             {
                 // The application consumed the F7. Don't let Xaml get it.
                 continue;
@@ -154,7 +154,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         if (_messageIsAltKeyup(message))
         {
             // Let's pass <Alt> to the application
-            if (host.OnDirectKeyEvent(VK_MENU, false))
+            if (host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
             {
                 // The application consumed the Alt. Don't let Xaml get it.
                 continue;

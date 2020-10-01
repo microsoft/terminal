@@ -1,18 +1,25 @@
-// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation
 // Licensed under the MIT license.
 
 #include "pch.h"
 #include "Utils.h"
 
-// Method Description:
-// - Constructs a wstring from a given Json::Value object. Reads the object as
-//   a std::string using asString, then builds an hstring from that std::string,
-//   then converts that hstring into a std::wstring.
-// Arguments:
-// - json: the Json::Value to parse as a string
-// Return Value:
-// - the wstring equivalent of the value in json
-std::wstring GetWstringFromJson(const Json::Value& json)
+std::wstring VisualizeControlCodes(std::wstring str) noexcept
 {
-    return winrt::to_hstring(json.asString()).c_str();
+    for (auto& ch : str)
+    {
+        if (ch < 0x20)
+        {
+            ch += 0x2400;
+        }
+        else if (ch == 0x20)
+        {
+            ch = 0x2423; // replace space with ␣
+        }
+        else if (ch == 0x7f)
+        {
+            ch = 0x2421; // replace del with ␡
+        }
+    }
+    return str;
 }

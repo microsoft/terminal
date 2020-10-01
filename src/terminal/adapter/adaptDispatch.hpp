@@ -55,17 +55,19 @@ namespace Microsoft::Console::VirtualTerminal
         bool EraseCharacters(const size_t numChars) override; // ECH
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
-        bool SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) override; // SGR
+        bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
+        bool SecondaryDeviceAttributes() override; // DA2
+        bool TertiaryDeviceAttributes() override; // DA3
         bool Vt52DeviceAttributes() override; // VT52 Identify
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
         bool SetColumns(const size_t columns) override; // DECCOLM
-        bool SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECSET
-        bool ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) override; // DECRST
+        bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) override; // DECSET
+        bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
@@ -80,16 +82,16 @@ namespace Microsoft::Console::VirtualTerminal
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT
         bool ReverseLineFeed() override; // RI
-        bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
+        bool SetWindowTitle(const std::wstring_view title) override; // OSCWindowTitle
         bool UseAlternateScreenBuffer() override; // ASBSET
         bool UseMainScreenBuffer() override; // ASBRST
         bool HorizontalTabSet() override; // HTS
         bool ForwardTab(const size_t numTabs) override; // CHT, HT
         bool BackwardsTab(const size_t numTabs) override; // CBT
         bool TabClear(const size_t clearType) override; // TBC
-        bool DesignateCodingSystem(const wchar_t codingSystem) override; // DOCS
-        bool Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) override; // SCS
-        bool Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset) override; // SCS
+        bool DesignateCodingSystem(const VTID codingSystem) override; // DOCS
+        bool Designate94Charset(const size_t gsetNumber, const VTID charset) override; // SCS
+        bool Designate96Charset(const size_t gsetNumber, const VTID charset) override; // SCS
         bool LockingShift(const size_t gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const size_t gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const size_t gsetNumber) override; // SS2, SS3
@@ -106,13 +108,18 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 
+        bool SetClipboard(const std::wstring_view content) noexcept override; // OSCSetClipboard
+
         bool SetColorTableEntry(const size_t tableIndex,
-                                const DWORD color) override; // OscColorTable
+                                const DWORD color) override; // OSCColorTable
         bool SetDefaultForeground(const DWORD color) override; // OSCDefaultForeground
         bool SetDefaultBackground(const DWORD color) override; // OSCDefaultBackground
 
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                const std::basic_string_view<size_t> parameters) override; // DTTERM_WindowManipulation
+                                const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
+
+        bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
+        bool EndHyperlink() override;
 
     private:
         enum class ScrollDirection
@@ -155,7 +162,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
-        bool _SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable);
+        bool _SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable);
         bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
@@ -188,7 +195,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool _isDECCOLMAllowed;
 
-        size_t _SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+        size_t _SetRgbColorsHelper(const gsl::span<const DispatchTypes::GraphicsOptions> options,
                                    TextAttribute& attr,
                                    const bool isForeground) noexcept;
     };

@@ -3,6 +3,7 @@ trigger:
   branches:
     include:
       - master
+      - feature/*
   paths:
     exclude:
       - doc/*
@@ -13,6 +14,7 @@ pr:
   branches:
     include:
       - master
+      - feature/*
   paths:
     exclude:
       - doc/*

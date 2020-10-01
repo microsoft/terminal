@@ -9,7 +9,7 @@
 
 #include "globals.h"
 
-#include <time.h>
+#include <ctime>
 
 #include "utils.hpp"
 

@@ -1,0 +1,31 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Command.idl";
+import "IDirectKeyListener.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass CommandPalette : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged, IDirectKeyListener
+    {
+        CommandPalette();
+
+        String NoMatchesText { get; };
+        String SearchBoxText { get; };
+        String ControlName { get; };
+        String ParentCommandName { get; };
+
+        Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
+
+        void SetCommands(Windows.Foundation.Collections.IVector<Command> actions);
+        void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
+        void EnableCommandPaletteMode();
+
+        void SelectNextItem(Boolean moveDown);
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
+
+        void EnableTabSwitcherMode(Boolean searchMode, UInt32 startIdx);
+        void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
+    }
+}

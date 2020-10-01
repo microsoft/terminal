@@ -1,6 +1,6 @@
 #include "precomp.h"
-#include <stdio.h>
-#include <wchar.h>
+#include <cstdio>
+#include <cwchar>
 #include "wincon.h"
 
 int CALLBACK EnumFontFamiliesExProc(ENUMLOGFONTEX* lpelfe, NEWTEXTMETRICEX* lpntme, int FontType, LPARAM lParam)

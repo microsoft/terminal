@@ -538,7 +538,7 @@ ptrdiff_t RandomIndex(ptrdiff_t length)
 {
     static bool generatorInitialized{ false };
     static std::default_random_engine generator;
-    if (generatorInitialized == false)
+    if (!generatorInitialized)
     {
         generator.seed(static_cast<unsigned>(std::chrono::system_clock::now().time_since_epoch().count()));
         generatorInitialized = true;

@@ -100,7 +100,7 @@ ConIoSrvComm::~ConIoSrvComm()
 
     // Initialize the server port name.
     Ret = RtlCreateUnicodeString(&PortName, CIS_ALPC_PORT_NAME);
-    if (Ret == FALSE)
+    if (!Ret)
     {
         return STATUS_NO_MEMORY;
     }

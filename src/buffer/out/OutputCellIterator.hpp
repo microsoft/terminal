@@ -39,9 +39,9 @@ public:
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const std::wstring_view utf16Text);
     OutputCellIterator(const std::wstring_view utf16Text, const TextAttribute attribute);
-    OutputCellIterator(const std::basic_string_view<WORD> legacyAttributes, const bool unused) noexcept;
-    OutputCellIterator(const std::basic_string_view<CHAR_INFO> charInfos) noexcept;
-    OutputCellIterator(const std::basic_string_view<OutputCell> cells);
+    OutputCellIterator(const gsl::span<const WORD> legacyAttributes) noexcept;
+    OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept;
+    OutputCellIterator(const gsl::span<const OutputCell> cells);
     ~OutputCellIterator() = default;
 
     OutputCellIterator& operator=(const OutputCellIterator& it) = default;
@@ -86,12 +86,13 @@ private:
     };
     Mode _mode;
 
-    std::basic_string_view<WORD> _legacyAttrs;
+    gsl::span<const WORD> _legacyAttrs;
 
     std::variant<
         std::wstring_view,
-        std::basic_string_view<CHAR_INFO>,
-        std::basic_string_view<OutputCell>,
+        gsl::span<const WORD>,
+        gsl::span<const CHAR_INFO>,
+        gsl::span<const OutputCell>,
         std::monostate>
         _run;
 

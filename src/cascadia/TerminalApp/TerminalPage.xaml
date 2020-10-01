@@ -53,5 +53,39 @@ the MIT License. See LICENSE in the project root for license information. -->
             DefaultButton="Primary"
             PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
         </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="MultiLinePasteDialog"
+            x:Uid="MultiLinePasteDialog"
+            DefaultButton="Primary">
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="LargePasteDialog"
+            x:Uid="LargePasteDialog"
+            DefaultButton="Primary">
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="CouldNotOpenUriDialog"
+            x:Uid="CouldNotOpenUriDialog"
+            DefaultButton="Primary">
+            <TextBlock IsTextSelectionEnabled="True" TextWrapping="WrapWholeWords">
+                <Run x:Name="CouldNotOpenUriReason" /> <LineBreak />
+                <Run
+                    x:Name="UnopenedUri"
+                    FontFamily="Cascadia Mono">
+                </Run>
+            </TextBlock>
+        </ContentDialog>
+
+        <local:CommandPalette
+            x:Name="CommandPalette"
+            Grid.Row="1"
+            Visibility="Collapsed"
+            VerticalAlignment="Stretch" />
     </Grid>
 </Page>

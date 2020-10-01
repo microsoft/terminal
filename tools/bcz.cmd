@@ -116,8 +116,12 @@ set "__PROJECT_NAME=!_OUTPUT!"
 rem If we're trying to clean build, make sure to update the target here.
 if "%_MSBUILD_TARGET%" == "Build" (
     set __MSBUILD_TARGET=%__PROJECT_NAME%
-) else if "%_MSBUILD_TARGET%" == "Clean,Build" (
+) else if "%_MSBUILD_TARGET%" == "Clean;Build" (
     set __MSBUILD_TARGET=%__PROJECT_NAME%:Rebuild
+) else (
+    echo.
+    echo Oops... build bug in the neighborhood of configuring a build target.
+    echo.
 )
 rem This statement will propagate our internal variables up to the calling
 rem scope. Because they're all on one line, the value of our local variables

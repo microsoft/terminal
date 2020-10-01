@@ -18,8 +18,8 @@ Abstract:
 
 #include <windows.h>
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"

@@ -79,13 +79,13 @@ private:
     void _OnMaximizeChange() noexcept;
     void _OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
-    void _SetIsFullscreen(const bool fFullscreenEnabled) override;
+    void _SetIsBorderless(const bool borderlessEnabled) override;
+    void _SetIsFullscreen(const bool fullscreenEnabled) override;
     bool _IsTitlebarVisible() const;
 
     void _UpdateFrameMargins() const noexcept;
     void _UpdateMaximizedState();
     void _UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight);
-    void _UpdateFrameTheme() const;
 
     void _OpenSystemMenu(const int mouseX, const int mouseY) const noexcept;
 };

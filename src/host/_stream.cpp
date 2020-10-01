@@ -971,6 +971,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
+                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -981,7 +982,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             waiter = std::make_unique<WriteData>(screenInfo,
                                                  pwchBuffer,
                                                  *pcbBuffer,
-                                                 gci.OutputCP);
+                                                 gci.OutputCP,
+                                                 requiresVtQuirk);
         }
         catch (...)
         {
@@ -989,6 +991,19 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
 
         return CONSOLE_STATUS_WAIT;
+    }
+
+    auto restoreVtQuirk{
+        wil::scope_exit([&]() { screenInfo.ResetIgnoreLegacyEquivalentVTAttributes(); })
+    };
+
+    if (requiresVtQuirk)
+    {
+        screenInfo.SetIgnoreLegacyEquivalentVTAttributes();
+    }
+    else
+    {
+        restoreVtQuirk.release();
     }
 
     const auto& textBuffer = screenInfo.GetTextBuffer();
@@ -1020,6 +1035,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 [[nodiscard]] HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
                                               const std::wstring_view buffer,
                                               size_t& read,
+                                              bool requiresVtQuirk,
                                               std::unique_ptr<WriteData>& waiter) noexcept
 {
     try
@@ -1032,7 +1048,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         size_t cbTextBufferLength;
         RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
 
-        NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, waiter);
+        NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
 
         // Convert back from bytes to characters for the resulting string length written.
         read = cbTextBufferLength / sizeof(wchar_t);
@@ -1065,6 +1081,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
                                                      const std::string_view buffer,
                                                      size_t& read,
+                                                     bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -1176,7 +1193,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
         // Make the W version of the call
         size_t wcBufferWritten{};
-        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, writeDataWaiter) };
+        const auto hr{ WriteConsoleWImplHelper(screenInfo, wstr, wcBufferWritten, requiresVtQuirk, writeDataWaiter) };
 
         // If there is no waiter, process the byte count now.
         if (nullptr == writeDataWaiter.get())
@@ -1254,6 +1271,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleWImpl(IConsoleOutputObject& context,
                                                      const std::wstring_view buffer,
                                                      size_t& read,
+                                                     bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
@@ -1262,7 +1280,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         auto unlock = wil::scope_exit([&] { UnlockConsole(); });
 
         std::unique_ptr<WriteData> writeDataWaiter;
-        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, writeDataWaiter));
+        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
 
         // Transfer specific waiter pointer into the generic interface wrapper.
         waiter.reset(writeDataWaiter.release());

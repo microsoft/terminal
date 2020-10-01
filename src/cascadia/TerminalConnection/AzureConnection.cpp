@@ -10,7 +10,7 @@
 #include "AzureConnection.h"
 #include "AzureClientID.h"
 #include <sstream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <LibraryResources.h>
 #include <unicode.hpp>
 

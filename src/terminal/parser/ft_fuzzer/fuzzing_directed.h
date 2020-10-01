@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <limits>
-#include <assert.h>
+#include <cassert>
 #include <strsafe.h>
 
 #pragma warning(disable : 4505)

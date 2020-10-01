@@ -6,7 +6,9 @@ ABANDONFONT
 ABCDEFGHIJKLMNO
 ABCG
 abf
+abgr
 abi
+ACCESSTOKEN
 acec
 acf
 acidev
@@ -23,6 +25,7 @@ addressof
 ADDSTRING
 ADDTOOL
 AEnd
+aef
 AFew
 AFill
 AFX
@@ -71,6 +74,7 @@ apps
 APPWINDOW
 appx
 appxbundle
+appxerror
 appxmanifest
 APrep
 apsect
@@ -99,7 +103,6 @@ AStomps
 ASYNCWINDOWPOS
 atch
 ATest
-atg
 attr
 ATTRCOLOR
 aumid
@@ -160,7 +163,6 @@ bitsavers
 bitset
 BKCOLOR
 BKGND
-BKMK
 Bksp
 blog
 Blt
@@ -190,6 +192,7 @@ buffersize
 buflen
 bugfix
 buildtransitive
+BUILDURI
 burriter
 BValue
 byref
@@ -202,6 +205,7 @@ capslock
 CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
+cassert
 catid
 cazamor
 CBash
@@ -268,12 +272,14 @@ clipbrd
 CLIPCHILDREN
 CLIPSIBLINGS
 cliutils
+clocale
 closetest
 cloudconsole
 cls
 CLSCTX
 clsid
 CLUSTERMAP
+cmath
 cmatrix
 cmder
 CMDEXT
@@ -292,7 +298,7 @@ codepage
 codepoint
 codeproject
 COINIT
-colo
+COLLECTIONURI
 colorizing
 colororacle
 colorref
@@ -349,10 +355,10 @@ conpty
 conptylib
 consecteturadipiscingelit
 conserv
-consoleaccessibility
 consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
+consolegit
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -416,12 +422,17 @@ Csr
 csrmsg
 CSRSS
 csrutil
+cstdarg
+cstddef
 cstdio
+cstdlib
 cstr
 cstring
 cstyle
+CSV
 CSwitch
 CText
+ctime
 ctl
 ctlseqs
 Ctlv
@@ -502,6 +513,7 @@ dealloc
 debian
 debolden
 debounce
+debugbreak
 DECALN
 DECANM
 DECAUPSS
@@ -537,6 +549,7 @@ DECSCUSR
 DECSED
 DECSEL
 DECSET
+DECSLPP
 DECSLRM
 DECSMBV
 DECSMKR
@@ -587,7 +600,9 @@ devops
 Dext
 df
 DFactory
+DFMT
 dh
+dhandler
 dialogbox
 diffing
 DINLINE
@@ -610,6 +625,8 @@ dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
+dmp
+dnceng
 DOCTYPE
 docx
 DONTCARE
@@ -632,7 +649,7 @@ DROPDOWNLIST
 DROPFILES
 drv
 dsm
-Dst
+dst
 DSwap
 DTest
 dtor
@@ -675,7 +692,7 @@ Elems
 elif
 elseif
 emacs
-emptybox
+EMPTYBOX
 enabledelayedexpansion
 endian
 endif
@@ -699,6 +716,7 @@ errno
 errorlevel
 esa
 ETB
+etcoreapp
 ETW
 ETX
 EUDC
@@ -744,7 +762,6 @@ fdw
 fea
 fesb
 FFDE
-FFF
 FFrom
 FGCOLOR
 fgetc
@@ -761,7 +778,6 @@ FILETYPE
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
-Filledbox
 FILTERONPASTE
 finalizer
 FINDCASE
@@ -813,7 +829,6 @@ fsproj
 fstream
 fte
 Ftm
-fullcolor
 fullscreen
 fullwidth
 func
@@ -842,6 +857,7 @@ GETAUTOHIDEBAREX
 GETCARETWIDTH
 getch
 getchar
+GETCLIENTAREAANIMATION
 GETCOMMANDHISTORY
 GETCOMMANDHISTORYLENGTH
 GETCONSOLEINPUT
@@ -884,9 +900,11 @@ GETWHEELSCROLLCHARACTERS
 GETWHEELSCROLLCHARS
 GETWHEELSCROLLLINES
 getwriter
+GFEh
 Gfun
 gfx
 gh
+gitfilters
 github
 gitlab
 gle
@@ -1003,7 +1021,6 @@ hwheel
 hwnd
 HWNDPARENT
 hxx
-hyperlink
 IAccessibility
 IAction
 IApi
@@ -1026,7 +1043,6 @@ ICore
 IData
 IDCANCEL
 IDD
-IDefault
 IDesktop
 IDictionary
 IDISHWND
@@ -1059,6 +1075,8 @@ IInteract
 IInteractivity
 IIo
 IList
+imagemagick
+Imatch
 ime
 Imm
 IMouse
@@ -1075,6 +1093,7 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
+inkscape
 inl
 INLINEPREFIX
 Inlines
@@ -1140,12 +1159,14 @@ IUI
 IUia
 IUnknown
 ivalid
+IValue
 IVector
 IWait
 iwch
 IWin
 IWindow
 IXaml
+IXMP
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1228,6 +1249,7 @@ linputfile
 Linq
 linux
 listbox
+listproperties
 listptr
 listptrsize
 lk
@@ -1248,10 +1270,12 @@ locstudio
 Loewen
 LOGFONT
 LOGFONTW
+logissue
 Loremipsumdolorsitamet
 lowercased
 loword
 lparam
+lparen
 LPBYTE
 LPCCH
 lpch
@@ -1371,8 +1395,8 @@ mimetype
 mincore
 mindbogglingly
 mingw
+minimizeall
 minkernel
-minmax
 minwin
 minwindef
 Mip
@@ -1521,6 +1545,7 @@ NOTICKS
 NOTIMPL
 notin
 NOTNULL
+NOTOPMOST
 NOTRACK
 NOTSUPPORTED
 notypeopt
@@ -1532,7 +1557,7 @@ NOYIELD
 NOZORDER
 NPM
 npos
-NRCS
+nrcs
 NSTATUS
 ntapi
 ntcon
@@ -1610,6 +1635,7 @@ OSCBG
 OSCCT
 OSCFG
 OSCRCC
+OSCSCB
 OSCSCC
 OSCWT
 OSDEPENDSROOT
@@ -1708,7 +1734,6 @@ pguid
 pgup
 PHANDLE
 phhook
-phsl
 phwnd
 pid
 pidl
@@ -1738,7 +1763,6 @@ POBJECT
 Podcast
 POINTSLIST
 POLYTEXTW
-popclip
 popd
 POPF
 poppack
@@ -1776,9 +1800,11 @@ prect
 prefast
 prefilled
 prefs
+preinstalled
 PRELOAD
 PREMULTIPLIED
 prepopulated
+presorted
 PREVENTPINNING
 PREVIEWLABEL
 PREVIEWWINDOW
@@ -1921,7 +1947,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
-remoting
+Remoting
 renderengine
 rendersize
 reparent
@@ -1929,7 +1955,6 @@ reparenting
 replatformed
 Replymessage
 repositorypath
-rerendered
 rescap
 Resequence
 Reserialize
@@ -1938,6 +1963,7 @@ resheader
 resizable
 resmimetype
 restrictedcapabilities
+restrictederrorinfo
 resw
 resx
 retval
@@ -1975,9 +2001,10 @@ RMENU
 roadmap
 robomac
 roundtrip
-ROWSTOSCROLL
+rparen
 RRF
 RRRGGGBB
+rsas
 rtcore
 RTEXT
 rtf
@@ -1994,6 +2021,7 @@ runformat
 runft
 RUNFULLSCREEN
 runsettings
+runtests
 runtimeclass
 runuia
 runut
@@ -2036,7 +2064,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
-SCS
+Scs
 scursor
 sddl
 sdeleted
@@ -2106,7 +2134,6 @@ Shl
 shlguid
 shlobj
 shlwapi
-shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2122,6 +2149,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+SIZEBOX
 sizeof
 SIZESCROLL
 SKIPFONT
@@ -2142,6 +2170,7 @@ SND
 SOLIDBOX
 Solutiondir
 somefile
+SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
 SPACEBAR
@@ -2178,14 +2207,11 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
-stdarg
 stdcall
-stddef
 stderr
 stdexcept
 stdin
 stdio
-stdlib
 STDMETHODCALLTYPE
 STDMETHODIMP
 stdout
@@ -2218,6 +2244,7 @@ subspan
 substr
 subsystemconsole
 subsystemwindows
+suiteless
 svg
 swapchain
 swapchainpanel
@@ -2252,6 +2279,7 @@ targetentrypoint
 TARGETLIBS
 TARGETNAME
 targetnametoken
+targetsize
 targetver
 taskbar
 tbar
@@ -2268,6 +2296,7 @@ tcommandline
 tcommands
 tcon
 TDP
+TEAMPROJECT
 tearoff
 Teb
 techcommunity
@@ -2278,11 +2307,11 @@ telnetd
 telnetpp
 templated
 terminalcore
-terminalnuget
 TERMINALSCROLLING
 terminfo
 TEs
 testapp
+testbuildplatform
 testcon
 testd
 testdlls
@@ -2291,11 +2320,15 @@ testlab
 testlist
 testmd
 testmddefinition
+testmode
+testname
+testnameprefix
 TESTNULL
 testpass
 testpasses
 testtestabc
 testtesttesttesttest
+testtimeout
 TEXCOORD
 texel
 TExpected
@@ -2334,7 +2367,6 @@ TMult
 tmultiple
 tmux
 todo
-Tofill
 tofrom
 tokenhelpers
 tokenized
@@ -2345,6 +2377,7 @@ Toolset
 tooltip
 TOPDOWNDIB
 TOPLEFT
+toplevel
 TOPRIGHT
 TOpt
 tosign
@@ -2430,7 +2463,6 @@ undef
 Unescape
 unexpand
 Unfocus
-unfocuses
 unhighlighting
 unhosted
 unicode
@@ -2453,6 +2485,7 @@ unpause
 Unregister
 Unregistering
 unte
+untests
 untextured
 untimes
 UPDATEDISPLAY
@@ -2550,6 +2583,7 @@ vstudio
 vswhere
 vtapp
 VTE
+VTID
 vtio
 vtmode
 vtpipeterm
@@ -2683,9 +2717,11 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wnwb
 workarea
 workaround
 workflow
+workitem
 wostream
 WOutside
 WOWARM
@@ -2729,6 +2765,7 @@ wtof
 wtoi
 wtw
 wtypes
+Wubi
 WUX
 WVerify
 wwaproj
@@ -2736,33 +2773,26 @@ WWith
 wx
 wxh
 xa
-xab
 xact
 xamarin
 xaml
 Xamlmeta
 xargs
 xaz
-xb
-xbc
 xbf
 xbutton
 XBUTTONDBLCLK
 XBUTTONDOWN
 XBUTTONUP
-xca
 XCast
-xce
 XCENTER
 XColors
 xcopy
 XCount
-xdd
 xdy
 xe
 XEncoding
 xff
-xffff
 XFile
 xlang
 XManifest
@@ -2781,6 +2811,7 @@ XSubstantial
 xtended
 xterm
 XTest
+xunit
 xutr
 xvalue
 XVIRTUALSCREEN

@@ -93,4 +93,5 @@ Note:
 [[nodiscard]] NTSTATUS DoWriteConsole(_In_reads_bytes_(*pcbBuffer) PWCHAR pwchBuffer,
                                       _Inout_ size_t* const pcbBuffer,
                                       SCREEN_INFORMATION& screenInfo,
+                                      bool requiresVtQuirk,
                                       std::unique_ptr<WriteData>& waiter);

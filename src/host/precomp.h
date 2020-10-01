@@ -56,7 +56,7 @@ Abstract:
 #include <intsafe.h>
 #pragma prefast(pop)
 #include <strsafe.h>
-#include <wchar.h>
+#include <cwchar>
 #include <mmsystem.h>
 #include "utils.hpp"
 

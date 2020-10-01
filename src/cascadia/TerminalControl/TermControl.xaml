@@ -38,13 +38,35 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0">
+            <Grid Grid.Column="0"
+                  Visibility="Visible"
+                  Background="Transparent"
+                  PointerPressed="_PointerPressedHandler"
+                  PointerMoved="_PointerMovedHandler"
+                  PointerReleased="_PointerReleasedHandler">
+
                 <SwapChainPanel x:Name="SwapChainPanel"
                                 SizeChanged="_SwapChainSizeChanged"
-                                CompositionScaleChanged="_SwapChainScaleChanged"
-                                PointerPressed="_PointerPressedHandler"
-                                PointerMoved="_PointerMovedHandler"
-                                PointerReleased="_PointerReleasedHandler" />
+                                CompositionScaleChanged="_SwapChainScaleChanged">
+
+                    <Canvas x:Name="OverlayCanvas"
+                            Visibility="Visible">
+                        <Border x:Name="HyperlinkTooltipBorder"
+                                BorderBrush="Transparent">
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Name="LinkTip"
+                                         Placement="Mouse">
+                                    <TextBlock IsTextSelectionEnabled="True">
+                                        <Run x:Name="HoveredUri"/> <LineBreak />
+                                        <Run x:Uid="HowToOpenRun"
+                                             FontStyle="Italic">
+                                        </Run>
+                                    </TextBlock>
+                                </ToolTip>
+                            </ToolTipService.ToolTip>
+                        </Border>
+                    </Canvas>
+                </SwapChainPanel>
 
                 <!-- Putting this in a grid w/ the SwapChainPanel
                 ensures that it's always aligned w/ the scrollbar -->

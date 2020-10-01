@@ -324,26 +324,39 @@ const std::wstring RenderData::GetConsoleTitle() const noexcept
     return gci.GetTitleAndPrefix();
 }
 
-// Routine Description:
-// - Converts a text attribute into the foreground RGB value that should be presented, applying
-//   relevant table translation information and preferences.
+// Method Description:
+// - Get the hyperlink URI associated with a hyperlink ID
+// Arguments:
+// - The hyperlink ID
 // Return Value:
-// - ARGB color value
-const COLORREF RenderData::GetForegroundColor(const TextAttribute& attr) const noexcept
+// - The URI
+const std::wstring RenderData::GetHyperlinkUri(uint16_t id) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupForegroundColor(attr);
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetHyperlinkUriFromId(id);
+}
+
+// Method Description:
+// - Get the custom ID associated with a hyperlink ID
+// Arguments:
+// - The hyperlink ID
+// Return Value:
+// - The custom ID if there was one, empty string otherwise
+const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
+{
+    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
 }
 
 // Routine Description:
-// - Converts a text attribute into the background RGB value that should be presented, applying
+// - Converts a text attribute into the RGB values that should be presented, applying
 //   relevant table translation information and preferences.
 // Return Value:
-// - ARGB color value
-const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const noexcept
+// - ARGB color values for the foreground and background
+std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupBackgroundColor(attr);
+    return gci.LookupAttributeColors(attr);
 }
 #pragma endregion
 

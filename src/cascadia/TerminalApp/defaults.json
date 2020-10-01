@@ -6,6 +6,7 @@
     "initialCols": 120,
     "initialRows": 30,
     "launchMode": "default",
+    "alwaysOnTop": false,
 
     // Selection
     "copyOnSelect": false,
@@ -17,12 +18,12 @@
     "showTabsInTitlebar": true,
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
+    "useTabSwitcher": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
     "startOnUserLogin":  false,
     "theme": "system",
-    "rowsToScroll": "system",
     "snapToGridOnResize": true,
 
     "profiles":
@@ -30,7 +31,7 @@
         {
             "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
             "name": "Windows PowerShell",
-            "commandline": "powershell.exe",
+            "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
             "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
@@ -49,7 +50,7 @@
         {
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
             "name": "Command Prompt",
-            "commandline": "cmd.exe",
+            "commandline": "%SystemRoot%\\System32\\cmd.exe",
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "colorScheme": "Campbell",
             "antialiasingMode": "grayscale",
@@ -187,7 +188,7 @@
             "foreground": "#839496",
             "background": "#002B36",
             "cursorColor": "#FFFFFF",
-            "black": "#073642",
+            "black": "#002B36",
             "red": "#DC322F",
             "green": "#859900",
             "yellow": "#B58900",
@@ -195,7 +196,7 @@
             "purple": "#D33682",
             "cyan": "#2AA198",
             "white": "#EEE8D5",
-            "brightBlack": "#002B36",
+            "brightBlack": "#073642",
             "brightRed": "#CB4B16",
             "brightGreen": "#586E75",
             "brightYellow": "#657B83",
@@ -209,7 +210,7 @@
             "foreground": "#657B83",
             "background": "#FDF6E3",
             "cursorColor": "#002B36",
-            "black": "#073642",
+            "black": "#002B36",
             "red": "#DC322F",
             "green": "#859900",
             "yellow": "#B58900",
@@ -217,7 +218,7 @@
             "purple": "#D33682",
             "cyan": "#2AA198",
             "white": "#EEE8D5",
-            "brightBlack": "#002B36",
+            "brightBlack": "#073642",
             "brightRed": "#CB4B16",
             "brightGreen": "#586E75",
             "brightYellow": "#657B83",
@@ -271,20 +272,27 @@
             "brightWhite": "#EEEEEC"
         }
     ],
-    "keybindings":
+    "actions":
     [
         // Application-level Keys
         { "command": "closeWindow", "keys": "alt+f4" },
         { "command": "toggleFullscreen", "keys": "alt+enter" },
         { "command": "toggleFullscreen", "keys": "f11" },
+        { "command": "toggleFocusMode" },
+        { "command": "toggleAlwaysOnTop" },
         { "command": "openNewTabDropdown", "keys": "ctrl+shift+space" },
         { "command": "openSettings", "keys": "ctrl+," },
         { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
         { "command": "find", "keys": "ctrl+shift+f" },
+        { "command": "toggleRetroEffect" },
+        { "command": "openTabColorPicker" },
+        { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
         //   The closeTab command closes a tab without confirmation, even if it has multiple panes.
+        { "command": "closeOtherTabs" },
+        { "command": "closeTabsAfter" },
         { "command": "newTab", "keys": "ctrl+shift+t" },
         { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+shift+1" },
         { "command": { "action": "newTab", "index": 1 }, "keys": "ctrl+shift+2" },
@@ -320,6 +328,7 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
+        { "command": "togglePaneZoom" },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -336,6 +345,53 @@
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
-        { "command": "resetFontSize", "keys": "ctrl+0" }
+        { "command": "resetFontSize", "keys": "ctrl+0" },
+
+        // Other commands
+        {
+            // Select color scheme...
+            "name": { "key": "SetColorSchemeParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "schemes",
+                    "name": "${scheme.name}",
+                    "command": { "action": "setColorScheme", "colorScheme": "${scheme.name}" }
+                }
+            ]
+        },
+        {
+            // New tab...
+            "name": { "key": "NewTabParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}",
+                    "command": { "action": "newTab", "profile": "${profile.name}" }
+                }
+            ]
+        },
+        {
+            // Split pane...
+            "name": { "key": "SplitPaneParentCommandName" },
+            "commands": [
+                {
+                    "iterateOn": "profiles",
+                    "icon": "${profile.icon}",
+                    "name": "${profile.name}...",
+                    "commands": [
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                        }
+                    ]
+                }
+            ]
+        }
     ]
 }

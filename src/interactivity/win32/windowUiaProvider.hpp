@@ -89,7 +89,7 @@ namespace Microsoft::Console::Interactivity::Win32
         // eventually overflowing the stack.
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
-        std::map<EVENTID, bool> _signalEventFiring;
+        std::unordered_map<EVENTID, bool> _signalEventFiring;
 
         [[nodiscard]] HRESULT _EnsureValidHwnd() const;
 

@@ -8,9 +8,7 @@
 // `renderer.PaintFrame()` is called, the tests will validate the expected
 // output, and then flush the output of the VtEngine straight to the Terminal.
 
-#include "precomp.h"
-#include <wextestclass.h>
-#include "../../inc/consoletaeftemplates.hpp"
+#include "pch.h"
 #include "../../types/inc/Viewport.hpp"
 #include "../../types/inc/convert.hpp"
 
@@ -116,9 +114,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         Viewport initialViewport = currentBuffer.GetViewport();
 
         auto vtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hFile),
-                                                               gci,
-                                                               initialViewport,
-                                                               gci.Get16ColorTable());
+                                                               initialViewport);
         auto pfn = std::bind(&ConptyRoundtripTests::_writeCallback, this, std::placeholders::_1, std::placeholders::_2);
         vtRenderEngine->SetTestCallback(pfn);
 
@@ -217,6 +213,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
     TEST_METHOD(WrapNewLineAtBottomLikeMSYS);
 
     TEST_METHOD(DeleteWrappedWord);
+
+    TEST_METHOD(HyperlinkIdConsistency);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -3474,4 +3472,71 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     VERIFY_SUCCEEDED(renderer.PaintFrame());
     Log::Comment(L"========== Checking the terminal buffer state (after) ==========");
     verifyBuffer(*termTb, term->_mutableViewport.ToInclusive(), true);
+}
+
+// This test checks that upon conpty rendering again, terminal still maintains
+// the same hyperlink IDs
+void ConptyRoundtripTests::HyperlinkIdConsistency()
+{
+    Log::Comment(NoThrowString().Format(
+        L"Write a link - the text will simply be 'Link' and the uri will be 'http://example.com'"));
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& hostSm = si.GetStateMachine();
+    auto& hostTb = si.GetTextBuffer();
+    auto& termTb = *term->_buffer;
+
+    _flushFirstFrame();
+
+    hostSm.ProcessString(L"\x1b]8;;http://example.com\x1b\\Link\x1b]8;;\x1b\\");
+
+    // For self-generated IDs, conpty will send a custom ID of the form
+    // {sessionID}-{self-generated ID}
+    // self-generated IDs begin at 1 and increment from there
+    const std::string fmt{ "\x1b]8;id={}-1;http://example.com\x1b\\" };
+    auto s = fmt::format(fmt, GetCurrentProcessId());
+    expectedOutput.push_back(s);
+    expectedOutput.push_back("Link");
+    expectedOutput.push_back("\x1b]8;;\x1b\\");
+
+    // Force a frame
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Move the cursor down
+    hostSm.ProcessString(L"\x1b[2;1H");
+    expectedOutput.push_back("\r\n");
+
+    // Force a frame
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Move the cursor to somewhere in the link text
+    hostSm.ProcessString(L"\x1b[1;2H");
+    expectedOutput.push_back("\x1b[1;2H");
+    expectedOutput.push_back("\x1b[?25h");
+
+    // Force a frame
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    // Move the cursor off the link
+    hostSm.ProcessString(L"\x1b[2;1H");
+    expectedOutput.push_back("\r\n");
+
+    // Force a frame
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+
+    auto verifyData = [](TextBuffer& tb) {
+        // Check that all the linked cells still have the same ID
+        auto attrRow = tb.GetRowByOffset(0).GetAttrRow();
+        auto id = attrRow.GetAttrByColumn(0).GetHyperlinkId();
+        for (auto i = 1; i < 4; ++i)
+        {
+            VERIFY_ARE_EQUAL(id, attrRow.GetAttrByColumn(i).GetHyperlinkId());
+        }
+    };
+
+    verifyData(hostTb);
+    verifyData(termTb);
 }

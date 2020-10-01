@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -9,7 +9,7 @@
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Core;
 
 using namespace WEX::Logging;
@@ -34,6 +34,9 @@ namespace TerminalCoreUnitTests
         // PrintString() is called with more code units than the buffer width.
         TEST_METHOD(PrintStringOfSurrogatePairs);
         TEST_METHOD(CheckDoubleWidthCursor);
+
+        TEST_METHOD(AddHyperlink);
+        TEST_METHOD(AddHyperlinkCustomId);
     };
 };
 
@@ -250,4 +253,58 @@ void TerminalApiTest::CheckDoubleWidthCursor()
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
     term.SetCursorPosition(1, 1);
     VERIFY_IS_TRUE(term.IsCursorDoubleWidth());
+}
+
+void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
+{
+    // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlink, adapted for the Terminal
+
+    Terminal term;
+    DummyRenderTarget emptyRT;
+    term.Create({ 100, 100 }, 0, emptyRT);
+
+    auto& tbi = *(term._buffer);
+    auto& stateMachine = *(term._stateMachine);
+
+    // Process the opening osc 8 sequence
+    stateMachine.ProcessString(L"\x1b]8;;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+
+    // Send any other text
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+
+    // Process the closing osc 8 sequences
+    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
+}
+
+void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomId()
+{
+    // This is a nearly literal copy-paste of ScreenBufferTests::TestAddHyperlinkCustomId, adapted for the Terminal
+
+    Terminal term;
+    DummyRenderTarget emptyRT;
+    term.Create({ 100, 100 }, 0, emptyRT);
+
+    auto& tbi = *(term._buffer);
+    auto& stateMachine = *(term._stateMachine);
+
+    // Process the opening osc 8 sequence
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    // Send any other text
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    // Process the closing osc 8 sequences
+    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }

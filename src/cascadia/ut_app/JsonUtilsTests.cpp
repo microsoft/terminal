@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/JsonUtilsNew.h"
+#include "../TerminalApp/JsonUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -33,6 +33,8 @@ struct ConversionTrait<StructWithConverterSpecialization>
     {
         return value.isInt();
     }
+
+    std::string TypeDescription() const { return ""; }
 };
 
 // Converts a JSON string value to an int and multiplies it by a specified factor
@@ -49,6 +51,8 @@ struct CustomConverter
     {
         return true;
     }
+
+    std::string TypeDescription() const { return ""; }
 };
 
 enum class JsonTestEnum : int
@@ -130,7 +134,7 @@ namespace TerminalAppUnitTests
 
         //// 1. Bare Value ////
         //// 1.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValue<int>(object), TypeMismatchException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<int>(object), DeserializationError, _ReturnTrueForException);
 
         //// 1.b. JSON NULL - Zero Value ////
         std::string zeroValueString{};
@@ -141,7 +145,7 @@ namespace TerminalAppUnitTests
 
         //// 2. Optional ////
         //// 2.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValue<std::optional<int>>(object), TypeMismatchException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<std::optional<int>>(object), DeserializationError, _ReturnTrueForException);
 
         //// 2.b. JSON NULL - nullopt ////
         VERIFY_ARE_EQUAL(std::nullopt, GetValue<std::optional<std::string>>(Json::Value::nullSingleton()));
@@ -160,7 +164,7 @@ namespace TerminalAppUnitTests
         std::string output{ "sentinel" }; // explicitly not the zero value
 
         //// 1.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValue(object, outputRedHerring), TypeMismatchException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue(object, outputRedHerring), DeserializationError, _ReturnTrueForException);
         VERIFY_ARE_EQUAL(5, outputRedHerring); // unchanged
 
         //// 1.b. JSON NULL - Unchanged ////
@@ -176,7 +180,7 @@ namespace TerminalAppUnitTests
         std::optional<std::string> optionalOutput{ "sentinel2" }; // explicitly not nullopt
 
         //// 2.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValue(object, optionalOutputRedHerring), TypeMismatchException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue(object, optionalOutputRedHerring), DeserializationError, _ReturnTrueForException);
         VERIFY_ARE_EQUAL(6, optionalOutputRedHerring); // unchanged
 
         //// 2.b. JSON NULL - nullopt ////
@@ -202,7 +206,7 @@ namespace TerminalAppUnitTests
 
         //// 1. Bare Value ////
         //// 1.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValueForKey<int>(object, key), KeyedException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValueForKey<int>(object, key), DeserializationError, _ReturnTrueForException);
 
         //// 1.b. JSON NULL - Zero Value ////
         std::string zeroValueString{};
@@ -216,7 +220,7 @@ namespace TerminalAppUnitTests
 
         //// 2. Optional ////
         //// 2.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValueForKey<std::optional<int>>(object, key), KeyedException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValueForKey<std::optional<int>>(object, key), DeserializationError, _ReturnTrueForException);
 
         //// 2.b. JSON NULL - nullopt ////
         VERIFY_ARE_EQUAL(std::nullopt, GetValueForKey<std::optional<std::string>>(object, nullKey));
@@ -245,7 +249,7 @@ namespace TerminalAppUnitTests
         std::string output{ "sentinel" }; // explicitly not the zero value
 
         //// 1.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValueForKey(object, key, outputRedHerring), KeyedException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValueForKey(object, key, outputRedHerring), DeserializationError, _ReturnTrueForException);
         VERIFY_ARE_EQUAL(5, outputRedHerring); // unchanged
 
         //// 1.b. JSON NULL - Unchanged ////
@@ -267,7 +271,7 @@ namespace TerminalAppUnitTests
         std::optional<std::string> optionalOutput{ "sentinel2" }; // explicitly not nullopt
 
         //// 2.a. Type Invalid - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValueForKey(object, key, optionalOutputRedHerring), KeyedException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValueForKey(object, key, optionalOutputRedHerring), DeserializationError, _ReturnTrueForException);
         VERIFY_ARE_EQUAL(6, optionalOutputRedHerring); // unchanged
 
         //// 2.b. JSON NULL - nullopt ////
@@ -289,11 +293,24 @@ namespace TerminalAppUnitTests
     // versions.
 
     template<typename TExpected, typename TJson>
-    static void TryBasicType(TExpected&& expected, TJson&& json)
+    static void TryBasicType(TExpected&& expected, TJson&& json, std::optional<Json::Value> overrideToJsonOutput = std::nullopt)
     {
+        // test FromJson
         Json::Value jsonObject{ json };
         const auto value{ GetValue<TExpected>(jsonObject) };
         VERIFY_ARE_EQUAL(expected, value, NoThrowString{}.Format(L"(type: %hs)", typeid(TExpected).name()));
+
+        // test ToJson
+        {
+            const std::string key{ "myKey" };
+
+            Json::Value expectedJson{};
+            expectedJson[key] = til::coalesce_value(overrideToJsonOutput, jsonObject);
+
+            Json::Value toJsonResult{};
+            SetValueForKey(toJsonResult, key, expected);
+            VERIFY_ARE_EQUAL(expectedJson, toJsonResult);
+        }
     }
 
     void JsonUtilsTests::BasicTypeConversion()
@@ -301,7 +318,7 @@ namespace TerminalAppUnitTests
         // Battery of all basic types ;P
         TryBasicType(std::string{ "hello" }, "hello");
         TryBasicType(int{ -1024 }, -1024);
-        TryBasicType(unsigned int{ 1024 }, 1024);
+        TryBasicType(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
         TryBasicType(false, false);
         TryBasicType(1.0f, 1.0f);
 
@@ -314,19 +331,20 @@ namespace TerminalAppUnitTests
         // double -> float
         TryBasicType(1.0f, 1.0);
 
-        TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#abcdef");
+        TryBasicType(til::color{ 0xab, 0xcd, 0xef }, "#ABCDEF");
+        TryBasicType(til::color{ 0xcc, 0xcc, 0xcc }, "#CCC", "#CCCCCC");
 
-        static const std::string testGuidString{ "{AA8147AA-E289-4508-BE83-FB68361EF2F3}" }; // can't use a string_view; jsoncpp hates it
+        static const std::string testGuidString{ "{aa8147aa-e289-4508-be83-fb68361ef2f3}" }; // can't use a string_view; jsoncpp hates it
         static const GUID testGuid{ 0xaa8147aa, 0xe289, 0x4508, { 0xbe, 0x83, 0xfb, 0x68, 0x36, 0x1e, 0xf2, 0xf3 } };
 
         TryBasicType(testGuid, testGuidString);
 
-        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "NOT_A_GUID" }), TypeMismatchException, _ReturnTrueForException);
-        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "{too short for a guid but just a bit}" }), TypeMismatchException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "NOT_A_GUID" }), DeserializationError, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "{too short for a guid but just a bit}" }), DeserializationError, _ReturnTrueForException);
         VERIFY_THROWS_SPECIFIC(GetValue<GUID>({ "{proper length string not a guid tho?}" }), std::exception, _ReturnTrueForException);
 
-        VERIFY_THROWS_SPECIFIC(GetValue<til::color>({ "#" }), TypeMismatchException, _ReturnTrueForException);
-        VERIFY_THROWS_SPECIFIC(GetValue<til::color>({ "#1234567890" }), TypeMismatchException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<til::color>({ "#" }), DeserializationError, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<til::color>({ "#1234567890" }), DeserializationError, _ReturnTrueForException);
     }
 
     void JsonUtilsTests::BasicTypeWithCustomConverter()
@@ -366,7 +384,20 @@ namespace TerminalAppUnitTests
 
         // Unknown value should produce something?
         Json::Value stringUnknown{ "unknown" };
-        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestEnum>(stringUnknown), UnexpectedValueException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestEnum>(stringUnknown), DeserializationError, _ReturnTrueForException);
+
+        // SetValueForKey
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestEnum::Third };
+
+            Json::Value expected{};
+            expected[key] = "third";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
     }
 
     void JsonUtilsTests::FlagMapper()
@@ -381,15 +412,63 @@ namespace TerminalAppUnitTests
         Json::Value stringAll{ "all" };
         VERIFY_ARE_EQUAL(JsonTestFlags::All, GetValue<JsonTestFlags>(stringAll));
 
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::Third };
+
+            Json::Value expected{};
+            expected[key] = "third";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
+
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::All };
+
+            Json::Value expected{};
+            expected[key] = "all";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
+
         // Multiple flags
         Json::Value arrayFirstSecond{ Json::arrayValue };
         arrayFirstSecond.append({ "first" });
         arrayFirstSecond.append({ "second" });
         VERIFY_ARE_EQUAL(JsonTestFlags::First | JsonTestFlags::Second, GetValue<JsonTestFlags>(arrayFirstSecond));
 
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::First | JsonTestFlags::Second };
+
+            Json::Value expected{};
+            expected[key] = arrayFirstSecond;
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
+
         // No flags
         Json::Value emptyArray{ Json::arrayValue };
         VERIFY_ARE_EQUAL(JsonTestFlags::None, GetValue<JsonTestFlags>(emptyArray));
+
+        {
+            const std::string key{ "myKey" };
+            const auto val{ JsonTestFlags::None };
+
+            Json::Value expected{};
+            expected[key] = "none";
+
+            Json::Value json{};
+            SetValueForKey(json, key, val);
+            VERIFY_ARE_EQUAL(expected, json);
+        }
 
         // Stacking Always + Any
         Json::Value arrayAllFirst{ Json::arrayValue };
@@ -401,17 +480,17 @@ namespace TerminalAppUnitTests
         Json::Value arrayNoneFirst{ Json::arrayValue };
         arrayNoneFirst.append({ "none" });
         arrayNoneFirst.append({ "first" });
-        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(arrayNoneFirst), UnexpectedValueException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(arrayNoneFirst), DeserializationError, _ReturnTrueForException);
 
         // Stacking Any + None (Exception; same as above, different order)
         Json::Value arrayFirstNone{ Json::arrayValue };
         arrayFirstNone.append({ "first" });
         arrayFirstNone.append({ "none" });
-        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(arrayFirstNone), UnexpectedValueException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(arrayFirstNone), DeserializationError, _ReturnTrueForException);
 
         // Unknown flag value?
         Json::Value stringUnknown{ "unknown" };
-        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(stringUnknown), UnexpectedValueException, _ReturnTrueForException);
+        VERIFY_THROWS_SPECIFIC(GetValue<JsonTestFlags>(stringUnknown), DeserializationError, _ReturnTrueForException);
     }
 
     void JsonUtilsTests::NestedExceptionDuringKeyParse()
@@ -420,20 +499,10 @@ namespace TerminalAppUnitTests
         Json::Value object{ Json::objectValue };
         object[key] = Json::Value{ "string" };
 
-        auto CheckKeyedException = [](const KeyedException& k) {
-            try
-            {
-                k.RethrowInner();
-            }
-            catch (TypeMismatchException&)
-            {
-                // This Keyed exception contained the correct inner.
-                return true;
-            }
-            // This Keyed exception did not contain the correct inner.
-            return false;
+        auto CheckKeyInException = [](const DeserializationError& k) {
+            return k.key.has_value();
         };
-        VERIFY_THROWS_SPECIFIC(GetValueForKey<int>(object, key), KeyedException, CheckKeyedException);
+        VERIFY_THROWS_SPECIFIC(GetValueForKey<int>(object, key), DeserializationError, CheckKeyInException);
     }
 
 }

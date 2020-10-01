@@ -18,7 +18,7 @@ namespace ColorTool.SchemeParsers
         [DllImport("kernel32")]
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
-        protected override string FileExtension { get; } = ".ini";
+        public override string FileExtension { get; } = ".ini";
 
         // These are in Windows Color table order - BRG, not RGB.
         internal static readonly IReadOnlyList<string> ColorNames = new[]
@@ -42,9 +42,6 @@ namespace ColorTool.SchemeParsers
         };
 
         public override string Name { get; } = "INI File Parser";
-
-        public override bool CanParse(string schemeName) => 
-            string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
 
         public override ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {

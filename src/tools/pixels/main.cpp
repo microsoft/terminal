@@ -222,9 +222,7 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv*/[])
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(csbiex);
 
-    BOOL b = GetConsoleScreenBufferInfoEx(hOut, &csbiex);
-
-    if (b == FALSE)
+    if (!GetConsoleScreenBufferInfoEx(hOut, &csbiex))
     {
         wcout << GetLastError() << endl;
     }

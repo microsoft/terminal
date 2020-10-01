@@ -42,7 +42,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
@@ -54,10 +54,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                                   const COLORREF colorBackground,
-                                                   const WORD legacyColorAttribute,
-                                                   const ExtendedAttributes extendedAttrs,
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
+                                                   const gsl::not_null<IRenderData*> pData,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                          _Out_ FontInfo& FontInfo) noexcept override;
@@ -98,6 +96,17 @@ namespace Microsoft::Console::Render
 
         std::vector<RECT> cursorInvertRects;
 
+        struct LineMetrics
+        {
+            int gridlineWidth;
+            int underlineOffset;
+            int underlineOffset2;
+            int underlineWidth;
+            int strikethroughOffset;
+            int strikethroughWidth;
+        };
+
+        LineMetrics _lineMetrics;
         COORD _coordFontLast;
         int _iCurrentDpi;
 

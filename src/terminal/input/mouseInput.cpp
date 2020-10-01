@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include <windows.h>
 #include "terminalInput.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -11,10 +12,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 static const int s_MaxDefaultCoordinate = 94;
-
-// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
-// "If the high-order bit is 1, the key is down; otherwise, it is up."
-static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 // Alternate scroll sequences
 static constexpr std::wstring_view CursorUpSequence{ L"\x1b[A" };
@@ -32,7 +29,6 @@ static constexpr std::wstring_view ApplicationDownSequence{ L"\x1bOB" };
 // - true iff button is a button message to translate
 static constexpr bool _isButtonMsg(const unsigned int button) noexcept
 {
-    bool isButton = false;
     switch (button)
     {
     case WM_LBUTTONDBLCLK:
@@ -46,10 +42,10 @@ static constexpr bool _isButtonMsg(const unsigned int button) noexcept
     case WM_MBUTTONDBLCLK:
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        isButton = true;
-        break;
+        return true;
+    default:
+        return false;
     }
-    return isButton;
 }
 
 // Routine Description:
@@ -64,6 +60,17 @@ static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 }
 
 // Routine Description:
+// - Determines if the input windows message code describes a mouse wheel event
+// Parameters:
+// - buttonCode - the message to decode.
+// Return value:
+// - true iff buttonCode is a wheel event to translate
+static constexpr bool _isWheelMsg(const unsigned int buttonCode) noexcept
+{
+    return buttonCode == WM_MOUSEWHEEL || buttonCode == WM_MOUSEHWHEEL;
+}
+
+// Routine Description:
 // - Determines if the input windows message code describes a button press
 //     (either down or doubleclick)
 // Parameters:
@@ -72,7 +79,6 @@ static constexpr bool _isHoverMsg(const unsigned int buttonCode) noexcept
 // - true iff button is a button down event
 static constexpr bool _isButtonDown(const unsigned int button) noexcept
 {
-    bool isButtonDown = false;
     switch (button)
     {
     case WM_LBUTTONDBLCLK:
@@ -83,32 +89,32 @@ static constexpr bool _isButtonDown(const unsigned int button) noexcept
     case WM_MBUTTONDBLCLK:
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        isButtonDown = true;
-        break;
+        return true;
+    default:
+        return false;
     }
-    return isButtonDown;
 }
 
 // Routine Description:
 // - Retrieves which mouse button is currently pressed. This is needed because
 //      MOUSEMOVE events do not also tell us if any mouse buttons are pressed during the move.
 // Parameters:
-// <none>
+// - state - the current state of which mouse buttons are pressed
 // Return value:
 // - a button corresponding to any pressed mouse buttons, else WM_LBUTTONUP if none are pressed.
-unsigned int TerminalInput::s_GetPressedButton() noexcept
+constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState state) noexcept
 {
-    // TODO GH#4869: Have the caller pass the mouse button state into HandleMouse
-    unsigned int button = WM_LBUTTONUP; // Will be treated as a release, or no button pressed.
-    if (WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed))
+    // Will be treated as a release, or no button pressed.
+    unsigned int button = WM_LBUTTONUP;
+    if (state.isLeftButtonDown)
     {
         button = WM_LBUTTONDOWN;
     }
-    else if (WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed))
+    else if (state.isMiddleButtonDown)
     {
         button = WM_MBUTTONDOWN;
     }
-    else if (WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed))
+    else if (state.isRightButtonDown)
     {
         button = WM_RBUTTONDOWN;
     }
@@ -172,6 +178,10 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
         xvalue = delta > 0 ? 0x40 : 0x41;
+        break;
+    default:
+        xvalue = 0;
+        break;
     }
     if (isHover)
     {
@@ -227,6 +237,10 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
         xvalue = delta > 0 ? 0x40 : 0x41;
+        break;
+    default:
+        xvalue = 0;
+        break;
     }
     if (isHover)
     {
@@ -286,13 +300,41 @@ bool TerminalInput::IsTrackingMouseInput() const noexcept
 // - button - the message to decode.
 // - modifierKeyState - the modifier keys pressed with this button
 // - delta - the amount that the scroll wheel changed (should be 0 unless button is a WM_MOUSE*WHEEL)
+// - state - the state of the mouse buttons at this moment
 // Return value:
 // - true if the event was handled and we should stop event propagation to the default window handler.
 bool TerminalInput::HandleMouse(const COORD position,
                                 const unsigned int button,
                                 const short modifierKeyState,
-                                const short delta)
+                                const short delta,
+                                const MouseButtonState state)
 {
+    if (Utils::Sign(delta) != Utils::Sign(_mouseInputState.accumulatedDelta))
+    {
+        // This works for wheel and non-wheel events and transitioning between wheel/non-wheel.
+        // Non-wheel events have a delta of 0, which will fail to match the sign on
+        // a real wheel event or the accumulated delta. Wheel events will be either + or -
+        // and we only want to accumulate them if they match in sign.
+        _mouseInputState.accumulatedDelta = 0;
+    }
+
+    if (_isWheelMsg(button))
+    {
+        _mouseInputState.accumulatedDelta += delta;
+        if (std::abs(_mouseInputState.accumulatedDelta) < WHEEL_DELTA)
+        {
+            // If we're accumulating button presses of the same type, *and* those presses are
+            // on the wheel, accumulate delta until we hit the amount required to dispatch one
+            // "line" worth of scroll.
+            // Mark the event as "handled" if we would have otherwise emitted a scroll event.
+            return IsTrackingMouseInput() || _ShouldSendAlternateScroll(button, delta);
+        }
+
+        // We're ready to send this event through, but first we need to clear the accumulated;
+        // delta. Otherwise, we'll dispatch every subsequent sub-delta event as its own event.
+        _mouseInputState.accumulatedDelta = 0;
+    }
+
     bool success = false;
     if (_ShouldSendAlternateScroll(button, delta))
     {
@@ -316,7 +358,7 @@ bool TerminalInput::HandleMouse(const COORD position,
             //      _GetPressedButton will return the first pressed mouse button.
             // If it returns WM_LBUTTONUP, then we can assume that the mouse
             //      moved without a button being pressed.
-            const unsigned int realButton = isHover ? s_GetPressedButton() : button;
+            const unsigned int realButton = isHover ? s_GetPressedButton(state) : button;
 
             // In default mode, only button presses/releases are sent
             // In ButtonEvent mode, changing coord hovers WITH A BUTTON PRESSED

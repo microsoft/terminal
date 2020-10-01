@@ -28,6 +28,8 @@ BOOL WINAPI DllMain(HINSTANCE hInstDll, DWORD reason, LPVOID /*reserved*/)
             TraceLoggingUnregister(g_hTerminalConnectionProvider);
         }
         break;
+    default:
+        break;
     }
 
     return TRUE;
