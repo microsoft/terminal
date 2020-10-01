@@ -32,10 +32,9 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, nullptr);
         GETSET_PROPERTY(uint32_t, TabViewIndex, 0);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
+        GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, nullptr);
 
     private:
-        winrt::Microsoft::Terminal::Settings::Editor::MainPage _settingsUI{ nullptr };
-
         bool _focused{ false };
         void _Focus();
 

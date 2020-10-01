@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - The UIElement acting as root of the Tab's root pane.
-    UIElement TerminalTab::GetTabContent()
+    FrameworkElement TerminalTab::Content()
     {
         if (_zoomedPane)
         {

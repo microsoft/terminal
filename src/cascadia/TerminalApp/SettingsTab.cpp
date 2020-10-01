@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
 {
     SettingsTab::SettingsTab()
     {
-        _settingsUI = winrt::Microsoft::Terminal::Settings::Editor::MainPage();
+        Content(winrt::Microsoft::Terminal::Settings::Editor::MainPage());
 
         _MakeTabViewItem();
         _MakeSwitchToTabCommand();
@@ -43,17 +43,6 @@ namespace winrt::TerminalApp::implementation
     {
         TabViewItem(::winrt::MUX::Controls::TabViewItem{});
         TabViewItem().Header(winrt::box_value(Title()));
-    }
-
-    // Method Description:
-    // - Get the root UIElement of this Tab's root pane.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The UIElement acting as root of the Tab's root pane.
-    UIElement SettingsTab::GetTabContent()
-    {
-        return _settingsUI;
     }
 
     // Method Description:
@@ -141,7 +130,7 @@ namespace winrt::TerminalApp::implementation
     void SettingsTab::Shutdown()
     {
         // TODO: Does/Will the settings UI need some shutdown procedures?
-        _settingsUI = nullptr;
+        Content(nullptr);
         _ClosedHandlers(nullptr, nullptr);
     }
 

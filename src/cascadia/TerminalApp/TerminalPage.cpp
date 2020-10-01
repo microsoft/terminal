@@ -1279,7 +1279,7 @@ namespace winrt::TerminalApp::implementation
                     _tabContent.Children().Clear();
                     activeTab->ExitZoom();
                     // Re-attach the tab's content to the UI tree.
-                    _tabContent.Children().Append(activeTab->GetTabContent());
+                    _tabContent.Children().Append(activeTab->Content());
                 }
             }
         }
@@ -1989,7 +1989,7 @@ namespace winrt::TerminalApp::implementation
                 auto tab{ _tabs.GetAt(index) };
 
                 _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab.GetTabContent());
+                _tabContent.Children().Append(tab.Content());
 
                 tab.SetFocused(true);
 

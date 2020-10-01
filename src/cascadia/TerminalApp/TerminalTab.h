@@ -23,7 +23,7 @@ namespace winrt::TerminalApp::implementation
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-        winrt::Windows::UI::Xaml::UIElement GetTabContent();
+        winrt::Windows::UI::Xaml::FrameworkElement Content();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
