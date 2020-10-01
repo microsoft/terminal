@@ -19,7 +19,7 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-typedef interval_tree::IntervalTree<size_t, size_t> ThisTree;
+typedef interval_tree::IntervalTree<til::point, size_t> ThisTree;
 
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -427,9 +427,7 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
     }
     // also look through our known pattern locations in our pattern interval tree
     // we need to convert to 1-d coordinates because that is how the tree stores them
-    const auto rowSize = _buffer->GetRowByOffset(0).size();
-    const auto absLoc = (rowSize * position.Y) + position.X;
-    const auto results = _patternIntervalTree.findOverlapping(absLoc + 1, absLoc);
+    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -438,12 +436,10 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
             {
                 const auto start = result.start;
                 const auto end = result.stop;
-                COORD startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };
-                COORD endCoord{ gsl::narrow<SHORT>(end % rowSize), gsl::narrow<SHORT>(end / rowSize) };
                 std::wstring uri;
 
-                const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(startCoord));
-                const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(endCoord));
+                const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+                const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
                 for (auto iter = startIter; iter != endIter; ++iter)
                 {
                     uri += iter->Chars();
@@ -628,13 +624,12 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 // - Invalidates the regions described in the given pattern tree for the rendering purposes
 // Arguments:
 // - The interval tree containing regions that need to be invalidated
-void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<size_t, size_t>& tree)
+void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
 {
-    const auto rowSize = _buffer->GetRowByOffset(0).size();
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const ThisTree::interval& interval) {
-        COORD startCoord{ gsl::narrow<SHORT>(interval.start % rowSize), gsl::narrow<SHORT>(interval.start / rowSize + vis) };
-        COORD endCoord{ gsl::narrow<SHORT>(interval.stop % rowSize), gsl::narrow<SHORT>(interval.stop / rowSize + vis) };
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
         _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);

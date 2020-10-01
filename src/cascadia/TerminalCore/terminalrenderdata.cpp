@@ -139,9 +139,8 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 // - The pattern ID of the location
 const size_t Terminal::GetPatternId(const COORD location) const noexcept
 {
-    // Convert the location into its 1-d location because the interval tree stores locations that way
-    const auto absLoc = (_buffer->GetRowByOffset(0).size() * location.Y) + location.X;
-    const auto results = _patternIntervalTree.findOverlapping(absLoc + 1, absLoc);
+    // Look through our interval tree for this location
+    const auto results = _patternIntervalTree.findOverlapping(COORD{ location.X + 1, location.Y }, location);
     if (results.size() == 0)
     {
         return 0;

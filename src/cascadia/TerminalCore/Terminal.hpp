@@ -275,8 +275,8 @@ private:
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we should make this behavior controlled by a setting.
 
-    interval_tree::IntervalTree<size_t, size_t> _patternIntervalTree;
-    void _InvalidatePatternTree(interval_tree::IntervalTree<size_t, size_t>& tree);
+    interval_tree::IntervalTree<til::point, size_t> _patternIntervalTree;
+    void _InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree);
     void _InvalidateFromCoords(const COORD start, const COORD end);
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
