@@ -1016,7 +1016,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(*index))
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
             {
                 try
                 {
@@ -1298,7 +1298,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(*index))
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
             {
                 _UnZoomIfNeeded();
                 terminalTab->NavigateFocus(direction);
@@ -1310,7 +1310,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(*index))
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
             {
                 return terminalTab->GetActiveTerminalControl();
             }
@@ -1390,7 +1390,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(*index))
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
             {
                 _UnZoomIfNeeded();
                 terminalTab->ClosePane();
@@ -1434,7 +1434,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(*index))
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
             {
                 terminalTab->Scroll(delta);
             }
@@ -1470,7 +1470,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto focusedTab = _GetTerminalTabImpl(*indexOpt);
+        auto focusedTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt));
 
         // Do nothing if the focused tab isn't a TerminalTab
         if (!focusedTab)
@@ -1553,7 +1553,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(*index))
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
             {
                 _UnZoomIfNeeded();
                 terminalTab->ResizePane(direction);
@@ -1578,7 +1578,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        if (auto terminalTab = _GetTerminalTabImpl(*indexOpt))
+        if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
         {
             delta = std::clamp(delta, -1, 1);
             const auto control = _GetActiveControl();
@@ -1695,7 +1695,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (auto index{ _GetFocusedTabIndex() })
             {
-                if (auto terminalTab = _GetTerminalTabImpl(*index))
+                if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
                 {
                     return terminalTab->CalcSnappedDimension(widthOrHeight, dimension);
                 }
@@ -2609,19 +2609,6 @@ namespace winrt::TerminalApp::implementation
         {
             _actionDispatch->DoAction(_switchToSettingsCommand.Action());
         }
-    }
-
-    // Method Description:
-    // - Returns a com_ptr to the implementation type of a TerminalTab at the given index.
-    //   If the tab is not a TerminalTab, returns nullptr.
-    // Arguments:
-    // - index: an unsigned integer index to a tab in _tabs
-    // Return Value:
-    // - If the tab is a TerminalTab, a com_ptr to the implementation type.
-    //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const uint32_t index) const
-    {
-        return _GetTerminalTabImpl(_tabs.GetAt(index));
     }
 
     // Method Description:
