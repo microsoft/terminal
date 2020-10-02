@@ -133,6 +133,7 @@ TIconSource GetColoredIcon(const winrt::hstring& path)
     return nullptr;
 }
 
+// TODO: GH#1564 SUI polish - Dedupe with Command's icon handler
 template<typename TIconSource>
 TIconSource GetFontIcon(const winrt::Windows::UI::Xaml::Media::FontFamily& fontFamily,
                         const double fontSize,

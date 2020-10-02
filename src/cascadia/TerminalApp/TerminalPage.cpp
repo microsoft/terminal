@@ -20,6 +20,7 @@
 #include "TabRowControl.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
+#include "SettingsTab.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -2550,6 +2551,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Creates a settings UI tab and focuses it. If there's already a settings UI tab open,
+    //   just focus the existing one.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TerminalPage::_OpenSettingsUI()
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
@@ -2613,16 +2621,7 @@ namespace winrt::TerminalApp::implementation
     //   If the tab is not a TerminalTab, nullptr
     winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const uint32_t index) const
     {
-        if (auto tab = _tabs.GetAt(index).try_as<TerminalApp::TerminalTab>())
-        {
-            winrt::com_ptr<TerminalTab> tabImpl;
-            tabImpl.copy_from(winrt::get_self<TerminalTab>(tab));
-            return tabImpl;
-        }
-        else
-        {
-            return nullptr;
-        }
+        return _GetTerminalTabImpl(_tabs.GetAt(index));
     }
 
     // Method Description:

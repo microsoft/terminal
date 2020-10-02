@@ -100,7 +100,6 @@ namespace winrt::TerminalApp::implementation
     // - the title string of the last focused terminal control in our tree.
     winrt::hstring SettingsTab::GetActiveTitle() const
     {
-        // TODO: This _could_ change depending on what page of the settings UI is open/focused?
         return Title();
     }
 

@@ -5,7 +5,6 @@
 
 #include "TerminalPage.g.h"
 #include "TerminalTab.h"
-#include "SettingsTab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
 #include "AppKeyBindings.h"

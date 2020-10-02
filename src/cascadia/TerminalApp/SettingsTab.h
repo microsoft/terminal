@@ -1,5 +1,19 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- SettingsTab.h
+
+Abstract:
+- The SettingsTab is a tab whose content is a Settings UI control. They can
+  coexist in a TabView with all other types of tabs, like the TerminalTab.
+  There should only be at most one SettingsTab open at any given time.
+
+Author(s):
+- Leon Liang - October 2020
+
+--*/
 
 #pragma once
 #include "SettingsTab.g.h"
