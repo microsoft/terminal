@@ -27,8 +27,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
-        bool IsFocused() const noexcept;
-        void SetFocused(const bool focused);
+        void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
+        winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
         winrt::fire_and_forget Scroll(const int delta);
 
@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
 
-        bool _focused{ false };
+        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
         winrt::hstring _runtimeTabText{};

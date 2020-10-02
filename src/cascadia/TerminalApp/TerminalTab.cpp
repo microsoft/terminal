@@ -110,33 +110,37 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Returns true if this is the currently focused tab. For any set of tabs,
+    // - Returns the focus state of this Tab. Unfocused means this tab is not focused,
+    //   and any other FocusState means that this tab is focused. For any set of tabs,
     //   there should only be one tab that is marked as focused, though each tab has
     //   no control over the other tabs in the set.
     // Arguments:
     // - <none>
     // Return Value:
-    // - true iff this tab is focused.
-    bool TerminalTab::IsFocused() const noexcept
+    // - A FocusState enum value
+    WUX::FocusState TerminalTab::FocusState() const noexcept
     {
-        return _focused;
+        return _focusState;
     }
 
     // Method Description:
     // - Updates our focus state. If we're gaining focus, make sure to transfer
     //   focus to the last focused terminal control in our tree of controls.
     // Arguments:
-    // - focused: our new focus state. If true, we should be focused. If false, we
-    //   should be unfocused.
+    // - focused: our new focus state
     // Return Value:
     // - <none>
-    void TerminalTab::SetFocused(const bool focused)
+    void TerminalTab::Focus(WUX::FocusState focusState)
     {
-        _focused = focused;
+        _focusState = focusState;
 
-        if (_focused)
+        if (_focusState != FocusState::Unfocused)
         {
-            _Focus();
+            auto lastFocusedControl = GetActiveTerminalControl();
+            if (lastFocusedControl)
+            {
+                lastFocusedControl.Focus(_focusState);
+            }
         }
     }
 
@@ -177,23 +181,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
-    }
-
-    // Method Description:
-    // - Focus the last focused control in our tree of panes.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_Focus()
-    {
-        _focused = true;
-
-        auto lastFocusedControl = GetActiveTerminalControl();
-        if (lastFocusedControl)
-        {
-            lastFocusedControl.Focus(FocusState::Programmatic);
-        }
     }
 
     // Method Description:
@@ -940,7 +927,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_RefreshVisualState()
     {
-        if (_focused)
+        if (_focusState != FocusState::Unfocused)
         {
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
             VisualStateManager::GoToState(TabViewItem(), L"Selected", true);

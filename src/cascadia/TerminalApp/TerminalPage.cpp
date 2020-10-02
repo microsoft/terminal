@@ -953,7 +953,7 @@ namespace winrt::TerminalApp::implementation
         auto newTabTitle = tab.GetActiveTitle();
 
         if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
-            tab.IsFocused())
+            tab.FocusState() != FocusState::Unfocused)
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
@@ -1170,7 +1170,7 @@ namespace winrt::TerminalApp::implementation
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
-            if (page && tab && tab->IsFocused())
+            if (page && tab && (tab->FocusState() != FocusState::Unfocused))
             {
                 page->_SetNonClientAreaColors(color);
             }
@@ -1180,7 +1180,7 @@ namespace winrt::TerminalApp::implementation
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
 
-            if (page && tab && tab->IsFocused())
+            if (page && tab && (tab->FocusState() != FocusState::Unfocused))
             {
                 page->_ClearNonClientAreaColors();
             }
@@ -1895,32 +1895,39 @@ namespace winrt::TerminalApp::implementation
     //   a background thread, as to not hang/crash the UI thread.
     fire_and_forget TerminalPage::_LaunchSettings(const SettingsTarget target)
     {
-        // This will switch the execution of the function to a background (not
-        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
-        // (used for retrieving the path to the file) will crash on the UI
-        // thread, because the main thread is a STA.
-        co_await winrt::resume_background();
-
-        auto openFile = [](const auto& filePath) {
-            HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
-            if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
-            {
-                ShellExecute(nullptr, nullptr, L"notepad", filePath.c_str(), nullptr, SW_SHOW);
-            }
-        };
-
-        switch (target)
+        if (target == SettingsTarget::SettingsUI)
         {
-        case SettingsTarget::DefaultsFile:
-            openFile(CascadiaSettings::GetDefaultSettingsPath());
-            break;
-        case SettingsTarget::SettingsFile:
-            openFile(CascadiaSettings::GetSettingsPath());
-            break;
-        case SettingsTarget::AllFiles:
-            openFile(CascadiaSettings::GetDefaultSettingsPath());
-            openFile(CascadiaSettings::GetSettingsPath());
-            break;
+            _OpenSettingsUI();
+        }
+        else
+        {
+            // This will switch the execution of the function to a background (not
+            // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+            // (used for retrieving the path to the file) will crash on the UI
+            // thread, because the main thread is a STA.
+            co_await winrt::resume_background();
+
+            auto openFile = [](const auto& filePath) {
+                HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+                if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+                {
+                    ShellExecute(nullptr, nullptr, L"notepad", filePath.c_str(), nullptr, SW_SHOW);
+                }
+            };
+
+            switch (target)
+            {
+            case SettingsTarget::DefaultsFile:
+                openFile(CascadiaSettings::GetDefaultSettingsPath());
+                break;
+            case SettingsTarget::SettingsFile:
+                openFile(CascadiaSettings::GetSettingsPath());
+                break;
+            case SettingsTarget::AllFiles:
+                openFile(CascadiaSettings::GetDefaultSettingsPath());
+                openFile(CascadiaSettings::GetSettingsPath());
+                break;
+            }
         }
     }
 
@@ -1979,7 +1986,7 @@ namespace winrt::TerminalApp::implementation
         // Unfocus all the tabs.
         for (auto tab : _tabs)
         {
-            tab.SetFocused(false);
+            tab.Focus(FocusState::Unfocused);
         }
 
         if (index >= 0)
@@ -1991,7 +1998,7 @@ namespace winrt::TerminalApp::implementation
                 _tabContent.Children().Clear();
                 _tabContent.Children().Append(tab.Content());
 
-                tab.SetFocused(true);
+                tab.Focus(FocusState::Programmatic);
 
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab.GetActiveTitle());
@@ -2502,7 +2509,7 @@ namespace winrt::TerminalApp::implementation
         // Return focus to the active control
         if (auto index{ _GetFocusedTabIndex() })
         {
-            _tabs.GetAt(*index).SetFocused(true);
+            _tabs.GetAt(*index).Focus(FocusState::Programmatic);
         }
     }
 

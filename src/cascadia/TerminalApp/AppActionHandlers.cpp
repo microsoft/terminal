@@ -164,14 +164,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::OpenSettingsArgs>())
         {
-            if (realArgs.Target() == SettingsTarget::SettingsUI)
-            {
-                _OpenSettingsUI();
-            }
-            else
-            {
-                _LaunchSettings(realArgs.Target());
-            }
+            _LaunchSettings(realArgs.Target());
             args.Handled(true);
         }
     }

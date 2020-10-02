@@ -14,10 +14,8 @@ namespace winrt::TerminalApp::implementation
     public:
         SettingsTab();
 
-        winrt::Windows::UI::Xaml::UIElement GetTabContent();
-
-        bool IsFocused() const noexcept;
-        void SetFocused(const bool focused);
+        void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
+        winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
         winrt::hstring GetActiveTitle() const;
 
@@ -35,8 +33,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::Page, Content, nullptr);
 
     private:
-        bool _focused{ false };
-        void _Focus();
+        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
 
         void _MakeTabViewItem();
         void _CreateContextMenu();

@@ -46,45 +46,24 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Returns true if this is the currently focused tab. For any set of tabs,
-    //   there should only be one tab that is marked as focused, though each tab has
-    //   no control over the other tabs in the set.
+    // - Focus the settings UI
     // Arguments:
-    // - <none>
-    // Return Value:
-    // - true iff this tab is focused.
-    bool SettingsTab::IsFocused() const noexcept
-    {
-        return _focused;
-    }
-
-    // Method Description:
-    // - Updates our focus state.
-    // Arguments:
-    // - focused: our new focus state. If true, we should be focused. If false, we
-    //   should be unfocused.
+    // - focusState: The FocusState mode by which focus is to be obtained.
     // Return Value:
     // - <none>
-    void SettingsTab::SetFocused(const bool focused)
+    void SettingsTab::Focus(WUX::FocusState focusState)
     {
-        _focused = focused;
+        _focusState = focusState;
 
-        if (_focused)
+        if (_focusState != FocusState::Unfocused)
         {
-            _Focus();
+            Content().Focus(focusState);
         }
     }
 
-    // Method Description:
-    // - Focus the settings UI
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void SettingsTab::_Focus()
+    WUX::FocusState SettingsTab::FocusState() const noexcept
     {
-        // TODO: Focus the settings UI
-        _focused = true;
+        return _focusState;
     }
 
     // Method Description:
