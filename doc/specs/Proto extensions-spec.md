@@ -65,7 +65,9 @@ The main thing to note for modification of existing profiles is that this will o
 default profiles (cmd/powershell) or the dynamically generated profiles. 
 
 For modifications to existing profiles, the json stub would need to indicate which profile it wishes to modify. It will
-do this by providing the corresponding guid in the `"updates"` field of the json stub.
+do this by providing the corresponding guid in the `"updates"` field of the json stub. The reason we use an `"updates"`
+field rather than a `"guid"` field (like the way the user settings are eventually layered onto profiles) is because we
+do not want to mistakenly create a new profile when the stub was meant to update a profile that did not exist. 
 
 Note that currently, we generate a GUID for dynamic profiles using the "initial" name of the profile (i.e. before
 any user changes are applied). For example, the "initial" name of a WSL profile is the \<name\> argument to
@@ -119,8 +121,7 @@ As in the case of the dynamic profile generator, if we create a profile that did
 exist in the user settings), we need to add the profile to the user settings file and re-save that file.
 
 Furthermore, we will add a source field to profiles created this way (again, similar to what we do for dynamic profiles).
-The source field value is dependent on how we obtained this json file, and will be touched on in more detail later in the
-spec (see "Creation and location(s) of the json files" - "The source field"). 
+The source field value is dependent on how we obtained this json file, and will be touched on in more detail [later in the spec](#the-source-field). 
 
 Here is an example of a json file that contains a full profile:
 
@@ -253,6 +254,9 @@ Shell profile, creates a new profile called 'Cool Profile' and creates a new col
 ```
 
 ### Creation and location(s) of the json files
+
+In this section, we cover where an app that wants to use this proto-extension functionality should put the json
+files. Once we implement this feature, we will need to provide documentation on this for app developers. 
 
 #### For apps installed through Microsoft store (or similar)
 
