@@ -1284,4 +1284,64 @@ class UiaTextRangeTests
         THROW_IF_FAILED(utr->GetText(-1, &text));
         VERIFY_ARE_EQUAL(L"M", std::wstring_view{ text });
     }
+
+    TEST_METHOD(ExpandAtEndOfVisibleRange)
+    {
+        // GH#7803: When we get the degenerate range at the end
+        //   of the visible range, we should still be in the visible
+        //   range.
+
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const COORD origin{ bufferSize.Origin() };
+        const COORD line1_start{ 0, 9 };
+        const COORD line2_start{ 0, 10 };
+        const COORD line1_end{ bufferSize.RightInclusive(), 9 };
+        const COORD endExclusive{ bufferSize.EndExclusive() };
+
+        // write "temp" at (2,2)
+        const COORD writeTarget{ 2, 2 };
+        _pTextBuffer->Write({ L"temp" }, writeTarget);
+
+        // Iterate over each TextUnit. If we don't support
+        // the given TextUnit, we're supposed to fallback
+        // to the last one that was defined anyways.
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:textUnit", L"{0, 1, 2, 3, 4, 5, 6}")
+        END_TEST_METHOD_PROPERTIES();
+
+        int unit;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"textUnit", unit), L"Get TextUnit variant");
+        TextUnit textUnit{ static_cast<TextUnit>(unit) };
+
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        Log::Comment(NoThrowString().Format(L"Expand by %s", toString(textUnit)));
+
+        // We can't actually get the visible range. So instead,
+        // we'll create a degenerate range at (line2_start, line2_start)
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, line2_start, line2_start));
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(textUnit));
+
+        // Verify expansion works properly
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(textUnit));
+        if (textUnit <= TextUnit::TextUnit_Character)
+        {
+            VERIFY_ARE_EQUAL(line1_end, utr->_start);
+            VERIFY_ARE_EQUAL(line2_start, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Word)
+        {
+            VERIFY_ARE_EQUAL(writeTarget, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Line)
+        {
+            VERIFY_ARE_EQUAL(line1_start, utr->_start);
+            VERIFY_ARE_EQUAL(line2_start, utr->_end);
+        }
+        else // textUnit <= TextUnit::TextUnit_Document:
+        {
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+    }
 };
