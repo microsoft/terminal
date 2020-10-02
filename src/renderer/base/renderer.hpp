@@ -25,6 +25,8 @@ Author(s):
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../buffer/out/CharRow.hpp"
 
+typedef interval_tree::IntervalTree<til::point, size_t> ThisTree;
+
 namespace Microsoft::Console::Render
 {
     class Renderer sealed : public IRenderer
@@ -80,6 +82,8 @@ namespace Microsoft::Console::Render
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
+        void UpdateLastHoveredInterval(const ThisTree::interval newInterval);
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 
@@ -87,6 +91,8 @@ namespace Microsoft::Console::Render
 
         std::unique_ptr<IRenderThread> _pThread;
         bool _destructing = false;
+
+        ThisTree::interval _hoveredInterval;
 
         void _NotifyPaintFrame();
 

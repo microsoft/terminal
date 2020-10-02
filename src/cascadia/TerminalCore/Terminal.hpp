@@ -131,6 +131,7 @@ public:
 
     std::wstring GetHyperlinkAtPosition(const COORD position);
     uint16_t GetHyperlinkIdAtPosition(const COORD position);
+    interval_tree::Interval<til::point, size_t> GetHyperlinkIntervalFromPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)

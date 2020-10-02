@@ -78,7 +78,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false },
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
+        _lastHoveredInterval{ til::point{}, til::point{}, size_t{} }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -1299,13 +1300,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _lastHoveredCell = terminalPos;
 
                 const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
+                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPos);
                 // If the hyperlink ID changed, trigger a redraw all (so this will happen both when we move
                 // onto a link and when we move off a link)
-                if (newId != _lastHoveredId)
+                if (newId != _lastHoveredId || (newInterval.start != _lastHoveredInterval.start))
                 {
-                    _renderEngine->UpdateHyperlinkHoveredId(newId);
-                    _renderer->TriggerRedrawAll();
                     _lastHoveredId = newId;
+                    _lastHoveredInterval = newInterval;
+                    _renderEngine->UpdateHyperlinkHoveredId(newId);
+                    _renderer->UpdateLastHoveredInterval(newInterval);
+                    _renderer->TriggerRedrawAll();
                 }
             }
         }

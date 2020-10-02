@@ -30,7 +30,8 @@ Renderer::Renderer(IRenderData* pData,
     _pThread{ std::move(thread) },
     _destructing{ false },
     _clusterBuffer{},
-    _viewport{ pData->GetViewport() }
+    _viewport{ pData->GetViewport() },
+    _hoveredInterval{ til::point{}, til::point{}, size_t{} }
 {
     for (size_t i = 0; i < cEngines; i++)
     {
@@ -711,18 +712,25 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Hold onto the current pattern id as well
             const auto currentPatternId = patternId;
 
-            // For now, we underline all patterns so adjust the currentRunColor if this run is a pattern
-            if (currentPatternId != 0)
-            {
-                currentRunColor.SetUnderlined(true);
-            }
-
             // Update the drawing brushes with our color.
             THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
 
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
+
+            // For now, we underline all patterns so adjust the currentRunColor if this run is a pattern
+            if (currentPatternId != 0)
+            {
+                if (_hoveredInterval.start <= til::point{ screenPoint } && til::point{ screenPoint } <= _hoveredInterval.stop)
+                {
+                    currentRunColor.SetDoublyUnderlined(true);
+                }
+                else
+                {
+                    currentRunColor.SetUnderlined(true);
+                }
+            }
 
             // Hold onto the start of this run iterator and the target location where we started
             // in case we need to do some special work to paint the line drawing characters.
@@ -1229,6 +1237,11 @@ void Renderer::ResetErrorStateAndResume()
 {
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
+}
+
+void Microsoft::Console::Render::Renderer::UpdateLastHoveredInterval(const ThisTree::interval newInterval)
+{
+    _hoveredInterval = newInterval;
 }
 
 // Method Description:

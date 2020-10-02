@@ -462,6 +462,22 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
     return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
 
+interval_tree::Interval<til::point, size_t> Microsoft::Terminal::Core::Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+{
+    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    if (results.size() > 0)
+    {
+        for (const auto& result : results)
+        {
+            if (result.value == _hyperlinkPatternId)
+            {
+                return result;
+            }
+        }
+    }
+    return ThisTree::interval(til::point{}, til::point{}, size_t{});
+}
+
 // Method Description:
 // - Send this particular (non-character) key event to the terminal.
 // - The terminal will translate the key and the modifiers pressed into the
