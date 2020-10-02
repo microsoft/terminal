@@ -275,7 +275,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ winrt::hstring{ til::u8u16(settingsJson0) } };
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
         VERIFY_IS_NOT_NULL(settings0);
 
         // This is super wacky, but we can't just initialize the

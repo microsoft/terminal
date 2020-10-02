@@ -22,7 +22,7 @@ Author(s):
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
 {
-    class SerializationTests;
+    class DeserializationTests;
     class KeyBindingsTests;
     class TestUtils;
 }
@@ -71,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::unordered_map<TerminalControl::KeyChord, Model::ActionAndArgs, KeyChordHash, KeyChordEquality> _keyShortcuts;
 
-        friend class SettingsModelLocalTests::SerializationTests;
+        friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class SettingsModelLocalTests::TestUtils;
     };

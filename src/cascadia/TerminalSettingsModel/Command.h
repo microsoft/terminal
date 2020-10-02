@@ -27,7 +27,7 @@ Author(s):
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
 {
-    class SerializationTests;
+    class DeserializationTests;
     class CommandTests;
 };
 
@@ -69,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
                                                           Windows::Foundation::Collections::IVectorView<Model::ColorScheme> schemes,
                                                           Windows::Foundation::Collections::IVector<SettingsLoadWarnings>& warnings);
-        friend class SettingsModelLocalTests::SerializationTests;
+        friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::CommandTests;
     };
 }

@@ -24,14 +24,14 @@ namespace SettingsModelLocalTests
     // an updated TAEF that will let us install framework packages when the test
     // package is deployed. Until then, these tests won't deploy in CI.
 
-    class SerializationTests : public JsonTestClass
+    class DeserializationTests : public JsonTestClass
     {
         // Use a custom AppxManifest to ensure that we can activate winrt types
         // from our test. This property will tell taef to manually use this as
         // the AppxManifest for this test class.
         // This does not yet work for anything XAML-y. See TabTests.cpp for more
         // details on that.
-        BEGIN_TEST_CLASS(SerializationTests)
+        BEGIN_TEST_CLASS(DeserializationTests)
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
@@ -112,7 +112,7 @@ namespace SettingsModelLocalTests
         }
     };
 
-    void SerializationTests::ValidateProfilesExist()
+    void DeserializationTests::ValidateProfilesExist()
     {
         const std::string settingsWithProfiles{ R"(
         {
@@ -173,7 +173,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::ValidateDefaultProfileExists()
+    void DeserializationTests::ValidateDefaultProfileExists()
     {
         const std::string goodProfiles{ R"(
         {
@@ -289,7 +289,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::ValidateDuplicateProfiles()
+    void DeserializationTests::ValidateDuplicateProfiles()
     {
         const std::string goodProfiles{ R"(
         {
@@ -425,7 +425,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::ValidateManyWarnings()
+    void DeserializationTests::ValidateManyWarnings()
     {
         const std::string badProfiles{ R"(
         {
@@ -473,7 +473,7 @@ namespace SettingsModelLocalTests
         VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
     }
 
-    void SerializationTests::LayerGlobalProperties()
+    void DeserializationTests::LayerGlobalProperties()
     {
         const std::string settings0String{ R"(
         {
@@ -505,7 +505,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(false, settings->_globals->ShowTabsInTitlebar());
     }
 
-    void SerializationTests::ValidateProfileOrdering()
+    void DeserializationTests::ValidateProfileOrdering()
     {
         const std::string userProfiles0String{ R"(
         {
@@ -603,7 +603,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::ValidateHideProfiles()
+    void DeserializationTests::ValidateHideProfiles()
     {
         const std::string defaultProfilesString{ R"(
         {
@@ -715,7 +715,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::ValidateProfilesGenerateGuids()
+    void DeserializationTests::ValidateProfilesGenerateGuids()
     {
         const std::string profile0String{ R"(
         {
@@ -810,7 +810,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_profiles.GetAt(5).Guid(), settings->_profiles.GetAt(2).Guid());
     }
 
-    void SerializationTests::GeneratedGuidRoundtrips()
+    void DeserializationTests::GeneratedGuidRoundtrips()
     {
         // Parse a profile without a guid.
         // We should automatically generate a GUID for that profile.
@@ -846,7 +846,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Guid(), profile2->Guid());
     }
 
-    void SerializationTests::TestAllValidationsWithNullGuids()
+    void DeserializationTests::TestAllValidationsWithNullGuids()
     {
         const std::string settings0String{ R"(
         {
@@ -882,7 +882,7 @@ namespace SettingsModelLocalTests
         VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
     }
 
-    void SerializationTests::TestReorderWithNullGuids()
+    void DeserializationTests::TestReorderWithNullGuids()
     {
         const std::string settings0String{ R"(
         {
@@ -939,7 +939,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(3).Name());
     }
 
-    void SerializationTests::TestReorderingWithoutGuid()
+    void DeserializationTests::TestReorderingWithoutGuid()
     {
         Log::Comment(NoThrowString().Format(
             L"During the GH#2515 PR, this set of settings was found to cause an"
@@ -1040,7 +1040,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(3).Name());
     }
 
-    void SerializationTests::TestLayeringNameOnlyProfiles()
+    void DeserializationTests::TestLayeringNameOnlyProfiles()
     {
         // This is a test discovered during GH#2782. When we add a name-only
         // profile, it should only layer with other name-only profiles with the
@@ -1093,7 +1093,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_profiles.GetAt(4).Name());
     }
 
-    void SerializationTests::TestExplodingNameOnlyProfiles()
+    void DeserializationTests::TestExplodingNameOnlyProfiles()
     {
         // This is a test for GH#2782. When we add a name-only profile, we'll
         // generate a GUID for it. We should make sure that we don't re-append
@@ -1196,7 +1196,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(4).Name());
     }
 
-    void SerializationTests::TestHideAllProfiles()
+    void DeserializationTests::TestHideAllProfiles()
     {
         const std::string settingsWithProfiles{ R"(
         {
@@ -1260,7 +1260,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::TestInvalidColorSchemeName()
+    void DeserializationTests::TestInvalidColorSchemeName()
     {
         Log::Comment(NoThrowString().Format(
             L"Ensure that setting a profile's scheme to a non-existent scheme causes a warning."));
@@ -1319,7 +1319,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"Campbell", settings->_profiles.GetAt(2).ColorSchemeName());
     }
 
-    void SerializationTests::TestHelperFunctions()
+    void DeserializationTests::TestHelperFunctions()
     {
         const std::string settings0String{ R"(
         {
@@ -1379,7 +1379,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(name2, prof2.Name());
     }
 
-    void SerializationTests::TestProfileIconWithEnvVar()
+    void DeserializationTests::TestProfileIconWithEnvVar()
     {
         const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
 
@@ -1401,7 +1401,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
         VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedIconPath());
     }
-    void SerializationTests::TestProfileBackgroundImageWithEnvVar()
+    void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
     {
         const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
 
@@ -1423,7 +1423,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
         VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
     }
-    void SerializationTests::TestCloseOnExitParsing()
+    void DeserializationTests::TestCloseOnExitParsing()
     {
         const std::string settingsJson{ R"(
         {
@@ -1459,7 +1459,7 @@ namespace SettingsModelLocalTests
         // Unknown modes parse as "Graceful"
         VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_profiles.GetAt(3).CloseOnExit());
     }
-    void SerializationTests::TestCloseOnExitCompatibilityShim()
+    void DeserializationTests::TestCloseOnExitCompatibilityShim()
     {
         const std::string settingsJson{ R"(
         {
@@ -1484,7 +1484,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->_profiles.GetAt(1).CloseOnExit());
     }
 
-    void SerializationTests::TestLayerUserDefaultsBeforeProfiles()
+    void DeserializationTests::TestLayerUserDefaultsBeforeProfiles()
     {
         // Test for microsoft/terminal#2325. For this test, we'll be setting the
         // "historySize" in the "defaultSettings", so it should apply to all
@@ -1532,7 +1532,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::TestDontLayerGuidFromUserDefaults()
+    void DeserializationTests::TestDontLayerGuidFromUserDefaults()
     {
         // Test for microsoft/terminal#2325. We don't want the user to put a
         // "guid" in the "defaultSettings", and have that apply to all the other
@@ -1590,7 +1590,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::TestLayerUserDefaultsOnDynamics()
+    void DeserializationTests::TestLayerUserDefaultsOnDynamics()
     {
         // Test for microsoft/terminal#2325. For this test, we'll be setting the
         // "historySize" in the "defaultSettings", so it should apply to all
@@ -1715,7 +1715,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(5555, settings->_profiles.GetAt(3).HistorySize());
     }
 
-    void SerializationTests::FindMissingProfile()
+    void DeserializationTests::FindMissingProfile()
     {
         // Test that CascadiaSettings::FindProfile returns null for a GUID that
         // doesn't exist
@@ -1752,7 +1752,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"profile1", profile2.Name());
     }
 
-    void SerializationTests::ValidateKeybindingsWarnings()
+    void DeserializationTests::ValidateKeybindingsWarnings()
     {
         const std::string badSettings{ R"(
         {
@@ -1793,7 +1793,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.GetAt(3));
     }
 
-    void SerializationTests::ValidateExecuteCommandlineWarning()
+    void DeserializationTests::ValidateExecuteCommandlineWarning()
     {
         const std::string badSettings{ R"(
         {
@@ -1840,7 +1840,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingRequiredParameter, settings->_warnings.GetAt(3));
     }
 
-    void SerializationTests::ValidateLegacyGlobalsWarning()
+    void DeserializationTests::ValidateLegacyGlobalsWarning()
     {
         const std::string badSettings{ R"(
         {
@@ -1876,7 +1876,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::LegacyGlobalsProperty, settings->_warnings.GetAt(0));
     }
 
-    void SerializationTests::TestTrailingCommas()
+    void DeserializationTests::TestTrailingCommas()
     {
         const std::string badSettings{ R"(
         {
@@ -1911,7 +1911,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::TestCommandsAndKeybindings()
+    void DeserializationTests::TestCommandsAndKeybindings()
     {
         const std::string settingsJson{ R"(
         {
@@ -2111,7 +2111,7 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void SerializationTests::TestNestedCommandWithoutName()
+    void DeserializationTests::TestNestedCommandWithoutName()
     {
         // This test tests a nested command without a name specified. This type
         // of command should just be ignored, since we can't auto-generate names
@@ -2177,7 +2177,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
     }
 
-    void SerializationTests::TestUnbindNestedCommand()
+    void DeserializationTests::TestUnbindNestedCommand()
     {
         // Test that layering a command with `"commands": null` set will unbind a command that already exists.
 
@@ -2259,7 +2259,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
     }
 
-    void SerializationTests::TestRebindNestedCommand()
+    void DeserializationTests::TestRebindNestedCommand()
     {
         // Test that layering a command with an action set on top of a command
         // with nested commands replaces the nested commands with an action.

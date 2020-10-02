@@ -81,7 +81,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Actually initialize the IconSource. Supports a variety of icons:
+    // - Set the command's IconSource. Supports a variety of icons:
     //    * If the icon is a path to an image, we'll use that.
     //    * If it isn't, then we'll try and use the text as a FontIcon. If the
     //      character is in the range of symbols reserved for the Segoe MDL2
@@ -89,7 +89,7 @@ namespace winrt::TerminalApp::implementation
     //      UI icon, so things like emoji will work.
     // - MUST BE CALLED ON THE UI THREAD.
     // Arguments:
-    // - <none>
+    // - cmd - the command that we're updating IconSource for
     // Return Value:
     // - <none>
     static void _refreshIcon(const Command& cmd)
