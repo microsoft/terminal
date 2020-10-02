@@ -247,7 +247,7 @@ namespace TerminalAppLocalTests
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
             auto tab{ page->_GetTerminalTabImpl(0) };
-            page->_tabView.SelectedItem(tab->GetTabViewItem());
+            page->_tabView.SelectedItem(tab->TabViewItem());
             page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
