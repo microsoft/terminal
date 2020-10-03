@@ -984,6 +984,7 @@ public:
         _insertCharacter{ false },
         _deleteCharacter{ false },
         _eraseType{ (DispatchTypes::EraseType)-1 },
+        _eraseTypes{},
         _setGraphics{ false },
         _statusReportType{ (DispatchTypes::AnsiStatusType)-1 },
         _deviceStatusReport{ false },
@@ -1005,6 +1006,8 @@ public:
         _reverseLineFeed{ false },
         _forwardTab{ false },
         _numTabs{ 0 },
+        _tabClear{ false },
+        _tabClearTypes{},
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
         _win32InputMode{ false },
@@ -1119,6 +1122,7 @@ public:
     {
         _eraseDisplay = true;
         _eraseType = eraseType;
+        _eraseTypes.push_back(eraseType);
         return true;
     }
 
@@ -1126,6 +1130,7 @@ public:
     {
         _eraseLine = true;
         _eraseType = eraseType;
+        _eraseTypes.push_back(eraseType);
         return true;
     }
 
@@ -1336,6 +1341,13 @@ public:
         return true;
     }
 
+    bool TabClear(const DispatchTypes::TabClearType clearType) noexcept override
+    {
+        _tabClear = true;
+        _tabClearTypes.push_back(clearType);
+        return true;
+    }
+
     bool EnableDECCOLMSupport(const bool fEnabled) noexcept override
     {
         _isDECCOLMAllowed = fEnabled;
@@ -1422,6 +1434,7 @@ public:
     bool _insertCharacter;
     bool _deleteCharacter;
     DispatchTypes::EraseType _eraseType;
+    std::vector<DispatchTypes::EraseType> _eraseTypes;
     bool _setGraphics;
     DispatchTypes::AnsiStatusType _statusReportType;
     bool _deviceStatusReport;
@@ -1443,6 +1456,8 @@ public:
     bool _reverseLineFeed;
     bool _forwardTab;
     size_t _numTabs;
+    bool _tabClear;
+    std::vector<DispatchTypes::TabClearType> _tabClearTypes;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
     bool _win32InputMode;
@@ -1921,6 +1936,31 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestMultipleModes)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[?5;1;6h");
+        VERIFY_IS_TRUE(pDispatch->_isScreenModeReversed);
+        VERIFY_IS_TRUE(pDispatch->_cursorKeysMode);
+        VERIFY_IS_TRUE(pDispatch->_isOriginModeRelative);
+
+        pDispatch->ClearState();
+        pDispatch->_isScreenModeReversed = true;
+        pDispatch->_cursorKeysMode = true;
+        pDispatch->_isOriginModeRelative = true;
+
+        mach.ProcessString(L"\x1b[?5;1;6l");
+        VERIFY_IS_FALSE(pDispatch->_isScreenModeReversed);
+        VERIFY_IS_FALSE(pDispatch->_cursorKeysMode);
+        VERIFY_IS_FALSE(pDispatch->_isOriginModeRelative);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestErase)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
@@ -1987,6 +2027,28 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(*pfOperationCallback);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
+    }
+
+    TEST_METHOD(TestMultipleErase)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[3;2J");
+        auto expectedEraseTypes = std::vector{ DispatchTypes::EraseType::Scrollback, DispatchTypes::EraseType::All };
+        VERIFY_IS_TRUE(pDispatch->_eraseDisplay);
+        VERIFY_ARE_EQUAL(expectedEraseTypes, pDispatch->_eraseTypes);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\x1b[0;1K");
+        expectedEraseTypes = std::vector{ DispatchTypes::EraseType::ToEnd, DispatchTypes::EraseType::FromBeginning };
+        VERIFY_IS_TRUE(pDispatch->_eraseLine);
+        VERIFY_ARE_EQUAL(expectedEraseTypes, pDispatch->_eraseTypes);
+
+        pDispatch->ClearState();
     }
 
     void VerifyDispatchTypes(const gsl::span<const DispatchTypes::GraphicsOptions> expectedOptions,
@@ -2521,6 +2583,35 @@ class StateMachineExternalTest final
 
         VERIFY_IS_TRUE(pDispatch->_forwardTab);
         VERIFY_ARE_EQUAL(1u, pDispatch->_numTabs);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestTabClear)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        mach.ProcessString(L"\x1b[g");
+        auto expectedClearTypes = std::vector{ DispatchTypes::TabClearType::ClearCurrentColumn };
+        VERIFY_IS_TRUE(pDispatch->_tabClear);
+        VERIFY_ARE_EQUAL(expectedClearTypes, pDispatch->_tabClearTypes);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\x1b[3g");
+        expectedClearTypes = std::vector{ DispatchTypes::TabClearType::ClearAllColumns };
+        VERIFY_IS_TRUE(pDispatch->_tabClear);
+        VERIFY_ARE_EQUAL(expectedClearTypes, pDispatch->_tabClearTypes);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\x1b[0;3g");
+        expectedClearTypes = std::vector{ DispatchTypes::TabClearType::ClearCurrentColumn, DispatchTypes::TabClearType::ClearAllColumns };
+        VERIFY_IS_TRUE(pDispatch->_tabClear);
+        VERIFY_ARE_EQUAL(expectedClearTypes, pDispatch->_tabClearTypes);
 
         pDispatch->ClearState();
     }
