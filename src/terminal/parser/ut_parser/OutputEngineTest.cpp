@@ -343,6 +343,40 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._parameters.at(3), 8u);
     }
 
+    TEST_METHOD(TestCsiMaxParamCount)
+    {
+        auto dispatch = std::make_unique<DummyDispatch>();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Output a sequence with 100 parameters");
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        for (size_t i = 0; i < 100; i++)
+        {
+            if (i > 0)
+            {
+                mach.ProcessCharacter(L';');
+                VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+            }
+            mach.ProcessCharacter(L'0' + i % 10);
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        }
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+
+        Log::Comment(L"Only MAX_PARAMETER_COUNT (32) parameters should be stored");
+        VERIFY_ARE_EQUAL(mach._parameters.size(), MAX_PARAMETER_COUNT);
+        for (size_t i = 0; i < MAX_PARAMETER_COUNT; i++)
+        {
+            VERIFY_IS_TRUE(mach._parameters.at(i).has_value());
+            VERIFY_ARE_EQUAL(mach._parameters.at(i).value(), i % 10);
+        }
+    }
+
     TEST_METHOD(TestLeadingZeroCsiParam)
     {
         auto dispatch = std::make_unique<DummyDispatch>();
