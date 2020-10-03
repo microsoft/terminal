@@ -1525,6 +1525,7 @@ class StateMachineExternalTest final
     void TestCsiCursorMovement(wchar_t const wchCommand,
                                size_t const uiDistance,
                                const bool fUseDistance,
+                               const bool fAddExtraParam,
                                const bool* const pfFlag,
                                StateMachine& mach,
                                StatefulDispatch& dispatch)
@@ -1535,6 +1536,13 @@ class StateMachineExternalTest final
         if (fUseDistance)
         {
             InsertNumberToMachine(&mach, uiDistance);
+
+            // Extraneous parameters should be ignored.
+            if (fAddExtraParam)
+            {
+                mach.ProcessCharacter(L';');
+                mach.ProcessCharacter(L'9');
+            }
         }
 
         mach.ProcessCharacter(wchCommand);
@@ -1555,41 +1563,44 @@ class StateMachineExternalTest final
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDistance", PARAM_VALUES)
+            TEST_METHOD_PROPERTY(L"Data:fExtraParam", L"{false,true}")
         END_TEST_METHOD_PROPERTIES()
 
         size_t uiDistance;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiDistance", uiDistance));
+        bool fExtra;
+        VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"fExtraParam", fExtra));
 
         auto dispatch = std::make_unique<StatefulDispatch>();
         auto pDispatch = dispatch.get();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
-        TestCsiCursorMovement(L'A', uiDistance, true, &pDispatch->_cursorUp, mach, *pDispatch);
+        TestCsiCursorMovement(L'A', uiDistance, true, fExtra, &pDispatch->_cursorUp, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'B', uiDistance, true, &pDispatch->_cursorDown, mach, *pDispatch);
+        TestCsiCursorMovement(L'B', uiDistance, true, fExtra, &pDispatch->_cursorDown, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'C', uiDistance, true, &pDispatch->_cursorForward, mach, *pDispatch);
+        TestCsiCursorMovement(L'C', uiDistance, true, fExtra, &pDispatch->_cursorForward, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'D', uiDistance, true, &pDispatch->_cursorBackward, mach, *pDispatch);
+        TestCsiCursorMovement(L'D', uiDistance, true, fExtra, &pDispatch->_cursorBackward, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'E', uiDistance, true, &pDispatch->_cursorNextLine, mach, *pDispatch);
+        TestCsiCursorMovement(L'E', uiDistance, true, fExtra, &pDispatch->_cursorNextLine, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'F', uiDistance, true, &pDispatch->_cursorPreviousLine, mach, *pDispatch);
+        TestCsiCursorMovement(L'F', uiDistance, true, fExtra, &pDispatch->_cursorPreviousLine, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'G', uiDistance, true, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
+        TestCsiCursorMovement(L'G', uiDistance, true, fExtra, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'`', uiDistance, true, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
+        TestCsiCursorMovement(L'`', uiDistance, true, fExtra, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'd', uiDistance, true, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
+        TestCsiCursorMovement(L'd', uiDistance, true, fExtra, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'a', uiDistance, true, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        TestCsiCursorMovement(L'a', uiDistance, true, fExtra, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'e', uiDistance, true, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
+        TestCsiCursorMovement(L'e', uiDistance, true, fExtra, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'@', uiDistance, true, &pDispatch->_insertCharacter, mach, *pDispatch);
+        TestCsiCursorMovement(L'@', uiDistance, true, fExtra, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'P', uiDistance, true, &pDispatch->_deleteCharacter, mach, *pDispatch);
+        TestCsiCursorMovement(L'P', uiDistance, true, fExtra, &pDispatch->_deleteCharacter, mach, *pDispatch);
     }
 
     TEST_METHOD(TestCsiCursorMovementWithoutValues)
@@ -1600,31 +1611,31 @@ class StateMachineExternalTest final
         StateMachine mach(std::move(engine));
 
         size_t uiDistance = 9999; // this value should be ignored with the false below.
-        TestCsiCursorMovement(L'A', uiDistance, false, &pDispatch->_cursorUp, mach, *pDispatch);
+        TestCsiCursorMovement(L'A', uiDistance, false, false, &pDispatch->_cursorUp, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'B', uiDistance, false, &pDispatch->_cursorDown, mach, *pDispatch);
+        TestCsiCursorMovement(L'B', uiDistance, false, false, &pDispatch->_cursorDown, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'C', uiDistance, false, &pDispatch->_cursorForward, mach, *pDispatch);
+        TestCsiCursorMovement(L'C', uiDistance, false, false, &pDispatch->_cursorForward, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'D', uiDistance, false, &pDispatch->_cursorBackward, mach, *pDispatch);
+        TestCsiCursorMovement(L'D', uiDistance, false, false, &pDispatch->_cursorBackward, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'E', uiDistance, false, &pDispatch->_cursorNextLine, mach, *pDispatch);
+        TestCsiCursorMovement(L'E', uiDistance, false, false, &pDispatch->_cursorNextLine, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'F', uiDistance, false, &pDispatch->_cursorPreviousLine, mach, *pDispatch);
+        TestCsiCursorMovement(L'F', uiDistance, false, false, &pDispatch->_cursorPreviousLine, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'G', uiDistance, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
+        TestCsiCursorMovement(L'G', uiDistance, false, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'`', uiDistance, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
+        TestCsiCursorMovement(L'`', uiDistance, false, false, &pDispatch->_cursorHorizontalPositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'd', uiDistance, false, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
+        TestCsiCursorMovement(L'd', uiDistance, false, false, &pDispatch->_verticalLinePositionAbsolute, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'a', uiDistance, false, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
+        TestCsiCursorMovement(L'a', uiDistance, false, false, &pDispatch->_horizontalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'e', uiDistance, false, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
+        TestCsiCursorMovement(L'e', uiDistance, false, false, &pDispatch->_verticalPositionRelative, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'@', uiDistance, false, &pDispatch->_insertCharacter, mach, *pDispatch);
+        TestCsiCursorMovement(L'@', uiDistance, false, false, &pDispatch->_insertCharacter, mach, *pDispatch);
         pDispatch->ClearState();
-        TestCsiCursorMovement(L'P', uiDistance, false, &pDispatch->_deleteCharacter, mach, *pDispatch);
+        TestCsiCursorMovement(L'P', uiDistance, false, false, &pDispatch->_deleteCharacter, mach, *pDispatch);
     }
 
     TEST_METHOD(TestCsiCursorPosition)
