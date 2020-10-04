@@ -126,6 +126,7 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
+
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
