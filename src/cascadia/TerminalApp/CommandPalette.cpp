@@ -107,22 +107,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
     {
-        uint8_t numberOfRows{};
-
-        if (pageButtonPressed)
-        {
-            numberOfRows = 9;
-        }
-        else if (!pageButtonPressed)
-        {
-            numberOfRows = 1;
-        }
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
-        const auto newIndex = ((numItems + selected + (moveDown ? numberOfRows : -numberOfRows)) % numItems);
+        const auto newIndex = ((numItems + selected + (moveDown ? (pageButtonPressed ? 9 : 1) : (pageButtonPressed ? -9 : -1))) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
