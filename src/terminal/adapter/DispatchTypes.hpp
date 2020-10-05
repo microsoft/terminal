@@ -172,7 +172,8 @@ namespace Microsoft::Console::VirtualTerminal
             return { subValues.data(), subValues.size() };
         }
 
-        bool for_each(const std::function<bool(const VTParameter)> predicate) const
+        template<typename T>
+        bool for_each(const T&& predicate) const
         {
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.
