@@ -50,7 +50,8 @@ namespace Microsoft::Console::Render
     enum class CursorPaintType
     {
         Fill,
-        Outline
+        Outline,
+        HorizontalOnly
     };
 
     constexpr const ULONG MinCursorHeightPercent = 25;
