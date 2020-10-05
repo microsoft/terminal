@@ -402,9 +402,9 @@ public:
         return {};
     }
 
-    const size_t GetPatternId(const COORD /*location*/) const noexcept
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
     {
-        return 0;
+        return {};
     }
 };
 

@@ -349,9 +349,9 @@ const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
 }
 
 // For now, we ignore regex patterns in conhost
-const size_t RenderData::GetPatternId(const COORD /*location*/) const noexcept
+const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) const noexcept
 {
-    return 0;
+    return {};
 }
 
 // Routine Description:

@@ -694,7 +694,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // Retrieve the first color.
         auto color = it->TextAttr();
         // Retrieve the first pattern id
-        auto patternId = _pData->GetPatternId(target);
+        auto patternIds = _pData->GetPatternId(target);
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -709,7 +709,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             const auto currentRunColor = color;
 
             // Hold onto the current pattern id as well
-            const auto currentPatternId = patternId;
+            const auto currentPatternId = patternIds;
 
             // Update the drawing brushes with our color.
             THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
@@ -740,16 +740,16 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             do
             {
                 COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
-                const auto thisPointPattern = _pData->GetPatternId(thisPoint);
-                if (color != it->TextAttr() || patternId != thisPointPattern)
+                const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
+                if (color != it->TextAttr() || patternIds != thisPointPatterns)
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || patternId != thisPointPattern)
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || patternIds != thisPointPatterns)
                     {
                         color = newAttr;
-                        patternId = thisPointPattern;
+                        patternIds = thisPointPatterns;
                         break; // vend this run
                     }
                 }
@@ -911,7 +911,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
-    if (_pData->GetPatternId(coordTarget) != 0)
+    if (_pData->GetPatternId(coordTarget).size() > 0)
     {
         if (_hoveredInterval.start <= til::point{ coordTarget } && til::point{ coordTarget } <= _hoveredInterval.stop)
         {
