@@ -9,7 +9,8 @@ namespace Microsoft.Terminal.TerminalControl
         Bar,
         Underscore,
         FilledBox,
-        EmptyBox
+        EmptyBox,
+        DoubleUnderscore
     };
 
     interface ICoreSettings
