@@ -36,9 +36,7 @@ namespace interval_tree
 
         constexpr bool operator!=(const Interval& other) const noexcept
         {
-            return start != other.start ||
-                   stop != other.stop ||
-                   value != other.value;
+            return !(*this == other);
         }
     };
 
