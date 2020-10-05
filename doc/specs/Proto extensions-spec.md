@@ -262,9 +262,10 @@ files. Once we implement this feature, we will need to provide documentation on 
 
 For apps that are installed through something like the Microsoft Store, they will need to declare themselves to
 be an app extension or write a separate app extension. In the app extension, they will need to create a public
-folder and insert their json files into it. The specifics of how they can do this are provided in the
-[Microsoft Docs](https://docs.microsoft.com/en-us/windows/uwp/launch-resume/how-to-create-an-extension) for how
-to create an app extension, and I will replicate the necessary section here. 
+folder, and create a subdirectory within that folder called `Fragments`. The json files should be inserted into the
+`Fragments` subdirectory. The specifics of how they can declare themselves as an app extension are provided in the
+[Microsoft Docs](https://docs.microsoft.com/en-us/windows/uwp/launch-resume/how-to-create-an-extension), and I will
+replicate the necessary section here. 
 
 In the appxmanifest file of the package:
 
@@ -298,7 +299,7 @@ the package root, where the `json` files they wish to share with us are stored (
 `Public` but can be renamed as long as it matches the relevant folder).
 
 During our profile generation, we will probe the OS for app extensions with the name `Microsoft.com.Terminal`
-and obtain the json files stored in the public folders of those app extensions.
+and obtain the json files stored in the `Fragments` subdirectories of the public folders of those app extensions.
 
 #### For apps installed 'traditionally' 
 
