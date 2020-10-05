@@ -376,7 +376,9 @@ Looking through the additional json files could negatively impact startup time.
 
 ## Future considerations
 
-This will likely be a stepping stone for the theme marketplace. 
+This will likely be a stepping stone for the theme marketplace.
+
+This will also likely be a stepping stone to allowing users to specify other files to import settings from. 
 
 ## Resources
 
