@@ -5,7 +5,6 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "../inc/Utils.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
 
