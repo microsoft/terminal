@@ -30,8 +30,7 @@ Renderer::Renderer(IRenderData* pData,
     _pThread{ std::move(thread) },
     _destructing{ false },
     _clusterBuffer{},
-    _viewport{ pData->GetViewport() },
-    _hoveredInterval{ til::point{}, til::point{}, size_t{} }
+    _viewport{ pData->GetViewport() }
 {
     for (size_t i = 0; i < cEngines; i++)
     {

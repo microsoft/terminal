@@ -19,8 +19,6 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-typedef interval_tree::IntervalTree<til::point, size_t> ThisTree;
-
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
@@ -474,7 +472,7 @@ ThisTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD positi
             }
         }
     }
-    return ThisTree::interval(til::point{}, til::point{}, size_t{});
+    return ThisTree::interval();
 }
 
 // Method Description:

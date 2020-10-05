@@ -16,6 +16,8 @@
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+typedef interval_tree::IntervalTree<til::point, size_t> ThisTree;
+
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other
 //      headers that include Terminal.hpp
@@ -131,7 +133,7 @@ public:
 
     std::wstring GetHyperlinkAtPosition(const COORD position);
     uint16_t GetHyperlinkIdAtPosition(const COORD position);
-    interval_tree::Interval<til::point, size_t> GetHyperlinkIntervalFromPosition(const COORD position);
+    ThisTree::interval GetHyperlinkIntervalFromPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
