@@ -20,20 +20,6 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
-        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
-        {
-            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
-            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
-            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
-            vkey = (ushort)wParam;
-        }
-
-        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
-        {
-            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
-            character = (char)vKey;
-        }
-
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
@@ -77,14 +63,32 @@ namespace Microsoft.Terminal.Wpf
         internal event EventHandler<int> UserScrolled;
 
         /// <summary>
-        /// Gets the character rows available to the terminal.
+        /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
+        /// on user action.
+        /// </summary>
+        public bool AutoFill { get; set; } = true;
+
+        /// <summary>
+        /// Gets the current character rows available to the terminal.
         /// </summary>
         internal int Rows { get; private set; }
 
         /// <summary>
-        /// Gets the character columns available to the terminal.
+        /// Gets the current character columns available to the terminal.
         /// </summary>
         internal int Columns { get; private set; }
+
+        /// <summary>
+        /// Gets the maximum amount of character rows that can fit in this control.
+        /// </summary>
+        /// <remarks>This will be in sync with <see cref="Rows"/> unless autofit is set to false.</remarks>
+        internal int MaxRows { get; private set; }
+
+        /// <summary>
+        /// Gets the maximum amount of character columns that can fit in this control.
+        /// </summary>
+        /// <remarks>This will be in sync with <see cref="Columns"/> unless autofit is set to false.</remarks>
+        internal int MaxColumns { get; private set; }
 
         /// <summary>
         /// Gets the window handle of the terminal.
@@ -172,7 +176,7 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Resizes the terminal.
+        /// Resizes the terminal using row and column count as the new size.
         /// </summary>
         /// <param name="rows">Number of rows to show.</param>
         /// <param name="columns">Number of columns to show.</param>
@@ -186,8 +190,16 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalResize(this.terminal, dimensions);
 
-            this.Rows = dimensions.Y;
+            // If AutoFill is true, keep Rows and Columns in sync with MaxRows and MaxColumns.
+            // Otherwise, MaxRows and MaxColumns will be set on startup and on control resize by the user.
+            if (this.AutoFill)
+            {
+                this.MaxColumns = dimensions.X;
+                this.MaxRows = dimensions.Y;
+            }
+
             this.Columns = dimensions.X;
+            this.Rows = dimensions.Y;
 
             this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
         }
@@ -236,6 +248,20 @@ namespace Microsoft.Terminal.Wpf
         {
             NativeMethods.DestroyTerminal(this.terminal);
             this.terminal = IntPtr.Zero;
+        }
+
+        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
+        {
+            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
+            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
+            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
+            vkey = (ushort)wParam;
+        }
+
+        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
+        {
+            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
+            character = (char)vKey;
         }
 
         private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
@@ -299,13 +325,28 @@ namespace Microsoft.Terminal.Wpf
                             break;
                         }
 
-                        NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out var dimensions);
+                        NativeMethods.COORD dimensions;
+
+                        // We only trigger a resize if we want to autofill to maximum size.
+                        if (this.AutoFill)
+                        {
+                            NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
+
+                            this.Columns = dimensions.X;
+                            this.Rows = dimensions.Y;
+                            this.MaxColumns = dimensions.X;
+                            this.MaxRows = dimensions.Y;
+                        }
+                        else
+                        {
+                            NativeMethods.TerminalCalculateResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
+                            this.MaxColumns = dimensions.X;
+                            this.MaxRows = dimensions.Y;
+                        }
 
                         this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
-                        this.Columns = dimensions.X;
-                        this.Rows = dimensions.Y;
-
                         break;
+
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
                         var delta = (short)(((long)wParam) >> 16);
                         this.UserScrolled?.Invoke(this, delta);

@@ -193,6 +193,9 @@ namespace Microsoft.Terminal.Wpf
         public static extern uint TerminalResize(IntPtr terminal, COORD dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern uint TerminalCalculateResize(IntPtr terminal, short width, short height, out COORD dimensions);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalDpiChanged(IntPtr terminal, int newDpi);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]

@@ -433,7 +433,7 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
     publicTerminal->SendOutput(data);
 }
 
-HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
+HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ double width, _In_ double height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -449,6 +449,20 @@ HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double heig
     const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
     return publicTerminal->Refresh(windowSize, dimensions);
 }
+
+HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
+{
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+
+    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { width, height });
+    const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
+
+    dimensions->X = viewInCharacters.Width();
+    dimensions->Y = viewInCharacters.Height();
+
+    return S_OK;
+}
+
 
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
 {

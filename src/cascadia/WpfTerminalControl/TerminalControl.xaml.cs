@@ -32,14 +32,34 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Gets the character rows available to the terminal.
+        /// Gets the current character rows available to the terminal.
         /// </summary>
         public int Rows => this.termContainer.Rows;
 
         /// <summary>
-        /// Gets the character columns available to the terminal.
+        /// Gets the current character columns available to the terminal.
         /// </summary>
         public int Columns => this.termContainer.Columns;
+
+        /// <summary>
+        /// Gets the maximum amount of character rows that can fit in this control.
+        /// </summary>
+        public int MaxRows => this.termContainer.MaxRows;
+
+        /// <summary>
+        /// Gets the maximum amount of character columns that can fit in this control.
+        /// </summary>
+        public int MaxColumns => this.termContainer.MaxColumns;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
+        /// on user action.
+        /// </summary>
+        public bool AutoFill
+        {
+            get => this.termContainer.AutoFill;
+            set => this.termContainer.AutoFill = value;
+        }
 
         /// <summary>
         /// Sets the connection to a terminal backend.
