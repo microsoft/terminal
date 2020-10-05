@@ -23,7 +23,6 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Hidden;
 
         String IconPath;
-        String ExpandedIconPath { get; };
 
         CloseOnExitMode CloseOnExit;
         String TabTitle;

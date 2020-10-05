@@ -244,22 +244,6 @@ void Profile::LayerJson(const Json::Value& json)
 }
 
 // Method Description:
-// - Returns this profile's icon path, if one is set. Otherwise returns the
-//   empty string. This method will expand any environment variables in the
-//   path, if there are any.
-// Return Value:
-// - this profile's icon path, if one is set. Otherwise returns the empty string.
-winrt::hstring Profile::ExpandedIconPath() const
-{
-    if (_IconPath.empty())
-    {
-        return _IconPath;
-    }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_IconPath.c_str()) };
-    return envExpandedPath;
-}
-
-// Method Description:
 // - Returns this profile's background image path, if one is set, expanding
 //   any environment variables in the path, if there are any.
 // Return Value:

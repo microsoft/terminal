@@ -81,88 +81,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Set the command's IconSource. Supports a variety of icons:
-    //    * If the icon is a path to an image, we'll use that.
-    //    * If it isn't, then we'll try and use the text as a FontIcon. If the
-    //      character is in the range of symbols reserved for the Segoe MDL2
-    //      Asserts, well treat it as such. Otherwise, we'll default to a Sego
-    //      UI icon, so things like emoji will work.
-    // - MUST BE CALLED ON THE UI THREAD.
-    // Arguments:
-    // - cmd - the command that we're updating IconSource for
-    // Return Value:
-    // - <none>
-    static void _refreshIcon(const Command& cmd)
-    {
-        if (cmd.IconPath().size() != 0)
-        {
-            cmd.IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(cmd.IconPath()));
-
-            // If we fail to set the icon source using the "icon" as a path,
-            // let's try it as a symbol/emoji.
-            //
-            // Anything longer that 2 wchar_t's _isn't_ an emoji or symbol, so
-            // don't do this if it's just an invalid path.
-            if (cmd.IconSource() == nullptr && cmd.IconPath().size() <= 2)
-            {
-                try
-                {
-                    WUX::Controls::FontIconSource icon;
-                    const wchar_t ch = cmd.IconPath()[0];
-
-                    // The range of MDL2 Icons isn't explicitly defined, but
-                    // we're using this based off the table on:
-                    // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
-                    const bool isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
-                    if (isMDL2Icon)
-                    {
-                        icon.FontFamily(WUX::Media::FontFamily{ L"Segoe MDL2 Assets" });
-                    }
-                    else
-                    {
-                        // Note: you _do_ need to manually set the font here.
-                        icon.FontFamily(WUX::Media::FontFamily{ L"Segoe UI" });
-                    }
-                    icon.FontSize(12);
-                    icon.Glyph(cmd.IconPath());
-                    cmd.IconSource(icon);
-                }
-                CATCH_LOG();
-            }
-        }
-        if (cmd.IconSource() == nullptr)
-        {
-            // Set the default IconSource to a BitmapIconSource with a null source
-            // (instead of just nullptr) because there's a really weird crash when swapping
-            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-            // Swapping between nullptr IconSources and non-null IconSources causes a crash
-            // to occur, but swapping between IconSources with a null source and non-null IconSources
-            // work perfectly fine :shrug:.
-            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-            icon.UriSource(nullptr);
-            cmd.IconSource(icon);
-        }
-    }
-
-    static void _recursiveUpdateCommandIcons(IMapView<winrt::hstring, Command> commands)
-    {
-        for (const auto& nameAndCmd : commands)
-        {
-            const auto& command = nameAndCmd.Value();
-
-            // !!! LOAD-BEARING !!! If this is never called, then Commands will
-            // have a nullptr icon. If they do, a really weird crash can occur.
-            // MAKE SURE this is called once after a settings load.
-            _refreshIcon(command);
-
-            if (command.HasNestedCommands())
-            {
-                _recursiveUpdateCommandIcons(command.NestedCommands());
-            }
-        }
-    }
-
     winrt::fire_and_forget TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
@@ -532,7 +450,7 @@ namespace winrt::TerminalApp::implementation
             // this flyout item.
             if (!profile.IconPath().empty())
             {
-                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.ExpandedIconPath());
+                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.IconPath()) };
 
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
@@ -778,7 +696,7 @@ namespace winrt::TerminalApp::implementation
         const auto profile = _settings.FindProfile(profileGuid);
         if (profile != nullptr && !profile.IconPath().empty())
         {
-            newTabImpl->UpdateIcon(profile.ExpandedIconPath());
+            newTabImpl->UpdateIcon(profile.IconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -1020,7 +938,7 @@ namespace winrt::TerminalApp::implementation
             const auto matchingProfile = _settings.FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile.ExpandedIconPath());
+                tab.UpdateIcon(matchingProfile.IconPath());
             }
             else
             {
@@ -2223,7 +2141,6 @@ namespace winrt::TerminalApp::implementation
                                                                        _settings.GlobalSettings().ColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
-        _recursiveUpdateCommandIcons(copyOfCommands.GetView());
 
         // Update the command palette when settings reload
         auto commandsCollection = winrt::single_threaded_vector<Command>();
