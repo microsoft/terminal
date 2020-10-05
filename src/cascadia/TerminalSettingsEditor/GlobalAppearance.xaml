@@ -34,7 +34,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             <Controls:RadioButtons x:Uid="Globals_TabWidthMode" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-
                 <RadioButton x:Uid="Globals_EqualTabWidthMode" x:Name="EqualTabWidthMode"/>
                 <RadioButton x:Uid="Globals_TitleLengthTabWidthMode" x:Name="TitleLengthTabWidthMode"/>
                 <RadioButton x:Uid="Globals_CompactTabWidthMode" x:Name="CompactTabWidthMode"/>
