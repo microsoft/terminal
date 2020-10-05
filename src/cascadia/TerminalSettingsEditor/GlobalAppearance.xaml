@@ -21,24 +21,24 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-        <TextBlock Text="Global Appearance"
+        <TextBlock x:Uid="Globals_GlobalAppearance"
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <Controls:RadioButtons Header="Theme" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Sets the theme of the application. The value 'system' refers to the active Windows system theme." ToolTipService.Placement="Mouse">
-                <RadioButton x:Name="DefaultTheme" Content="Default"/>
-                <RadioButton x:Name="DarkTheme" Content="Dark"/>
-                <RadioButton x:Name="LightTheme" Content="Light"/>
+            <Controls:RadioButtons x:Uid="Globals_Theme" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
+                <RadioButton x:Uid="Globals_DefaultTheme" x:Name="DefaultTheme"/>
+                <RadioButton x:Uid="Globals_DarkTheme" x:Name="DarkTheme"/>
+                <RadioButton x:Uid="Globals_LightTheme" x:Name="LightTheme"/>
             </Controls:RadioButtons>
-            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitlebar, Mode=TwoWay}" Content="Show the title bar" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the tabs are moved into the title bar and the title bar disappears. When unchecked, the title bar sits above the tabs." ToolTipService.Placement="Mouse" />
-            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Content="Show terminal title in title bar" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the title bar displays the title of the selected tab. When unchecked, the title bar displays 'Windows Terminal'." ToolTipService.Placement="Mouse" />
-            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Content="Always show tabs" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, tabs are always displayed. When unchecked and 'show the title bar' is checked, tabs only appear after opening a new tab." ToolTipService.Placement="Mouse" />
-            <Controls:RadioButtons Header="Tab width mode" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Sets the width of the tabs. 'Equal' sizes each tab to the same width. 'Title length' sizes each tab to the length of its title. 'Compact' sizes each tab to the length of its title when focused, and shrinks to the size of only the icon when the tab is unfocused." ToolTipService.Placement="Mouse">
-                <RadioButton x:Name="EqualTabWidthMode" Content="Equal"/>
-                <RadioButton x:Name="TitleLengthTabWidthMode" Content="Title length"/>
-                <RadioButton x:Name="CompactTabWidthMode" Content="Compact"/>
+            <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <Controls:RadioButtons x:Uid="Globals_TabWidthMode"  Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
+                <RadioButton x:Uid="Globals_EqualTabWidthMode" x:Name="EqualTabWidthMode"/>
+                <RadioButton x:Uid="Globals_TitleLengthTabWidthMode" x:Name="TitleLengthTabWidthMode"/>
+                <RadioButton x:Uid="Globals_CompactTabWidthMode" x:Name="CompactTabWidthMode"/>
             </Controls:RadioButtons>
-            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Content="Show close all tabs popup" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, closing a window with multiple tabs open will require confirmation. When unchecked, the confirmation dialog will not appear." ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
         </StackPanel>
     </Grid>
 </Page>

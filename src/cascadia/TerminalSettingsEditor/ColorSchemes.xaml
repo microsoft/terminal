@@ -20,7 +20,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-        <TextBlock Text="Color schemes"
+        <TextBlock x:Uid="ColorScheme_ColorSchemes"
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20"
                    Grid.Row="0" />
@@ -46,7 +46,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     Grid.Column="0">
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Background"
+                <TextBox x:Uid="ColorScheme_Background"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BackgroundHexValue, Mode=TwoWay}" />
@@ -71,7 +71,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Black"
+                <TextBox x:Uid="ColorScheme_Black"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BlackHexValue, Mode=TwoWay}" />
@@ -96,7 +96,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Blue"
+                <TextBox x:Uid="ColorScheme_Blue"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BlueHexValue, Mode=TwoWay}" />
@@ -121,7 +121,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Cyan"
+                <TextBox x:Uid="ColorScheme_Cyan"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.CyanHexValue, Mode=TwoWay}" />
@@ -146,7 +146,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Green"
+                <TextBox x:Uid="ColorScheme_Green"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.GreenHexValue, Mode=TwoWay}" />
@@ -171,7 +171,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Purple"
+                <TextBox x:Uid="ColorScheme_Purple"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.PurpleHexValue, Mode=TwoWay}" />
@@ -196,7 +196,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Red"
+                <TextBox x:Uid="ColorScheme_Red"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.RedHexValue, Mode=TwoWay}" />
@@ -221,7 +221,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="White"
+                <TextBox x:Uid="ColorScheme_White"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.WhiteHexValue, Mode=TwoWay}" />
@@ -246,7 +246,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Yellow"
+                <TextBox x:Uid="ColorScheme_Yellow"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.YellowHexValue, Mode=TwoWay}" />
@@ -274,7 +274,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     Grid.Column="1">
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Foreground"
+                <TextBox x:Uid="ColorScheme_Foreground"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.ForegroundHexValue, Mode=TwoWay}" />
@@ -299,7 +299,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Black"
+                <TextBox x:Uid="ColorScheme_BrightBlack"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightBlackHexValue, Mode=TwoWay}" />
@@ -324,7 +324,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Blue"
+                <TextBox x:Uid="ColorScheme_BrightBlue"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightBlueHexValue, Mode=TwoWay}" />
@@ -349,7 +349,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Cyan"
+                <TextBox x:Uid="ColorScheme_BrightCyan"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightCyanHexValue, Mode=TwoWay}" />
@@ -374,7 +374,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Green"
+                <TextBox x:Uid="ColorScheme_BrightGreen"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightGreenHexValue, Mode=TwoWay}" />
@@ -399,7 +399,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Purple"
+                <TextBox x:Uid="ColorScheme_BrightPurple"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightPurpleHexValue, Mode=TwoWay}" />
@@ -424,7 +424,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Red"
+                <TextBox x:Uid="ColorScheme_BrightRed"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightRedHexValue, Mode=TwoWay}" />
@@ -449,7 +449,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright White"
+                <TextBox x:Uid="ColorScheme_BrightWhite"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightWhiteHexValue, Mode=TwoWay}" />
@@ -474,7 +474,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
             <StackPanel Orientation="Horizontal"
                         Margin="0,0,0,20">
-                <TextBox Header="Bright Yellow"
+                <TextBox x:Uid="ColorScheme_BrightYellow"
                          Width="100"
                          FontSize="15"
                          Text="{x:Bind ColorSchemeModel.ColorScheme.BrightYellowHexValue, Mode=TwoWay}" />
