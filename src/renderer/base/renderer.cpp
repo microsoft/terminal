@@ -707,7 +707,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // We'll be changing the persistent one as we run through the inner loops to detect
             // when a run changes, but we will still need to know this color at the bottom
             // when we go to draw gridlines for the length of the run.
-            auto currentRunColor = color;
+            const auto currentRunColor = color;
 
             // Hold onto the current pattern id as well
             const auto currentPatternId = patternId;
@@ -718,19 +718,6 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // Advance the point by however many columns we've just outputted and reset the accumulator.
             screenPoint.X += gsl::narrow<SHORT>(cols);
             cols = 0;
-
-            // For now, we underline all patterns so adjust the currentRunColor if this run is a pattern
-            if (currentPatternId != 0)
-            {
-                if (_hoveredInterval.start <= til::point{ screenPoint } && til::point{ screenPoint } <= _hoveredInterval.stop)
-                {
-                    currentRunColor.SetDoublyUnderlined(true);
-                }
-                else
-                {
-                    currentRunColor.SetUnderlined(true);
-                }
-            }
 
             // Hold onto the start of this run iterator and the target location where we started
             // in case we need to do some special work to paint the line drawing characters.
@@ -923,6 +910,20 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 {
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
+
+    // For now, we dash underline patterns and switch to regular underline on hover
+    if (_pData->GetPatternId(coordTarget) != 0)
+    {
+        if (_hoveredInterval.start <= til::point{ coordTarget } && til::point{ coordTarget } <= _hoveredInterval.stop)
+        {
+            lines |= IRenderEngine::GridLines::Underline;
+        }
+        else
+        {
+            lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+        }
+    }
+
     // Return early if there are no lines to paint.
     if (lines != IRenderEngine::GridLines::None)
     {

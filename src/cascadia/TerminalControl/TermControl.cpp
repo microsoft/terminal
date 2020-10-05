@@ -36,7 +36,7 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
 // The minimum delay between updating the locations of regex patterns
-constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(10);
+constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(50);
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
