@@ -5,7 +5,7 @@ last updated: 2020-07-10
 issue id: [#885](https://github.com/microsoft/terminal/issues/885)
 ---
 
-# Spec Title
+# Terminal Settings Model
 
 ## Abstract
 
@@ -59,7 +59,7 @@ namespace TerminalApp
         // NOTE: It may be possible to move both of these to the constructor instead
         void SetDispatch(ShortcutActionDispatch dispatch);
         void SetKeyMap(KeyMapping keymap);
-    } 
+    }
 }
 
 namespace TerminalSettingsModel
@@ -85,12 +85,12 @@ Introducing these `Microsoft.Terminal.Settings.Model` WinRT objects also allow t
  for setting serialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
 
 Deserialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
- already includes `FromJson` and `CanConvert`. Deserialization would be handled by a `ToJson` function.
+ already includes `FromJson` and `CanConvert`. Serialization would be handled by a `ToJson` function.
 
 
 ### Terminal Settings Model: Warnings and Serialization Errors
 
-Today, if the serialization of `CascadiaSettings` encounters any errors, an exception is thrown and caught/handled
+Today, if the deserialization of `CascadiaSettings` encounters any errors, an exception is thrown and caught/handled
  by falling back to a simple `CascadiaSettings` object. However, WinRT does not support exceptions.
 
 To get around this issue, when `CascadiaSettings` encounters a serialization error, it must internally record
@@ -104,7 +104,7 @@ To get around this issue, when `CascadiaSettings` encounters a serialization err
 TerminalApp will construct and reference a `CascadiaSettings settings` as follows:
 - TerminalApp will have a global reference to the "settings.json" filepath
 - construct an `CascadiaSettings` using `CascadiaSettings("settings.json")`. This builds an `CascadiaSettings`
-   from the "defaults.json" file data (which is already compiled as a string literal) 
+   from the "defaults.json" file data (which is already compiled as a string literal)
    and layers the settings.json data on top of it.
 - check for errors/warnings, and handle them appropriately
 
@@ -159,17 +159,7 @@ N/A
 
 ## Potential Issues
 
-### Deserialization
-
-After deserializing the settings, injecting the new json into settings.json
- should not remove the existing comments or formatting.
-
-The deserialization process takes place right after comparing the `settingsSource` and `settingsClone` objects.
- For each setting found in the diff, we go to the relevant part of the JSON and see if the key is already there.
- If it is, we update the value to be the one from `settingsClone`. Otherwise, we append the key/value pair
- at the end of the section (much like we do with dynamic profiles in `profiles`).
-
-
+N/A
 
 ## Future considerations
 
@@ -214,7 +204,7 @@ runtimeclass CascadiaSettings
 {
     // Create a copy of the existing CascadiaSettings
     CascadiaSettings Clone();
-    
+
     // Compares object to "source" and applies changes to
     // the settings file at "outPath"
     void Save(String outPath);
@@ -230,10 +220,10 @@ settingsClone = settingsSource.Clone()
 
 As the user navigates the Settings UI, the relevant contents of `settingsClone` will be retrieved and presented.
  As the user makes changes to the Settings UI, XAML will update `settingsClone` using XAML data binding.
- When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called; 
+ When the user saves/applies the changes in the XAML, `settingsClone.Save("settings.json")` is called;
  this compares the changes between `settingsClone` and `settingsSource`, then injects the changes (if any) to `settings.json`.
 
-As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `CascadiaSettings`. 
+As mentioned earlier, TerminalApp detects a change to "settings.json" to update its `CascadiaSettings`.
  Since the above triggers a change to `settings.json`, TerminalApp will also update itself. When
  something like this occurs, `settingsSource` will automatically be updated too.
 
@@ -243,6 +233,16 @@ In the case that a user is simultaneously updating the settings file directly an
 
  **NOTE:** In the event that the user would want to export their current configuration, `Save`
  can be used to export the changes to a new file.
+
+ ### Reserialization (DRAFT)
+
+After deserializing the settings, injecting the new json into settings.json
+ should not remove the existing comments or formatting.
+
+The reserialization process takes place right after comparing the `settingsSource` and `settingsClone` objects.
+ For each setting found in the diff, we go to the relevant part of the JSON and see if the key is already there.
+ If it is, we update the value to be the one from `settingsClone`. Otherwise, we append the key/value pair
+ at the end of the section (much like we do with dynamic profiles in `profiles`).
 
 ## Resources
 
