@@ -19,5 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
+    // C++/WinRT generates a constructor even though one is not specified in the IDL
     BASIC_FACTORY(KeyChordSerialization);
 }
