@@ -426,27 +426,20 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         return uri;
     }
     // also look through our known pattern locations in our pattern interval tree
-    // we need to convert to 1-d coordinates because that is how the tree stores them
-    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
-    if (results.size() > 0)
+    const auto result = GetHyperlinkIntervalFromPosition(position);
+    if (result.value == _hyperlinkPatternId)
     {
-        for (const auto& result : results)
-        {
-            if (result.value == _hyperlinkPatternId)
-            {
-                const auto start = result.start;
-                const auto end = result.stop;
-                std::wstring uri;
+        const auto start = result.start;
+        const auto end = result.stop;
+        std::wstring uri;
 
-                const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
-                const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
-                for (auto iter = startIter; iter != endIter; ++iter)
-                {
-                    uri += iter->Chars();
-                }
-                return uri;
-            }
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        for (auto iter = startIter; iter != endIter; ++iter)
+        {
+            uri += iter->Chars();
         }
+        return uri;
     }
     return {};
 }
@@ -462,7 +455,13 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
     return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
 
-interval_tree::Interval<til::point, size_t> Microsoft::Terminal::Core::Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+// Method description:
+// - Given a position in a URI pattern, gets the start and end coordinates of the URI
+// Arguments:
+// - The position
+// Return value:
+// - The interval representing the start and end coordinates
+ThisTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
     const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
     if (results.size() > 0)

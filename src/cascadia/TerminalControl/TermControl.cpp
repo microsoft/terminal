@@ -1301,8 +1301,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                 const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
                 const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPos);
-                // If the hyperlink ID changed, trigger a redraw all (so this will happen both when we move
-                // onto a link and when we move off a link)
+                // If the hyperlink ID changed or the interval changed, trigger a redraw all
+                // (so this will happen both when we move onto a link and when we move off a link)
                 if (newId != _lastHoveredId || (newInterval.start != _lastHoveredInterval.start))
                 {
                     _lastHoveredId = newId;
