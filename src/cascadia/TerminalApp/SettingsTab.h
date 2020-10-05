@@ -31,8 +31,6 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
         winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
-        winrt::hstring GetActiveTitle() const;
-
         void UpdateTabViewIndex(const uint32_t idx);
 
         void Shutdown();

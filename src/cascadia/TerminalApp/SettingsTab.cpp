@@ -93,17 +93,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets the title string of the settings UI
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the title string of the last focused terminal control in our tree.
-    winrt::hstring SettingsTab::GetActiveTitle() const
-    {
-        return Title();
-    }
-
-    // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy
     void SettingsTab::Shutdown()
     {

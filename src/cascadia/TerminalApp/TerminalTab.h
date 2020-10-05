@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
-        winrt::hstring GetActiveTitle() const;
+        winrt::fire_and_forget UpdateTitle();
 
         void Shutdown();
         void ClosePane();
@@ -114,8 +114,8 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
+        winrt::hstring _GetActiveTitle() const;
         void _UpdateTabHeader();
-        winrt::fire_and_forget _UpdateTitle();
         void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         void _RecalculateAndApplyTabColor();

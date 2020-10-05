@@ -210,6 +210,8 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenSettingsUI();
 
+        void _ReapplyCompactTabSize();
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

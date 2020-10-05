@@ -700,7 +700,8 @@ namespace winrt::TerminalApp::implementation
         auto weakTab = make_weak(newTabImpl);
 
         // When the tab's active pane changes, we'll want to lookup a new icon
-        // for it, and possibly propagate the title up to the window.
+        // for it. The Title change will be propagated upwards through the tab's
+        // PropertyChanged event handler.
         newTabImpl->ActivePaneChanged([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };
@@ -709,24 +710,12 @@ namespace winrt::TerminalApp::implementation
             {
                 // Possibly update the icon of the tab.
                 page->_UpdateTabIcon(*tab);
-                // Possibly update the title of the tab, window to match the newly
-                // focused pane.
-                page->_UpdateTitle(*tab);
             }
         });
 
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
-        // GH#6570
-        // The TabView does not apply compact sizing to items added after Compact is enabled.
-        // By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
-        // that it works.
-        // Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
-        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
-        {
-            _tabView.UpdateLayout();
-            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
-        }
+        _ReapplyCompactTabSize();
 
         // Set this tab's icon to the icon from the user's profile
         const auto profile = _settings.FindProfile(profileGuid);
@@ -951,7 +940,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void TerminalPage::_UpdateTitle(const TerminalTab& tab)
     {
-        auto newTabTitle = tab.GetActiveTitle();
+        auto newTabTitle = tab.Title();
 
         if (_settings.GlobalSettings().ShowTitleInTitlebar() &&
             tab.FocusState() != FocusState::Unfocused)
@@ -2002,7 +1991,7 @@ namespace winrt::TerminalApp::implementation
                 tab.Focus(FocusState::Programmatic);
 
                 // Raise an event that our title changed
-                _titleChangeHandlers(*this, tab.GetActiveTitle());
+                _titleChangeHandlers(*this, tab.Title());
             }
             CATCH_LOG();
         }
@@ -2119,7 +2108,9 @@ namespace winrt::TerminalApp::implementation
             if (auto terminalTab = _GetTerminalTabImpl(tab))
             {
                 _UpdateTabIcon(*terminalTab);
-                _UpdateTitle(*terminalTab);
+
+                // Force the TerminalTab to re-grab its currently active control's title.
+                terminalTab->UpdateTitle();
             }
         }
 
@@ -2577,16 +2568,7 @@ namespace winrt::TerminalApp::implementation
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
 
-            // GH#6570
-            // The TabView does not apply compact sizing to items added after Compact is enabled.
-            // By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
-            // that it works.
-            // Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
-            if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
-            {
-                _tabView.UpdateLayout();
-                _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
-            }
+            _ReapplyCompactTabSize();
 
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
@@ -2630,6 +2612,25 @@ namespace winrt::TerminalApp::implementation
         else
         {
             return nullptr;
+        }
+    }
+
+    // Method Description:
+    // - The TabView does not apply compact sizing to items added after Compact is enabled.
+    //   By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
+    //   that it works.
+    //   Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
+    //   TODO: Remove this function and its calls when ingesting the above changes.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ReapplyCompactTabSize()
+    {
+        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
+        {
+            _tabView.UpdateLayout();
+            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
         }
     }
 

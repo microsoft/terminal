@@ -14,8 +14,6 @@ namespace TerminalApp
         Windows.UI.Xaml.FrameworkElement Content { get; };
         Windows.UI.Xaml.FocusState FocusState { get; };
 
-        String GetActiveTitle();
-
         void Focus(Windows.UI.Xaml.FocusState focusState);
         void UpdateTabViewIndex(UInt32 idx);
         void Shutdown();

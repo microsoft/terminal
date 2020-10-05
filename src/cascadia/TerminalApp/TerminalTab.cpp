@@ -57,7 +57,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _UpdateTitle();
+        UpdateTitle();
         _RecalculateAndApplyTabColor();
     }
 
@@ -221,7 +221,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the title string of the last focused terminal control in our tree.
-    winrt::hstring TerminalTab::GetActiveTitle() const
+    winrt::hstring TerminalTab::_GetActiveTitle() const
     {
         if (!_runtimeTabText.empty())
         {
@@ -239,14 +239,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalTab::_UpdateTitle()
+    winrt::fire_and_forget TerminalTab::UpdateTitle()
     {
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(TabViewItem().Dispatcher());
         if (auto tab{ weakThis.get() })
         {
             // Bubble our current tab text to anyone who's listening for changes.
-            Title(GetActiveTitle());
+            Title(_GetActiveTitle());
 
             // Update SwitchToTab command's name
             SwitchToTabCommand().Name(Title());
@@ -384,13 +384,13 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::SetTabText(winrt::hstring title)
     {
         _runtimeTabText = title;
-        _UpdateTitle();
+        UpdateTitle();
     }
 
     void TerminalTab::ResetTabText()
     {
         _runtimeTabText = L"";
-        _UpdateTitle();
+        UpdateTitle();
     }
 
     // Method Description:
@@ -413,7 +413,7 @@ namespace winrt::TerminalApp::implementation
             {
                 // The title of the control changed, but not necessarily the title of the tab.
                 // Set the tab's text to the active panes' text.
-                tab->_UpdateTitle();
+                tab->UpdateTitle();
             }
         });
 
@@ -458,7 +458,7 @@ namespace winrt::TerminalApp::implementation
         _activePane->SetActive();
 
         // Update our own title text to match the newly-active pane.
-        _UpdateTitle();
+        UpdateTitle();
 
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
@@ -588,7 +588,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_UpdateTabHeader()
     {
-        winrt::hstring tabText{ GetActiveTitle() };
+        winrt::hstring tabText{ Title() };
 
         if (!_inRename)
         {
@@ -679,7 +679,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tab->_runtimeTabText = textBox.Text();
                 tab->_inRename = false;
-                tab->_UpdateTitle();
+                tab->UpdateTitle();
             }
         });
 
@@ -701,7 +701,7 @@ namespace winrt::TerminalApp::implementation
                     e.Handled(true);
                     textBox.Text(tab->_runtimeTabText);
                     tab->_inRename = false;
-                    tab->_UpdateTitle();
+                    tab->UpdateTitle();
                     break;
                 }
             }
