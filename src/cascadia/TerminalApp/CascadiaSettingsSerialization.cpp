@@ -48,6 +48,7 @@ static constexpr std::string_view jsonExtension{ ".json" };
 static constexpr std::string_view LocalSource{ "local" };
 static constexpr std::string_view GlobalSource{ "global" };
 static constexpr std::string_view AppSource{ "app" };
+static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
 static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments" };
 static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows Terminal\\Fragments" };
 
@@ -403,14 +404,14 @@ void CascadiaSettings::_LoadProtoExtensions()
     }
 
     // Search through the local app data folder if its not in ignoredNamespaces
-    if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\Windows\\Terminal")))
+    if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataFolder.data())))
     {
         const auto jsonFiles = _AccumulateJsonFilesInDirectory(LocalAppDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(LocalSource));
     }
 
     // Search through the global app data folder if its not in ignoredNamespaces
-    if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramData%\\Microsoft\\Windows\\Terminal")))
+    if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(ProgramDataFolder.data())))
     {
         const auto jsonFiles = _AccumulateJsonFilesInDirectory(ProgramDataFolder);
         _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(GlobalSource));
@@ -467,8 +468,9 @@ void CascadiaSettings::_LoadProtoExtensions()
             // you may have noticed that we need to resort to clunky implementations for async operations
             // (they're right above)
             // so for now we will just take the folder path and access the files that way
-            const auto path = foundFolder.Path();
-            const auto jsonFiles = _AccumulateJsonFilesInDirectory(path);
+            auto path = winrt::to_string(foundFolder.Path());
+            path.append(FragmentsSubDirectory);
+            const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
             _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(AppSource));
         }
     }
