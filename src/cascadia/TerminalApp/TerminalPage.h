@@ -4,7 +4,7 @@
 #pragma once
 
 #include "TerminalPage.g.h"
-#include "Tab.h"
+#include "TerminalTab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
 #include "AppKeyBindings.h"
@@ -90,10 +90,11 @@ namespace winrt::TerminalApp::implementation
 
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::ITab> _tabs;
+        winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const ITab& tab) const;
         void _UpdateTabIndices();
+
+        winrt::TerminalApp::Command _switchToSettingsCommand{ nullptr };
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
@@ -135,8 +136,8 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
-        void _UpdateTitle(const Tab& tab);
-        void _UpdateTabIcon(Tab& tab);
+        void _UpdateTitle(const TerminalTab& tab);
+        void _UpdateTabIcon(TerminalTab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
@@ -148,7 +149,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, Tab& hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, TerminalTab& hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const uint32_t tabIndex);
@@ -156,7 +157,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        winrt::com_ptr<Tab> _GetFocusedTab();
+        ITab _GetFocusedTab();
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
@@ -206,6 +207,12 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        void _OpenSettingsUI();
+
+        void _ReapplyCompactTabSize();
+
+        void _MakeSwitchToTabCommand(const ITab& tab, const uint32_t index);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

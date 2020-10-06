@@ -82,6 +82,23 @@ namespace Microsoft::TerminalApp::details
     {
         using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
     };
+
+    template<typename TIconSource>
+    struct FontIconSource
+    {
+    };
+
+    template<>
+    struct FontIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Microsoft::UI::Xaml::Controls::FontIconSource;
+    };
+
+    template<>
+    struct FontIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Windows::UI::Xaml::Controls::FontIconSource;
+    };
 }
 
 // Method Description:
@@ -108,6 +125,28 @@ TIconSource GetColoredIcon(const winrt::hstring& path)
             // non-transparent pixels in the image.
             iconSource.ShowAsMonochrome(false);
             iconSource.UriSource(iconUri);
+            return iconSource;
+        }
+        CATCH_LOG();
+    }
+
+    return nullptr;
+}
+
+// TODO: GH#1564 SUI polish - Dedupe with Command's icon handler
+template<typename TIconSource>
+TIconSource GetFontIcon(const winrt::Windows::UI::Xaml::Media::FontFamily& fontFamily,
+                        const double fontSize,
+                        const winrt::hstring glyph)
+{
+    if (!glyph.empty())
+    {
+        try
+        {
+            ::Microsoft::TerminalApp::details::FontIconSource<TIconSource>::type iconSource;
+            iconSource.FontFamily(fontFamily);
+            iconSource.FontSize(fontSize);
+            iconSource.Glyph(glyph);
             return iconSource;
         }
         CATCH_LOG();

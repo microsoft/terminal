@@ -42,7 +42,8 @@ namespace TerminalApp
     {
         SettingsFile = 0,
         DefaultsFile,
-        AllFiles
+        AllFiles,
+        SettingsUI
     };
 
     [default_interface] runtimeclass NewTerminalArgs {

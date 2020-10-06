@@ -966,7 +966,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::OnTabsChanged(const IInspectable& s, const IVectorChangedEventArgs& e)
     {
-        if (auto tabList = s.try_as<IObservableVector<TerminalApp::Tab>>())
+        if (auto tabList = s.try_as<IObservableVector<TerminalApp::ITab>>())
         {
             auto idx = e.Index();
             auto changedEvent = e.CollectionChange();

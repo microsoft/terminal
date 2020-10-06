@@ -7,7 +7,7 @@
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
-#include "../TerminalApp/Tab.h"
+#include "../TerminalApp/TerminalTab.h"
 #include "../CppWinrtTailored.h"
 #include "JsonTestClass.h"
 
@@ -246,8 +246,8 @@ namespace TerminalAppLocalTests
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
-            auto tab{ page->_GetStrongTabImpl(0) };
-            page->_tabView.SelectedItem(tab->GetTabViewItem());
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            page->_tabView.SelectedItem(tab->TabViewItem());
             page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
@@ -469,7 +469,7 @@ namespace TerminalAppLocalTests
 
         result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetStrongTabImpl(0);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(1, tab->GetLeafPaneCount());
         });
         VERIFY_SUCCEEDED(result);
@@ -479,7 +479,7 @@ namespace TerminalAppLocalTests
             page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetStrongTabImpl(0);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, tab->GetLeafPaneCount());
         });
         VERIFY_SUCCEEDED(result);
@@ -497,7 +497,7 @@ namespace TerminalAppLocalTests
             page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetStrongTabImpl(0);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2,
                              tab->GetLeafPaneCount(),
                              L"We should gracefully do nothing here - the profile no longer exists.");

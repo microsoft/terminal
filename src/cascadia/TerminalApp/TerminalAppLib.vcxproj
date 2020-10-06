@@ -76,6 +76,12 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsTab.h">
+      <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalTab.h">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -100,9 +106,6 @@
     </ClInclude>
     <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Tab.h">
-      <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorScheme.h">
@@ -167,6 +170,12 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="SettingsTab.cpp">
+      <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalTab.cpp">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -191,9 +200,6 @@
     </ClCompile>
     <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="Tab.cpp">
-      <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="ColorScheme.cpp">
@@ -268,6 +274,7 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="SettingsTab.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="KeyMapping.idl" />
@@ -277,6 +284,8 @@
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="ITab.idl" />
+    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -300,7 +309,6 @@
     <Midl Include="Command.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="Tab.idl" />
     <Midl Include="TerminalSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Profile.idl" />

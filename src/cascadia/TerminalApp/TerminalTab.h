@@ -4,7 +4,7 @@
 #pragma once
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
-#include "Tab.g.h"
+#include "TerminalTab.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -14,22 +14,21 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct Tab : public TabT<Tab>
+    struct TerminalTab : TerminalTabT<TerminalTab>
     {
     public:
-        Tab() = delete;
-        Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        TerminalTab() = delete;
+        TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-        winrt::Windows::UI::Xaml::UIElement GetRootElement();
+        winrt::Windows::UI::Xaml::FrameworkElement Content();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
-        bool IsFocused() const noexcept;
-        void SetFocused(const bool focused);
+        void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
+        winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
         winrt::fire_and_forget Scroll(const int delta);
 
@@ -47,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         void NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
-        winrt::hstring GetActiveTitle() const;
+        winrt::fire_and_forget UpdateTitle();
 
         void Shutdown();
         void ClosePane();
@@ -68,8 +67,6 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
-        void UpdateTabViewIndex(const uint32_t idx);
-
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -80,9 +77,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
 
-        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
-        // This is needed since Tab is going to be managing its own SwitchToTab command.
-        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
+        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -93,7 +88,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
 
-        bool _focused{ false };
+        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
         winrt::hstring _runtimeTabText{};
@@ -113,15 +108,13 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
+        winrt::hstring _GetActiveTitle() const;
         void _UpdateTabHeader();
-        winrt::fire_and_forget _UpdateTitle();
         void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
-
-        void _MakeSwitchToTabCommand();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
