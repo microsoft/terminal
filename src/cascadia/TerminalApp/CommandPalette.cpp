@@ -101,22 +101,21 @@ namespace winrt::TerminalApp::implementation
     // - Moves the focus up or down the list of commands. If we're at the top,
     //   we'll loop around to the bottom, and vice-versa.
     // Arguments:
-    // - moveDown: if true, we're attempting to move to the next item in the
-    //   list. Otherwise, we're attempting to move to the previous.
+    // - moveDown: if true, we're attempting to move to the next or a few next item in the
+    //   list. Otherwise, we're attempting to move to the previous or not very many previous.
     // Return Value:
     // - <none>
     void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
     {
-
         const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
-        const int numList = listHeight / 42;
+        const int numVisibleItems = listHeight / 42;
 
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
-        const auto newIndex = ((numItems + selected + (moveDown ? (pageButtonPressed ? numList : 1) : (pageButtonPressed ? -numList : -1))) % numItems);
+        const auto newIndex = ((numItems + selected + (moveDown ? (pageButtonPressed ? numVisibleItems : 1) : (pageButtonPressed ? -numVisibleItems : -1))) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
