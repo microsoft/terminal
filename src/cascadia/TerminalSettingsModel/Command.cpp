@@ -149,9 +149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
 
-        hstring icon;
-        JsonUtils::GetValueForKey(json, IconKey, icon);
-        result->Icon(icon);
+        JsonUtils::GetValueForKey(json, IconKey, result->_Icon);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
