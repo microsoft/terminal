@@ -294,6 +294,7 @@ try
     }
 
     CursorPaintType paintType = CursorPaintType::Fill;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
 
     switch (options.cursorType)
     {
@@ -320,8 +321,14 @@ try
     }
     case CursorType::DoubleUnderscore:
     {
-        rect.top = rect.bottom - 3;
-        paintType = CursorPaintType::HorizontalOnly;
+        // Use rect for lower line.
+        rect.top = rect.bottom - 1;
+
+        // Draw upper line directly.
+        D2D1_RECT_F upperLine = rect;
+        upperLine.top -= 2;
+        upperLine.bottom -= 2;
+        d2dContext->FillRectangle(upperLine, brush.Get());
         break;
     }
     case CursorType::EmptyBox:
@@ -336,8 +343,6 @@ try
     default:
         return E_NOTIMPL;
     }
-
-    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
 
     if (options.fUseColor)
     {
@@ -363,31 +368,6 @@ try
         rect.right -= 0.5f;
 
         d2dContext->DrawRectangle(rect, brush.Get());
-        break;
-    }
-    case CursorPaintType::HorizontalOnly:
-    {
-        // DrawRectangle in straddles physical pixels in an attempt to draw a line
-        // between them. To avoid this, bump the rectangle around by half the stroke width.
-        rect.top += 0.5f;
-        rect.left += 0.5f;
-        rect.bottom -= 0.5f;
-        rect.right -= 0.5f;
-
-        D2D1_POINT_2F leftPoint = til::point{};
-        D2D1_POINT_2F rightPoint = til::point{};
-
-        leftPoint.x = rect.left;
-        leftPoint.y = rect.top;
-        rightPoint.x = rect.right;
-        rightPoint.y = rect.top;
-        d2dContext->DrawLine(leftPoint, rightPoint, brush.Get());
-
-        leftPoint.x = rect.left;
-        leftPoint.y = rect.bottom;
-        rightPoint.x = rect.right;
-        rightPoint.y = rect.bottom;
-        d2dContext->DrawLine(leftPoint, rightPoint, brush.Get());
         break;
     }
     default:
