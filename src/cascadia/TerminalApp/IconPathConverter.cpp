@@ -183,8 +183,7 @@ namespace winrt::TerminalApp::implementation
                                                         hstring const& /* language */)
     {
         const auto& iconPath = winrt::unbox_value_or<winrt::hstring>(value, L"");
-        Controls::IconSource iconSource{ _getIconSource<Controls::IconSource>(iconPath) };
-        return winrt::box_value(iconSource);
+        return _getIconSource<Controls::IconSource>(iconPath);
     }
 
     // unused for one-way bindings
