@@ -2554,7 +2554,6 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_switchToSettingsCommand)
         {
-
             auto newTabImpl = winrt::make_self<SettingsTab>();
             _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
