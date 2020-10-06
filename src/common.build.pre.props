@@ -87,7 +87,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <AdditionalOptions>/std:c++17 /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/std:c++17 /utf-8 /Zc:preprocessor %(AdditionalOptions)</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
