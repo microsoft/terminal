@@ -6,7 +6,6 @@
 #include "AppLogic.g.h"
 
 #include "Tab.h"
-#include "CascadiaSettings.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -17,7 +16,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         static AppLogic* Current() noexcept;
-        static const TerminalApp::CascadiaSettings CurrentAppSettings();
+        static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
         ~AppLogic() = default;
@@ -27,14 +26,12 @@ namespace winrt::TerminalApp::implementation
         void RunAsUwp();
         bool IsElevated() const noexcept;
         void LoadSettings();
-        [[nodiscard]] TerminalApp::CascadiaSettings GetSettings() const noexcept;
+        [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
-        winrt::hstring ApplicationDisplayName() const;
-        winrt::hstring ApplicationVersion() const;
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
@@ -42,7 +39,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
+        Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
@@ -70,7 +67,7 @@ namespace winrt::TerminalApp::implementation
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
-        TerminalApp::CascadiaSettings _settings{ nullptr };
+        Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};

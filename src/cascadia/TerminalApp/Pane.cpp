@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "Pane.h"
-#include "Profile.h"
 #include "AppLogic.h"
 
 using namespace winrt::Windows::Foundation;
@@ -12,6 +11,7 @@ using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
@@ -324,8 +324,8 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
     if (paneProfile)
     {
         auto mode = paneProfile.CloseOnExit();
-        if ((mode == winrt::TerminalApp::CloseOnExitMode::Always) ||
-            (mode == winrt::TerminalApp::CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        if ((mode == CloseOnExitMode::Always) ||
+            (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
             _ClosedHandlers(nullptr, nullptr);
         }
@@ -1712,8 +1712,8 @@ int Pane::GetLeafPaneCount() const noexcept
 // - nullopt if `target` is not this pane or a child of this pane, otherwise the
 //   SplitState that `target` would use for an `Automatic` split given
 //   `availableSpace`
-std::optional<winrt::TerminalApp::SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                                          const winrt::Windows::Foundation::Size availableSpace) const
+std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                      const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (_IsLeaf())
     {
