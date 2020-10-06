@@ -9,13 +9,12 @@ namespace TerminalApp
     {
         String Title { get; };
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
-        Command SwitchToTabCommand { get; };
+        Command SwitchToTabCommand;
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
         Windows.UI.Xaml.FrameworkElement Content { get; };
         Windows.UI.Xaml.FocusState FocusState { get; };
 
         void Focus(Windows.UI.Xaml.FocusState focusState);
-        void UpdateTabViewIndex(UInt32 idx);
         void Shutdown();
     }
 }

@@ -212,6 +212,8 @@ namespace winrt::TerminalApp::implementation
 
         void _ReapplyCompactTabSize();
 
+        void _MakeSwitchToTabCommand(const ITab& tab, const uint32_t index);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);

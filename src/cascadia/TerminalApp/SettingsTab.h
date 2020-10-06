@@ -31,8 +31,6 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
         winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
-        void UpdateTabViewIndex(const uint32_t idx);
-
         void Shutdown();
 
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
@@ -40,7 +38,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::hstring, Title, L"Settings");
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, nullptr);
         GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, nullptr);
-        GETSET_PROPERTY(uint32_t, TabViewIndex, 0);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::Page, Content, nullptr);
 
@@ -49,7 +46,6 @@ namespace winrt::TerminalApp::implementation
 
         void _MakeTabViewItem();
         void _CreateContextMenu();
-        void _MakeSwitchToTabCommand();
         winrt::fire_and_forget _CreateIcon();
     };
 }

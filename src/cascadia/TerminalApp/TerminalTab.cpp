@@ -36,7 +36,6 @@ namespace winrt::TerminalApp::implementation
         _activePane = _rootPane;
 
         _MakeTabViewItem();
-        _MakeSwitchToTabCommand();
     }
 
     // Method Description:
@@ -1009,35 +1008,6 @@ namespace winrt::TerminalApp::implementation
     bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
-    }
-
-    // Method Description:
-    // - Initializes a SwitchToTab command object for this Tab instance.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_MakeSwitchToTabCommand()
-    {
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-        args->TabIndex(_TabViewIndex);
-
-        focusTabAction->Action(ShortcutAction::SwitchToTab);
-        focusTabAction->Args(*args);
-
-        winrt::TerminalApp::Command command;
-        command.Action(*focusTabAction);
-        command.Name(Title());
-        command.IconSource(IconSource());
-
-        SwitchToTabCommand(command);
-    }
-
-    void TerminalTab::UpdateTabViewIndex(const uint32_t idx)
-    {
-        TabViewIndex(idx);
-        SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

@@ -685,12 +685,11 @@ namespace winrt::TerminalApp::implementation
 
         TermControl term{ settings, connection };
 
-        // Add the new tab to the list of our tabs.
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
-        _tabs.Append(*newTabImpl);
+        _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
-        // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+        // Add the new tab to the list of our tabs.
+        _tabs.Append(*newTabImpl);
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -2538,7 +2537,8 @@ namespace winrt::TerminalApp::implementation
     {
         for (uint32_t i = 0; i < _tabs.Size(); ++i)
         {
-            _tabs.GetAt(i).UpdateTabViewIndex(i);
+            auto command = _tabs.GetAt(i).SwitchToTabCommand();
+            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
         }
     }
 
@@ -2554,12 +2554,12 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_switchToSettingsCommand)
         {
-            // Add the new tab to the list of our tabs.
-            auto newTabImpl = winrt::make_self<SettingsTab>();
-            _tabs.Append(*newTabImpl);
 
-            // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-            newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+            auto newTabImpl = winrt::make_self<SettingsTab>();
+            _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
+
+            // Add the new tab to the list of our tabs.
+            _tabs.Append(*newTabImpl);
 
             // Don't capture a strong ref to the tab. If the tab is removed as this
             // is called, we don't really care anymore about handling the event.
@@ -2632,6 +2632,32 @@ namespace winrt::TerminalApp::implementation
             _tabView.UpdateLayout();
             _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
         }
+    }
+
+    // Method Description:
+    // - Initializes a SwitchToTab command object for this Tab instance.
+    //   This should be done before the tab is added to the _tabs vector so that
+    //   controls like the CmdPal that observe the vector changes can always expect
+    //   a SwitchToTab command to be available.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_MakeSwitchToTabCommand(const ITab& tab, const uint32_t index)
+    {
+        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
+        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
+        args->TabIndex(index);
+
+        focusTabAction->Action(ShortcutAction::SwitchToTab);
+        focusTabAction->Args(*args);
+
+        winrt::TerminalApp::Command command;
+        command.Action(*focusTabAction);
+        command.Name(tab.Title());
+        command.IconSource(tab.IconSource());
+
+        tab.SwitchToTabCommand(command);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

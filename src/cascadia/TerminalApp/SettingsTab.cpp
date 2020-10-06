@@ -28,7 +28,6 @@ namespace winrt::TerminalApp::implementation
         Content(winrt::Microsoft::Terminal::Settings::Editor::MainPage());
 
         _MakeTabViewItem();
-        _MakeSwitchToTabCommand();
         _CreateContextMenu();
         _CreateIcon();
     }
@@ -132,34 +131,5 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutSeparator menuSeparator;
         newTabFlyout.Items().Append(closeTabMenuItem);
         TabViewItem().ContextFlyout(newTabFlyout);
-    }
-
-    // Method Description:
-    // - Initializes a SwitchToTab command object for this Tab instance.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void SettingsTab::_MakeSwitchToTabCommand()
-    {
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-        args->TabIndex(_TabViewIndex);
-
-        focusTabAction->Action(ShortcutAction::SwitchToTab);
-        focusTabAction->Args(*args);
-
-        winrt::TerminalApp::Command command;
-        command.Action(*focusTabAction);
-        command.Name(Title());
-        command.IconSource(IconSource());
-
-        SwitchToTabCommand(command);
-    }
-
-    void SettingsTab::UpdateTabViewIndex(const uint32_t idx)
-    {
-        TabViewIndex(idx);
-        SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
     }
 }
