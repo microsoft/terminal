@@ -471,9 +471,9 @@ void CascadiaSettings::_ValidateMediaResources()
             }
         }
 
-        if (!profile.IconPath().empty())
+        if (!profile.Icon().empty())
         {
-            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.IconPath().c_str()) };
+            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.Icon().c_str()) };
             try
             {
                 winrt::Windows::Foundation::Uri imagePath{ iconPath };
@@ -485,7 +485,7 @@ void CascadiaSettings::_ValidateMediaResources()
                 if (iconPath.size() > 2)
                 {
                     // reset icon path
-                    profile.IconPath(L"");
+                    profile.Icon(L"");
                     invalidIcon = true;
                 }
             }

@@ -74,7 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(hstring, Source);
         GETSET_PROPERTY(bool, Hidden, false);
 
-        GETSET_PROPERTY(hstring, IconPath);
+        GETSET_PROPERTY(hstring, Icon);
 
         GETSET_PROPERTY(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         GETSET_PROPERTY(hstring, TabTitle);

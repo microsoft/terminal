@@ -233,7 +233,7 @@ namespace winrt::TerminalApp::implementation
             _tabViewItem.IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
 
             // Update SwitchToTab command's icon
-            SwitchToTabCommand().IconPath(_lastIconPath);
+            SwitchToTabCommand().Icon(_lastIconPath);
         }
     }
 
@@ -1048,7 +1048,7 @@ namespace winrt::TerminalApp::implementation
         Command command;
         command.Action(focusTabAction);
         command.Name(Title());
-        command.IconPath(_lastIconPath);
+        command.Icon(_lastIconPath);
 
         SwitchToTabCommand(command);
     }

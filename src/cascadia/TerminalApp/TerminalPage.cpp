@@ -448,9 +448,9 @@ namespace winrt::TerminalApp::implementation
 
             // If there's an icon set for this profile, set it as the icon for
             // this flyout item.
-            if (!profile.IconPath().empty())
+            if (!profile.Icon().empty())
             {
-                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.IconPath()) };
+                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.Icon()) };
 
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
@@ -694,9 +694,9 @@ namespace winrt::TerminalApp::implementation
 
         // Set this tab's icon to the icon from the user's profile
         const auto profile = _settings.FindProfile(profileGuid);
-        if (profile != nullptr && !profile.IconPath().empty())
+        if (profile != nullptr && !profile.Icon().empty())
         {
-            newTabImpl->UpdateIcon(profile.IconPath());
+            newTabImpl->UpdateIcon(profile.Icon());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -938,7 +938,7 @@ namespace winrt::TerminalApp::implementation
             const auto matchingProfile = _settings.FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile.IconPath());
+                tab.UpdateIcon(matchingProfile.Icon());
             }
             else
             {

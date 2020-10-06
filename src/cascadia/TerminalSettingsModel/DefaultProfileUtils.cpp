@@ -26,7 +26,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CreateDefaultProfile(const 
     iconPath.append(Microsoft::Console::Utils::GuidToString(profileGuid));
     iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
 
-    newProfile.IconPath(iconPath);
+    newProfile.Icon(iconPath);
 
     return newProfile;
 }

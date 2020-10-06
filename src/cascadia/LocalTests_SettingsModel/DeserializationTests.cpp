@@ -1399,7 +1399,10 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedIconPath());
+
+        const auto profile{ settings->_profiles.GetAt(0) };
+        const auto expandedIconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.Icon().c_str()) };
+        VERIFY_ARE_EQUAL(expectedPath, expandedIconPath);
     }
     void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
     {

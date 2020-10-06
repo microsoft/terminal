@@ -169,7 +169,7 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 
             // Create the shell link object for the profile
             winrt::com_ptr<IShellLinkW> shLink;
-            const auto normalizedIconPath{ _normalizeIconPath(profile.IconPath()) };
+            const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
             RETURN_IF_FAILED(_createShellLink(profile.Name(), normalizedIconPath, args, shLink.put()));
 
             RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));

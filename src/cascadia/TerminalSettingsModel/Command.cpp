@@ -151,7 +151,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring icon;
         JsonUtils::GetValueForKey(json, IconKey, icon);
-        result->IconPath(icon);
+        result->Icon(icon);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -404,7 +404,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.IconPath()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);

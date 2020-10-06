@@ -22,7 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
         Guid ConnectionType;
         Boolean Hidden;
 
-        String IconPath;
+        String Icon;
 
         CloseOnExitMode CloseOnExit;
         String TabTitle;

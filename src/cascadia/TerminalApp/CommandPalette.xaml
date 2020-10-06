@@ -228,7 +228,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
-                                    IconSource="{x:Bind IconPath,
+                                    IconSource="{x:Bind Icon,
                                                         Mode=OneWay,
                                                         Converter={StaticResource IconSourceConverter}}"/>
 
