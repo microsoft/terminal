@@ -105,14 +105,18 @@ namespace winrt::TerminalApp::implementation
     //   list. Otherwise, we're attempting to move to the previous.
     // Return Value:
     // - <none>
-    void CommandPalette::SelectNextItem(const bool moveDown)
+    void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
     {
+
+        const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
+        const int numList = listHeight / 42;
+
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
-        const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
+        const auto newIndex = ((numItems + selected + (moveDown ? (pageButtonPressed ? numList : 1) : (pageButtonPressed ? -numList : -1))) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
@@ -134,12 +138,12 @@ namespace winrt::TerminalApp::implementation
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                SelectNextItem(false);
+                SelectNextItem(false, false);
                 e.Handled(true);
             }
             else
             {
-                SelectNextItem(true);
+                SelectNextItem(true, false);
                 e.Handled(true);
             }
         }
@@ -161,13 +165,25 @@ namespace winrt::TerminalApp::implementation
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
-            SelectNextItem(false);
+            SelectNextItem(false, false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
             // Action Mode: Move focus to the previous item in the list.
-            SelectNextItem(true);
+            SelectNextItem(true, false);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::PageUp)
+        {
+            // Action Mode: Move focus to the previous item in the list.
+            SelectNextItem(false, true);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::PageDown)
+        {
+            // Action Mode: Move focus to the previous item in the list.
+            SelectNextItem(true, true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)

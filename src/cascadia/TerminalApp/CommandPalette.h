@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void SelectNextItem(const bool moveDown);
+        void SelectNextItem(const bool moveDown, const bool pageButtonPressed);
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
