@@ -1617,6 +1617,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _SetEndSelectionPointAtCursor(point);
         }
 
+        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        _terminal->ClearPatternTree();
         _updatePatternLocations->Run();
     }
 

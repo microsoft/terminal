@@ -190,6 +190,7 @@ public:
     bool IsCursorBlinkingAllowed() const noexcept;
 
     void UpdatePatterns() noexcept;
+    void ClearPatternTree() noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
 

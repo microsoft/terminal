@@ -1120,10 +1120,17 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 //   region changes (for example by text entering the buffer or scrolling)
 void Terminal::UpdatePatterns() noexcept
 {
-    auto old = _patternIntervalTree;
     _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
-    _InvalidatePatternTree(old);
     _InvalidatePatternTree(_patternIntervalTree);
+}
+
+// Method Description:
+// - Clears our interval pattern tree
+// - This is called to prevent the renderer from rendering patterns while the
+//   visible region is changing 
+void Terminal::ClearPatternTree() noexcept
+{
+    _patternIntervalTree = {};
 }
 
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
