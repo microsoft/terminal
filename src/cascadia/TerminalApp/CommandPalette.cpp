@@ -3,9 +3,6 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
-#include "ActionAndArgs.h"
-#include "ActionArgs.h"
-#include "Command.h"
 
 #include <LibraryResources.h>
 
@@ -18,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -26,11 +24,11 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
-        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _filteredActions = winrt::single_threaded_observable_vector<Command>();
+        _nestedActionStack = winrt::single_threaded_vector<Command>();
+        _currentNestedCommands = winrt::single_threaded_vector<Command>();
+        _allCommands = winrt::single_threaded_vector<Command>();
+        _allTabActions = winrt::single_threaded_vector<Command>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -177,7 +175,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto selectedItem = _filteredActionsView().SelectedItem())
                 {
-                    _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                    _dispatchCommand(selectedItem.try_as<Command>());
                 }
             }
             // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
@@ -300,7 +298,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                if (const auto data = selectedItem.try_as<TerminalApp::Command>())
+                if (const auto data = selectedItem.try_as<Command>())
                 {
                     _dispatchCommand(data);
                 }
@@ -347,7 +345,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
-        _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
+        _dispatchCommand(e.ClickedItem().try_as<Command>());
     }
 
     // Method Description:
@@ -382,7 +380,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A list of Commands to filter.
-    Collections::IVector<TerminalApp::Command> CommandPalette::_commandsToFilter()
+    Collections::IVector<Command> CommandPalette::_commandsToFilter()
     {
         switch (_currentMode)
         {
@@ -397,7 +395,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _allTabActions;
         case CommandPaletteMode::CommandlineMode:
-            return winrt::single_threaded_vector<TerminalApp::Command>();
+            return winrt::single_threaded_vector<Command>();
         default:
             return _allCommands;
         }
@@ -412,7 +410,7 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommand(const TerminalApp::Command& command)
+    void CommandPalette::_dispatchCommand(const Command& command)
     {
         if (command)
         {
@@ -505,11 +503,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring cmdline{ input };
 
         // Build the ExecuteCommandline action from the values we've parsed on the commandline.
-        auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-        executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
-        args->Commandline(cmdline);
-        executeActionAndArgs->Args(*args);
+        ExecuteCommandlineArgs args{ cmdline };
+        ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -518,7 +513,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-        if (_dispatch.DoAction(*executeActionAndArgs))
+        if (_dispatch.DoAction(executeActionAndArgs))
         {
             _close();
         }
@@ -584,7 +579,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
+    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
@@ -594,7 +589,7 @@ namespace winrt::TerminalApp::implementation
         _bindings = bindings;
     }
 
-    void CommandPalette::SetCommands(Collections::IVector<TerminalApp::Command> const& actions)
+    void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
         _allCommands = actions;
         _updateFilteredActions();
@@ -651,7 +646,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareCommandNames(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
+    static bool _compareCommandNames(const Command& lhs, const Command& rhs)
     {
         std::wstring_view leftName{ lhs.Name() };
         std::wstring_view rightName{ rhs.Name() };
@@ -661,7 +656,7 @@ namespace winrt::TerminalApp::implementation
     // This is a helper struct to aid in sorting Commands by a given weighting.
     struct WeightedCommand
     {
-        TerminalApp::Command command;
+        Command command;
         int weight;
         int inOrderCounter;
 
@@ -693,9 +688,9 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<winrt::TerminalApp::Command> CommandPalette::_collectFilteredActions()
+    std::vector<Command> CommandPalette::_collectFilteredActions()
     {
-        std::vector<winrt::TerminalApp::Command> actions;
+        std::vector<Command> actions;
 
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
@@ -720,7 +715,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Add all the commands, but make sure they're sorted alphabetically.
-            std::vector<TerminalApp::Command> sortedCommands;
+            std::vector<Command> sortedCommands;
             sortedCommands.reserve(commandsToFilter.Size());
 
             for (auto action : commandsToFilter)
