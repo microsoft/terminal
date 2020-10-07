@@ -2028,7 +2028,20 @@ namespace winrt::TerminalApp::implementation
                 _tabContent.Children().Clear();
                 _tabContent.Children().Append(tab->GetRootElement());
 
-                tab->SetFocused(true);
+                // GH#7409: If the tab switcher is open, then we _don't_ want to
+                // automatically focus the new tab here. The tab switcher wants
+                // to be able to "preview" the selected tab as the user tabs
+                // through the menu, but if we toss the focus to the control
+                // here, then the user won't be able to navigate the ATS any
+                // longer.
+                //
+                // When the tab swither is eventually dismissed, the focus will
+                // get tossed back to the focused terminal control, so we don't
+                // need to worry about focus getting lost.
+                if (CommandPalette().Visibility() != Visibility::Visible)
+                {
+                    tab->SetFocused(true);
+                }
 
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab->GetActiveTitle());
