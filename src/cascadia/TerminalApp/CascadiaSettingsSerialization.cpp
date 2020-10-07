@@ -52,7 +52,7 @@ static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
 static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments" };
 static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows Terminal\\Fragments" };
 
-static constexpr std::string_view AppExtensionHostName{ "Microsoft.com.Terminal" };
+static constexpr std::string_view AppExtensionHostName{ "com.Microsoft.Terminal" };
 
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
@@ -560,6 +560,7 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                         // _AppendDynamicProfilesToUserSettings() is called later
                         newProfile->LayerJson(profileStub);
                         newProfile->Source(source);
+                        newProfile->GenerateGuidIfNecessary();
                         _profiles.Append(*newProfile);
                     }
                 }
