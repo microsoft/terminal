@@ -477,7 +477,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 Media::Imaging::BitmapImage image(imageUri);
                 BackgroundImage().Source(image);
             }
-            
+
             // Apply stretch, opacity and alignment settings
             BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
             BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
