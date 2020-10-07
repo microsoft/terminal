@@ -452,7 +452,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         if (!_settings.BackgroundImage().empty())
-        {     
+        {
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
 
             // Check if the image brush is already pointing to the image
