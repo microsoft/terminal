@@ -132,7 +132,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         _ScrollState = profile.ScrollState();
-
+        _UseDesktopImage = profile.UseDesktopImage();
         if (!profile.BackgroundImagePath().empty())
         {
             _BackgroundImage = profile.ExpandedBackgroundImagePath();

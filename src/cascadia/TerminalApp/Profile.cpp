@@ -51,6 +51,7 @@ static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
 static constexpr std::string_view IconKey{ "icon" };
+static constexpr std::string_view UseDesktopImageKey{ "useDesktopImage" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
@@ -234,6 +235,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
     JsonUtils::GetValueForKey(json, IconKey, _IconPath);
+    JsonUtils::GetValueForKey(json, UseDesktopImageKey, _UseDesktopImage);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);

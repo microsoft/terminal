@@ -447,15 +447,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
-        if (!_settings.BackgroundImage().empty())
+        if (!_settings.BackgroundImage().empty() || _settings.UseDesktopImage())
         {
+            if (_settings.UseDesktopImage())
+            {
+                WCHAR desktopImage[MAX_PATH];
+                SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopImage, SPIF_UPDATEINIFILE);
+                _settings.BackgroundImage(desktopImage);
+            }
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
 
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
             // set a new image source for the brush
             auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
             if (imageSource == nullptr ||
                 imageSource.UriSource() == nullptr ||
                 imageSource.UriSource().RawUri() != imageUri.RawUri())
@@ -466,8 +471,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
                 BackgroundImage().Source(image);
+                
             }
-
+            
             // Apply stretch, opacity and alignment settings
             BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
             BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
@@ -478,6 +484,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             BackgroundImage().Source(nullptr);
         }
+
+        
     }
 
     // Method Description:
