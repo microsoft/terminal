@@ -81,13 +81,13 @@ namespace Microsoft.Terminal.Wpf
         /// <summary>
         /// Gets the maximum amount of character rows that can fit in this control.
         /// </summary>
-        /// <remarks>This will be in sync with <see cref="Rows"/> unless autofit is set to false.</remarks>
+        /// <remarks>This will be in sync with <see cref="Rows"/> unless <see cref="AutoFill"/> is set to false.</remarks>
         internal int MaxRows { get; private set; }
 
         /// <summary>
         /// Gets the maximum amount of character columns that can fit in this control.
         /// </summary>
-        /// <remarks>This will be in sync with <see cref="Columns"/> unless autofit is set to false.</remarks>
+        /// <remarks>This will be in sync with <see cref="Columns"/> unless <see cref="AutoFill"/> is set to false.</remarks>
         internal int MaxColumns { get; private set; }
 
         /// <summary>
@@ -335,7 +335,7 @@ namespace Microsoft.Terminal.Wpf
 
                         NativeMethods.COORD dimensions;
 
-                        // We only trigger a resize if we want to autofill to maximum size.
+                        // We only trigger a resize if we want to fill to maximum size.
                         if (this.AutoFill)
                         {
                             NativeMethods.TerminalTriggerResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
