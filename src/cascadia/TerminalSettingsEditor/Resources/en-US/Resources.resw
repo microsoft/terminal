@@ -212,10 +212,10 @@
     <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
   </data>
   <data name="Globals_ForceFullRepaint.Content" xml:space="preserve">
-    <value>Enable differential drawing</value>
+    <value>Redraw entire screen when display updates</value>
   </data>
   <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, the terminal will render only the updates to the screen between frames. When unchecked, the terminal will redraw the entire screen each frame.</value>
+    <value>When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames.</value>
   </data>
   <data name="Globals_GlobalAppearance.Text" xml:space="preserve">
     <value>Global Appearance</value>
@@ -258,6 +258,9 @@
   </data>
   <data name="Globals_Rendering.Text" xml:space="preserve">
     <value>Rendering</value>
+  </data>
+  <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
+    <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
   </data>
   <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
     <value>Show the title bar</value>
