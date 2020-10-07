@@ -1786,6 +1786,14 @@ CATCH_RETURN();
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
+[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
+{
+    const short widthInPixels = gsl::narrow_cast<short>(viewInCharacters.Width() * _glyphCell.width());
+    const short heightInPixels = gsl::narrow_cast<short>(viewInCharacters.Height() * _glyphCell.height());
+
+    return Viewport::FromDimensions(viewInCharacters.Origin(), { widthInPixels, heightInPixels });
+}
+
 // Routine Description:
 // - Sets the DPI in this renderer
 // Arguments:
