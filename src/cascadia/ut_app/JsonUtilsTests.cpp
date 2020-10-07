@@ -3,13 +3,13 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/JsonUtils.h"
+#include "../TerminalSettingsModel/JsonUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace TerminalApp::JsonUtils;
+using namespace Microsoft::Terminal::Settings::Model::JsonUtils;
 
 struct StructWithConverterSpecialization
 {

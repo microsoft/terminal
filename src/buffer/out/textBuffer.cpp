@@ -1317,8 +1317,13 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 const til::point TextBuffer::GetGlyphStart(const til::point pos) const
 {
     COORD resultPos = pos;
-
     const auto bufferSize = GetSize();
+
+    if (resultPos == bufferSize.EndExclusive())
+    {
+        bufferSize.DecrementInBounds(resultPos, true);
+    }
+
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.DecrementInBounds(resultPos, true);
@@ -1359,9 +1364,15 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) const
 {
     COORD resultPos = pos;
+    const auto bufferSize = GetSize();
+
+    if (resultPos == GetSize().EndExclusive())
+    {
+        // we're already at the end
+        return false;
+    }
 
     // try to move. If we can't, we're done.
-    const auto bufferSize = GetSize();
     const bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
@@ -1376,20 +1387,19 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) con
 // - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
 // Arguments:
 // - pos - a COORD on the word you are currently on
-// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first cell of the previous glyph (inclusive)
-bool TextBuffer::MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive) const
+bool TextBuffer::MoveToPreviousGlyph(til::point& pos) const
 {
     COORD resultPos = pos;
 
     // try to move. If we can't, we're done.
     const auto bufferSize = GetSize();
-    const bool success = bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    const bool success = bufferSize.DecrementInBounds(resultPos, true);
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
-        bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+        bufferSize.DecrementInBounds(resultPos, true);
     }
 
     pos = resultPos;

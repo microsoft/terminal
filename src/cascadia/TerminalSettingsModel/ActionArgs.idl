@@ -1,0 +1,151 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    interface IActionArgs
+    {
+        Boolean Equals(IActionArgs other);
+        String GenerateName();
+    };
+
+    interface IActionEventArgs
+    {
+        Boolean Handled;
+        IActionArgs ActionArgs { get; };
+    };
+
+    enum Direction
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum SplitState
+    {
+        Automatic = -1,
+        None = 0,
+        Vertical = 1,
+        Horizontal = 2
+    };
+
+    enum SplitType
+    {
+        Manual = 0,
+        Duplicate = 1
+    };
+
+    enum SettingsTarget
+    {
+        SettingsFile = 0,
+        DefaultsFile,
+        AllFiles
+    };
+
+    [default_interface] runtimeclass NewTerminalArgs {
+        NewTerminalArgs();
+        NewTerminalArgs(Int32 profileIndex);
+
+        String Commandline;
+        String StartingDirectory;
+        String TabTitle;
+        String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+        // ProfileIndex can be null (for "use the default"), so this needs to be
+        // a IReference, so it's nullable
+        Windows.Foundation.IReference<Int32> ProfileIndex { get; };
+
+        Boolean Equals(NewTerminalArgs other);
+        String GenerateName();
+    };
+
+    [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
+    {
+        ActionEventArgs();
+        ActionEventArgs(IActionArgs args);
+    };
+
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs
+    {
+        Boolean SingleLine { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormatting { get; };
+    };
+
+    [default_interface] runtimeclass NewTabArgs : IActionArgs
+    {
+        NewTabArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
+    {
+        SwitchToTabArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
+    };
+
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs
+    {
+        Direction Direction { get; };
+    };
+
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs
+    {
+        Direction Direction { get; };
+    };
+
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
+    {
+        Int32 Delta { get; };
+    };
+
+    [default_interface] runtimeclass SendInputArgs : IActionArgs
+    {
+        String Input { get; };
+    };
+
+    [default_interface] runtimeclass SplitPaneArgs : IActionArgs
+    {
+        SplitPaneArgs(SplitState style, NewTerminalArgs terminalArgs);
+        SplitState SplitStyle { get; };
+        NewTerminalArgs TerminalArgs { get; };
+        SplitType SplitMode { get; };
+    };
+
+    [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
+    {
+        SettingsTarget Target { get; };
+    };
+
+    [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
+    {
+        String SchemeName { get; };
+    };
+
+    [default_interface] runtimeclass SetTabColorArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> TabColor { get; };
+    };
+
+    [default_interface] runtimeclass RenameTabArgs : IActionArgs
+    {
+        String Title { get; };
+    };
+
+    [default_interface] runtimeclass ExecuteCommandlineArgs : IActionArgs
+    {
+        ExecuteCommandlineArgs(String commandline);
+        String Commandline;
+    };
+
+    [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+}

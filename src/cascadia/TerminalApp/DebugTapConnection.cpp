@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "DebugTapConnection.h"
-#include "Utils.h"
 
 using namespace ::winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::winrt::Windows::Foundation;
@@ -94,13 +93,13 @@ namespace winrt::Microsoft::TerminalApp::implementation
 
     void DebugTapConnection::_OutputHandler(const hstring str)
     {
-        _TerminalOutputHandlers(VisualizeControlCodes(str));
+        _TerminalOutputHandlers(til::visualize_control_codes(str));
     }
 
     // Called by the DebugInputTapConnection to print user input
     void DebugTapConnection::_PrintInput(const hstring& str)
     {
-        auto clean{ VisualizeControlCodes(str) };
+        auto clean{ til::visualize_control_codes(str) };
         auto formatted{ wil::str_printf<std::wstring>(L"\x1b[91m%ls\x1b[m", clean.data()) };
         _TerminalOutputHandlers(formatted);
     }

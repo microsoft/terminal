@@ -7,6 +7,7 @@
 #include "ShortcutActionDispatch.g.cpp"
 
 using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
@@ -23,99 +24,99 @@ namespace winrt::TerminalApp::implementation
     {
         const auto& action = actionAndArgs.Action();
         const auto& args = actionAndArgs.Args();
-        auto eventArgs = args ? winrt::make_self<ActionEventArgs>(args) :
-                                winrt::make_self<ActionEventArgs>();
+        auto eventArgs = args ? ActionEventArgs{ args } :
+                                ActionEventArgs{};
 
         switch (action)
         {
         case ShortcutAction::CopyText:
         {
-            _CopyTextHandlers(*this, *eventArgs);
+            _CopyTextHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::PasteText:
         {
-            _PasteTextHandlers(*this, *eventArgs);
+            _PasteTextHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::OpenNewTabDropdown:
         {
-            _OpenNewTabDropdownHandlers(*this, *eventArgs);
+            _OpenNewTabDropdownHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::DuplicateTab:
         {
-            _DuplicateTabHandlers(*this, *eventArgs);
+            _DuplicateTabHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::OpenSettings:
         {
-            _OpenSettingsHandlers(*this, *eventArgs);
+            _OpenSettingsHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::NewTab:
         {
-            _NewTabHandlers(*this, *eventArgs);
+            _NewTabHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::NewWindow:
         {
-            _NewWindowHandlers(*this, *eventArgs);
+            _NewWindowHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::CloseWindow:
         {
-            _CloseWindowHandlers(*this, *eventArgs);
+            _CloseWindowHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::CloseTab:
         {
-            _CloseTabHandlers(*this, *eventArgs);
+            _CloseTabHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ClosePane:
         {
-            _ClosePaneHandlers(*this, *eventArgs);
+            _ClosePaneHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::ScrollUp:
         {
-            _ScrollUpHandlers(*this, *eventArgs);
+            _ScrollUpHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ScrollDown:
         {
-            _ScrollDownHandlers(*this, *eventArgs);
+            _ScrollDownHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ScrollUpPage:
         {
-            _ScrollUpPageHandlers(*this, *eventArgs);
+            _ScrollUpPageHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ScrollDownPage:
         {
-            _ScrollDownPageHandlers(*this, *eventArgs);
+            _ScrollDownPageHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::NextTab:
         {
-            _NextTabHandlers(*this, *eventArgs);
+            _NextTabHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::PrevTab:
         {
-            _PrevTabHandlers(*this, *eventArgs);
+            _PrevTabHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::SendInput:
         {
-            _SendInputHandlers(*this, *eventArgs);
+            _SendInputHandlers(*this, eventArgs);
             break;
         }
 
@@ -123,118 +124,118 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::SplitHorizontal:
         case ShortcutAction::SplitPane:
         {
-            _SplitPaneHandlers(*this, *eventArgs);
+            _SplitPaneHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::TogglePaneZoom:
         {
-            _TogglePaneZoomHandlers(*this, *eventArgs);
+            _TogglePaneZoomHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::SwitchToTab:
         {
-            _SwitchToTabHandlers(*this, *eventArgs);
+            _SwitchToTabHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::ResizePane:
         {
-            _ResizePaneHandlers(*this, *eventArgs);
+            _ResizePaneHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::MoveFocus:
         {
-            _MoveFocusHandlers(*this, *eventArgs);
+            _MoveFocusHandlers(*this, eventArgs);
             break;
         }
 
         case ShortcutAction::AdjustFontSize:
         {
-            _AdjustFontSizeHandlers(*this, *eventArgs);
+            _AdjustFontSizeHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::Find:
         {
-            _FindHandlers(*this, *eventArgs);
+            _FindHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ResetFontSize:
         {
-            _ResetFontSizeHandlers(*this, *eventArgs);
+            _ResetFontSizeHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleRetroEffect:
         {
-            _ToggleRetroEffectHandlers(*this, *eventArgs);
+            _ToggleRetroEffectHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleFocusMode:
         {
-            _ToggleFocusModeHandlers(*this, *eventArgs);
+            _ToggleFocusModeHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleFullscreen:
         {
-            _ToggleFullscreenHandlers(*this, *eventArgs);
+            _ToggleFullscreenHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleAlwaysOnTop:
         {
-            _ToggleAlwaysOnTopHandlers(*this, *eventArgs);
+            _ToggleAlwaysOnTopHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleCommandPalette:
         {
-            _ToggleCommandPaletteHandlers(*this, *eventArgs);
+            _ToggleCommandPaletteHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::SetColorScheme:
         {
-            _SetColorSchemeHandlers(*this, *eventArgs);
+            _SetColorSchemeHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::SetTabColor:
         {
-            _SetTabColorHandlers(*this, *eventArgs);
+            _SetTabColorHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::OpenTabColorPicker:
         {
-            _OpenTabColorPickerHandlers(*this, *eventArgs);
+            _OpenTabColorPickerHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::RenameTab:
         {
-            _RenameTabHandlers(*this, *eventArgs);
+            _RenameTabHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ExecuteCommandline:
         {
-            _ExecuteCommandlineHandlers(*this, *eventArgs);
+            _ExecuteCommandlineHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::CloseOtherTabs:
         {
-            _CloseOtherTabsHandlers(*this, *eventArgs);
+            _CloseOtherTabsHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::CloseTabsAfter:
         {
-            _CloseTabsAfterHandlers(*this, *eventArgs);
+            _CloseTabsAfterHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::TabSearch:
         {
-            _TabSearchHandlers(*this, *eventArgs);
+            _TabSearchHandlers(*this, eventArgs);
             break;
         }
         default:
             return false;
         }
-        return eventArgs->Handled();
+        return eventArgs.Handled();
     }
 
 }

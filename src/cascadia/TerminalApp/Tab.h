@@ -33,18 +33,18 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget Scroll(const int delta);
 
-        bool CanSplitPane(winrt::TerminalApp::SplitState splitType);
-        void SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        bool CanSplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
+        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-        SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
-        bool PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
+        winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
+        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-        void ResizePane(const winrt::TerminalApp::Direction& direction);
-        void NavigateFocus(const winrt::TerminalApp::Direction& direction);
+        void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
+        void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::hstring GetActiveTitle() const;
@@ -78,7 +78,7 @@ namespace winrt::TerminalApp::implementation
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
-        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
 
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
         // This is needed since Tab is going to be managing its own SwitchToTab command.
