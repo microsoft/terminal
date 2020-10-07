@@ -83,7 +83,7 @@ namespace winrt::TerminalApp::implementation
 
         GETSET_PROPERTY(winrt::Windows::UI::Text::FontWeight, FontWeight);
 
-        GETSET_PROPERTY(bool, UseDesktopImage, false);
+        GETSET_PROPERTY(bool, UseDesktopBackgroundImage, false);
         GETSET_PROPERTY(hstring, BackgroundImage);
         GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
 

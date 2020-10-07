@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
         GETSET_PROPERTY(hstring, StartingDirectory);
 
-        GETSET_PROPERTY(bool, UseDesktopImage, false);
+        GETSET_PROPERTY(bool, UseDesktopBackgroundImage, false);
         GETSET_PROPERTY(hstring, BackgroundImagePath);
         GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
         GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);

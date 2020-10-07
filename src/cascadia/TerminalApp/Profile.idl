@@ -43,7 +43,7 @@ namespace TerminalApp
         String StartingDirectory;
         String EvaluatedStartingDirectory { get; };
 
-        Boolean UseDesktopImage;
+        Boolean UseDesktopBackgroundImage;
         String BackgroundImagePath;
         String ExpandedBackgroundImagePath { get; };
         Double BackgroundImageOpacity;

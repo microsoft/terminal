@@ -447,9 +447,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
-        if (!_settings.BackgroundImage().empty() || _settings.UseDesktopImage())
+        if (!_settings.BackgroundImage().empty() || _settings.UseDesktopBackgroundImage())
         {
-            if (_settings.UseDesktopImage())
+            // Check if the user wants to replace their terminal background
+            // with that of their desktop background. If so grab the path of
+            // the desktop background and replace "BackgroundImage()" with it.
+            if (_settings.UseDesktopBackgroundImage())
             {
                 WCHAR desktopImage[MAX_PATH];
                 SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopImage, SPIF_UPDATEINIFILE);

@@ -16,7 +16,6 @@
 #include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
-#include <string>
 
 namespace Microsoft::Console::VirtualTerminal
 {
