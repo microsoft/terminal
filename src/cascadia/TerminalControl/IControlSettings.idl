@@ -44,7 +44,6 @@ namespace Microsoft.Terminal.TerminalControl
         String StartingDirectory;
         String EnvironmentVariables;
 
-        Boolean UseDesktopBackgroundImage;
         String BackgroundImage;
         Double BackgroundImageOpacity;
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
