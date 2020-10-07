@@ -9,6 +9,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
+    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
     TabNavigation="Cycle"
     IsTabStop="True"
     AllowFocusOnInteraction="True"
@@ -205,7 +206,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             ItemsSource="{x:Bind FilteredActions}">
 
                 <ItemsControl.ItemTemplate >
-                    <DataTemplate x:DataType="local:Command">
+                    <DataTemplate x:DataType="SettingsModel:Command">
 
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->

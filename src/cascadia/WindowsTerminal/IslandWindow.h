@@ -28,7 +28,7 @@ public:
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
+    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void FocusModeChanged(const bool focusMode);
@@ -55,7 +55,7 @@ protected:
 
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
-    std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
+    std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> _pfnCreateCallback;
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;

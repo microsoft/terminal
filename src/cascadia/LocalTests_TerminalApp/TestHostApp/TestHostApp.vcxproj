@@ -100,6 +100,10 @@
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
     </ProjectReference>
 
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
+      <Project>{CA5CAD1A-082C-4476-9F33-94B339494076}</Project>
+    </ProjectReference>
+
   </ItemGroup>
 
   <PropertyGroup>
@@ -152,6 +156,10 @@
     <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
     <Copy SourceFiles="$(_TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll"
           DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
+
+    <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
+    <Copy SourceFiles="$(_TestBinRoot)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll"
+          DestinationFiles="$(TargetDir)\SettingsModel.LocalTests.dll" />
 
     <!-- Copy some dlls which TerminalConnection is dependent upon that didn't
       get rolled up into this  directory -->
