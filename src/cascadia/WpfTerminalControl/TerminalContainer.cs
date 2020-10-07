@@ -166,12 +166,16 @@ namespace Microsoft.Terminal.Wpf
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
             NativeMethods.COORD dimensions;
-            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width * dpiScale.DpiScaleX, renderSize.Height * dpiScale.DpiScaleY, out dimensions);
+            NativeMethods.TerminalTriggerResize(
+                this.terminal,
+                Convert.ToInt16(renderSize.Width * dpiScale.DpiScaleX),
+                Convert.ToInt16(renderSize.Height * dpiScale.DpiScaleY),
+                out dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
 
-            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
             return (dimensions.Y, dimensions.X);
         }
 
@@ -180,15 +184,17 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         /// <param name="rows">Number of rows to show.</param>
         /// <param name="columns">Number of columns to show.</param>
-        internal void Resize(uint rows, uint columns)
+        /// <returns><see cref="long"/> pair with the new width and height size in pixels for the renderer.</returns>
+        internal (int width, int height) Resize(uint rows, uint columns)
         {
+            NativeMethods.SIZE dimensionsInPixels;
             NativeMethods.COORD dimensions = new NativeMethods.COORD
             {
                 X = (short)columns,
                 Y = (short)rows,
             };
 
-            NativeMethods.TerminalResize(this.terminal, dimensions);
+            NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out dimensionsInPixels);
 
             // If AutoFill is true, keep Rows and Columns in sync with MaxRows and MaxColumns.
             // Otherwise, MaxRows and MaxColumns will be set on startup and on control resize by the user.
@@ -201,7 +207,9 @@ namespace Microsoft.Terminal.Wpf
             this.Columns = dimensions.X;
             this.Rows = dimensions.Y;
 
-            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+
+            return (dimensionsInPixels.cx, dimensionsInPixels.cy);
         }
 
         /// <inheritdoc/>
@@ -330,7 +338,7 @@ namespace Microsoft.Terminal.Wpf
                         // We only trigger a resize if we want to autofill to maximum size.
                         if (this.AutoFill)
                         {
-                            NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out dimensions);
+                            NativeMethods.TerminalTriggerResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
 
                             this.Columns = dimensions.X;
                             this.Rows = dimensions.Y;
@@ -344,7 +352,7 @@ namespace Microsoft.Terminal.Wpf
                             this.MaxRows = dimensions.Y;
                         }
 
-                        this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+                        this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         break;
 
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
@@ -401,7 +409,7 @@ namespace Microsoft.Terminal.Wpf
 
         private void OnWrite(string data)
         {
-            this.connection?.WriteInput(data);
+            this.Connection?.WriteInput(data);
         }
     }
 }
