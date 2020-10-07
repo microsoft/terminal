@@ -27,8 +27,8 @@ extern "C" {
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ double width, _In_ double height, _Out_ COORD* dimensions);
-__declspec(dllexport) HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensions, _Out_ SIZE* dimensionsInPixels);
 __declspec(dllexport) HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
@@ -91,7 +91,8 @@ private:
     std::optional<til::point> _singleClickTouchdownPos;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-    friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
+    friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
+    friend HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensions, _Out_ SIZE* dimensionsInPixels);
     friend HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
