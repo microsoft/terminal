@@ -8,13 +8,12 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "ActionAndArgs.h"
-#include "ActionArgs.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -279,7 +278,7 @@ namespace winrt::TerminalApp::implementation
     // - splitType: The type of split we want to create.
     // Return Value:
     // - True if the focused pane can be split. False otherwise.
-    bool TerminalTab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
+    bool TerminalTab::CanSplitPane(SplitState splitType)
     {
         return _activePane->CanSplit(splitType);
     }
@@ -293,7 +292,7 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
+    void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
@@ -339,7 +338,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void TerminalTab::ResizePane(const winrt::TerminalApp::Direction& direction)
+    void TerminalTab::ResizePane(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -353,7 +352,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void TerminalTab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+    void TerminalTab::NavigateFocus(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.

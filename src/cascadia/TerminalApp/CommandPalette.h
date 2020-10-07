@@ -20,9 +20,9 @@ namespace winrt::TerminalApp::implementation
     {
         CommandPalette();
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> FilteredActions();
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> FilteredActions();
 
-        void SetCommands(Windows::Foundation::Collections::IVector<TerminalApp::Command> const& actions);
+        void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
         void EnableCommandPaletteMode();
@@ -46,14 +46,14 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allCommands{ nullptr };
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _currentNestedCommands{ nullptr };
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Command> _filteredActions{ nullptr };
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _nestedActionStack{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _currentNestedCommands{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _nestedActionStack{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _commandsToFilter();
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _commandsToFilter();
 
         void _filterTextChanged(Windows::Foundation::IInspectable const& sender,
                                 Windows::UI::Xaml::RoutedEventArgs const& args);
@@ -73,7 +73,7 @@ namespace winrt::TerminalApp::implementation
 
         void _updateFilteredActions();
 
-        std::vector<winrt::TerminalApp::Command> _collectFilteredActions();
+        std::vector<Microsoft::Terminal::Settings::Model::Command> _collectFilteredActions();
 
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
@@ -87,13 +87,13 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
-        Windows::Foundation::Collections::IVector<TerminalApp::Command> _allTabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allTabActions{ nullptr };
         uint32_t _switcherStartIdx;
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
-        void _dispatchCommand(const TerminalApp::Command& command);
+        void _dispatchCommand(const Microsoft::Terminal::Settings::Model::Command& command);
         void _dispatchCommandline();
         void _dismissPalette();
     };

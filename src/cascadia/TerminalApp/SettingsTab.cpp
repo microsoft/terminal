@@ -6,8 +6,6 @@
 #include "SettingsTab.h"
 #include "SettingsTab.g.cpp"
 #include "Utils.h"
-#include "ActionAndArgs.h"
-#include "ActionArgs.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;

@@ -37,7 +37,7 @@ namespace winrt::TerminalApp::implementation
 
         GETSET_PROPERTY(winrt::hstring, Title, L"Settings");
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, nullptr);
-        GETSET_PROPERTY(winrt::TerminalApp::Command, SwitchToTabCommand, nullptr);
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, nullptr);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::Page, Content, nullptr);
 
