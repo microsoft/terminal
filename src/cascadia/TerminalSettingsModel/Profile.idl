@@ -43,7 +43,6 @@ namespace Microsoft.Terminal.Settings.Model
         String StartingDirectory;
         String EvaluatedStartingDirectory { get; };
 
-        Boolean UseDesktopBackgroundImage;
         String BackgroundImagePath;
         String ExpandedBackgroundImagePath { get; };
         Double BackgroundImageOpacity;

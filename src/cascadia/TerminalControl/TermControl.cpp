@@ -451,18 +451,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
-        if (!_settings.BackgroundImage().empty() || _settings.UseDesktopBackgroundImage())
-        {
-            // Check if the user wants to replace their terminal background
-            // with that of their desktop background. If so grab the path of
-            // the desktop background and replace "BackgroundImage()" with it.
-            if (_settings.UseDesktopBackgroundImage())
-            {
-                WCHAR desktopImage[MAX_PATH];
-                SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopImage, SPIF_UPDATEINIFILE);
-                _settings.BackgroundImage(desktopImage);
-            }
-
+        if (!_settings.BackgroundImage().empty())
+        {     
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
 
             // Check if the image brush is already pointing to the image
