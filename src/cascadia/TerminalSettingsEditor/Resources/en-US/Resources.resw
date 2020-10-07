@@ -212,22 +212,22 @@
     <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
   </data>
   <data name="Globals_ForceFullRepaint.Content" xml:space="preserve">
-    <value>Screen redrawing</value>
+    <value>Enable differential drawing</value>
   </data>
   <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames.</value>
+    <value>When checked, the terminal will render only the updates to the screen between frames. When unchecked, the terminal will redraw the entire screen each frame.</value>
   </data>
   <data name="Globals_GlobalAppearance.Text" xml:space="preserve">
     <value>Global Appearance</value>
   </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
-    <value>Columns on first launch</value>
+    <value>Columns on first launch (in characters)</value>
   </data>
   <data name="Globals_InitialCols.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The number of columns displayed in the window upon first load.</value>
   </data>
   <data name="Globals_InitialRows.Header" xml:space="preserve">
-    <value>Rows on first launch</value>
+    <value>Rows on first launch (in characters)</value>
   </data>
   <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load.</value>
