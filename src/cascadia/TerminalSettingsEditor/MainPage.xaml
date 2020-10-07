@@ -37,13 +37,13 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <muxc:NavigationViewItem x:Uid="Nav_Home"
                                          Icon="Home"
-                                         Tag="Home_Page"/>
+                                         Tag="Home_Nav"/>
                 <muxc:NavigationViewItem x:Uid="Nav_General"
                                          Icon="Globe"
                                          Tag="General_Nav">
                     <muxc:NavigationViewItem.MenuItems>
                         <muxc:NavigationViewItem x:Uid="Nav_Launch"
-                                                 Tag="Launch_Page">
+                                                 Tag="Launch_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xEA86;"/>
@@ -76,7 +76,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.Icon>
 
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem x:Uid="Nav_GlobalAppearance"
+                        <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
                                                  Tag="GlobalAppearance_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
@@ -102,7 +102,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.Icon>
 
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem x:Uid="Nav_GlobalProfile"
+                        <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
                                                  Tag="GlobalProfile_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>

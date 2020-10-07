@@ -27,9 +27,9 @@ the MIT License. See LICENSE in the project root for license information. -->
             <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettingsModel.GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                <RadioButton x:Uid="Globals_DefaultLaunchSize" x:Name="DefaultLaunchSize"/>
-                <RadioButton x:Uid="Globals_MaximizedLaunchSize" x:Name="MaximizedLaunchSize"/>
-                <RadioButton x:Uid="Globals_FullscreenLaunchSize" x:Name="FullscreenLaunchSize"/>
+                <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
+                <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>
+                <RadioButton x:Uid="Globals_LaunchSizeFullscreen" x:Name="FullscreenLaunchSize"/>
             </Controls:RadioButtons>
             <TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettingsModel.GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
             <Controls:NumberBox x:Uid="Globals_InitialCols"

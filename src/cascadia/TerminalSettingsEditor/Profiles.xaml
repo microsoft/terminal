@@ -33,8 +33,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <StackPanel Grid.Row="3" Grid.Column="0">
                     <TextBox x:Uid="Profile_TabTitle" Margin="0,0,0,20" FontSize="15" Text="{x:Bind ProfileModel.Profile.TabTitle, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                     <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                        <RadioButton x:Uid="Profile_VisibleScrollbarVisibility" x:Name="ScrollBarVisible"/>
-                        <RadioButton x:Uid="Profile_HiddenScrollbarVisibility" x:Name="ScrollBarHidden"/>
+                        <RadioButton x:Uid="Profile_ScrollbarVisibilityVisible" x:Name="ScrollBarVisible"/>
+                        <RadioButton x:Uid="Profile_ScrollbarVisibilityHidden" x:Name="ScrollBarHidden"/>
                     </Controls:RadioButtons>
                 </StackPanel>
             </Grid>
@@ -64,11 +64,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <TextBox x:Uid="Profile_FontWeight" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
                         <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind ProfileModel.Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                         <Controls:RadioButtons x:Uid="Profile_CursorShape" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                            <RadioButton x:Uid="Profile_BarCursorShape" x:Name="CursorShapeBar"/>
-                            <RadioButton x:Uid="Profile_VintageCursorShape" x:Name="CursorShapeVintage"/>
-                            <RadioButton x:Uid="Profile_UnderscoreCursorShape" x:Name="CursorShapeUnderscore"/>
-                            <RadioButton x:Uid="Profile_FilledBoxCursorShape" x:Name="CursorShapeFilledBox"/>
-                            <RadioButton x:Uid="Profile_EmptyBoxCursorShape" x:Name="CursorShapeEmptyBox"/>
+                            <RadioButton x:Uid="Profile_CursorShapeBar" x:Name="CursorShapeBar"/>
+                            <RadioButton x:Uid="Profile_CursorShapeVintage" x:Name="CursorShapeVintage"/>
+                            <RadioButton x:Uid="Profile_CursorShapeUnderscore" x:Name="CursorShapeUnderscore"/>
+                            <RadioButton x:Uid="Profile_CursorShapeFilledBox" x:Name="CursorShapeFilledBox"/>
+                            <RadioButton x:Uid="Profile_CursorShapeEmptyBox" x:Name="CursorShapeEmptyBox"/>
                         </Controls:RadioButtons>
                         <Controls:NumberBox x:Uid="Profile_CursorHeight" Margin="0,0,0,20" FontSize="15" Value="100" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
                         <StackPanel x:Uid="Profile_CursorColorToolTip"
@@ -189,23 +189,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Button x:Uid="Profile_BackgroundImageBrowse" Click="BackgroundImage_Click" Margin="5,0,0,0" Grid.Column="2" Grid.Row="0"/>
                     <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,100,0">
                         <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                            <RadioButton x:Uid="Profile_NoneBackgroundImageStretchMode" x:Name="backgroundImageStretchModeNone"/>
-                            <RadioButton x:Uid="Profile_FillBackgroundImageStretchMode" x:Name="backgroundImageStretchModeFill"/>
-                            <RadioButton x:Uid="Profile_UniformBackgroundImageStretchMode" x:Name="backgroundImageStretchModeUniform"/>
-                            <RadioButton x:Uid="Profile_UniformToFillBackgroundImageStretchMode" x:Name="backgroundImageStretchModeUniformToFill"/>
+                            <RadioButton x:Uid="Profile_BackgroundImageStretchModeNone" x:Name="backgroundImageStretchModeNone"/>
+                            <RadioButton x:Uid="Profile_BackgroundImageStretchModeFill" x:Name="backgroundImageStretchModeFill"/>
+                            <RadioButton x:Uid="Profile_BackgroundImageStretchModeUniform" x:Name="backgroundImageStretchModeUniform"/>
+                            <RadioButton x:Uid="Profile_BackgroundImageStretchModeUniformToFill" x:Name="backgroundImageStretchModeUniformToFill"/>
                         </Controls:RadioButtons>
                         <DropDownButton x:Uid="Profile_BackgroundImageAlignment" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                             <DropDownButton.Flyout>
                                 <MenuFlyout Placement="Bottom">
-                                    <MenuFlyoutItem x:Uid="Profile_CenterBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_LeftBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_TopBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_RightBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_BottomBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_TopLeftBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_TopRightBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_BottomLeftBackgroundImageAlignment"/>
-                                    <MenuFlyoutItem x:Uid="Profile_BottomRightBackgroundImageAlignment"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
+                                    <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
                                 </MenuFlyout>
                             </DropDownButton.Flyout>
                         </DropDownButton>
@@ -232,17 +232,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <CheckBox x:Uid="Profile_Hidden" ToolTipService.Placement="Mouse" />
                     <CheckBox x:Uid="Profile_SuppressApplicationTitle" ToolTipService.Placement="Mouse" />
                     <Controls:RadioButtons x:Uid="Profile_AntialiasingMode" Margin="0,0,0,10" ToolTipService.Placement="Mouse">
-                        <RadioButton x:Uid="Profile_GrayscaleAntialiasingMode" x:Name="antialiasingTextGrayscale"/>
-                        <RadioButton x:Uid="Profile_ClearTypeAntialiasingMode" x:Name="antialiasingTextClearType"/>
-                        <RadioButton x:Uid="Profile_AliasedAntialiasingMode" x:Name="antialiasingTextAliased"/>
+                        <RadioButton x:Uid="Profile_AntialiasingModeGrayscale" x:Name="antialiasingTextGrayscale"/>
+                        <RadioButton x:Uid="Profile_AntialiasingModeClearType" x:Name="antialiasingTextClearType"/>
+                        <RadioButton x:Uid="Profile_AntialiasingModeAliased" x:Name="antialiasingTextAliased"/>
                     </Controls:RadioButtons>
                     <CheckBox x:Uid="Profile_AltGrAliasing" ToolTipService.Placement="Mouse" />
                     <CheckBox x:Uid="Profile_SnapOnInput" ToolTipService.Placement="Mouse" />
                     <Controls:NumberBox x:Uid="Profile_HistorySize" Margin="0,0,0,10" Value="9001" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="100" ToolTipService.Placement="Mouse" />
                     <Controls:RadioButtons x:Uid="Profile_CloseOnExit" Margin="0,0,0,10" ToolTipService.Placement="Mouse">
-                        <RadioButton x:Uid="Profile_GracefulCloseOnExit" x:Name="closeOnExitGraceful"/>
-                        <RadioButton x:Uid="Profile_AlwaysCloseOnExit" x:Name="closeOnExitAlways"/>
-                        <RadioButton x:Uid="Profile_NeverCloseOnExit" x:Name="closeOnExitNever"/>
+                        <RadioButton x:Uid="Profile_CloseOnExitGraceful" x:Name="closeOnExitGraceful"/>
+                        <RadioButton x:Uid="Profile_CloseOnExitAlways" x:Name="closeOnExitAlways"/>
+                        <RadioButton x:Uid="Profile_CloseOnExitNever" x:Name="closeOnExitNever"/>
                     </Controls:RadioButtons>
                 </StackPanel>
             </Grid>

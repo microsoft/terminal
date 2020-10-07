@@ -179,9 +179,7 @@
   </data>
   <data name="Globals_AlwaysShowTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, tabs are always displayed. When unchecked and 'show the title bar' is checked, tabs only appear after opening a new tab.</value>
-  </data>
-  <data name="Globals_CompactTabWidthMode.Content" xml:space="preserve">
-    <value>Compact</value>
+    <comment>'show the title bar' must match the value for &lt;Globals_ShowTitlebar.Content&gt;.</comment>
   </data>
   <data name="Globals_ConfirmCloseAllTabs.Content" xml:space="preserve">
     <value>Show close all tabs popup</value>
@@ -201,20 +199,11 @@
   <data name="Globals_CopyOnSelect.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, a selection is immediately copied to your clipboard upon creation. When unchecked, the selection persists and awaits further action.</value>
   </data>
-  <data name="Globals_DarkTheme.Content" xml:space="preserve">
-    <value>Dark</value>
-  </data>
-  <data name="Globals_DefaultLaunchSize.Content" xml:space="preserve">
-    <value>Default</value>
-  </data>
   <data name="Globals_DefaultProfile.Header" xml:space="preserve">
     <value>Default profile</value>
   </data>
   <data name="Globals_DefaultProfile.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the key binding assigned to 'newTab'.</value>
-  </data>
-  <data name="Globals_DefaultTheme.Content" xml:space="preserve">
-    <value>Default</value>
   </data>
   <data name="Globals_DisableDynamicProfiles.Content" xml:space="preserve">
     <value>Automatically create new profiles when new shells are installed</value>
@@ -222,17 +211,11 @@
   <data name="Globals_DisableDynamicProfiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
   </data>
-  <data name="Globals_EqualTabWidthMode.Content" xml:space="preserve">
-    <value>Equal</value>
-  </data>
   <data name="Globals_ForceFullRepaint.Content" xml:space="preserve">
     <value>Screen redrawing</value>
   </data>
   <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames.</value>
-  </data>
-  <data name="Globals_FullscreenLaunchSize.Content" xml:space="preserve">
-    <value>Full screen</value>
   </data>
   <data name="Globals_GlobalAppearance.Text" xml:space="preserve">
     <value>Global Appearance</value>
@@ -264,10 +247,13 @@
   <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines whether the terminal will launch in a window, maximized, or full screen.</value>
   </data>
-  <data name="Globals_LightTheme.Content" xml:space="preserve">
-    <value>Light</value>
+  <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
+    <value>Default</value>
   </data>
-  <data name="Globals_MaximizedLaunchSize.Content" xml:space="preserve">
+  <data name="Globals_LaunchSizeFullscreen.Content" xml:space="preserve">
+    <value>Full screen</value>
+  </data>
+  <data name="Globals_LaunchSizeMaximized.Content" xml:space="preserve">
     <value>Maximized</value>
   </data>
   <data name="Globals_Rendering.Text" xml:space="preserve">
@@ -286,13 +272,13 @@
     <value>When checked, the title bar displays the title of the selected tab. When unchecked, the title bar displays 'Windows Terminal'.</value>
   </data>
   <data name="Globals_SnapToGridOnResize.Content" xml:space="preserve">
-    <value>Window resize behavior</value>
+    <value>Snap window resizing to character grid</value>
   </data>
   <data name="Globals_SnapToGridOnResize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the window will snap to the nearest character boundary on resize. When unchecked, the window will resize smoothly.</value>
   </data>
   <data name="Globals_SoftwareRendering.Content" xml:space="preserve">
-    <value>Software rendering</value>
+    <value>Use software rendering</value>
   </data>
   <data name="Globals_SoftwareRendering.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
@@ -311,15 +297,32 @@
   </data>
   <data name="Globals_TabWidthMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets the width of the tabs. 'Equal' sizes each tab to the same width. 'Title length' sizes each tab to the length of its title. 'Compact' sizes each tab to the length of its title when focused, and shrinks to the size of only the icon when the tab is unfocused.</value>
+    <comment>'equal' must match the value for &lt;Globals_TabWidthModeEqual.Content&gt;. 'title length' must match the value for &lt;Globals_TabWidthModeTitleLength.Content&gt;. 'compact' must match the value for &lt;Globals_TabWidthModeCompact.Content&gt;.</comment>
+  </data>
+  <data name="Globals_TabWidthModeCompact.Content" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="Globals_TabWidthModeEqual.Content" xml:space="preserve">
+    <value>Equal</value>
+  </data>
+  <data name="Globals_TabWidthModeTitleLength.Content" xml:space="preserve">
+    <value>Title length</value>
   </data>
   <data name="Globals_Theme.Header" xml:space="preserve">
     <value>Theme</value>
   </data>
   <data name="Globals_Theme.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Sets the theme of the application. The value 'system' refers to the active Windows system theme.</value>
+    <value>Sets the theme of the application. The value 'default' refers to the active Windows system theme.</value>
+    <comment>'default' must match the value for &lt;Globals_ThemeDefault.Content&gt;.</comment>
   </data>
-  <data name="Globals_TitleLengthTabWidthMode.Content" xml:space="preserve">
-    <value>Title length</value>
+  <data name="Globals_ThemeDark.Content" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Globals_ThemeDefault.Content" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Globals_ThemeLight.Content" xml:space="preserve">
+    <value>Light</value>
   </data>
   <data name="Globals_WordDelimiters.Header" xml:space="preserve">
     <value>Word delimiters</value>
@@ -333,17 +336,14 @@
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
   </data>
+  <data name="Nav_AppearanceGlobal.Content" xml:space="preserve">
+    <value>Global</value>
+  </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
   </data>
   <data name="Nav_General.Content" xml:space="preserve">
     <value>General</value>
-  </data>
-  <data name="Nav_GlobalAppearance.Content" xml:space="preserve">
-    <value>Global</value>
-  </data>
-  <data name="Nav_GlobalProfile.Content" xml:space="preserve">
-    <value>Global</value>
   </data>
   <data name="Nav_Home.Content" xml:space="preserve">
     <value>Home</value>
@@ -356,6 +356,9 @@
   </data>
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
+  </data>
+  <data name="Nav_ProfileGlobal.Content" xml:space="preserve">
+    <value>Global</value>
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
@@ -372,23 +375,26 @@
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  <data name="Profile_AliasedAntialiasingMode.Content" xml:space="preserve">
-    <value>Aliased</value>
-  </data>
   <data name="Profile_AltGrAliasing.Content" xml:space="preserve">
     <value>AltGr aliasing</value>
   </data>
   <data name="Profile_AltGrAliasing.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When unchecked, this behavior will be disabled.</value>
   </data>
-  <data name="Profile_AlwaysCloseOnExit.Content" xml:space="preserve">
-    <value>Always</value>
-  </data>
   <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
     <value>Antialiasing text</value>
   </data>
   <data name="Profile_AntialiasingMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Controls how text is antialiased in the renderer. Note that changing this setting will require starting a new terminal instance.</value>
+  </data>
+  <data name="Profile_AntialiasingModeAliased.Content" xml:space="preserve">
+    <value>Aliased</value>
+  </data>
+  <data name="Profile_AntialiasingModeClearType.Content" xml:space="preserve">
+    <value>ClearType</value>
+  </data>
+  <data name="Profile_AntialiasingModeGrayscale.Content" xml:space="preserve">
+    <value>Grayscale</value>
   </data>
   <data name="Profile_Appearance.Header" xml:space="preserve">
     <value>Appearance</value>
@@ -411,8 +417,35 @@
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets how the background image aligns to the boundaries of the window.</value>
   </data>
+  <data name="Profile_BackgroundImageAlignmentBottom.Text" xml:space="preserve">
+    <value>Bottom</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentBottomLeft.Text" xml:space="preserve">
+    <value>Bottom left</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentBottomRight.Text" xml:space="preserve">
+    <value>Bottom right</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentCenter.Text" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentLeft.Text" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentRight.Text" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentTop.Text" xml:space="preserve">
+    <value>Top</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentTopLeft.Text" xml:space="preserve">
+    <value>Top left</value>
+  </data>
+  <data name="Profile_BackgroundImageAlignmentTopRight.Text" xml:space="preserve">
+    <value>Top right</value>
+  </data>
   <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
-    <value>Browse</value>
+    <value>Browse...</value>
   </data>
   <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
     <value>Background image opacity</value>
@@ -426,29 +459,32 @@
   <data name="Profile_BackgroundImageStretchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets how the background image is resized to fill the window.</value>
   </data>
-  <data name="Profile_BarCursorShape.Content" xml:space="preserve">
-    <value>Bar</value>
+  <data name="Profile_BackgroundImageStretchModeFill.Content" xml:space="preserve">
+    <value>Fill</value>
   </data>
-  <data name="Profile_BottomBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Bottom</value>
+  <data name="Profile_BackgroundImageStretchModeNone.Content" xml:space="preserve">
+    <value>None</value>
   </data>
-  <data name="Profile_BottomLeftBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Bottom left</value>
+  <data name="Profile_BackgroundImageStretchModeUniform.Content" xml:space="preserve">
+    <value>Uniform</value>
   </data>
-  <data name="Profile_BottomRightBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Bottom right</value>
-  </data>
-  <data name="Profile_CenterBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Center</value>
-  </data>
-  <data name="Profile_ClearTypeAntialiasingMode.Content" xml:space="preserve">
-    <value>ClearType</value>
+  <data name="Profile_BackgroundImageStretchModeUniformToFill.Content" xml:space="preserve">
+    <value>Uniform to fill</value>
   </data>
   <data name="Profile_CloseOnExit.Header" xml:space="preserve">
     <value>How the profile closes</value>
   </data>
   <data name="Profile_CloseOnExit.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets how the profile reacts to termination or failure to launch. Graceful will close when exit is typed or the process exits normally.</value>
+  </data>
+  <data name="Profile_CloseOnExitAlways.Content" xml:space="preserve">
+    <value>Always</value>
+  </data>
+  <data name="Profile_CloseOnExitGraceful.Content" xml:space="preserve">
+    <value>Graceful</value>
+  </data>
+  <data name="Profile_CloseOnExitNever.Content" xml:space="preserve">
+    <value>Never</value>
   </data>
   <data name="Profile_ColorScheme.Content" xml:space="preserve">
     <value>Color scheme</value>
@@ -463,7 +499,7 @@
     <value>Executable used in the profile.</value>
   </data>
   <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
-    <value>Browse</value>
+    <value>Browse...</value>
   </data>
   <data name="Profile_CursorColor.Header" xml:space="preserve">
     <value>Cursor color</value>
@@ -483,14 +519,20 @@
   <data name="Profile_CursorShape.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets the shape of the cursor.</value>
   </data>
-  <data name="Profile_EmptyBoxCursorShape.Content" xml:space="preserve">
+  <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
+    <value>Bar</value>
+  </data>
+  <data name="Profile_CursorShapeEmptyBox.Content" xml:space="preserve">
     <value>Empty box</value>
   </data>
-  <data name="Profile_FillBackgroundImageStretchMode.Content" xml:space="preserve">
-    <value>Fill</value>
-  </data>
-  <data name="Profile_FilledBoxCursorShape.Content" xml:space="preserve">
+  <data name="Profile_CursorShapeFilledBox.Content" xml:space="preserve">
     <value>Filled box</value>
+  </data>
+  <data name="Profile_CursorShapeUnderscore.Content" xml:space="preserve">
+    <value>Underscore</value>
+  </data>
+  <data name="Profile_CursorShapeVintage.Content" xml:space="preserve">
+    <value>Vintage</value>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
     <value>Font face</value>
@@ -519,20 +561,11 @@
   <data name="Profile_General.Header" xml:space="preserve">
     <value>General</value>
   </data>
-  <data name="Profile_GracefulCloseOnExit.Content" xml:space="preserve">
-    <value>Graceful</value>
-  </data>
-  <data name="Profile_GrayscaleAntialiasingMode.Content" xml:space="preserve">
-    <value>Grayscale</value>
-  </data>
   <data name="Profile_Hidden.Content" xml:space="preserve">
     <value>Hide profile from dropdown</value>
   </data>
   <data name="Profile_Hidden.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If checked, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
-  </data>
-  <data name="Profile_HiddenScrollbarVisibility.Content" xml:space="preserve">
-    <value>Hidden</value>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
     <value>History size</value>
@@ -547,16 +580,7 @@
     <value>Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.</value>
   </data>
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
-    <value>Browse</value>
-  </data>
-  <data name="Profile_LeftBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Left</value>
-  </data>
-  <data name="Profile_NeverCloseOnExit.Content" xml:space="preserve">
-    <value>Never</value>
-  </data>
-  <data name="Profile_NoneBackgroundImageStretchMode.Content" xml:space="preserve">
-    <value>None</value>
+    <value>Browse...</value>
   </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
@@ -568,16 +592,19 @@
     <value>Retro terminal effects</value>
   </data>
   <data name="Profile_RetroTerminalEffect.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, enables retro terminal effects. This is an experimental feature and its continued existence is not guaranteed.</value>
-  </data>
-  <data name="Profile_RightBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Right</value>
+    <value>When checked, enables retro terminal effects such as glowing text and scan lines.</value>
   </data>
   <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
     <value>Scrollbar visibility</value>
   </data>
   <data name="Profile_ScrollbarVisibility.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines the visibility of the scrollbar.</value>
+  </data>
+  <data name="Profile_ScrollbarVisibilityHidden.Content" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="Profile_ScrollbarVisibilityVisible.Content" xml:space="preserve">
+    <value>Visible</value>
   </data>
   <data name="Profile_SelectionBackgroundColor.Header" xml:space="preserve">
     <value>Selection background color</value>
@@ -598,13 +625,13 @@
     <value>The directory the shell starts in when it is loaded.</value>
   </data>
   <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
-    <value>Browse</value>
+    <value>Browse...</value>
   </data>
   <data name="Profile_SuppressApplicationTitle.Content" xml:space="preserve">
     <value>Suppress title changes</value>
   </data>
   <data name="Profile_SuppressApplicationTitle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, the tab title overrides the default title of the tab and any title change messages from the application will be suppressed. Otherwise, the tab title behaves as normal.</value>
+    <value>When checked, the tab title overrides the default title of the tab and any title change messages from the application will be suppressed.</value>
   </data>
   <data name="Profile_TabTitle.Header" xml:space="preserve">
     <value>Tab title</value>
@@ -612,34 +639,10 @@
   <data name="Profile_TabTitle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Replaces the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (CMD, PowerShell) may use this value over the lifetime of the application.</value>
   </data>
-  <data name="Profile_TopBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Top</value>
-  </data>
-  <data name="Profile_TopLeftBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Top left</value>
-  </data>
-  <data name="Profile_TopRightBackgroundImageAlignment.Text" xml:space="preserve">
-    <value>Top right</value>
-  </data>
-  <data name="Profile_UnderscoreCursorShape.Content" xml:space="preserve">
-    <value>Underscore</value>
-  </data>
-  <data name="Profile_UniformBackgroundImageStretchMode.Content" xml:space="preserve">
-    <value>Uniform</value>
-  </data>
-  <data name="Profile_UniformToFillBackgroundImageStretchMode" xml:space="preserve">
-    <value>Uniform to fill</value>
-  </data>
   <data name="Profile_UseAcrylic.Content" xml:space="preserve">
     <value>Enable acrylic</value>
   </data>
   <data name="Profile_UseAcrylic.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the window will have an acrylic background. When unchecked, the window will have a plain, untextured background.</value>
-  </data>
-  <data name="Profile_VintageCursorShape.Content" xml:space="preserve">
-    <value>Vintage</value>
-  </data>
-  <data name="Profile_VisibleScrollbarVisibility.Content" xml:space="preserve">
-    <value>Visible</value>
   </data>
 </root>
