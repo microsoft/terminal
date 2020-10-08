@@ -1361,11 +1361,6 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
     return false;
 }
 
-#pragma warning(push)
-#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
-
-#pragma warning(pop)
-
 // Routine Description:
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table

@@ -693,7 +693,7 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "lightblue2"sv, til::color{ 178, 223, 238 } },
     std::pair{ "lightblue3"sv, til::color{ 154, 192, 205 } },
     std::pair{ "lightblue4"sv, til::color{ 104, 131, 139 } },
-    std::pair{ "lightcora"sv, til::color{ 240, 128, 128 } },
+    std::pair{ "lightcoral"sv, til::color{ 240, 128, 128 } },
     std::pair{ "lightcyan"sv, til::color{ 224, 255, 255 } },
     std::pair{ "lightcyan1"sv, til::color{ 224, 255, 255 } },
     std::pair{ "lightcyan2"sv, til::color{ 209, 238, 238 } },
@@ -871,7 +871,7 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "seagreen2"sv, til::color{ 78, 238, 148 } },
     std::pair{ "seagreen3"sv, til::color{ 67, 205, 128 } },
     std::pair{ "seagreen4"sv, til::color{ 46, 139, 87 } },
-    std::pair{ "seashel"sv, til::color{ 255, 245, 238 } },
+    std::pair{ "seashell"sv, til::color{ 255, 245, 238 } },
     std::pair{ "seashell1"sv, til::color{ 255, 245, 238 } },
     std::pair{ "seashell2"sv, til::color{ 238, 229, 222 } },
     std::pair{ "seashell3"sv, til::color{ 205, 197, 191 } },
@@ -1022,6 +1022,9 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
     std::copy(standardXterm256ColorTable.begin(), standardXterm256ColorTable.end(), table.begin());
 }
 
+#pragma warning(push)
+#pragma warning(disable : 26447) // This is a false positive.
+
 // Function Description:
 // - Parses a color from a string based on the XOrg app color name table.
 // Arguments:
@@ -1033,7 +1036,8 @@ try
 {
     std::wstring key(wstr);
     std::stringstream ss;
-    for (wchar_t c : key)
+
+    for (const wchar_t c : key)
     {
         // X11 guarantees that characters are all Latin1.
         // Return early if an invalid character is seen.
@@ -1048,7 +1052,7 @@ try
             continue;
         }
 
-        ss << static_cast<char>(std::towlower(c));
+        ss << gsl::narrow_cast<char>(std::towlower(c));
     }
 
     std::string name(ss.str());
@@ -1065,3 +1069,5 @@ catch (...)
     LOG_CAUGHT_EXCEPTION();
     return std::nullopt;
 }
+
+#pragma warning(pop)

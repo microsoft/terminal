@@ -302,9 +302,9 @@ try
     // Only if we find a valid colorspec can we pass it out successfully.
     if (foundValidColorSpec)
     {
-        return til::color(LOBYTE(colorValues.at(0)),
-                          LOBYTE(colorValues.at(1)),
-                          LOBYTE(colorValues.at(2)));
+        return til::color(LOBYTE(til::at(colorValues, 0)),
+                          LOBYTE(til::at(colorValues, 1)),
+                          LOBYTE(til::at(colorValues, 2)));
     }
 
     return std::nullopt;
