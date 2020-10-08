@@ -7,6 +7,7 @@
 #include "CommonState.hpp"
 
 #include "uiaTextRange.hpp"
+#include "../types/ScreenInfoUiaProviderBase.h"
 #include "../../../buffer/out/textBuffer.hpp"
 
 using namespace WEX::Common;
@@ -24,46 +25,65 @@ using namespace Microsoft::Console::Interactivity::Win32;
 // it not doing anything for its implementation because it is not used
 // during the unit tests below.
 
-class DummyElementProvider final : public IRawElementProviderSimple
+class DummyElementProvider final : public ScreenInfoUiaProviderBase
 {
 public:
-    // IUnknown methods
-    IFACEMETHODIMP_(ULONG)
-    AddRef()
-    {
-        return 1;
-    }
-
-    IFACEMETHODIMP_(ULONG)
-    Release()
-    {
-        return 1;
-    }
-    IFACEMETHODIMP QueryInterface(_In_ REFIID /*riid*/,
-                                  _COM_Outptr_result_maybenull_ void** /*ppInterface*/)
-    {
-        return E_NOTIMPL;
-    };
-
-    // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* /*pOptions*/)
+    IFACEMETHODIMP Navigate(_In_ NavigateDirection /*direction*/,
+                            _COM_Outptr_result_maybenull_ IRawElementProviderFragment** /*ppProvider*/) override
     {
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID /*iid*/,
-                                      _COM_Outptr_result_maybenull_ IUnknown** /*ppInterface*/)
+    IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* /*pRect*/) override
     {
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID /*idProp*/,
-                                    _Out_ VARIANT* /*pVariant*/)
+    IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** /*ppProvider*/) override
     {
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** /*ppProvider*/)
+    void ChangeViewport(const SMALL_RECT /*NewWindow*/)
+    {
+        return;
+    }
+
+    HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* /*pProvider*/, const std::wstring_view /*wordDelimiters*/, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // degenerate range
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/, const std::wstring_view /*wordDelimiters*/, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // degenerate range at cursor position
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
+                            const Cursor& /*cursor*/,
+                            const std::wstring_view /*wordDelimiters*/,
+                            _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // specific endpoint range
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
+                            const COORD /*start*/,
+                            const COORD /*end*/,
+                            const std::wstring_view /*wordDelimiters*/,
+                            _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // range from a UiaPoint
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
+                            const UiaPoint /*point*/,
+                            const std::wstring_view /*wordDelimiters*/,
+                            _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
     {
         return E_NOTIMPL;
     }
@@ -104,6 +124,12 @@ class UiaTextRangeTests
         int moveAmt;
         TextPatternRangeEndpoint endpoint;
         ExpectedResult expected;
+    };
+
+    struct ScrollTest
+    {
+        std::wstring comment;
+        short yPos;
     };
 
     static constexpr wchar_t* toString(TextUnit unit) noexcept
@@ -1283,5 +1309,41 @@ class UiaTextRangeTests
         THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Character));
         THROW_IF_FAILED(utr->GetText(-1, &text));
         VERIFY_ARE_EQUAL(L"M", std::wstring_view{ text });
+    }
+
+    TEST_METHOD(ScrollIntoView)
+    {
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const auto viewportSize{ _pUiaData->GetViewport() };
+
+        const std::vector<ScrollTest> testData{
+            { L"Origin", bufferSize.Top() },
+            { L"ViewportHeight From Top - 1", bufferSize.Top() + viewportSize.Height() - 1 },
+            { L"ViewportHeight From Top", bufferSize.Top() + viewportSize.Height() },
+            { L"ViewportHeight From Top + 1", bufferSize.Top() + viewportSize.Height() + 1 },
+            { L"ViewportHeight From Bottom - 1", bufferSize.BottomInclusive() - viewportSize.Height() - 1 },
+            { L"ViewportHeight From Bottom", bufferSize.BottomInclusive() - viewportSize.Height() },
+            { L"ViewportHeight From Bottom + 1", bufferSize.BottomInclusive() - viewportSize.Height() + 1 },
+
+            // GH#7839: ExclusiveEnd is a non-existent space,
+            // so scrolling to it when !alignToTop used to crash
+            { L"Exclusive End", bufferSize.BottomExclusive() }
+        };
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:alignToTop", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES();
+
+        bool alignToTop;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"alignToTop", alignToTop), L"Get alignToTop variant");
+
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (const auto test : testData)
+        {
+            Log::Comment(test.comment.c_str());
+            const til::point pos{ bufferSize.Left(), test.yPos };
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, pos, pos));
+            VERIFY_SUCCEEDED(utr->ScrollIntoView(alignToTop));
+        }
     }
 };

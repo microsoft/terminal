@@ -127,7 +127,6 @@ namespace Microsoft::Console::Types
 
         std::wstring _wordDelimiters{};
 
-        virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
