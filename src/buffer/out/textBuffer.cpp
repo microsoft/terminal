@@ -14,7 +14,7 @@
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
-typedef interval_tree::IntervalTree<til::point, size_t> ThisTree;
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
 // Routine Description:
 // - Creates a new instance of TextBuffer
@@ -2378,9 +2378,9 @@ const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString
 // - The lastRow to search
 // Return value:
 // - An interval tree containing the patterns found
-interval_tree::IntervalTree<til::point, size_t> TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) const
+PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) const
 {
-    ThisTree::interval_vector intervals;
+    PointTree::interval_vector intervals;
 
     std::wstring concatAll;
     const auto rowSize = GetRowByOffset(0).size();
@@ -2423,9 +2423,9 @@ interval_tree::IntervalTree<til::point, size_t> TextBuffer::GetPatterns(const si
             // Keeping these relative to the viewport for now because its the renderer
             // that actually uses these locations and the renderer works relative to
             // the viewport
-            intervals.push_back(ThisTree::interval(startCoord, endCoord, idAndPattern.first));
+            intervals.push_back(PointTree::interval(startCoord, endCoord, idAndPattern.first));
         }
     }
-    ThisTree result(std::move(intervals));
+    PointTree result(std::move(intervals));
     return result;
 }

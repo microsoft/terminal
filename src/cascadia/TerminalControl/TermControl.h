@@ -17,8 +17,6 @@
 #include "SearchBoxControl.h"
 #include "ThrottledFunc.h"
 
-typedef interval_tree::IntervalTree<til::point, size_t> ThisTree;
-
 namespace Microsoft::Console::VirtualTerminal
 {
     struct MouseButtonState;
@@ -217,7 +215,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
 
-        ThisTree::interval _lastHoveredInterval;
+        interval_tree::IntervalTree<til::point, size_t>::interval _lastHoveredInterval;
 
         using Timestamp = uint64_t;
 

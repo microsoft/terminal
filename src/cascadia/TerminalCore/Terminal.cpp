@@ -19,6 +19,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
+
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
@@ -459,7 +461,7 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The position
 // Return value:
 // - The interval representing the start and end coordinates
-ThisTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+PointTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
     const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
     if (results.size() > 0)
@@ -472,7 +474,7 @@ ThisTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD positi
             }
         }
     }
-    return ThisTree::interval();
+    return PointTree::interval();
 }
 
 // Method Description:
@@ -640,7 +642,7 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
 void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
 {
     const auto vis = _VisibleStartIndex();
-    auto invalidate = [=](const ThisTree::interval& interval) {
+    auto invalidate = [=](const PointTree::interval& interval) {
         COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
         COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
         _InvalidateFromCoords(startCoord, endCoord);

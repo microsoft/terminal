@@ -10,6 +10,8 @@
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
+
 static constexpr auto maxRetriesForRenderEngine = 3;
 // The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
 static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
@@ -1239,7 +1241,7 @@ void Renderer::ResetErrorStateAndResume()
     EnablePainting();
 }
 
-void Microsoft::Console::Render::Renderer::UpdateLastHoveredInterval(const ThisTree::interval newInterval)
+void Renderer::UpdateLastHoveredInterval(const PointTree::interval newInterval)
 {
     _hoveredInterval = newInterval;
 }
