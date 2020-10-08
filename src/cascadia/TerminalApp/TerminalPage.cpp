@@ -1856,7 +1856,7 @@ namespace winrt::TerminalApp::implementation
         if (parsedUri.SchemeName() == L"file")
         {
             const auto host = parsedUri.Host();
-            // If no hostname was provided or if the hostname was "localhost", Host() will return null
+            // If no hostname was provided or if the hostname was "localhost", Host() will return an empty string
             // and we allow it
             if (host == L"")
             {
