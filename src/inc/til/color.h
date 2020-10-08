@@ -21,6 +21,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Here, we leverage the spec-legality of using unions for type conversions and the
         // overlap of four uint8_ts and a uint32_t to make the conversion very obvious to
         // both compilers.
+#pragma warning(push)
+        // CL will complain about the both nameless and anonymous struct.
+#pragma warning(disable : 4201)
         union
         {
             struct
@@ -33,12 +36,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
             uint32_t abgr;
         };
+#pragma warning(pop)
 
         constexpr color() noexcept :
             r{ 0 },
             g{ 0 },
             b{ 0 },
-            a{ 0 } {}
+            a{ 0 }
+        {
+        }
 
         constexpr color(uint8_t _r, uint8_t _g, uint8_t _b) noexcept :
             r{ _r },

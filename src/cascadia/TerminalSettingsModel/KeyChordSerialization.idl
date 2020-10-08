@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    static runtimeclass KeyChordSerialization
+    {
+        static Microsoft.Terminal.TerminalControl.KeyChord FromString(String str);
+        static String ToString(Microsoft.Terminal.TerminalControl.KeyChord chord);
+    }
+}

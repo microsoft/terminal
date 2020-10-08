@@ -111,6 +111,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Italics = 3,
         Underline = 4,
         BlinkOrXterm256Index = 5, // 5 is also Blink (appears as Bold).
+        RapidBlink = 6,
         Negative = 7,
         Invisible = 8,
         CrossedOut = 9,

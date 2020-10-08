@@ -61,12 +61,11 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <telemetry\ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
-// JsonCpp
-#include <json.h>
-
 #include <shellapi.h>
 
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
 #include <winrt/Windows.UI.Popups.h>
 
 #include <CLI11/CLI11.hpp>

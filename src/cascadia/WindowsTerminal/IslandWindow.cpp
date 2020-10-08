@@ -13,6 +13,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -89,7 +90,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -131,14 +132,14 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
-    winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
+    LaunchMode launchMode = LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
         _pfnCreateCallback(_window.get(), rc, launchMode);
     }
 
     int nCmdShow = SW_SHOW;
-    if (launchMode == winrt::TerminalApp::LaunchMode::MaximizedMode)
+    if (launchMode == LaunchMode::MaximizedMode)
     {
         nCmdShow = SW_MAXIMIZE;
     }

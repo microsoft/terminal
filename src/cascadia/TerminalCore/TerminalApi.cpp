@@ -345,6 +345,14 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool Terminal::WarningBell() noexcept
+try
+{
+    _pfnWarningBell();
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
 try
 {

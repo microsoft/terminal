@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "Command.idl";
 import "IDirectKeyListener.idl";
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
@@ -15,9 +15,9 @@ namespace TerminalApp
         String ControlName { get; };
         String ParentCommandName { get; };
 
-        Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Command> FilteredActions { get; };
 
-        void SetCommands(Windows.Foundation.Collections.IVector<Command> actions);
+        void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
         void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
         void EnableCommandPaletteMode();
 
