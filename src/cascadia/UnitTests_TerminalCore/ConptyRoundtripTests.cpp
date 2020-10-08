@@ -3491,7 +3491,7 @@ void ConptyRoundtripTests::HyperlinkIdConsistency()
 
     _flushFirstFrame();
 
-    hostSm.ProcessString(L"\x1b]8;;http://example.com\x1b/Link\x1b]8;;\x1b/");
+    hostSm.ProcessString(L"\x1b]8;;http://example.com\x1b\\Link\x1b]8;;\x1b\\");
 
     // For self-generated IDs, conpty will send a custom ID of the form
     // {sessionID}-{self-generated ID}
