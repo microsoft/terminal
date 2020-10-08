@@ -35,16 +35,27 @@ namespace Microsoft::Console::ErrorReporting
 {
     __declspec(selectany) TraceLoggingHProvider FallbackProvider;
     __declspec(noinline) inline void WINAPI ReportFailureToFallbackProvider(bool alreadyReported, const wil::FailureInfo& failure) noexcept
+    try
     {
         if (!alreadyReported && FallbackProvider)
         {
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
             TraceLoggingWrite(FallbackProvider, "FallbackError", TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY), TraceLoggingLevel(WINEVENT_LEVEL_ERROR), CONSOLE_WIL_TRACELOGGING_FAILURE_PARAMS(failure));
         }
     }
+    catch (...)
+    {
+        // Don't log anything. We just failed to trace, where will we go now?
+    }
 
     __declspec(noinline) inline void EnableFallbackFailureReporting(TraceLoggingHProvider provider) noexcept
+    try
     {
         FallbackProvider = provider;
         ::wil::SetResultTelemetryFallback(::Microsoft::Console::ErrorReporting::ReportFailureToFallbackProvider);
+    }
+    catch (...)
+    {
+        // Don't log anything. We just failed to set up WIL -- how are we going to log anything?
     }
 }
