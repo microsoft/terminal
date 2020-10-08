@@ -31,6 +31,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
+            <local:IconPathConverter x:Key="IconSourceConverter"/>
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -227,7 +228,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
-                                    IconSource="{x:Bind IconSource, Mode=OneWay}"/>
+                                    IconSource="{x:Bind Icon,
+                                                        Mode=OneWay,
+                                                        Converter={StaticResource IconSourceConverter}}"/>
 
                                 <TextBlock Grid.Column="1"
                                        HorizontalAlignment="Left"

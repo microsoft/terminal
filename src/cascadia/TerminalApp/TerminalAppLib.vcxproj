@@ -98,11 +98,13 @@
     <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="IconPathConverter.h">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Tab.h">
       <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="Utils.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
@@ -152,6 +154,9 @@
     </ClCompile>
     <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="IconPathConverter.cpp">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Tab.cpp">
       <DependentUpon>Tab.idl</DependentUpon>
@@ -220,6 +225,7 @@
     </Midl>
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
+    <Midl Include="IconPathConverter.idl" />
     <Midl Include="Tab.idl" />
     <Midl Include="TerminalSettings.idl" />
   </ItemGroup>

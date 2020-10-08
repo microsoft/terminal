@@ -471,17 +471,23 @@ void CascadiaSettings::_ValidateMediaResources()
             }
         }
 
-        if (!profile.IconPath().empty())
+        if (!profile.Icon().empty())
         {
+            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.Icon().c_str()) };
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedIconPath() };
+                winrt::Windows::Foundation::Uri imagePath{ iconPath };
             }
             catch (...)
             {
-                // reset icon path
-                profile.IconPath(L"");
-                invalidIcon = true;
+                // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol,
+                // so treat it as an invalid path.
+                if (iconPath.size() > 2)
+                {
+                    // reset icon path
+                    profile.Icon(L"");
+                    invalidIcon = true;
+                }
             }
         }
     }
