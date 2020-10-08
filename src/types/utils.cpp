@@ -120,19 +120,14 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 // - An optional color which contains value if a color was successfully parsed
 std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view string) noexcept
 {
-    std::optional<til::color> color = ColorFromXParseColorSpec(string);
-    if (color.has_value())
+    auto color = ColorFromXParseColorSpec(string);
+    if (!color.has_value())
     {
-        return color.value();
+        // Try again, but use the app color name parser
+        color = ColorFromXOrgAppColorName(string);
     }
 
-    color = ColorFromXOrgAppColorName(string);
-    if (color.has_value())
-    {
-        return color.value();
-    }
-
-    return std::nullopt;
+    return color;
 }
 
 // Routine Description:
@@ -314,7 +309,11 @@ try
 
     return std::nullopt;
 }
-CATCH_FAIL_FAST()
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return std::nullopt;
+}
 
 // Routine Description:
 // - Converts a hex character to its equivalent integer value.

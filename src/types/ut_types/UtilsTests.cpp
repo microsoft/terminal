@@ -205,6 +205,7 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorInvalid(L"rgb:/1/1");
     _VerifyXTermColorInvalid(L"rgb:1/1/1/");
     _VerifyXTermColorInvalid(L"rgb:1/1/1/1");
+    _VerifyXTermColorInvalid(L"rgb:111111111");
     _VerifyXTermColorInvalid(L"rgb:this/is/invalid");
     _VerifyXTermColorInvalid(L"rgba:1/1/1");
     _VerifyXTermColorInvalid(L"rgbi:1/1/1");
