@@ -266,11 +266,23 @@ winrt::hstring Profile::ExpandedIconPath() const
 // - This profile's expanded background image path / the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
+    WCHAR desktopWallpaper[MAX_PATH];
     if (_BackgroundImagePath.empty())
     {
         return _BackgroundImagePath;
     }
-    return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    // checks if the user would like to copy their desktop wallpaper
+    // if so, replaces the path with the desktop wallpaper's path
+    else if (_BackgroundImagePath == to_hstring("DesktopWallpaper"))
+    {
+        SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE);
+        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(desktopWallpaper) };
+    }
+    else
+    {
+        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    }
+    
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const

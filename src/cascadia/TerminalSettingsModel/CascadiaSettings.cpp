@@ -455,16 +455,8 @@ void CascadiaSettings::_ValidateMediaResources()
 
     for (auto profile : _profiles)
     {
-        if (!profile.BackgroundImagePath().empty())
+        if (!profile.BackgroundImagePath().empty() && profile.BackgroundImagePath() != to_hstring("DesktopWallpaper"))
         {
-            // checks if the if the user would like to copy their desktop wallpaper
-            // if so, replaces the path with the desktop wallpaper's path
-            if(profile.BackgroundImagePath() == to_hstring("DesktopWallpaper"))
-            {
-                WCHAR desktopImage[MAX_PATH];
-                SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopImage, SPIF_UPDATEINIFILE);
-                profile.BackgroundImagePath(desktopImage);
-            }
             // Attempt to convert the path to a URI, the ctor will throw if it's invalid/unparseable.
             // This covers file paths on the machine, app data, URLs, and other resource paths.
             try
