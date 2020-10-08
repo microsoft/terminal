@@ -120,14 +120,17 @@ namespace Microsoft.Terminal.Wpf
 
             this.terminalRendererSize = this.termContainer.Resize(rows, columns);
 
-            double width = ((this.terminalUserControl.RenderSize.Width * dpiScale.DpiScaleX) - this.terminalRendererSize.width) / dpiScale.DpiScaleX;
-            double height = ((this.terminalUserControl.RenderSize.Height * dpiScale.DpiScaleY) - this.terminalRendererSize.height) / dpiScale.DpiScaleY;
+            double marginWidth = ((this.terminalUserControl.RenderSize.Width * dpiScale.DpiScaleX) - this.terminalRendererSize.width) / dpiScale.DpiScaleX;
+            double marginHeight = ((this.terminalUserControl.RenderSize.Height * dpiScale.DpiScaleY) - this.terminalRendererSize.height) / dpiScale.DpiScaleY;
+
+            // Make space for the scrollbar.
+            marginWidth -= this.scrollbar.Width;
 
             // Prevent negative margin size.
-            width = width < 0 ? 0 : width;
-            height = height < 0 ? 0 : height;
+            marginWidth = marginWidth < 0 ? 0 : marginWidth;
+            marginHeight = marginHeight < 0 ? 0 : marginHeight;
 
-            this.terminalGrid.Margin = new Thickness(0, 0, width, height);
+            this.terminalGrid.Margin = new Thickness(0, 0, marginWidth, marginHeight);
         }
 
         /// <summary>
