@@ -14,4 +14,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
     {
         return m_globalSettings;
     }
+    winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettingsModel::GlobalAppSettings()
+    {
+        return _globalAppSettings;
+    }
 }

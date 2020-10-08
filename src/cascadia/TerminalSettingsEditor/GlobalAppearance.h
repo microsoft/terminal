@@ -15,8 +15,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::GlobalSettingsModel GlobalSettingsModel();
 
+        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalAppSettings();
+
     private:
         Model::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+
+        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings _GlobalAppSettings{ nullptr };
     };
 }
 

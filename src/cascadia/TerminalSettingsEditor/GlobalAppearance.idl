@@ -9,5 +9,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         GlobalAppearance();
         Microsoft.Terminal.Settings.Editor.Model.GlobalSettingsModel GlobalSettingsModel { get; };
+        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalAppSettings { get; };
     }
 }

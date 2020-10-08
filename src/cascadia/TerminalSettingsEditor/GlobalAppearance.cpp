@@ -8,6 +8,7 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -20,5 +21,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Model::GlobalSettingsModel GlobalAppearance::GlobalSettingsModel()
     {
         return m_globalSettingsModel;
+    }
+
+    GlobalAppSettings GlobalAppearance::GlobalAppSettings()
+    {
+        return _GlobalAppSettings;
     }
 }
