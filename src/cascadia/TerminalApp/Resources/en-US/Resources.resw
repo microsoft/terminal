@@ -291,8 +291,11 @@
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>New Tab</value>
   </data>
-  <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>New Tab</value>
+  <data name="NewTabRun.Text" xml:space="preserve">
+    <value>Open a new tab</value>
+  </data>
+  <data name="NewPaneRun.Text" xml:space="preserve">
+    <value>Hold alt to open a new pane instead</value>
   </data>
   <data name="WindowCloseButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Close</value>

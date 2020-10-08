@@ -34,6 +34,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                 BorderThickness="0"
                 CornerRadius="{Binding Source={ThemeResource OverlayCornerRadius}, Converter={StaticResource TopCornerRadiusFilterConverter}}"
                 AutomationProperties.AccessibilityView="Control">
+                <ToolTipService.ToolTip>
+                    <ToolTip x:Name="TabTip"
+                             Placement="Mouse">
+                        <TextBlock IsTextSelectionEnabled="False">
+                            <Run x:Uid="NewTabRun"/> <LineBreak />
+                            <Run x:Uid="NewPaneRun"
+                                 FontStyle="Italic">
+                            </Run>
+                        </TextBlock>
+                    </ToolTip>
+                </ToolTipService.ToolTip>
                 <!-- U+E710 is the fancy plus icon. -->
                 <mux:SplitButton.Resources>
 		    <!-- Override the SplitButton* resources to match the tab view's button's styles. -->
