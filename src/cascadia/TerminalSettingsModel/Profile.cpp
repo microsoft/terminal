@@ -233,7 +233,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
-    JsonUtils::GetValueForKey(json, IconKey, _IconPath);
+    JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
@@ -262,6 +262,7 @@ winrt::hstring Profile::ExpandedIconPath() const
 
 // Method Description:
 // - Either Returns this profile's background image path, if one is set, expanding
+// - Returns this profile's background image path, if one is set, expanding
 //   any environment variables in the path, if there are any.
 // - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
 // Return Value:

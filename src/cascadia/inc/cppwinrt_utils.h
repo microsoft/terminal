@@ -133,13 +133,13 @@ public:                                                                         
     {                                                                                  \
         if (_##name != value)                                                          \
         {                                                                              \
-            const_cast<type&>(_##name) = value;                                        \
+            _##name = value;                                                           \
             event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
         }                                                                              \
     };                                                                                 \
                                                                                        \
 private:                                                                               \
-    const type _##name{ __VA_ARGS__ };                                                 \
+    type _##name{ __VA_ARGS__ };                                                       \
     void _set##name(const type& value)                                                 \
     {                                                                                  \
         const_cast<type&>(_##name) = value;                                            \
