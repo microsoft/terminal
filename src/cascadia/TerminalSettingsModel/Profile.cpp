@@ -265,7 +265,7 @@ winrt::hstring Profile::ExpandedIconPath() const
 //   any environment variables in the path, if there are any.
 // - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
 // Return Value:
-// - This profile's expanded background image path / the empty string.
+// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
     if (_BackgroundImagePath.empty())
