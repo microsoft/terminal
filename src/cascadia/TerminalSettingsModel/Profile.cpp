@@ -50,6 +50,7 @@ static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
 static constexpr std::string_view IconKey{ "icon" };
+static constexpr std::string_view DesktopWallpaperEnum{ "DesktopWallpaper" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
@@ -260,23 +261,24 @@ winrt::hstring Profile::ExpandedIconPath() const
 }
 
 // Method Description:
-// - Returns this profile's background image path, if one is set, expanding
+// - Either Returns this profile's background image path, if one is set, expanding
 //   any environment variables in the path, if there are any.
+// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
 // Return Value:
 // - This profile's expanded background image path / the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
-    WCHAR desktopWallpaper[MAX_PATH];
     if (_BackgroundImagePath.empty())
     {
         return _BackgroundImagePath;
     }
     // checks if the user would like to copy their desktop wallpaper
     // if so, replaces the path with the desktop wallpaper's path
-    else if (_BackgroundImagePath == to_hstring("DesktopWallpaper"))
+    else if (_BackgroundImagePath == to_hstring(DesktopWallpaperEnum))
     {
+        WCHAR desktopWallpaper[MAX_PATH];
         SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE);
-        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(desktopWallpaper) };
+        return winrt::hstring{(desktopWallpaper)};
     }
     else
     {
