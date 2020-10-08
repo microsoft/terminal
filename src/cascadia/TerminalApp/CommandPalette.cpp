@@ -132,7 +132,7 @@ namespace winrt::TerminalApp::implementation
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             const auto& selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto& command = selectedCommand.try_as<TerminalApp::Command>())
+            if (const auto& command = selectedCommand.try_as<Command>())
             {
                 const auto& actionAndArgs = command.Action();
                 _dispatch.DoAction(actionAndArgs);
