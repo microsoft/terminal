@@ -1426,7 +1426,6 @@ namespace SettingsModelLocalTests
     }
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
     {
-        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
         const winrt::hstring expectedBackgroundImagePath{ winrt::to_hstring("DesktopWallpaper") };
 
         const std::string settingsJson{ R"(
