@@ -3,18 +3,17 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/ColorScheme.h"
-#include "../TerminalApp/Profile.h"
-#include "../TerminalApp/CascadiaSettings.h"
-#include "../LocalTests_TerminalApp/JsonTestClass.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/Profile.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../LocalTests_SettingsModel/JsonTestClass.h"
 #include "../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalAppUnitTests
@@ -88,7 +87,7 @@ namespace TerminalAppUnitTests
                                           "\"purple\" : \"#881798\","
                                           "\"red\" : \"#C50F1F\","
                                           "\"selectionBackground\" : \"#131313\","
-                                          "\"white\" : \"#CCC\","
+                                          "\"white\" : \"#CCCCCC\","
                                           "\"yellow\" : \"#C19C00\""
                                           "}" };
 
@@ -111,6 +110,10 @@ namespace TerminalAppUnitTests
             const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
             VERIFY_ARE_EQUAL(expected, actual);
         }
+
+        Log::Comment(L"Roundtrip Test for Color Scheme");
+        Json::Value outJson{ scheme->ToJson() };
+        VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 
     void JsonTests::ProfileGeneratesGuid()

@@ -6,12 +6,12 @@
 
 #include "../TerminalApp/TerminalPage.h"
 #include "../TerminalApp/AppCommandlineArgs.h"
-#include "../TerminalApp/ActionArgs.h"
 
 using namespace WEX::Logging;
 using namespace WEX::Common;
 using namespace WEX::TestExecution;
 
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 using namespace ::TerminalApp;
 
@@ -1076,9 +1076,8 @@ namespace TerminalAppLocalTests
 
     void CommandlineTest::TestSimpleExecuteCommandlineAction()
     {
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
-        args->Commandline(L"new-tab");
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        ExecuteCommandlineArgs args{ L"new-tab" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(1u, actions.size());
         auto actionAndArgs = actions.at(0);
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1095,9 +1094,8 @@ namespace TerminalAppLocalTests
 
     void CommandlineTest::TestMultipleCommandExecuteCommandlineAction()
     {
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
-        args->Commandline(L"new-tab ; split-pane");
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        ExecuteCommandlineArgs args{ L"new-tab ; split-pane" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(2u, actions.size());
         {
             auto actionAndArgs = actions.at(0);
@@ -1129,10 +1127,9 @@ namespace TerminalAppLocalTests
 
     void CommandlineTest::TestInvalidExecuteCommandlineAction()
     {
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
         // -H and -V cannot be combined.
-        args->Commandline(L"split-pane -H -V");
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        ExecuteCommandlineArgs args{ L"split-pane -H -V" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(0u, actions.size());
     }
 }

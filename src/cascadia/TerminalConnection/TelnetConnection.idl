@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface]
     runtimeclass TelnetConnection : ITerminalConnection
     {
+        static Guid ConnectionType { get; };
         TelnetConnection(String uri);
     };
 

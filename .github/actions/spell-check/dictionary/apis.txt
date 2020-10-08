@@ -3,6 +3,7 @@ ACCESSDENIED
 alignof
 bitfield
 bitfields
+COLORPROPERTY
 CLASSNOTAVAILABLE
 environstrings
 EXPCMDFLAGS

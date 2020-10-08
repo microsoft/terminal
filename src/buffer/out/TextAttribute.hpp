@@ -69,7 +69,8 @@ public:
     std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
-                                                     const bool reverseScreenMode = false) const noexcept;
+                                                     const bool reverseScreenMode = false,
+                                                     const bool blinkingIsFaint = false) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -151,6 +152,8 @@ public:
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
                WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // hyperlinks have a visual representation
+               !IsHyperlink() &&
                // all other attributes do not have a visual representation
                (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||

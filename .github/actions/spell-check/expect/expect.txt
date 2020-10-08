@@ -857,6 +857,7 @@ GETAUTOHIDEBAREX
 GETCARETWIDTH
 getch
 getchar
+GETCLIENTAREAANIMATION
 GETCOMMANDHISTORY
 GETCOMMANDHISTORYLENGTH
 GETCONSOLEINPUT
@@ -1805,6 +1806,7 @@ preinstalled
 PRELOAD
 PREMULTIPLIED
 prepopulated
+presorted
 PREVENTPINNING
 PREVIEWLABEL
 PREVIEWWINDOW
@@ -2717,6 +2719,7 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wnwb
 workarea
 workaround
 workflow
@@ -2764,6 +2767,7 @@ wtof
 wtoi
 wtw
 wtypes
+Wubi
 WUX
 WVerify
 wwaproj

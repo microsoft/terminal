@@ -1,0 +1,62 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ColorScheme.idl";
+import "KeyMapping.idl";
+import "Command.idl";
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    // MIDL 3 allows for structs to hold nullable types
+    // Though IReference is a WinRT object, MIDL 3
+    // handles all of the ownership logic for us.
+    // Docs: https://docs.microsoft.com/en-us/uwp/midl-3/intro#types
+    struct LaunchPosition
+    {
+        Windows.Foundation.IReference<Int64> X;
+        Windows.Foundation.IReference<Int64> Y;
+    };
+
+    enum LaunchMode
+    {
+        DefaultMode,
+        MaximizedMode,
+        FullscreenMode,
+    };
+
+    [default_interface] runtimeclass GlobalAppSettings {
+        Guid DefaultProfile;
+        String UnparsedDefaultProfile();
+
+        Int32 InitialRows;
+        Int32 InitialCols;
+        Boolean AlwaysShowTabs;
+        Boolean ShowTitleInTitlebar;
+        Boolean ConfirmCloseAllTabs;
+        Windows.UI.Xaml.ElementTheme Theme;
+        Microsoft.UI.Xaml.Controls.TabViewWidthMode TabWidthMode;
+        Boolean ShowTabsInTitlebar;
+        String WordDelimiters;
+        Boolean CopyOnSelect;
+        Microsoft.Terminal.TerminalControl.CopyFormat CopyFormatting;
+        Boolean WarnAboutLargePaste;
+        Boolean WarnAboutMultiLinePaste;
+        LaunchPosition InitialPosition;
+        LaunchMode LaunchMode;
+        Boolean SnapToGridOnResize;
+        Boolean ForceFullRepaintRendering;
+        Boolean SoftwareRendering;
+        Boolean ForceVTInput;
+        Boolean DebugFeaturesEnabled;
+        Boolean StartOnUserLogin;
+        Boolean AlwaysOnTop;
+        Boolean UseTabSwitcher;
+
+        Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
+        void AddColorScheme(ColorScheme scheme);
+
+        KeyMapping KeyMap();
+
+        Windows.Foundation.Collections.IMapView<String, Command> Commands();
+    }
+}
