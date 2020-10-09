@@ -2,23 +2,24 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "MainPage.h"
 #include "Interaction.h"
 #include "Interaction.g.cpp"
-#include <ObjectModel\GlobalSettings.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Interaction::Interaction()
     {
-        m_globalSettingsModel = winrt::make<Model::implementation::GlobalSettingsModel>();
         InitializeComponent();
     }
 
-    Model::GlobalSettingsModel Interaction::GlobalSettingsModel()
+    GlobalAppSettings Interaction::GlobalSettings()
     {
-        return m_globalSettingsModel;
+        return MainPage::Settings().GlobalSettings();
     }
 }

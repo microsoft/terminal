@@ -17,4 +17,5 @@
         <Setter Property="Margin" Value="12,0,12,12" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     </Style>
+
 </ResourceDictionary>

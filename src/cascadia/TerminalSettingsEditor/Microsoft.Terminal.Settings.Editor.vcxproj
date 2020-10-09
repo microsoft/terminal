@@ -80,8 +80,6 @@
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
     <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
-    <ClInclude Include="ObjectModel\GlobalSettings.h" />
-    <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
     <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="MainPage.h">
@@ -188,8 +186,6 @@
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
     <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
-    <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
-    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
     <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -242,8 +238,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ObjectModel\ColorSchemeModel.idl" />
-    <Midl Include="ObjectModel\GlobalSettings.idl" />
-    <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
     <Midl Include="ObjectModel\Profile.idl" />
     <Midl Include="ObjectModel\ProfileModel.idl" />
     <Midl Include="Rendering.idl">

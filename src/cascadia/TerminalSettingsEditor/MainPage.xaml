@@ -41,9 +41,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </muxc:NavigationViewItem>
 
                 <muxc:NavigationViewItem Icon="Globe"
-                    Tag="General_Nav" >
+                                         Tag="General_Nav" >
+                    
                     <TextBlock>General</TextBlock>
-
+                    
                     <muxc:NavigationViewItem.MenuItems>
                         <muxc:NavigationViewItem Tag="Launch_Nav" >
                             <!-- Couldn't find spaceship -->
@@ -52,7 +53,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </muxc:NavigationViewItem.Icon>
                             <TextBlock Tag="Launch_Page">Startup</TextBlock>
                         </muxc:NavigationViewItem>
-
                         <muxc:NavigationViewItem Tag="Interaction_Nav" >
                             <!-- Couldn't find cursor alone -->
                             <muxc:NavigationViewItem.Icon>
@@ -60,7 +60,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </muxc:NavigationViewItem.Icon>
                             <TextBlock Tag="Globals_Page">Interaction</TextBlock>
                         </muxc:NavigationViewItem>
-
                         <muxc:NavigationViewItem Tag="Rendering_Nav" >
                             <!-- Couldn't find cursor alone -->
                             <muxc:NavigationViewItem.Icon>
@@ -68,7 +67,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </muxc:NavigationViewItem.Icon>
                             <TextBlock Tag="Globals_Page">Rendering</TextBlock>
                         </muxc:NavigationViewItem>
-
                     </muxc:NavigationViewItem.MenuItems>
 
                 </muxc:NavigationViewItem>

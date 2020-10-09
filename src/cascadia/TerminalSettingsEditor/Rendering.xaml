@@ -24,8 +24,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Content="Screen redrawing" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames." ToolTipService.Placement="Mouse" />
-            <CheckBox IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.SoftwareRendering, Mode=TwoWay}" Content="Software rendering" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one." ToolTipService.Placement="Mouse" />
+            <CheckBox IsChecked="{x:Bind GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Content="Screen redrawing" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames." ToolTipService.Placement="Mouse" />
+            <CheckBox IsChecked="{x:Bind GlobalSettings.SoftwareRendering, Mode=TwoWay}" Content="Software rendering" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one." ToolTipService.Placement="Mouse" />
         </StackPanel>
     </Grid>
 </Page>

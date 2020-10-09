@@ -29,8 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto clickedItemContainer = args.ClickedItem().as<HomeGridItem>();
         hstring tag = clickedItemContainer->PageTag();
-        MainPage mainPage;
-        mainPage.Navigate(frame(), tag);
+        MainPage::Navigate(frame(), tag);
     }
 
     Editor::SettingsEditorViewModel Home::HomeViewModel()

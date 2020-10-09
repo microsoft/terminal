@@ -1,6 +1,5 @@
 #pragma once
 
-#include "GlobalSettings.h"
 #include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
