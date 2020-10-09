@@ -2519,6 +2519,134 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
+    // Method Description:
+    // - Updates all tabs with their current index in _tabs.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateTabIndices()
+    {
+        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        {
+            auto command = _tabs.GetAt(i).SwitchToTabCommand();
+            command.Action().Args().as<SwitchToTabArgs>().TabIndex(i);
+        }
+    }
+
+    // Method Description:
+    // - Creates a settings UI tab and focuses it. If there's already a settings UI tab open,
+    //   just focus the existing one.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OpenSettingsUI()
+    {
+        // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
+        if (!_switchToSettingsCommand)
+        {
+            auto newTabImpl = winrt::make_self<SettingsTab>();
+            _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
+
+            // Add the new tab to the list of our tabs.
+            _tabs.Append(*newTabImpl);
+
+            // Don't capture a strong ref to the tab. If the tab is removed as this
+            // is called, we don't really care anymore about handling the event.
+            auto weakTab = make_weak(newTabImpl);
+
+            auto tabViewItem = newTabImpl->TabViewItem();
+            _tabView.TabItems().Append(tabViewItem);
+
+            _ReapplyCompactTabSize();
+
+            tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+
+            // When the tab is closed, remove it from our list of tabs.
+            newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+                if (auto page{ weakThis.get() })
+                {
+                    page->_switchToSettingsCommand = nullptr;
+                    page->_RemoveOnCloseRoutine(tabViewItem, page);
+                }
+            });
+
+            _switchToSettingsCommand = newTabImpl->SwitchToTabCommand();
+
+            // This kicks off TabView::SelectionChanged, in response to which
+            // we'll attach the terminal's Xaml control to the Xaml root.
+            _tabView.SelectedItem(tabViewItem);
+        }
+        else
+        {
+            _actionDispatch->DoAction(_switchToSettingsCommand.Action());
+        }
+    }
+
+    // Method Description:
+    // - Returns a com_ptr to the implementation type of the given tab if it's a TerminalTab.
+    //   If the tab is not a TerminalTab, returns nullptr.
+    // Arguments:
+    // - tab: the projected type of a Tab
+    // Return Value:
+    // - If the tab is a TerminalTab, a com_ptr to the implementation type.
+    //   If the tab is not a TerminalTab, nullptr
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const ITab& tab) const
+    {
+        if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
+        {
+            winrt::com_ptr<TerminalTab> tabImpl;
+            tabImpl.copy_from(winrt::get_self<TerminalTab>(terminalTab));
+            return tabImpl;
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    // Method Description:
+    // - The TabView does not apply compact sizing to items added after Compact is enabled.
+    //   By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
+    //   that it works.
+    //   Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
+    //   TODO: Remove this function and its calls when ingesting the above changes.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ReapplyCompactTabSize()
+    {
+        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
+        {
+            _tabView.UpdateLayout();
+            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
+        }
+    }
+
+    // Method Description:
+    // - Initializes a SwitchToTab command object for this Tab instance.
+    //   This should be done before the tab is added to the _tabs vector so that
+    //   controls like the CmdPal that observe the vector changes can always expect
+    //   a SwitchToTab command to be available.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_MakeSwitchToTabCommand(const ITab& tab, const uint32_t index)
+    {
+        SwitchToTabArgs args{ index };
+        ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
+
+        Command command;
+        command.Action(focusTabAction);
+        command.Name(tab.Title());
+        command.IconSource(tab.IconSource());
+
+        tab.SwitchToTabCommand(command);
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
