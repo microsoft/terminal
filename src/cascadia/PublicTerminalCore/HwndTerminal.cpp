@@ -469,7 +469,7 @@ HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ CO
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensionsInPixels);
 
-    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
     const auto viewInCharacters = Viewport::FromDimensions({ 0, 0 }, { (dimensionsInCharacters.X), (dimensionsInCharacters.Y) });
     const auto viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
@@ -492,7 +492,7 @@ HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ CO
 /// <returns>HRESULT of the calculation.</returns>
 HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
 {
-    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
     const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { width, height });
     const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
