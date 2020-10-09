@@ -93,6 +93,8 @@ namespace winrt::TerminalApp::implementation
             }
             _sizeChangedRevoker.revoke();
         });
+
+        _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
     }
 
     // Method Description:
@@ -113,6 +115,29 @@ namespace winrt::TerminalApp::implementation
         const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+    // Method Description:
+    // - Called when the command selection changes. We'll use this in the tab
+    //   switcher to "preview" tabs as the user navigates the list of tabs. To
+    //   do that, we'll dispatch the switch to tab command for this tab, but not
+    //   dismiss the switcher.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            const auto& selectedCommand = _filteredActionsView().SelectedItem();
+            if (const auto& command = selectedCommand.try_as<Command>())
+            {
+                const auto& actionAndArgs = command.Action();
+                _dispatch.DoAction(actionAndArgs);
+            }
+        }
     }
 
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,

@@ -43,12 +43,13 @@ static constexpr bool _isProbableFilePath(std::wstring_view path)
 //   paths to have the "correct" slash direction.
 static std::wstring _normalizeIconPath(std::wstring_view path)
 {
-    if (_isProbableFilePath(path))
+    const auto fullPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+    if (_isProbableFilePath(fullPath))
     {
-        std::filesystem::path asPath{ path };
+        std::filesystem::path asPath{ fullPath };
         return asPath.make_preferred().wstring();
     }
-    return std::wstring{ path };
+    return std::wstring{ fullPath };
 }
 
 // Function Description:
@@ -168,7 +169,7 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 
             // Create the shell link object for the profile
             winrt::com_ptr<IShellLinkW> shLink;
-            const auto normalizedIconPath{ _normalizeIconPath(profile.ExpandedIconPath()) };
+            const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
             RETURN_IF_FAILED(_createShellLink(profile.Name(), normalizedIconPath, args, shLink.put()));
 
             RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));
