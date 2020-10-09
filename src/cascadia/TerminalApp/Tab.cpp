@@ -1106,26 +1106,18 @@ namespace winrt::TerminalApp::implementation
 
     void Tab::_CloseTabsAfter()
     {
-        auto actionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-        actionAndArgs->Action(ShortcutAction::CloseTabsAfter);
+        CloseTabsAfterArgs args{ _TabViewIndex };
+        ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
 
-        auto args = winrt::make_self<implementation::CloseTabsAfterArgs>();
-        args->Index(TabViewIndex());
-        actionAndArgs->Args(*args);
-
-        _dispatch.DoAction(*actionAndArgs);
+        _dispatch.DoAction(closeTabsAfter);
     }
 
     void Tab::_CloseOtherTabs()
     {
-        auto actionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-        actionAndArgs->Action(ShortcutAction::CloseOtherTabs);
+        CloseOtherTabsArgs args{ _TabViewIndex };
+        ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
 
-        auto args = winrt::make_self<implementation::CloseOtherTabsArgs>();
-        args->Index(TabViewIndex());
-        actionAndArgs->Args(*args);
-
-        _dispatch.DoAction(*actionAndArgs);
+        _dispatch.DoAction(closeOtherTabs);
     }
 
     void Tab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)

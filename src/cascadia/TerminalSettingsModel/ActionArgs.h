@@ -505,6 +505,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
     {
         CloseOtherTabsArgs() = default;
+        CloseOtherTabsArgs(uint32_t& tabIndex) :
+            _Index{ tabIndex } {};
         GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
@@ -533,6 +535,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
     {
         CloseTabsAfterArgs() = default;
+        CloseTabsAfterArgs(uint32_t& tabIndex) :
+            _Index{ tabIndex } {};
         GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
 
         static constexpr std::string_view IndexKey{ "index" };
@@ -567,4 +571,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(NewTabArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
+    BASIC_FACTORY(CloseOtherTabsArgs);
+    BASIC_FACTORY(CloseTabsAfterArgs);
 }
