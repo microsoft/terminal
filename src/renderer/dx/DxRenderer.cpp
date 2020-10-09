@@ -1780,16 +1780,16 @@ CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.width());
-    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.height());
+    const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _glyphCell.width());
+    const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _glyphCell.height());
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
 [[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
 {
-    const short widthInPixels = gsl::narrow_cast<short>(viewInCharacters.Width() * _glyphCell.width());
-    const short heightInPixels = gsl::narrow_cast<short>(viewInCharacters.Height() * _glyphCell.height());
+    const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _glyphCell.width());
+    const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _glyphCell.height());
 
     return Viewport::FromDimensions(viewInCharacters.Origin(), { widthInPixels, heightInPixels });
 }
