@@ -51,6 +51,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean StartOnUserLogin;
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
+        Boolean DisableAnimations;
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

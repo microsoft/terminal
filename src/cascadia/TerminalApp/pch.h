@@ -37,11 +37,13 @@
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.UI.Xaml.Data.h>
 #include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.UI.Xaml.Media.Animation.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
 #include "winrt/Windows.UI.Xaml.Automation.h"
+#include "winrt/Windows.UI.ViewManagement.h"
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
