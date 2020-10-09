@@ -263,13 +263,12 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     {
         WCHAR desktopWallpaper[MAX_PATH];
         SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE);
-        return winrt::hstring{(desktopWallpaper)};
+        return winrt::hstring{ (desktopWallpaper) };
     }
     else
     {
         return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
     }
-    
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
