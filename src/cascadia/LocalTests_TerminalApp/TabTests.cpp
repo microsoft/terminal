@@ -7,13 +7,13 @@
 #include "../TerminalApp/MinMaxCloseControl.h"
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
-#include "../TerminalApp/Tab.h"
+#include "../TerminalApp/TerminalTab.h"
 #include "../CppWinrtTailored.h"
-#include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -26,7 +26,7 @@ namespace TerminalAppLocalTests
     // an updated TAEF that will let us install framework packages when the test
     // package is deployed. Until then, these tests won't deploy in CI.
 
-    class TabTests : public JsonTestClass
+    class TabTests
     {
         // For this set of tests, we need to activate some XAML content. For
         // release builds, the application runs as a centennial application,
@@ -64,7 +64,6 @@ namespace TerminalAppLocalTests
 
         TEST_CLASS_SETUP(ClassSetup)
         {
-            InitializeJsonReader();
             return true;
         }
 
@@ -75,7 +74,7 @@ namespace TerminalAppLocalTests
 
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                     winrt::com_ptr<winrt::TerminalApp::implementation::CascadiaSettings>& initialSettings);
+                                     CascadiaSettings initialSettings);
     };
 
     void TabTests::EnsureTestsActivate()
@@ -190,7 +189,7 @@ namespace TerminalAppLocalTests
     // Return Value:
     // - <none>
     void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                           winrt::com_ptr<winrt::TerminalApp::implementation::CascadiaSettings>& initialSettings)
+                                           CascadiaSettings initialSettings)
     {
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
@@ -206,7 +205,7 @@ namespace TerminalAppLocalTests
         auto result = RunOnUIThread([&projectedPage, &page, initialSettings]() {
             projectedPage = winrt::TerminalApp::TerminalPage();
             page.copy_from(winrt::get_self<winrt::TerminalApp::implementation::TerminalPage>(projectedPage));
-            page->_settings = *initialSettings;
+            page->_settings = initialSettings;
         });
         VERIFY_SUCCEEDED(result);
 
@@ -246,8 +245,8 @@ namespace TerminalAppLocalTests
             // In the real app, this isn't a problem, but doesn't happen
             // reliably in the unit tests.
             Log::Comment(L"Ensure we set the first tab as the selected one.");
-            auto tab{ page->_GetStrongTabImpl(0) };
-            page->_tabView.SelectedItem(tab->GetTabViewItem());
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            page->_tabView.SelectedItem(tab->TabViewItem());
             page->_UpdatedSelectedTab(0);
         });
         VERIFY_SUCCEEDED(result);
@@ -276,12 +275,8 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        VerifyParseSucceeded(settingsJson0);
-        auto settings0 = winrt::make_self<implementation::CascadiaSettings>(false);
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
         VERIFY_IS_NOT_NULL(settings0);
-        settings0->_ParseJsonString(settingsJson0, false);
-        settings0->LayerJson(settings0->_userSettings);
-        settings0->_ValidateSettings();
 
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
@@ -338,19 +333,11 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        VerifyParseSucceeded(settingsJson0);
-        auto settings0 = winrt::make_self<implementation::CascadiaSettings>(false);
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
         VERIFY_IS_NOT_NULL(settings0);
-        settings0->_ParseJsonString(settingsJson0, false);
-        settings0->LayerJson(settings0->_userSettings);
-        settings0->_ValidateSettings();
 
-        VerifyParseSucceeded(settingsJson1);
-        auto settings1 = winrt::make_self<implementation::CascadiaSettings>(false);
+        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
         VERIFY_IS_NOT_NULL(settings1);
-        settings1->_ParseJsonString(settingsJson1, false);
-        settings1->LayerJson(settings1->_userSettings);
-        settings1->_ValidateSettings();
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
@@ -383,7 +370,7 @@ namespace TerminalAppLocalTests
             L"Change the settings of the TerminalPage so the first profile is "
             L"no longer in the list of profiles"));
         result = RunOnUIThread([&page, settings1]() {
-            page->_settings = *settings1;
+            page->_settings = settings1;
         });
         VERIFY_SUCCEEDED(result);
 
@@ -433,19 +420,11 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        VerifyParseSucceeded(settingsJson0);
-        auto settings0 = winrt::make_self<implementation::CascadiaSettings>(false);
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
         VERIFY_IS_NOT_NULL(settings0);
-        settings0->_ParseJsonString(settingsJson0, false);
-        settings0->LayerJson(settings0->_userSettings);
-        settings0->_ValidateSettings();
 
-        VerifyParseSucceeded(settingsJson1);
-        auto settings1 = winrt::make_self<implementation::CascadiaSettings>(false);
+        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
         VERIFY_IS_NOT_NULL(settings1);
-        settings1->_ParseJsonString(settingsJson1, false);
-        settings1->LayerJson(settings1->_userSettings);
-        settings1->_ValidateSettings();
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
@@ -469,7 +448,7 @@ namespace TerminalAppLocalTests
 
         result = RunOnUIThread([&page]() {
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetStrongTabImpl(0);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(1, tab->GetLeafPaneCount());
         });
         VERIFY_SUCCEEDED(result);
@@ -479,7 +458,7 @@ namespace TerminalAppLocalTests
             page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetStrongTabImpl(0);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, tab->GetLeafPaneCount());
         });
         VERIFY_SUCCEEDED(result);
@@ -488,7 +467,7 @@ namespace TerminalAppLocalTests
             L"Change the settings of the TerminalPage so the first profile is "
             L"no longer in the list of profiles"));
         result = RunOnUIThread([&page, settings1]() {
-            page->_settings = *settings1;
+            page->_settings = settings1;
         });
         VERIFY_SUCCEEDED(result);
 
@@ -497,7 +476,7 @@ namespace TerminalAppLocalTests
             page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-            auto tab = page->_GetStrongTabImpl(0);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2,
                              tab->GetLeafPaneCount(),
                              L"We should gracefully do nothing here - the profile no longer exists.");

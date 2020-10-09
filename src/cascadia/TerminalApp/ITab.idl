@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    interface ITab
+    {
+        String Title { get; };
+        Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+        Microsoft.Terminal.Settings.Model.Command SwitchToTabCommand;
+        Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
+        Windows.UI.Xaml.FrameworkElement Content { get; };
+        Windows.UI.Xaml.FocusState FocusState { get; };
+
+        void Focus(Windows.UI.Xaml.FocusState focusState);
+        void Shutdown();
+    }
+}

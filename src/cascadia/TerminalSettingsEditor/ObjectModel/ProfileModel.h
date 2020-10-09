@@ -1,8 +1,8 @@
 #pragma once
-#include "Microsoft.Terminal.Settings.Model.ProfileModel.g.h"
+#include "Model.ProfileModel.g.h"
 #include "ObjectModel/Profile.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     struct ProfileModel : ProfileModelT<ProfileModel>
     {

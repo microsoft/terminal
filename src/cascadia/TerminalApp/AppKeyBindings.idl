@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "ShortcutActionDispatch.idl";
-import "KeyMapping.idl";
 
 namespace TerminalApp
 {
@@ -10,6 +9,6 @@ namespace TerminalApp
         AppKeyBindings();
 
         void SetDispatch(ShortcutActionDispatch dispatch);
-        void SetKeyMapping(KeyMapping keymap);
+        void SetKeyMapping(Microsoft.Terminal.Settings.Model.KeyMapping keymap);
     }
 }

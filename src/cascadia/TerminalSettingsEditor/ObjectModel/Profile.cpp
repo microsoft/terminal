@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "Profile.h"
-#include "Microsoft.Terminal.Settings.Model.Profile.g.cpp"
+#include "Model.Profile.g.cpp"
 
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation;
 
 HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
 {

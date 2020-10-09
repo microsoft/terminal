@@ -13,43 +13,6 @@ Author(s):
 --*/
 #pragma once
 
-// Method Description:
-// - Create a std::string from a string_view. We do this because we can't look
-//   up a key in a Json::Value with a string_view directly, so instead we'll use
-//   this helper. Should a string_view lookup ever be added to jsoncpp, we can
-//   remove this entirely.
-// Arguments:
-// - key: the string_view to build a string from
-// Return Value:
-// - a std::string to use for looking up a value from a Json::Value
-inline std::string JsonKey(const std::string_view key)
-{
-    return static_cast<std::string>(key);
-}
-
-// This is a pair of helpers for determining if a pair of guids are equal, and
-// establishing an ordering on GUIDs (via std::less).
-namespace std
-{
-    template<>
-    struct less<GUID>
-    {
-        bool operator()(const GUID& lhs, const GUID& rhs) const
-        {
-            return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
-        }
-    };
-
-    template<>
-    struct equal_to<GUID>
-    {
-        bool operator()(const GUID& lhs, const GUID& rhs) const
-        {
-            return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
-        }
-    };
-}
-
 namespace winrt::Microsoft::UI::Xaml::Controls
 {
     struct IconSource;
@@ -81,6 +44,23 @@ namespace Microsoft::TerminalApp::details
     struct BitmapIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
+    };
+
+    template<typename TIconSource>
+    struct FontIconSource
+    {
+    };
+
+    template<>
+    struct FontIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Microsoft::UI::Xaml::Controls::FontIconSource;
+    };
+
+    template<>
+    struct FontIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
+    {
+        using type = winrt::Windows::UI::Xaml::Controls::FontIconSource;
     };
 }
 
@@ -116,9 +96,24 @@ TIconSource GetColoredIcon(const winrt::hstring& path)
     return nullptr;
 }
 
-std::wstring VisualizeControlCodes(std::wstring str) noexcept;
-
-inline std::wstring VisualizeControlCodes(std::wstring_view str) noexcept
+// TODO: GH#1564 SUI polish - Dedupe with Command's icon handler
+template<typename TIconSource>
+TIconSource GetFontIcon(const winrt::Windows::UI::Xaml::Media::FontFamily& fontFamily,
+                        const double fontSize,
+                        const winrt::hstring glyph)
 {
-    return VisualizeControlCodes(std::wstring{ str });
+    if (!glyph.empty())
+    {
+        try
+        {
+            ::Microsoft::TerminalApp::details::FontIconSource<TIconSource>::type iconSource;
+            iconSource.FontFamily(fontFamily);
+            iconSource.FontSize(fontSize);
+            iconSource.Glyph(glyph);
+            return iconSource;
+        }
+        CATCH_LOG();
+    }
+
+    return nullptr;
 }

@@ -128,7 +128,7 @@ private:                                                                        
 // (like when the class is being initialized).
 #define OBSERVABLE_GETSET_PROPERTY(type, name, event, ...)                             \
 public:                                                                                \
-    type name() { return _##name; };                                                   \
+    type name() const noexcept { return _##name; };                                    \
     void name(const type& value)                                                       \
     {                                                                                  \
         if (_##name != value)                                                          \
