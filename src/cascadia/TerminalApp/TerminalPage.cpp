@@ -464,6 +464,9 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
+            auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
+            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, tabRowImpl->TabTip());
+
             profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
