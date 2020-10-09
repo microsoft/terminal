@@ -47,6 +47,7 @@ serializer
 SIZENS
 spsc
 STDCPP
+strchr
 syscall
 tmp
 tx
