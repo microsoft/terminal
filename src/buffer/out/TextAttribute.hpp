@@ -152,6 +152,8 @@ public:
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
                WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // hyperlinks have a visual representation
+               !IsHyperlink() &&
                // all other attributes do not have a visual representation
                (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||

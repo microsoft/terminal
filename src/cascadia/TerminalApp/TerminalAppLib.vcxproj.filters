@@ -10,44 +10,8 @@
     <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="AzureCloudShellGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="PowershellCoreProfileGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="WslDistroGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
-    <ClCompile Include="CascadiaSettings.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
-    <ClCompile Include="CascadiaSettingsSerialization.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
-    <ClCompile Include="GlobalAppSettings.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
-    <ClCompile Include="KeyChordSerialization.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
-    <ClCompile Include="Profile.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
-    <ClCompile Include="ColorScheme.cpp">
-      <Filter>settings</Filter>
-    </ClCompile>
     <ClCompile Include="Pane.cpp">
       <Filter>pane</Filter>
-    </ClCompile>
-    <ClCompile Include="DefaultProfileUtils.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <Filter>json</Filter>
     </ClCompile>
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
@@ -71,44 +35,8 @@
     <ClInclude Include="App.base.h">
       <Filter>app</Filter>
     </ClInclude>
-    <ClInclude Include="AzureCloudShellGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="IDynamicProfileGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="PowershellCoreProfileGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="WslDistroGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="CascadiaSettings.h">
-      <Filter>settings</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalAppSettings.h">
-      <Filter>settings</Filter>
-    </ClInclude>
-    <ClInclude Include="TerminalSettingsSerializationHelpers.h">
-      <Filter>settings</Filter>
-    </ClInclude>
-    <ClInclude Include="KeyChordSerialization.h">
-      <Filter>settings</Filter>
-    </ClInclude>
-    <ClInclude Include="Profile.h">
-      <Filter>settings</Filter>
-    </ClInclude>
-    <ClInclude Include="ColorScheme.h">
-      <Filter>settings</Filter>
-    </ClInclude>
     <ClInclude Include="Pane.h">
       <Filter>pane</Filter>
-    </ClInclude>
-    <ClInclude Include="DefaultProfileUtils.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="JsonUtils.h">
-      <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="Tab.h">
       <Filter>tab</Filter>
@@ -134,30 +62,15 @@
     <Midl Include="AppKeyBindings.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="KeyMapping.idl">
-      <Filter>settings</Filter>
-    </Midl>
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
     <Midl Include="Tab.idl">
       <Filter>tab</Filter>
     </Midl>
-    <Midl Include="Command.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl">
-      <Filter>settings</Filter>
-    </Midl>
-    <Midl Include="ColorScheme.idl">
-      <Filter>settings</Filter>
-    </Midl>
-    <Midl Include="Profile.idl">
-      <Filter>settings</Filter>
-    </Midl>
-    <Midl Include="GlobalAppSettings.idl">
       <Filter>settings</Filter>
     </Midl>
   </ItemGroup>
@@ -188,9 +101,6 @@
     <Filter Include="app">
       <UniqueIdentifier>{21588d0a-fa81-4306-828d-c095af895b9e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="profileGeneration">
-      <UniqueIdentifier>{c81be61b-0d58-4277-8fd1-fcc888c3da9c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="settings">
       <UniqueIdentifier>{27ff86d8-2a62-4787-b55a-2ec1db32abec}</UniqueIdentifier>
     </Filter>
@@ -199,9 +109,6 @@
     </Filter>
     <Filter Include="controls">
       <UniqueIdentifier>{2455d67b-17ef-4cdd-ad9e-eb8ec4412e03}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="json">
-      <UniqueIdentifier>{81a6314f-aa5b-4533-a499-13bc3a5c4af0}</UniqueIdentifier>
     </Filter>
     <Filter Include="tab">
       <UniqueIdentifier>{6d40e12f-b83f-462e-8f93-fa421f87b27e}</UniqueIdentifier>

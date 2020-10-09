@@ -1126,7 +1126,8 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 
     if (accessibilityMode)
     {
-        return _GetWordEndForAccessibility(target, wordDelimiters);
+        const auto lastCharPos{ GetLastNonSpaceCharacter() };
+        return _GetWordEndForAccessibility(target, wordDelimiters, lastCharPos);
     }
     else
     {
@@ -1139,12 +1140,19 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 // Arguments:
 // - target - a COORD on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
+// - lastCharPos - the position of the last nonspace character in the text buffer (to improve performance)
 // Return Value:
 // - The COORD for the first character of the next readable "word". If no next word, return one past the end of the buffer
-const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const
+const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD lastCharPos) const
 {
     const auto bufferSize = GetSize();
     COORD result = target;
+
+    // Check if we're already on/past the last RegularChar
+    if (bufferSize.CompareInBounds(result, lastCharPos, true) >= 0)
+    {
+        return bufferSize.EndExclusive();
+    }
 
     // ignore right boundary. Continue through readable text found
     while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
@@ -1153,6 +1161,12 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
         {
             break;
         }
+    }
+
+    // we are already on/past the last RegularChar
+    if (bufferSize.CompareInBounds(result, lastCharPos, true) >= 0)
+    {
+        return bufferSize.EndExclusive();
     }
 
     // make sure we expand to the beginning of the NEXT word
@@ -1256,44 +1270,16 @@ void TextBuffer::_PruneHyperlinks()
 // - pos - The COORD for the first character on the "word" (inclusive)
 bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const
 {
-    auto copy = pos;
-    const auto bufferSize = GetSize();
+    // move to the beginning of the next word
+    // NOTE: _GetWordEnd...() returns the exclusive position of the "end of the word"
+    //       This is also the inclusive start of the next word.
+    auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, lastCharPos) };
 
-    // Already at the end. Can't move forward.
-    if (pos == bufferSize.EndExclusive())
+    if (copy == GetSize().EndExclusive())
     {
         return false;
     }
 
-    // started on a word, continue until the end of the word
-    while (_GetDelimiterClassAt(copy, wordDelimiters) == DelimiterClass::RegularChar)
-    {
-        if (!bufferSize.IncrementInBounds(copy))
-        {
-            // last char in buffer is a RegularChar
-            // thus there is no next word
-            return false;
-        }
-    }
-
-    // we are already on/past the last RegularChar
-    if (bufferSize.CompareInBounds(copy, lastCharPos) >= 0)
-    {
-        return false;
-    }
-
-    // on whitespace, continue until the beginning of the next word
-    while (_GetDelimiterClassAt(copy, wordDelimiters) != DelimiterClass::RegularChar)
-    {
-        if (!bufferSize.IncrementInBounds(copy))
-        {
-            // last char in buffer is a DelimiterChar or ControlChar
-            // there is no next word
-            return false;
-        }
-    }
-
-    // successful move, copy result out
     pos = copy;
     return true;
 }
@@ -1308,40 +1294,17 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
 // - pos - The COORD for the first character on the "word" (inclusive)
 bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters) const
 {
-    auto copy = pos;
-    const auto bufferSize{ GetSize() };
+    // move to the beginning of the current word
+    auto copy{ GetWordStart(pos, wordDelimiters, true) };
 
-    // GH#7663: Treat EndExclusive as EndInclusive so
-    // that it actually points to a space in the buffer
-    if (pos == bufferSize.EndExclusive())
+    if (!GetSize().DecrementInBounds(copy, true))
     {
-        copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        // can't move behind current word
+        return false;
     }
 
-    // started on whitespace/delimiter, continue until the end of the previous word
-    while (_GetDelimiterClassAt(copy, wordDelimiters) != DelimiterClass::RegularChar)
-    {
-        if (!bufferSize.DecrementInBounds(copy))
-        {
-            // first char in buffer is a DelimiterChar or ControlChar
-            // there is no previous word
-            return false;
-        }
-    }
-
-    // on a word, continue until the beginning of the word
-    while (_GetDelimiterClassAt(copy, wordDelimiters) == DelimiterClass::RegularChar)
-    {
-        if (!bufferSize.DecrementInBounds(copy))
-        {
-            // first char in buffer is a RegularChar
-            // there is no previous word
-            return false;
-        }
-    }
-
-    // successful move, copy result out
-    pos = copy;
+    // move to the beginning of the previous word
+    pos = GetWordStart(copy, wordDelimiters, true);
     return true;
 }
 
@@ -1354,8 +1317,13 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 const til::point TextBuffer::GetGlyphStart(const til::point pos) const
 {
     COORD resultPos = pos;
-
     const auto bufferSize = GetSize();
+
+    if (resultPos == bufferSize.EndExclusive())
+    {
+        bufferSize.DecrementInBounds(resultPos, true);
+    }
+
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.DecrementInBounds(resultPos, true);
@@ -1396,9 +1364,15 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
 bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) const
 {
     COORD resultPos = pos;
+    const auto bufferSize = GetSize();
+
+    if (resultPos == GetSize().EndExclusive())
+    {
+        // we're already at the end
+        return false;
+    }
 
     // try to move. If we can't, we're done.
-    const auto bufferSize = GetSize();
     const bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
@@ -1413,20 +1387,19 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) con
 // - Update pos to be the beginning of the previous glyph/character. This is used for accessibility
 // Arguments:
 // - pos - a COORD on the word you are currently on
-// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first cell of the previous glyph (inclusive)
-bool TextBuffer::MoveToPreviousGlyph(til::point& pos, bool allowBottomExclusive) const
+bool TextBuffer::MoveToPreviousGlyph(til::point& pos) const
 {
     COORD resultPos = pos;
 
     // try to move. If we can't, we're done.
     const auto bufferSize = GetSize();
-    const bool success = bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+    const bool success = bufferSize.DecrementInBounds(resultPos, true);
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
-        bufferSize.DecrementInBounds(resultPos, allowBottomExclusive);
+        bufferSize.DecrementInBounds(resultPos, true);
     }
 
     pos = resultPos;
