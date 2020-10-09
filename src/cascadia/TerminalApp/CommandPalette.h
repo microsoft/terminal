@@ -64,6 +64,9 @@ namespace winrt::TerminalApp::implementation
         void _keyUpHandler(Windows::Foundation::IInspectable const& sender,
                            Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
+        void _selectedCommandChanged(Windows::Foundation::IInspectable const& sender,
+                                     Windows::UI::Xaml::RoutedEventArgs const& args);
+
         void _updateUIForStackChange();
 
         void _rootPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
