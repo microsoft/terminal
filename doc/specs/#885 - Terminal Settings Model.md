@@ -78,13 +78,94 @@ This separation leaves `AppKeyBindings` with the responsibility of detecting and
  `KeyMapping` handles the (de)serialization and navigation of the key bindings.
 
 
+### Fallback Value
+
+Cascading settings allows our settings model to be constructed in layers (i.e. settings.json values override defaults.json values). With the upcoming introduction of the Settings UI and serialization, it is important to know where a setting value comes from. Consider a Settings UI displaying the following information:
+```json
+    // <profile>: <color scheme value>
+    "defaults": "Solarized", // profiles.defaults
+    "A": "Raspberry", // profile A
+    "B": "Tango", // profile B
+    "C": "Solarized" // profile C
+```
+If `profiles.defaults` gets changed to `"Tango"` via the Settings UI, it is unclear if profile C's value should be updated as well. We need profile C to record if it's value is inherited from profile.defaults or explicitly set by the user.
+
+To start, each settings object will now have a `Clone()` function. For `GlobalAppSettings`, it will look something like this:
+```c++
+GlobalAppSettings GlobalAppSettings::Clone() const
+{
+    GlobalAppSettings clone {};
+    clone._parent = this;
+    return clone;
+}
+```
+`_parent` serves as a reference for who to ask if a settings value was not provided by the user. `LaunchMode`, for example, will now have a getter/setter that looks similar to this:
+```c++
+LaunchMode GlobalAppSettings::LaunchMode()
+{
+    // fallback tree:
+    //  - user set value
+    //  - inherited value
+    //  - system set value
+    return til::coalesce_value(_LaunchMode, _parent.LaunchMode(), LaunchMode::DefaultMode);
+}
+
+void GlobalAppSettings::LaunchMode(IReference<LaunchMode> val)
+{
+    // if val is nullptr, we are explicitly saying that we want the inherited value
+    _LaunchMode = val;
+}
+```
+
+As `CascadiaSettings` loads the settings model, it will clone each component of the settings model and layer the new values on top of it. Thus, `LayerJson` will look something like this:
+```c++
+void CascadiaSettings::LayerJson(const Json::Value& json)
+{
+    _globals = _globals.Clone();
+    _globals->LayerJson(json);
+
+    // repeat the same for Profiles/ColorSchemes...
+}
+```
+For `defaults.json`, `_globals` will now hold all of the values set in `defaults.json`. If any settings were omitted from the `defaults.json`, `_globals` will fallback to its parent (a `GlobalAppSettings` consisting purely of system-defined values).
+
+For `settings.json`, `_globals` will only hold the values set in `settings.json`. If any settings were omitted from `settings.json`, `_globals` will fallback to its parent (the `GlobalAppSettings` built from `defaults.json).
+
+This process becomes a bit more complex for `Profile` because it can fallback in the following order:
+1. `settings.json` profile
+2. `settings.json` `profiles.defaults`
+3. (if a dynamic profile) the hardcoded value in the dynamic profile generator
+4. `defaults.json` profile
+
+`CascadiaSettings` must do the following...
+1. load `defaults.json`
+   - append newly created profiles to `_profiles` (unchanged)
+2. load dynamic profiles
+   - append newly created profiles to `_profiles` (unchanged)
+3. load `settings.json` `profiles.defaults`
+   - layer `profile.defaults` onto `_profiles` (unchanged)
+   - construct a `Profile` from `profiles.defaults`. Save as `Profile _profileDefaults`.
+4. load `settings.json` `profiles.list`
+   - if a matching profile exists, clone the matching profile, and layer the json onto the clone.
+   - otherwise, clone `_profileDefaults`, and layer the json onto the clone.
+
+
+### Clone vs Copy
+
+Settings objects will have `Clone()` and `Copy()`. `Clone()` is responsible for creating a new settings object that inherits undefined values from its parent. `Copy()` is responsible for recreating the contents of the settings object, including a reference to a copied parent.
+
+The Settings UI will use `Copy()` to get a full copy of `CascadiaSettings` and data bind the UI to that copy. Thus, `Copy()` needs to be exposed in the IDL.
+
+`Clone()` will only be used during (de)serialization to adequately interpret and update the JSON. `Clone()` enables, but is not explicitly used, for retrieving a value from a settings object. It can also be used to enable larger hierarchies for inheritance within the settings model.
+
+
 ### Terminal Settings Model: Serialization and Deserialization
 
 Introducing these `Microsoft.Terminal.Settings.Model` WinRT objects also allow the serialization and deserialization
  logic from TerminalApp to be moved to TerminalSettings. `JsonUtils` introduces several quick and easy methods
- for setting serialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
+ for setting deserialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
 
-Deserialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
+Serialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
  already includes `FromJson` and `CanConvert`. Serialization would be handled by a `ToJson` function.
 
 
