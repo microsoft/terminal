@@ -35,82 +35,79 @@ the MIT License. See LICENSE in the project root for license information. -->
             </muxc:NavigationView.AutoSuggestBox>
             <muxc:NavigationView.MenuItems>
 
-                <muxc:NavigationViewItem Icon="Home"
-                                        Tag="Home_Nav">
-                    <TextBlock Tag="Home_Page">Home</TextBlock>
-                </muxc:NavigationViewItem>
-
-                <muxc:NavigationViewItem Icon="Globe"
-                    Tag="General_Nav" >
-                    <TextBlock>General</TextBlock>
-
+                <muxc:NavigationViewItem x:Uid="Nav_Home"
+                                         Icon="Home"
+                                         Tag="Home_Nav"/>
+                <muxc:NavigationViewItem x:Uid="Nav_General"
+                                         Icon="Globe"
+                                         Tag="General_Nav">
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Tag="Launch_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_Launch"
+                                                 Tag="Launch_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xEA86;" />
+                                <FontIcon Glyph="&#xEA86;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Launch_Page">Startup</TextBlock>
                         </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem Tag="Interaction_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_Interaction"
+                                                 Tag="Interaction_Nav">
                             <!-- Couldn't find cursor alone -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7C9;" />
+                                <FontIcon Glyph="&#xE7C9;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Globals_Page">Interaction</TextBlock>
                         </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem Tag="Rendering_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_Rendering"
+                                                 Tag="Rendering_Nav" >
                             <!-- Couldn't find cursor alone -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7F8;" />
+                                <FontIcon Glyph="&#xE7F8;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Globals_Page">Rendering</TextBlock>
                         </muxc:NavigationViewItem>
 
                     </muxc:NavigationViewItem.MenuItems>
 
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem Tag="Appearance_Nav" Content="Appearance">
+                <muxc:NavigationViewItem x:Uid="Nav_Appearance" Tag="Appearance_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE790;" />
+                        <FontIcon Glyph="&#xE790;"/>
                     </muxc:NavigationViewItem.Icon>
 
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Tag="GlobalAppearance_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
+                                                 Tag="GlobalAppearance_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
+                                <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Global_Page">Global</TextBlock>
                         </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem Tag="ColorSchemes_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+                                                 Tag="ColorSchemes_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
+                                <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Global_Page">Color schemes</TextBlock>
                         </muxc:NavigationViewItem>
                     </muxc:NavigationViewItem.MenuItems>
 
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem Tag="Profiles_Nav">
+                <muxc:NavigationViewItem x:Uid="Nav_Profiles"
+                                         Tag="Profiles_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE770;" />
+                        <FontIcon Glyph="&#xE770;"/>
                     </muxc:NavigationViewItem.Icon>
-                    <TextBlock Tag="Profiles_Page">Profiles</TextBlock>
 
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Tag="GlobalProfile_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
+                                                 Tag="GlobalProfile_Nav">
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
+                                <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Global_Page">Global</TextBlock>
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem Tag="CmdPrompt_Nav" >
@@ -145,12 +142,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock Tag="Powershell7_Page">PowerShell 7</TextBlock>
                         </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem Tag="AddNew_Nav" >
+                        <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"
+                                                 Tag="AddNew_Nav" >
                             <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE710;" />
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="AddNew_Page">Add new</TextBlock>
                         </muxc:NavigationViewItem>
 
                     </muxc:NavigationViewItem.MenuItems>
@@ -164,11 +161,10 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             </muxc:NavigationView.MenuItems>
             <muxc:NavigationView.PaneFooter>
-                <muxc:NavigationViewItem>
+                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </muxc:NavigationViewItem.Icon>
-                    <TextBlock>Open JSON file</TextBlock>
                 </muxc:NavigationViewItem>
             </muxc:NavigationView.PaneFooter>
             <Frame x:Name="contentFrame"
