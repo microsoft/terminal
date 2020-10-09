@@ -761,12 +761,6 @@ namespace winrt::TerminalApp::implementation
                                                               winrt::guid());
         }
 
-        else if (hasConnectionType &&
-                 connectionType == TerminalConnection::TelnetConnection::ConnectionType())
-        {
-            connection = TerminalConnection::TelnetConnection(settings.Commandline());
-        }
-
         else
         {
             std::wstring guidWString = Utils::GuidToString(profileGuid);
