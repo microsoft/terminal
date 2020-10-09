@@ -6,8 +6,8 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-static const wchar_t base64Chars[] = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const wchar_t padChar = L'=';
+static const char base64Chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char padChar = '=';
 
 #pragma warning(disable : 26446 26447 26482 26485 26493 26494)
 
@@ -75,15 +75,16 @@ std::wstring Base64::s_Encode(const std::wstring_view src) noexcept
 // - true if decoding successfully, otherwise false.
 bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
 {
+    std::string mbStr;
     int state = 0;
-    wchar_t tmp;
+    char tmp;
 
     const auto len = src.size() / 4 * 3;
     if (len == 0)
     {
         return false;
     }
-    dst.reserve(len);
+    mbStr.reserve(len);
 
     auto iter = src.cbegin();
     while (iter < src.cend())
@@ -99,7 +100,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
             break;
         }
 
-        auto pos = wcschr(base64Chars, *iter);
+        auto pos = strchr(base64Chars, *iter);
         if (!pos) // A non-base64 character found.
         {
             return false;
@@ -108,24 +109,24 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
         switch (state)
         {
         case 0:
-            tmp = (wchar_t)(pos - base64Chars) << 2;
+            tmp = (char)(pos - base64Chars) << 2;
             state = 1;
             break;
         case 1:
-            tmp |= (pos - base64Chars) >> 4;
-            dst.push_back(tmp);
-            tmp = (wchar_t)((pos - base64Chars) & 0x0f) << 4;
+            tmp |= (char)(pos - base64Chars) >> 4;
+            mbStr += tmp;
+            tmp = (char)((pos - base64Chars) & 0x0f) << 4;
             state = 2;
             break;
         case 2:
-            tmp |= (pos - base64Chars) >> 2;
-            dst.push_back(tmp);
-            tmp = (wchar_t)((pos - base64Chars) & 0x03) << 6;
+            tmp |= (char)(pos - base64Chars) >> 2;
+            mbStr += tmp;
+            tmp = (char)((pos - base64Chars) & 0x03) << 6;
             state = 3;
             break;
         case 3:
             tmp |= pos - base64Chars;
-            dst.push_back(tmp);
+            mbStr += tmp;
             state = 0;
             break;
         default:
@@ -176,7 +177,11 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
         return false;
     }
 
-    return true;
+    const auto wstrLen = MultiByteToWideChar(CP_UTF8, 0, mbStr.c_str(), (int)mbStr.length(), nullptr, 0);
+    dst.resize(wstrLen);
+    const auto err = MultiByteToWideChar(CP_UTF8, 0, mbStr.c_str(), (int)mbStr.length(), dst.data(), wstrLen);
+
+    return err != 0;
 }
 
 // Routine Description:
