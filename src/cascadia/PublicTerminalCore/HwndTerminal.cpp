@@ -503,7 +503,6 @@ HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, 
     return S_OK;
 }
 
-
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
