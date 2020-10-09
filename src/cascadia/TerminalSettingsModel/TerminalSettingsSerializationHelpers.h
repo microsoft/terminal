@@ -169,8 +169,8 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
         pair_type{ "default", ValueType::DefaultMode },
         pair_type{ "maximized", ValueType::MaximizedMode },
         pair_type{ "fullscreen", ValueType::FullscreenMode },
-        pair_type{ "focused", ValueType::FocusedMode },
-        pair_type{ "maximizedFocused", ValueType::MaximizedFocusedMode },
+        pair_type{ "focus", ValueType::FocusMode },
+        pair_type{ "maximizedFocus", ValueType::MaximizedFocusMode },
     };
 };
 

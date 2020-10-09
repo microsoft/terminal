@@ -265,7 +265,7 @@ namespace winrt::TerminalApp::implementation
             {
                 _root->ToggleFullscreen();
             }
-            else if (launchMode == LaunchMode::FocusedMode || launchMode == LaunchMode::MaximizedFocusedMode)
+            else if (launchMode == LaunchMode::FocusMode || launchMode == LaunchMode::MaximizedFocusMode)
             {
                 _root->ToggleFocusMode();
             }
