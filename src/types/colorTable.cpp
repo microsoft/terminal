@@ -1034,10 +1034,8 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 std::optional<til::color> Utils::ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept
 try
 {
-    std::wstring key(wstr);
     std::stringstream ss;
-
-    for (const wchar_t c : key)
+    for (const wchar_t c : wstr)
     {
         // X11 guarantees that characters are all Latin1.
         // Return early if an invalid character is seen.
