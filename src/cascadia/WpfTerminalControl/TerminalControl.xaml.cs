@@ -5,6 +5,7 @@
 
 namespace Microsoft.Terminal.Wpf
 {
+    using System;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Input;
@@ -16,6 +17,8 @@ namespace Microsoft.Terminal.Wpf
     public partial class TerminalControl : UserControl
     {
         private int accumulatedDelta = 0;
+
+        private (int width, int height) terminalRendererSize;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalControl"/> class.
@@ -32,14 +35,34 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Gets the character rows available to the terminal.
+        /// Gets the current character rows available to the terminal.
         /// </summary>
         public int Rows => this.termContainer.Rows;
 
         /// <summary>
-        /// Gets the character columns available to the terminal.
+        /// Gets the current character columns available to the terminal.
         /// </summary>
         public int Columns => this.termContainer.Columns;
+
+        /// <summary>
+        /// Gets the maximum amount of character rows that can fit in this control.
+        /// </summary>
+        public int MaxRows => this.termContainer.MaxRows;
+
+        /// <summary>
+        /// Gets the maximum amount of character columns that can fit in this control.
+        /// </summary>
+        public int MaxColumns => this.termContainer.MaxColumns;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
+        /// on user action.
+        /// </summary>
+        public bool AutoFill
+        {
+            get => this.termContainer.AutoFill;
+            set => this.termContainer.AutoFill = value;
+        }
 
         /// <summary>
         /// Sets the connection to a terminal backend.
@@ -68,6 +91,13 @@ namespace Microsoft.Terminal.Wpf
             }
 
             this.termContainer.SetTheme(theme, fontFamily, fontSize);
+
+            // DefaultBackground uses Win32 COLORREF syntax which is BGR instead of RGB.
+            byte b = Convert.ToByte((theme.DefaultBackground >> 16) & 0xff);
+            byte g = Convert.ToByte((theme.DefaultBackground >> 8) & 0xff);
+            byte r = Convert.ToByte(theme.DefaultBackground & 0xff);
+
+            this.terminalGrid.Background = new SolidColorBrush(Color.FromRgb(r, g, b));
         }
 
         /// <summary>
@@ -86,7 +116,21 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="columns">Number of columns to display.</param>
         public void Resize(uint rows, uint columns)
         {
-            this.termContainer.Resize(rows, columns);
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
+            this.terminalRendererSize = this.termContainer.Resize(rows, columns);
+
+            double marginWidth = ((this.terminalUserControl.RenderSize.Width * dpiScale.DpiScaleX) - this.terminalRendererSize.width) / dpiScale.DpiScaleX;
+            double marginHeight = ((this.terminalUserControl.RenderSize.Height * dpiScale.DpiScaleY) - this.terminalRendererSize.height) / dpiScale.DpiScaleY;
+
+            // Make space for the scrollbar.
+            marginWidth -= this.scrollbar.Width;
+
+            // Prevent negative margin size.
+            marginWidth = marginWidth < 0 ? 0 : marginWidth;
+            marginHeight = marginHeight < 0 ? 0 : marginHeight;
+
+            this.terminalGrid.Margin = new Thickness(0, 0, marginWidth, marginHeight);
         }
 
         /// <summary>
@@ -97,6 +141,27 @@ namespace Microsoft.Terminal.Wpf
         public (int rows, int columns) TriggerResize(Size rendersize)
         {
             return this.termContainer.TriggerResize(rendersize);
+        }
+
+        /// <inheritdoc/>
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            // Renderer will not resize on control resize. We have to manually recalculate the margin to fill in the space.
+            if (this.AutoFill == false && this.terminalRendererSize.width != 0 && this.terminalRendererSize.height != 0)
+            {
+                var dpiScale = VisualTreeHelper.GetDpi(this);
+
+                double width = ((sizeInfo.NewSize.Width * dpiScale.DpiScaleX) - this.terminalRendererSize.width) / dpiScale.DpiScaleX;
+                double height = ((sizeInfo.NewSize.Height * dpiScale.DpiScaleY) - this.terminalRendererSize.height) / dpiScale.DpiScaleY;
+
+                // Prevent negative margin size.
+                width = width < 0 ? 0 : width;
+                height = height < 0 ? 0 : height;
+
+                this.terminalGrid.Margin = new Thickness(0, 0, width, height);
+            }
+
+            base.OnRenderSizeChanged(sizeInfo);
         }
 
         private void TerminalControl_GotFocus(object sender, RoutedEventArgs e)
