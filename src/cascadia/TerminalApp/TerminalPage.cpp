@@ -464,8 +464,20 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            auto tabRowImpl = winrt::get_self<implementation::TabRowControl>(_tabRow);
-            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, tabRowImpl->TabTip());
+            auto newTabRun = WUX::Documents::Run();
+            newTabRun.Text(RS_(L"NewTabRun/Text"));
+            auto newPaneRun = WUX::Documents::Run();
+            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+            newPaneRun.FontStyle(FontStyle::Italic);
+
+            auto textBlock = WUX::Controls::TextBlock{};
+            textBlock.Inlines().Append(newTabRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newPaneRun);
+
+            auto toolTip = WUX::Controls::ToolTip{};
+            toolTip.Content(textBlock);
+            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
 
             profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
