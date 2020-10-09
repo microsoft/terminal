@@ -129,7 +129,6 @@
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="WslDistroGenerator.h" />
     <ClInclude Include="AzureCloudShellGenerator.h" />
-    <ClInclude Include="TelnetGenerator.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>

@@ -16,7 +16,6 @@
 
 #include "KeyChordSerialization.h"
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
-#include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
@@ -790,12 +789,6 @@ namespace winrt::TerminalApp::implementation
                                                               settings.InitialRows(),
                                                               settings.InitialCols(),
                                                               winrt::guid());
-        }
-
-        else if (hasConnectionType &&
-                 connectionType == TelnetConnectionType)
-        {
-            connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
 
         else
