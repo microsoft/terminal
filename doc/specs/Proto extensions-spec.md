@@ -78,9 +78,9 @@ GUID. Then, in the stub they provide the GUID can be used to identify which prof
 Naturally, we will have to provide documentation on how they could generate the desired GUID themselves. In that documentation,
 we will also provide examples showing how the current GUIDs are generated for clarity's sake. 
 
-We might run into the case where multiple json stubs modify the same profile and so they override each other. For the initial implementation, we
-are simply going to apply _all_ the changes. Eventually, we will probably want some sort of hierarchy to determine
-an order to which changes are applied.
+We need to inform developers that **we will not** prescribe any ordering to the way in which these modifications will be
+applied - thus, they should not rely on their stub being the first/last to modify a particular profile (in the event that
+there is more than one json stub modifying the same profile).
 
 Here is an example of a json file that modifies an existing profile (specifically the Azure cloud shell profile):
 
@@ -307,18 +307,19 @@ For apps that are installed 'traditionally', there are 2 cases. The first is tha
 the users of the system - in this case, the installer should add their json files to the global folder:
 
 ```
-C:\ProgramData\Microsoft\Windows Terminal\Fragments
+C:\ProgramData\Microsoft\Windows Terminal\Fragments\{app-name}
 ```
 
 Note: `C:\ProgramData` is a [known folder](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776911(v=vs.85))
-that apps should be able to access. It will be on us to create the folder `Windows Terminal` in `C:\ProgramData\Microsoft\Windows`
-for this to happen. 
+that apps should be able to access. If the folder `Windows Terminal` in `C:\ProgramData\Microsoft\Windows`
+does not already exist, the installer should create it. **Note:** the installer must create a subdirectory within
+the `Fragments` folder with their app name, we will use that name for the [`source` field](#the-source-field). 
 
 In the second case, the installation is only for the current user. For this case, the installer should add the
 json files to the local folder:
 
 ```
-C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments
+C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments\{app-name}
 ```
 
 We will look through both folders mentioned above during profile generation. 
@@ -329,13 +330,10 @@ Currently, we allow users an easy way to disable/enable profiles that are genera
 example, a user can easily hide all dynamic profiles with the source `"Windows.Terminal.Wsl"` if they wish to.
 To retain this functionality, we will add source fields to profiles we create through proto-extensions. 
 
-For full profiles that came from the *global* folder `C:\ProgramData\Microsoft\Windows\Terminal`,
-we will give the value `global` to the source field.
+For full profiles that came from apps installed 'traditionally', we will use the name of the subdirectory where
+the json file was found to fill out the source field. 
 
-For full profiles that came from the *local* folder `C:\Users\<user>\AppData\Local\Microsoft\Windows\Terminal`,
-we will give the value `local` to the source field.
-
-For full profiles that came from app extensions, we will give the value `app` to the source field.
+For full profiles that came from app extensions, we will use the app package name to fill out the source field. 
 
 
 
@@ -375,6 +373,8 @@ Looking through the additional json files could negatively impact startup time.
 * When a `.json` files is deleted, any new profiles that were generated from it remain in the user's settings file (though they no longer appear in the tab dropdown).
 
 ## Future considerations
+
+We need to consider how an app extension provides the path to an image (for the icon source or background image of a profile for example)
 
 This will likely be a stepping stone for the theme marketplace.
 
