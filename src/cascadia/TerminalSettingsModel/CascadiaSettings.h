@@ -60,15 +60,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         CascadiaSettings();
         explicit CascadiaSettings(const bool addDynamicProfiles);
         CascadiaSettings(hstring json);
+        Model::CascadiaSettings Copy() const;
 
         static Model::CascadiaSettings LoadDefaults();
         static Model::CascadiaSettings LoadAll();
         static Model::CascadiaSettings LoadUniversal();
 
         Model::GlobalAppSettings GlobalSettings() const;
-
         Windows::Foundation::Collections::IObservableVector<Model::Profile> Profiles() const noexcept;
-
         Model::KeyMapping KeyMap() const noexcept;
 
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);

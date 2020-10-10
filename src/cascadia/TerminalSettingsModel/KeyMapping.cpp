@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "KeyMapping.h"
 #include "KeyChordSerialization.h"
+#include "ActionAndArgs.h"
 
 #include "KeyMapping.g.cpp"
 
@@ -12,6 +13,16 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    winrt::com_ptr<KeyMapping> KeyMapping::Copy() const
+    {
+        auto keymap{ winrt::make_self<KeyMapping>() };
+        std::for_each(_keyShortcuts.begin(), _keyShortcuts.end(), [keymap](auto& kv) {
+            const auto actionAndArgsImpl{ winrt::get_self<ActionAndArgs>(kv.second) };
+            keymap->_keyShortcuts[kv.first] = *actionAndArgsImpl->Copy();
+        });
+        return keymap;
+    }
+
     Microsoft::Terminal::Settings::Model::ActionAndArgs KeyMapping::TryLookup(KeyChord const& chord) const
     {
         const auto result = _keyShortcuts.find(chord);

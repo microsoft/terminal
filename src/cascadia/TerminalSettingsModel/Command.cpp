@@ -33,19 +33,38 @@ static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    Command::Command()
+    Command::Command() :
+        _subcommands{ winrt::single_threaded_map<winrt::hstring, Model::Command>() }
     {
         _setAction(nullptr);
     }
 
+    com_ptr<Command> Command::Copy() const
+    {
+        auto command{ winrt::make_self<Command>() };
+        command->_Name = _Name;
+        command->_Action = _Action;
+        command->_KeyChordText = _KeyChordText;
+        command->_Icon = _Icon;
+        command->_IterateOn = _IterateOn;
+
+        command->_originalJson = _originalJson;
+        for (auto kv : _subcommands)
+        {
+            const auto subcmd{ winrt::get_self<Command>(kv.Value()) };
+            command->_subcommands.Insert(kv.Key(), *subcmd->Copy());
+        }
+        return command;
+    }
+
     IMapView<winrt::hstring, Model::Command> Command::NestedCommands()
     {
-        return _subcommands ? _subcommands.GetView() : nullptr;
+        return _subcommands.Size() > 0 ? _subcommands.GetView() : nullptr;
     }
 
     bool Command::HasNestedCommands()
     {
-        return _subcommands ? _subcommands.Size() > 0 : false;
+        return _subcommands.Size() > 0;
     }
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
@@ -135,7 +154,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
             // Initialize our list of subcommands.
-            result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());

@@ -89,6 +89,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
             return *args;
         }
+        Model::NewTerminalArgs Copy() const
+        {
+            auto copy{ winrt::make_self<NewTerminalArgs>() };
+            copy->_Commandline = _Commandline;
+            copy->_StartingDirectory = _StartingDirectory;
+            copy->_TabTitle = _TabTitle;
+            copy->_ProfileIndex = _ProfileIndex;
+            copy->_Profile = _Profile;
+            return *copy;
+        }
     };
 
     struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
@@ -121,6 +131,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
             return { *args, {} };
         }
+
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<CopyTextArgs>() };
+            copy->_SingleLine = _SingleLine;
+            copy->_CopyFormatting = _CopyFormatting;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
@@ -148,6 +166,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<NewTabArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<NewTabArgs>() };
+            copy->_TerminalArgs = _TerminalArgs.Copy();
+            return copy.as<IActionArgs>();
         }
     };
 
@@ -178,6 +202,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<SwitchToTabArgs>();
             JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SwitchToTabArgs>() };
+            copy->_TabIndex = _TabIndex;
+            return copy.as<IActionArgs>();
         }
     };
 
@@ -214,6 +244,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return { *args, {} };
             }
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ResizePaneArgs>() };
+            copy->_Direction = _Direction;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
@@ -249,6 +285,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return { *args, {} };
             }
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<MoveFocusArgs>() };
+            copy->_Direction = _Direction;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
@@ -276,6 +318,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<AdjustFontSizeArgs>();
             JsonUtils::GetValueForKey(json, AdjustFontSizeDelta, args->_Delta);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<AdjustFontSizeArgs>() };
+            copy->_Delta = _Delta;
+            return copy.as<IActionArgs>();
         }
     };
 
@@ -307,6 +355,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SendInputArgs>() };
+            copy->_Input = _Input;
+            return copy.as<IActionArgs>();
         }
     };
 
@@ -347,6 +401,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, SplitModeKey, args->_SplitMode);
             return { *args, {} };
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SplitPaneArgs>() };
+            copy->_SplitStyle = _SplitStyle;
+            copy->_TerminalArgs = _TerminalArgs.Copy();
+            copy->_SplitMode = _SplitMode;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
@@ -374,6 +436,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<OpenSettingsArgs>();
             JsonUtils::GetValueForKey(json, TargetKey, args->_Target);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<OpenSettingsArgs>() };
+            copy->_Target = _Target;
+            return copy.as<IActionArgs>();
         }
     };
 
@@ -407,6 +475,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return { *args, {} };
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SetColorSchemeArgs>() };
+            copy->_SchemeName = _SchemeName;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
@@ -438,6 +512,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return { *args, {} };
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SetTabColorArgs>() };
+            copy->_TabColor = _TabColor;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
@@ -465,6 +545,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<RenameTabArgs>();
             JsonUtils::GetValueForKey(json, TitleKey, args->_Title);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<RenameTabArgs>() };
+            copy->_Title = _Title;
+            return copy.as<IActionArgs>();
         }
     };
 
@@ -500,6 +586,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             return { *args, {} };
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ExecuteCommandlineArgs>() };
+            copy->_Commandline = _Commandline;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
@@ -528,6 +620,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
             return { *args, {} };
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<CloseOtherTabsArgs>() };
+            copy->_Index = _Index;
+            return copy.as<IActionArgs>();
+        }
     };
 
     struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
@@ -555,6 +653,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<CloseTabsAfterArgs>();
             JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<CloseTabsAfterArgs>() };
+            copy->_Index = _Index;
+            return copy.as<IActionArgs>();
         }
     };
 }

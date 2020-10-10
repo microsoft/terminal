@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Command : CommandT<Command>
     {
         Command();
+        com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings);
@@ -62,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Json::Value _originalJson;
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands;
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,
