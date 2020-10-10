@@ -177,11 +177,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
         return false;
     }
 
-    const auto wstrLen = MultiByteToWideChar(CP_UTF8, 0, mbStr.c_str(), (int)mbStr.length(), nullptr, 0);
-    dst.resize(wstrLen);
-    const auto err = MultiByteToWideChar(CP_UTF8, 0, mbStr.c_str(), (int)mbStr.length(), dst.data(), wstrLen);
-
-    return err != 0;
+    return SUCCEEDED(til::u8u16(mbStr, dst));
 }
 
 // Routine Description:
