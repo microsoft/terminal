@@ -175,14 +175,24 @@ void AppCommandlineArgs::_buildParser()
     //   -M,--maximized: Maximizes the window on launch
     //   -F,--fullscreen: Fullscreens the window on launch
     auto maximizedCallback = [this](int64_t /*count*/) {
-        _launchMode = winrt::Microsoft::Terminal::Settings::Model::LaunchMode::MaximizedMode;
+        _launchMode = (_launchMode.has_value() && _launchMode.value() == winrt::Microsoft::Terminal::Settings::Model::LaunchMode::FocusMode) ?
+                          winrt::Microsoft::Terminal::Settings::Model::LaunchMode::MaximizedFocusMode :
+                          winrt::Microsoft::Terminal::Settings::Model::LaunchMode::MaximizedMode;
     };
     auto fullscreenCallback = [this](int64_t /*count*/) {
         _launchMode = winrt::Microsoft::Terminal::Settings::Model::LaunchMode::FullscreenMode;
     };
+    auto focusCallback = [this](int64_t /*count*/) {
+        _launchMode = (_launchMode.has_value() && _launchMode.value() == winrt::Microsoft::Terminal::Settings::Model::LaunchMode::MaximizedMode) ?
+                          winrt::Microsoft::Terminal::Settings::Model::LaunchMode::MaximizedFocusMode :
+                          winrt::Microsoft::Terminal::Settings::Model::LaunchMode::FocusMode;
+    };
+
     auto maximized = _app.add_flag_function("-M,--maximized", maximizedCallback, RS_A(L"CmdMaximizedDesc"));
     auto fullscreen = _app.add_flag_function("-F,--fullscreen", fullscreenCallback, RS_A(L"CmdFullscreenDesc"));
+    auto focus = _app.add_flag_function("-f,--focus", focusCallback, RS_A(L"CmdFocusDesc"));
     maximized->excludes(fullscreen);
+    focus->excludes(fullscreen);
 
     // Subcommands
     _buildNewTabParser();
