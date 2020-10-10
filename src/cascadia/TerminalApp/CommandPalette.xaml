@@ -213,8 +213,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                   MinHeight="42.0"
                                   AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
-                                  
-                            
+
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
 
                                 <Grid.ColumnDefinitions>
