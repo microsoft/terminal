@@ -210,7 +210,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  MinHeight="60.0"
+                                  MinHeight="42.0"
                                   AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
                                   AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
                                   
