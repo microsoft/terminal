@@ -108,7 +108,8 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
     {
         const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
-        const int numVisibleItems = listHeight / 42;
+        // ListViewItem's MinHeight is set to 42.0 in CommandPalette.xaml
+        const int numVisibleItems = listHeight / 60;
 
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
