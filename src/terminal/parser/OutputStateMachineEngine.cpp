@@ -1391,8 +1391,8 @@ try
     for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
         unsigned int tableIndex = 0;
-        const bool indexSuccess = Utils::StringToUint(parts.at(i), tableIndex);
-        const auto colorOptional = Utils::ColorFromXTermColor(parts.at(j));
+        const bool indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
+        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
         if (indexSuccess && colorOptional.has_value())
         {
             newTableIndexes.push_back(tableIndex);
@@ -1475,7 +1475,7 @@ try
     std::vector<DWORD> newRgbs;
     for (size_t i = 0; i < parts.size(); i++)
     {
-        const auto colorOptional = Utils::ColorFromXTermColor(parts.at(i));
+        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, i));
         if (colorOptional.has_value())
         {
             newRgbs.push_back(colorOptional.value());
