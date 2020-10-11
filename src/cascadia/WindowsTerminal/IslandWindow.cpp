@@ -263,7 +263,7 @@ void IslandWindow::Initialize()
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
 
     if (_rootGrid)
     {
@@ -499,7 +499,7 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
                      0,
                      0,
                      0,
-                     SWP_NOMOVE | SWP_NOSIZE);
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 }
 
@@ -613,7 +613,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
                  windowPos.top<int>(),
                  windowPos.width<int>(),
                  windowPos.height<int>(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 // Method Description:
@@ -699,7 +699,7 @@ void IslandWindow::_ApplyWindowSize()
                                          newSize.top,
                                          newSize.right - newSize.left,
                                          newSize.bottom - newSize.top,
-                                         SWP_FRAMECHANGED));
+                                         SWP_FRAMECHANGED | SWP_NOACTIVATE));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
