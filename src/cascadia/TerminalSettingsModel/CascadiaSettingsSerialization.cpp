@@ -590,6 +590,8 @@ winrt::com_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& j
 // <none>
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
+    // add a new inheritance layer, and apply json values to child
+    _globals.attach(_globals->CreateChild());
     _globals->LayerJson(json);
 
     if (auto schemes{ json[SchemesKey.data()] })
@@ -627,10 +629,14 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 {
     // Layer the json on top of an existing profile, if we have one:
-    auto pProfile = _FindMatchingProfile(profileJson);
-    if (pProfile)
+    auto profileIndex{ _FindMatchingProfileIndex(profileJson) };
+    if (profileIndex)
     {
-        pProfile->LayerJson(profileJson);
+        // add a new inheritance layer, and apply json values to child
+        auto parentProj{ _profiles.GetAt(*profileIndex) };
+        auto parent{ winrt::get_self<Profile>(parentProj) };
+        auto childImpl{ parent->CreateChild() };
+        childImpl->LayerJson(profileJson);
     }
     else
     {
@@ -639,13 +645,13 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            auto profile = winrt::make_self<Profile>();
+            auto profile{ winrt::make_self<Profile>() };
 
             // GH#2325: If we have a set of default profile settings, apply them here.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
             {
-                profile->LayerJson(_userDefaultProfileSettings);
+                profile.attach(_userDefaultProfileSettings->CreateChild());
             }
 
             profile->LayerJson(profileJson);
@@ -667,15 +673,38 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 //   profile exists.
 winrt::com_ptr<Profile> CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
 {
-    for (auto profile : _profiles)
+    auto index{ _FindMatchingProfileIndex(profileJson) };
+    if (index)
     {
-        auto profileImpl = winrt::get_self<Profile>(profile);
-        if (profileImpl->ShouldBeLayered(profileJson))
-        {
-            return profileImpl->get_strong();
-        }
+        auto profile{ _profiles.GetAt(*index) };
+        auto profileImpl{ winrt::get_self<Profile>(profile) };
+        return profileImpl->get_strong();
     }
     return nullptr;
+}
+
+// Method Description:
+// - Finds a profile from our list of profiles that matches the given json
+//   object. Uses Profile::ShouldBeLayered to determine if the Json::Value is a
+//   match or not. This method should be used to find a profile to layer the
+//   given settings upon.
+// - Returns nullopt if no such match exists.
+// Arguments:
+// - json: an object which may be a partial serialization of a Profile object.
+// Return Value:
+// - The index for the matching Profile, iff it exists. Otherwise, nullopt.
+std::optional<uint32_t> CascadiaSettings::_FindMatchingProfileIndex(const Json::Value& profileJson)
+{
+    for (uint32_t i = 0; i < _profiles.Size(); ++i)
+    {
+        const auto profile{ _profiles.GetAt(i) };
+        const auto profileImpl = winrt::get_self<Profile>(profile);
+        if (profileImpl->ShouldBeLayered(profileJson))
+        {
+            return i;
+        }
+    }
+    return std::nullopt;
 }
 
 // Method Description:
@@ -706,16 +735,17 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
     // from user settings file
     if (defaultSettings)
     {
-        _userDefaultProfileSettings = defaultSettings;
-
         // Remove the `guid` member from the default settings. That'll
         // hyper-explode, so just don't let them do that.
-        _userDefaultProfileSettings.removeMember({ "guid" });
+        defaultSettings.removeMember({ "guid" });
+
+        _userDefaultProfileSettings = winrt::make_self<Profile>();
+        _userDefaultProfileSettings->LayerJson(defaultSettings);
 
         for (auto profile : _profiles)
         {
             auto profileImpl = winrt::get_self<Profile>(profile);
-            profileImpl->LayerJson(_userDefaultProfileSettings);
+            _userDefaultProfileSettings->ApplyTo(profileImpl);
         }
     }
 }

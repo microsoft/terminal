@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- CascadiaSettings.hpp
+- GlobalAppSettings.h
 
 Abstract:
 - This class encapsulates all of the settings that are global to the app, and
@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "GlobalAppSettings.g.h"
+#include "IInheritable.h"
 
 #include "KeyMapping.h"
 #include "Command.h"
@@ -30,7 +31,7 @@ namespace SettingsModelLocalTests
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct GlobalAppSettings : GlobalAppSettingsT<GlobalAppSettings>
+    struct GlobalAppSettings : GlobalAppSettingsT<GlobalAppSettings>, IInheritable<GlobalAppSettings>
     {
     public:
         GlobalAppSettings();
@@ -53,30 +54,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         guid DefaultProfile() const;
         hstring UnparsedDefaultProfile() const;
 
-        GETSET_PROPERTY(int32_t, InitialRows, DEFAULT_ROWS);
-        GETSET_PROPERTY(int32_t, InitialCols, DEFAULT_COLS);
-        GETSET_PROPERTY(bool, AlwaysShowTabs, true);
-        GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
-        GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
-        GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-        GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
-        GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        GETSET_PROPERTY(bool, CopyOnSelect, false);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
-        GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
-        GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
-        GETSET_PROPERTY(Model::LaunchPosition, InitialPosition, nullptr, nullptr);
-        GETSET_PROPERTY(Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
-        GETSET_PROPERTY(bool, SnapToGridOnResize, true);
-        GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
-        GETSET_PROPERTY(bool, SoftwareRendering, false);
-        GETSET_PROPERTY(bool, ForceVTInput, false);
-        GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
-        GETSET_PROPERTY(bool, StartOnUserLogin, false);
-        GETSET_PROPERTY(bool, AlwaysOnTop, false);
-        GETSET_PROPERTY(bool, UseTabSwitcher, true);
-        GETSET_PROPERTY(bool, DisableAnimations, false);
+        GETSET_SETTING(int32_t, InitialRows, DEFAULT_ROWS);
+        GETSET_SETTING(int32_t, InitialCols, DEFAULT_COLS);
+        GETSET_SETTING(bool, AlwaysShowTabs, true);
+        GETSET_SETTING(bool, ShowTitleInTitlebar, true);
+        GETSET_SETTING(bool, ConfirmCloseAllTabs, true);
+        GETSET_SETTING(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
+        GETSET_SETTING(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+        GETSET_SETTING(bool, ShowTabsInTitlebar, true);
+        GETSET_SETTING(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
+        GETSET_SETTING(bool, CopyOnSelect, false);
+        GETSET_SETTING(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
+        GETSET_SETTING(bool, WarnAboutLargePaste, true);
+        GETSET_SETTING(bool, WarnAboutMultiLinePaste, true);
+        GETSET_SETTING(Model::LaunchPosition, InitialPosition, nullptr, nullptr);
+        GETSET_SETTING(Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
+        GETSET_SETTING(bool, SnapToGridOnResize, true);
+        GETSET_SETTING(bool, ForceFullRepaintRendering, false);
+        GETSET_SETTING(bool, SoftwareRendering, false);
+        GETSET_SETTING(bool, ForceVTInput, false);
+        GETSET_SETTING(bool, DebugFeaturesEnabled); // default value set in constructor
+        GETSET_SETTING(bool, StartOnUserLogin, false);
+        GETSET_SETTING(bool, AlwaysOnTop, false);
+        GETSET_SETTING(bool, UseTabSwitcher, true);
+        GETSET_SETTING(bool, DisableAnimations, false);
 
     private:
         hstring _unparsedDefaultProfile;

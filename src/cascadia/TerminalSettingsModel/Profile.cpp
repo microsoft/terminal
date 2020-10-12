@@ -88,14 +88,20 @@ Json::Value Profile::GenerateStub() const
         stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(*_Guid));
     }
 
-    stub[JsonKey(NameKey)] = winrt::to_string(_Name);
-
-    if (!_Source.empty())
+    if (_Name)
     {
-        stub[JsonKey(SourceKey)] = winrt::to_string(_Source);
+        stub[JsonKey(NameKey)] = winrt::to_string(*_Name);
     }
 
-    stub[JsonKey(HiddenKey)] = _Hidden;
+    if (_Source && !_Source.value().empty())
+    {
+        stub[JsonKey(SourceKey)] = winrt::to_string(*_Source);
+    }
+
+    if (_Hidden)
+    {
+        stub[JsonKey(HiddenKey)] = *_Hidden;
+    }
 
     return stub;
 }
@@ -151,12 +157,12 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
-    if (!_Source.empty())
+    if (_Source && !_Source.value().empty())
     {
         if (otherHadSource)
         {
             // If we have a source and the other has a source, compare them!
-            sourceMatches = *otherSource == _Source;
+            sourceMatches = *otherSource == *_Source;
         }
         else
         {
@@ -164,9 +170,9 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
             // `this` is a dynamic profile with a source, and our _source is one
             // of the legacy DPG namespaces. We're looking to see if the other
             // json object has the same guid, but _no_ "source"
-            if (_Source == WslGeneratorNamespace ||
-                _Source == AzureGeneratorNamespace ||
-                _Source == PowershellCoreGeneratorNamespace)
+            if (*_Source == WslGeneratorNamespace ||
+                *_Source == AzureGeneratorNamespace ||
+                *_Source == PowershellCoreGeneratorNamespace)
             {
                 sourceMatches = true;
             }
@@ -201,10 +207,10 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
 
     // Core Settings
-    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+    _Foreground.set = JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground.setting);
+    _Background.set = JsonUtils::GetValueForKey(json, BackgroundKey, _Background.setting);
+    _SelectionBackground.set = JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting);
+    _CursorColor.set = JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor.setting);
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -240,7 +246,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+    _TabColor.set = JsonUtils::GetValueForKey(json, TabColorKey, _TabColor.setting);
 }
 
 // Method Description:
@@ -250,16 +256,18 @@ void Profile::LayerJson(const Json::Value& json)
 // - This profile's expanded background image path / the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
-    if (_BackgroundImagePath.empty())
+    const auto path{ BackgroundImagePath() };
+    if (path.empty())
     {
-        return _BackgroundImagePath;
+        return path;
     }
-    return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
 {
-    return winrt::hstring{ Profile::EvaluateStartingDirectory(_StartingDirectory.c_str()) };
+    const auto path{ StartingDirectory() };
+    return winrt::hstring{ Profile::EvaluateStartingDirectory(path.c_str()) };
 }
 
 // Method Description:
@@ -303,7 +311,7 @@ void Profile::GenerateGuidIfNecessary() noexcept
     {
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
-        _Guid = Profile::_GenerateGuidForProfile(_Name, _Source);
+        _Guid = Profile::_GenerateGuidForProfile(Name(), Source());
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
@@ -326,6 +334,50 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 {
     const auto& source = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
     return !source.isNull();
+}
+
+// Function Description:
+// - Apply each of the current Profile's settings values onto the given Profile, if it is set
+// Arguments:
+// - profile: the Profile to be updated
+// Return Value:
+// - <None>
+void Profile::ApplyTo(Profile* profile) const
+{
+    APPLY_OUT(Name);
+    APPLY_OUT(Source);
+    APPLY_OUT(Hidden);
+    APPLY_OUT(Icon);
+    APPLY_OUT(CloseOnExit);
+    APPLY_OUT(TabTitle);
+    APPLY_OUT(TabColor);
+    APPLY_OUT(SuppressApplicationTitle);
+    APPLY_OUT(UseAcrylic);
+    APPLY_OUT(AcrylicOpacity);
+    APPLY_OUT(ScrollState);
+    APPLY_OUT(FontFace);
+    APPLY_OUT(FontSize);
+    APPLY_OUT(FontWeight);
+    APPLY_OUT(Padding);
+    APPLY_OUT(Commandline);
+    APPLY_OUT(StartingDirectory);
+    APPLY_OUT(BackgroundImagePath);
+    APPLY_OUT(BackgroundImageOpacity);
+    APPLY_OUT(BackgroundImageStretchMode);
+    APPLY_OUT(AntialiasingMode);
+    APPLY_OUT(RetroTerminalEffect);
+    APPLY_OUT(ForceFullRepaintRendering);
+    APPLY_OUT(SoftwareRendering);
+    APPLY_OUT(ColorSchemeName);
+    APPLY_OUT(Foreground);
+    APPLY_OUT(Background);
+    APPLY_OUT(SelectionBackground);
+    APPLY_OUT(CursorColor);
+    APPLY_OUT(HistorySize);
+    APPLY_OUT(SnapOnInput);
+    APPLY_OUT(AltGrAliasing);
+    APPLY_OUT(CursorShape);
+    APPLY_OUT(CursorHeight);
 }
 
 // Function Description:
