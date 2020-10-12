@@ -90,17 +90,20 @@ Cascading settings allows our settings model to be constructed in layers (i.e. s
 ```
 If `profiles.defaults` gets changed to `"Tango"` via the Settings UI, it is unclear if profile C's value should be updated as well. We need profile C to record if it's value is inherited from profile.defaults or explicitly set by the user.
 
-To start, each settings object will now have a `Clone()` function. For `GlobalAppSettings`, it will look something like this:
+#### Object Model Inheritance
+
+To start, each settings object will now have a `CreateChild()` function. For `GlobalAppSettings`, it will look something like this:
 ```c++
-GlobalAppSettings GlobalAppSettings::Clone() const
+GlobalAppSettings GlobalAppSettings::CreateChild() const
 {
-    GlobalAppSettings clone {};
-    clone._parent = this;
-    return clone;
+    GlobalAppSettings child {};
+    child._parent = this;
+    return child;
 }
 ```
 `_parent` serves as a reference for who to ask if a settings value was not provided by the user. `LaunchMode`, for example, will now have a getter/setter that looks similar to this:
 ```c++
+// returns the resolved value for this setting
 LaunchMode GlobalAppSettings::LaunchMode()
 {
     // fallback tree:
@@ -115,13 +118,40 @@ void GlobalAppSettings::LaunchMode(IReference<LaunchMode> val)
     // if val is nullptr, we are explicitly saying that we want the inherited value
     _LaunchMode = val;
 }
+
+// returns the user set value for this setting
+// NOTE: This is important for the Settings UI to identify whether the user explicitly or implicitly set the presented value
+LaunchMode GlobalAppSettings::ExplicitLaunchMode()
+{
+    return _LaunchMode;
+}
 ```
 
-As `CascadiaSettings` loads the settings model, it will clone each component of the settings model and layer the new values on top of it. Thus, `LayerJson` will look something like this:
+Additionally, each settings object will now have an `ApplyTo()` function. For `Profile`, it will look something like this:
+```c++
+// layers the Profile settings onto another profile
+void Profile::ApplyTo(Profile profile) const
+{
+    if (_fontSize)
+    {
+        FontSize(_fontSize);
+    }
+
+    // repeat for all settings
+}
+```
+
+This functionality will be useful when layering the `profile.defaults` onto dynamic profiles.
+
+As a result, the tracking and functionality of cascading settings is moved into the object model instead of keeping it as a json-only concept.
+
+#### Updates to CascadiaSettings
+
+As `CascadiaSettings` loads the settings model, it will create children for each component of the settings model and layer the new values on top of it. Thus, `LayerJson` will look something like this:
 ```c++
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
-    _globals = _globals.Clone();
+    _globals = _globals.CreateInheritedProfile();
     _globals->LayerJson(json);
 
     // repeat the same for Profiles/ColorSchemes...
@@ -146,17 +176,19 @@ This process becomes a bit more complex for `Profile` because it can fallback in
    - layer `profile.defaults` onto `_profiles` (unchanged)
    - construct a `Profile` from `profiles.defaults`. Save as `Profile _profileDefaults`.
 4. load `settings.json` `profiles.list`
-   - if a matching profile exists, clone the matching profile, and layer the json onto the clone.
-   - otherwise, clone `_profileDefaults`, and layer the json onto the clone.
+   - if a matching profile exists, `CreateInheritedProfile` from the matching profile, and layer the json onto the child.
+   - otherwise, `CreateInheritedProfile` from `_profileDefaults`, and layer the json onto the clone.
+
+Additionally, `_profileDefaults` will be exposed by `Profile CascadiaSettings::ProfileDefaults()`. This will enable [#7414](https://github.com/microsoft/terminal/pull/7414)'s implementation to spawn incoming commandline app tabs with the "Default" profile (as opposed to the "default profile").
 
 
-### Clone vs Copy
+### CreateChild vs Copy
 
-Settings objects will have `Clone()` and `Copy()`. `Clone()` is responsible for creating a new settings object that inherits undefined values from its parent. `Copy()` is responsible for recreating the contents of the settings object, including a reference to a copied parent.
+Settings objects will have `CreateChild()` and `Copy()`. `CreateChild()` is responsible for creating a new settings object that inherits undefined values from its parent. `Copy()` is responsible for recreating the contents of the settings object, including a reference to a copied parent.
 
 The Settings UI will use `Copy()` to get a full copy of `CascadiaSettings` and data bind the UI to that copy. Thus, `Copy()` needs to be exposed in the IDL.
 
-`Clone()` will only be used during (de)serialization to adequately interpret and update the JSON. `Clone()` enables, but is not explicitly used, for retrieving a value from a settings object. It can also be used to enable larger hierarchies for inheritance within the settings model.
+`CreateChild()` will only be used during (de)serialization to adequately interpret and update the JSON. `CreateChild()` enables, but is not explicitly used, for retrieving a value from a settings object. It can also be used to enable larger hierarchies for inheritance within the settings model.
 
 
 ### Terminal Settings Model: Serialization and Deserialization
