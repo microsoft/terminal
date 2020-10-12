@@ -33,6 +33,8 @@ namespace winrt::TerminalApp::implementation
 
         void SelectNextItem(const bool moveDown, const bool pageButtonPressed);
 
+        void GoHome(const bool toHome);
+
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
         void OnTabsChanged(const Windows::Foundation::IInspectable& s, const Windows::Foundation::Collections::IVectorChangedEventArgs& e);

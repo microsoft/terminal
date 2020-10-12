@@ -122,6 +122,23 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
+    void CommandPalette::GoHome(const bool toHome)
+    {
+        int newIndex;
+        if (toHome)
+        {
+            newIndex = 0;
+            _filteredActionsView().SelectedIndex(newIndex);
+            _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+        }
+        else
+        {
+            newIndex = ::base::saturated_cast<int>(_filteredActionsView().Items().Size() - 1);
+            _filteredActionsView().SelectedIndex(newIndex);
+            _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+        }
+    }
+
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
@@ -186,6 +203,16 @@ namespace winrt::TerminalApp::implementation
             // Action Mode: Move focus to the previous item in the list.
             SelectNextItem(true, true);
             e.Handled(true);
+        }
+        else if (key == VirtualKey::Home)
+        {
+            GoHome(true);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::End)
+        {
+            GoHome(false);
+            e.Handled(false);
         }
         else if (key == VirtualKey::Enter)
         {
