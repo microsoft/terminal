@@ -120,6 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _LoadDynamicProfiles();
         void _LoadProtoExtensions();
+        void _ApplyJsonStubsHelper(const std::wstring_view directory, const std::unordered_set<std::wstring>& ignoredNamespaces);
         std::unordered_set<std::string> _AccumulateJsonFilesInDirectory(const std::wstring_view directory);
         void _AddOrModifyProfiles(const std::unordered_set<std::string> files, const winrt::hstring source);
 

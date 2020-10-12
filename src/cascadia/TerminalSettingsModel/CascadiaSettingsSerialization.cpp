@@ -403,47 +403,46 @@ void CascadiaSettings::_LoadProtoExtensions()
         }
     }
 
-    // Search through the local app data folder if its not in ignoredNamespaces
-    if ((ignoredNamespaces.find(L"local") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataFolder.data())))
+    // Search through the local app data folder
+    if (std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataFolder.data())))
     {
-        const auto jsonFiles = _AccumulateJsonFilesInDirectory(LocalAppDataFolder);
-        _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(LocalSource));
+        _ApplyJsonStubsHelper(LocalAppDataFolder, ignoredNamespaces);
     }
 
-    // Search through the global app data folder if its not in ignoredNamespaces
-    if ((ignoredNamespaces.find(L"global") == ignoredNamespaces.end()) && std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(ProgramDataFolder.data())))
+    // Search through the global app data folder
+    if (std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(ProgramDataFolder.data())))
     {
-        const auto jsonFiles = _AccumulateJsonFilesInDirectory(ProgramDataFolder);
-        _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(GlobalSource));
+        _ApplyJsonStubsHelper(ProgramDataFolder, ignoredNamespaces);
     }
 
-    // Search through app extensions if its not in ignoredNamespaces
-    if (ignoredNamespaces.find(L"app") == ignoredNamespaces.end())
-    {
-        // Gets the catalog of extensions with the name "Microsoft.com.Terminal"
-        const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
+    // Search through app extensions
+    // Gets the catalog of extensions with the name "com.Microsoft.Terminal"
+    const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
 
-        // Extracting the list of extensions from the catalog is an async operation, but since
-        // we are on a UI thread - and so cannot call a blocking operation like .get() - we use
-        // a mutex and condition variable
-        std::condition_variable cv;
-        std::mutex mtx;
-        Windows::Foundation::Collections::IVectorView<Windows::ApplicationModel::AppExtensions::AppExtension> extensions;
+    // Extracting the list of extensions from the catalog is an async operation, but since
+    // we are on a UI thread - and so cannot call a blocking operation like .get() - we use
+    // a mutex and condition variable
+    std::condition_variable cv;
+    std::mutex mtx;
+    Windows::Foundation::Collections::IVectorView<Windows::ApplicationModel::AppExtensions::AppExtension> extensions;
 
-        auto lambda = [&]() -> winrt::fire_and_forget {
-            co_await resume_background();
-            const auto localExtensions = catalog.FindAllAsync().get();
-
-            std::unique_lock<std::mutex> lock{ mtx };
-            extensions = localExtensions;
-            cv.notify_all();
-        };
+    auto lambda = [&]() -> winrt::fire_and_forget {
+        co_await resume_background();
+        const auto localExtensions = catalog.FindAllAsync().get();
 
         std::unique_lock<std::mutex> lock{ mtx };
-        lambda();
-        cv.wait(lock);
+        extensions = localExtensions;
+        cv.notify_all();
+    };
 
-        for (auto ext : extensions)
+    std::unique_lock<std::mutex> lock{ mtx };
+    lambda();
+    cv.wait(lock);
+
+    for (auto ext : extensions)
+    {
+        // Only apply the stubs if the package name is not in ignored namespaces
+        if (ignoredNamespaces.find(ext.Package().DisplayName().c_str()) == ignoredNamespaces.end())
         {
             // Likewise, getting the public folder from an extension is an async operation
             // So we use another mutex and condition variable
@@ -471,7 +470,36 @@ void CascadiaSettings::_LoadProtoExtensions()
             auto path = winrt::to_string(foundFolder.Path());
             path.append(FragmentsSubDirectory);
             const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
-            _AddOrModifyProfiles(jsonFiles, winrt::to_hstring(AppSource));
+
+            // Provide the package name as the source
+            _AddOrModifyProfiles(jsonFiles, ext.Package().DisplayName().c_str());
+        }
+    }
+}
+
+// Method Description:
+// - Helper function to apply json stubs in the local app data folder and the global program data folder
+// Arguments:
+// - The directory to find json files in
+// - The set of ignored namespaces
+void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, const std::unordered_set<std::wstring>& ignoredNamespaces)
+{
+    const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
+
+    // The json files should be within subdirectories where the subdirectory name is the app name
+    for (auto& protoExtFolder : std::filesystem::directory_iterator(root))
+    {
+        auto folderPath = protoExtFolder.path().generic_string();
+
+        // We only want the parent folder name as the source
+        auto source = til::u8u16(folderPath.substr(folderPath.find_last_of("/") + 1));
+
+        // Only apply the stubs if the parent folder name is not in ignored namespaces
+        // (also make sure this is a directory for sanity)
+        if (std::filesystem::is_directory(protoExtFolder) && ignoredNamespaces.find(source) == ignoredNamespaces.end())
+        {
+            const auto jsonFiles = _AccumulateJsonFilesInDirectory(protoExtFolder.path().c_str());
+            _AddOrModifyProfiles(jsonFiles, winrt::hstring{ source });
         }
     }
 }
