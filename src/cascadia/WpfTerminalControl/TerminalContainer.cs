@@ -66,7 +66,7 @@ namespace Microsoft.Terminal.Wpf
         /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
         /// on user action.
         /// </summary>
-        internal bool AutoFill { get; set; } = true;
+        internal bool AutoResize { get; set; } = true;
 
         /// <summary>
         /// Gets or sets the size of the parent user control that hosts the terminal hwnd.
@@ -137,10 +137,8 @@ namespace Microsoft.Terminal.Wpf
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
-            var size = this.CalculateRowsAndColumns(this.TerminalControlSize);
 
-            this.Rows = (int)size.rows;
-            this.Columns = (int)size.columns;
+            this.Resize(this.TerminalControlSize);
         }
 
         /// <summary>
@@ -163,12 +161,11 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="renderSize">Size of the rendering window.</param>
         internal void Resize(Size renderSize)
         {
-            NativeMethods.COORD dimensions;
             NativeMethods.TerminalTriggerResize(
                 this.terminal,
                 Convert.ToInt16(renderSize.Width),
                 Convert.ToInt16(renderSize.Height),
-                out dimensions);
+                out NativeMethods.COORD dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
@@ -212,8 +209,7 @@ namespace Microsoft.Terminal.Wpf
         /// <returns>Amount of rows and columns that would fit the given size.</returns>
         internal (uint columns, uint rows) CalculateRowsAndColumns(Size size)
         {
-            NativeMethods.COORD dimensions;
-            NativeMethods.TerminalCalculateResize(this.terminal, (short)size.Width, (short)size.Height, out dimensions);
+            NativeMethods.TerminalCalculateResize(this.terminal, (short)size.Width, (short)size.Height, out NativeMethods.COORD dimensions);
 
             return ((uint)dimensions.X, (uint)dimensions.Y);
         }
@@ -354,8 +350,7 @@ namespace Microsoft.Terminal.Wpf
 
                         NativeMethods.COORD dimensions;
 
-                        // We only trigger a resize if we want to automatically fill to maximum size.
-                        if (this.AutoFill)
+                        if (this.AutoResize)
                         {
                             NativeMethods.TerminalTriggerResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
 

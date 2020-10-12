@@ -56,10 +56,10 @@ namespace Microsoft.Terminal.Wpf
         /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
         /// on user action.
         /// </summary>
-        public bool AutoFill
+        public bool AutoResize
         {
-            get => this.termContainer.AutoFill;
-            set => this.termContainer.AutoFill = value;
+            get => this.termContainer.AutoResize;
+            set => this.termContainer.AutoResize = value;
         }
 
         /// <summary>
@@ -147,10 +147,10 @@ namespace Microsoft.Terminal.Wpf
             this.termContainer.TerminalControlSize = new Size()
             {
                 Width = (sizeInfo.NewSize.Width - this.scrollbar.ActualWidth) * dpiScale.DpiScaleX,
-                Height = (sizeInfo.NewSize.Height - this.scrollbar.ActualWidth) * dpiScale.DpiScaleY,
+                Height = sizeInfo.NewSize.Height * dpiScale.DpiScaleY,
             };
 
-            if (this.AutoFill == false)
+            if (!this.AutoResize)
             {
                 // Renderer will not resize on control resize. We have to manually calculate the margin to fill in the space.
                 this.terminalGrid.Margin = this.CalculateMargins(sizeInfo.NewSize);
