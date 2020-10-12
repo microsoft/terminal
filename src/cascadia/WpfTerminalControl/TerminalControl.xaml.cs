@@ -180,7 +180,7 @@ namespace Microsoft.Terminal.Wpf
                 };
             }
 
-            // During intialization, the terminal renderer size will be 0 and the terminal renderer
+            // During initialization, the terminal renderer size will be 0 and the terminal renderer
             // draws on all available space. Therefore no margins are needed until resized.
             if (this.TerminalRendererSize.Width != 0)
             {
