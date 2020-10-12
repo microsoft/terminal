@@ -81,11 +81,11 @@ namespace winrt::TerminalApp::implementation
             auto glyph = L"\xE713"; // This is the Setting icon (looks like a gear)
 
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
-            IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
-            TabViewItem().IconSource(GetFontIcon<winrt::MUX::Controls::IconSource>(fontFamily, 12, glyph));
+            Icon(glyph);
+            TabViewItem().IconSource(IconPathConverter::IconSourceMUX(glyph));
 
             // Update SwitchToTab command's icon
-            SwitchToTabCommand().IconSource(GetFontIcon<winrt::WUX::Controls::IconSource>(fontFamily, 12, glyph));
+            SwitchToTabCommand().Icon(glyph);
         }
     }
 

@@ -232,7 +232,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
-    JsonUtils::GetValueForKey(json, IconKey, _IconPath);
+    JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
@@ -241,22 +241,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
-}
-
-// Method Description:
-// - Returns this profile's icon path, if one is set. Otherwise returns the
-//   empty string. This method will expand any environment variables in the
-//   path, if there are any.
-// Return Value:
-// - this profile's icon path, if one is set. Otherwise returns the empty string.
-winrt::hstring Profile::ExpandedIconPath() const
-{
-    if (_IconPath.empty())
-    {
-        return _IconPath;
-    }
-    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_IconPath.c_str()) };
-    return envExpandedPath;
 }
 
 // Method Description:

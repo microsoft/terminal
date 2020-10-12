@@ -998,6 +998,7 @@ hpj
 hpp
 HPR
 HPROPSHEETPAGE
+HProvider
 HREDRAW
 hresult
 HRSRC

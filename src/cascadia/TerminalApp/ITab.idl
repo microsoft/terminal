@@ -6,7 +6,7 @@ namespace TerminalApp
     interface ITab
     {
         String Title { get; };
-        Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+        String Icon { get; };
         Microsoft.Terminal.Settings.Model.Command SwitchToTabCommand;
         Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
         Windows.UI.Xaml.FrameworkElement Content { get; };
