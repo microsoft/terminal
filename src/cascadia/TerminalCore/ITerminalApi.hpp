@@ -34,6 +34,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
         virtual bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
 
+        virtual bool WarningBell() noexcept = 0;
         virtual bool SetWindowTitle(std::wstring_view title) noexcept = 0;
 
         virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept = 0;

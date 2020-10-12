@@ -13,6 +13,7 @@ using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -34,6 +35,7 @@ namespace winrt::TerminalApp::implementation
         _activePane = _rootPane;
 
         _MakeTabViewItem();
+        _MakeSwitchToTabCommand();
     }
 
     // Method Description:
@@ -227,8 +229,11 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
-            IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(_lastIconPath));
-            _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+            IconSource(IconPathConverter::IconSourceWUX(_lastIconPath));
+            _tabViewItem.IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+
+            // Update SwitchToTab command's icon
+            SwitchToTabCommand().Icon(_lastIconPath);
         }
     }
 
@@ -266,6 +271,9 @@ namespace winrt::TerminalApp::implementation
             // Bubble our current tab text to anyone who's listening for changes.
             Title(GetActiveTitle());
 
+            // Update SwitchToTab command's name
+            SwitchToTabCommand().Name(Title());
+
             // Update the UI to reflect the changed
             _UpdateTabHeader();
         }
@@ -295,7 +303,7 @@ namespace winrt::TerminalApp::implementation
     // - splitType: The type of split we want to create.
     // Return Value:
     // - True if the focused pane can be split. False otherwise.
-    bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
+    bool Tab::CanSplitPane(SplitState splitType)
     {
         return _activePane->CanSplit(splitType);
     }
@@ -309,7 +317,7 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
+    void Tab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
@@ -355,7 +363,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+    void Tab::ResizePane(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -369,7 +377,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+    void Tab::NavigateFocus(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -1024,6 +1032,31 @@ namespace winrt::TerminalApp::implementation
     bool Tab::IsZoomed()
     {
         return _zoomedPane != nullptr;
+    }
+
+    // Method Description:
+    // - Initializes a SwitchToTab command object for this Tab instance.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_MakeSwitchToTabCommand()
+    {
+        SwitchToTabArgs args{ _TabViewIndex };
+        ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
+
+        Command command;
+        command.Action(focusTabAction);
+        command.Name(Title());
+        command.Icon(_lastIconPath);
+
+        SwitchToTabCommand(command);
+    }
+
+    void Tab::UpdateTabViewIndex(const uint32_t idx)
+    {
+        TabViewIndex(idx);
+        SwitchToTabCommand().Action().Args().as<SwitchToTabArgs>().TabIndex(idx);
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

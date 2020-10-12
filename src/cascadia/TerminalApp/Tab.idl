@@ -7,5 +7,7 @@ namespace TerminalApp
     {
         String Title { get; };
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+        Microsoft.Terminal.Settings.Model.Command SwitchToTabCommand { get; };
+        UInt32 TabViewIndex { get; };
     }
 }

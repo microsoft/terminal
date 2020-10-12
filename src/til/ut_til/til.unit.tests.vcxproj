@@ -22,6 +22,7 @@
     <ClCompile Include="CoalesceTests.cpp" />
     <ClCompile Include="ReplaceTests.cpp" />
     <ClCompile Include="SomeTests.cpp" />
+    <ClCompile Include="VisualizeControlCodesTests.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

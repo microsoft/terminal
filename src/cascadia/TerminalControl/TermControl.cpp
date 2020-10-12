@@ -75,6 +75,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
+        _blinkTimer{},
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false },
@@ -84,6 +85,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         InitializeComponent();
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+
+        auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
+        _terminal->SetWarningBellCallback(pfnWarningBell);
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -733,6 +737,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // The user has disabled cursor blinking
                 _cursorTimer = std::nullopt;
+            }
+
+            // Set up blinking attributes
+            BOOL animationsEnabled = TRUE;
+            SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+            if (animationsEnabled && blinkTime != INFINITE)
+            {
+                // Create a timer
+                DispatcherTimer blinkTimer;
+                blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
+                blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
+                blinkTimer.Start();
+                _blinkTimer.emplace(std::move(blinkTimer));
+            }
+            else
+            {
+                // The user has disabled blinking
+                _blinkTimer = std::nullopt;
             }
 
             // import value from WinUser (convert from milli-seconds to micro-seconds)
@@ -1807,6 +1829,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer.value().Start();
         }
 
+        if (_blinkTimer.has_value())
+        {
+            _blinkTimer.value().Start();
+        }
+
         _UpdateSystemParameterSettings();
     }
 
@@ -1851,6 +1878,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _cursorTimer.value().Stop();
             _terminal->SetCursorOn(false);
+        }
+
+        if (_blinkTimer.has_value())
+        {
+            _blinkTimer.value().Stop();
         }
     }
 
@@ -2066,6 +2098,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Toggle the blinking rendition state when called by the blink timer.
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    void TermControl::_BlinkTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                      Windows::Foundation::IInspectable const& /* e */)
+    {
+        if (!_closing)
+        {
+            auto& renderTarget = *_renderer;
+            auto& blinkingState = _terminal->GetBlinkingState();
+            blinkingState.ToggleBlinkingRendition(renderTarget);
+        }
+    }
+
+    // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - cursorPosition: in pixels, relative to the origin of the control
@@ -2155,6 +2203,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
+    }
+
+    void TermControl::_TerminalWarningBell()
+    {
+        _WarningBellHandlers(*this, nullptr);
     }
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)

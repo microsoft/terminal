@@ -1049,6 +1049,11 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
     _pfnWriteInput.swap(pfn);
 }
 
+void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
+{
+    _pfnWarningBell.swap(pfn);
+}
+
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
@@ -1138,4 +1143,9 @@ void Terminal::ClearPatternTree() noexcept
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
     return _tabColor;
+}
+
+BlinkingState& Terminal::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
 }
