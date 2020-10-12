@@ -11,7 +11,6 @@ namespace Microsoft.Terminal.Wpf
     using System.Windows.Controls;
     using System.Windows.Input;
     using System.Windows.Media;
-    using Microsoft.VisualStudio.Shell;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -116,8 +115,11 @@ namespace Microsoft.Terminal.Wpf
         {
             this.termContainer.Resize(rows, columns);
 
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-            this.terminalGrid.Margin = this.CalculateMargins();
+#pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
+            await this.Dispatcher.BeginInvoke(
+                new Action(delegate() { this.terminalGrid.Margin = this.CalculateMargins(); }),
+                System.Windows.Threading.DispatcherPriority.Render);
+#pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
         }
 
         /// <summary>
