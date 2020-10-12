@@ -38,8 +38,8 @@ class Microsoft::Console::VirtualTerminal::InputTest
 public:
     TEST_CLASS(InputTest);
 
-    static void s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-    static void s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
+    static void s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents, const IInputEvent* const /*pInEvent*/);
+    static void s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents, const IInputEvent* const /*pInEvent*/);
 
     TEST_METHOD(TerminalInputTests);
     TEST_METHOD(TerminalInputModifierKeyTests);
@@ -78,7 +78,7 @@ public:
     }
 };
 
-void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents, const IInputEvent* const /*pInEvent*/)
 {
     auto records = IInputEvent::ToInputRecords(inEvents);
 
@@ -100,7 +100,7 @@ void InputTest::s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInp
     }
 }
 
-void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents, const IInputEvent* const /*pInEvent*/)
 {
     auto records = IInputEvent::ToInputRecords(inEvents);
 

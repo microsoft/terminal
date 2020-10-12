@@ -255,8 +255,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
-        void _SendInputToConnection(const winrt::hstring& wstr);
-        void _SendInputToConnection(std::wstring_view wstr);
+        void _SendInputToConnection(const winrt::hstring& wstr, const IInputEvent* const pInEvent);
+        void _SendInputToConnection(std::wstring_view wstr, const IInputEvent* const pInEvent);
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
@@ -303,6 +303,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _AsyncCloseConnection();
+
+        void _UpdateTerminalOnInput(const IInputEvent* const pInEvent);
     };
 }
 

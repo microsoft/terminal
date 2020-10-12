@@ -175,7 +175,7 @@ public:
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
 #pragma endregion
 
-    void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
+    void SetWriteInputCallback(std::function<void(std::wstring&, const IInputEvent* const)> pfn) noexcept;
     void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
@@ -208,7 +208,7 @@ public:
 #pragma endregion
 
 private:
-    std::function<void(std::wstring&)> _pfnWriteInput;
+    std::function<void(std::wstring&, const IInputEvent* const)> _pfnWriteInput;
     std::function<void()> _pfnWarningBell;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;

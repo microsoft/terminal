@@ -21,7 +21,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
-TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
+TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&, const IInputEvent* const)> pfn) :
     _leadingSurrogate{}
 {
     _pfnWriteEvents = pfn;
@@ -535,7 +535,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     if (_win32InputMode && !_forceDisableWin32InputMode)
     {
         const auto seq = _GenerateWin32KeySequence(keyEvent);
-        _SendInputSequence(seq);
+        _SendInputSequence(seq, pInEvent);
         return true;
     }
 
@@ -583,13 +583,13 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
             ch &= 0b11111;
-            _SendEscapedInputSequence(ch);
+            _SendEscapedInputSequence(ch, pInEvent);
             return true;
         }
     }
 
-    const auto senderFunc = [this](const std::wstring_view seq) noexcept {
-        _SendInputSequence(seq);
+    const auto senderFunc = [this, pInEvent](const std::wstring_view seq) noexcept {
+        _SendInputSequence(seq, pInEvent);
     };
 
     // If a modifier key was pressed, then we need to try and send the modified sequence.
@@ -602,7 +602,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // but handles cases without Ctrl modifiers.
     if (keyEvent.IsAltPressed() && !keyEvent.IsCtrlPressed() && keyEvent.GetCharData() != 0)
     {
-        _SendEscapedInputSequence(keyEvent.GetCharData());
+        _SendEscapedInputSequence(keyEvent.GetCharData(), pInEvent);
         return true;
     }
 
@@ -624,7 +624,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         // -> Use the vkey to alternatively determine if Ctrl+@ is being pressed.
         if (ch == UNICODE_SPACE || (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0))))
         {
-            _SendNullInputSequence(keyEvent.GetActiveModifierKeys());
+            _SendNullInputSequence(keyEvent.GetActiveModifierKeys(), pInEvent);
             return true;
         }
     }
@@ -639,7 +639,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // If all else fails we can finally try to send the character itself if there is any.
     if (keyEvent.GetCharData() != 0)
     {
-        _SendChar(keyEvent.GetCharData());
+        _SendChar(keyEvent.GetCharData(), pInEvent);
         return true;
     }
 
@@ -651,7 +651,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
 // - Surrogate pairs are being aggregated by this function before being sent.
 // Arguments:
 // - ch: The UTF-16 character to send.
-void TerminalInput::_SendChar(const wchar_t ch)
+void TerminalInput::_SendChar(const wchar_t ch, const IInputEvent* const pInEvent)
 {
     if (Utf16Parser::IsLeadingSurrogate(ch))
     {
@@ -660,7 +660,7 @@ void TerminalInput::_SendChar(const wchar_t ch)
             // we already were storing a leading surrogate but we got another one. Go ahead and send the
             // saved surrogate piece and save the new one
             const auto formatted = wil::str_printf<std::wstring>(L"%I32u", _leadingSurrogate.value());
-            _SendInputSequence(formatted);
+            _SendInputSequence(formatted, pInEvent);
         }
         // save the leading portion of a surrogate pair so that they can be sent at the same time
         _leadingSurrogate.emplace(ch);
@@ -669,11 +669,11 @@ void TerminalInput::_SendChar(const wchar_t ch)
     {
         std::array<wchar_t, 2> wstr{ { _leadingSurrogate.value(), ch } };
         _leadingSurrogate.reset();
-        _SendInputSequence({ wstr.data(), wstr.size() });
+        _SendInputSequence({ wstr.data(), wstr.size() }, pInEvent);
     }
     else
     {
-        _SendInputSequence({ &ch, 1 });
+        _SendInputSequence({ &ch, 1 }, pInEvent);
     }
 }
 
@@ -684,14 +684,14 @@ void TerminalInput::_SendChar(const wchar_t ch)
 // - wch - character to send to input paired with Esc
 // Return Value:
 // - None
-void TerminalInput::_SendEscapedInputSequence(const wchar_t wch) const
+void TerminalInput::_SendEscapedInputSequence(const wchar_t wch, const IInputEvent* const pInEvent) const
 {
     try
     {
         std::deque<std::unique_ptr<IInputEvent>> inputEvents;
         inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, L'\x1b', 0));
         inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
-        _pfnWriteEvents(inputEvents);
+        _pfnWriteEvents(inputEvents, pInEvent);
     }
     catch (...)
     {
@@ -699,7 +699,7 @@ void TerminalInput::_SendEscapedInputSequence(const wchar_t wch) const
     }
 }
 
-void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
+void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState, const IInputEvent* const pInEvent) const
 {
     try
     {
@@ -710,7 +710,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
                                                          0ui16,
                                                          L'\x0',
                                                          controlKeyState));
-        _pfnWriteEvents(inputEvents);
+        _pfnWriteEvents(inputEvents, pInEvent);
     }
     catch (...)
     {
@@ -718,7 +718,7 @@ void TerminalInput::_SendNullInputSequence(const DWORD controlKeyState) const
     }
 }
 
-void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const noexcept
+void TerminalInput::_SendInputSequence(const std::wstring_view sequence, const IInputEvent* const pInEvent) const noexcept
 {
     if (!sequence.empty())
     {
@@ -729,7 +729,7 @@ void TerminalInput::_SendInputSequence(const std::wstring_view sequence) const n
             {
                 inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, wch, 0));
             }
-            _pfnWriteEvents(inputEvents);
+            _pfnWriteEvents(inputEvents, pInEvent);
         }
         catch (...)
         {

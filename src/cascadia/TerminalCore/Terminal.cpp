@@ -54,13 +54,13 @@ Terminal::Terminal() :
 
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
+    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite, const IInputEvent* const pInEvent) {
         if (!_pfnWriteInput)
         {
             return;
         }
         std::wstring wstr = _KeyEventsToText(inEventsToWrite);
-        _pfnWriteInput(wstr);
+        _pfnWriteInput(wstr, pInEvent);
     };
 
     _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
@@ -460,15 +460,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
                             const ControlKeyStates states,
                             const bool keyDown)
 {
-    // GH#6423 - don't snap on this key if the key that was pressed was a
-    // modifier key. We'll wait for a real keystroke to snap to the bottom.
-    // GH#6481 - Additionally, make sure the key was actually pressed. This
-    // check will make sure we behave the same as before GH#6309
-    if (!KeyEvent::IsModifierKey(vkey) && keyDown)
-    {
-        TrySnapOnInput();
-    }
-
     _StoreKeyEvent(vkey, scanCode);
 
     // As a Terminal we're mostly interested in getting key events from physical hardware (mouse & keyboard).
@@ -960,7 +951,7 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
     }
 }
 
-void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
+void Terminal::SetWriteInputCallback(std::function<void(std::wstring&, const IInputEvent* const)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
 }

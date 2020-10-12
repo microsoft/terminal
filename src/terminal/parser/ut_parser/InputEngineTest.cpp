@@ -977,7 +977,7 @@ void InputEngineTest::AltIntermediateTest()
     // First create the callback TerminalInput will call - this will be
     // triggered second, after both the state machine and the TerminalInput have
     // translated the characters.
-    auto pfnTerminalInputCallback = [&](std::deque<std::unique_ptr<IInputEvent>>& inEvents) {
+    auto pfnTerminalInputCallback = [&](std::deque<std::unique_ptr<IInputEvent>>& inEvents, const IInputEvent* const /*pInEvent*/) {
         // Get all the characters:
         std::wstring wstr = L"";
         for (auto& ev : inEvents)

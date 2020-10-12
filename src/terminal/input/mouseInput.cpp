@@ -338,7 +338,8 @@ bool TerminalInput::HandleMouse(const COORD position,
     bool success = false;
     if (_ShouldSendAlternateScroll(button, delta))
     {
-        success = _SendAlternateScroll(delta);
+        // TODO - pass real mouse event
+        success = _SendAlternateScroll(delta, nullptr);
     }
     else
     {
@@ -411,7 +412,8 @@ bool TerminalInput::HandleMouse(const COORD position,
 
                 if (success)
                 {
-                    _SendInputSequence(sequence);
+                    // TODO - pass real mouse event
+                    _SendInputSequence(sequence, nullptr);
                     success = true;
                 }
                 if (_mouseInputState.trackingMode == TrackingMode::ButtonEvent || _mouseInputState.trackingMode == TrackingMode::AnyEvent)
@@ -563,15 +565,15 @@ bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const 
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
-bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
+bool TerminalInput::_SendAlternateScroll(const short delta, const IInputEvent* const pInEvent) const noexcept
 {
     if (delta > 0)
     {
-        _SendInputSequence(_cursorApplicationMode ? ApplicationUpSequence : CursorUpSequence);
+        _SendInputSequence(_cursorApplicationMode ? ApplicationUpSequence : CursorUpSequence, pInEvent);
     }
     else
     {
-        _SendInputSequence(_cursorApplicationMode ? ApplicationDownSequence : CursorDownSequence);
+        _SendInputSequence(_cursorApplicationMode ? ApplicationDownSequence : CursorDownSequence, pInEvent);
     }
     return true;
 }

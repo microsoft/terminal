@@ -110,8 +110,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
-        _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
-            _SendInputToConnection(wstr);
+        _terminal->SetWriteInputCallback([this](std::wstring& wstr, const IInputEvent* const pInEvent) {
+            _SendInputToConnection(wstr, pInEvent);
         });
 
         _terminal->UpdateSettings(settings);
@@ -313,7 +313,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::SendInput(const winrt::hstring& wstr)
     {
-        _SendInputToConnection(wstr);
+        // TODO - consider passing something other than null
+        _SendInputToConnection(wstr, nullptr);
     }
 
     void TermControl::ToggleRetroEffect()
@@ -948,21 +949,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                        const ControlKeyStates modifiers,
                                        const bool keyDown)
     {
-        // When there is a selection active, escape should clear it and NOT flow through
-        // to the terminal. With any other keypress, it should clear the selection AND
-        // flow through to the terminal.
-        // GH#6423 - don't dismiss selection if the key that was pressed was a
-        // modifier key. We'll wait for a real keystroke to dismiss the
-        // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
+        // When there is a selection active, escape should clear it and NOT flow through to the terminal.
+        if (_terminal->IsSelectionActive() && keyDown && vkey == VK_ESCAPE)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
-
-            if (vkey == VK_ESCAPE)
-            {
-                return true;
-            }
+            return true;
         }
 
         if (vkey == VK_ESCAPE ||
@@ -1863,14 +1855,43 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
+    void TermControl::_SendInputToConnection(const winrt::hstring& wstr, const IInputEvent* const pInEvent)
     {
+        _UpdateTerminalOnInput(pInEvent);
         _connection.WriteInput(wstr);
     }
 
-    void TermControl::_SendInputToConnection(std::wstring_view wstr)
+    void TermControl::_SendInputToConnection(std::wstring_view wstr, const IInputEvent* const pInEvent)
     {
+        _UpdateTerminalOnInput(pInEvent);
         _connection.WriteInput(wstr);
+    }
+
+    void TermControl::_UpdateTerminalOnInput(const IInputEvent* const pInEvent)
+    {
+        if (pInEvent && pInEvent->EventType() == InputEventType::KeyEvent)
+        {
+            const auto pKeyEvent = static_cast<const KeyEvent* const>(pInEvent);
+            const auto vkey = pKeyEvent->GetVirtualKeyCode();
+
+            // GH#6423 - don't dismiss selection if the key that was pressed was a
+            // modifier key. We'll wait for a real keystroke to dismiss the
+            // selection.
+            // GH#6423 - don't snap on this key if the key that was pressed was a
+            // modifier key. We'll wait for a real keystroke to snap to the bottom.
+            // GH#6481 - Additionally, make sure the key was actually pressed. This
+            // check will make sure we behave the same as before GH#6309
+            if (pKeyEvent->IsKeyDown() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+            {
+                if (_terminal->IsSelectionActive())
+                {
+                    _terminal->ClearSelection();
+                    _renderer->TriggerSelection();
+                }
+
+                _terminal->TrySnapOnInput();
+            }
+        }
     }
 
     // Method Description:
@@ -2876,7 +2897,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     allPaths += fullPath;
                 }
-                _SendInputToConnection(allPaths);
+
+                _SendInputToConnection(allPaths, nullptr);
             }
         }
         else if (e.DataView().Contains(StandardDataFormats::Text()))

@@ -23,7 +23,7 @@ namespace TerminalCoreUnitTests
         {
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
-            auto inputFn = std::bind(&InputTest::_VerifyExpectedInput, this, std::placeholders::_1);
+            auto inputFn = std::bind(&InputTest::_VerifyExpectedInput, this, std::placeholders::_1, std::placeholders::_2);
             term.SetWriteInputCallback(inputFn);
             return true;
         };
@@ -32,7 +32,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(AltSpace);
         TEST_METHOD(InvalidKeyEvent);
 
-        void _VerifyExpectedInput(std::wstring& actualInput)
+        void _VerifyExpectedInput(std::wstring& actualInput, const IInputEvent* const /*pInEvent*/)
         {
             VERIFY_ARE_EQUAL(expectedinput.size(), actualInput.size());
             VERIFY_ARE_EQUAL(expectedinput, actualInput);

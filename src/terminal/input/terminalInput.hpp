@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalInput final
     {
     public:
-        TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
+        TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&, const IInputEvent* const)> pfn);
 
         TerminalInput() = delete;
         TerminalInput(const TerminalInput& old) = default;
@@ -75,7 +75,7 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
     private:
-        std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
+        std::function<void(std::deque<std::unique_ptr<IInputEvent>>&, const IInputEvent* const)> _pfnWriteEvents;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
@@ -86,10 +86,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _win32InputMode{ false };
         bool _forceDisableWin32InputMode{ false };
 
-        void _SendChar(const wchar_t ch);
-        void _SendNullInputSequence(const DWORD dwControlKeyState) const;
-        void _SendInputSequence(const std::wstring_view sequence) const noexcept;
-        void _SendEscapedInputSequence(const wchar_t wch) const;
+        void _SendChar(const wchar_t ch, const IInputEvent* const pInEvent);
+        void _SendNullInputSequence(const DWORD dwControlKeyState, const IInputEvent* const pInEvent) const;
+        void _SendInputSequence(const std::wstring_view sequence, const IInputEvent* const pInEvent) const noexcept;
+        void _SendEscapedInputSequence(const wchar_t wch, const IInputEvent* const pInEvent) const;
         static std::wstring _GenerateWin32KeySequence(const KeyEvent& key);
 
 #pragma region MouseInputState Management
@@ -143,7 +143,7 @@ namespace Microsoft::Console::VirtualTerminal
                                                  const short delta);
 
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
-        bool _SendAlternateScroll(const short delta) const noexcept;
+        bool _SendAlternateScroll(const short delta, const IInputEvent* const pInEvent) const noexcept;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion

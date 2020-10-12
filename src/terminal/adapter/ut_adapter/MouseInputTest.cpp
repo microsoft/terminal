@@ -85,7 +85,7 @@ class MouseInputTest
 public:
     TEST_CLASS(MouseInputTest);
 
-    static void s_MouseInputTestCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
+    static void s_MouseInputTestCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events, const IInputEvent* const /*pInEvent*/)
     {
         Log::Comment(L"MouseInput successfully generated a sequence for the input, and sent it.");
 
