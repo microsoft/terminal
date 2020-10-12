@@ -6,10 +6,13 @@
 namespace Microsoft.Terminal.Wpf
 {
     using System;
+    using System.Threading;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Input;
     using System.Windows.Media;
+    using Microsoft.VisualStudio.Shell;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// A basic terminal control. This control can receive and render standard VT100 sequences.
@@ -18,7 +21,13 @@ namespace Microsoft.Terminal.Wpf
     {
         private int accumulatedDelta = 0;
 
-        private (int width, int height) terminalRendererSize;
+        /// <summary>
+        /// Gets size of the terminal renderer.
+        /// </summary>
+        private Size TerminalRendererSize
+        {
+            get => this.termContainer.TerminalRendererSize;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TerminalControl"/> class.
@@ -45,16 +54,6 @@ namespace Microsoft.Terminal.Wpf
         public int Columns => this.termContainer.Columns;
 
         /// <summary>
-        /// Gets the maximum amount of character rows that can fit in this control.
-        /// </summary>
-        public int MaxRows => this.termContainer.MaxRows;
-
-        /// <summary>
-        /// Gets the maximum amount of character columns that can fit in this control.
-        /// </summary>
-        public int MaxColumns => this.termContainer.MaxColumns;
-
-        /// <summary>
         /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
         /// on user action.
         /// </summary>
@@ -69,10 +68,7 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         public ITerminalConnection Connection
         {
-            set
-            {
-                this.termContainer.Connection = value;
-            }
+            set => this.termContainer.Connection = value;
         }
 
         /// <summary>
@@ -114,54 +110,95 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         /// <param name="rows">Number of rows to display.</param>
         /// <param name="columns">Number of columns to display.</param>
-        public void Resize(uint rows, uint columns)
+        /// <param name="cancellationToken">Cancellation token for this task.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task ResizeAsync(uint rows, uint columns, CancellationToken cancellationToken)
         {
-            var dpiScale = VisualTreeHelper.GetDpi(this);
+            this.termContainer.Resize(rows, columns);
 
-            this.terminalRendererSize = this.termContainer.Resize(rows, columns);
-
-            double marginWidth = ((this.terminalUserControl.RenderSize.Width * dpiScale.DpiScaleX) - this.terminalRendererSize.width) / dpiScale.DpiScaleX;
-            double marginHeight = ((this.terminalUserControl.RenderSize.Height * dpiScale.DpiScaleY) - this.terminalRendererSize.height) / dpiScale.DpiScaleY;
-
-            // Make space for the scrollbar.
-            marginWidth -= this.scrollbar.Width;
-
-            // Prevent negative margin size.
-            marginWidth = marginWidth < 0 ? 0 : marginWidth;
-            marginHeight = marginHeight < 0 ? 0 : marginHeight;
-
-            this.terminalGrid.Margin = new Thickness(0, 0, marginWidth, marginHeight);
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            this.terminalGrid.Margin = this.CalculateMargins();
         }
 
         /// <summary>
         /// Resizes the terminal to the specified dimensions.
         /// </summary>
-        /// <param name="rendersize">Rendering size for the terminal.</param>
+        /// <param name="rendersize">Rendering size for the terminal in device independent units.</param>
         /// <returns>A tuple of (int, int) representing the number of rows and columns in the terminal.</returns>
         public (int rows, int columns) TriggerResize(Size rendersize)
         {
-            return this.termContainer.TriggerResize(rendersize);
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+            rendersize.Width *= dpiScale.DpiScaleX;
+            rendersize.Height *= dpiScale.DpiScaleY;
+
+            this.termContainer.Resize(rendersize);
+
+            return (this.Rows, this.Columns);
         }
 
         /// <inheritdoc/>
         protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            // Renderer will not resize on control resize. We have to manually recalculate the margin to fill in the space.
-            if (this.AutoFill == false && this.terminalRendererSize.width != 0 && this.terminalRendererSize.height != 0)
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+
+            // termContainer requires scaled sizes.
+            this.termContainer.TerminalControlSize = new Size()
             {
-                var dpiScale = VisualTreeHelper.GetDpi(this);
+                Width = (sizeInfo.NewSize.Width - this.scrollbar.ActualWidth) * dpiScale.DpiScaleX,
+                Height = (sizeInfo.NewSize.Height - this.scrollbar.ActualWidth) * dpiScale.DpiScaleY,
+            };
 
-                double width = ((sizeInfo.NewSize.Width * dpiScale.DpiScaleX) - this.terminalRendererSize.width) / dpiScale.DpiScaleX;
-                double height = ((sizeInfo.NewSize.Height * dpiScale.DpiScaleY) - this.terminalRendererSize.height) / dpiScale.DpiScaleY;
+            if (this.AutoFill == false)
+            {
+                // Renderer will not resize on control resize. We have to manually calculate the margin to fill in the space.
+                this.terminalGrid.Margin = this.CalculateMargins(sizeInfo.NewSize);
 
-                // Prevent negative margin size.
-                width = width < 0 ? 0 : width;
-                height = height < 0 ? 0 : height;
-
-                this.terminalGrid.Margin = new Thickness(0, 0, width, height);
+                // Margins stop resize events, therefore we have to manually check if more space is available and raise
+                //  a resize event if needed.
+                this.termContainer.RaiseResizedIfDrawSpaceIncreased();
             }
 
             base.OnRenderSizeChanged(sizeInfo);
+        }
+
+        /// <summary>
+        /// Calculates the margins that should surround the terminal renderer, if any.
+        /// </summary>
+        /// <param name="controlSize">New size of the control. Uses the control's current size if not provided.</param>
+        /// <returns>The new terminal control margin thickness in device independent units.</returns>
+        private Thickness CalculateMargins(Size controlSize = default)
+        {
+            var dpiScale = VisualTreeHelper.GetDpi(this);
+            double width = 0, height = 0;
+
+            if (controlSize == default)
+            {
+                controlSize = new Size()
+                {
+                    Width = this.terminalUserControl.ActualWidth,
+                    Height = this.terminalUserControl.ActualHeight,
+                };
+            }
+
+            // During intialization, the terminal renderer size will be 0 and the terminal renderer
+            // draws on all available space. Therefore no margins are needed until resized.
+            if (this.TerminalRendererSize.Width != 0)
+            {
+                width = controlSize.Width - (this.TerminalRendererSize.Width / dpiScale.DpiScaleX);
+            }
+
+            if (this.TerminalRendererSize.Height != 0)
+            {
+                height = controlSize.Height - (this.TerminalRendererSize.Height / dpiScale.DpiScaleX);
+            }
+
+            width -= this.scrollbar.ActualWidth;
+
+            // Prevent negative margin size.
+            width = width < 0 ? 0 : width;
+            height = height < 0 ? 0 : height;
+
+            return new Thickness(0, 0, width, height);
         }
 
         private void TerminalControl_GotFocus(object sender, RoutedEventArgs e)

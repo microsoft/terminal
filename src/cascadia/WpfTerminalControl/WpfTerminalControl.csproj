@@ -23,6 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Framework" Version="16.7.30329.88" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="16.7.56" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
