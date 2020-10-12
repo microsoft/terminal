@@ -1127,6 +1127,7 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 //   region changes (for example by text entering the buffer or scrolling)
 void Terminal::UpdatePatterns() noexcept
 {
+    auto lock = LockForWriting();
     _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
     _InvalidatePatternTree(_patternIntervalTree);
 }

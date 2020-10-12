@@ -2256,6 +2256,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         update.newValue = viewTop;
 
         _updateScrollBar->Run(update);
+        _terminal->ClearPatternTree();
+        _updatePatternLocations->Run();
     }
 
     // Method Description:
