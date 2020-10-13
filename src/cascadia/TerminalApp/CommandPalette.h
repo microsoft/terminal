@@ -39,7 +39,8 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, SearchBoxText, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, FakePlaceholderText, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
 

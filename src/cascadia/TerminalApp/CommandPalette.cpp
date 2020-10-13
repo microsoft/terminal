@@ -213,9 +213,32 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Action, TabSearch, TabSwitch Mode: Dismiss the palette if the
+            // Commandline, TabSearch, TabSwitch Mode: Dismiss the palette if the
             // text is empty, otherwise clear the search string.
-            if (_currentMode != CommandPaletteMode::CommandlineMode)
+            if (_currentMode != CommandPaletteMode::ActionMode)
+            {
+                const auto currentInput = _getPostPrefixInput();
+                if (currentInput.empty())
+                {
+                    // The user has only input "> " so far. We should just dismiss
+                    // the palette. This is like dismissing the commandline mode with
+                    // empty input.
+                    _dismissPalette();
+                }
+                else
+                {
+                    // Clear out the current input. We'll leave a ">" in the
+                    // input (to stay in action mode), and a leading space
+                    // (if they currently had one).
+                    const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
+                    _searchBox().Text(hasLeadingSpace ? L"> " : L">");
+
+                    // This will conveniently move the cursor to the end of the
+                    // text input for us.
+                    _searchBox().Select(_searchBox().Text().size(), 0);
+                }
+            }
+            else if (_currentMode == CommandPaletteMode::ActionMode)
             {
                 if (_searchBox().Text().empty())
                 {
@@ -224,29 +247,6 @@ namespace winrt::TerminalApp::implementation
                 else
                 {
                     _searchBox().Text(L"");
-                }
-            }
-            else if (_currentMode == CommandPaletteMode::CommandlineMode)
-            {
-                const auto currentInput = _getPostPrefixInput();
-                if (currentInput.empty())
-                {
-                    // The user's only input "> " so far. We should just dismiss
-                    // the palette. This is like dismissing the Action mode with
-                    // empty input.
-                    _dismissPalette();
-                }
-                else
-                {
-                    // Clear out the current input. We'll leave a ">" in the
-                    // input (to stay in commandline mode), and a leading space
-                    // (if they currently had one).
-                    const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
-                    _searchBox().Text(hasLeadingSpace ? L"> " : L">");
-
-                    // This will conveniently move the cursor to the end of the
-                    // text input for us.
-                    _searchBox().Select(_searchBox().Text().size(), 0);
                 }
             }
 
@@ -582,19 +582,28 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
         _filteredActionsView().SelectedIndex(0);
 
-        _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
+        if (_currentMode == CommandPaletteMode::ActionMode)
+        {
+            winrt::hstring searchText{ _getPostPrefixInput() };
+            FakePlaceholderText(searchText.empty() ? RS_(L"CmdPalActionPrompt") : L"");
+        }
+
+        if (_currentMode == CommandPaletteMode::CommandlineMode || _currentMode == CommandPaletteMode::ActionMode)
+        {
+            _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
+        }
     }
 
     void CommandPalette::_evaluatePrefix()
     {
-        auto newMode = CommandPaletteMode::ActionMode;
+        auto newMode = CommandPaletteMode::CommandlineMode;
 
         auto inputText = _searchBox().Text();
         if (inputText.size() > 0)
         {
             if (inputText[0] == L'>')
             {
-                newMode = CommandPaletteMode::CommandlineMode;
+                newMode = CommandPaletteMode::ActionMode;
             }
         }
 
@@ -652,20 +661,28 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSearchMode:
         case CommandPaletteMode::TabSwitchMode:
         {
-            SearchBoxText(RS_(L"TabSwitcher_SearchBoxText"));
+            SearchBoxPlaceholderText(RS_(L"TabSwitcher_SearchBoxText"));
+            FakePlaceholderText(L"");
             NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
             ControlName(RS_(L"TabSwitcherControlName"));
+            _searchBox().Text(L"");
             break;
         }
         case CommandPaletteMode::CommandlineMode:
-            NoMatchesText(RS_(L"CmdPalCommandlinePrompt"));
+            SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
+            FakePlaceholderText(L"");
+            NoMatchesText(L"");
             ControlName(RS_(L"CommandPaletteControlName"));
+            _searchBox().Text(L"");
             break;
         case CommandPaletteMode::ActionMode:
         default:
-            SearchBoxText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
+            SearchBoxPlaceholderText(L"");
+            FakePlaceholderText(RS_(L"CmdPalActionPrompt"));
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
             ControlName(RS_(L"CommandPaletteControlName"));
+            _searchBox().Text(L">");
+            _searchBox().Select(_searchBox().Text().size(), 0);
             break;
         }
     }
@@ -717,7 +734,7 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<Command> actions;
 
-        auto searchText = _searchBox().Text();
+        winrt::hstring searchText{ _getPostPrefixInput() };
         const bool addAll = searchText.empty();
 
         auto commandsToFilter = _commandsToFilter();
