@@ -511,6 +511,41 @@ namespace winrt::TerminalApp::implementation
                 tab->_RecalculateAndApplyTabColor();
             }
         });
+
+        pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+            if (auto tab{ weakThis.get() })
+            {
+                if (tab->_zoomedPane)
+                {
+                    co_await winrt::resume_foreground(tab->GetRootElement().Dispatcher());
+                    tab->ExitZoom();
+                    tab->Content(tab->GetRootElement());
+                    // if (tab->_focused)
+                    // {
+                    //     tab->_Focus();
+                    // }
+                    // tab->_UpdateActivePane(tab->_rootPane->GetActivePane());
+                }
+
+                // OKAY I see what's happening here the ActivePaneChanged
+                // Handler in TerminalPage doesn't re-attach the tab content to
+                // the tree, it just updates hte title of the window.
+                //
+                // So when the pane is `exit`ed, the pane's control is removed
+                // and re-attached to the parent grid, which _isn't in the XAML
+                // tree_. And no one can go tell the TerminalPage that it needs
+                // to re set up the tab content again.
+                //
+                // The Page _manually_ does this in a few places, when various
+                // pane actions are about to take place, it'll unzoom. It would
+                // be way easier if the Tab could just manage the content of the
+                // page.
+                //
+                // Or if the Tab just had a Content that was observable, that
+                // when that changed, the page would auto readjust. That does
+                // sound like a LOT of work though.
+            }
+        });
     }
 
     // Method Description:

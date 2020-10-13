@@ -84,6 +84,8 @@ namespace winrt::TerminalApp::implementation
         // This is needed since Tab is going to be managing its own SwitchToTab command.
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
 
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::UIElement, Content, _PropertyChangedHandlers, nullptr);
+
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };

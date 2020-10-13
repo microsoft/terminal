@@ -327,6 +327,15 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
         if ((mode == winrt::TerminalApp::CloseOnExitMode::Always) ||
             (mode == winrt::TerminalApp::CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
+            // We need to call Restore on the root of the tree, or at least our
+            // parent, to get us re-added ot their content. However, we also
+            // want to close our content here too, and remove it from the UI
+            // tree.
+
+            // if (_zoomed)
+            // {
+            //     Restore(shared_from_this());
+            // };
             _ClosedHandlers(nullptr, nullptr);
         }
     }

@@ -1160,6 +1160,16 @@ namespace winrt::TerminalApp::implementation
                 {
                     page->_UpdateTitle(*tab);
                 }
+                else if (args.PropertyName() == L"Content")
+                {
+                    if (tab == page->_GetFocusedTab())
+                    {
+                        page->_tabContent.Children().Clear();
+                        page->_tabContent.Children().Append(tab->Content());
+
+                        tab->SetFocused(true);
+                    }
+                }
             }
         });
 
