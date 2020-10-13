@@ -129,7 +129,7 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
             WSLDistro.Commandline(L"wsl.exe -d " + distName);
             WSLDistro.ColorSchemeName(L"Campbell");
             WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-            WSLDistro.IconPath(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+            WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
             profiles.emplace_back(WSLDistro);
         }
     }

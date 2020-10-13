@@ -38,6 +38,13 @@
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
     },
+    "Icon": {
+      "description": "Image file location or an emoji to be used as an icon. Displays within the tab, the dropdown menu, and jumplist.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
@@ -472,6 +479,14 @@
               "type": "array"
             }
           ]
+        },
+        "icon": { "$ref": "#/definitions/Icon" },
+        "name": {
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -508,6 +523,11 @@
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
           "$ref": "#/definitions/CopyFormat"
+        },
+        "disableAnimations": {
+          "default": false,
+          "description": "When set to `true`, visual animations will be disabled across the application.",
+          "type": "boolean"
         },
         "largePasteWarning": {
           "default": true,
@@ -822,10 +842,7 @@
           "minimum": -1,
           "type": "integer"
         },
-        "icon": {
-          "description": "Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.",
-          "type": ["string", "null"]
-        },
+        "icon":{ "$ref": "#/definitions/Icon" },
         "name": {
           "description": "Name of the profile. Displays in the dropdown menu.",
           "minLength": 1,

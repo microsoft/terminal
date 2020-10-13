@@ -5,10 +5,6 @@
 #include "EchoConnection.h"
 #include <sstream>
 
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
-
 #include "EchoConnection.g.cpp"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation

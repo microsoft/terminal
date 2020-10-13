@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
         GETSET_PROPERTY(bool, UseTabSwitcher, true);
+        GETSET_PROPERTY(bool, DisableAnimations, false);
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible);
 
     private:

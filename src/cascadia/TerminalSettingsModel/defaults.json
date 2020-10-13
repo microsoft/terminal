@@ -25,6 +25,7 @@
     "startOnUserLogin":  false,
     "theme": "system",
     "snapToGridOnResize": true,
+    "disableAnimations": false,
     "bellStyle": "audible",
 
     "profiles":
