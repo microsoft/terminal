@@ -175,7 +175,7 @@ void AppCommandlineArgs::_buildParser()
     //   -M,--maximized: Maximizes the window on launch
     //   -F,--fullscreen: Fullscreens the window on launch
     //   -f,--focus: Sets the terminal into the Focus mode
-    // While fullscreen excludes both maximized and focus mode, the user can combine betwen the maximized and focused (-fM)
+    // While fullscreen excludes both maximized and focus mode, the user can combine between the maximized and focused (-fM)
     auto maximizedCallback = [this](int64_t /*count*/) {
         _launchMode = (_launchMode.has_value() && _launchMode.value() == LaunchMode::FocusMode) ?
                           LaunchMode::MaximizedFocusMode :
