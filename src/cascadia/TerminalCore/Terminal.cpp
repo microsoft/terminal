@@ -936,6 +936,9 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
         }
+
+        // manually erase our pattern intervals since the locations have changed now
+        _patternIntervalTree = {};
     }
 
     // Update Cursor Position
