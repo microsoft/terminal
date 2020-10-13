@@ -34,7 +34,6 @@ static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view CommandLineKey{ "commandline" };
 static constexpr std::string_view UpdatesKey{ "updates" };
 static constexpr std::string_view GuidKey{ "guid" };
 
@@ -45,9 +44,6 @@ static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
 static constexpr std::string_view jsonExtension{ ".json" };
-static constexpr std::string_view LocalSource{ "local" };
-static constexpr std::string_view GlobalSource{ "global" };
-static constexpr std::string_view AppSource{ "app" };
 static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
 static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments" };
 static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows Terminal\\Fragments" };
@@ -491,7 +487,7 @@ void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, 
     {
         auto folderPath = protoExtFolder.path().generic_string();
 
-        // We only want the parent folder name as the source
+        // We only want the parent folder name as the source (not the full path)
         auto source = til::u8u16(folderPath.substr(folderPath.find_last_of("/") + 1));
 
         // Only apply the stubs if the parent folder name is not in ignored namespaces
@@ -584,7 +580,7 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                         }
 
                         // Make sure to give the new profile a source, then we add it to our list of profiles
-                        // We don't make modifications to the user profiles yet, that will happen when
+                        // We don't make modifications to the user's settings file yet, that will happen when
                         // _AppendDynamicProfilesToUserSettings() is called later
                         newProfile->LayerJson(profileStub);
                         newProfile->Source(source);
