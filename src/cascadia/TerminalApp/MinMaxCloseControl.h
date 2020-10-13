@@ -11,6 +11,7 @@
 #include "winrt/Windows.UI.Xaml.Interop.h"
 #include "MinMaxCloseControl.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "winrt/Windows.ApplicationModel.Resources.Core.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -26,6 +27,9 @@ namespace winrt::TerminalApp::implementation
                             winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
                          winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+        winrt::fire_and_forget _ResourceQualifiersChanged(winrt::Windows::Foundation::IInspectable const& sender,
+                                                          winrt::Windows::Foundation::IInspectable const& e);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);

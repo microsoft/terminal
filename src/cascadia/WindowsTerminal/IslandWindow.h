@@ -21,6 +21,7 @@ public:
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
+    LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam) override;
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);

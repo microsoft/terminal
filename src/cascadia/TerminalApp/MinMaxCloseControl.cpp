@@ -10,6 +10,9 @@
 #include "MinMaxCloseControl.h"
 
 #include "MinMaxCloseControl.g.cpp"
+
+#include "winrt/Windows.ApplicationModel.Resources.Core.h"
+
 using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
@@ -36,6 +39,21 @@ namespace winrt::TerminalApp::implementation
                                          RoutedEventArgs const& e)
     {
         _closeClickHandlers(*this, e);
+    }
+
+    winrt::fire_and_forget MinMaxCloseControl::_ResourceQualifiersChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                                                          winrt::Windows::Foundation::IInspectable const& /*e*/)
+    {
+        co_await winrt::resume_foreground(Dispatcher());
+        CloseGlyph().UriSource(CloseGlyph().UriSource());
+        MinimizeGlyph().UriSource(MinimizeGlyph().UriSource());
+        if (auto t = MaximizeButton().GetTemplateChild(L"MaxRestoreGlyph"))
+        {
+            if (auto t2 = t.try_as<Controls::BitmapIcon>())
+            {
+                t2.UriSource(t2.UriSource());
+            }
+        }
     }
 
     void MinMaxCloseControl::SetWindowVisualState(WindowVisualState visualState)
@@ -89,6 +107,7 @@ namespace winrt::TerminalApp::implementation
             CloseButton().Height(windowedHeight);
             break;
         }
+        _ResourceQualifiersChanged(nullptr, nullptr);
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);

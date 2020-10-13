@@ -331,5 +331,176 @@
     </ItemGroup>
   </Target>
 
+  <ItemGroup>
+    <None Include="appframeicons/Close.scale-100_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-100.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-125_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-125.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-150_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-150.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-200_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-200.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-250_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-250.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-300_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-300.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-400_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Close.scale-400.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-100_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-100.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-125_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-125.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-150_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-150.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-200_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-200.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-250_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-250.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-300_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-300.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-400_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Maximize.scale-400.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-100_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-100.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-125_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-125.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-150_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-150.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-200_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-200.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-250_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-250.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-300_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-300.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-400_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Minimize.scale-400.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-100_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-100.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-125_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-125.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-150_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-150.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-200_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-200.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-250_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-250.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-300_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-300.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-400_contrast-white.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="appframeicons/Restore.scale-400.png">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+  </ItemGroup>
+
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

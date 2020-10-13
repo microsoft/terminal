@@ -5,6 +5,7 @@
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
+#include "winrt/Windows.ApplicationModel.Resources.Core.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -271,6 +272,31 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         _rootGrid.Width(size.Width);
         _rootGrid.Height(size.Height);
     }
+}
+
+LRESULT IslandWindow::HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam) try {
+    static constexpr std::array<std::pair<float, std::wstring_view>, 6> scaleQualifiers{
+        std::pair{ 1.0f, L"100" },
+        std::pair{ 1.25f, L"125" },
+        std::pair{ 1.50f, L"150" },
+        std::pair{ 2.0f, L"200" },
+        std::pair{ 3.0f, L"300" },
+        std::pair{ 4.0f, L"400" },
+    };
+    auto lr = __super::HandleDpiChange(hWnd, wParam, lParam);
+    auto fv = winrt::Windows::ApplicationModel::Resources::Core::ResourceContext::GetForCurrentView();
+    auto qv = fv.QualifierValues();
+    auto sc = GetCurrentDpiScale();
+    auto pp = std::partition_point(scaleQualifiers.begin(), scaleQualifiers.end(), [sc](auto&& f) {
+        return f.first < sc;
+    });
+    auto pv = pp->second;
+    qv.Insert(L"scale", pp->second);
+    return lr;
+}
+catch (...)
+{
+    return 0;
 }
 
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept

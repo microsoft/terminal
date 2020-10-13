@@ -100,7 +100,7 @@ public:
     }
 
     // DPI Change handler. on WM_DPICHANGE resize the window
-    [[nodiscard]] LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
+    [[nodiscard]] virtual LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
         _inDpiChange = true;
         const HWND hWndStatic = GetWindow(hWnd, GW_CHILD);

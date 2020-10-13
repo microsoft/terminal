@@ -18,48 +18,42 @@ the MIT License. See LICENSE in the project root for license information. -->
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
-                    <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
-                    <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
-                    <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
-                    <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
+                    <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
+                    <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
+                    <StaticResource x:Key="ButtonForeground" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <SolidColorBrush x:Key="ButtonBackground" Color="Transparent" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
-                    <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
+                    <SolidColorBrush x:Key="CloseButtonForegroundPointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
-                    <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
+                    <SolidColorBrush x:Key="CloseButtonForegroundPressed" Color="Black"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
-                    <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
-                    <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
-                    <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
+                    <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
+                    <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
+                    <StaticResource x:Key="ButtonForeground" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <SolidColorBrush x:Key="ButtonBackground" Color="Transparent" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
-                    <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
+                    <SolidColorBrush x:Key="CloseButtonForegroundPointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
-                    <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
+                    <SolidColorBrush x:Key="CloseButtonForegroundPressed" Color="Black"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <x:Double x:Key="CaptionButtonStrokeWidth">3.0</x:Double>
-                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
-                    <SolidColorBrush x:Key="CaptionButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
-                    <SolidColorBrush x:Key="CaptionButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
-                    <SolidColorBrush x:Key="CaptionButtonStroke" Color="{ThemeResource SystemColorButtonTextColor}"/>
-                    <SolidColorBrush x:Key="CaptionButtonStrokePointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
-                    <SolidColorBrush x:Key="CaptionButtonStrokePressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="ButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
+                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
+                    <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource SystemColorButtonTextColor}"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
-                    <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="CloseButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
-                    <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="CloseButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
-
-            <x:String x:Key="CaptionButtonPath"></x:String>
-            <x:String x:Key="CaptionButtonPathWindowMaximized"></x:String>
 
             <!-- "CaptionButtonHeightWindowed" and
                  "CaptionButtonHeightMaximized" define the size we should use
@@ -74,82 +68,59 @@ the MIT License. See LICENSE in the project root for license information. -->
             <x:Double x:Key="CaptionButtonHeightMaximized">32.0</x:Double>
 
             <Style x:Key="CaptionButton" TargetType="Button">
+                <Setter Property="Background" Value="{ThemeResource ButtonBackground}"/>
+                <Setter Property="BackgroundSizing" Value="OuterBorderEdge"/>
+                <Setter Property="Foreground" Value="{ThemeResource ButtonForeground}"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource ButtonBorderBrush}"/>
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Background" Value="{ThemeResource CaptionButtonBackground}" />
                 <Setter Property="IsTabStop" Value="False" />
+                <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="UseSystemFocusVisuals" Value="False"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
-
-                            <Border x:Name="ButtonBaseElement"
-                                Background="{TemplateBinding Background}"
-                                BackgroundSizing="{TemplateBinding BackgroundSizing}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{TemplateBinding CornerRadius}"
-                                Padding="{TemplateBinding Padding}"
-                                AutomationProperties.AccessibilityView="Raw">
-
+                            <ContentPresenter x:Name="ContentPresenter" AutomationProperties.AccessibilityView="Raw" BackgroundSizing="{TemplateBinding BackgroundSizing}" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" ContentTemplate="{TemplateBinding ContentTemplate}" Content="{TemplateBinding Content}" CornerRadius="{TemplateBinding CornerRadius}" ContentTransitions="{TemplateBinding ContentTransitions}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" Padding="{TemplateBinding Padding}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
                                 <VisualStateManager.VisualStateGroups>
                                     <VisualStateGroup x:Name="CommonStates">
-                                        <VisualStateGroup.Transitions>
-                                            <VisualTransition From="PointerOver" To="Normal">
-                                                <Storyboard>
-                                                    <ColorAnimation Storyboard.TargetName="ButtonBaseElement" Storyboard.TargetProperty="(UIElement.Background).(SolidColorBrush.Color)" To="{Binding Color, Source={ThemeResource CaptionButtonBackground}}" Duration="0:0:0.2"/>
-                                                    <ColorAnimation Storyboard.TargetName="Path" Storyboard.TargetProperty="(UIElement.Stroke).(SolidColorBrush.Color)" To="{Binding Color, Source={ThemeResource CaptionButtonStroke}}" Duration="0:0:0.1"/>
-                                                </Storyboard>
-                                            </VisualTransition>
-                                        </VisualStateGroup.Transitions>
-
                                         <VisualState x:Name="Normal">
-                                            <VisualState.Setters>
-                                                <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackground}" />
-                                                <Setter Target="Path.Stroke" Value="{ThemeResource CaptionButtonStroke}" />
-                                            </VisualState.Setters>
+                                            <Storyboard>
+                                            </Storyboard>
                                         </VisualState>
-
                                         <VisualState x:Name="PointerOver">
-                                            <VisualState.Setters>
-                                                <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackgroundPointerOver}" />
-                                                <Setter Target="Path.Stroke" Value="{ThemeResource CaptionButtonStrokePointerOver}" />
-                                            </VisualState.Setters>
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Duration="0" Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Background">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundPointerOver}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonForegroundPointerOver}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
                                         </VisualState>
-
                                         <VisualState x:Name="Pressed">
-                                            <VisualState.Setters>
-                                                <Setter Target="ButtonBaseElement.Background" Value="{ThemeResource CaptionButtonBackgroundPressed}" />
-                                                <Setter Target="Path.Stroke" Value="{ThemeResource CaptionButtonStrokePressed}" />
-                                            </VisualState.Setters>
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Background">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundPressed}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonForegroundPressed}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
                                         </VisualState>
-
-                                        <VisualState x:Name="Disabled" />
-                                    </VisualStateGroup>
-
-                                    <VisualStateGroup x:Name="MinMaxStates">
-                                        <VisualState x:Name="WindowStateNormal" />
-
-                                        <VisualState x:Name="WindowStateMaximized">
-                                            <VisualState.Setters>
-                                                <Setter Target="Path.Data" Value="{ThemeResource CaptionButtonPathWindowMaximized}" />
-                                            </VisualState.Setters>
+                                        <VisualState x:Name="Disabled">
+                                            <Storyboard>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Background">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundDisabled}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                                <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                                    <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonForegroundDisabled}"/>
+                                                </ObjectAnimationUsingKeyFrames>
+                                            </Storyboard>
                                         </VisualState>
                                     </VisualStateGroup>
-
                                 </VisualStateManager.VisualStateGroups>
-
-                                <Path
-                                    x:Name="Path"
-                                    StrokeThickness="{ThemeResource CaptionButtonStrokeWidth}"
-                                    Stroke="{ThemeResource CaptionButtonStroke}"
-                                    Data="{ThemeResource CaptionButtonPath}"
-                                    Stretch="Fill"
-                                    UseLayoutRounding="True"
-                                    Width="10"
-                                    Height="10"
-                                    StrokeEndLineCap="Square"
-                                    StrokeStartLineCap="Square" />
-                            </Border>
-
+                            </ContentPresenter>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
@@ -164,11 +135,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             Style="{StaticResource CaptionButton}"
             Click="_MinimizeClick"
             AutomationProperties.AccessibilityView="Raw">
-        <Button.Resources>
-            <ResourceDictionary>
-                <x:String x:Key="CaptionButtonPath">M 0 0 H 10</x:String>
-            </ResourceDictionary>
-        </Button.Resources>
+        <BitmapIcon x:Name="MinimizeGlyph" UriSource="ms-appx:///TerminalApp/appframeicons/Minimize.png" Width="12" Height="12" />
     </Button>
     <Button Height="{StaticResource CaptionButtonHeightWindowed}" MinWidth="46.0" Width="46.0"
             x:Name="MaximizeButton"
@@ -176,12 +143,60 @@ the MIT License. See LICENSE in the project root for license information. -->
             Style="{StaticResource CaptionButton}"
             Click="_MaximizeClick"
             AutomationProperties.AccessibilityView="Raw">
-        <Button.Resources>
-            <ResourceDictionary>
-                <x:String x:Key="CaptionButtonPath">M 0 0 H 10 V 10 H 0 V 0</x:String>
-                <x:String x:Key="CaptionButtonPathWindowMaximized">M 0 2 h 8 v 8 h -8 v -8 M 2 2 v -2 h 8 v 8 h -2</x:String>
-            </ResourceDictionary>
-        </Button.Resources>
+        <Button.Template>
+            <!-- Yes, you have to retemplate the ENTIRE BUTTON to add a single visual state. -->
+            <ControlTemplate TargetType="Button">
+                <ContentPresenter x:Name="ContentPresenter" AutomationProperties.AccessibilityView="Raw" BackgroundSizing="{TemplateBinding BackgroundSizing}" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" ContentTemplate="{TemplateBinding ContentTemplate}" CornerRadius="{TemplateBinding CornerRadius}" ContentTransitions="{TemplateBinding ContentTransitions}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" Padding="{TemplateBinding Padding}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}">
+                    <VisualStateManager.VisualStateGroups>
+                        <VisualStateGroup x:Name="CommonStates">
+                            <VisualState x:Name="Normal">
+                                <Storyboard>
+                                </Storyboard>
+                            </VisualState>
+                            <VisualState x:Name="PointerOver">
+                                <Storyboard>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Background">
+                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundPointerOver}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonForegroundPointerOver}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </VisualState>
+                            <VisualState x:Name="Pressed">
+                                <Storyboard>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Background">
+                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundPressed}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonForegroundPressed}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </VisualState>
+                            <VisualState x:Name="Disabled">
+                                <Storyboard>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Background">
+                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonBackgroundDisabled}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                    <ObjectAnimationUsingKeyFrames Storyboard.TargetName="ContentPresenter" Storyboard.TargetProperty="Foreground">
+                                        <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource ButtonForegroundDisabled}"/>
+                                    </ObjectAnimationUsingKeyFrames>
+                                </Storyboard>
+                            </VisualState>
+                        </VisualStateGroup>
+                        <VisualStateGroup x:Name="MinMaxStates">
+                            <VisualState x:Name="WindowStateNormal" />
+                            <VisualState x:Name="WindowStateMaximized">
+                                <VisualState.Setters>
+                                    <Setter Target="MaxRestoreGlyph.UriSource" Value="ms-appx:///TerminalApp/appframeicons/Restore.png" />
+                                </VisualState.Setters>
+                            </VisualState>
+                        </VisualStateGroup>
+                    </VisualStateManager.VisualStateGroups>
+                    <BitmapIcon x:Name="MaxRestoreGlyph" UriSource="ms-appx:///TerminalApp/appframeicons/Maximize.png" />
+                </ContentPresenter>
+            </ControlTemplate>
+        </Button.Template>
     </Button>
     <Button Height="{StaticResource CaptionButtonHeightWindowed}" MinWidth="46.0" Width="46.0"
             x:Name="CloseButton"
@@ -193,27 +208,26 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary>
                 <ResourceDictionary.ThemeDictionaries>
                     <ResourceDictionary x:Key="Light">
-                        <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
-                        <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
-                        <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="CloseButtonStrokePointerOver"/>
-                        <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="CloseButtonStrokePressed"/>
+                        <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
+                        <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
+                        <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="CloseButtonForegroundPointerOver"/>
+                        <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="CloseButtonForegroundPressed"/>
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="Dark">
-                        <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
-                        <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
-                        <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="CloseButtonStrokePointerOver"/>
-                        <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="CloseButtonStrokePressed"/>
+                        <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
+                        <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
+                        <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="CloseButtonForegroundPointerOver"/>
+                        <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="CloseButtonForegroundPressed"/>
                     </ResourceDictionary>
                     <ResourceDictionary x:Key="HighContrast">
-                        <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
-                        <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
-                        <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="CloseButtonStrokePointerOver"/>
-                        <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="CloseButtonStrokePressed"/>
+                        <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="CloseButtonBackgroundPointerOver"/>
+                        <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="CloseButtonBackgroundPressed"/>
+                        <StaticResource x:Key="ButtonForegroundPointerOver" ResourceKey="CloseButtonForegroundPointerOver"/>
+                        <StaticResource x:Key="ButtonForegroundPressed" ResourceKey="CloseButtonForegroundPressed"/>
                     </ResourceDictionary>
                 </ResourceDictionary.ThemeDictionaries>
-
-                <x:String x:Key="CaptionButtonPath">M 0 0 L 10 10 M 10 0 L 0 10</x:String>
             </ResourceDictionary>
         </Button.Resources>
+        <BitmapIcon x:Name="CloseGlyph" UriSource="ms-appx:///TerminalApp/appframeicons/Close.png" Width="12" Height="12" />
     </Button>
 </StackPanel>
