@@ -79,9 +79,6 @@
     <ClInclude Include="NewTabOptionPanelControl.h">
       <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ObjectModel\AppSettings.h" />
-    <ClInclude Include="ObjectModel\ColorScheme.h" />
-    <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -183,9 +180,6 @@
     <ClCompile Include="NewTabOptionPanelControl.cpp">
       <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ObjectModel\AppSettings.cpp" />
-    <ClCompile Include="ObjectModel\ColorScheme.cpp" />
-    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -212,7 +206,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="MainPageTemplateSelector.idl" />
-    <Midl Include="ObjectModel\ColorScheme.idl" />
     <Midl Include="Home.idl">
       <DependentUpon>Home.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -234,7 +227,6 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="ObjectModel\ColorSchemeModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>

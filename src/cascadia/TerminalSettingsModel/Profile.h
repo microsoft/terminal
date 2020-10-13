@@ -71,50 +71,52 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
-        GETSET_PROPERTY(hstring, Name, L"Default");
-        GETSET_PROPERTY(hstring, Source);
-        GETSET_PROPERTY(bool, Hidden, false);
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-        GETSET_PROPERTY(hstring, IconPath);
+        OBSERVABLE_GETSET_PROPERTY(hstring, Name, _PropertyChangedHandlers, L"Default");
+        OBSERVABLE_GETSET_PROPERTY(hstring, Source, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, Hidden, _PropertyChangedHandlers, false);
 
-        GETSET_PROPERTY(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
-        GETSET_PROPERTY(hstring, TabTitle);
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor);
-        GETSET_PROPERTY(bool, SuppressApplicationTitle, false);
+        OBSERVABLE_GETSET_PROPERTY(hstring, IconPath, _PropertyChangedHandlers);
 
-        GETSET_PROPERTY(bool, UseAcrylic, false);
-        GETSET_PROPERTY(double, AcrylicOpacity, 0.5);
-        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
+        OBSERVABLE_GETSET_PROPERTY(CloseOnExitMode, CloseOnExit, _PropertyChangedHandlers, CloseOnExitMode::Graceful);
+        OBSERVABLE_GETSET_PROPERTY(hstring, TabTitle, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, SuppressApplicationTitle, _PropertyChangedHandlers, false);
 
-        GETSET_PROPERTY(hstring, FontFace, DEFAULT_FONT_FACE);
-        GETSET_PROPERTY(int32_t, FontSize, DEFAULT_FONT_SIZE);
-        GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
-        GETSET_PROPERTY(hstring, Padding, DEFAULT_PADDING);
+        OBSERVABLE_GETSET_PROPERTY(bool, UseAcrylic, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(double, AcrylicOpacity, _PropertyChangedHandlers, 0.5);
+        OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState, _PropertyChangedHandlers, Microsoft::Terminal::TerminalControl::ScrollbarState::Visible);
 
-        GETSET_PROPERTY(hstring, Commandline, L"cmd.exe");
-        GETSET_PROPERTY(hstring, StartingDirectory);
+        OBSERVABLE_GETSET_PROPERTY(hstring, FontFace, _PropertyChangedHandlers, DEFAULT_FONT_FACE);
+        OBSERVABLE_GETSET_PROPERTY(int32_t, FontSize, _PropertyChangedHandlers, DEFAULT_FONT_SIZE);
+        OBSERVABLE_GETSET_PROPERTY(Windows::UI::Text::FontWeight, FontWeight, _PropertyChangedHandlers, DEFAULT_FONT_WEIGHT);
+        OBSERVABLE_GETSET_PROPERTY(hstring, Padding, _PropertyChangedHandlers, DEFAULT_PADDING);
 
-        GETSET_PROPERTY(hstring, BackgroundImagePath);
-        GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
-        GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
+        OBSERVABLE_GETSET_PROPERTY(hstring, Commandline, _PropertyChangedHandlers, L"cmd.exe");
+        OBSERVABLE_GETSET_PROPERTY(hstring, StartingDirectory, _PropertyChangedHandlers);
 
-        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
-        GETSET_PROPERTY(bool, RetroTerminalEffect, false);
-        GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
-        GETSET_PROPERTY(bool, SoftwareRendering, false);
+        OBSERVABLE_GETSET_PROPERTY(hstring, BackgroundImagePath, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(double, BackgroundImageOpacity, _PropertyChangedHandlers, 1.0);
+        OBSERVABLE_GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, _PropertyChangedHandlers, Windows::UI::Xaml::Media::Stretch::Fill);
 
-        GETSET_PROPERTY(hstring, ColorSchemeName, L"Campbell");
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, Foreground);
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, Background);
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, SelectionBackground);
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, CursorColor);
+        OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, _PropertyChangedHandlers, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
+        OBSERVABLE_GETSET_PROPERTY(bool, RetroTerminalEffect, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, ForceFullRepaintRendering, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, SoftwareRendering, _PropertyChangedHandlers, false);
 
-        GETSET_PROPERTY(int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        GETSET_PROPERTY(bool, SnapOnInput, true);
-        GETSET_PROPERTY(bool, AltGrAliasing, true);
+        OBSERVABLE_GETSET_PROPERTY(hstring, ColorSchemeName, _PropertyChangedHandlers, L"Campbell");
+        OBSERVABLE_GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, Foreground, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, Background, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, SelectionBackground, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, CursorColor, _PropertyChangedHandlers);
 
-        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
-        GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+        OBSERVABLE_GETSET_PROPERTY(int32_t, HistorySize, _PropertyChangedHandlers, DEFAULT_HISTORY_SIZE);
+        OBSERVABLE_GETSET_PROPERTY(bool, SnapOnInput, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(bool, AltGrAliasing, _PropertyChangedHandlers, true);
+
+        OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, _PropertyChangedHandlers, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, CursorHeight, _PropertyChangedHandlers, DEFAULT_CURSOR_HEIGHT);
 
     private:
         std::optional<winrt::guid> _Guid{ std::nullopt };

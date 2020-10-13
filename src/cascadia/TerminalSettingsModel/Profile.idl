@@ -10,7 +10,8 @@ namespace Microsoft.Terminal.Settings.Model
         Always
     };
 
-    [default_interface] runtimeclass Profile {
+    [default_interface] runtimeclass Profile : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
         Profile();
         Profile(Guid guid);
 

@@ -1,9 +1,0 @@
-import "ObjectModel/ColorScheme.idl";
-
-namespace Microsoft.Terminal.Settings.Editor.Model
-{
-    runtimeclass ColorSchemeModel
-    {
-        ColorScheme ColorScheme { get; };
-    }
-}
