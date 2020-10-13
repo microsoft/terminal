@@ -262,8 +262,16 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     else if (_BackgroundImagePath == to_hstring(DesktopWallpaperEnum))
     {
         WCHAR desktopWallpaper[MAX_PATH];
-        SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE);
-        return winrt::hstring{ (desktopWallpaper) };
+        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            return winrt::hstring{ (desktopWallpaper) };
+        }
+        else
+        {
+            return winrt::hstring{ L"" };
+        }
+
+        
     }
     else
     {
