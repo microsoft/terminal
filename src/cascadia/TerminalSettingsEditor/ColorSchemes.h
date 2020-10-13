@@ -4,7 +4,6 @@
 #pragma once
 
 #include "ColorSchemes.g.h"
-#include "ObjectModel/ColorSchemeModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -12,7 +11,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
-        Model::ColorSchemeModel ColorSchemeModel();
 
         void Background_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const&, Windows::UI::Xaml::Controls::ColorChangedEventArgs const&);
         void Foreground_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const&, Windows::UI::Xaml::Controls::ColorChangedEventArgs const&);
@@ -33,8 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Yellow_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const&, Windows::UI::Xaml::Controls::ColorChangedEventArgs const&);
         void BrightYellow_ColorChanged(Windows::UI::Xaml::Controls::ColorPicker const&, Windows::UI::Xaml::Controls::ColorChangedEventArgs const&);
 
-    private:
-        Model::ColorSchemeModel m_colorSchemeModel{ nullptr };
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ColorScheme, ColorScheme);
     };
 }
 

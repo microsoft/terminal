@@ -1,0 +1,8 @@
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass MainPageTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        MainPageTemplateSelector();
+        Windows.UI.Xaml.DataTemplate ProfilesTemplate;
+    }
+}

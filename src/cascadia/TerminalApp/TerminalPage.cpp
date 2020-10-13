@@ -2705,7 +2705,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_MakeSwitchToTabCommand(const ITab& tab, const uint32_t index)
     {
-
         SwitchToTabArgs args{ index };
         ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
 

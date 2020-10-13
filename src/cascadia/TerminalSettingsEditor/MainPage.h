@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include "Utils.h"
 #include "MainPage.g.h"
-#include "ObjectModel/AppSettings.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SearchSettings(hstring query, winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& autoBox);
 
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings Settings();
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> Profiles();
 
     private:
         // XAML should data-bind to the _settingsClone

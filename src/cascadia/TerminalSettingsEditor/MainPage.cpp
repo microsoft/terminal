@@ -21,8 +21,9 @@ namespace winrt
 }
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -40,22 +41,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Add new profile"), L"AddNew_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Always show tabs"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Color scheme"), L"ColorSchemes_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Columns on first launch"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Columns on first launch"), L"Startup_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Copy after selection is made"), L"Interaction_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Copy formatting"), L"Interaction_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Default profile"), L"Launch_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Disable dynamic profiles"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Default profile"), L"Startup_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Disable dynamic profiles"), L"Startup_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Global appearance"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Global profile settings"), L"GlobalProfile_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Hide close all tabs popup"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Interaction"), L"Interaction_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Keyboard"), L"Keyboard_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch"), L"Launch_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch on startup"), L"Launch_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch position"), L"Launch_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch size"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch"), L"Startup_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch on startup"), L"Startup_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch position"), L"Startup_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Launch size"), L"Startup_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Rendering"), L"Rendering_Nav"));
-        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Rows on first launch"), L"Launch_Nav"));
+        SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Rows on first launch"), L"Startup_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Screen redrawing"), L"Rendering_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Show terminal title in title bar"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Show the title bar"), L"GlobalAppearance_Nav"));
@@ -66,9 +67,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Word delimiters"), L"Interaction_Nav"));
     }
 
-    winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings MainPage::Settings()
+    CascadiaSettings MainPage::Settings()
     {
         return _settingsSource;
+    }
+
+    IObservableVector<Profile> MainPage::Profiles()
+    {
+        return Settings().Profiles();
     }
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
@@ -185,7 +191,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const hstring homePage = L"Home_Nav";
         const hstring generalPage = L"General_Nav";
-        const hstring launchSubpage = L"Launch_Nav";
+        const hstring startupSubpage = L"Startup_Nav";
         const hstring interactionSubpage = L"Interaction_Nav";
         const hstring renderingSubpage = L"Rendering_Nav";
 
@@ -203,7 +209,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame.Navigate(xaml_typename<Editor::Home>());
         }
-        else if (clickedItemTag == launchSubpage)
+        else if (clickedItemTag == generalPage)
+        {
+            contentFrame.Navigate(xaml_typename<Editor::Globals>());
+        }
+        else if (clickedItemTag == startupSubpage)
         {
             contentFrame.Navigate(xaml_typename<Editor::Launch>());
         }

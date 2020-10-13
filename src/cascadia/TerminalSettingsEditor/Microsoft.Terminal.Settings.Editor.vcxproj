@@ -53,7 +53,6 @@
     </ClInclude>
     <ClInclude Include="Globals.h">
       <DependentUpon>Globals.xaml</DependentUpon>
-      <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Home.h">
       <DependentUpon>Home.xaml</DependentUpon>
@@ -71,6 +70,9 @@
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="MainPageTemplateSelector.h">
+      <DependentUpon>MainPageTemplateSelector.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SplitPaneOptionPanelControl.h">
       <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
     </ClInclude>
@@ -80,13 +82,9 @@
     <ClInclude Include="ObjectModel\AppSettings.h" />
     <ClInclude Include="ObjectModel\ColorScheme.h" />
     <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
-    <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ObjectModel\ProfileModel.h">
-      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Profiles.h">
       <DependentUpon>Profiles.xaml</DependentUpon>
@@ -159,7 +157,6 @@
     </ClCompile>
     <ClCompile Include="Globals.cpp">
       <DependentUpon>Globals.xaml</DependentUpon>
-      <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Home.cpp">
       <DependentUpon>Home.xaml</DependentUpon>
@@ -177,6 +174,9 @@
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="MainPageTemplateSelector.cpp">
+      <DependentUpon>MainPageTemplateSelector.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="SplitPaneOptionPanelControl.cpp">
       <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
     </ClCompile>
@@ -186,7 +186,6 @@
     <ClCompile Include="ObjectModel\AppSettings.cpp" />
     <ClCompile Include="ObjectModel\ColorScheme.cpp" />
     <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
-    <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -194,9 +193,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="ObjectModel\ProfileModel.cpp">
-      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Profiles.cpp">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -211,6 +207,11 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
+    <Midl Include="Globals.idl">
+      <DependentUpon>Globals.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="MainPageTemplateSelector.idl" />
     <Midl Include="ObjectModel\ColorScheme.idl" />
     <Midl Include="Home.idl">
       <DependentUpon>Home.xaml</DependentUpon>
@@ -224,10 +225,6 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="Globals.idl">
-      <DependentUpon>Globals.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
     <Midl Include="HomeGridItem.idl" />
     <Midl Include="Launch.idl">
       <DependentUpon>Launch.xaml</DependentUpon>
@@ -238,8 +235,6 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ObjectModel\ColorSchemeModel.idl" />
-    <Midl Include="ObjectModel\Profile.idl" />
-    <Midl Include="ObjectModel\ProfileModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>

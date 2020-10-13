@@ -14,12 +14,6 @@
     <ClCompile Include="ObjectModel\AppSettings.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectModel\GlobalSettings.cpp">
-      <Filter>ObjectModel</Filter>
-    </ClCompile>
-    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
-      <Filter>ObjectModel</Filter>
-    </ClCompile>
     <ClCompile Include="ObjectModel\Profile.cpp">
       <Filter>ObjectModel</Filter>
     </ClCompile>
@@ -37,12 +31,6 @@
     <ClInclude Include="ObjectModel\AppSettings.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectModel\GlobalSettings.h">
-      <Filter>ObjectModel</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
-      <Filter>ObjectModel</Filter>
-    </ClInclude>
     <ClInclude Include="ObjectModel\Profile.h">
       <Filter>ObjectModel</Filter>
     </ClInclude>
@@ -53,12 +41,6 @@
       <Filter>ObjectModel</Filter>
     </Midl>
     <Midl Include="ObjectModel\ColorScheme.idl">
-      <Filter>ObjectModel</Filter>
-    </Midl>
-    <Midl Include="ObjectModel\GlobalSettings.idl">
-      <Filter>ObjectModel</Filter>
-    </Midl>
-    <Midl Include="ObjectModel\GlobalSettingsModel.idl">
       <Filter>ObjectModel</Filter>
     </Midl>
     <Midl Include="ObjectModel\Profile.idl">

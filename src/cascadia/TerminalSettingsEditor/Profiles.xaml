@@ -10,6 +10,18 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <Flyout x:Key="ColorPickerFlyout">
+            <ColorPicker IsColorSliderVisible="False"
+                         IsColorChannelTextInputVisible="False"
+                         IsHexInputVisible="False"
+                         IsAlphaEnabled="False"
+                         IsAlphaSliderVisible="True"
+                         IsAlphaTextInputVisible="True" />
+        </Flyout>
+    </Page.Resources>
+    
     <Pivot>
         <PivotItem Header="General">
             <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
@@ -24,14 +36,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="Commandline" Header="Command line" Margin="0,0,0,20" Grid.Row="0" Grid.Column="0" FontSize="15" Text="{x:Bind ProfileModel.Profile.Commandline, Mode=TwoWay}" ToolTipService.ToolTip="Executable used in the profile." ToolTipService.Placement="Mouse"/>
+                <TextBox x:Name="Commandline" Header="Command line" Margin="0,0,0,20" Grid.Row="0" Grid.Column="0" FontSize="15" Text="{x:Bind Profile.Commandline, Mode=TwoWay}" ToolTipService.ToolTip="Executable used in the profile." ToolTipService.Placement="Mouse"/>
                 <Button Content="Browse" Click="Commandline_Click" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" FontSize="15"/>
-                <TextBox x:Name="StartingDirectory" Header="Starting directory" Margin="0,0,0,20" Grid.Row="1" Grid.Column="0" FontSize="15" Text="{x:Bind ProfileModel.Profile.StartingDirectory, Mode=TwoWay}" ToolTipService.ToolTip="The directory the shell starts in when it is loaded." ToolTipService.Placement="Mouse"/>
+                <TextBox x:Name="StartingDirectory" Header="Starting directory" Margin="0,0,0,20" Grid.Row="1" Grid.Column="0" FontSize="15" Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" ToolTipService.ToolTip="The directory the shell starts in when it is loaded." ToolTipService.Placement="Mouse"/>
                 <Button Content="Browse" Margin="5,0,0,0" Grid.Row="1" Grid.Column="1" FontSize="15"/>
-                <TextBox Header="Icon" Margin="0,0,0,20" Grid.Row="2" Grid.Column="0" FontSize="15" Text="{x:Bind ProfileModel.Profile.Icon, Mode=TwoWay}" ToolTipService.ToolTip="Image file location of the icon used in the profile. Displays within the tab and the dropdown menu." ToolTipService.Placement="Mouse"/>
+                <TextBox Header="Icon" Margin="0,0,0,20" Grid.Row="2" Grid.Column="0" FontSize="15" Text="{x:Bind Profile.IconPath, Mode=TwoWay}" ToolTipService.ToolTip="Image file location of the icon used in the profile. Displays within the tab and the dropdown menu." ToolTipService.Placement="Mouse"/>
                 <Button Content="Browse" Margin="5,0,0,0" Grid.Row="2" Grid.Column="1" FontSize="15" />
                 <StackPanel Grid.Row="3" Grid.Column="0">
-                    <TextBox Header="Tab title" Margin="0,0,0,20" FontSize="15" Text="{x:Bind ProfileModel.Profile.TabTitle, Mode=TwoWay}" ToolTipService.ToolTip="Replaces the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (CMD, PowerShell) may use this value over the lifetime of the application." ToolTipService.Placement="Mouse"/>
+                    <TextBox Header="Tab title" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" ToolTipService.ToolTip="Replaces the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (CMD, PowerShell) may use this value over the lifetime of the application." ToolTipService.Placement="Mouse"/>
                     <Controls:RadioButtons Header="Scrollbar visibility" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Defines the visibility of the scrollbar." ToolTipService.Placement="Mouse">
                         <RadioButton x:Name="ScrollBarVisible" Content="Visible"/>
                         <RadioButton x:Name="ScrollBarHidden" Content="Hidden"/>
@@ -53,16 +65,18 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ColumnDefinition Width="1*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
+
+                    
                     <!-- THIS IS WHERE THE MINI-TERMINAL WOULD GO -->
 
 
                     <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,100,0">
-                        <TextBox Header="Font face" Margin="0,0,0,20" FontSize="15" Text="{x:Bind ProfileModel.Profile.FontFace, Mode=TwoWay}" ToolTipService.ToolTip="Name of the font face used in the profile." ToolTipService.Placement="Mouse"/>
+                        <TextBox Header="Font face" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.FontFace, Mode=TwoWay}" ToolTipService.ToolTip="Name of the font face used in the profile." ToolTipService.Placement="Mouse"/>
                     </StackPanel>
                     <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,100,0">
-                        <Controls:NumberBox Header="Font size" Margin="0,0,0,20" FontSize="15" Value="{x:Bind ProfileModel.Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.ToolTip="Size of the font in points." ToolTipService.Placement="Mouse" />
+                        <Controls:NumberBox Header="Font size" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.ToolTip="Size of the font in points." ToolTipService.Placement="Mouse" />
                         <TextBox Header="Font weight" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Sets the weight (lightness or heaviness of the strokes) for the given font." ToolTipService.Placement="Mouse"/>
-                        <TextBox Header="Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind ProfileModel.Profile.Padding, Mode=TwoWay}" ToolTipService.ToolTip="Sets the padding around the text within the window. Can have three different formats: '#' sets the same padding for all sides. '#, #' sets the same padding for left-right and top-bottom. '#, #, #, #' sets the padding individually for left, top, right, and bottom." ToolTipService.Placement="Mouse"/>
+                        <TextBox Header="Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.Padding, Mode=TwoWay}" ToolTipService.ToolTip="Sets the padding around the text within the window. Can have three different formats: '#' sets the same padding for all sides. '#, #' sets the same padding for left-right and top-bottom. '#, #, #, #' sets the padding individually for left, top, right, and bottom." ToolTipService.Placement="Mouse"/>
                         <Controls:RadioButtons Header="Cursor shape" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Sets the shape of the cursor." ToolTipService.Placement="Mouse">
                             <RadioButton x:Name="CursorShapeBar" Content="Bar"/>
                             <RadioButton x:Name="CursorShapeVintage" Content="Vintage"/>
@@ -83,17 +97,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                <Button.Flyout>
-                                    <Flyout>
-                                        <ColorPicker IsColorSliderVisible="False"
-                                         IsColorChannelTextInputVisible="False"
-                                         IsHexInputVisible="False"
-                                         IsAlphaEnabled="False"
-                                         IsAlphaSliderVisible="True"
-                                         IsAlphaTextInputVisible="True" />
-                                    </Flyout>
-                                </Button.Flyout>
+                                    CornerRadius="2"
+                                    Flyout="{StaticResource ColorPickerFlyout}">
                             </Button>
                         </StackPanel>
                         <DropDownButton Content="Color scheme" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Name of the color scheme to use." ToolTipService.Placement="Mouse">
@@ -121,17 +126,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                <Button.Flyout>
-                                    <Flyout>
-                                        <ColorPicker IsColorSliderVisible="False"
-                                         IsColorChannelTextInputVisible="False"
-                                         IsHexInputVisible="False"
-                                         IsAlphaEnabled="False"
-                                         IsAlphaSliderVisible="True"
-                                         IsAlphaTextInputVisible="True" />
-                                    </Flyout>
-                                </Button.Flyout>
+                                    CornerRadius="2"
+                                    Flyout="{StaticResource ColorPickerFlyout}">
                             </Button>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
@@ -146,17 +142,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                <Button.Flyout>
-                                    <Flyout>
-                                        <ColorPicker IsColorSliderVisible="False"
-                                         IsColorChannelTextInputVisible="False"
-                                         IsHexInputVisible="False"
-                                         IsAlphaEnabled="False"
-                                         IsAlphaSliderVisible="True"
-                                         IsAlphaTextInputVisible="True" />
-                                    </Flyout>
-                                </Button.Flyout>
+                                    CornerRadius="2"
+                                    Flyout="{StaticResource ColorPickerFlyout}">
                             </Button>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal"
@@ -171,21 +158,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                <Button.Flyout>
-                                    <Flyout>
-                                        <ColorPicker IsColorSliderVisible="False"
-                                         IsColorChannelTextInputVisible="False"
-                                         IsHexInputVisible="False"
-                                         IsAlphaEnabled="False"
-                                         IsAlphaSliderVisible="True"
-                                         IsAlphaTextInputVisible="True" />
-                                    </Flyout>
-                                </Button.Flyout>
+                                    CornerRadius="2"
+                                    Flyout="{StaticResource ColorPickerFlyout}">
                             </Button>
                         </StackPanel>
                     </StackPanel>
-                    <TextBox x:Name="BackgroundImage" Header="Background image" Margin="0,0,0,20" FontSize="15" Grid.Column="1" Grid.Row="0" Text="{x:Bind ProfileModel.Profile.BackgroundImage, Mode=TwoWay}" ToolTipService.ToolTip="Sets the file location of the image to draw over the window background." ToolTipService.Placement="Mouse"/>
+                    <TextBox x:Name="BackgroundImage" Header="Background image" Margin="0,0,0,20" FontSize="15" Grid.Column="1" Grid.Row="0" Text="{x:Bind Profile.BackgroundImagePath, Mode=TwoWay}" ToolTipService.ToolTip="Sets the file location of the image to draw over the window background." ToolTipService.Placement="Mouse"/>
                     <Button Content="Browse" Click="BackgroundImage_Click" Margin="5,0,0,0" Grid.Column="2" Grid.Row="0"/>
                     <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,100,0">
                         <Controls:RadioButtons Header="Background image stretch mode" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Sets how the background image is resized to fill the window." ToolTipService.Placement="Mouse">
@@ -209,10 +187,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </MenuFlyout>
                             </DropDownButton.Flyout>
                         </DropDownButton>
-                        <Controls:NumberBox Header="Background image opacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind ProfileModel.Profile.BackgroundImageOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" ToolTipService.ToolTip="Sets the transparency of the background image." ToolTipService.Placement="Mouse" />
-                        <CheckBox Content="Enable acrylic" Margin="0,0,0,20" FontSize="15" IsChecked="{x:Bind ProfileModel.Profile.UseAcrylic, Mode=TwoWay}" ToolTipService.ToolTip="When checked, the window will have an acrylic background. When unchecked, the window will have a plain, untextured background." ToolTipService.Placement="Mouse"/>
-                        <Controls:NumberBox Header="Acrylic opacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind ProfileModel.Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" ToolTipService.ToolTip="When acrylic is enabled, it sets the transparency of the window for the profile." ToolTipService.Placement="Mouse" />
-                        <CheckBox Content="Retro terminal effects" Margin="0,0,0,20" FontSize="15" IsChecked="{x:Bind ProfileModel.Profile.RetroTerminalEffect, Mode=TwoWay}" ToolTipService.ToolTip="When checked, enables retro terminal effects. This is an experimental feature and its continued existence is not guaranteed." ToolTipService.Placement="Mouse"/>
+                        <Controls:NumberBox Header="Background image opacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.BackgroundImageOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" ToolTipService.ToolTip="Sets the transparency of the background image." ToolTipService.Placement="Mouse" />
+                        <CheckBox Content="Enable acrylic" Margin="0,0,0,20" FontSize="15" IsChecked="{x:Bind Profile.UseAcrylic, Mode=TwoWay}" ToolTipService.ToolTip="When checked, the window will have an acrylic background. When unchecked, the window will have a plain, untextured background." ToolTipService.Placement="Mouse"/>
+                        <Controls:NumberBox Header="Acrylic opacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" ToolTipService.ToolTip="When acrylic is enabled, it sets the transparency of the window for the profile." ToolTipService.Placement="Mouse" />
+                        <CheckBox Content="Retro terminal effects" Margin="0,0,0,20" FontSize="15" IsChecked="{x:Bind Profile.RetroTerminalEffect, Mode=TwoWay}" ToolTipService.ToolTip="When checked, enables retro terminal effects. This is an experimental feature and its continued existence is not guaranteed." ToolTipService.Placement="Mouse"/>
                     </StackPanel>
                 </Grid>
             </ScrollViewer>
