@@ -270,8 +270,6 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
         {
             return winrt::hstring{ L"" };
         }
-
-        
     }
     else
     {
