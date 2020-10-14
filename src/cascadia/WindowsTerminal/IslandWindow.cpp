@@ -139,7 +139,7 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     }
 
     int nCmdShow = SW_SHOW;
-    if (launchMode == LaunchMode::MaximizedMode)
+    if (launchMode == LaunchMode::MaximizedMode || launchMode == LaunchMode::MaximizedFocusMode)
     {
         nCmdShow = SW_MAXIMIZE;
     }
