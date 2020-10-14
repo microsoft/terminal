@@ -173,6 +173,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <TextBlock
                 Padding="16, 0, 16, 4"
+                Height="42"
                 x:Name="_parentCommandText"
                 FontStyle="Italic"
                 Visibility="{x:Bind ParentCommandName,
