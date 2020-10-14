@@ -10,6 +10,10 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <local:GuidToStringConverter x:Key="GuidToStringConverter"/>
+    </Page.Resources>
+
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
           Margin="0,12,0,0">
         <Grid.RowDefinitions>
@@ -24,7 +28,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <TextBox Text="{x:Bind GlobalSettings.DefaultProfile}" Header="Default profile" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Profile that opens when clicking the '+' icon or typing the key binding assigned to 'newTab'." ToolTipService.Placement="Mouse" />
+            <!-- TODO: This seems to complain if it's TwoWay binding on a winrt::guid property, even with a converter -->
+            <!--<TextBox Text="{x:Bind GlobalSettings.DefaultProfile, Converter={StaticResource GuidToStringConverter}, Mode=TwoWay}" Header="Default profile" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Profile that opens when clicking the '+' icon or typing the key binding assigned to 'newTab'." ToolTipService.Placement="Mouse" />-->
             <CheckBox IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Content="Launch on machine startup" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, this enables the launch of Windows Terminal at machine startup." ToolTipService.Placement="Mouse" />
             <Controls:RadioButtons Header="Launch size" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Defines whether the terminal will launch in a window, maximized, or full screen." ToolTipService.Placement="Mouse">
                 <RadioButton x:Name="DefaultLaunchSize" Content="Default"/>

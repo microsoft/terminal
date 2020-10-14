@@ -57,6 +57,9 @@
     <ClInclude Include="Globals.h">
       <DependentUpon>Globals.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="GuidToStringConverter.h">
+      <DependentUpon>GuidToStringConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Home.h">
       <DependentUpon>Home.xaml</DependentUpon>
     </ClInclude>
@@ -161,6 +164,9 @@
     <ClCompile Include="Globals.cpp">
       <DependentUpon>Globals.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="GuidToStringConverter.cpp">
+      <DependentUpon>GuidToStringConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Home.cpp">
       <DependentUpon>Home.xaml</DependentUpon>
     </ClCompile>
@@ -212,6 +218,7 @@
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="GuidToStringConverter.idl" />
     <Midl Include="MainPageTemplateSelector.idl" />
     <Midl Include="Home.idl">
       <DependentUpon>Home.xaml</DependentUpon>

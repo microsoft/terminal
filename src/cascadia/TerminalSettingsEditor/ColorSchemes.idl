@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
         Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
+        Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentOtherColors;
         Windows.Foundation.Collections.IObservableVector<String> ColorSchemeList { get; };
     }
 

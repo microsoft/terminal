@@ -49,8 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // These are implemented manually to handle the string/GUID exchange
         // by higher layers in the app.
-        void DefaultProfile(const guid& defaultProfile) noexcept;
-        guid DefaultProfile() const;
+        void DefaultProfile(const winrt::guid& defaultProfile) noexcept;
+        winrt::guid DefaultProfile() const;
         hstring UnparsedDefaultProfile() const;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         hstring _unparsedDefaultProfile;
-        guid _defaultProfile;
+        winrt::guid _defaultProfile;
 
         com_ptr<KeyMapping> _keymap;
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;

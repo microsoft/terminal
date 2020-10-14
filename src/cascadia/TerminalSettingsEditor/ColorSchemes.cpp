@@ -17,7 +17,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static constexpr uint32_t ColorTableSize = 16;
     static constexpr std::array<std::string_view, 16> TableColors = {
         "Black",
         "Red",
@@ -37,9 +36,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         "Bright White"
     };
 
+    static constexpr std::array<std::string_view, 4> OtherColors = {
+        "Background",
+        "Foreground",
+        "Selection Background",
+        "Cursor Color"
+    };
+
     ColorSchemes::ColorSchemes():
         _ColorSchemeList{ single_threaded_observable_vector<hstring>() },
-        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
+        _CurrentOtherColors{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
 
@@ -86,11 +93,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::_UpdateColorTable(const Model::ColorScheme& colorScheme)
     {
         _CurrentColorTable.Clear();
-        for (uint32_t i = 0; i < ColorTableSize; ++i)
+        for (uint32_t i = 0; i < TableColors.size(); ++i)
         {
             auto entry = winrt::make<ColorTableEntry>(to_hstring(TableColors[i]), colorScheme.Table()[i]);
             _CurrentColorTable.Append(entry);
         }
+        _CurrentOtherColors.Clear();
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[0]), colorScheme.Background()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[1]), colorScheme.Foreground()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[2]), colorScheme.SelectionBackground()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[3]), colorScheme.CursorColor()));
     }
 
     ColorTableEntry::ColorTableEntry(winrt::hstring name, Windows::UI::Color color)
