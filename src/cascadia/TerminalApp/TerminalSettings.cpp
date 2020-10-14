@@ -18,7 +18,7 @@ namespace winrt::TerminalApp::implementation
         THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
-        _ApplyProfileSettings(profile, globals.ColorSchemes());
+        _ApplyProfileSettings(profile, globals.ColorSchemes().GetView());
         _ApplyGlobalSettings(globals);
     }
 

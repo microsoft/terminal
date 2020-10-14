@@ -24,7 +24,8 @@ namespace Microsoft.Terminal.Settings.Model
         FullscreenMode,
     };
 
-    [default_interface] runtimeclass GlobalAppSettings {
+    [default_interface] runtimeclass GlobalAppSettings : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
         Guid DefaultProfile;
         String UnparsedDefaultProfile();
 
@@ -52,7 +53,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
 
-        Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
+        Windows.Foundation.Collections.IObservableMap<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 
         KeyMapping KeyMap();

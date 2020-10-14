@@ -14,6 +14,7 @@ using namespace ::Microsoft::Console;
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::UI;
+using namespace winrt::Windows::Foundation::Collections;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view ForegroundKey{ "foreground" };

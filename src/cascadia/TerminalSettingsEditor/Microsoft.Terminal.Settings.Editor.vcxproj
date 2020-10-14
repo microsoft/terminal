@@ -44,6 +44,9 @@
     <ClInclude Include="AddProfile.h">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ColorToHexConverter.h">
+      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClInclude>
@@ -145,6 +148,9 @@
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ColorToHexConverter.cpp">
+      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
@@ -201,6 +207,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
+    <Midl Include="ColorToHexConverter.idl" />
     <Midl Include="Globals.idl">
       <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>

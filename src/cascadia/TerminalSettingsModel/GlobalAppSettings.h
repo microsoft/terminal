@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         GlobalAppSettings();
 
-        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
+        Windows::Foundation::Collections::IObservableMap<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
 
         Model::KeyMapping KeyMap() const noexcept;
@@ -53,29 +53,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         guid DefaultProfile() const;
         hstring UnparsedDefaultProfile() const;
 
-        GETSET_PROPERTY(int32_t, InitialRows, DEFAULT_ROWS);
-        GETSET_PROPERTY(int32_t, InitialCols, DEFAULT_COLS);
-        GETSET_PROPERTY(bool, AlwaysShowTabs, true);
-        GETSET_PROPERTY(bool, ShowTitleInTitlebar, true);
-        GETSET_PROPERTY(bool, ConfirmCloseAllTabs, true);
-        GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-        GETSET_PROPERTY(bool, ShowTabsInTitlebar, true);
-        GETSET_PROPERTY(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        GETSET_PROPERTY(bool, CopyOnSelect, false);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
-        GETSET_PROPERTY(bool, WarnAboutLargePaste, true);
-        GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, true);
-        GETSET_PROPERTY(Model::LaunchPosition, InitialPosition, nullptr, nullptr);
-        GETSET_PROPERTY(Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
-        GETSET_PROPERTY(bool, SnapToGridOnResize, true);
-        GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
-        GETSET_PROPERTY(bool, SoftwareRendering, false);
-        GETSET_PROPERTY(bool, ForceVTInput, false);
-        GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
-        GETSET_PROPERTY(bool, StartOnUserLogin, false);
-        GETSET_PROPERTY(bool, AlwaysOnTop, false);
-        GETSET_PROPERTY(bool, UseTabSwitcher, true);
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(int32_t, InitialRows, _PropertyChangedHandlers, DEFAULT_ROWS);
+        OBSERVABLE_GETSET_PROPERTY(int32_t, InitialCols, _PropertyChangedHandlers, DEFAULT_COLS);
+        OBSERVABLE_GETSET_PROPERTY(bool, AlwaysShowTabs, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(bool, ShowTitleInTitlebar, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(bool, ConfirmCloseAllTabs, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::ElementTheme, Theme, _PropertyChangedHandlers, winrt::Windows::UI::Xaml::ElementTheme::Default);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, _PropertyChangedHandlers, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+        OBSERVABLE_GETSET_PROPERTY(bool, ShowTabsInTitlebar, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(hstring, WordDelimiters, _PropertyChangedHandlers, DEFAULT_WORD_DELIMITERS);
+        OBSERVABLE_GETSET_PROPERTY(bool, CopyOnSelect, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, _PropertyChangedHandlers, 0);
+        OBSERVABLE_GETSET_PROPERTY(bool, WarnAboutLargePaste, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(bool, WarnAboutMultiLinePaste, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(Model::LaunchPosition, InitialPosition, _PropertyChangedHandlers, nullptr, nullptr);
+        OBSERVABLE_GETSET_PROPERTY(Model::LaunchMode, LaunchMode, _PropertyChangedHandlers, LaunchMode::DefaultMode);
+        OBSERVABLE_GETSET_PROPERTY(bool, SnapToGridOnResize, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(bool, ForceFullRepaintRendering, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, SoftwareRendering, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, ForceVTInput, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, DebugFeaturesEnabled, _PropertyChangedHandlers); // default value set in constructor
+        OBSERVABLE_GETSET_PROPERTY(bool, StartOnUserLogin, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, AlwaysOnTop, _PropertyChangedHandlers, false);
+        OBSERVABLE_GETSET_PROPERTY(bool, UseTabSwitcher, _PropertyChangedHandlers, true);
 
     private:
         hstring _unparsedDefaultProfile;
@@ -84,7 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<KeyMapping> _keymap;
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
 
-        Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
+        Windows::Foundation::Collections::IObservableMap<hstring, Model::ColorScheme> _colorSchemes;
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
         friend class SettingsModelLocalTests::DeserializationTests;

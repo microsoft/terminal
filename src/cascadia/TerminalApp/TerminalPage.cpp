@@ -2249,7 +2249,7 @@ namespace winrt::TerminalApp::implementation
     {
         IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().Commands(),
                                                                        _settings.Profiles().GetView(),
-                                                                       _settings.GlobalSettings().ColorSchemes());
+                                                                       _settings.GlobalSettings().ColorSchemes().GetView());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
         _recursiveUpdateCommandIcons(copyOfCommands.GetView());
