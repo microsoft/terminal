@@ -20,18 +20,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct IInheritable
     {
     public:
-        T* CreateChild() const
+        // Method Description:
+        // - Create a new instance of T, but set its parent to this instance
+        // Arguments:
+        // - <none>
+        // Return Value:
+        // - a new instance of T with this instance set as its parent
+        com_ptr<T> CreateChild() const
         {
             auto child{ winrt::make_self<T>() };
-            child->_parent.attach(const_cast<T*>(static_cast<const T*>(this)));
-            return child.detach();
+            winrt::copy_from_abi(child->_parent, const_cast<T*>(static_cast<const T*>(this)));
+            child->_FinalizeInheritance();
+            return child;
         }
 
     protected:
         com_ptr<T> _parent{ nullptr };
+
+        // Method Description:
+        // - Actions to be performed after a child was created. Generally used to set
+        //   any extraneous data from the parent into the child.
+        // Arguments:
+        // - <none>
+        // Return Value:
+        // - <none>
+        virtual void _FinalizeInheritance() {}
     };
 
-    // Nullable settings are settings that explicitly allow null to mean something
+    // This is like std::optional, but we can use it in inheritance to determine whether the user explicitly cleared it
     template<typename T>
     struct NullableSetting
     {
@@ -65,23 +81,15 @@ public:                                                                     \
     };                                                                      \
                                                                             \
     /* Overwrite the user set value */                                      \
-    /* Dispatch event if value changed */                                   \
     void name(const type& value)                                            \
     {                                                                       \
-        if (_##name != value)                                               \
-        {                                                                   \
-            _##name = value;                                                \
-        }                                                                   \
+        _##name = value;                                                    \
     };                                                                      \
                                                                             \
     /* Clear the user set value */                                          \
-    /* Dispatch event if value changed */                                   \
     void Clear##name()                                                      \
     {                                                                       \
-        if (Has##name())                                                    \
-        {                                                                   \
-            _##name = std::nullopt;                                         \
-        }                                                                   \
+        _##name = std::nullopt;                                             \
     };                                                                      \
                                                                             \
 private:                                                                    \
@@ -92,7 +100,7 @@ private:                                                                    \
                    _##name :                                                \
                    (_parent ?                                               \
                         _parent->_get##name##Impl() :                       \
-                        type{ __VA_ARGS__ });                               \
+                        std::nullopt);                                      \
     };
 
 // This macro is similar to the one above, but is reserved for optional settings
@@ -130,10 +138,7 @@ public:                                                                         
     /* Dispatch event if value changed */                                             \
     void Clear##name()                                                                \
     {                                                                                 \
-        if (Has##name())                                                              \
-        {                                                                             \
-            _##name.set = false;                                                      \
-        }                                                                             \
+        _##name.set = false;                                                          \
     };                                                                                \
                                                                                       \
 private:                                                                              \
@@ -149,8 +154,8 @@ private:                                                                        
 
 // Use this macro for Profile::ApplyTo
 // Checks if a given setting is set, and if it is, sets it on profile
-#define APPLY_OUT(setting)               \
-    if (Has##setting())                  \
-    {                                    \
+#define APPLY_OUT(setting)                \
+    if (Has##setting())                   \
+    {                                     \
         profile->_##setting = _##setting; \
     }

@@ -35,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         GlobalAppSettings();
+        void _FinalizeInheritance() override;
 
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);

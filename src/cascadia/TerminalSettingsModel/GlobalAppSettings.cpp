@@ -63,6 +63,30 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
 }
 
+// Method Description:
+// - Copies any extraneous data from the parent before completing a CreateChild call
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void GlobalAppSettings::_FinalizeInheritance()
+{
+    // TODO CARLOS: these should be "Copy", but we're just directly linking them while 7877 merges
+    _keymap = _parent->_keymap;
+    std::for_each(_parent->_keybindingsWarnings.begin(), _parent->_keybindingsWarnings.end(), [this](auto& warning) { _keybindingsWarnings.push_back(warning); });
+    for (auto kv : _parent->_colorSchemes)
+    {
+        const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
+        _colorSchemes.Insert(kv.Key(), *schemeImpl);
+    }
+
+    for (auto kv : _parent->_commands)
+    {
+        const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
+        _commands.Insert(kv.Key(), *commandImpl);
+    }
+}
+
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
 {
     return _colorSchemes.GetView();

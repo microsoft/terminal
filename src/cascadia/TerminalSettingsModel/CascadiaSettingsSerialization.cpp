@@ -591,7 +591,7 @@ winrt::com_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& j
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
     // add a new inheritance layer, and apply json values to child
-    _globals.attach(_globals->CreateChild());
+    _globals = _globals->CreateChild();
     _globals->LayerJson(json);
 
     if (auto schemes{ json[SchemesKey.data()] })
@@ -637,6 +637,9 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         auto parent{ winrt::get_self<Profile>(parentProj) };
         auto childImpl{ parent->CreateChild() };
         childImpl->LayerJson(profileJson);
+
+        // replace parent in _profiles with child
+        _profiles.SetAt(*profileIndex, *childImpl);
     }
     else
     {
@@ -651,7 +654,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
             {
-                profile.attach(_userDefaultProfileSettings->CreateChild());
+                profile = _userDefaultProfileSettings->CreateChild();
             }
 
             profile->LayerJson(profileJson);
