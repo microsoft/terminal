@@ -44,6 +44,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
     {
         InitializeComponent();
@@ -672,6 +673,7 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
+        _mruTabs.Append(*newTabImpl);
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
@@ -1047,6 +1049,12 @@ namespace winrt::TerminalApp::implementation
         auto tab{ _GetStrongTabImpl(tabIndex) };
         tab->Shutdown();
 
+        uint32_t mruIndex;
+        if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), mruIndex))
+        {
+            _mruTabs.RemoveAt(mruIndex);
+        }
+
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
@@ -1225,6 +1233,13 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 _SetFocusedTabIndex(tabIndex);
+            }
+
+            uint32_t mruIndex;
+            if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), mruIndex))
+            {
+                mruIndex.RemoveAt(mruIndex);
+                mruIndex.InsertAt(0, _tabs.GetAt(tabIndex));
             }
 
             return true;

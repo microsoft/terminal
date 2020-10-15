@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _mruTabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
         void _UpdateTabIndices();
