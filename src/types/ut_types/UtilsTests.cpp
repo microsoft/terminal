@@ -189,6 +189,7 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorResult(L"LightYellow", RGB(255, 255, 224));
     _VerifyXTermColorResult(L"yellow3", RGB(205, 205, 0));
     _VerifyXTermColorResult(L"wheat4", RGB(139, 126, 102));
+    _VerifyXTermColorResult(L"royalblue3", RGB(58, 95, 205));
     _VerifyXTermColorResult(L"gray58", RGB(148, 148, 148));
     _VerifyXTermColorResult(L"grey58", RGB(148, 148, 148));
 
@@ -243,7 +244,7 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorInvalid(L"rgẞ:1/1/1");
     _VerifyXTermColorInvalid(L"yellow3a");
     _VerifyXTermColorInvalid(L"3yellow");
-    _VerifyXTermColorInvalid(L"yello3w");
+    _VerifyXTermColorInvalid(L"royal3blue");
     _VerifyXTermColorInvalid(L"5gray");
     _VerifyXTermColorInvalid(L"5gray8");
     _VerifyXTermColorInvalid(L"58grey");
