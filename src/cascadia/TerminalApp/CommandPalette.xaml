@@ -60,7 +60,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Key="KeyChordBorderStyle" TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
-                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
@@ -91,7 +91,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Key="KeyChordBorderStyle" TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
-                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
