@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         "Bright White"
     };
 
-    ColorSchemes::ColorSchemes():
+    ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<hstring>() },
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
