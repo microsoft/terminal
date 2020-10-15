@@ -187,8 +187,11 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorResult(L"dark green", RGB(0, 100, 0));
     _VerifyXTermColorResult(L"medium sea green", RGB(60, 179, 113));
     _VerifyXTermColorResult(L"LightYellow", RGB(255, 255, 224));
+    _VerifyXTermColorResult(L"yellow", RGB(255, 255, 0));
     _VerifyXTermColorResult(L"yellow3", RGB(205, 205, 0));
+    _VerifyXTermColorResult(L"wheat", RGB(245, 222, 179));
     _VerifyXTermColorResult(L"wheat4", RGB(139, 126, 102));
+    _VerifyXTermColorResult(L"royalblue", RGB(65, 105, 225));
     _VerifyXTermColorResult(L"royalblue3", RGB(58, 95, 205));
     _VerifyXTermColorResult(L"gray", RGB(190, 190, 190));
     _VerifyXTermColorResult(L"grey", RGB(190, 190, 190));
@@ -258,6 +261,8 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorInvalid(L"58grey");
     _VerifyXTermColorInvalid(L"gray-1");
     _VerifyXTermColorInvalid(L"gray101");
+    _VerifyXTermColorInvalid(L"gray-");
+    _VerifyXTermColorInvalid(L"gray;");
 }
 
 void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)

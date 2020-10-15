@@ -552,7 +552,7 @@ try
         if (foundVariant)
         {
             // Variant should be at the end of the string, e.g., "yellow3".
-            // This means another alphabet character is seen, e.g., "yellow3a".
+            // This means another non-numeric character is seen, e.g., "yellow3a".
             // This is invalid so return early.
             return std::nullopt;
         }
