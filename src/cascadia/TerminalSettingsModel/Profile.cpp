@@ -50,7 +50,6 @@ static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
 static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view DesktopWallpaperEnum{ "DesktopWallpaper" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
@@ -58,6 +57,8 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
+
+static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
 
 Profile::Profile()
 {
@@ -262,6 +263,8 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     else if (_BackgroundImagePath == to_hstring(DesktopWallpaperEnum))
     {
         WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
         if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
         {
             return winrt::hstring{ (desktopWallpaper) };
