@@ -509,6 +509,10 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = parameters.at(0).value_or(0) == 0 && _dispatch->TertiaryDeviceAttributes();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
         break;
+    case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
+        success = _dispatch->RequestTerminalParameters(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECREQTPARM);
+        break;
     case CsiActionCodes::SU_ScrollUp:
         success = _dispatch->ScrollUp(parameters.at(0));
         TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);

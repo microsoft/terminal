@@ -1823,6 +1823,30 @@ public:
         VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
     }
 
+    TEST_METHOD(RequestTerminalParametersTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify response for unsolicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[2;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 2: Verify response for solicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[3;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 3: Verify failure with invalid parameter.");
+        _testGetSet->PrepData();
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
+
+        Log::Comment(L"Test 4: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+    }
+
     TEST_METHOD(CursorKeysModeTest)
     {
         Log::Comment(L"Starting test...");
