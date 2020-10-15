@@ -48,7 +48,7 @@ static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
 static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments" };
 static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows Terminal\\Fragments" };
 
-static constexpr std::string_view AppExtensionHostName{ "com.microsoft.windows.terminal.settingsext" };
+static constexpr std::string_view AppExtensionHostName{ "com.microsoft.windows.terminal.settings" };
 
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
@@ -412,7 +412,7 @@ void CascadiaSettings::_LoadProtoExtensions()
     }
 
     // Search through app extensions
-    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settingsext"
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
     const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
 
     // Extracting the list of extensions from the catalog is an async operation, but since
