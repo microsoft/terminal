@@ -488,7 +488,7 @@ void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, 
         auto folderPath = protoExtFolder.path().generic_string();
 
         // We only want the parent folder name as the source (not the full path)
-        auto source = til::u8u16(folderPath.substr(folderPath.find_last_of("/") + 1));
+        auto source = til::u8u16(folderPath.substr(folderPath.find_last_of(std::filesystem::path::preferred_separator) + 1));
 
         // Only apply the stubs if the parent folder name is not in ignored namespaces
         // (also make sure this is a directory for sanity)
