@@ -172,7 +172,7 @@ namespace winrt::TerminalApp::implementation
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
-        void _Scroll(ScrollDirection scrollDirection, std::optional<int> rowsToScroll);
+        void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::Direction& direction);
         void _ScrollPage(ScrollDirection scrollDirection);

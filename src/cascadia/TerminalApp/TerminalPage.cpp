@@ -1386,12 +1386,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
     // - rowsToScroll: a number of lines to move the viewport. If not provided we will use a system default.
-    void TerminalPage::_Scroll(ScrollDirection scrollDirection, std::optional<int> rowsToScroll)
+    void TerminalPage::_Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll)
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            auto realRowsToScroll = rowsToScroll.has_value() ? rowsToScroll.value() : _GetActiveControl().GetRowsToScroll();
+            auto realRowsToScroll = rowsToScroll == nullptr ? _GetActiveControl().GetRowsToScroll() : rowsToScroll.Value();
             focusedTab->Scroll(scrollDirection * realRowsToScroll);
         }
     }
