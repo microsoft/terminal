@@ -24,7 +24,7 @@ In a "normal" CMD environment, `te.exe` may not be directly available. Try the f
 
 Then you should be able to use `%TAEF%` as an alias of the actual `te.exe`.
 
-For the purposes of the OpenConsole project, you can run the tests using the `te.exe` that matches the architecture for which the test was build (x86/x64) in the pattern
+For the purposes of the OpenConsole project, you can run the tests using the `te.exe` that matches the architecture for which the test was built (x86/x64):
 
 	te.exe Console.Unit.Tests.dll
 
