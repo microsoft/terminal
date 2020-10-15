@@ -2397,6 +2397,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->GetScrollOffset();
     }
 
+    int TermControl::GetRowsToScroll() const
+    {
+        return _rowsToScroll;
+    }
+
     // Function Description:
     // - Gets the height of the terminal in lines of text
     // Return Value:

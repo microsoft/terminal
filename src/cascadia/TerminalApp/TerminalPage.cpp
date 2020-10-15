@@ -1391,7 +1391,9 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            focusedTab->Scroll(delta);
+            const auto control = _GetActiveControl();
+            const auto rowsToScroll = control.GetRowsToScroll();
+            focusedTab->Scroll(delta * rowsToScroll);
         }
     }
 
