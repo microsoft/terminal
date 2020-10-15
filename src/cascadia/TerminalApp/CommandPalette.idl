@@ -12,7 +12,7 @@ namespace TerminalApp
 
         String NoMatchesText { get; };
         String SearchBoxPlaceholderText { get; };
-        String FakePlaceholderText { get; };
+        String PrefixCharacter { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
 

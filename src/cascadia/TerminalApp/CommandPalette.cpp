@@ -213,41 +213,27 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Escape)
         {
-            // Commandline, TabSearch, TabSwitch Mode: Dismiss the palette if the
-            // text is empty, otherwise clear the search string.
-            if (_currentMode != CommandPaletteMode::ActionMode)
+            // Dismiss the palette if the text is empty, otherwise clear the
+            // search string.
+            if (_searchBox().Text().empty())
             {
-                const auto currentInput = _getPostPrefixInput();
-                if (currentInput.empty())
-                {
-                    // The user has only input "> " so far. We should just dismiss
-                    // the palette. This is like dismissing the commandline mode with
-                    // empty input.
-                    _dismissPalette();
-                }
-                else
-                {
-                    // Clear out the current input. We'll leave a ">" in the
-                    // input (to stay in action mode), and a leading space
-                    // (if they currently had one).
-                    const bool hasLeadingSpace = (_searchBox().Text().size()) - (currentInput.size()) > 1;
-                    _searchBox().Text(hasLeadingSpace ? L"> " : L">");
-
-                    // This will conveniently move the cursor to the end of the
-                    // text input for us.
-                    _searchBox().Select(_searchBox().Text().size(), 0);
-                }
+                _dismissPalette();
             }
-            else if (_currentMode == CommandPaletteMode::ActionMode)
+            else
             {
-                if (_searchBox().Text().empty())
-                {
-                    _dismissPalette();
-                }
-                else
-                {
-                    _searchBox().Text(L"");
-                }
+                _searchBox().Text(L"");
+            }
+
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::Back)
+        {
+            // If the last filter text was empty, and we're backspacing from
+            // that state, then the user "backspaced" the virtual '>' we're
+            // using as the action mode indicator. Switch into commandline mode.
+            if (_searchBox().Text().empty() && _lastFilterTextWasEmpty && _currentMode == CommandPaletteMode::ActionMode)
+            {
+                _switchToMode(CommandPaletteMode::CommandlineMode);
             }
 
             e.Handled(true);
@@ -480,18 +466,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
-
     // Method Description:
-    // - Get all the input text in _searchBox that follows the prefix character
-    //   and any whitespace following that prefix character. This can be used in
-    //   commandline mode to get all the useful input that the user input after
-    //   the leading ">" prefix.
-    // - Note that this will behave unexpectedly in Action Mode.
+    // - Get all the input text in _searchBox that follows any leading spaces.
     // Arguments:
     // - <none>
     // Return Value:
-    // - the string of input following the prefix character.
-    std::wstring CommandPalette::_getPostPrefixInput()
+    // - the string of input following any number of leading spaces
+    std::wstring CommandPalette::_getTrimmedInput()
     {
         const std::wstring input{ _searchBox().Text() };
         if (input.empty())
@@ -499,17 +480,15 @@ namespace winrt::TerminalApp::implementation
             return input;
         }
 
-        const auto rawCmdline{ input.substr(1) };
-
         // Trim leading whitespace
-        const auto firstNonSpace = rawCmdline.find_first_not_of(L" ");
+        const auto firstNonSpace = input.find_first_not_of(L" ");
         if (firstNonSpace == std::wstring::npos)
         {
             // All the following characters are whitespace.
             return L"";
         }
 
-        return rawCmdline.substr(firstNonSpace);
+        return input.substr(firstNonSpace);
     }
 
     // Method Description:
@@ -520,12 +499,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dispatchCommandline()
     {
-        const auto input = _getPostPrefixInput();
-        if (input.empty())
+        auto cmdline{ _getTrimmedInput() };
+        if (cmdline.empty())
         {
             return;
         }
-        winrt::hstring cmdline{ input };
 
         // Build the ExecuteCommandline action from the values we've parsed on the commandline.
         ExecuteCommandlineArgs args{ cmdline };
@@ -574,31 +552,38 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
-        if (_currentMode == CommandPaletteMode::CommandlineMode || _currentMode == CommandPaletteMode::ActionMode)
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
             _evaluatePrefix();
         }
 
+        // We're setting _lastFilterTextWasEmpty here, because if the user tries
+        // to backspace the last character in the input, the Backspace KeyDown
+        // event will fire _before_ _filterTextChanged does. Updating the value
+        // here will ensure that we can check this case appropriately.
+        _lastFilterTextWasEmpty = _searchBox().Text().empty();
+
         _updateFilteredActions();
         _filteredActionsView().SelectedIndex(0);
 
-        if (_currentMode == CommandPaletteMode::ActionMode)
-        {
-            winrt::hstring searchText{ _getPostPrefixInput() };
-            FakePlaceholderText(searchText.empty() ? RS_(L"CmdPalActionPrompt") : L"");
-        }
-
-        if (_currentMode == CommandPaletteMode::CommandlineMode || _currentMode == CommandPaletteMode::ActionMode)
+        if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode)
         {
             _noMatchesText().Visibility(_filteredActions.Size() > 0 ? Visibility::Collapsed : Visibility::Visible);
+        }
+        else
+        {
+            _noMatchesText().Visibility(Visibility::Collapsed);
         }
     }
 
     void CommandPalette::_evaluatePrefix()
     {
+        // This will take you from commandline mode, into action mode. The
+        // backspace handler in _keyDownHandler will handle taking us from
+        // action mode to commandline mode.
         auto newMode = CommandPaletteMode::CommandlineMode;
 
-        auto inputText = _searchBox().Text();
+        auto inputText = _getTrimmedInput();
         if (inputText.size() > 0)
         {
             if (inputText[0] == L'>')
@@ -609,6 +594,7 @@ namespace winrt::TerminalApp::implementation
 
         if (newMode != _currentMode)
         {
+            //_switchToMode will remove the '>' character from the input.
             _switchToMode(newMode);
         }
     }
@@ -653,6 +639,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        _searchBox().Text(L"");
+        _searchBox().Select(_searchBox().Text().size(), 0);
         // Leaving this block of code outside the above if-statement
         // guarantees that the correct text is shown for the mode
         // whenever _switchToMode is called.
@@ -662,27 +650,23 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
         {
             SearchBoxPlaceholderText(RS_(L"TabSwitcher_SearchBoxText"));
-            FakePlaceholderText(L"");
             NoMatchesText(RS_(L"TabSwitcher_NoMatchesText"));
             ControlName(RS_(L"TabSwitcherControlName"));
-            _searchBox().Text(L"");
+            PrefixCharacter(L"");
             break;
         }
         case CommandPaletteMode::CommandlineMode:
             SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
-            FakePlaceholderText(L"");
             NoMatchesText(L"");
             ControlName(RS_(L"CommandPaletteControlName"));
-            _searchBox().Text(L"");
+            PrefixCharacter(L"");
             break;
         case CommandPaletteMode::ActionMode:
         default:
-            SearchBoxPlaceholderText(L"");
-            FakePlaceholderText(RS_(L"CmdPalActionPrompt"));
+            SearchBoxPlaceholderText(RS_(L"CmdPalActionPrompt"));
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
             ControlName(RS_(L"CommandPaletteControlName"));
-            _searchBox().Text(L">");
-            _searchBox().Select(_searchBox().Text().size(), 0);
+            PrefixCharacter(L">");
             break;
         }
     }
@@ -734,7 +718,7 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<Command> actions;
 
-        winrt::hstring searchText{ _getPostPrefixInput() };
+        winrt::hstring searchText{ _getTrimmedInput() };
         const bool addAll = searchText.empty();
 
         auto commandsToFilter = _commandsToFilter();

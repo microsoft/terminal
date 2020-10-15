@@ -167,6 +167,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 Grid.Row="0"
                 x:Name="_searchBox"
                 Margin="8"
+                Padding="18,8,8,8"
                 IsSpellCheckEnabled="False"
                 TextChanged="_filterTextChanged"
                 PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
@@ -175,14 +176,13 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <TextBlock
                 Grid.Row="0"
-                x:Name="_fakePlaceholderText"
-                Margin="32,15,0,-8"
-                FontSize="13"
-                Foreground="{ThemeResource TextBoxPlaceholderTextThemeBrush}"
-                Visibility="{x:Bind FakePlaceholderText,
+                x:Name="_prefixCharacter"
+                Margin="16,16,0,-8"
+                FontSize="14"
+                Visibility="{x:Bind PrefixCharacter,
                              Mode=OneWay,
                              Converter={StaticResource ParentCommandVisibilityConverter}}"
-                Text="{x:Bind FakePlaceholderText, Mode=OneWay}"
+                Text="{x:Bind PrefixCharacter, Mode=OneWay}"
                 >
             </TextBlock>
 
