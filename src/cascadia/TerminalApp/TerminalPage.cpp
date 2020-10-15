@@ -7,7 +7,6 @@
 #include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
-#include <Mmsystem.h>
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
@@ -1122,8 +1121,6 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
-        term.WarningBell({ this, &TerminalPage::_WarningBellHandler });
-
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
@@ -1782,21 +1779,6 @@ namespace winrt::TerminalApp::implementation
             eventArgs.HandleClipboardData(text);
         }
         CATCH_LOG();
-    }
-
-    // Method Description:
-    // - Plays a warning note when triggered by the BEL control character,
-    //   using the sound configured for the "Critical Stop" system event.
-    //   This matches the behavior of the Windows Console host.
-    // Arguments:
-    // - <none>
-    void TerminalPage::_WarningBellHandler(const IInspectable sender, const IInspectable eventArgs)
-    {
-        if (_settings.GlobalSettings().BellStyle() == winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible)
-        {
-            const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-            PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-        }
     }
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)

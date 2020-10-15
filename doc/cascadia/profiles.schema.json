@@ -509,11 +509,6 @@
           "description": "When set to true, tabs are always displayed. When set to false and \"showTabsInTitlebar\" is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
-        "bellStyle": {
-          "default": "audible",
-          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
-          "$ref": "#/definitions/BellStyle",
-        },
         "copyOnSelect": {
           "default": false,
           "description": "When set to true, a selection is immediately copied to your clipboard upon creation. When set to false, the selection persists and awaits further action.",
@@ -728,6 +723,11 @@
             "uniformToFill"
           ],
           "type": "string"
+        },
+        "bellStyle": {
+          "default": "audible",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
+          "$ref": "#/definitions/BellStyle",
         },
         "closeOnExit": {
           "default": "graceful",

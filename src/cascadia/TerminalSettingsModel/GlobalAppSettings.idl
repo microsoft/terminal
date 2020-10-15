@@ -17,12 +17,6 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Int64> Y;
     };
 
-    enum BellStyle
-    {
-        None,
-        Audible
-    };
-
     enum LaunchMode
     {
         DefaultMode,
@@ -60,7 +54,6 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
         Boolean DisableAnimations;
-        BellStyle BellStyle;
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

@@ -57,6 +57,7 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
+static constexpr std::string_view BellStyleKey{ "bellStyle" };
 
 static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
 
@@ -243,6 +244,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+
+    JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 }
 
 // Method Description:
