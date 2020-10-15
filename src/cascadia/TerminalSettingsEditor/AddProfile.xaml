@@ -141,7 +141,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <TextBox Header="GUID" Margin="0,0,0,10" />
                         <TextBox Header="Command line" Margin="0,0,0,10" />
                         <TextBox Header="Starting directory" Margin="0,0,0,10" />
-                        <TextBox Header="Icon" Margin="0,0,0,10" />
+                        <!--<TextBox Header="Icon" Margin="0,0,0,10" />-->
                         <TextBox Header="Tab title" Margin="0,0,0,10" />
                         <Controls:RadioButtons Header="Scrollbar visibility" Margin="0,0,0,10">
                             <RadioButton x:Name="ScrollBarVisible" Content="Visible"/>

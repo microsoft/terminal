@@ -80,6 +80,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _UpdateColorTable(colorScheme);
     }
 
+    void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
+                                          ColorChangedEventArgs const& args)
+    {
+        if (auto picker = sender.try_as<ColorPicker>())
+        {
+            auto tag = winrt::unbox_value<hstring>(picker.Tag());
+
+            if (tag == L"Background")
+            {
+                CurrentColorScheme().Background(args.NewColor());
+            }
+            else if (tag == L"Foreground")
+            {
+                CurrentColorScheme().Foreground(args.NewColor());
+            }
+            else if (tag == L"Selection Background")
+            {
+                CurrentColorScheme().SelectionBackground(args.NewColor());
+            }
+            else if (tag == L"Cursor Color")
+            {
+                CurrentColorScheme().CursorColor(args.NewColor());
+            }
+        }
+        if (auto test = sender.try_as<ColorTableEntry>())
+        {
+
+        }
+    }
+
     void ColorSchemes::_UpdateColorSchemeList()
     {
         auto colorSchemeMap = MainPage::Settings().GlobalSettings().ColorSchemes();
@@ -98,11 +128,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto entry = winrt::make<ColorTableEntry>(to_hstring(TableColors[i]), colorScheme.Table()[i]);
             _CurrentColorTable.Append(entry);
         }
+
         _CurrentOtherColors.Clear();
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[0]), colorScheme.Background()));
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[1]), colorScheme.Foreground()));
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[2]), colorScheme.SelectionBackground()));
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(to_hstring(OtherColors[3]), colorScheme.CursorColor()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Background", colorScheme.Background()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Foreground", colorScheme.Foreground()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Selection Background", colorScheme.SelectionBackground()));
+        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Cursor Color", colorScheme.CursorColor()));
     }
 
     ColorTableEntry::ColorTableEntry(winrt::hstring name, Windows::UI::Color color)

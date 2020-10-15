@@ -12,10 +12,10 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d">
 
     <Page.Resources>
-        <DataTemplate x:Key="ProfileNavigationItem" x:DataType="model:Profile">
+        <!--<DataTemplate x:Key="ProfileNavigationItem" x:DataType="model:Profile">
             <muxc:NavigationViewItem Content="{x:Bind Name}" Tag="{x:Bind Name}"/>
         </DataTemplate>
-        <local:MainPageTemplateSelector x:Key="ProfilesNavTemplateSelector" ProfilesTemplate="{StaticResource ProfileNavigationItem}"/>
+        <local:MainPageTemplateSelector x:Key="ProfilesNavTemplateSelector" ProfilesTemplate="{StaticResource ProfileNavigationItem}"/>-->
     </Page.Resources>
 
     <Grid>
@@ -41,71 +41,71 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 QuerySubmitted="AutoSuggestBox_QuerySubmitted"
                                 SuggestionChosen="AutoSuggestBox_SuggestionChosen"/>
             </muxc:NavigationView.AutoSuggestBox>
-            <muxc:NavigationView.MenuItems>
+            <!--<muxc:NavigationView.MenuItems>
 
-                <muxc:NavigationViewItem Icon="Home"
-                                         Tag="Home_Nav"
-                                         Content="Home">
-                </muxc:NavigationViewItem>
-
-                <muxc:NavigationViewItem Icon="Globe"
-                                         Tag="General_Nav"
-                                         Content="General">
+                <muxc:NavigationViewItem x:Uid="Nav_Home"
+                                         Icon="Home"
+                                         Tag="Home_Nav"/>
+                <muxc:NavigationViewItem x:Uid="Nav_General"
+                                         Icon="Globe"
+                                         Tag="General_Nav">
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Tag="Startup_Nav" Content="Startup">
-                            <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem x:Uid="Nav_Launch"
+                                                 Tag="Launch_Nav">
+                            --><!-- Couldn't find spaceship --><!--
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xEA86;" />
+                                <FontIcon Glyph="&#xEA86;"/>
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
-                        <muxc:NavigationViewItem Tag="Interaction_Nav" Content="Interaction">
-                            <!-- Couldn't find cursor alone -->
+
+                        <muxc:NavigationViewItem x:Uid="Nav_Interaction"
+                                                 Tag="Interaction_Nav">
+                            --><!-- Couldn't find cursor alone --><!--
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7C9;" />
+                                <FontIcon Glyph="&#xE7C9;"/>
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
-                        <muxc:NavigationViewItem Tag="Rendering_Nav" Content="Rendering">
-                            <!-- Couldn't find cursor alone -->
+
+                        <muxc:NavigationViewItem x:Uid="Nav_Rendering"
+                                                 Tag="Rendering_Nav" >
+                            --><!-- Couldn't find cursor alone --><!--
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7F8;" />
+                                <FontIcon Glyph="&#xE7F8;"/>
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
                     </muxc:NavigationViewItem.MenuItems>
 
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem Tag="Appearance_Nav" Content="Appearance">
+                <muxc:NavigationViewItem x:Uid="Nav_Appearance" Tag="Appearance_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE790;" />
+                        <FontIcon Glyph="&#xE790;"/>
                     </muxc:NavigationViewItem.Icon>
 
                     <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem Tag="GlobalAppearance_Nav" >
-                            <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
+                                                 Tag="GlobalAppearance_Nav">
+                            --><!-- Couldn't find spaceship --><!--
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
+                                <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Global_Page">Global</TextBlock>
                         </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem Tag="ColorSchemes_Nav" >
-                            <!-- Couldn't find spaceship -->
+                        <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+                                                 Tag="ColorSchemes_Nav">
+                            --><!-- Couldn't find spaceship --><!--
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
+                                <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Global_Page">Color schemes</TextBlock>
                         </muxc:NavigationViewItem>
                     </muxc:NavigationViewItem.MenuItems>
 
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem x:Name="ProfilesNavItemParent"
-                                         Tag="Profiles_Nav"
-                                         x:DefaultBindMode="OneWay"
-                                         Content="Profiles"
-                                         >
+                <muxc:NavigationViewItem x:Uid="Nav_Profiles"
+                                         Tag="Profiles_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE770;" />
+                        <FontIcon Glyph="&#xE770;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
@@ -116,13 +116,12 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             </muxc:NavigationView.MenuItems>
             <muxc:NavigationView.PaneFooter>
-                <muxc:NavigationViewItem>
+                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </muxc:NavigationViewItem.Icon>
-                    <TextBlock>Open JSON file</TextBlock>
                 </muxc:NavigationViewItem>
-            </muxc:NavigationView.PaneFooter>
+            </muxc:NavigationView.PaneFooter>-->
             <Frame x:Name="contentFrame"
                    Margin="20"></Frame>
         </muxc:NavigationView>

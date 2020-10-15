@@ -77,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         OBSERVABLE_GETSET_PROPERTY(bool, StartOnUserLogin, _PropertyChangedHandlers, false);
         OBSERVABLE_GETSET_PROPERTY(bool, AlwaysOnTop, _PropertyChangedHandlers, false);
         OBSERVABLE_GETSET_PROPERTY(bool, UseTabSwitcher, _PropertyChangedHandlers, true);
+        OBSERVABLE_GETSET_PROPERTY(bool, DisableAnimations, _PropertyChangedHandlers, false);
 
     private:
         hstring _unparsedDefaultProfile;

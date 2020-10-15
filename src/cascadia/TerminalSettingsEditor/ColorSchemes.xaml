@@ -41,13 +41,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Button Background="{x:Bind ColorToBrush(Color), Mode=OneWay}">
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker Color="{x:Bind Color, Mode=TwoWay}"
+                            <ColorPicker Tag="{x:Bind Name, Mode=OneWay}"
+                                         Color="{x:Bind Color, Mode=TwoWay}"
                                          IsColorSliderVisible="False"
                                          IsColorChannelTextInputVisible="False"
                                          IsHexInputVisible="False"
                                          IsAlphaEnabled="False"
                                          IsAlphaSliderVisible="True"
-                                         IsAlphaTextInputVisible="True"/>
+                                         IsAlphaTextInputVisible="True"
+                                         ColorChanged="ColorPickerChanged"/>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
@@ -66,8 +68,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-        
-        <TextBlock Text="Color schemes"
+        <TextBlock x:Uid="ColorScheme_ColorSchemes"
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20"
                    Grid.Row="0" />

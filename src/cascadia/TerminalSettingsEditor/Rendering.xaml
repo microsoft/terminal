@@ -18,14 +18,16 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-        <TextBlock Text="Rendering"
+        <TextBlock x:Uid="Globals_Rendering"
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <CheckBox IsChecked="{x:Bind GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Content="Screen redrawing" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames." ToolTipService.Placement="Mouse" />
-            <CheckBox IsChecked="{x:Bind GlobalSettings.SoftwareRendering, Mode=TwoWay}" Content="Software rendering" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one." ToolTipService.Placement="Mouse" />
+            <TextBlock x:Uid="Globals_RenderingDisclaimer"
+                   Style="{StaticResource BodyTextBlockStyle}"
+                   Margin="0,0,0,20" />
+            <CheckBox x:Uid="Globals_ForceFullRepaint" IsChecked="{x:Bind GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_SoftwareRendering" IsChecked="{x:Bind GlobalSettings.SoftwareRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
         </StackPanel>
     </Grid>
 </Page>

@@ -14,6 +14,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemes();
 
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
+        void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
 
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> ColorSchemeList();
 

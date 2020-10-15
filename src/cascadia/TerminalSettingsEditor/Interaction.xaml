@@ -20,15 +20,15 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
-        <TextBlock Text="Interaction"
+        <TextBlock x:Uid="Globals_Interaction"
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <CheckBox IsChecked="{x:Bind GlobalSettings.CopyOnSelect, Mode=TwoWay}" Content="Copy after selection is made" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, a selection is immediately copied to your clipboard upon creation. When unchecked, the selection persists and awaits further action." ToolTipService.Placement="Mouse" />
-            <!--TODO: Come back to Enums after doing all the simple ones aka. bools-->
-            <!--<CheckBox IsChecked="{x:Bind GlobalSettings.CopyFormatting, Mode=TwoWay}" Content="Copy formatting" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the color and font formatting of selected text is also copied to your clipboard. When unchecked, only plain text is copied to your clipboard." ToolTipService.Placement="Mouse" />-->
-            <TextBox Header="Word delimiters" Text="{x:Bind GlobalSettings.WordDelimiters, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="Determines the delimiters used in a double click selection." ToolTipService.Placement="Mouse" />
-            <CheckBox IsChecked="{x:Bind GlobalSettings.SnapToGridOnResize, Mode=TwoWay}" Content="Window resize behavior" Margin="0,0,0,20" FontSize="15" ToolTipService.ToolTip="When checked, the window will snap to the nearest character boundary on resize. When unchecked, the window will resize smoothly." ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_CopyOnSelect" IsChecked="{x:Bind GlobalSettings.CopyOnSelect, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <!--TODO: Convert this type into a boolean-->
+            <!--<CheckBox x:Uid="Globals_CopyFormatting" IsChecked="{x:Bind GlobalSettings.CopyFormatting, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />-->
+            <TextBox x:Uid="Globals_WordDelimiters" Text="{x:Bind GlobalSettings.WordDelimiters, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_SnapToGridOnResize" IsChecked="{x:Bind GlobalSettings.SnapToGridOnResize, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
         </StackPanel>
     </Grid>
 </Page>

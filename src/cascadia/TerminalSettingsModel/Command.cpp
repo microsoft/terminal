@@ -149,9 +149,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
 
-        // Only get the icon path right now. The icon needs to be resolved into
-        // an IconSource on the UI thread, which will be done by RefreshIcon.
-        JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_Icon);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -404,7 +402,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.ExpandedIconPath()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);
