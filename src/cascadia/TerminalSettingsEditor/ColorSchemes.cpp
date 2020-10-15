@@ -36,17 +36,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         "Bright White"
     };
 
-    static constexpr std::array<std::string_view, 4> OtherColors = {
-        "Background",
-        "Foreground",
-        "Selection Background",
-        "Cursor Color"
-    };
-
     ColorSchemes::ColorSchemes():
         _ColorSchemeList{ single_threaded_observable_vector<hstring>() },
-        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() },
-        _CurrentOtherColors{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
+        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
 
@@ -81,32 +73,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
-                                          ColorChangedEventArgs const& args)
+                                          ColorChangedEventArgs const& /*args*/)
     {
         if (auto picker = sender.try_as<ColorPicker>())
         {
-            auto tag = winrt::unbox_value<hstring>(picker.Tag());
-
-            if (tag == L"Background")
-            {
-                CurrentColorScheme().Background(args.NewColor());
-            }
-            else if (tag == L"Foreground")
-            {
-                CurrentColorScheme().Foreground(args.NewColor());
-            }
-            else if (tag == L"Selection Background")
-            {
-                CurrentColorScheme().SelectionBackground(args.NewColor());
-            }
-            else if (tag == L"Cursor Color")
-            {
-                CurrentColorScheme().CursorColor(args.NewColor());
-            }
-        }
-        if (auto test = sender.try_as<ColorTableEntry>())
-        {
-
+            // TODO: Until I figure out why I can't stuff Index into Tag, this will be commented out.
+            //auto index = winrt::unbox_value<uint8_t>(picker.Tag());
+            //CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
         }
     }
 
@@ -123,22 +96,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::_UpdateColorTable(const Model::ColorScheme& colorScheme)
     {
         _CurrentColorTable.Clear();
-        for (uint32_t i = 0; i < TableColors.size(); ++i)
+        for (uint8_t i = 0; i < TableColors.size(); ++i)
         {
-            auto entry = winrt::make<ColorTableEntry>(to_hstring(TableColors[i]), colorScheme.Table()[i]);
+            auto entry = winrt::make<ColorTableEntry>(i, colorScheme.Table()[i]);
             _CurrentColorTable.Append(entry);
         }
-
-        _CurrentOtherColors.Clear();
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Background", colorScheme.Background()));
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Foreground", colorScheme.Foreground()));
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Selection Background", colorScheme.SelectionBackground()));
-        _CurrentOtherColors.Append(winrt::make<ColorTableEntry>(L"Cursor Color", colorScheme.CursorColor()));
     }
 
-    ColorTableEntry::ColorTableEntry(winrt::hstring name, Windows::UI::Color color)
+    ColorTableEntry::ColorTableEntry(uint32_t index, Windows::UI::Color color)
     {
-        Name(name);
+        Index(winrt::box_value(index));
         Color(color);
+        Name(to_hstring(TableColors[index]));
     }
 }

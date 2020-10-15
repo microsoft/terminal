@@ -10,10 +10,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <local:GuidToStringConverter x:Key="GuidToStringConverter"/>
-    </Page.Resources>
-
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
           Margin="0,12,0,0">
         <Grid.RowDefinitions>

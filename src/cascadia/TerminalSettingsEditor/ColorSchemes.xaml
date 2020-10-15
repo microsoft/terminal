@@ -41,7 +41,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Button Background="{x:Bind ColorToBrush(Color), Mode=OneWay}">
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker Tag="{x:Bind Name, Mode=OneWay}"
+                            <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
                                          Color="{x:Bind Color, Mode=TwoWay}"
                                          IsColorSliderVisible="False"
                                          IsColorChannelTextInputVisible="False"
@@ -86,16 +86,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                       Grid.Column="0"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}"
-                          ItemTemplate="{StaticResource ColorTableTemplate}">
-            </ItemsControl>
-        </ScrollViewer>
-
-        <ScrollViewer Grid.Row="2"
-                      Grid.Column="1"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{x:Bind CurrentOtherColors, Mode=TwoWay}"
+            <ItemsControl x:Name="ColorTableControl"
+                          ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}"
                           ItemTemplate="{StaticResource ColorTableTemplate}">
             </ItemsControl>
         </ScrollViewer>

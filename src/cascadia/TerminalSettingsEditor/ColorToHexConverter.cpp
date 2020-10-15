@@ -13,7 +13,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                           hstring const& /* language */)
     {
         til::color test{ winrt::unbox_value<winrt::Windows::UI::Color>(value) };
-        return winrt::box_value(hstring(test.ToHexString()));
+        auto hex = winrt::to_hstring(test.ToHexString().data());
+        return winrt::box_value(hex);
     }
 
     Foundation::IInspectable ColorToHexConverter::ConvertBack(Foundation::IInspectable const& value,
