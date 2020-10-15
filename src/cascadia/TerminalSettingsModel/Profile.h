@@ -115,6 +115,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
         GETSET_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
+        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible);
+
     private:
         std::optional<winrt::guid> _Guid{ std::nullopt };
         std::optional<winrt::guid> _ConnectionType{ std::nullopt };

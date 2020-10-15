@@ -26,6 +26,13 @@
       ],
       "type": "string"
     },
+    "BellStyle": {
+      "enum": [
+        "none",
+        "audible"
+      ],
+      "type": "string"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -716,6 +723,11 @@
             "uniformToFill"
           ],
           "type": "string"
+        },
+        "bellStyle": {
+          "default": "audible",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
+          "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {
           "default": "graceful",
