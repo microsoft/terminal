@@ -396,7 +396,9 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "fuchsia"sv, til::color{ 255, 0, 255 } },
     std::pair{ "gainsboro"sv, til::color{ 220, 220, 220 } },
     std::pair{ "ghostwhite"sv, til::color{ 248, 248, 255 } },
+    std::pair{ "gray"sv, til::color{ 190, 190, 190 } },
     std::pair{ "greenyellow"sv, til::color{ 173, 255, 47 } },
+    std::pair{ "grey"sv, til::color{ 190, 190, 190 } },
     std::pair{ "indigo"sv, til::color{ 75, 0, 130 } },
     std::pair{ "lavender"sv, til::color{ 230, 230, 250 } },
     std::pair{ "lawngreen"sv, til::color{ 124, 252, 0 } },
@@ -452,108 +454,6 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "yellowgreen"sv, til::color{ 154, 205, 50 } }
 };
 
-static constexpr std::array<til::color, 100> xorgAppGrayColorTable{
-    til::color{ 190, 190, 190 },
-    til::color{ 3, 3, 3 },
-    til::color{ 5, 5, 5 },
-    til::color{ 8, 8, 8 },
-    til::color{ 10, 10, 10 },
-    til::color{ 13, 13, 13 },
-    til::color{ 15, 15, 15 },
-    til::color{ 18, 18, 18 },
-    til::color{ 20, 20, 20 },
-    til::color{ 23, 23, 23 },
-    til::color{ 26, 26, 26 },
-    til::color{ 28, 28, 28 },
-    til::color{ 31, 31, 31 },
-    til::color{ 33, 33, 33 },
-    til::color{ 36, 36, 36 },
-    til::color{ 38, 38, 38 },
-    til::color{ 41, 41, 41 },
-    til::color{ 43, 43, 43 },
-    til::color{ 46, 46, 46 },
-    til::color{ 48, 48, 48 },
-    til::color{ 51, 51, 51 },
-    til::color{ 54, 54, 54 },
-    til::color{ 56, 56, 56 },
-    til::color{ 59, 59, 59 },
-    til::color{ 61, 61, 61 },
-    til::color{ 64, 64, 64 },
-    til::color{ 66, 66, 66 },
-    til::color{ 69, 69, 69 },
-    til::color{ 71, 71, 71 },
-    til::color{ 74, 74, 74 },
-    til::color{ 77, 77, 77 },
-    til::color{ 79, 79, 79 },
-    til::color{ 82, 82, 82 },
-    til::color{ 84, 84, 84 },
-    til::color{ 87, 87, 87 },
-    til::color{ 89, 89, 89 },
-    til::color{ 92, 92, 92 },
-    til::color{ 94, 94, 94 },
-    til::color{ 97, 97, 97 },
-    til::color{ 99, 99, 99 },
-    til::color{ 102, 102, 102 },
-    til::color{ 105, 105, 105 },
-    til::color{ 107, 107, 107 },
-    til::color{ 110, 110, 110 },
-    til::color{ 112, 112, 112 },
-    til::color{ 115, 115, 115 },
-    til::color{ 117, 117, 117 },
-    til::color{ 120, 120, 120 },
-    til::color{ 122, 122, 122 },
-    til::color{ 125, 125, 125 },
-    til::color{ 127, 127, 127 },
-    til::color{ 130, 130, 130 },
-    til::color{ 133, 133, 133 },
-    til::color{ 135, 135, 135 },
-    til::color{ 138, 138, 138 },
-    til::color{ 140, 140, 140 },
-    til::color{ 143, 143, 143 },
-    til::color{ 145, 145, 145 },
-    til::color{ 148, 148, 148 },
-    til::color{ 150, 150, 150 },
-    til::color{ 153, 153, 153 },
-    til::color{ 156, 156, 156 },
-    til::color{ 158, 158, 158 },
-    til::color{ 161, 161, 161 },
-    til::color{ 163, 163, 163 },
-    til::color{ 166, 166, 166 },
-    til::color{ 168, 168, 168 },
-    til::color{ 171, 171, 171 },
-    til::color{ 173, 173, 173 },
-    til::color{ 176, 176, 176 },
-    til::color{ 179, 179, 179 },
-    til::color{ 181, 181, 181 },
-    til::color{ 184, 184, 184 },
-    til::color{ 186, 186, 186 },
-    til::color{ 189, 189, 189 },
-    til::color{ 191, 191, 191 },
-    til::color{ 194, 194, 194 },
-    til::color{ 196, 196, 196 },
-    til::color{ 199, 199, 199 },
-    til::color{ 201, 201, 201 },
-    til::color{ 204, 204, 204 },
-    til::color{ 207, 207, 207 },
-    til::color{ 209, 209, 209 },
-    til::color{ 212, 212, 212 },
-    til::color{ 214, 214, 214 },
-    til::color{ 217, 217, 217 },
-    til::color{ 219, 219, 219 },
-    til::color{ 222, 222, 222 },
-    til::color{ 224, 224, 224 },
-    til::color{ 227, 227, 227 },
-    til::color{ 229, 229, 229 },
-    til::color{ 232, 232, 232 },
-    til::color{ 235, 235, 235 },
-    til::color{ 237, 237, 237 },
-    til::color{ 240, 240, 240 },
-    til::color{ 242, 242, 242 },
-    til::color{ 245, 245, 245 },
-    til::color{ 247, 247, 247 },
-    til::color{ 250, 250, 250 },
-    til::color{ 252, 252, 252 },
-};
 // Function Description:
 // - Fill the first 16 entries of a given color table with the Campbell color
 //   scheme, in the ANSI/VT RGB order.
@@ -671,18 +571,21 @@ try
         }
     }
 
+    // Calculate the color value for gray0 - gray99.
+    if ((name == "gray" || name == "grey") && foundVariant)
+    {
+        if (variantIndex > 100) // size_t is unsigned, so >=0 is implicit
+        {
+            return std::nullopt;
+        }
+        const auto component{ ::base::saturated_cast<uint8_t>(((variantIndex * 255) + 50) / 100) };
+        return til::color{ component, component, component };
+    }
+
     const auto colorIter = xorgAppColorTable.find(name);
     if (colorIter != xorgAppColorTable.end())
     {
         return colorIter->second;
-    }
-
-    if (name == "gray" || name == "grey")
-    {
-        if (variantIndex < xorgAppGrayColorTable.size())
-        {
-            return xorgAppGrayColorTable.at(variantIndex);
-        }
     }
 
     return std::nullopt;
