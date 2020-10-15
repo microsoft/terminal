@@ -770,6 +770,40 @@ bool AdaptDispatch::Vt52DeviceAttributes()
 }
 
 // Routine Description:
+// - DECREQTPARM - This sequence was originally used on the VT100 terminal to
+//   report the serial communication parameters (baud rate, data bits, parity,
+//   etc.). On modern terminal emulators, the response is simply hardcoded.
+// Arguments:
+// - permission - This would originally have determined whether the terminal
+//   was allowed to send unsolicited reports or not.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPermission permission)
+{
+    // We don't care whether unsolicited reports are allowed or not, but the
+    // requested permission does determine the value of the first response
+    // parameter. The remaining parameters are just hardcoded to indicate a
+    // 38400 baud connection, which matches the XTerm response. The full
+    // parameter sequence is as follows:
+    // - response type:    2 or 3 (unsolicited or solicited)
+    // - parity:           1 (no parity)
+    // - data bits:        1 (8 bits per character)
+    // - transmit speed:   128 (38400 baud)
+    // - receive speed:    128 (38400 baud)
+    // - clock multiplier: 1
+    // - flags:            0
+    switch (permission)
+    {
+    case DispatchTypes::ReportingPermission::Unsolicited:
+        return _WriteResponse(L"\x1b[2;1;1;128;128;1;0x");
+    case DispatchTypes::ReportingPermission::Solicited:
+        return _WriteResponse(L"\x1b[3;1;1;128;128;1;0x");
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DSR-OS - Reports the operating status back to the input channel
 // Arguments:
 // - <none>

@@ -226,6 +226,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyBar = 6
     };
 
+    enum class ReportingPermission : size_t
+    {
+        Unsolicited = 0,
+        Solicited = 1
+    };
+
     enum class LineFeedType : unsigned int
     {
         WithReturn,

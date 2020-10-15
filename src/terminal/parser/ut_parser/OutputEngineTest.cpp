@@ -991,6 +991,8 @@ public:
         _secondaryDeviceAttributes{ false },
         _tertiaryDeviceAttributes{ false },
         _vt52DeviceAttributes{ false },
+        _requestTerminalParameters{ false },
+        _reportingPermission{ (DispatchTypes::ReportingPermission)-1 },
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
@@ -1184,6 +1186,14 @@ public:
     bool Vt52DeviceAttributes() noexcept override
     {
         _vt52DeviceAttributes = true;
+
+        return true;
+    }
+
+    bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) noexcept override
+    {
+        _requestTerminalParameters = true;
+        _reportingPermission = permission;
 
         return true;
     }
@@ -1409,6 +1419,8 @@ public:
     bool _secondaryDeviceAttributes;
     bool _tertiaryDeviceAttributes;
     bool _vt52DeviceAttributes;
+    bool _requestTerminalParameters;
+    DispatchTypes::ReportingPermission _reportingPermission;
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
@@ -2315,6 +2327,44 @@ class StateMachineExternalTest final
         mach.ProcessCharacter(L'c');
 
         VERIFY_IS_FALSE(pDispatch->_tertiaryDeviceAttributes);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestRequestTerminalParameters)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Test 1: Check default case, no params.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'x');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalParameters);
+        VERIFY_ARE_EQUAL(DispatchTypes::ReportingPermission::Unsolicited, pDispatch->_reportingPermission);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 2: Check unsolicited permission, 0 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'0');
+        mach.ProcessCharacter(L'x');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalParameters);
+        VERIFY_ARE_EQUAL(DispatchTypes::ReportingPermission::Unsolicited, pDispatch->_reportingPermission);
+
+        Log::Comment(L"Test 3: Check solicited permission, 1 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'x');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalParameters);
+        VERIFY_ARE_EQUAL(DispatchTypes::ReportingPermission::Solicited, pDispatch->_reportingPermission);
 
         pDispatch->ClearState();
     }
