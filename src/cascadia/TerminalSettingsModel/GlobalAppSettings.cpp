@@ -60,12 +60,12 @@ GlobalAppSettings::GlobalAppSettings() :
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
     _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
-    _colorSchemes = winrt::single_threaded_observable_map<winrt::hstring, Model::ColorScheme>();
+    _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
 }
 
-winrt::Windows::Foundation::Collections::IObservableMap<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
+winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
 {
-    return _colorSchemes;
+    return _colorSchemes.GetView();
 }
 
 void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept

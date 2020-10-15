@@ -54,7 +54,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean UseTabSwitcher;
         Boolean DisableAnimations;
 
-        Windows.Foundation.Collections.IObservableMap<String, ColorScheme> ColorSchemes();
+        Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 
         KeyMapping KeyMap();

@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         GlobalAppSettings();
 
-        Windows::Foundation::Collections::IObservableMap<hstring, Model::ColorScheme> ColorSchemes() noexcept;
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
 
         Model::KeyMapping KeyMap() const noexcept;
@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_ptr<KeyMapping> _keymap;
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
 
-        Windows::Foundation::Collections::IObservableMap<hstring, Model::ColorScheme> _colorSchemes;
+        Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
         friend class SettingsModelLocalTests::DeserializationTests;
