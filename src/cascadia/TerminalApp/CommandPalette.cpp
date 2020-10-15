@@ -663,7 +663,7 @@ namespace winrt::TerminalApp::implementation
             break;
         case CommandPaletteMode::ActionMode:
         default:
-            SearchBoxPlaceholderText(RS_(L"CmdPalActionPrompt"));
+            SearchBoxPlaceholderText(RS_(L"CommandPalette_SearchBox/PlaceholderText"));
             NoMatchesText(RS_(L"CommandPalette_NoMatchesText/Text"));
             ControlName(RS_(L"CommandPaletteControlName"));
             PrefixCharacter(L">");
