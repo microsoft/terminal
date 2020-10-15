@@ -727,7 +727,7 @@
         "bellStyle": {
           "default": "audible",
           "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
-          "$ref": "#/definitions/BellStyle",
+          "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {
           "default": "graceful",
