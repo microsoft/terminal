@@ -141,11 +141,13 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
     {
+        CloseOtherTabsArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
     [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
     {
+        CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 }

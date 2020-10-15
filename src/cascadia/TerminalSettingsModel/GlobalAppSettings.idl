@@ -28,6 +28,8 @@ namespace Microsoft.Terminal.Settings.Model
         DefaultMode,
         MaximizedMode,
         FullscreenMode,
+        FocusMode,
+        MaximizedFocusMode,
     };
 
     [default_interface] runtimeclass GlobalAppSettings {

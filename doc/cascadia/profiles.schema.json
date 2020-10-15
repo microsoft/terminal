@@ -560,18 +560,18 @@
         },
         "initialCols": {
           "default": 120,
-          "description": "The number of columns displayed in the window upon first load.",
+          "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
         },
         "initialPosition": {
           "$ref": "#/definitions/Coordinates",
-          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to maximized, the window will be maximized on the monitor specified by those coordinates."
+          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), the window will be maximized on the monitor specified by those coordinates."
         },
         "initialRows": {
           "default": 30,
-          "description": "The number of rows displayed in the window upon first load.",
+          "description": "The number of rows displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
@@ -583,11 +583,13 @@
         },
         "launchMode": {
           "default": "default",
-          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window.",
+          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to \"focus\" is equivalent to launching the terminal in the \"default\" mode, but with the focus mode enabled. Similar, setting this to \"maximizedFocus\" will result in launching the terminal in a maximized window with the focus mode enabled.",
           "enum": [
             "fullscreen",
             "maximized",
-            "default"
+            "default",
+            "focus",
+            "maximizedFocus"
           ],
           "type": "string"
         },

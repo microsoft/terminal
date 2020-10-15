@@ -58,6 +58,8 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 
+static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
+
 Profile::Profile()
 {
 }
@@ -244,17 +246,38 @@ void Profile::LayerJson(const Json::Value& json)
 }
 
 // Method Description:
+// - Either Returns this profile's background image path, if one is set, expanding
 // - Returns this profile's background image path, if one is set, expanding
 //   any environment variables in the path, if there are any.
+// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
 // Return Value:
-// - This profile's expanded background image path / the empty string.
+// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
     if (_BackgroundImagePath.empty())
     {
         return _BackgroundImagePath;
     }
-    return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    // checks if the user would like to copy their desktop wallpaper
+    // if so, replaces the path with the desktop wallpaper's path
+    else if (_BackgroundImagePath == to_hstring(DesktopWallpaperEnum))
+    {
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            return winrt::hstring{ (desktopWallpaper) };
+        }
+        else
+        {
+            return winrt::hstring{ L"" };
+        }
+    }
+    else
+    {
+        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    }
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const

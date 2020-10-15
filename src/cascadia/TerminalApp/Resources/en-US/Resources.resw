@@ -177,8 +177,17 @@
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Close...</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Close Tabs to the Right</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>Close Other Tabs</value>
+  </data>
   <data name="TabClose" xml:space="preserve">
-    <value>Close</value>
+    <value>Close Tab</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
@@ -284,6 +293,9 @@
   </data>
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
+  </data>
+  <data name="CmdFocusDesc" xml:space="preserve">
+    <value>Launch the window in focus mode</value>
   </data>
   <data name="NewTabSplitButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
     <value>Press the button to open a new terminal tab with your default profile. Open the flyout to select which profile you want to open.</value>

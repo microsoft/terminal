@@ -6,6 +6,7 @@
 #include "..\..\inc\consoletaeftemplates.hpp"
 
 #include "..\inc\utils.hpp"
+#include "..\inc\colorTable.hpp"
 #include <conattrs.hpp>
 
 using namespace WEX::Common;
@@ -21,6 +22,12 @@ class UtilsTests
     TEST_METHOD(TestClampToShortMax);
     TEST_METHOD(TestSwapColorPalette);
     TEST_METHOD(TestGuidToString);
+    TEST_METHOD(TestSplitString);
+    TEST_METHOD(TestStringToUint);
+    TEST_METHOD(TestColorFromXTermColor);
+
+    void _VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue);
+    void _VerifyXTermColorInvalid(const std::wstring_view wstr);
 };
 
 void UtilsTests::TestClampToShortMax()
@@ -88,4 +95,159 @@ void UtilsTests::TestGuidToString()
 
     VERIFY_ARE_EQUAL(constantGuidString.size(), generatedGuid.size());
     VERIFY_ARE_EQUAL(constantGuidString, generatedGuid);
+}
+
+void UtilsTests::TestSplitString()
+{
+    std::vector<std::wstring_view> result;
+    result = SplitString(L"", L';');
+    VERIFY_ARE_EQUAL(0u, result.size());
+    result = SplitString(L"1", L';');
+    VERIFY_ARE_EQUAL(1u, result.size());
+    result = SplitString(L"123", L';');
+    VERIFY_ARE_EQUAL(1u, result.size());
+
+    result = SplitString(L";123", L';');
+    VERIFY_ARE_EQUAL(2u, result.size());
+    VERIFY_ARE_EQUAL(L"", result.at(0));
+    VERIFY_ARE_EQUAL(L"123", result.at(1));
+
+    result = SplitString(L"123;", L';');
+    VERIFY_ARE_EQUAL(2u, result.size());
+    VERIFY_ARE_EQUAL(L"123", result.at(0));
+    VERIFY_ARE_EQUAL(L"", result.at(1));
+
+    result = SplitString(L"123;456", L';');
+    VERIFY_ARE_EQUAL(2u, result.size());
+    VERIFY_ARE_EQUAL(L"123", result.at(0));
+    VERIFY_ARE_EQUAL(L"456", result.at(1));
+
+    result = SplitString(L"123;456;789", L';');
+    VERIFY_ARE_EQUAL(3u, result.size());
+    VERIFY_ARE_EQUAL(L"123", result.at(0));
+    VERIFY_ARE_EQUAL(L"456", result.at(1));
+    VERIFY_ARE_EQUAL(L"789", result.at(2));
+}
+
+void UtilsTests::TestStringToUint()
+{
+    bool success = false;
+    unsigned int value = 0;
+    success = StringToUint(L"", value);
+    VERIFY_IS_FALSE(success);
+    success = StringToUint(L"xyz", value);
+    VERIFY_IS_FALSE(success);
+    success = StringToUint(L";", value);
+    VERIFY_IS_FALSE(success);
+
+    success = StringToUint(L"1", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(1u, value);
+
+    success = StringToUint(L"123", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(123u, value);
+
+    success = StringToUint(L"123456789", value);
+    VERIFY_IS_TRUE(success);
+    VERIFY_ARE_EQUAL(123456789u, value);
+}
+
+void UtilsTests::TestColorFromXTermColor()
+{
+    _VerifyXTermColorResult(L"rgb:1/1/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rGb:1/1/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"RGB:1/1/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:111/1/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1111/1/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/11/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/111/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/1111/1", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/1/11", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/1/111", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/1/1111", RGB(0x11, 0x11, 0x11));
+    _VerifyXTermColorResult(L"rgb:1/23/4", RGB(0x11, 0x23, 0x44));
+    _VerifyXTermColorResult(L"rgb:1/23/45", RGB(0x11, 0x23, 0x45));
+    _VerifyXTermColorResult(L"rgb:1/23/456", RGB(0x11, 0x23, 0x45));
+    _VerifyXTermColorResult(L"rgb:12/34/5", RGB(0x12, 0x34, 0x55));
+    _VerifyXTermColorResult(L"rgb:12/34/56", RGB(0x12, 0x34, 0x56));
+    _VerifyXTermColorResult(L"rgb:12/345/67", RGB(0x12, 0x34, 0x67));
+    _VerifyXTermColorResult(L"rgb:12/345/678", RGB(0x12, 0x34, 0x67));
+    _VerifyXTermColorResult(L"rgb:123/456/789", RGB(0x12, 0x45, 0x78));
+    _VerifyXTermColorResult(L"rgb:123/4564/789", RGB(0x12, 0x45, 0x78));
+    _VerifyXTermColorResult(L"rgb:123/4564/7897", RGB(0x12, 0x45, 0x78));
+    _VerifyXTermColorResult(L"rgb:1231/4564/7897", RGB(0x12, 0x45, 0x78));
+
+    _VerifyXTermColorResult(L"#111", RGB(0x10, 0x10, 0x10));
+    _VerifyXTermColorResult(L"#123456", RGB(0x12, 0x34, 0x56));
+    _VerifyXTermColorResult(L"#123456789", RGB(0x12, 0x45, 0x78));
+    _VerifyXTermColorResult(L"#123145647897", RGB(0x12, 0x45, 0x78));
+
+    _VerifyXTermColorResult(L"orange", RGB(255, 165, 0));
+    _VerifyXTermColorResult(L"dark green", RGB(0, 100, 0));
+    _VerifyXTermColorResult(L"medium sea green", RGB(60, 179, 113));
+    _VerifyXTermColorResult(L"LightYellow", RGB(255, 255, 224));
+
+    // Invalid sequences.
+    _VerifyXTermColorInvalid(L"");
+    _VerifyXTermColorInvalid(L"r:");
+    _VerifyXTermColorInvalid(L"rg:");
+    _VerifyXTermColorInvalid(L"rgb:");
+    _VerifyXTermColorInvalid(L"rgb:/");
+    _VerifyXTermColorInvalid(L"rgb://");
+    _VerifyXTermColorInvalid(L"rgb:///");
+    _VerifyXTermColorInvalid(L"rgb:1");
+    _VerifyXTermColorInvalid(L"rgb:1/");
+    _VerifyXTermColorInvalid(L"rgb:/1");
+    _VerifyXTermColorInvalid(L"rgb:1/1");
+    _VerifyXTermColorInvalid(L"rgb:1/1/");
+    _VerifyXTermColorInvalid(L"rgb:1/11/");
+    _VerifyXTermColorInvalid(L"rgb:/1/1");
+    _VerifyXTermColorInvalid(L"rgb:1/1/1/");
+    _VerifyXTermColorInvalid(L"rgb:1/1/1/1");
+    _VerifyXTermColorInvalid(L"rgb:111111111");
+    _VerifyXTermColorInvalid(L"rgb:this/is/invalid");
+    _VerifyXTermColorInvalid(L"rgba:1/1/1");
+    _VerifyXTermColorInvalid(L"rgbi:1/1/1");
+    _VerifyXTermColorInvalid(L"cmyk:1/1/1/1");
+    _VerifyXTermColorInvalid(L"rgb#111");
+    _VerifyXTermColorInvalid(L"rgb:#111");
+    _VerifyXTermColorInvalid(L"rgb:rgb:1/1/1");
+    _VerifyXTermColorInvalid(L"rgb:rgb:#111");
+    _VerifyXTermColorInvalid(L"#");
+    _VerifyXTermColorInvalid(L"#1");
+    _VerifyXTermColorInvalid(L"#1111");
+    _VerifyXTermColorInvalid(L"#11111");
+    _VerifyXTermColorInvalid(L"#1/1/1");
+    _VerifyXTermColorInvalid(L"#11/1/");
+    _VerifyXTermColorInvalid(L"#1111111");
+    _VerifyXTermColorInvalid(L"#/1/1/1");
+    _VerifyXTermColorInvalid(L"#rgb:1/1/1");
+    _VerifyXTermColorInvalid(L"#111invalid");
+    _VerifyXTermColorInvalid(L"#invalid111");
+    _VerifyXTermColorInvalid(L"#1111111111111111");
+    _VerifyXTermColorInvalid(L"12/34/56");
+    _VerifyXTermColorInvalid(L"123456");
+    _VerifyXTermColorInvalid(L"rgb：1/1/1");
+    _VerifyXTermColorInvalid(L"中文rgb:1/1/1");
+    _VerifyXTermColorInvalid(L"rgb中文:1/1/1");
+    _VerifyXTermColorInvalid(L"这是一句中文");
+    _VerifyXTermColorInvalid(L"RGBİ1/1/1");
+    _VerifyXTermColorInvalid(L"rgbİ1/1/1");
+    _VerifyXTermColorInvalid(L"rgbİ:1/1/1");
+    _VerifyXTermColorInvalid(L"rgß:1/1/1");
+    _VerifyXTermColorInvalid(L"rgẞ:1/1/1");
+}
+
+void UtilsTests::_VerifyXTermColorResult(const std::wstring_view wstr, DWORD colorValue)
+{
+    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    VERIFY_IS_TRUE(color.has_value());
+    VERIFY_ARE_EQUAL(colorValue, (COLORREF)color.value());
+}
+
+void UtilsTests::_VerifyXTermColorInvalid(const std::wstring_view wstr)
+{
+    std::optional<til::color> color = ColorFromXTermColor(wstr);
+    VERIFY_IS_FALSE(color.has_value());
 }

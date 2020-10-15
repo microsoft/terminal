@@ -673,8 +673,10 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
+        newTabImpl->SetDispatch(*_actionDispatch);
+
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+        _UpdateTabIndices();
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -2545,9 +2547,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTabIndices()
     {
-        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        const uint32_t size = _tabs.Size();
+        for (uint32_t i = 0; i < size; ++i)
         {
-            _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+            _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
         }
     }
 
