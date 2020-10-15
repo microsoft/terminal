@@ -9,7 +9,6 @@
 
 #include "globals.h"
 #include "screenInfo.hpp"
-
 #include "input.h"
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
