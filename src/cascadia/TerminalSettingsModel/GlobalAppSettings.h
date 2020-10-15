@@ -52,7 +52,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // by higher layers in the app.
         void DefaultProfile(const guid& defaultProfile) noexcept;
         guid DefaultProfile() const;
-        hstring UnparsedDefaultProfile() const;
+        bool HasUnparsedDefaultProfile() const;
+        winrt::hstring UnparsedDefaultProfile() const;
+        void UnparsedDefaultProfile(const hstring& value);
+        void ClearUnparsedDefaultProfile();
 
         GETSET_SETTING(int32_t, InitialRows, DEFAULT_ROWS);
         GETSET_SETTING(int32_t, InitialCols, DEFAULT_COLS);
@@ -80,14 +83,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, DisableAnimations, false);
 
     private:
-        hstring _unparsedDefaultProfile;
         guid _defaultProfile;
+        std::optional<hstring> _UnparsedDefaultProfile{ std::nullopt };
+        bool _validDefaultProfile;
 
         com_ptr<KeyMapping> _keymap;
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
 
         Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
+
+        std::optional<hstring> _getUnparsedDefaultProfileImpl() const;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;

@@ -67,6 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ConnectionType(const winrt::guid& conType) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
+        bool HasBackgroundImageAlignment() const noexcept;
+        void ClearBackgroundImageAlignment() noexcept;
         const Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
         void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
@@ -121,9 +123,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::optional<winrt::guid> _Guid{ std::nullopt };
         std::optional<winrt::guid> _ConnectionType{ std::nullopt };
-        std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> _BackgroundImageAlignment{
-            Windows::UI::Xaml::HorizontalAlignment::Center,
-            Windows::UI::Xaml::VerticalAlignment::Center
+        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };
+        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _getBackgroundImageAlignmentImpl() const
+        {
+            return _BackgroundImageAlignment ?
+                       _BackgroundImageAlignment :
+                       (_parent ?
+                            _parent->_getBackgroundImageAlignmentImpl() :
+                            std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>{ Windows::UI::Xaml::HorizontalAlignment::Center,
+                                                                                                                      Windows::UI::Xaml::VerticalAlignment::Center });
         };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

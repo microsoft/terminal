@@ -21,6 +21,7 @@ ICustom
 IDialog
 IDirect
 IExplorer
+IInheritable
 IMap
 IObject
 IStorage

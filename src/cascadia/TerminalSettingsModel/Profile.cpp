@@ -88,20 +88,15 @@ Json::Value Profile::GenerateStub() const
         stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(*_Guid));
     }
 
-    if (_Name)
+    stub[JsonKey(NameKey)] = winrt::to_string(Name());
+
+    const auto source{ Source() };
+    if (!source.empty())
     {
-        stub[JsonKey(NameKey)] = winrt::to_string(*_Name);
+        stub[JsonKey(SourceKey)] = winrt::to_string(source);
     }
 
-    if (_Source && !_Source.value().empty())
-    {
-        stub[JsonKey(SourceKey)] = winrt::to_string(*_Source);
-    }
-
-    if (_Hidden)
-    {
-        stub[JsonKey(HiddenKey)] = *_Hidden;
-    }
+    stub[JsonKey(HiddenKey)] = Hidden();
 
     return stub;
 }
@@ -157,12 +152,13 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
-    if (_Source && !_Source.value().empty())
+    const auto mySource{ Source() };
+    if (!mySource.empty())
     {
         if (otherHadSource)
         {
             // If we have a source and the other has a source, compare them!
-            sourceMatches = *otherSource == *_Source;
+            sourceMatches = *otherSource == mySource;
         }
         else
         {
@@ -170,9 +166,9 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
             // `this` is a dynamic profile with a source, and our _source is one
             // of the legacy DPG namespaces. We're looking to see if the other
             // json object has the same guid, but _no_ "source"
-            if (*_Source == WslGeneratorNamespace ||
-                *_Source == AzureGeneratorNamespace ||
-                *_Source == PowershellCoreGeneratorNamespace)
+            if (mySource == WslGeneratorNamespace ||
+                mySource == AzureGeneratorNamespace ||
+                mySource == PowershellCoreGeneratorNamespace)
             {
                 sourceMatches = true;
             }
@@ -421,25 +417,43 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
+#pragma region BackgroundImageAlignment
+bool Profile::HasBackgroundImageAlignment() const noexcept
+{
+    return _BackgroundImageAlignment.has_value();
+}
+
+void Profile::ClearBackgroundImageAlignment() noexcept
+{
+    _BackgroundImageAlignment = std::nullopt;
+}
+
 const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
 {
-    return std::get<HorizontalAlignment>(_BackgroundImageAlignment);
+    return std::get<HorizontalAlignment>(*_getBackgroundImageAlignmentImpl());
 }
 
 void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
 {
-    std::get<HorizontalAlignment>(_BackgroundImageAlignment) = value;
+    if (!HasBackgroundImageAlignment() || std::get<HorizontalAlignment>(*_BackgroundImageAlignment) != value)
+    {
+        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
+    }
 }
 
 const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
 {
-    return std::get<VerticalAlignment>(_BackgroundImageAlignment);
+    return std::get<VerticalAlignment>(*_getBackgroundImageAlignmentImpl());
 }
 
 void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
 {
-    std::get<VerticalAlignment>(_BackgroundImageAlignment) = value;
+    if (!HasBackgroundImageAlignment() || std::get<VerticalAlignment>(*_BackgroundImageAlignment) != value)
+    {
+        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
+    }
 }
+#pragma endregion
 
 bool Profile::HasGuid() const noexcept
 {

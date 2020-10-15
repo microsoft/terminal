@@ -55,7 +55,7 @@ static constexpr bool debugFeaturesDefault{ false };
 GlobalAppSettings::GlobalAppSettings() :
     _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},
-    _unparsedDefaultProfile{},
+    _validDefaultProfile{ false },
     _defaultProfile{},
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
@@ -68,23 +68,57 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
     return _colorSchemes.GetView();
 }
 
+#pragma region DefaultProfile
 void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
 {
-    _unparsedDefaultProfile.clear();
+    _validDefaultProfile = true;
     _defaultProfile = defaultProfile;
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
 {
     // If we have an unresolved default profile, we should likely explode.
-    THROW_HR_IF(E_INVALIDARG, !_unparsedDefaultProfile.empty());
+    THROW_HR_IF(E_INVALIDARG, !_validDefaultProfile);
     return _defaultProfile;
+}
+
+bool GlobalAppSettings::HasUnparsedDefaultProfile() const
+{
+    return _UnparsedDefaultProfile.has_value();
 }
 
 winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
 {
-    return _unparsedDefaultProfile;
+    const auto val{ _getUnparsedDefaultProfileImpl() };
+    return val ? *val : hstring{ L"" };
 }
+
+void GlobalAppSettings::UnparsedDefaultProfile(const hstring& value)
+{
+    if (_UnparsedDefaultProfile != value)
+    {
+        _UnparsedDefaultProfile = value;
+        _validDefaultProfile = false;
+    }
+}
+
+void GlobalAppSettings::ClearUnparsedDefaultProfile()
+{
+    if (HasUnparsedDefaultProfile())
+    {
+        _UnparsedDefaultProfile = std::nullopt;
+    }
+}
+
+std::optional<winrt::hstring> GlobalAppSettings::_getUnparsedDefaultProfileImpl() const
+{
+    return _UnparsedDefaultProfile ?
+               _UnparsedDefaultProfile :
+               (_parent ?
+                    _parent->_getUnparsedDefaultProfileImpl() :
+                    std::nullopt);
+}
+#pragma endregion
 
 winrt::Microsoft::Terminal::Settings::Model::KeyMapping GlobalAppSettings::KeyMap() const noexcept
 {
@@ -106,7 +140,10 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    JsonUtils::GetValueForKey(json, DefaultProfileKey, _unparsedDefaultProfile);
+    // _validDefaultProfile keeps track of whether we've verified that DefaultProfile points to something
+    // CascadiaSettings::_ResolveDefaultProfile performs a validation and updates DefaultProfile() with the
+    // resolved value, then making it valid.
+    _validDefaultProfile = !JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
 
     JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
