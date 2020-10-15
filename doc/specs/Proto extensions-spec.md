@@ -9,7 +9,7 @@ last updated: <2020-10-15>
 ## Abstract
 
 This spec outlines adding support for proto extensions. This would allow other apps/programs
-to add json snippets to our json files, and will be used when we generate settings for our various profiles. 
+to add json snippets to our json files, and will be used when we generate settings for our various profiles.
 
 ## Inspiration
 
@@ -19,7 +19,7 @@ Currently, Ubuntu/WSL/Powershell etc are unable to provide any specifications fo
 their profiles in Terminal to look - only we and the users can modify the profiles. We want to provide
 these installations with the functionality to have a say in this, allowing them to specify things like
 their icon, their font and so on. However, we want to maintain that the user has final say over all of
-these settings. 
+these settings.
 
 ## Solution Design
 
@@ -57,17 +57,17 @@ these stubs should be put into lists in the json file: one list named ```profile
 }
 ```
 
-An example of a full json file with these fields filled out is shown at the end of this section. 
+An example of a full json file with these fields filled out is shown at the end of this section.
 
 #### Modifications to existing profiles
 
 The main thing to note for modification of existing profiles is that this will only be used for modifying the
-default profiles (cmd/powershell) or the dynamically generated profiles. 
+default profiles (cmd/powershell) or the dynamically generated profiles.
 
 For modifications to existing profiles, the json stub would need to indicate which profile it wishes to modify. It will
 do this by providing the corresponding guid in the `"updates"` field of the json stub. The reason we use an `"updates"`
 field rather than a `"guid"` field (like the way the user settings are eventually layered onto profiles) is because we
-do not want to mistakenly create a new profile when the stub was meant to update a profile that did not exist. 
+do not want to mistakenly create a new profile when the stub was meant to update a profile that did not exist.
 
 Note that currently, we generate a GUID for dynamic profiles using the "initial" name of the profile (i.e. before
 any user changes are applied). For example, the "initial" name of a WSL profile is the \<name\> argument to
@@ -76,7 +76,7 @@ on the version. Thus, the stub creator could simply use the same uuidv5 GUID gen
 GUID. Then, in the stub they provide the GUID can be used to identify which profile to modify.
 
 Naturally, we will have to provide documentation on how they could generate the desired GUID themselves. In that documentation,
-we will also provide examples showing how the current GUIDs are generated for clarity's sake. 
+we will also provide examples showing how the current GUIDs are generated for clarity's sake.
 
 We need to inform developers that **we will not** prescribe any ordering to the way in which these modifications will be
 applied - thus, they should not rely on their stub being the first/last to modify a particular profile (in the event that
@@ -97,7 +97,7 @@ Here is an example of a json file that modifies an existing profile (specificall
 ```
 
 **NOTE**: This will *not* change the way the profile looks in the user's settings file. The Azure cloud shell profile
-in their settings file (assuming they have made no changes) will still be as below. 
+in their settings file (assuming they have made no changes) will still be as below.
 
 ```js
 {
@@ -107,7 +107,7 @@ in their settings file (assuming they have made no changes) will still be as bel
     "source": "Windows.Terminal.Azure"
 }
 ```
-However, the user is free to make changes to it as usual and those changes will have the 'final say'. 
+However, the user is free to make changes to it as usual and those changes will have the 'final say'.
 
 #### Full profile stubs
 
@@ -121,7 +121,7 @@ As in the case of the dynamic profile generator, if we create a profile that did
 exist in the user settings), we need to add the profile to the user settings file and re-save that file.
 
 Furthermore, we will add a source field to profiles created this way (again, similar to what we do for dynamic profiles).
-The source field value is dependent on how we obtained this json file, and will be touched on in more detail [later in the spec](#the-source-field). 
+The source field value is dependent on how we obtained this json file, and will be touched on in more detail [later in the spec](#the-source-field).
 
 Here is an example of a json file that contains a full profile:
 
@@ -152,14 +152,14 @@ json stub in the user's settings file will be:
     "source": "local"
 }
 ```
-Again, the user will be able to make changes to it as they do for all other profiles. 
+Again, the user will be able to make changes to it as they do for all other profiles.
 
 #### Creation of colour schemes
 
 As with full profiles, we will have some qualifying criteria for what we accept as full colour schemes: color schemes
 must have _all_ the fields that define a colour scheme - see the
 [docs](https://docs.microsoft.com/en-us/windows/terminal/customize-settings/color-schemes)
-on creating new colour schemes for what this means. 
+on creating new colour schemes for what this means.
 
 This may cause the issue of colour schemes being overridden if there are many creations of a colour scheme with the
 same name. Since for now all we have to uniquely identify colour schemes *is* the name, we will just let this be.
@@ -256,7 +256,7 @@ Shell profile, creates a new profile called 'Cool Profile' and creates a new col
 ### Creation and location(s) of the json files
 
 In this section, we cover where an app that wants to use this proto-extension functionality should put the json
-files. Once we implement this feature, we will need to provide documentation on this for app developers. 
+files. Once we implement this feature, we will need to provide documentation on this for app developers.
 
 #### For apps installed through Microsoft store (or similar)
 
@@ -265,11 +265,11 @@ be an app extension or write a separate app extension. In the app extension, the
 folder, and create a subdirectory within that folder called `Fragments`. The json files should be inserted into the
 `Fragments` subdirectory. The specifics of how they can declare themselves as an app extension are provided in the
 [Microsoft Docs](https://docs.microsoft.com/en-us/windows/uwp/launch-resume/how-to-create-an-extension), and I will
-replicate the necessary section here. 
+replicate the necessary section here.
 
 In the appxmanifest file of the package:
 
-```
+```js
 <Package
   ...
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
@@ -301,39 +301,39 @@ the package root, where the `json` files they wish to share with us are stored (
 During our profile generation, we will probe the OS for app extensions with the name `com.microsoft.windows.terminal.settings`
 and obtain the json files stored in the `Fragments` subdirectories of the public folders of those app extensions.
 
-#### For apps installed 'traditionally' 
+#### For apps installed 'traditionally'
 
 For apps that are installed 'traditionally', there are 2 cases. The first is that this installation is for all
 the users of the system - in this case, the installer should add their json files to the global folder:
 
-```
+```js
 C:\ProgramData\Microsoft\Windows Terminal\Fragments\{app-name}
 ```
 
 Note: `C:\ProgramData` is a [known folder](https://docs.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb776911(v=vs.85))
 that apps should be able to access. If the folder `Windows Terminal` in `C:\ProgramData\Microsoft\Windows`
 does not already exist, the installer should create it. **Note:** the installer must create a subdirectory within
-the `Fragments` folder with their app name, we will use that name for the [`source` field](#the-source-field). 
+the `Fragments` folder with their app name, we will use that name for the [`source` field](#the-source-field).
 
 In the second case, the installation is only for the current user. For this case, the installer should add the
 json files to the local folder:
 
-```
+```js
 C:\Users\<user>\AppData\Local\Microsoft\Windows Terminal\Fragments\{app-name}
 ```
 
-We will look through both folders mentioned above during profile generation. 
+We will look through both folders mentioned above during profile generation.
 
 #### The source field
 
 Currently, we allow users an easy way to disable/enable profiles that are generated from certain sources. For
 example, a user can easily hide all dynamic profiles with the source `"Windows.Terminal.Wsl"` if they wish to.
-To retain this functionality, we will add source fields to profiles we create through proto-extensions. 
+To retain this functionality, we will add source fields to profiles we create through proto-extensions.
 
 For full profiles that came from apps installed 'traditionally', we will use the name of the subdirectory where
-the json file was found to fill out the source field. 
+the json file was found to fill out the source field.
 
-For full profiles that came from app extensions, we will use the app package name to fill out the source field. 
+For full profiles that came from app extensions, we will use the app package name to fill out the source field.
 
 
 
@@ -356,16 +356,16 @@ things they do not want to.
 
 ### Reliability
 
-This should not affect reliability - most of what its doing is simply layering json which we already do. 
+This should not affect reliability - most of what its doing is simply layering json which we already do.
 
 ### Compatibility
 
 Again, there should not be any issues here - the user settings can still be layered after this layering for the user
-to have the final say. 
+to have the final say.
 
 ### Performance, Power, and Efficiency
 
-Looking through the additional json files could negatively impact startup time. 
+Looking through the additional json files could negatively impact startup time.
 
 ## Potential Issues
 
@@ -378,7 +378,7 @@ We need to consider how an app extension provides the path to an image (for the 
 
 This will likely be a stepping stone for the theme marketplace.
 
-This will also likely be a stepping stone to allowing users to specify other files to import settings from. 
+This will also likely be a stepping stone to allowing users to specify other files to import settings from.
 
 ## Resources
 
