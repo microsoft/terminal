@@ -281,7 +281,7 @@ In the appxmanifest file of the package:
         <Extensions>
           ...
           <uap3:Extension Category="windows.appExtension">
-            <uap3:AppExtension Name="com.microsoft.windows.terminal.settingsext"
+            <uap3:AppExtension Name="com.microsoft.windows.terminal.settings"
                                Id="<id>"
                                PublicFolder="Public">
             </uap3:AppExtension>
@@ -293,12 +293,12 @@ In the appxmanifest file of the package:
 </Package>
 ```
 
-Note that the name field **must** be `com.microsoft.windows.terminal.settingsext` for us to detect this extension. The `Id` field
+Note that the name field **must** be `com.microsoft.windows.terminal.settings` for us to detect this extension. The `Id` field
 can be filled out as the app wishes. The `PublicFolder` field should have the name of the folder, relative to
 the package root, where the `json` files they wish to share with us are stored (this folder is typically named
 `Public` but can be renamed as long as it matches the relevant folder).
 
-During our profile generation, we will probe the OS for app extensions with the name `com.microsoft.windows.terminal.settingsext`
+During our profile generation, we will probe the OS for app extensions with the name `com.microsoft.windows.terminal.settings`
 and obtain the json files stored in the `Fragments` subdirectories of the public folders of those app extensions.
 
 #### For apps installed 'traditionally' 
