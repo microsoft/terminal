@@ -54,3 +54,4 @@ userenv
 wcstoui
 XDocument
 XElement
+XParse

@@ -8,6 +8,7 @@
 #include "base64.hpp"
 
 #include "ascii.hpp"
+#include "../../types/inc/utils.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -734,8 +735,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     std::wstring params;
     std::wstring uri;
     bool queryClipboard = false;
-    size_t tableIndex = 0;
-    DWORD color = 0;
+    std::vector<size_t> tableIndexes;
+    std::vector<DWORD> colors;
 
     switch (parameter)
     {
@@ -745,19 +746,17 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         success = _GetOscTitle(string, title);
         break;
     case OscActionCodes::SetColor:
-        success = _GetOscSetColorTable(string, tableIndex, color);
+        success = _GetOscSetColorTable(string, tableIndexes, colors);
         break;
     case OscActionCodes::SetForegroundColor:
     case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
-        success = _GetOscSetColor(string, color);
+        success = _GetOscSetColor(string, colors);
         break;
     case OscActionCodes::SetClipboard:
         success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
         break;
     case OscActionCodes::ResetCursorColor:
-        // the console uses 0xffffffff as an "invalid color" value
-        color = 0xffffffff;
         success = true;
         break;
     case OscActionCodes::Hyperlink:
@@ -779,19 +778,33 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
             break;
         case OscActionCodes::SetColor:
-            success = _dispatch->SetColorTableEntry(tableIndex, color);
+            for (size_t i = 0; i < tableIndexes.size(); i++)
+            {
+                const auto tableIndex = til::at(tableIndexes, i);
+                const auto rgb = til::at(colors, i);
+                success = _dispatch->SetColorTableEntry(tableIndex, rgb);
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
             break;
         case OscActionCodes::SetForegroundColor:
-            success = _dispatch->SetDefaultForeground(color);
+            if (colors.size() > 0)
+            {
+                success = _dispatch->SetDefaultForeground(til::at(colors, 0));
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
             break;
         case OscActionCodes::SetBackgroundColor:
-            success = _dispatch->SetDefaultBackground(color);
+            if (colors.size() > 0)
+            {
+                success = _dispatch->SetDefaultBackground(til::at(colors, 0));
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
             break;
         case OscActionCodes::SetCursorColor:
-            success = _dispatch->SetCursorColor(color);
+            if (colors.size() > 0)
+            {
+                success = _dispatch->SetCursorColor(til::at(colors, 0));
+            }
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
             break;
         case OscActionCodes::SetClipboard:
@@ -802,7 +815,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
             break;
         case OscActionCodes::ResetCursorColor:
-            success = _dispatch->SetCursorColor(color);
+            // the console uses 0xffffffff as an "invalid color" value
+            success = _dispatch->SetCursorColor(0xffffffff);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
             break;
         case OscActionCodes::Hyperlink:
@@ -1348,247 +1362,50 @@ bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const noexcept
 }
 
 // Routine Description:
-// - Converts a hex character to its equivalent integer value.
-// Arguments:
-// - wch - Character to convert.
-// - value - receives the int value of the char
-// Return Value:
-// - true iff the character is a hex character.
-bool OutputStateMachineEngine::s_HexToUint(const wchar_t wch,
-                                           unsigned int& value) noexcept
-{
-    value = 0;
-    bool success = false;
-    if (wch >= L'0' && wch <= L'9')
-    {
-        value = wch - L'0';
-        success = true;
-    }
-    else if (wch >= L'A' && wch <= L'F')
-    {
-        value = (wch - L'A') + 10;
-        success = true;
-    }
-    else if (wch >= L'a' && wch <= L'f')
-    {
-        value = (wch - L'a') + 10;
-        success = true;
-    }
-    return success;
-}
-
-#pragma warning(push)
-#pragma warning(disable : 26497) // We don't use any of these "constexprable" functions in that fashion
-
-// Routine Description:
-// - Determines if a character is a valid number character, 0-9.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isNumber(const wchar_t wch) noexcept
-{
-    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
-}
-
-// Routine Description:
-// - Determines if a character is a valid hex character, 0-9a-fA-F.
-// Arguments:
-// - wch - Character to check.
-// Return Value:
-// - True if it is. False if it isn't.
-static constexpr bool _isHexNumber(const wchar_t wch) noexcept
-{
-    return (wch >= L'0' && wch <= L'9') || // 0x30 - 0x39
-           (wch >= L'A' && wch <= L'F') ||
-           (wch >= L'a' && wch <= L'f');
-}
-
-#pragma warning(pop)
-
-// Routine Description:
-// - Given a color spec string, attempts to parse the color that's encoded.
-//   The only supported spec currently is the following:
-//      spec: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//          where <color> is one or two hex digits, upper or lower case.
-// Arguments:
-// - string - The string containing the color spec string to parse.
-// - rgb - receives the color that we parsed
-// Return Value:
-// - True if a color was successfully parsed
-bool OutputStateMachineEngine::s_ParseColorSpec(const std::wstring_view string,
-                                                DWORD& rgb) noexcept
-{
-    bool foundRGB = false;
-    bool foundValidColorSpec = false;
-    std::array<unsigned int, 3> colorValues = { 0 };
-    bool success = false;
-    // We can have anywhere between [11,15] characters
-    // 9 "rgb:h/h/h"
-    // 12 "rgb:hh/hh/hh"
-    // Any fewer cannot be valid, and any more will be too many.
-    // Return early in this case.
-    //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (string.size() < 9 || string.size() > 12)
-    {
-        return false;
-    }
-
-    // Now we look for "rgb:"
-    // Other colorspaces are theoretically possible, but we don't support them.
-
-    auto curr = string.cbegin();
-    if ((*curr++ == L'r') &&
-        (*curr++ == L'g') &&
-        (*curr++ == L'b') &&
-        (*curr++ == L':'))
-    {
-        foundRGB = true;
-    }
-
-    if (foundRGB)
-    {
-        // Colorspecs are up to hh/hh/hh, for 1-2 h's
-        for (size_t component = 0; component < 3; component++)
-        {
-            bool foundColor = false;
-            auto& value = til::at(colorValues, component);
-            for (size_t i = 0; i < 3; i++)
-            {
-                const wchar_t wch = *curr++;
-
-                if (_isHexNumber(wch))
-                {
-                    value *= 16;
-                    unsigned int intVal = 0;
-                    if (s_HexToUint(wch, intVal))
-                    {
-                        value += intVal;
-                    }
-                    else
-                    {
-                        // Encountered something weird oh no
-                        foundColor = false;
-                        break;
-                    }
-                    // If we're on the blue component, we're not going to see a /.
-                    // Break out once we hit the end.
-                    if (component == 2 && curr >= string.cend())
-                    {
-                        foundValidColorSpec = true;
-                        break;
-                    }
-                }
-                else if (wch == L'/')
-                {
-                    // Break this component, and start the next one.
-                    foundColor = true;
-                    break;
-                }
-                else
-                {
-                    // Encountered something weird oh no
-                    foundColor = false;
-                    break;
-                }
-            }
-            if (!foundColor || curr >= string.cend())
-            {
-                // Indicates there was a some error parsing color
-                //  or we're at the end of the string.
-                break;
-            }
-        }
-    }
-    // Only if we find a valid colorspec can we pass it out successfully.
-    if (foundValidColorSpec)
-    {
-        DWORD color = RGB(LOBYTE(colorValues.at(0)),
-                          LOBYTE(colorValues.at(1)),
-                          LOBYTE(colorValues.at(2)));
-
-        rgb = color;
-        success = true;
-    }
-    return success;
-}
-
-// Routine Description:
 // - OSC 4 ; c ; spec ST
 //      c: the index of the ansi color table
-//      spec: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//          where <color> is two hex digits
+//      spec: The colors are specified by name or RGB specification as per XParseColor
+//
+//   It's possible to have multiple "c ; spec" pairs, which will set the index "c" of the color table
+//   with color parsed from "spec" for each pair respectively.
 // Arguments:
 // - string - the Osc String to parse
-// - tableIndex - receives the table index
-// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
+// - tableIndexes - receives the table indexes
+// - rgbs - receives the colors that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if a table index and color was parsed successfully. False otherwise.
+// - True if at least one table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(const std::wstring_view string,
-                                                    size_t& tableIndex,
-                                                    DWORD& rgb) const noexcept
+                                                    std::vector<size_t>& tableIndexes,
+                                                    std::vector<DWORD>& rgbs) const noexcept
+try
 {
-    tableIndex = 0;
-    rgb = 0;
-    size_t _TableIndex = 0;
-
-    bool foundTableIndex = false;
-    bool success = false;
-    // We can have anywhere between [11,16] characters
-    // 11 "#;rgb:h/h/h"
-    // 16 "###;rgb:hh/hh/hh"
-    // Any fewer cannot be valid, and any more will be too many.
-    // Return early in this case.
-    //      We'll still have to bounds check when parsing the hh/hh/hh values
-    if (string.size() < 11 || string.size() > 16)
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() < 2)
     {
         return false;
     }
 
-    // First try to get the table index, a number between [0,256]
-    size_t current = 0;
-    for (size_t i = 0; i < 4; i++)
-    {
-        const wchar_t wch = string.at(current);
-        if (_isNumber(wch))
-        {
-            _TableIndex *= 10;
-            _TableIndex += wch - L'0';
+    std::vector<size_t> newTableIndexes;
+    std::vector<DWORD> newRgbs;
 
-            ++current;
-        }
-        else if (wch == L';' && i > 0)
-        {
-            // We need to explicitly pass in a number, we can't default to 0 if
-            //  there's no param
-            ++current;
-            foundTableIndex = true;
-            break;
-        }
-        else
-        {
-            // Found an unexpected character, fail.
-            break;
-        }
-    }
-    // Now we look for "rgb:"
-    // Other colorspaces are theoretically possible, but we don't support them.
-    if (foundTableIndex)
+    for (size_t i = 0, j = 1; j < parts.size(); i += 2, j += 2)
     {
-        DWORD color = 0;
-        success = s_ParseColorSpec(string.substr(current), color);
-
-        if (success)
+        unsigned int tableIndex = 0;
+        const bool indexSuccess = Utils::StringToUint(til::at(parts, i), tableIndex);
+        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, j));
+        if (indexSuccess && colorOptional.has_value())
         {
-            tableIndex = _TableIndex;
-            rgb = color;
+            newTableIndexes.push_back(tableIndex);
+            newRgbs.push_back(colorOptional.value());
         }
     }
 
-    return success;
+    tableIndexes.swap(newTableIndexes);
+    rgbs.swap(newRgbs);
+
+    return tableIndexes.size() > 0 && rgbs.size() > 0;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
@@ -1630,31 +1447,51 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST
-//      spec: a color in the following format:
-//          "rgb:<red>/<green>/<blue>"
-//          where <color> is two hex digits
+//      spec: The colors are specified by name or RGB specification as per XParseColor
+//
+//   It's possible to have multiple "spec", which by design equals to a series of OSC command
+//   with accumulated Ps. For example "OSC 10;color1;color2" is effectively an "OSC 10;color1"
+//   and an "OSC 11;color2".
+//
+//   However, we do not support the chaining of OSC 10-17 yet. Right now only the first parameter
+//   will take effect.
 // Arguments:
 // - string - the Osc String to parse
-// - rgb - receives the color that we parsed in the format: 0x00BBGGRR
+// - rgbs - receives the colors that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if a table index and color was parsed successfully. False otherwise.
+// - True if the first table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColor(const std::wstring_view string,
-                                               DWORD& rgb) const noexcept
+                                               std::vector<DWORD>& rgbs) const noexcept
+try
 {
-    rgb = 0;
-
     bool success = false;
 
-    DWORD color = 0;
-    success = s_ParseColorSpec(string, color);
-
-    if (success)
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() < 1)
     {
-        rgb = color;
+        return false;
     }
+
+    std::vector<DWORD> newRgbs;
+    for (size_t i = 0; i < parts.size(); i++)
+    {
+        const auto colorOptional = Utils::ColorFromXTermColor(til::at(parts, i));
+        if (colorOptional.has_value())
+        {
+            newRgbs.push_back(colorOptional.value());
+            // Only mark the parsing as a success iff the first color is a success.
+            if (i == 0)
+            {
+                success = true;
+            }
+        }
+    }
+
+    rgbs.swap(newRgbs);
 
     return success;
 }
+CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
