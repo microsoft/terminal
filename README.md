@@ -292,7 +292,8 @@ submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for some of its
 dependencies. To make sure submodules are restored or updated, be sure to run
 the following prior to building:
 
-```shell git submodule update --init --recursive
+```shell
+git submodule update --init --recursive
 ```
 
 OpenConsole.sln may be built from within Visual Studio or from the command-line
@@ -300,13 +301,17 @@ using a set of convenience scripts & tools in the **/tools** directory:
 
 ### Building in PowerShell
 
-```powershell Import-Module .\tools\OpenConsole.psm1 Set-MsBuildDevEnvironment
+```powershell
+Import-Module .\tools\OpenConsole.psm1
+Set-MsBuildDevEnvironment
 Invoke-OpenConsoleBuild
 ```
 
 ### Building in Cmd
 
-```shell .\tools\razzle.cmd bcz
+```shell
+.\tools\razzle.cmd
+bcz
 ```
 
 ## Running & Debugging
