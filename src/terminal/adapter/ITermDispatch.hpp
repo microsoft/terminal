@@ -70,7 +70,7 @@ public:
     virtual bool HorizontalTabSet() = 0; // HTS
     virtual bool ForwardTab(const size_t numTabs) = 0; // CHT, HT
     virtual bool BackwardsTab(const size_t numTabs) = 0; // CBT
-    virtual bool TabClear(const size_t clearType) = 0; // TBC
+    virtual bool TabClear(const DispatchTypes::TabClearType clearType) = 0; // TBC
     virtual bool EnableDECCOLMSupport(const bool enabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool enabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) = 0; // ?1005
@@ -86,11 +86,11 @@ public:
     virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
-    virtual bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options) = 0; // SGR
+    virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
-    virtual bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECSET
+    virtual bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECSET
 
-    virtual bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) = 0; // DECRST
+    virtual bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
@@ -116,7 +116,8 @@ public:
 
     // DTTERM_WindowManipulation
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const gsl::span<const size_t> parameters) = 0;
+                                    const VTParameter parameter1,
+                                    const VTParameter parameter2) = 0;
 
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;

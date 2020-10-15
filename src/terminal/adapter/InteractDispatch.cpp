@@ -92,11 +92,13 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform
-// - parameters - Additional parameters to pass to the function
+// - parameter1 - The first optional parameter for the function
+// - parameter2 - The second optional parameter for the function
 // Return value:
 // True if handled successfully. False otherwise.
 bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                          const gsl::span<const size_t> parameters)
+                                          const VTParameter parameter1,
+                                          const VTParameter parameter2)
 {
     bool success = false;
     // Other Window Manipulation functions:
@@ -105,21 +107,15 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        if (parameters.empty())
-        {
-            success = DispatchCommon::s_RefreshWindow(*_pConApi);
-        }
+        success = DispatchCommon::s_RefreshWindow(*_pConApi);
         break;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
         // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
         // the ConGetSet interface, that specifically handles a conpty resize.
-        if (parameters.size() == 2)
+        success = DispatchCommon::s_ResizeWindow(*_pConApi, parameter2.value_or(0), parameter1.value_or(0));
+        if (success)
         {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
-            if (success)
-            {
-                DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
-            }
+            DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
         }
         break;
     default:

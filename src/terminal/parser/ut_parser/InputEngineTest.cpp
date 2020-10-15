@@ -73,8 +73,7 @@ public:
         _expectSendCtrlC{ false },
         _expectCursorPosition{ false },
         _expectedCursor{ -1, -1 },
-        _expectedWindowManipulation{ DispatchTypes::WindowManipulationType::Invalid },
-        _expectedCParams{ 0 }
+        _expectedWindowManipulation{ DispatchTypes::WindowManipulationType::Invalid }
     {
         std::fill_n(_expectedParams, ARRAYSIZE(_expectedParams), gsl::narrow<short>(0));
     }
@@ -207,7 +206,6 @@ public:
     COORD _expectedCursor;
     DispatchTypes::WindowManipulationType _expectedWindowManipulation;
     unsigned short _expectedParams[16];
-    size_t _expectedCParams;
 };
 
 class Microsoft::Console::VirtualTerminal::InputEngineTest
@@ -327,7 +325,8 @@ public:
 
     virtual bool WriteCtrlKey(const KeyEvent& event) override;
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                    const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
+                                    const VTParameter parameter1,
+                                    const VTParameter parameter2) override; // DTTERM_WindowManipulation
     virtual bool WriteString(const std::wstring_view string) override;
 
     virtual bool MoveCursor(const size_t row,
@@ -362,16 +361,13 @@ bool TestInteractDispatch::WriteCtrlKey(const KeyEvent& event)
 }
 
 bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                              const gsl::span<const size_t> parameters)
+                                              const VTParameter parameter1,
+                                              const VTParameter parameter2)
 {
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, function);
-    for (size_t i = 0; i < parameters.size(); i++)
-    {
-        unsigned short actual;
-        VERIFY_SUCCEEDED(SizeTToUShort(til::at(parameters, i), &actual));
-        VERIFY_ARE_EQUAL(_testState->_expectedParams[i], actual);
-    }
+    VERIFY_ARE_EQUAL(_testState->_expectedParams[0], parameter1.value_or(0));
+    VERIFY_ARE_EQUAL(_testState->_expectedParams[1], parameter2.value_or(0));
     return true;
 }
 
@@ -634,8 +630,6 @@ void InputEngineTest::WindowManipulationTest()
         L"Only the valid ones should call the "
         L"TestInteractDispatch::WindowManipulation callback."));
 
-    bool fValidType = false;
-
     const unsigned short param1 = 123;
     const unsigned short param2 = 456;
     const wchar_t* const wszParam1 = L"123";
@@ -643,11 +637,6 @@ void InputEngineTest::WindowManipulationTest()
 
     for (unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
     {
-        if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
-        {
-            fValidType = true;
-        }
-
         std::wstringstream seqBuilder;
         seqBuilder << L"\x1b[" << i;
 
@@ -659,24 +648,18 @@ void InputEngineTest::WindowManipulationTest()
             seqBuilder << L";" << wszParam1 << L";" << wszParam2;
 
             testState._expectedToCallWindowManipulation = true;
-            testState._expectedCParams = 2;
             testState._expectedParams[0] = param1;
             testState._expectedParams[1] = param2;
             testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
-        else if (i == DispatchTypes::WindowManipulationType::RefreshWindow)
-        {
-            // refresh window doesn't expect any params.
-
-            testState._expectedToCallWindowManipulation = true;
-            testState._expectedCParams = 0;
-            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
-        }
         else
         {
-            testState._expectedToCallWindowManipulation = false;
-            testState._expectedCParams = 0;
-            testState._expectedWindowManipulation = DispatchTypes::WindowManipulationType::Invalid;
+            // other operations don't expect any params.
+
+            testState._expectedToCallWindowManipulation = true;
+            testState._expectedParams[0] = 0;
+            testState._expectedParams[1] = 0;
+            testState._expectedWindowManipulation = static_cast<DispatchTypes::WindowManipulationType>(i);
         }
         seqBuilder << L"t";
         std::wstring seq = seqBuilder.str();
@@ -1422,9 +1405,8 @@ void InputEngineTest::TestWin32InputParsing()
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
 
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(0, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
@@ -1433,9 +1415,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\0', key.GetCharData());
@@ -1444,9 +1425,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1455,9 +1435,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 4 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1466,9 +1445,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 1 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 1 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1477,9 +1455,8 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4, 5 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 4, 5 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
@@ -1488,20 +1465,14 @@ void InputEngineTest::TestWin32InputParsing()
         VERIFY_ARE_EQUAL(1, key.GetRepeatCount());
     }
     {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4, 5, 6 };
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
+        std::vector<VTParameter> params{ 1, 2, 3, 4, 5, 6 };
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), params.size() });
         VERIFY_ARE_EQUAL(1, key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL(2, key.GetVirtualScanCode());
         VERIFY_ARE_EQUAL(L'\x03', key.GetCharData());
         VERIFY_ARE_EQUAL(true, key.IsKeyDown());
         VERIFY_ARE_EQUAL(0x5u, key.GetActiveModifierKeys());
         VERIFY_ARE_EQUAL(6, key.GetRepeatCount());
-    }
-    {
-        KeyEvent key{};
-        std::vector<size_t> params{ 1, 2, 3, 4, 5, 6, 7 };
-        VERIFY_IS_FALSE(engine->_GenerateWin32Key({ params.data(), params.size() }, key));
     }
 }
 
@@ -1532,8 +1503,7 @@ void InputEngineTest::TestWin32InputOptionals()
     auto engine = std::make_unique<InputStateMachineEngine>(std::move(dispatch));
 
     {
-        KeyEvent key{};
-        std::vector<size_t> params{
+        std::vector<VTParameter> params{
             ::base::saturated_cast<size_t>(provideVirtualKeyCode ? 1 : 0),
             ::base::saturated_cast<size_t>(provideVirtualScanCode ? 2 : 0),
             ::base::saturated_cast<size_t>(provideCharData ? 3 : 0),
@@ -1542,7 +1512,7 @@ void InputEngineTest::TestWin32InputOptionals()
             ::base::saturated_cast<size_t>(provideRepeatCount ? 6 : 0)
         };
 
-        VERIFY_IS_TRUE(engine->_GenerateWin32Key({ params.data(), static_cast<size_t>(numParams) }, key));
+        KeyEvent key = engine->_GenerateWin32Key({ params.data(), static_cast<size_t>(numParams) });
         VERIFY_ARE_EQUAL((provideVirtualKeyCode && numParams > 0) ? 1 : 0,
                          key.GetVirtualKeyCode());
         VERIFY_ARE_EQUAL((provideVirtualScanCode && numParams > 1) ? 2 : 0,

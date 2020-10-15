@@ -249,7 +249,7 @@ try
         startPos.X = viewport.Left();
         nlength = viewport.RightExclusive() - startPos.X;
         break;
-    case DispatchTypes::EraseType::Scrollback:
+    default:
         return false;
     }
 
