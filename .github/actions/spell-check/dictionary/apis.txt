@@ -3,6 +3,7 @@ ACCESSDENIED
 alignof
 bitfield
 bitfields
+COLORPROPERTY
 CLASSNOTAVAILABLE
 environstrings
 EXPCMDFLAGS
@@ -45,6 +46,8 @@ RSHIFT
 rx
 serializer
 SIZENS
+GETDESKWALLPAPER
+UPDATEINIFILE
 spsc
 STDCPP
 syscall
@@ -54,3 +57,4 @@ userenv
 wcstoui
 XDocument
 XElement
+XParse

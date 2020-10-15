@@ -13,6 +13,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console::Types;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
@@ -89,7 +90,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -131,14 +132,14 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
-    winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
+    LaunchMode launchMode = LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
         _pfnCreateCallback(_window.get(), rc, launchMode);
     }
 
     int nCmdShow = SW_SHOW;
-    if (launchMode == winrt::TerminalApp::LaunchMode::MaximizedMode)
+    if (launchMode == LaunchMode::MaximizedMode || launchMode == LaunchMode::MaximizedFocusMode)
     {
         nCmdShow = SW_MAXIMIZE;
     }
@@ -262,7 +263,7 @@ void IslandWindow::Initialize()
 void IslandWindow::OnSize(const UINT width, const UINT height)
 {
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, nullptr, 0, 0, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
 
     if (_rootGrid)
     {
@@ -498,7 +499,7 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
                      0,
                      0,
                      0,
-                     SWP_NOMOVE | SWP_NOSIZE);
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 }
 
@@ -612,7 +613,7 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
                  windowPos.top<int>(),
                  windowPos.width<int>(),
                  windowPos.height<int>(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 // Method Description:
@@ -698,7 +699,7 @@ void IslandWindow::_ApplyWindowSize()
                                          newSize.top,
                                          newSize.right - newSize.left,
                                          newSize.bottom - newSize.top,
-                                         SWP_FRAMECHANGED));
+                                         SWP_FRAMECHANGED | SWP_NOACTIVATE));
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

@@ -39,6 +39,9 @@
     <ClCompile Include="..\RenderEngineBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\BlinkingState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Cluster.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -76,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="..\..\inc\RenderEngineBase.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\BlinkingState.hpp">
+      <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\Cluster.hpp">
       <Filter>Header Files\inc</Filter>

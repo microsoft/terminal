@@ -140,6 +140,13 @@ Once you've discussed your proposed feature/fix/etc. with a team member, and you
 1. Create & push a feature branch
 1. Create a [Draft Pull Request (PR)](https://github.blog/2019-02-14-introducing-draft-pull-requests/)
 1. Work on your changes
+1. Build and see if it works. Consult [How to build OpenConsole](./doc/building.md) if you have problems.
+
+### Testing
+
+Testing is a key component in the development workflow. Both Windows Terminal and Windows Console use TAEF(the Test Authoring and Execution Framework) as the main framework for testing.
+
+If your changes affect existing test cases, or you're working on brand new features and also the accompanying test cases, see [TAEF](./doc/TAEF.md) for more information about how to validate your work locally.
 
 ### Code Review
 

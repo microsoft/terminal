@@ -31,6 +31,13 @@
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
     },
+    "Icon": {
+      "description": "Image file location or an emoji to be used as an icon. Displays within the tab, the dropdown menu, and jumplist.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
@@ -465,6 +472,14 @@
               "type": "array"
             }
           ]
+        },
+        "icon": { "$ref": "#/definitions/Icon" },
+        "name": {
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -497,6 +512,11 @@
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
           "$ref": "#/definitions/CopyFormat"
         },
+        "disableAnimations": {
+          "default": false,
+          "description": "When set to `true`, visual animations will be disabled across the application.",
+          "type": "boolean"
+        },
         "largePasteWarning": {
           "default": true,
           "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
@@ -528,18 +548,18 @@
         },
         "initialCols": {
           "default": 120,
-          "description": "The number of columns displayed in the window upon first load.",
+          "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
         },
         "initialPosition": {
           "$ref": "#/definitions/Coordinates",
-          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to maximized, the window will be maximized on the monitor specified by those coordinates."
+          "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), the window will be maximized on the monitor specified by those coordinates."
         },
         "initialRows": {
           "default": 30,
-          "description": "The number of rows displayed in the window upon first load.",
+          "description": "The number of rows displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
           "maximum": 999,
           "minimum": 1,
           "type": "integer"
@@ -551,11 +571,13 @@
         },
         "launchMode": {
           "default": "default",
-          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window.",
+          "description": "Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to \"focus\" is equivalent to launching the terminal in the \"default\" mode, but with the focus mode enabled. Similar, setting this to \"maximizedFocus\" will result in launching the terminal in a maximized window with the focus mode enabled.",
           "enum": [
             "fullscreen",
             "maximized",
-            "default"
+            "default",
+            "focus",
+            "maximizedFocus"
           ],
           "type": "string"
         },
@@ -810,10 +832,7 @@
           "minimum": -1,
           "type": "integer"
         },
-        "icon": {
-          "description": "Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.",
-          "type": ["string", "null"]
-        },
+        "icon":{ "$ref": "#/definitions/Icon" },
         "name": {
           "description": "Name of the profile. Displays in the dropdown menu.",
           "minLength": 1,

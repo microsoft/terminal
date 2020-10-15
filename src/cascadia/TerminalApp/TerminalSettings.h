@@ -19,11 +19,26 @@ Author(s):
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     struct TerminalSettings : TerminalSettingsT<TerminalSettings>
     {
         TerminalSettings() = default;
+        TerminalSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
+                         guid profileGuid,
+                         const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+
+        static std::tuple<guid, TerminalApp::TerminalSettings> BuildSettings(const Microsoft::Terminal::Settings::Model::CascadiaSettings& appSettings,
+                                                                             const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                                                                             const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
+
+        void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
 
 // TECHNICALLY, the hstring copy assignment can throw, but the GETSET_PROPERTY
 // macro defines the operator as `noexcept`. We're not really worried about it,
@@ -34,10 +49,9 @@ namespace winrt::TerminalApp::implementation
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
 
-        // Get/Set ColorTableEntry needs to be implemented manually, to get a
+        // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
         uint32_t GetColorTableEntry(int32_t index) const noexcept;
-        void SetColorTableEntry(int32_t index, uint32_t value);
 
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
@@ -101,6 +115,11 @@ namespace winrt::TerminalApp::implementation
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
+
+        void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
+        void _ApplyGlobalSettings(const Microsoft::Terminal::Settings::Model::GlobalAppSettings& globalSettings) noexcept;
+
+        friend class TerminalAppLocalTests::SettingsTests;
     };
 }
 

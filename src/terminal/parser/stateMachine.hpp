@@ -27,6 +27,11 @@ namespace Microsoft::Console::VirtualTerminal
     // but for now 32767 is the safest limit for our existing code base.
     constexpr size_t MAX_PARAMETER_VALUE = 32767;
 
+    // The DEC STD 070 reference requires that a minimum of 16 parameter values
+    // are supported, but most modern terminal emulators will allow around twice
+    // that number.
+    constexpr size_t MAX_PARAMETER_COUNT = 32;
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -86,6 +91,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _EnterDcsIntermediate() noexcept;
         void _EnterDcsPassThrough() noexcept;
         void _EnterDcsTermination() noexcept;
+        void _EnterSosPmApcString() noexcept;
+        void _EnterSosPmApcTermination() noexcept;
 
         void _EventGround(const wchar_t wch);
         void _EventEscape(const wchar_t wch);
@@ -96,18 +103,19 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventCsiParam(const wchar_t wch);
         void _EventOscParam(const wchar_t wch) noexcept;
         void _EventOscString(const wchar_t wch);
-        void _EventOscTermination(const wchar_t wch);
         void _EventSs3Entry(const wchar_t wch);
         void _EventSs3Param(const wchar_t wch);
         void _EventVt52Param(const wchar_t wch);
         void _EventDcsEntry(const wchar_t wch);
-        void _EventDcsIgnore(const wchar_t wch) noexcept;
+        void _EventDcsIgnore() noexcept;
         void _EventDcsIntermediate(const wchar_t wch);
         void _EventDcsParam(const wchar_t wch);
         void _EventDcsPassThrough(const wchar_t wch);
-        void _EventDcsTermination(const wchar_t wch);
+        void _EventSosPmApcString(const wchar_t wch) noexcept;
+        void _EventVariableLengthStringTermination(const wchar_t wch);
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
+        const bool _IsVariableLengthStringState() const noexcept;
 
         enum class VTStates
         {
@@ -129,7 +137,9 @@ namespace Microsoft::Console::VirtualTerminal
             DcsIntermediate,
             DcsParam,
             DcsPassThrough,
-            DcsTermination
+            DcsTermination,
+            SosPmApcString,
+            SosPmApcTermination
         };
 
         Microsoft::Console::VirtualTerminal::ParserTracing _trace;
@@ -143,7 +153,8 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring_view _run;
 
         VTIDBuilder _identifier;
-        std::vector<size_t> _parameters;
+        std::vector<VTParameter> _parameters;
+        bool _parameterLimitReached;
 
         std::wstring _oscString;
         size_t _oscParameter;

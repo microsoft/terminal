@@ -543,22 +543,6 @@ bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 // Routine Description:
 // - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
-// - events - the input events to be copied into the head of the input
-//            buffer for the underlying attached process
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - true if successful (see DoSrvPrivatePrependConsoleInput). false otherwise.
-bool ConhostInternalGetSet::PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                       size_t& eventsWritten)
-{
-    return SUCCEEDED(DoSrvPrivatePrependConsoleInput(_io.GetActiveInputBuffer(),
-                                                     events,
-                                                     eventsWritten));
-}
-
-// Routine Description:
-// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
 // - <none>
 // Return Value:
 // - true if successful (see DoSrvPrivateRefreshWindow). false otherwise.

@@ -3,9 +3,6 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
-#include "ActionAndArgs.h"
-#include "ActionArgs.h"
-#include "Command.h"
 
 #include <LibraryResources.h>
 
@@ -18,6 +15,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -26,11 +24,11 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
 
-        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Command>();
-        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
-        _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::Command>();
+        _filteredActions = winrt::single_threaded_observable_vector<Command>();
+        _nestedActionStack = winrt::single_threaded_vector<Command>();
+        _currentNestedCommands = winrt::single_threaded_vector<Command>();
+        _allCommands = winrt::single_threaded_vector<Command>();
+        _allTabActions = winrt::single_threaded_vector<Command>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -95,6 +93,8 @@ namespace winrt::TerminalApp::implementation
             }
             _sizeChangedRevoker.revoke();
         });
+
+        _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
     }
 
     // Method Description:
@@ -115,6 +115,29 @@ namespace winrt::TerminalApp::implementation
         const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+    // Method Description:
+    // - Called when the command selection changes. We'll use this in the tab
+    //   switcher to "preview" tabs as the user navigates the list of tabs. To
+    //   do that, we'll dispatch the switch to tab command for this tab, but not
+    //   dismiss the switcher.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_selectedCommandChanged(const IInspectable& /*sender*/,
+                                                 const Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            const auto& selectedCommand = _filteredActionsView().SelectedItem();
+            if (const auto& command = selectedCommand.try_as<Command>())
+            {
+                const auto& actionAndArgs = command.Action();
+                _dispatch.DoAction(actionAndArgs);
+            }
+        }
     }
 
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
@@ -177,7 +200,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (const auto selectedItem = _filteredActionsView().SelectedItem())
                 {
-                    _dispatchCommand(selectedItem.try_as<TerminalApp::Command>());
+                    _dispatchCommand(selectedItem.try_as<Command>());
                 }
             }
             // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
@@ -300,7 +323,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto selectedItem = _filteredActionsView().SelectedItem())
             {
-                if (const auto data = selectedItem.try_as<TerminalApp::Command>())
+                if (const auto data = selectedItem.try_as<Command>())
                 {
                     _dispatchCommand(data);
                 }
@@ -347,7 +370,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
-        _dispatchCommand(e.ClickedItem().try_as<TerminalApp::Command>());
+        _dispatchCommand(e.ClickedItem().try_as<Command>());
     }
 
     // Method Description:
@@ -382,7 +405,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A list of Commands to filter.
-    Collections::IVector<TerminalApp::Command> CommandPalette::_commandsToFilter()
+    Collections::IVector<Command> CommandPalette::_commandsToFilter()
     {
         switch (_currentMode)
         {
@@ -397,7 +420,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _allTabActions;
         case CommandPaletteMode::CommandlineMode:
-            return winrt::single_threaded_vector<TerminalApp::Command>();
+            return winrt::single_threaded_vector<Command>();
         default:
             return _allCommands;
         }
@@ -412,7 +435,7 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommand(const TerminalApp::Command& command)
+    void CommandPalette::_dispatchCommand(const Command& command)
     {
         if (command)
         {
@@ -505,11 +528,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring cmdline{ input };
 
         // Build the ExecuteCommandline action from the values we've parsed on the commandline.
-        auto executeActionAndArgs = winrt::make_self<implementation::ActionAndArgs>();
-        executeActionAndArgs->Action(ShortcutAction::ExecuteCommandline);
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
-        args->Commandline(cmdline);
-        executeActionAndArgs->Args(*args);
+        ExecuteCommandlineArgs args{ cmdline };
+        ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -518,7 +538,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-        if (_dispatch.DoAction(*executeActionAndArgs))
+        if (_dispatch.DoAction(executeActionAndArgs))
         {
             _close();
         }
@@ -584,7 +604,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    Collections::IObservableVector<TerminalApp::Command> CommandPalette::FilteredActions()
+    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
@@ -594,7 +614,7 @@ namespace winrt::TerminalApp::implementation
         _bindings = bindings;
     }
 
-    void CommandPalette::SetCommands(Collections::IVector<TerminalApp::Command> const& actions)
+    void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
         _allCommands = actions;
         _updateFilteredActions();
@@ -651,7 +671,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareCommandNames(const TerminalApp::Command& lhs, const TerminalApp::Command& rhs)
+    static bool _compareCommandNames(const Command& lhs, const Command& rhs)
     {
         std::wstring_view leftName{ lhs.Name() };
         std::wstring_view rightName{ rhs.Name() };
@@ -661,7 +681,7 @@ namespace winrt::TerminalApp::implementation
     // This is a helper struct to aid in sorting Commands by a given weighting.
     struct WeightedCommand
     {
-        TerminalApp::Command command;
+        Command command;
         int weight;
         int inOrderCounter;
 
@@ -693,9 +713,9 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<winrt::TerminalApp::Command> CommandPalette::_collectFilteredActions()
+    std::vector<Command> CommandPalette::_collectFilteredActions()
     {
-        std::vector<winrt::TerminalApp::Command> actions;
+        std::vector<Command> actions;
 
         auto searchText = _searchBox().Text();
         const bool addAll = searchText.empty();
@@ -720,7 +740,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Add all the commands, but make sure they're sorted alphabetically.
-            std::vector<TerminalApp::Command> sortedCommands;
+            std::vector<Command> sortedCommands;
             sortedCommands.reserve(commandsToFilter.Size());
 
             for (auto action : commandsToFilter)
@@ -975,112 +995,22 @@ namespace winrt::TerminalApp::implementation
             {
             case CollectionChange::ItemChanged:
             {
-                winrt::com_ptr<Command> item;
-                item.copy_from(winrt::get_self<Command>(_allTabActions.GetAt(idx)));
-                item->propertyChangedRevoker.revoke();
-
-                auto tab = tabList.GetAt(idx);
-                GenerateCommandForTab(idx, false, tab);
-                UpdateTabIndices(idx);
                 break;
             }
             case CollectionChange::ItemInserted:
             {
                 auto tab = tabList.GetAt(idx);
-                GenerateCommandForTab(idx, true, tab);
-                UpdateTabIndices(idx);
+                _allTabActions.InsertAt(idx, tab.SwitchToTabCommand());
                 break;
             }
             case CollectionChange::ItemRemoved:
             {
-                winrt::com_ptr<Command> item;
-                item.copy_from(winrt::get_self<Command>(_allTabActions.GetAt(idx)));
-                item->propertyChangedRevoker.revoke();
-
                 _allTabActions.RemoveAt(idx);
-                UpdateTabIndices(idx);
                 break;
             }
             }
 
             _updateFilteredActions();
-        }
-    }
-
-    // Method Description:
-    // - In the case where a tab is removed or reordered, the given indices of
-    //   the tab switch commands following the removed/reordered tab will get out of sync by 1
-    //   (e.g. if tab 1 is removed, tabs 2,3,4,... need to become tabs 1,2,3,...)
-    //   This function just loops through the tabs following startIdx and adjusts their given indices.
-    // Arguments:
-    // - startIdx: The index to start the update loop at.
-    // Return Value:
-    // - <none>
-    void CommandPalette::UpdateTabIndices(const uint32_t startIdx)
-    {
-        for (auto i = startIdx; i < _allTabActions.Size(); ++i)
-        {
-            auto command = _allTabActions.GetAt(i);
-
-            command.Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(i);
-        }
-    }
-
-    // Method Description:
-    // - Create a tab switching command based on the given tab object and insert/update the command
-    //   at the given index. The command will call a SwitchToTab action on the given idx.
-    // Arguments:
-    // - idx: The index to insert or update the tab switch command.
-    // - tab: The tab object to refer to when creating the tab switch command.
-    // Return Value:
-    // - <none>
-    void CommandPalette::GenerateCommandForTab(const uint32_t idx, bool inserted, TerminalApp::Tab& tab)
-    {
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-        args->TabIndex(idx);
-
-        focusTabAction->Action(ShortcutAction::SwitchToTab);
-        focusTabAction->Args(*args);
-
-        auto command = winrt::make_self<implementation::Command>();
-        command->Action(*focusTabAction);
-        command->Name(tab.Title());
-        command->IconSource(tab.IconSource());
-
-        // Listen for changes to the Tab so we can update this Command's attributes accordingly.
-        auto weakThis{ get_weak() };
-        auto weakCommand{ command->get_weak() };
-        command->propertyChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis, weakCommand, tab](auto&&, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args) {
-            auto palette{ weakThis.get() };
-            auto command{ weakCommand.get() };
-
-            if (palette && command)
-            {
-                if (args.PropertyName() == L"Title")
-                {
-                    if (command->Name() != tab.Title())
-                    {
-                        command->Name(tab.Title());
-                    }
-                }
-                if (args.PropertyName() == L"IconSource")
-                {
-                    if (command->IconSource() != tab.IconSource())
-                    {
-                        command->IconSource(tab.IconSource());
-                    }
-                }
-            }
-        });
-
-        if (inserted)
-        {
-            _allTabActions.InsertAt(idx, *command);
-        }
-        else
-        {
-            _allTabActions.SetAt(idx, *command);
         }
     }
 

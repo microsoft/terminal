@@ -7,7 +7,7 @@
 #include <ShObjIdl.h>
 #include <Propkey.h>
 
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 //  This property key isn't already defined in propkey.h, but is used by UWP Jumplist to determine the icon of the jumplist item.
 //  IShellLink's SetIconLocation isn't going to read "ms-appx://" icon paths, so we'll need to use this to set the icon.
@@ -16,6 +16,41 @@ DEFINE_PROPERTYKEY(PKEY_AppUserModel_DestListLogoUri, 0x9F4C2855, 0x9F79, 0x4B39
     {                                                                                      \
         { 0x9F4C2855, 0x9F79, 0x4B39, 0xA8, 0xD0, 0xE1, 0xD4, 0x2D, 0xE1, 0xD5, 0xF3 }, 29 \
     }
+
+// Function Description:
+// - This function guesses whether a string is a file path.
+static constexpr bool _isProbableFilePath(std::wstring_view path)
+{
+    // "C:X", "C:\X", "\\?", "\\."
+    // _this function rejects \??\ as a path_
+    if (path.size() >= 3)
+    {
+        const auto firstColon{ path.find(L':') };
+        if (firstColon == 1)
+        {
+            return true;
+        }
+
+        const auto prefix{ path.substr(0, 2) };
+        return prefix == LR"(//)" || prefix == LR"(\\)";
+    }
+    return false;
+}
+
+// Function Description:
+// - DestListLogoUri cannot take paths that are separated by / unless they're URLs.
+//   This function uses std::filesystem to normalize strings that appear to be file
+//   paths to have the "correct" slash direction.
+static std::wstring _normalizeIconPath(std::wstring_view path)
+{
+    const auto fullPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+    if (_isProbableFilePath(fullPath))
+    {
+        std::filesystem::path asPath{ fullPath };
+        return asPath.make_preferred().wstring();
+    }
+    return std::wstring{ fullPath };
+}
 
 // Function Description:
 // - Helper function for getting the path to the appropriate executable to use
@@ -83,7 +118,7 @@ static std::wstring_view _getExePath()
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) noexcept
+HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
     try
     {
@@ -99,7 +134,7 @@ HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) 
         RETURN_IF_FAILED(jumplistItems->Clear());
 
         // Update the list of profiles.
-        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.GetProfiles()));
+        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.Profiles().GetView()));
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.
@@ -123,7 +158,7 @@ HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) 
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, const gsl::span<const Profile>& profiles) noexcept
+[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<Profile> profiles) noexcept
 {
     try
     {
@@ -134,7 +169,8 @@ HRESULT Jumplist::UpdateJumplist(const TerminalApp::CascadiaSettings& settings) 
 
             // Create the shell link object for the profile
             winrt::com_ptr<IShellLinkW> shLink;
-            RETURN_IF_FAILED(_createShellLink(profile.Name(), profile.GetExpandedIconPath(), args, shLink.put()));
+            const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
+            RETURN_IF_FAILED(_createShellLink(profile.Name(), normalizedIconPath, args, shLink.put()));
 
             RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));
         }

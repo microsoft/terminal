@@ -6,6 +6,7 @@ ABANDONFONT
 ABCDEFGHIJKLMNO
 ABCG
 abf
+abgr
 abi
 ACCESSTOKEN
 acec
@@ -856,6 +857,7 @@ GETAUTOHIDEBAREX
 GETCARETWIDTH
 getch
 getchar
+GETCLIENTAREAANIMATION
 GETCOMMANDHISTORY
 GETCOMMANDHISTORYLENGTH
 GETCONSOLEINPUT
@@ -959,6 +961,8 @@ hfile
 hfont
 hglobal
 hh
+hhh
+hhhh
 hhook
 hhx
 HIBYTE
@@ -996,6 +1000,7 @@ hpj
 hpp
 HPR
 HPROPSHEETPAGE
+HProvider
 HREDRAW
 hresult
 HRSRC
@@ -1802,6 +1807,7 @@ preinstalled
 PRELOAD
 PREMULTIPLIED
 prepopulated
+presorted
 PREVENTPINNING
 PREVIEWLABEL
 PREVIEWWINDOW
@@ -2714,6 +2720,7 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wnwb
 workarea
 workaround
 workflow
@@ -2761,6 +2768,7 @@ wtof
 wtoi
 wtw
 wtypes
+Wubi
 WUX
 WVerify
 wwaproj
@@ -2787,6 +2795,9 @@ XCount
 xdy
 xe
 XEncoding
+xes
+Xes
+XES
 xff
 XFile
 xlang
@@ -2796,6 +2807,8 @@ XMFLOAT
 xml
 xmlns
 xor
+xorg
+XOrg
 Xpath
 XPosition
 XResource

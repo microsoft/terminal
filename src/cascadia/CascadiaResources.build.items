@@ -26,7 +26,7 @@
       <Link>ProfileIcons\%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>
     <!-- Default Settings -->
-    <Content Include="$(OpenConsoleDir)src\cascadia\TerminalApp\defaults.json">
+    <Content Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\defaults.json">
       <DeploymentContent>true</DeploymentContent>
       <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
     </Content>

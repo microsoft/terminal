@@ -9,6 +9,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -421,6 +422,17 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         return uri;
     }
     return {};
+}
+
+// Method Description:
+// - Gets the hyperlink ID of the text at the given terminal position
+// Arguments:
+// - The position of the text
+// Return value:
+// - The hyperlink ID
+uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+{
+    return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
 }
 
 // Method Description:
@@ -954,6 +966,11 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
     _pfnWriteInput.swap(pfn);
 }
 
+void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
+{
+    _pfnWarningBell.swap(pfn);
+}
+
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
@@ -1024,4 +1041,9 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
     return _tabColor;
+}
+
+BlinkingState& Terminal::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
 }
