@@ -504,7 +504,8 @@ void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, 
 // - Finds all the json files within the given directory
 // Arguments:
 // - directory: the directory to search
-// - out: pointer to the set where we should add the files found
+// Return Value:
+// - A set containing all the found file data
 std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory)
 {
     std::unordered_set<std::string> jsonFiles;
