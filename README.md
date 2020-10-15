@@ -33,7 +33,6 @@ For users who are unable to install Terminal from the Microsoft Store, Terminal 
 
 > 🔴 Note: If you install Terminal manually:
 >
-> * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
 > * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
 #### Via Windows Package Manager CLI (aka winget)
