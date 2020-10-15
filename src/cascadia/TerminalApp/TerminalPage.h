@@ -207,6 +207,9 @@ namespace winrt::TerminalApp::implementation
 
         void _UnZoomIfNeeded();
 
+        void _UpdateTabSwitcherActions(bool mru);
+        void _UpdateMRUTab(const uint32_t index);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);

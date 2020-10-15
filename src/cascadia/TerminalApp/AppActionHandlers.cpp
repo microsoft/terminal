@@ -492,6 +492,14 @@ namespace winrt::TerminalApp::implementation
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
 
+        // TODO: For now, tab search is always in order, no MRU.
+        auto tabCommands = winrt::single_threaded_vector<Command>();
+        for (const auto& tab : _tabs)
+        {
+            tabCommands.Append(tab.SwitchToTabCommand());
+        }
+        CommandPalette().SetTabActions(tabCommands);
+
         CommandPalette().EnableTabSwitcherMode(true, startIdx);
         CommandPalette().Visibility(Visibility::Visible);
 

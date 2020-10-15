@@ -225,13 +225,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        _tabs.VectorChanged([weakThis{ get_weak() }](auto&& s, auto&& e) {
-            if (auto page{ weakThis.get() })
-            {
-                page->CommandPalette().OnTabsChanged(s, e);
-            }
-        });
-
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
@@ -1185,23 +1178,30 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
+        bool mru = true;
         if (auto index{ _GetFocusedTabIndex() })
         {
             uint32_t tabCount = _tabs.Size();
             // Wraparound math. By adding tabCount and then calculating modulo tabCount,
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
-            const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
 
             if (_settings.GlobalSettings().UseTabSwitcher())
             {
+                _UpdateTabSwitcherActions(mru);
+
+                // If the cmdpal was still visible, this means we're just previewing through the open list.
                 if (CommandPalette().Visibility() == Visibility::Visible)
                 {
                     CommandPalette().SelectNextItem(bMoveRight);
                 }
-
-                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().Visibility(Visibility::Visible);
+                else
+                {
+                    newTabIndex = (mru && _mruTabs.Size() > 1) ? 1 : newTabIndex;
+                    CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                    CommandPalette().Visibility(Visibility::Visible);
+                }
             }
             else
             {
@@ -1233,13 +1233,6 @@ namespace winrt::TerminalApp::implementation
             else
             {
                 _SetFocusedTabIndex(tabIndex);
-            }
-
-            uint32_t mruIndex;
-            if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), mruIndex))
-            {
-                mruIndex.RemoveAt(mruIndex);
-                mruIndex.InsertAt(0, _tabs.GetAt(tabIndex));
             }
 
             return true;
@@ -1988,6 +1981,7 @@ namespace winrt::TerminalApp::implementation
                 if (CommandPalette().Visibility() != Visibility::Visible)
                 {
                     tab->SetFocused(true);
+                    _UpdateMRUTab(index);
                 }
 
                 // Raise an event that our title changed
@@ -2523,6 +2517,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             _GetStrongTabImpl(index.value())->SetFocused(true);
+            _UpdateMRUTab(index.value());
         }
     }
 
@@ -2560,6 +2555,39 @@ namespace winrt::TerminalApp::implementation
         for (uint32_t i = 0; i < _tabs.Size(); ++i)
         {
             _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+        }
+    }
+
+    void TerminalPage::_UpdateTabSwitcherActions(bool mru)
+    {
+        auto tabCommands = winrt::single_threaded_vector<Command>();
+
+        if (mru)
+        {
+            for (const auto& tab : _mruTabs)
+            {
+                tabCommands.Append(tab.SwitchToTabCommand());
+            }
+            CommandPalette().SetTabActions(tabCommands);
+        }
+        else
+        {
+            for (const auto& tab : _tabs)
+            {
+                tabCommands.Append(tab.SwitchToTabCommand());
+            }
+
+            CommandPalette().SetTabActions(tabCommands);
+        }
+    }
+
+    void TerminalPage::_UpdateMRUTab(const uint32_t index)
+    {
+        uint32_t mruIndex;
+        if (_mruTabs.IndexOf(_tabs.GetAt(index), mruIndex))
+        {
+            _mruTabs.RemoveAt(mruIndex);
+            _mruTabs.InsertAt(0, _tabs.GetAt(index));
         }
     }
 
