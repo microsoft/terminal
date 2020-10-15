@@ -22,6 +22,8 @@
 #include "ExecuteCommandlineArgs.g.h"
 #include "CloseOtherTabsArgs.g.h"
 #include "CloseTabsAfterArgs.g.h"
+#include "ScrollUpArgs.g.h"
+#include "ScrollDownArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -554,6 +556,62 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CloseTabsAfterArgs>();
             JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
+            return { *args, {} };
+        }
+    };
+
+    struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
+    {
+        ScrollUpArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+
+        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ScrollUpArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_RowsToScroll == _RowsToScroll;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ScrollUpArgs>();
+            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
+            return { *args, {} };
+        }
+    };
+
+    struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
+    {
+        ScrollDownArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+
+        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ScrollDownArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_RowsToScroll == _RowsToScroll;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ScrollDownArgs>();
+            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
             return { *args, {} };
         }
     };

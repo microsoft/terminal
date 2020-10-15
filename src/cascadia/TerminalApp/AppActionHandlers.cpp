@@ -65,14 +65,18 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleScrollUp(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        _Scroll(-1);
+        const auto& realArgs = args.ActionArgs().try_as<ScrollUpArgs>();
+        const auto rowsToScroll = realArgs.RowsToScroll() == nullptr ? std::nullopt : std::optional<int>(realArgs.RowsToScroll().Value());
+        _Scroll(ScrollUp, rowsToScroll);
         args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollDown(const IInspectable& /*sender*/,
                                          const ActionEventArgs& args)
     {
-        _Scroll(1);
+        const auto& realArgs = args.ActionArgs().try_as<ScrollDownArgs>();
+        const auto rowsToScroll = realArgs.RowsToScroll() == nullptr ? std::nullopt : std::optional<int>(realArgs.RowsToScroll().Value());
+        _Scroll(ScrollDown, rowsToScroll);
         args.Handled(true);
     }
 
@@ -144,14 +148,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _ScrollPage(-1);
+        _ScrollPage(ScrollUp);
         args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollDownPage(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _ScrollPage(1);
+        _ScrollPage(ScrollDown);
         args.Handled(true);
     }
 

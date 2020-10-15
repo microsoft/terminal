@@ -28,6 +28,14 @@ namespace winrt::TerminalApp::implementation
         Initialized = 2
     };
 
+    enum ScrollDirection : int
+    {
+        // Hack alert, we are going to use numeric values to compute the actual scroll delta,
+        // e.g., ScrollUp * rowsToScroll, will result in -rowsToScroll
+        ScrollUp = -1,
+        ScrollDown = 1
+    };
+
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
     public:
@@ -164,10 +172,10 @@ namespace winrt::TerminalApp::implementation
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
-        void _Scroll(int delta);
+        void _Scroll(ScrollDirection scrollDirection, std::optional<int> rowsToScroll);
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::Direction& direction);
-        void _ScrollPage(int delta);
+        void _ScrollPage(ScrollDirection scrollDirection);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& keyChord);
 
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);

@@ -1382,18 +1382,17 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
-    //      down a number of lines. Negative values of `delta` will move the
-    //      view up, and positive values will move the viewport down.
+    //      down a number of lines.
     // Arguments:
-    // - delta: a number of lines to move the viewport relative to the current viewport.
-    void TerminalPage::_Scroll(int delta)
+    // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
+    // - rowsToScroll: a number of lines to move the viewport. If not provided we will use a system default.
+    void TerminalPage::_Scroll(ScrollDirection scrollDirection, std::optional<int> rowsToScroll)
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            const auto control = _GetActiveControl();
-            const auto rowsToScroll = control.GetRowsToScroll();
-            focusedTab->Scroll(delta * rowsToScroll);
+            auto realRowsToScroll = rowsToScroll.has_value() ? rowsToScroll.value() : _GetActiveControl().GetRowsToScroll();
+            focusedTab->Scroll(scrollDirection * realRowsToScroll);
         }
     }
 
@@ -1511,12 +1510,9 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
     //      down a page. The page length will be dependent on the terminal view height.
-    //      Negative values of `delta` will move the view up by one page, and positive values
-    //      will move the viewport down by one page.
     // Arguments:
-    // - delta: The direction to move the view relative to the current viewport(it
-    //      is clamped between -1 and 1)
-    void TerminalPage::_ScrollPage(int delta)
+    // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
+    void TerminalPage::_ScrollPage(ScrollDirection scrollDirection)
     {
         auto indexOpt = _GetFocusedTabIndex();
         // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
@@ -1525,11 +1521,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        delta = std::clamp(delta, -1, 1);
         const auto control = _GetActiveControl();
         const auto termHeight = control.GetViewHeight();
         auto focusedTab{ _GetStrongTabImpl(*indexOpt) };
-        focusedTab->Scroll(termHeight * delta);
+        focusedTab->Scroll(termHeight * scrollDirection);
     }
 
     // Method Description:
