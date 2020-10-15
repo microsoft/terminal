@@ -16,6 +16,7 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
     _isInAnsiMode(true),
     _parameters{},
+    _parameterLimitReached(false),
     _oscString{},
     _cachedSequence{ std::nullopt },
     _processingIndividually(false)
@@ -507,24 +508,41 @@ void StateMachine::_ActionParam(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Param");
 
-    // If we have no parameters and we're about to add one, get the 0 value ready here.
-    if (_parameters.empty())
+    // Once we've reached the parameter limit, additional parameters are ignored.
+    if (!_parameterLimitReached)
     {
-        _parameters.push_back(0);
-    }
+        // If we have no parameters and we're about to add one, get the next value ready here.
+        if (_parameters.empty())
+        {
+            _parameters.push_back({});
+        }
 
-    // On a delimiter, increase the number of params we've seen.
-    // "Empty" params should still count as a param -
-    //      eg "\x1b[0;;m" should be three "0" params
-    if (wch == L';')
-    {
-        // Move to next param.
-        _parameters.push_back(0);
-    }
-    else
-    {
-        // Accumulate the character given into the last (current) parameter
-        _AccumulateTo(wch, _parameters.back());
+        // On a delimiter, increase the number of params we've seen.
+        // "Empty" params should still count as a param -
+        //      eg "\x1b[0;;m" should be three params
+        if (_isParameterDelimiter(wch))
+        {
+            // If we receive a delimiter after we've already accumulated the
+            // maximum allowed parameters, then we need to set a flag to
+            // indicate that further parameter characters should be ignored.
+            if (_parameters.size() >= MAX_PARAMETER_COUNT)
+            {
+                _parameterLimitReached = true;
+            }
+            else
+            {
+                // Otherwise move to next param.
+                _parameters.push_back({});
+            }
+        }
+        else
+        {
+            // Accumulate the character given into the last (current) parameter.
+            // If the value hasn't been initialized yet, it'll start as 0.
+            auto currentParameter = _parameters.back().value_or(0);
+            _AccumulateTo(wch, currentParameter);
+            _parameters.back() = currentParameter;
+        }
     }
 }
 
@@ -542,6 +560,7 @@ void StateMachine::_ActionClear()
     _identifier.Clear();
 
     _parameters.clear();
+    _parameterLimitReached = false;
 
     _oscString.clear();
     _oscParameter = 0;
