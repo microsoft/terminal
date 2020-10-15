@@ -227,17 +227,12 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        static bool s_HexToUint(const wchar_t wch,
-                                unsigned int& value) noexcept;
         bool _GetOscSetColorTable(const std::wstring_view string,
-                                  size_t& tableIndex,
-                                  DWORD& rgb) const noexcept;
-
-        static bool s_ParseColorSpec(const std::wstring_view string,
-                                     DWORD& rgb) noexcept;
+                                  std::vector<size_t>& tableIndexes,
+                                  std::vector<DWORD>& rgbs) const noexcept;
 
         bool _GetOscSetColor(const std::wstring_view string,
-                             DWORD& rgb) const noexcept;
+                             std::vector<DWORD>& rgbs) const noexcept;
 
         static constexpr DispatchTypes::CursorStyle DefaultCursorStyle = DispatchTypes::CursorStyle::UserDefault;
         bool _GetCursorStyle(const gsl::span<const size_t> parameters,

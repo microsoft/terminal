@@ -165,10 +165,12 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(5) = {
         pair_type{ "default", ValueType::DefaultMode },
         pair_type{ "maximized", ValueType::MaximizedMode },
         pair_type{ "fullscreen", ValueType::FullscreenMode },
+        pair_type{ "focus", ValueType::FocusMode },
+        pair_type{ "maximizedFocus", ValueType::MaximizedFocusMode },
     };
 };
 

@@ -54,7 +54,6 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestInvalidColorSchemeName);
         TEST_METHOD(TestHelperFunctions);
 
-        TEST_METHOD(TestProfileIconWithEnvVar);
         TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
 
         TEST_METHOD(TestCloseOnExitParsing);
@@ -1379,28 +1378,6 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(name2, prof2.Name());
     }
 
-    void DeserializationTests::TestProfileIconWithEnvVar()
-    {
-        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
-
-        const std::string settingsJson{ R"(
-        {
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "icon": "%WINDIR%\\System32\\x_80.png"
-                }
-            ]
-        })" };
-
-        VerifyParseSucceeded(settingsJson);
-
-        auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_ParseJsonString(settingsJson, false);
-        settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedIconPath());
-    }
     void DeserializationTests::TestProfileBackgroundImageWithEnvVar()
     {
         const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
