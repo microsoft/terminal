@@ -71,7 +71,7 @@
         </uap5:Extension>
         <uap3:Extension Category="windows.appExtensionHost">
               <uap3:AppExtensionHost>
-                <uap3:Name>Microsoft.com.Terminal</uap3:Name>
+                <uap3:Name>com.microsoft.windows.terminal.settings</uap3:Name>
               </uap3:AppExtensionHost>
         </uap3:Extension>
 

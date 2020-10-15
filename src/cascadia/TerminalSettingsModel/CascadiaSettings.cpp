@@ -169,15 +169,15 @@ winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
 }
 
 // Method Description:
-// - Validates a given colour scheme
-// - A colour scheme is valid if it contains values for _all_ the fields
+// - Validates a given color scheme
+// - A color scheme is valid if it contains values for _all_ the fields
 // Arguments:
-// - The colour scheme to validate
+// - The color scheme to validate
 // Return Value:
 // - true if the scheme is valid, false otherwise
 bool CascadiaSettings::_ValidateColorScheme(const Json::Value scheme)
 {
-    for (const auto key : ColorSchemeKeys)
+    for (const auto& key : ColorSchemeKeys)
     {
         if (!scheme.isMember(JsonKey(key)))
         {

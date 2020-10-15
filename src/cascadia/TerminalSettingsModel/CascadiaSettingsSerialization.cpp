@@ -383,7 +383,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
 // Method Description:
 // - Searches the local app data folder, global app data folder and app
 //   extensions for json stubs we should use to create new profiles,
-//   modify existing profiles or add new colour schemes
+//   modify existing profiles or add new color schemes
 // - If the user settings has any namespaces in the "disabledProfileSources"
 //   property, we'll ensure that the corresponding folders do not get searched
 void CascadiaSettings::_LoadProtoExtensions()
@@ -435,7 +435,7 @@ void CascadiaSettings::_LoadProtoExtensions()
     lambda();
     cv.wait(lock);
 
-    for (auto ext : extensions)
+    for (const auto& ext : extensions)
     {
         // Only apply the stubs if the package name is not in ignored namespaces
         if (ignoredNamespaces.find(ext.Package().DisplayName().c_str()) == ignoredNamespaces.end())
@@ -524,8 +524,11 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
                                                  OPEN_EXISTING,
                                                  FILE_ATTRIBUTE_NORMAL,
                                                  nullptr) };
-
-            if (hFile)
+            if (!hFile)
+            {
+                THROW_LAST_ERROR();
+            }
+            else
             {
                 const auto fileData = _ReadFile(hFile.get()).value();
                 jsonFiles.emplace(fileData);
@@ -537,15 +540,15 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
 
 // Method Description:
 // - Given a set of json files, uses them to modify existing profiles,
-//   create new profiles, and create new colour schemes
+//   create new profiles, and create new color schemes
 // Arguments:
 // - stubs: the set of json files
 // - source: the location the files came from
 void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string> files, const winrt::hstring source)
 {
-    for (const auto file : files)
+    for (const auto& file : files)
     {
-        // A file could have many new profiles/many profiles it wants to modify/many new colour schemes
+        // A file could have many new profiles/many profiles it wants to modify/many new color schemes
         // so we first parse the entire file into one json object
         Json::Value fullFile;
 
@@ -554,7 +557,7 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
         if (fullFile.isMember(JsonKey(ProfilesKey)))
         {
             // Now we separately get each stub that modifies/adds a profile
-            for (auto profileStub : fullFile[JsonKey(ProfilesKey)])
+            for (auto& profileStub : fullFile[JsonKey(ProfilesKey)])
             {
                 if (profileStub.isMember(JsonKey(UpdatesKey)))
                 {
@@ -594,17 +597,17 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
 
         if (fullFile.isMember(JsonKey(SchemesKey)))
         {
-            // Now we separately get each stub that adds a colour scheme
-            for (const auto schemeStub : fullFile[JsonKey(SchemesKey)])
+            // Now we separately get each stub that adds a color scheme
+            for (const auto& schemeStub : fullFile[JsonKey(SchemesKey)])
             {
                 auto matchingScheme = _FindMatchingColorScheme(schemeStub);
                 if (matchingScheme)
                 {
-                    // We do not allow modifications to existing colour schemes
+                    // We do not allow modifications to existing color schemes
                 }
                 else
                 {
-                    // This is a new colour scheme, add it only if it specifies _all_ the fields
+                    // This is a new color scheme, add it only if it specifies _all_ the fields
                     if (_ValidateColorScheme(schemeStub))
                     {
                         const auto newScheme = ColorScheme::FromJson(schemeStub);
