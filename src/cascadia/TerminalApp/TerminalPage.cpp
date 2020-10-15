@@ -231,6 +231,11 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // Settings AllowDependentAnimations will affect whether animations are
+        // enabled application-wide, so we don't need to check it each time we
+        // want to create an animation.
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
+
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
         // window will be, so they can subdivide that space.
@@ -463,6 +468,21 @@ namespace winrt::TerminalApp::implementation
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
+
+            auto newTabRun = WUX::Documents::Run();
+            newTabRun.Text(RS_(L"NewTabRun/Text"));
+            auto newPaneRun = WUX::Documents::Run();
+            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+            newPaneRun.FontStyle(FontStyle::Italic);
+
+            auto textBlock = WUX::Controls::TextBlock{};
+            textBlock.Inlines().Append(newTabRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newPaneRun);
+
+            auto toolTip = WUX::Controls::ToolTip{};
+            toolTip.Content(textBlock);
+            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
 
             profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
@@ -759,12 +779,6 @@ namespace winrt::TerminalApp::implementation
                                                               settings.InitialRows(),
                                                               settings.InitialCols(),
                                                               winrt::guid());
-        }
-
-        else if (hasConnectionType &&
-                 connectionType == TerminalConnection::TelnetConnection::ConnectionType())
-        {
-            connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
 
         else
@@ -2090,6 +2104,11 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+
+        // Settings AllowDependentAnimations will affect whether animations are
+        // enabled application-wide, so we don't need to check it each time we
+        // want to create an animation.
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

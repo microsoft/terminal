@@ -119,6 +119,7 @@ private:
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
+    void _SetupEntranceAnimation();
     void _UpdateBorders();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);

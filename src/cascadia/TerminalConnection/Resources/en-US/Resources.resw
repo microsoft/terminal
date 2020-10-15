@@ -212,7 +212,4 @@
     <comment>The first argument {0...} is the hexadecimal error code. The second argument {1} is the user-specified path to a program.
       If this string is broken to multiple lines, it will not be displayed properly.</comment>
   </data>
-  <data name="TelnetInternetOrServerIssue" xml:space="preserve">
-    <value>Could not connect to telnet server.</value>
-  </data>
 </root>
