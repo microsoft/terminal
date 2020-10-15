@@ -46,4 +46,5 @@ jobs:
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: master
+          MARKDOWN_CONFIG_FILE: .markdownlint.json
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
