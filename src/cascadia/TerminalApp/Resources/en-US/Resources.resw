@@ -177,8 +177,17 @@
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="TabCloseSubMenu" xml:space="preserve">
+    <value>Close...</value>
+  </data>
+  <data name="TabCloseAfter" xml:space="preserve">
+    <value>Close Tabs to the Right</value>
+  </data>
+  <data name="TabCloseOther" xml:space="preserve">
+    <value>Close Other Tabs</value>
+  </data>
   <data name="TabClose" xml:space="preserve">
-    <value>Close</value>
+    <value>Close Tab</value>
   </data>
   <data name="TabColorChoose" xml:space="preserve">
     <value>Color...</value>
