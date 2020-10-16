@@ -75,6 +75,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
+        // StartingDirectory is a nullable hstring. The IDL does not allow
+        // hstring to be nullable. So we must expose it as an IInspectable
+        bool HasStartingDirectory() const;
+        winrt::Windows::Foundation::IInspectable StartingDirectory() const;
+        void StartingDirectory(const winrt::Windows::Foundation::IInspectable& value);
+        void ClearStartingDirectory();
+
         GETSET_SETTING(hstring, Name, L"Default");
         GETSET_SETTING(hstring, Source);
         GETSET_SETTING(bool, Hidden, false);
@@ -96,7 +103,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(hstring, Padding, DEFAULT_PADDING);
 
         GETSET_SETTING(hstring, Commandline, L"cmd.exe");
-        GETSET_SETTING(hstring, StartingDirectory);
 
         GETSET_SETTING(hstring, BackgroundImagePath);
         GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
@@ -134,6 +140,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        (_parent ?
                             _parent->_getBackgroundImageAlignmentImpl() :
                             std::nullopt);
+        };
+
+        NullableString _StartingDirectory{};
+        winrt::Windows::Foundation::IInspectable _getStartingDirectoryImpl() const
+        {
+            return HasStartingDirectory() ?
+                       _StartingDirectory.setting :
+                       (_parent ?
+                            _parent->_getStartingDirectoryImpl() :
+                            nullptr);
         };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
