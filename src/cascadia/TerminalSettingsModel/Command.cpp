@@ -156,8 +156,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // will only be marked iterable on the first pass.
         if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
-            result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             // Initialize our list of subcommands.
+            result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings
             warnings.insert(warnings.end(), nestedWarnings.begin(), nestedWarnings.end());
