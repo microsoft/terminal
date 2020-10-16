@@ -99,6 +99,7 @@ private:
     winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
+    winrt::event_token _warningBellToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
@@ -130,6 +131,8 @@ private:
 
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                    winrt::Windows::Foundation::IInspectable const& e);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 

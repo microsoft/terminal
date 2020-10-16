@@ -327,7 +327,7 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
 // - parameters - Set of parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::span<const size_t> parameters)
+bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTParameters parameters)
 {
     bool success = false;
 
@@ -366,7 +366,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
     case Vt52ActionCodes::DirectCursorAddress:
         // VT52 cursor addresses are provided as ASCII characters, with
         // the lowest value being a space, representing an address of 1.
-        success = _dispatch->CursorPosition(gsl::at(parameters, 0) - ' ' + 1, gsl::at(parameters, 1) - ' ' + 1);
+        success = _dispatch->CursorPosition(parameters.at(0).value() - ' ' + 1, parameters.at(1).value() - ' ' + 1);
         break;
     case Vt52ActionCodes::Identify:
         success = _dispatch->Vt52DeviceAttributes();
@@ -378,11 +378,8 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
         success = _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-    {
-        const DispatchTypes::PrivateModeParams mode[] = { DispatchTypes::PrivateModeParams::DECANM_AnsiMode };
-        success = _dispatch->SetPrivateModes(mode);
+        success = _dispatch->SetPrivateMode(DispatchTypes::PrivateModeParams::DECANM_AnsiMode);
         break;
-    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -403,279 +400,192 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const gsl::s
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const size_t> parameters)
+bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParameters parameters)
 {
     bool success = false;
-    size_t distance = 0;
-    size_t line = 0;
-    size_t column = 0;
-    size_t topMargin = 0;
-    size_t bottomMargin = 0;
-    size_t numTabs = 0;
-    size_t clearType = 0;
-    unsigned int function = 0;
-    DispatchTypes::EraseType eraseType = DispatchTypes::EraseType::ToEnd;
-    std::vector<DispatchTypes::PrivateModeParams> privateModeParams;
-    // We hold the vector in the class because client applications that do a lot of color work
-    // would spend a lot of time reallocating/resizing the vector.
-    _graphicsOptions.clear();
-    DispatchTypes::AnsiStatusType deviceStatusType = static_cast<DispatchTypes::AnsiStatusType>(0); // there is no default status type.
-    size_t repeatCount = 0;
-    DispatchTypes::CursorStyle cursorStyle = DefaultCursorStyle;
-    // This is all the args after the first arg, and the count of args not including the first one.
-    const auto remainingParams = parameters.size() > 1 ? parameters.subspan(1) : gsl::span<const size_t>{};
 
-    // fill params
     switch (id)
     {
     case CsiActionCodes::CUU_CursorUp:
+        success = _dispatch->CursorUp(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
+        break;
     case CsiActionCodes::CUD_CursorDown:
+        success = _dispatch->CursorDown(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
+        break;
     case CsiActionCodes::CUF_CursorForward:
+        success = _dispatch->CursorForward(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
+        break;
     case CsiActionCodes::CUB_CursorBackward:
+        success = _dispatch->CursorBackward(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
+        break;
     case CsiActionCodes::CNL_CursorNextLine:
+        success = _dispatch->CursorNextLine(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
+        break;
     case CsiActionCodes::CPL_CursorPrevLine:
+        success = _dispatch->CursorPrevLine(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
+        break;
     case CsiActionCodes::CHA_CursorHorizontalAbsolute:
     case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-    case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-    case CsiActionCodes::HPR_HorizontalPositionRelative:
-    case CsiActionCodes::VPR_VerticalPositionRelative:
-    case CsiActionCodes::ICH_InsertCharacter:
-    case CsiActionCodes::DCH_DeleteCharacter:
-    case CsiActionCodes::ECH_EraseCharacters:
-        success = _GetCursorDistance(parameters, distance);
+        success = _dispatch->CursorHorizontalPositionAbsolute(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
         break;
-    case CsiActionCodes::HVP_HorizontalVerticalPosition:
+    case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
+        success = _dispatch->VerticalLinePositionAbsolute(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
+        break;
+    case CsiActionCodes::HPR_HorizontalPositionRelative:
+        success = _dispatch->HorizontalPositionRelative(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
+        break;
+    case CsiActionCodes::VPR_VerticalPositionRelative:
+        success = _dispatch->VerticalPositionRelative(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
+        break;
     case CsiActionCodes::CUP_CursorPosition:
-        success = _GetXYPosition(parameters, line, column);
+    case CsiActionCodes::HVP_HorizontalVerticalPosition:
+        success = _dispatch->CursorPosition(parameters.at(0), parameters.at(1));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
         break;
     case CsiActionCodes::DECSTBM_SetScrollingRegion:
-        success = _GetTopBottomMargins(parameters, topMargin, bottomMargin);
+        success = _dispatch->SetTopBottomScrollingMargins(parameters.at(0).value_or(0), parameters.at(1).value_or(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
+        break;
+    case CsiActionCodes::ICH_InsertCharacter:
+        success = _dispatch->InsertCharacter(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
+        break;
+    case CsiActionCodes::DCH_DeleteCharacter:
+        success = _dispatch->DeleteCharacter(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
         break;
     case CsiActionCodes::ED_EraseDisplay:
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->EraseInDisplay(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
+        break;
     case CsiActionCodes::EL_EraseLine:
-        success = _GetEraseOperation(parameters, eraseType);
+        success = parameters.for_each([&](const auto eraseType) {
+            return _dispatch->EraseInLine(eraseType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
+        success = parameters.for_each([&](const auto mode) {
+            return _dispatch->SetPrivateMode(mode);
+        });
+        //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
+        break;
     case CsiActionCodes::DECRST_PrivateModeReset:
-        success = _GetPrivateModeParams(parameters, privateModeParams);
+        success = parameters.for_each([&](const auto mode) {
+            return _dispatch->ResetPrivateMode(mode);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
         break;
     case CsiActionCodes::SGR_SetGraphicsRendition:
-        success = _GetGraphicsOptions(parameters, _graphicsOptions);
+        success = _dispatch->SetGraphicsRendition(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
         break;
     case CsiActionCodes::DSR_DeviceStatusReport:
-        success = _GetDeviceStatusOperation(parameters, deviceStatusType);
+        success = _dispatch->DeviceStatusReport(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
         break;
     case CsiActionCodes::DA_DeviceAttributes:
+        success = parameters.at(0).value_or(0) == 0 && _dispatch->DeviceAttributes();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
+        break;
     case CsiActionCodes::DA2_SecondaryDeviceAttributes:
+        success = parameters.at(0).value_or(0) == 0 && _dispatch->SecondaryDeviceAttributes();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
+        break;
     case CsiActionCodes::DA3_TertiaryDeviceAttributes:
-        success = _VerifyDeviceAttributesParams(parameters);
+        success = parameters.at(0).value_or(0) == 0 && _dispatch->TertiaryDeviceAttributes();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
+        break;
+    case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
+        success = _dispatch->RequestTerminalParameters(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECREQTPARM);
         break;
     case CsiActionCodes::SU_ScrollUp:
+        success = _dispatch->ScrollUp(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
+        break;
     case CsiActionCodes::SD_ScrollDown:
-        success = _GetScrollDistance(parameters, distance);
+        success = _dispatch->ScrollDown(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
         break;
     case CsiActionCodes::ANSISYSSC_CursorSave:
+        success = parameters.empty() && _dispatch->CursorSaveState();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
+        break;
     case CsiActionCodes::ANSISYSRC_CursorRestore:
-        success = _VerifyHasNoParameters(parameters);
+        success = parameters.empty() && _dispatch->CursorRestoreState();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
         break;
     case CsiActionCodes::IL_InsertLine:
+        success = _dispatch->InsertLine(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
+        break;
     case CsiActionCodes::DL_DeleteLine:
-        success = _GetScrollDistance(parameters, distance);
+        success = _dispatch->DeleteLine(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
         break;
     case CsiActionCodes::CHT_CursorForwardTab:
+        success = _dispatch->ForwardTab(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
+        break;
     case CsiActionCodes::CBT_CursorBackTab:
-        success = _GetTabDistance(parameters, numTabs);
+        success = _dispatch->BackwardsTab(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
         break;
     case CsiActionCodes::TBC_TabClear:
-        success = _GetTabClearType(parameters, clearType);
+        success = parameters.for_each([&](const auto clearType) {
+            return _dispatch->TabClear(clearType);
+        });
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
+        break;
+    case CsiActionCodes::ECH_EraseCharacters:
+        success = _dispatch->EraseCharacters(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
         break;
     case CsiActionCodes::DTTERM_WindowManipulation:
-        success = _GetWindowManipulationType(parameters, function);
+        success = _dispatch->WindowManipulation(parameters.at(0), parameters.at(1), parameters.at(2));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
         break;
     case CsiActionCodes::REP_RepeatCharacter:
-        success = _GetRepeatCount(parameters, repeatCount);
+        // Handled w/o the dispatch. This function is unique in that way
+        // If this were in the ITerminalDispatch, then each
+        // implementation would effectively be the same, calling only
+        // functions that are already part of the interface.
+        // Print the last graphical character a number of times.
+        if (_lastPrintedChar != AsciiChars::NUL)
+        {
+            const size_t repeatCount = parameters.at(0);
+            std::wstring wstr(repeatCount, _lastPrintedChar);
+            _dispatch->PrintString(wstr);
+        }
+        success = true;
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
         break;
     case CsiActionCodes::DECSCUSR_SetCursorStyle:
-        success = _GetCursorStyle(parameters, cursorStyle);
+        success = _dispatch->SetCursorStyle(parameters.at(0));
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
+        break;
+    case CsiActionCodes::DECSTR_SoftReset:
+        success = _dispatch->SoftReset();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
     default:
-        // If no params to fill, param filling was successful.
-        success = true;
+        // If no functions to call, overall dispatch was a failure.
+        success = false;
         break;
-    }
-
-    // if param filling successful, try to dispatch
-    if (success)
-    {
-        switch (id)
-        {
-        case CsiActionCodes::CUU_CursorUp:
-            success = _dispatch->CursorUp(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUU);
-            break;
-        case CsiActionCodes::CUD_CursorDown:
-            success = _dispatch->CursorDown(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUD);
-            break;
-        case CsiActionCodes::CUF_CursorForward:
-            success = _dispatch->CursorForward(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUF);
-            break;
-        case CsiActionCodes::CUB_CursorBackward:
-            success = _dispatch->CursorBackward(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUB);
-            break;
-        case CsiActionCodes::CNL_CursorNextLine:
-            success = _dispatch->CursorNextLine(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CNL);
-            break;
-        case CsiActionCodes::CPL_CursorPrevLine:
-            success = _dispatch->CursorPrevLine(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CPL);
-            break;
-        case CsiActionCodes::CHA_CursorHorizontalAbsolute:
-        case CsiActionCodes::HPA_HorizontalPositionAbsolute:
-            success = _dispatch->CursorHorizontalPositionAbsolute(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CHA);
-            break;
-        case CsiActionCodes::VPA_VerticalLinePositionAbsolute:
-            success = _dispatch->VerticalLinePositionAbsolute(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::VPA);
-            break;
-        case CsiActionCodes::HPR_HorizontalPositionRelative:
-            success = _dispatch->HorizontalPositionRelative(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::HPR);
-            break;
-        case CsiActionCodes::VPR_VerticalPositionRelative:
-            success = _dispatch->VerticalPositionRelative(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::VPR);
-            break;
-        case CsiActionCodes::CUP_CursorPosition:
-        case CsiActionCodes::HVP_HorizontalVerticalPosition:
-            success = _dispatch->CursorPosition(line, column);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CUP);
-            break;
-        case CsiActionCodes::DECSTBM_SetScrollingRegion:
-            success = _dispatch->SetTopBottomScrollingMargins(topMargin, bottomMargin);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTBM);
-            break;
-        case CsiActionCodes::ICH_InsertCharacter:
-            success = _dispatch->InsertCharacter(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::ICH);
-            break;
-        case CsiActionCodes::DCH_DeleteCharacter:
-            success = _dispatch->DeleteCharacter(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DCH);
-            break;
-        case CsiActionCodes::ED_EraseDisplay:
-            success = _dispatch->EraseInDisplay(eraseType);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::ED);
-            break;
-        case CsiActionCodes::EL_EraseLine:
-            success = _dispatch->EraseInLine(eraseType);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::EL);
-            break;
-        case CsiActionCodes::DECSET_PrivateModeSet:
-            success = _dispatch->SetPrivateModes({ privateModeParams.data(), privateModeParams.size() });
-            //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
-            break;
-        case CsiActionCodes::DECRST_PrivateModeReset:
-            success = _dispatch->ResetPrivateModes({ privateModeParams.data(), privateModeParams.size() });
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
-            break;
-        case CsiActionCodes::SGR_SetGraphicsRendition:
-            success = _dispatch->SetGraphicsRendition({ _graphicsOptions.data(), _graphicsOptions.size() });
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::SGR);
-            break;
-        case CsiActionCodes::DSR_DeviceStatusReport:
-            success = _dispatch->DeviceStatusReport(deviceStatusType);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DSR);
-            break;
-        case CsiActionCodes::DA_DeviceAttributes:
-            success = _dispatch->DeviceAttributes();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
-            break;
-        case CsiActionCodes::DA2_SecondaryDeviceAttributes:
-            success = _dispatch->SecondaryDeviceAttributes();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DA2);
-            break;
-        case CsiActionCodes::DA3_TertiaryDeviceAttributes:
-            success = _dispatch->TertiaryDeviceAttributes();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DA3);
-            break;
-        case CsiActionCodes::SU_ScrollUp:
-            success = _dispatch->ScrollUp(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::SU);
-            break;
-        case CsiActionCodes::SD_ScrollDown:
-            success = _dispatch->ScrollDown(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::SD);
-            break;
-        case CsiActionCodes::ANSISYSSC_CursorSave:
-            success = _dispatch->CursorSaveState();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSSC);
-            break;
-        case CsiActionCodes::ANSISYSRC_CursorRestore:
-            success = _dispatch->CursorRestoreState();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::ANSISYSRC);
-            break;
-        case CsiActionCodes::IL_InsertLine:
-            success = _dispatch->InsertLine(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::IL);
-            break;
-        case CsiActionCodes::DL_DeleteLine:
-            success = _dispatch->DeleteLine(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DL);
-            break;
-        case CsiActionCodes::CHT_CursorForwardTab:
-            success = _dispatch->ForwardTab(numTabs);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CHT);
-            break;
-        case CsiActionCodes::CBT_CursorBackTab:
-            success = _dispatch->BackwardsTab(numTabs);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::CBT);
-            break;
-        case CsiActionCodes::TBC_TabClear:
-            success = _dispatch->TabClear(clearType);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::TBC);
-            break;
-        case CsiActionCodes::ECH_EraseCharacters:
-            success = _dispatch->EraseCharacters(distance);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::ECH);
-            break;
-        case CsiActionCodes::DTTERM_WindowManipulation:
-            success = _dispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(function),
-                                                    remainingParams);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DTTERM_WM);
-            break;
-        case CsiActionCodes::REP_RepeatCharacter:
-            // Handled w/o the dispatch. This function is unique in that way
-            // If this were in the ITerminalDispatch, then each
-            // implementation would effectively be the same, calling only
-            // functions that are already part of the interface.
-            // Print the last graphical character a number of times.
-            if (_lastPrintedChar != AsciiChars::NUL)
-            {
-                std::wstring wstr(repeatCount, _lastPrintedChar);
-                _dispatch->PrintString(wstr);
-            }
-            success = true;
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::REP);
-            break;
-        case CsiActionCodes::DECSCUSR_SetCursorStyle:
-            success = _dispatch->SetCursorStyle(cursorStyle);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSCUSR);
-            break;
-        case CsiActionCodes::DECSTR_SoftReset:
-            success = _dispatch->SoftReset();
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
-            break;
-        default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
-            break;
-        }
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
@@ -857,381 +767,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - true iff we successfully dispatched the sequence.
-bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/,
-                                                 const gsl::span<const size_t> /*parameters*/) noexcept
+bool OutputStateMachineEngine::ActionSs3Dispatch(const wchar_t /*wch*/, const VTParameters /*parameters*/) noexcept
 {
     // The output engine doesn't handle any SS3 sequences.
     _ClearLastChar();
     return false;
-}
-
-// Routine Description:
-// - Retrieves the listed graphics options to be applied in order to the "font style" of the next characters inserted into the buffer.
-// Arguments:
-// - parameters - The parameters to parse
-// - options - Space that will be filled with valid options from the GraphicsOptions enum
-// Return Value:
-// - True if we successfully retrieved an array of valid graphics options from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetGraphicsOptions(const gsl::span<const size_t> parameters,
-                                                   std::vector<DispatchTypes::GraphicsOptions>& options) const
-{
-    bool success = false;
-
-    if (parameters.empty())
-    {
-        options.push_back(DefaultGraphicsOption);
-        success = true;
-    }
-    else
-    {
-        for (const auto& p : parameters)
-        {
-            options.push_back((DispatchTypes::GraphicsOptions)p);
-        }
-        success = true;
-    }
-
-    // If we were unable to process the string, and there's a TTY attached to us,
-    //      trigger the state machine to flush the string to the terminal.
-    if (_pfnFlushToTerminal != nullptr && !success)
-    {
-        success = _pfnFlushToTerminal();
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the erase type parameter for an upcoming operation.
-// Arguments:
-// - parameters - The parameters to parse
-// - eraseType - Receives the erase type parameter
-// Return Value:
-// - True if we successfully pulled an erase type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetEraseOperation(const gsl::span<const size_t> parameters,
-                                                  DispatchTypes::EraseType& eraseType) const noexcept
-{
-    bool success = false; // If we have too many parameters or don't know what to do with the given value, return false.
-    eraseType = DefaultEraseType; // if we fail, just put the default type in.
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        eraseType = DefaultEraseType;
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, attempt to match it to the values we accept.
-        const auto param = static_cast<DispatchTypes::EraseType>(til::at(parameters, 0));
-
-        switch (param)
-        {
-        case DispatchTypes::EraseType::ToEnd:
-        case DispatchTypes::EraseType::FromBeginning:
-        case DispatchTypes::EraseType::All:
-        case DispatchTypes::EraseType::Scrollback:
-            eraseType = param;
-            success = true;
-            break;
-        }
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves a distance for a cursor operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - distance - Receives the distance
-// Return Value:
-// - True if we successfully pulled the cursor distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorDistance(const gsl::span<const size_t> parameters,
-                                                  size_t& distance) const noexcept
-{
-    bool success = false;
-    distance = DefaultCursorDistance;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        distance = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (distance == 0)
-    {
-        distance = DefaultCursorDistance;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves a distance for a scroll operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - distance - Receives the distance
-// Return Value:
-// - True if we successfully pulled the scroll distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetScrollDistance(const gsl::span<const size_t> parameters,
-                                                  size_t& distance) const noexcept
-{
-    bool success = false;
-    distance = DefaultScrollDistance;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        distance = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (distance == 0)
-    {
-        distance = DefaultScrollDistance;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves a width for the console window from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - consoleWidth - Receives the width
-// Return Value:
-// - True if we successfully pulled the width from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetConsoleWidth(const gsl::span<const size_t> parameters,
-                                                size_t& consoleWidth) const noexcept
-{
-    bool success = false;
-    consoleWidth = DefaultConsoleWidth;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        consoleWidth = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 80.
-    if (consoleWidth == 0)
-    {
-        consoleWidth = DefaultConsoleWidth;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves an X/Y coordinate pair for a cursor operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - line - Receives the Y/Line/Row position
-// - column - Receives the X/Column position
-// Return Value:
-// - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetXYPosition(const gsl::span<const size_t> parameters,
-                                              size_t& line,
-                                              size_t& column) const noexcept
-{
-    bool success = false;
-    line = DefaultLine;
-    column = DefaultColumn;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's only one param, leave the default for the column, and retrieve the specified row.
-        line = til::at(parameters, 0);
-        success = true;
-    }
-    else if (parameters.size() == 2)
-    {
-        // If there are exactly two parameters, use them.
-        line = til::at(parameters, 0);
-        column = til::at(parameters, 1);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (line == 0)
-    {
-        line = DefaultLine;
-    }
-
-    if (column == 0)
-    {
-        column = DefaultColumn;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves a top and bottom pair for setting the margins from the parameter pool stored during Param actions
-// Arguments:
-// - parameters - The parameters to parse
-// - topMargin - Receives the top margin
-// - bottomMargin - Receives the bottom margin
-// Return Value:
-// - True if we successfully pulled the margin settings from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTopBottomMargins(const gsl::span<const size_t> parameters,
-                                                    size_t& topMargin,
-                                                    size_t& bottomMargin) const noexcept
-{
-    // Notes:                           (input -> state machine out)
-    // having only a top param is legal         ([3;r   -> 3,0)
-    // having only a bottom param is legal      ([;3r   -> 0,3)
-    // having neither uses the defaults         ([;r [r -> 0,0)
-    // an illegal combo (eg, 3;2r) is ignored
-
-    bool success = false;
-    topMargin = DefaultTopMargin;
-    bottomMargin = DefaultBottomMargin;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        topMargin = til::at(parameters, 0);
-        success = true;
-    }
-    else if (parameters.size() == 2)
-    {
-        // If there are exactly two parameters, use them.
-        topMargin = til::at(parameters, 0);
-        bottomMargin = til::at(parameters, 1);
-        success = true;
-    }
-
-    if (bottomMargin > 0 && bottomMargin < topMargin)
-    {
-        success = false;
-    }
-    return success;
-}
-// Routine Description:
-// - Retrieves the status type parameter for an upcoming device query operation
-// Arguments:
-// - parameters - The parameters to parse
-// - statusType - Receives the Status Type parameter
-// Return Value:
-// - True if we successfully found a device operation in the parameters stored. False otherwise.
-bool OutputStateMachineEngine::_GetDeviceStatusOperation(const gsl::span<const size_t> parameters,
-                                                         DispatchTypes::AnsiStatusType& statusType) const noexcept
-{
-    bool success = false;
-    statusType = static_cast<DispatchTypes::AnsiStatusType>(0);
-
-    if (parameters.size() == 1)
-    {
-        // If there's one parameter, attempt to match it to the values we accept.
-        const auto param = til::at(parameters, 0);
-
-        switch (param)
-        {
-        // This looks kinda silly, but I want the parser to reject (success = false) any status types we haven't put here.
-        case (unsigned short)DispatchTypes::AnsiStatusType::OS_OperatingStatus:
-            statusType = DispatchTypes::AnsiStatusType::OS_OperatingStatus;
-            success = true;
-            break;
-        case (unsigned short)DispatchTypes::AnsiStatusType::CPR_CursorPositionReport:
-            statusType = DispatchTypes::AnsiStatusType::CPR_CursorPositionReport;
-            success = true;
-            break;
-        default:
-            success = false;
-            break;
-        }
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the listed private mode params be set/reset by DECSET/DECRST
-// Arguments:
-// - parameters - The parameters to parse
-// - privateModes - Space that will be filled with valid params from the PrivateModeParams enum
-// Return Value:
-// - True if we successfully retrieved an array of private mode params from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetPrivateModeParams(const gsl::span<const size_t> parameters,
-                                                     std::vector<DispatchTypes::PrivateModeParams>& privateModes) const
-{
-    bool success = false;
-    // Can't just set nothing at all
-    if (parameters.size() > 0)
-    {
-        for (const auto& p : parameters)
-        {
-            privateModes.push_back((DispatchTypes::PrivateModeParams)p);
-        }
-        success = true;
-    }
-    return success;
-}
-
-// - Verifies that no parameters were parsed for the current CSI sequence
-// Arguments:
-// - parameters - The parameters to parse
-// Return Value:
-// - True if there were no parameters. False otherwise.
-bool OutputStateMachineEngine::_VerifyHasNoParameters(const gsl::span<const size_t> parameters) const noexcept
-{
-    return parameters.empty();
-}
-
-// Routine Description:
-// - Validates that we received the correct parameter sequence for the Device Attributes command.
-// - For DA, we should have received either NO parameters or just one 0 parameter. Anything else is not acceptable.
-// Arguments:
-// - parameters - The parameters to parse
-// Return Value:
-// - True if the DA params were valid. False otherwise.
-bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(const gsl::span<const size_t> parameters) const noexcept
-{
-    bool success = false;
-
-    if (parameters.empty())
-    {
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        if (til::at(parameters, 0) == 0)
-        {
-            success = true;
-        }
-    }
-
-    return success;
 }
 
 // Routine Description:
@@ -1247,67 +787,6 @@ bool OutputStateMachineEngine::_GetOscTitle(const std::wstring_view string,
     title = string;
 
     return !string.empty();
-}
-
-// Routine Description:
-// - Retrieves a distance for a tab operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - distance - Receives the distance
-// Return Value:
-// - True if we successfully pulled the tab distance from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabDistance(const gsl::span<const size_t> parameters,
-                                               size_t& distance) const noexcept
-{
-    bool success = false;
-    distance = DefaultTabDistance;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        distance = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (distance == 0)
-    {
-        distance = DefaultTabDistance;
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the type of tab clearing operation from the parameter pool stored during Param actions.
-// Arguments:
-// - parameters - The parameters to parse
-// - clearType - Receives the clear type
-// Return Value:
-// - True if we successfully pulled the tab clear type from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetTabClearType(const gsl::span<const size_t> parameters,
-                                                size_t& clearType) const noexcept
-{
-    bool success = false;
-    clearType = DefaultTabClearType;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        clearType = til::at(parameters, 0);
-        success = true;
-    }
-    return success;
 }
 
 // Method Description:
@@ -1494,71 +973,6 @@ try
 CATCH_LOG_RETURN_FALSE()
 
 // Method Description:
-// - Retrieves the type of window manipulation operation from the parameter pool
-//      stored during Param actions.
-//  This is kept separate from the input version, as there may be
-//      codes that are supported in one direction but not the other.
-// Arguments:
-// - parameters - The parameters to parse
-// - function - Receives the function type
-// Return Value:
-// - True iff we successfully pulled the function type from the parameters
-bool OutputStateMachineEngine::_GetWindowManipulationType(const gsl::span<const size_t> parameters,
-                                                          unsigned int& function) const noexcept
-{
-    bool success = false;
-    function = DefaultWindowManipulationType;
-
-    if (parameters.size() > 0)
-    {
-        switch (til::at(parameters, 0))
-        {
-        case DispatchTypes::WindowManipulationType::RefreshWindow:
-            function = DispatchTypes::WindowManipulationType::RefreshWindow;
-            success = true;
-            break;
-        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-            function = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
-            success = true;
-            break;
-        default:
-            success = false;
-            break;
-        }
-    }
-
-    return success;
-}
-
-// Routine Description:
-// - Retrieves the cursor style from the parameter list
-// Arguments:
-// - parameters - The parameters to parse
-// - cursorStyle - Receives the cursorStyle
-// Return Value:
-// - True if we successfully pulled the cursor style from the parameters we've stored. False otherwise.
-bool OutputStateMachineEngine::_GetCursorStyle(const gsl::span<const size_t> parameters,
-                                               DispatchTypes::CursorStyle& cursorStyle) const noexcept
-{
-    bool success = false;
-    cursorStyle = DefaultCursorStyle;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        cursorStyle = (DispatchTypes::CursorStyle)til::at(parameters, 0);
-        success = true;
-    }
-
-    return success;
-}
-
-// Method Description:
 // - Sets us up to have another terminal acting as the tty instead of conhost.
 //      We'll set a couple members, and if they aren't null, when we get a
 //      sequence we don't understand, we'll pass it along to the terminal
@@ -1576,41 +990,6 @@ void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* 
 {
     this->_pTtyConnection = pTtyConnection;
     this->_pfnFlushToTerminal = pfnFlushToTerminal;
-}
-
-// Routine Description:
-// - Retrieves a number of times to repeat the last graphical character
-// Arguments:
-// - parameters - The parameters to parse
-// - repeatCount - Receives the repeat count
-// Return Value:
-// - True if we successfully pulled the repeat count from the parameters.
-//   False otherwise.
-bool OutputStateMachineEngine::_GetRepeatCount(gsl::span<const size_t> parameters,
-                                               size_t& repeatCount) const noexcept
-{
-    bool success = false;
-    repeatCount = DefaultRepeatCount;
-
-    if (parameters.empty())
-    {
-        // Empty parameter sequences should use the default
-        success = true;
-    }
-    else if (parameters.size() == 1)
-    {
-        // If there's one parameter, use it.
-        repeatCount = til::at(parameters, 0);
-        success = true;
-    }
-
-    // Distances of 0 should be changed to 1.
-    if (repeatCount == 0)
-    {
-        repeatCount = DefaultRepeatCount;
-    }
-
-    return success;
 }
 
 // Routine Description:

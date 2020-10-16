@@ -20,6 +20,8 @@
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
 #include "ExecuteCommandlineArgs.g.cpp"
+#include "CloseOtherTabsArgs.g.cpp"
+#include "CloseTabsAfterArgs.g.cpp"
 
 #include <LibraryResources.h>
 
