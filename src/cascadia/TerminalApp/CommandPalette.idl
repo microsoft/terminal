@@ -21,7 +21,7 @@ namespace TerminalApp
         void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
         void EnableCommandPaletteMode();
 
-        void SelectNextItem(Boolean moveDown, Boolean pageButtonPressed);
+        void SelectNextItem(Boolean moveDown, Boolean pageUpDown, Boolean homeEnd);
 
         void SetDispatch(ShortcutActionDispatch dispatch);
 
