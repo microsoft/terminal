@@ -485,10 +485,8 @@ void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, 
     // The json files should be within subdirectories where the subdirectory name is the app name
     for (auto& protoExtFolder : std::filesystem::directory_iterator(root))
     {
-        auto folderPath = protoExtFolder.path().generic_string();
-
         // We only want the parent folder name as the source (not the full path)
-        auto source = til::u8u16(folderPath.substr(folderPath.find_last_of(std::filesystem::path::preferred_separator) + 1));
+        const auto source = protoExtFolder.path().filename().wstring();
 
         // Only apply the stubs if the parent folder name is not in ignored namespaces
         // (also make sure this is a directory for sanity)
