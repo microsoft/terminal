@@ -10,6 +10,14 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+
     <Frame x:Name="frame">
         <Frame.ContentTransitions>
             <TransitionCollection>

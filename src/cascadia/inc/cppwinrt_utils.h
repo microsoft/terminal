@@ -128,18 +128,18 @@ private:                                                                        
 // (like when the class is being initialized).
 #define OBSERVABLE_GETSET_PROPERTY(type, name, event, ...)                             \
 public:                                                                                \
-    type name() { return _##name; };                                                   \
+    type name() const noexcept { return _##name; };                                    \
     void name(const type& value)                                                       \
     {                                                                                  \
         if (_##name != value)                                                          \
         {                                                                              \
-            const_cast<type&>(_##name) = value;                                        \
+            _##name = value;                                                           \
             event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
         }                                                                              \
     };                                                                                 \
                                                                                        \
 private:                                                                               \
-    const type _##name{ __VA_ARGS__ };                                                 \
+    type _##name{ __VA_ARGS__ };                                                       \
     void _set##name(const type& value)                                                 \
     {                                                                                  \
         const_cast<type&>(_##name) = value;                                            \

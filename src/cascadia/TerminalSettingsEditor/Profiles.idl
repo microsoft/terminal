@@ -8,6 +8,6 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
     {
         Profiles();
-        Microsoft.Terminal.Settings.Model.ProfileModel ProfileModel { get; };
+        Microsoft.Terminal.Settings.Editor.Model.ProfileModel ProfileModel { get; };
     }
 }

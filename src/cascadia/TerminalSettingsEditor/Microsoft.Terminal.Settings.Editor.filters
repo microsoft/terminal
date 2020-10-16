@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="HomeGridItem.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\ColorScheme.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\AppSettings.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\GlobalSettings.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\Profile.cpp">
+      <Filter>ObjectModel</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HomeGridItem.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="ObjectModel\ColorSchemeModel.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\ColorScheme.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\AppSettings.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\GlobalSettings.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\Profile.h">
+      <Filter>ObjectModel</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="HomeGridItem.idl" />
+    <Midl Include="ObjectModel\ColorSchemeModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\ColorScheme.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\GlobalSettings.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\Profile.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="ObjectModel\ProfileModel.idl">
+      <Filter>ObjectModel</Filter>
+    </Midl>
+    <Midl Include="SettingsEditorViewModel.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="TerminalSettingsEditor.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="AddProfile.xaml" />
+    <Page Include="GlobalAppearance.xaml" />
+    <Page Include="ColorSchemes.xaml" />
+    <Page Include="Globals.xaml" />
+    <Page Include="Home.xaml" />
+    <Page Include="Interaction.xaml" />
+    <Page Include="Keybindings.xaml" />
+    <Page Include="Launch.xaml" />
+    <Page Include="MainPage.xaml" />
+    <Page Include="SplitPaneOptionPanelControl.xaml" />
+    <Page Include="NewTabOptionPanelControl.xaml" />
+    <Page Include="Profiles.xaml" />
+    <Page Include="Rendering.xaml" />
+    <Page Include="CommonResources.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ObjectModel">
+      <UniqueIdentifier>{46598618-8219-4016-ae77-cb53d953645a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+</Project>

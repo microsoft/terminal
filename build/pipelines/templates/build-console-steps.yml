@@ -41,6 +41,8 @@ steps:
     configuration: '$(BuildConfiguration)'
     msbuildArgs: "${{ parameters.additionalBuildArguments }}"
     clean: true
+    # The build agents cannot currently support parallel build due to the
+    # memory requirements of our PCH files.
     maximumCpuCount: false
 
 - task: PowerShell@2

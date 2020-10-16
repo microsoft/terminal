@@ -176,6 +176,6 @@
     <value>Resume</value>
   </data>
   <data name="HowToOpenRun.Text" xml:space="preserve">
-    <value>ctrl+click to follow link</value>
+    <value>Ctrl+Click to follow link</value>
   </data>
 </root>

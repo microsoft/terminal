@@ -1,8 +1,8 @@
 #pragma once
-#include "Microsoft.Terminal.Settings.Model.ColorSchemeModel.g.h"
+#include "Model.ColorSchemeModel.g.h"
 #include "ColorScheme.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     struct ColorSchemeModel : ColorSchemeModelT<ColorSchemeModel>
     {

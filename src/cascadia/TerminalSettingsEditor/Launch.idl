@@ -9,6 +9,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Launch();
 
-        Microsoft.Terminal.Settings.Model.GlobalSettingsModel GlobalSettingsModel { get; };
+        Microsoft.Terminal.Settings.Editor.Model.GlobalSettingsModel GlobalSettingsModel { get; };
     }
 }

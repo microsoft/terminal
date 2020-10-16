@@ -185,10 +185,6 @@ public:
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
-    COLORREF CalculateDefaultForeground() const noexcept;
-    COLORREF CalculateDefaultBackground() const noexcept;
-    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
-
 private:
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;

@@ -24,6 +24,7 @@ IExplorer
 IMap
 IObject
 IStorage
+ITab
 llabs
 LCID
 lround
@@ -45,11 +46,14 @@ RSHIFT
 rx
 serializer
 SIZENS
+GETDESKWALLPAPER
 snprintf
 spsc
 STDCPP
+strchr
 Subheader
 Subpage
+UPDATEINIFILE
 syscall
 tmp
 tolower
@@ -59,3 +63,4 @@ wcsstr
 wcstoui
 XDocument
 XElement
+XParse

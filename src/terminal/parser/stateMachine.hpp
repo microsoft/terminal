@@ -27,6 +27,11 @@ namespace Microsoft::Console::VirtualTerminal
     // but for now 32767 is the safest limit for our existing code base.
     constexpr size_t MAX_PARAMETER_VALUE = 32767;
 
+    // The DEC STD 070 reference requires that a minimum of 16 parameter values
+    // are supported, but most modern terminal emulators will allow around twice
+    // that number.
+    constexpr size_t MAX_PARAMETER_COUNT = 32;
+
     class StateMachine final
     {
 #ifdef UNIT_TESTING
@@ -148,7 +153,8 @@ namespace Microsoft::Console::VirtualTerminal
         std::wstring_view _run;
 
         VTIDBuilder _identifier;
-        std::vector<size_t> _parameters;
+        std::vector<VTParameter> _parameters;
+        bool _parameterLimitReached;
 
         std::wstring _oscString;
         size_t _oscParameter;
