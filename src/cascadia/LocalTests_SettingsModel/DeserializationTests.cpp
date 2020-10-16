@@ -55,6 +55,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestHelperFunctions);
 
         TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
+        TEST_METHOD(TestProfileBackgroundImageWithDesktopWallpaper);
 
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
@@ -1399,6 +1400,28 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
         VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
         VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
+    }
+    void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
+    {
+        const winrt::hstring expectedBackgroundImagePath{ winrt::to_hstring("DesktopWallpaper") };
+
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "backgroundImage": "DesktopWallpaper"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+        settings->_ParseJsonString(settingsJson, false);
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_profiles.GetAt(0).BackgroundImagePath());
+        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestCloseOnExitParsing()
     {

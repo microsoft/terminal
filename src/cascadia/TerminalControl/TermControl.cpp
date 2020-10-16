@@ -967,8 +967,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // flow through to the terminal.
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
+        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
