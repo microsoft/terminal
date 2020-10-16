@@ -71,20 +71,70 @@ GlobalAppSettings::GlobalAppSettings() :
 // - <none>
 void GlobalAppSettings::_FinalizeInheritance()
 {
-    // TODO CARLOS: these should be "Copy", but we're just directly linking them while 7877 merges
+    // TODO CARLOS: Crash invoking IActionAndArgs->Copy
+    //_keymap = _parent->_keymap->Copy();
     _keymap = _parent->_keymap;
-    std::for_each(_parent->_keybindingsWarnings.begin(), _parent->_keybindingsWarnings.end(), [this](auto& warning) { _keybindingsWarnings.push_back(warning); });
+    std::copy(_parent->_keybindingsWarnings.begin(), _parent->_keybindingsWarnings.end(), std::back_inserter(_keybindingsWarnings));
     for (auto kv : _parent->_colorSchemes)
     {
         const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
-        _colorSchemes.Insert(kv.Key(), *schemeImpl);
+        _colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
     }
 
     for (auto kv : _parent->_commands)
     {
         const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
-        _commands.Insert(kv.Key(), *commandImpl);
+        _commands.Insert(kv.Key(), *commandImpl->Copy());
     }
+}
+
+winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
+{
+    auto globals{ winrt::make_self<GlobalAppSettings>() };
+    globals->_InitialRows = _InitialRows;
+    globals->_InitialCols = _InitialCols;
+    globals->_AlwaysShowTabs = _AlwaysShowTabs;
+    globals->_ShowTitleInTitlebar = _ShowTitleInTitlebar;
+    globals->_ConfirmCloseAllTabs = _ConfirmCloseAllTabs;
+    globals->_Theme = _Theme;
+    globals->_TabWidthMode = _TabWidthMode;
+    globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
+    globals->_WordDelimiters = _WordDelimiters;
+    globals->_CopyOnSelect = _CopyOnSelect;
+    globals->_CopyFormatting = _CopyFormatting;
+    globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
+    globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
+    globals->_InitialPosition = _InitialPosition;
+    globals->_LaunchMode = _LaunchMode;
+    globals->_SnapToGridOnResize = _SnapToGridOnResize;
+    globals->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
+    globals->_SoftwareRendering = _SoftwareRendering;
+    globals->_ForceVTInput = _ForceVTInput;
+    globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
+    globals->_StartOnUserLogin = _StartOnUserLogin;
+    globals->_AlwaysOnTop = _AlwaysOnTop;
+    globals->_UseTabSwitcher = _UseTabSwitcher;
+    globals->_DisableAnimations = _DisableAnimations;
+
+    globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
+    globals->_defaultProfile = _defaultProfile;
+    // TODO CARLOS: Crash invoking IActionAndArgs->Copy
+    //globals->_keymap = _keymap->Copy();
+    globals->_keymap = _keymap;
+    std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
+
+    for (auto kv : _colorSchemes)
+    {
+        const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
+        globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+    }
+
+    for (auto kv : _commands)
+    {
+        const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
+        globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
+    }
+    return globals;
 }
 
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept

@@ -23,22 +23,33 @@
 #pragma warning(disable : 26485) // array-to-pointer decay is virtually impossible to avoid when we can't use STL.
 
 // Function Description:
+// - Returns the path to conhost.exe as a process heap string.
+static wil::unique_process_heap_string _InboxConsoleHostPath()
+{
+    wil::unique_process_heap_string systemDirectory;
+    wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
+    return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+}
+
+// Function Description:
 // - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
-//   module is building with Windows.
+//   module is building with Windows and OpenConsole could be found.
 // Return Value:
 // - A pointer to permanent storage containing the path to the console host.
 static wchar_t* _ConsoleHostPath()
 {
     // Use the magic of magic statics to only calculate this once.
     static wil::unique_process_heap_string consoleHostPath = []() {
-#ifdef __INSIDE_WINDOWS
-        wil::unique_process_heap_string systemDirectory;
-        wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
-        return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+#if defined(__INSIDE_WINDOWS)
+        return _InboxConsoleHostPath();
 #else
         // Use the STL only if we're not building in Windows.
         std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
         modulePath.replace_filename(L"OpenConsole.exe");
+        if (!std::filesystem::exists(modulePath))
+        {
+            return _InboxConsoleHostPath();
+        }
         auto modulePathAsString{ modulePath.wstring() };
         return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
 #endif // __INSIDE_WINDOWS

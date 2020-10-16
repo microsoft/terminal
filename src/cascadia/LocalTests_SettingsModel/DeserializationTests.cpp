@@ -55,6 +55,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestHelperFunctions);
 
         TEST_METHOD(TestProfileBackgroundImageWithEnvVar);
+        TEST_METHOD(TestProfileBackgroundImageWithDesktopWallpaper);
 
         TEST_METHOD(TestCloseOnExitParsing);
         TEST_METHOD(TestCloseOnExitCompatibilityShim);
@@ -78,6 +79,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestNestedCommandWithoutName);
         TEST_METHOD(TestUnbindNestedCommand);
         TEST_METHOD(TestRebindNestedCommand);
+
+        TEST_METHOD(TestCopy);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1400,6 +1403,28 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
         VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
     }
+    void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
+    {
+        const winrt::hstring expectedBackgroundImagePath{ winrt::to_hstring("DesktopWallpaper") };
+
+        const std::string settingsJson{ R"(
+        {
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "backgroundImage": "DesktopWallpaper"
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+        settings->_ParseJsonString(settingsJson, false);
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_profiles.GetAt(0).BackgroundImagePath());
+        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
+    }
     void DeserializationTests::TestCloseOnExitParsing()
     {
         const std::string settingsJson{ R"(
@@ -2347,4 +2372,92 @@ namespace SettingsModelLocalTests
         }
     }
 
+    void DeserializationTests::TestCopy()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+            "initialCols": 50,
+            "profiles":
+            [
+                {
+                    "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                    "name": "Custom Profile",
+                    "fontFace": "Cascadia Code"
+                }
+            ],
+            "schemes":
+            [
+                {
+                    "name": "Campbell, but for a test",
+                    "foreground": "#CCCCCC",
+                    "background": "#0C0C0C",
+                    "cursorColor": "#FFFFFF",
+                    "black": "#0C0C0C",
+                    "red": "#C50F1F",
+                    "green": "#13A10E",
+                    "yellow": "#C19C00",
+                    "blue": "#0037DA",
+                    "purple": "#881798",
+                    "cyan": "#3A96DD",
+                    "white": "#CCCCCC",
+                    "brightBlack": "#767676",
+                    "brightRed": "#E74856",
+                    "brightGreen": "#16C60C",
+                    "brightYellow": "#F9F1A5",
+                    "brightBlue": "#3B78FF",
+                    "brightPurple": "#B4009E",
+                    "brightCyan": "#61D6D6",
+                    "brightWhite": "#F2F2F2"
+                }
+            ],
+            "actions":
+            [
+                { "command": "openSettings", "keys": "ctrl+," },
+                { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
+        
+                {
+                    "name": { "key": "SetColorSchemeParentCommandName" },
+                    "commands": [
+                        {
+                            "iterateOn": "schemes",
+                            "name": "${scheme.name}",
+                            "command": { "action": "setColorScheme", "colorScheme": "${scheme.name}" }
+                        }
+                    ]
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+        settings->_ParseJsonString(settingsJson, false);
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        const auto copy{ settings->Copy() };
+        const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
+
+        // test globals
+        VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), copyImpl->_globals->DefaultProfile());
+
+        // test profiles
+        VERIFY_ARE_EQUAL(settings->_profiles.Size(), copyImpl->_profiles.Size());
+        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Name(), copyImpl->_profiles.GetAt(0).Name());
+
+        // test schemes
+        const auto schemeName{ L"Campbell, but for a test" };
+        VERIFY_ARE_EQUAL(settings->_globals->_colorSchemes.Size(), copyImpl->_globals->_colorSchemes.Size());
+        VERIFY_ARE_EQUAL(settings->_globals->_colorSchemes.HasKey(schemeName), copyImpl->_globals->_colorSchemes.HasKey(schemeName));
+
+        // test actions
+        VERIFY_ARE_EQUAL(settings->_globals->_keymap->_keyShortcuts.size(), copyImpl->_globals->_keymap->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(settings->_globals->_commands.Size(), copyImpl->_globals->_commands.Size());
+
+        // Test that changing the copy should not change the original
+        VERIFY_ARE_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
+        copyImpl->_globals->WordDelimiters(L"changed value");
+        VERIFY_ARE_NOT_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
+    }
 }

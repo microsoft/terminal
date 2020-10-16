@@ -46,8 +46,11 @@ RSHIFT
 rx
 serializer
 SIZENS
+GETDESKWALLPAPER
+UPDATEINIFILE
 spsc
 STDCPP
+strchr
 syscall
 tmp
 tx
@@ -55,3 +58,4 @@ userenv
 wcstoui
 XDocument
 XElement
+XParse

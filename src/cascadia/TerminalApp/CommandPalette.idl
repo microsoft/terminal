@@ -11,7 +11,8 @@ namespace TerminalApp
         CommandPalette();
 
         String NoMatchesText { get; };
-        String SearchBoxText { get; };
+        String SearchBoxPlaceholderText { get; };
+        String PrefixCharacter { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
 

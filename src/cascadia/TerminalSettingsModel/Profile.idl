@@ -10,6 +10,12 @@ namespace Microsoft.Terminal.Settings.Model
         Always
     };
 
+    enum BellStyle
+    {
+        None,
+        Audible
+    };
+
     [default_interface] runtimeclass Profile {
         Profile();
         Profile(Guid guid);
@@ -162,5 +168,9 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasCursorHeight();
         void ClearCursorHeight();
         UInt32 CursorHeight;
+
+        Boolean HasBellStyle();
+        void ClearBellStyle();
+        BellStyle BellStyle;
     }
 }

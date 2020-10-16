@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         Profile();
         Profile(guid guid);
+        com_ptr<Profile> Copy() const;
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
@@ -119,6 +120,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
         GETSET_SETTING(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
+
+        GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
 
     private:
         std::optional<winrt::guid> _Guid{ std::nullopt };
