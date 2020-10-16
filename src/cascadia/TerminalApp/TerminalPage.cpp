@@ -7,7 +7,6 @@
 #include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
-#include <Mmsystem.h>
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
@@ -469,6 +468,21 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
+            auto newTabRun = WUX::Documents::Run();
+            newTabRun.Text(RS_(L"NewTabRun/Text"));
+            auto newPaneRun = WUX::Documents::Run();
+            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+            newPaneRun.FontStyle(FontStyle::Italic);
+
+            auto textBlock = WUX::Controls::TextBlock{};
+            textBlock.Inlines().Append(newTabRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newPaneRun);
+
+            auto toolTip = WUX::Controls::ToolTip{};
+            toolTip.Content(textBlock);
+            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
+
             profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
@@ -658,8 +672,10 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
+        newTabImpl->SetDispatch(*_actionDispatch);
+
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+        _UpdateTabIndices();
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -1104,8 +1120,6 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
-
-        term.WarningBell({ this, &TerminalPage::_WarningBellHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
@@ -1765,18 +1779,6 @@ namespace winrt::TerminalApp::implementation
             eventArgs.HandleClipboardData(text);
         }
         CATCH_LOG();
-    }
-
-    // Method Description:
-    // - Plays a warning note when triggered by the BEL control character,
-    //   using the sound configured for the "Critical Stop" system event.
-    //   This matches the behavior of the Windows Console host.
-    // Arguments:
-    // - <none>
-    void TerminalPage::_WarningBellHandler(const IInspectable sender, const IInspectable eventArgs)
-    {
-        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
     }
 
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
@@ -2527,9 +2529,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTabIndices()
     {
-        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        const uint32_t size = _tabs.Size();
+        for (uint32_t i = 0; i < size; ++i)
         {
-            _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+            _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
         }
     }
 
