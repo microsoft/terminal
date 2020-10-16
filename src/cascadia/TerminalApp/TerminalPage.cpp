@@ -1405,7 +1405,8 @@ namespace winrt::TerminalApp::implementation
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
             auto realRowsToScroll = rowsToScroll == nullptr ? _GetActiveControl().GetRowsToScroll() : rowsToScroll.Value();
-            focusedTab->Scroll(scrollDirection * realRowsToScroll);
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
+            focusedTab->Scroll(scrollDelta);
         }
     }
 
@@ -1537,7 +1538,8 @@ namespace winrt::TerminalApp::implementation
         const auto control = _GetActiveControl();
         const auto termHeight = control.GetViewHeight();
         auto focusedTab{ _GetStrongTabImpl(*indexOpt) };
-        focusedTab->Scroll(termHeight * scrollDirection);
+        auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
+        focusedTab->Scroll(scrollDelta);
     }
 
     // Method Description:
@@ -2531,6 +2533,18 @@ namespace winrt::TerminalApp::implementation
         {
             _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
         }
+    }
+
+    // Method Description:
+    // - Computes the delta for scrolling the tab's viewport.
+    // Arguments:
+    // - scrollDirection - direction (up / down) to scroll
+    // - rowsToScroll - the number of rows to scroll
+    // Return Value:
+    // - delta - Signed delta, where a negative value means scrolling up.
+    int TerminalPage::_ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll) const
+    {
+        return scrollDirection == ScrollUp ? -1 * rowsToScroll : rowsToScroll;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

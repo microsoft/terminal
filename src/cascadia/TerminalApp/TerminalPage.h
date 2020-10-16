@@ -30,9 +30,7 @@ namespace winrt::TerminalApp::implementation
 
     enum ScrollDirection : int
     {
-        // Hack alert, we are going to use numeric values to compute the actual scroll delta,
-        // e.g., ScrollUp * rowsToScroll, will result in -rowsToScroll
-        ScrollUp = -1,
+        ScrollUp = 0,
         ScrollDown = 1
     };
 
@@ -212,6 +210,8 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll) const;
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
