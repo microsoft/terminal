@@ -2677,6 +2677,21 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Passing an empty `Pc` param and a base64-encoded multibyte text `Pd` works.
+        // U+306b U+307b U+3093 U+3054 U+6c49 U+8bed U+d55c U+ad6d
+        mach.ProcessString(L"\x1b]52;;44Gr44G744KT44GU5rGJ6K+t7ZWc6rWt\x07");
+        VERIFY_ARE_EQUAL(L"にほんご汉语한국", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        // Passing an empty `Pc` param and a base64-encoded multibyte text w/ emoji sequences `Pd` works.
+        // U+d83d U+dc4d U+d83d U+dc4d U+d83c U+dffb U+d83d U+dc4d U+d83c U+dffc U+d83d
+        // U+dc4d U+d83c U+dffd U+d83d U+dc4d U+d83c U+dffe U+d83d U+dc4d U+d83c U+dfff
+        mach.ProcessString(L"\x1b]52;;8J+RjfCfkY3wn4+78J+RjfCfj7zwn5GN8J+PvfCfkY3wn4++8J+RjfCfj78=\x07");
+        VERIFY_ARE_EQUAL(L"👍👍🏻👍🏼👍🏽👍🏾👍🏿", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
         // Passing a non-empty `Pc` param (`s0` is ignored) and a valid `Pd` param works.
         mach.ProcessString(L"\x1b]52;s0;Zm9v\x07");
         VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);

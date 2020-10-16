@@ -18,5 +18,5 @@ TestUtils::VerifyExpectedString\(tb, L"[^"]+"
 \b([A-Za-z])\1{3,}\b
 Base64::s_(?:En|De)code\(L"[^"]+"
 VERIFY_ARE_EQUAL\(L"[^"]+"
-L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\+/"
 std::memory_order_[\w]+
