@@ -49,6 +49,7 @@ GETDESKWALLPAPER
 UPDATEINIFILE
 spsc
 STDCPP
+strchr
 syscall
 tmp
 tx
