@@ -120,6 +120,9 @@
   <data name="InitialJsonParseErrorText" xml:space="preserve">
     <value>Settings could not be loaded from file. Check for syntax errors, including trailing commas.</value>
   </data>
+  <data name="WriteToSettingsFailedText" xml:space="preserve">
+    <value>We could not write to your settings file. Check the permissions on your settings file.</value>
+  </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
     <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the "defaultProfile" matches the GUID of one of your profiles.</value>
     <comment>{Locked="\"defaultProfile\""}</comment>
@@ -145,6 +148,9 @@
   </data>
   <data name="InitialJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to load settings</value>
+  </data>
+  <data name="WriteToSettingsFailedTitle" xml:space="preserve">
+    <value>Failed to write to settings</value>
   </data>
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Encountered errors while loading user settings</value>
