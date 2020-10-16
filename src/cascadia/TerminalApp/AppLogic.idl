@@ -13,13 +13,6 @@ namespace TerminalApp
         Int64 Y;
     };
 
-    enum LaunchMode
-    {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
-    };
-
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -44,9 +37,6 @@ namespace TerminalApp
 
         String Title { get; };
 
-        String ApplicationDisplayName { get; };
-        String ApplicationVersion { get; };
-
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
@@ -55,7 +45,7 @@ namespace TerminalApp
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
+        Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();

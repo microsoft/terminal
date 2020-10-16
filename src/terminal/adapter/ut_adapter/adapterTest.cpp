@@ -1255,7 +1255,7 @@ public:
 
         _testGetSet->PrepData();
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 0;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
@@ -1292,7 +1292,7 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
         graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
@@ -1605,7 +1605,7 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
@@ -1821,6 +1821,30 @@ public:
         _testGetSet->_privateWriteConsoleInputWResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
+    }
+
+    TEST_METHOD(RequestTerminalParametersTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify response for unsolicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[2;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 2: Verify response for solicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[3;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 3: Verify failure with invalid parameter.");
+        _testGetSet->PrepData();
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
+
+        Log::Comment(L"Test 4: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
     }
 
     TEST_METHOD(CursorKeysModeTest)
@@ -2094,7 +2118,7 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 3;
 
         _testGetSet->_privateGetColorTableEntryResult = true;
@@ -2137,6 +2161,53 @@ public:
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_expectedAttribute.SetIndexedForeground256((BYTE)::XtermToWindowsIndex(9));
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
+    }
+
+    TEST_METHOD(XtermExtendedColorDefaultParameterTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[16];
+
+        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(0);
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = {};
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(0);
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 123;
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = {};
+        rgOptions[3] = {};
+        rgOptions[4] = 123;
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 5 }));
     }
 
     TEST_METHOD(SetColorTableValue)

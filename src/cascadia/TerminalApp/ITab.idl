@@ -1,0 +1,21 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+import "ShortcutActionDispatch.idl";
+
+namespace TerminalApp
+{
+    interface ITab
+    {
+        String Title { get; };
+        String Icon { get; };
+        Microsoft.Terminal.Settings.Model.Command SwitchToTabCommand;
+        Microsoft.UI.Xaml.Controls.TabViewItem TabViewItem { get; };
+        Windows.UI.Xaml.FrameworkElement Content { get; };
+        Windows.UI.Xaml.FocusState FocusState { get; };
+
+        void Focus(Windows.UI.Xaml.FocusState focusState);
+        void Shutdown();
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
+    }
+}

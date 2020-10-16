@@ -22,7 +22,7 @@ namespace winrt
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

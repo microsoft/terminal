@@ -88,16 +88,18 @@ bool TextAttribute::IsLegacy() const noexcept
 // - defaultFgColor: the default foreground color rgb value.
 // - defaultBgColor: the default background color rgb value.
 // - reverseScreenMode: true if the screen mode is reversed.
+// - blinkingIsFaint: true if blinking should be interpreted as faint.
 // Return Value:
 // - the foreground and background colors that should be displayed.
 std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
-                                                                const bool reverseScreenMode) const noexcept
+                                                                const bool reverseScreenMode,
+                                                                const bool blinkingIsFaint) const noexcept
 {
     auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
     auto bg = _background.GetColor(colorTable, defaultBgColor);
-    if (IsFaint())
+    if (IsFaint() || (IsBlinking() && blinkingIsFaint))
     {
         fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
     }

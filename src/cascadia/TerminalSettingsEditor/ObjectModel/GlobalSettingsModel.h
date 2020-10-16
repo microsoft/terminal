@@ -1,8 +1,8 @@
 #pragma once
-#include "Microsoft.Terminal.Settings.Model.GlobalSettingsModel.g.h"
+#include "Model.GlobalSettingsModel.g.h"
 #include "GlobalSettings.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     struct GlobalSettingsModel : GlobalSettingsModelT<GlobalSettingsModel>
     {

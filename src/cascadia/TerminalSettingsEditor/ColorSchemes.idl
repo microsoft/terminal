@@ -8,6 +8,6 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
     {
         ColorSchemes();
-        Microsoft.Terminal.Settings.Model.ColorSchemeModel ColorSchemeModel { get; };
+        Microsoft.Terminal.Settings.Editor.Model.ColorSchemeModel ColorSchemeModel { get; };
     }
 }

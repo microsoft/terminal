@@ -1,0 +1,295 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    We're explicitly telling our references to be non-private so that they won't
+    be copied into our folder. In the case of Microsoft.Ui.Xaml, it seems to copy
+    literally everything EXCEPT its .winmd file, which allows us to keep building.
+    -->
+  <ItemDefinitionGroup>
+    <Reference>
+      <Private>false</Private>
+    </Reference>
+  </ItemDefinitionGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-0b5e-45c3-96a8-bb496bfe4e32}</ProjectGuid>
+    <ProjectName>Microsoft.Terminal.Settings.Editor</ProjectName>
+    <RootNamespace>Microsoft.Terminal.Settings.Editor</RootNamespace>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <!-- C++/WinRT sets the depth to 1 if there is a XAML file in the project
+      Unfortunately for us, we need it to be 3. When the namespace merging
+      depth is 1, Microsoft.Terminal.TerminalControl becomes "Microsoft",
+      and our WinMD file becomes "Microsoft". Because WinRT is very
+      namespace-driven, this winmd is considered to contain the entire
+      Microsoft namespace. This is, obviously, not great. None of our other
+      projects compile properly when they depend on this "Microsoft.winmd."
+    -->
+    <CppWinRTNamespaceMergeDepth>4</CppWinRTNamespaceMergeDepth>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+    <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
+  </PropertyGroup>
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="AddProfile.h">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="GlobalAppearance.h">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ColorSchemes.h">
+      <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <DependentUpon>Globals.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Home.h">
+      <DependentUpon>Home.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="HomeGridItem.h">
+      <DependentUpon>HomeGridItem.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Interaction.h">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Keybindings.h">
+      <DependentUpon>Keybindings.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Launch.h">
+      <DependentUpon>Launch.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SplitPaneOptionPanelControl.h">
+      <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="NewTabOptionPanelControl.h">
+      <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\AppSettings.h" />
+    <ClInclude Include="ObjectModel\ColorScheme.h" />
+    <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
+    <ClInclude Include="ObjectModel\GlobalSettings.h" />
+    <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
+    <ClInclude Include="ObjectModel\Profile.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="MainPage.h">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ObjectModel\ProfileModel.h">
+      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Profiles.h">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="Rendering.h">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="SettingsEditorViewModel.h">
+      <DependentUpon>SettingsEditorViewModel.idl</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <Page Include="AddProfile.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CommonResources.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="GlobalAppearance.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ColorSchemes.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Globals.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Home.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Interaction.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Keybindings.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Launch.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SplitPaneOptionPanelControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="NewTabOptionPanelControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Rendering.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="AddProfile.cpp">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="GlobalAppearance.cpp">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorSchemes.cpp">
+      <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Globals.cpp">
+      <DependentUpon>Globals.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Home.cpp">
+      <DependentUpon>Home.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="HomeGridItem.cpp">
+      <DependentUpon>HomeGridItem.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Interaction.cpp">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Keybindings.cpp">
+      <DependentUpon>Keybindings.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Launch.cpp">
+      <DependentUpon>Launch.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SplitPaneOptionPanelControl.cpp">
+      <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="NewTabOptionPanelControl.cpp">
+      <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ObjectModel\AppSettings.cpp" />
+    <ClCompile Include="ObjectModel\ColorScheme.cpp" />
+    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
+    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
+    <ClCompile Include="ObjectModel\Profile.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="MainPage.cpp">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="ObjectModel\ProfileModel.cpp">
+      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Profiles.cpp">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="Rendering.cpp">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="SettingsEditorViewModel.cpp">
+      <DependentUpon>SettingsEditorViewModel.idl</DependentUpon>
+    </ClCompile>
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="ObjectModel\ColorScheme.idl" />
+    <Midl Include="Home.idl">
+      <DependentUpon>Home.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="GlobalAppearance.idl">
+      <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ColorSchemes.idl">
+      <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Globals.idl">
+      <DependentUpon>Globals.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="HomeGridItem.idl" />
+    <Midl Include="Launch.idl">
+      <DependentUpon>Launch.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Interaction.idl">
+      <DependentUpon>Interaction.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ObjectModel\ColorSchemeModel.idl" />
+    <Midl Include="ObjectModel\GlobalSettings.idl" />
+    <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
+    <Midl Include="ObjectModel\Profile.idl" />
+    <Midl Include="ObjectModel\ProfileModel.idl" />
+    <Midl Include="Rendering.idl">
+      <DependentUpon>Rendering.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Keybindings.idl">
+      <DependentUpon>Keybindings.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="MainPage.idl">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="Profiles.idl">
+      <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AddProfile.idl">
+      <DependentUpon>AddProfile.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SplitPaneOptionPanelControl.idl">
+      <DependentUpon>SplitPaneOptionPanelControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="NewTabOptionPanelControl.idl">
+      <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="SettingsEditorViewModel.idl" />
+  </ItemGroup>
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <None Include="TerminalSettingsEditor.def" />
+    <None Include="packages.config" />
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <OCResourceDirectory Include="Resources" />
+    <None Include="PropertySheet.props" />
+  </ItemGroup>
+  <!-- ========================= Project References ======================== -->
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+</Project>

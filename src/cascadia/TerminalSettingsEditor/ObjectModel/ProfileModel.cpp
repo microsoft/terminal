@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "ObjectModel/Profile.h"
-#include "Microsoft.Terminal.Settings.Model.ProfileModel.g.cpp"
+#include "Model.ProfileModel.g.cpp"
 #include "ProfileModel.h"
 
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation
 {
     ProfileModel::ProfileModel()
     {
