@@ -190,9 +190,9 @@ void UtilsTests::TestColorFromXTermColor()
     _VerifyXTermColorResult(L"yellow", RGB(255, 255, 0));
     _VerifyXTermColorResult(L"yellow3", RGB(205, 205, 0));
     _VerifyXTermColorResult(L"wheat", RGB(245, 222, 179));
-    _VerifyXTermColorResult(L"wheat4", RGB(139, 126, 102));
+    _VerifyXTermColorResult(L"wheat4", RGB(139, 126, 101));
     _VerifyXTermColorResult(L"royalblue", RGB(65, 105, 225));
-    _VerifyXTermColorResult(L"royalblue3", RGB(58, 95, 205));
+    _VerifyXTermColorResult(L"royalblue3", RGB(57, 94, 205));
     _VerifyXTermColorResult(L"gray", RGB(190, 190, 190));
     _VerifyXTermColorResult(L"grey", RGB(190, 190, 190));
     _VerifyXTermColorResult(L"gray0", RGB(0, 0, 0));
