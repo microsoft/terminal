@@ -130,8 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                        _BackgroundImageAlignment :
                        (_parent ?
                             _parent->_getBackgroundImageAlignmentImpl() :
-                            std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>{ Windows::UI::Xaml::HorizontalAlignment::Center,
-                                                                                                                      Windows::UI::Xaml::VerticalAlignment::Center });
+                            std::nullopt);
         };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

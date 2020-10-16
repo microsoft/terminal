@@ -360,6 +360,7 @@ void Profile::ApplyTo(Profile* profile) const
     APPLY_OUT(BackgroundImagePath);
     APPLY_OUT(BackgroundImageOpacity);
     APPLY_OUT(BackgroundImageStretchMode);
+    APPLY_OUT(BackgroundImageAlignment);
     APPLY_OUT(AntialiasingMode);
     APPLY_OUT(RetroTerminalEffect);
     APPLY_OUT(ForceFullRepaintRendering);
@@ -430,7 +431,8 @@ void Profile::ClearBackgroundImageAlignment() noexcept
 
 const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
 {
-    return std::get<HorizontalAlignment>(*_getBackgroundImageAlignmentImpl());
+    const auto val{ _getBackgroundImageAlignmentImpl() };
+    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
 }
 
 void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
@@ -443,7 +445,8 @@ void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& valu
 
 const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
 {
-    return std::get<VerticalAlignment>(*_getBackgroundImageAlignmentImpl());
+    const auto val{ _getBackgroundImageAlignmentImpl() };
+    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
 }
 
 void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
