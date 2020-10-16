@@ -107,7 +107,9 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
     {
-        const auto itemHeight = ::base::saturated_cast<int>(_parentCommandText().Height());
+        const auto container = _filteredActionsView().ContainerFromIndex(0);
+        const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
+        const auto itemHeight = ::base::saturated_cast<int>(item.ActualHeight());
         const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
         const int numVisibleItems = listHeight / itemHeight;
 
