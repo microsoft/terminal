@@ -5,6 +5,8 @@
 #include "Pane.h"
 #include "AppLogic.h"
 
+#include <Mmsystem.h>
+
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
@@ -42,6 +44,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _border.Child(_control);
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+    _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
 
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
@@ -309,7 +312,8 @@ bool Pane::NavigateFocus(const Direction& direction)
 // - <none>
 // Return Value:
 // - <none>
-void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
+                                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     std::unique_lock lock{ _createCloseLock };
     // It's possible that this event handler started being executed, then before
@@ -341,6 +345,31 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/, 
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
             Close();
+        }
+    }
+}
+
+// Method Description:
+// - Plays a warning note when triggered by the BEL control character,
+//   using the sound configured for the "Critical Stop" system event.`
+//   This matches the behavior of the Windows Console host.
+// Arguments:
+// - <unused>
+void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                      const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+    auto paneProfile = settings.FindProfile(_profile.value());
+    if (paneProfile)
+    {
+        if (paneProfile.BellStyle() == winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible)
+        {
+            const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+            PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
         }
     }
 }
@@ -625,6 +654,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+        _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -634,6 +664,8 @@ void Pane::_CloseChild(const bool closeFirst)
         _secondChild->Closed(_secondClosedToken);
         closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
+        closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
 
         // If either of our children was focused, we want to take that focus from
         // them.
@@ -714,6 +746,7 @@ void Pane::_CloseChild(const bool closeFirst)
         oldFirst->Closed(oldFirstToken);
         oldSecond->Closed(oldSecondToken);
         closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+        closedChild->_control.WarningBell(closedChild->_warningBellToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1412,6 +1445,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // revoke our handler - the child will take care of the control now.
     _control.ConnectionStateChanged(_connectionStateChangedToken);
     _connectionStateChangedToken.value = 0;
+    _control.WarningBell(_warningBellToken);
+    _warningBellToken.value = 0;
 
     // Remove our old GotFocus handler from the control. We don't what the
     // control telling us that it's now focused, we want it telling its new

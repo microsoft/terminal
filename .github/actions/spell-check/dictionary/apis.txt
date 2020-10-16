@@ -46,11 +46,14 @@ RSHIFT
 rx
 serializer
 SIZENS
+GETDESKWALLPAPER
 snprintf
 spsc
 STDCPP
+strchr
 Subheader
 Subpage
+UPDATEINIFILE
 syscall
 tmp
 tolower
@@ -60,3 +63,4 @@ wcsstr
 wcstoui
 XDocument
 XElement
+XParse

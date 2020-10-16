@@ -33,7 +33,9 @@ namespace winrt::TerminalApp::implementation
 
         void Shutdown();
 
+        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         GETSET_PROPERTY(winrt::hstring, Title, L"Settings");
         GETSET_PROPERTY(winrt::hstring, Icon);
@@ -41,11 +43,24 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
         GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::Page, Content, nullptr);
 
+        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
+        // This is needed since Tab is going to be managing its own SwitchToTab command.
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
+        // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
+        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewNumTabs, _PropertyChangedHandlers, 0);
+
     private:
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         void _MakeTabViewItem();
         void _CreateContextMenu();
+        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
+        void _EnableCloseMenuItems();
         winrt::fire_and_forget _CreateIcon();
+        void _CloseTabsAfter();
+        void _CloseOtherTabs();
     };
 }

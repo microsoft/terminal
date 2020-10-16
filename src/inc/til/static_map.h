@@ -39,7 +39,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using const_iterator = typename std::array<std::pair<K, V>, N>::const_iterator;
 
         template<typename... Args>
-        constexpr explicit static_map(const Args&... args) :
+        constexpr explicit static_map(const Args&... args) noexcept :
             _predicate{},
             _array{ { args... } }
         {

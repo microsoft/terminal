@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
@@ -14,5 +15,7 @@ namespace TerminalApp
 
         void Focus(Windows.UI.Xaml.FocusState focusState);
         void Shutdown();
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

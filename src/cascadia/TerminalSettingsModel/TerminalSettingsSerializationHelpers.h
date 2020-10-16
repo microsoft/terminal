@@ -47,6 +47,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
+{
+    static constexpr std::array<pair_type, 2> mappings = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "audible", ValueType::Audible }
+    };
+};
+
 JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
 {
     // reduce repetition
@@ -165,10 +173,12 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
-    JSON_MAPPINGS(3) = {
+    JSON_MAPPINGS(5) = {
         pair_type{ "default", ValueType::DefaultMode },
         pair_type{ "maximized", ValueType::MaximizedMode },
         pair_type{ "fullscreen", ValueType::FullscreenMode },
+        pair_type{ "focus", ValueType::FocusMode },
+        pair_type{ "maximizedFocus", ValueType::MaximizedFocusMode },
     };
 };
 

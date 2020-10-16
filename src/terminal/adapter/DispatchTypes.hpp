@@ -89,11 +89,110 @@ namespace Microsoft::Console::VirtualTerminal
         uint64_t _idAccumulator = 0;
         size_t _idShift = 0;
     };
+
+    class VTParameter
+    {
+    public:
+        constexpr VTParameter() noexcept :
+            _value{ -1 }
+        {
+        }
+
+        constexpr VTParameter(const size_t rhs) noexcept :
+            _value{ gsl::narrow_cast<decltype(_value)>(rhs) }
+        {
+        }
+
+        constexpr bool has_value() const noexcept
+        {
+            // A negative value indicates that the parameter was omitted.
+            return _value >= 0;
+        }
+
+        constexpr size_t value() const noexcept
+        {
+            return _value;
+        }
+
+        constexpr size_t value_or(size_t defaultValue) const noexcept
+        {
+            return has_value() ? _value : defaultValue;
+        }
+
+        template<typename T, std::enable_if_t<sizeof(T) == sizeof(size_t), int> = 0>
+        constexpr operator T() const noexcept
+        {
+            // For most selective parameters, omitted values will default to 0.
+            return static_cast<T>(value_or(0));
+        }
+
+        constexpr operator size_t() const noexcept
+        {
+            // For numeric parameters, both 0 and omitted values will default to 1.
+            return has_value() && _value != 0 ? _value : 1;
+        }
+
+    private:
+        std::make_signed<size_t>::type _value;
+    };
+
+    class VTParameters
+    {
+    public:
+        constexpr VTParameters() noexcept
+        {
+        }
+
+        constexpr VTParameters(const VTParameter* ptr, const size_t count) noexcept :
+            _values{ ptr, count }
+        {
+        }
+
+        constexpr VTParameter at(const size_t index) const noexcept
+        {
+            // If the index is out of range, we return a parameter with no value.
+            return index < _values.size() ? _values[index] : VTParameter{};
+        }
+
+        constexpr bool empty() const noexcept
+        {
+            return _values.empty();
+        }
+
+        constexpr size_t size() const noexcept
+        {
+            // We always return a size of at least 1, since an empty parameter
+            // list is the equivalent of a single "default" parameter.
+            return std::max<size_t>(_values.size(), 1);
+        }
+
+        VTParameters subspan(const size_t offset) const noexcept
+        {
+            const auto subValues = _values.subspan(offset);
+            return { subValues.data(), subValues.size() };
+        }
+
+        template<typename T>
+        bool for_each(const T&& predicate) const
+        {
+            // We always return at least 1 value here, since an empty parameter
+            // list is the equivalent of a single "default" parameter.
+            auto success = predicate(at(0));
+            for (auto i = 1u; i < _values.size(); i++)
+            {
+                success = predicate(_values[i]) && success;
+            }
+            return success;
+        }
+
+    private:
+        gsl::span<const VTParameter> _values;
+    };
 }
 
 namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 {
-    enum class EraseType : unsigned int
+    enum class EraseType : size_t
     {
         ToEnd = 0,
         FromBeginning = 1,
@@ -101,7 +200,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
-    enum GraphicsOptions : unsigned int
+    enum GraphicsOptions : size_t
     {
         Off = 0,
         BoldBright = 1,
@@ -163,13 +262,13 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundWhite = 107,
     };
 
-    enum class AnsiStatusType : unsigned int
+    enum class AnsiStatusType : size_t
     {
         OS_OperatingStatus = 5,
         CPR_CursorPositionReport = 6,
     };
 
-    enum PrivateModeParams : unsigned short
+    enum PrivateModeParams : size_t
     {
         DECCKM_CursorKeysMode = 1,
         DECANM_AnsiMode = 2,
@@ -202,20 +301,20 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         UTF8 = VTID("G")
     };
 
-    enum TabClearType : unsigned short
+    enum TabClearType : size_t
     {
         ClearCurrentColumn = 0,
         ClearAllColumns = 3
     };
 
-    enum WindowManipulationType : unsigned int
+    enum WindowManipulationType : size_t
     {
         Invalid = 0,
         RefreshWindow = 7,
         ResizeWindowInCharacters = 8,
     };
 
-    enum class CursorStyle : unsigned int
+    enum class CursorStyle : size_t
     {
         UserDefault = 0, // Implemented as "restore cursor to user default".
         BlinkingBlock = 1,
@@ -224,6 +323,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         SteadyUnderline = 4,
         BlinkingBar = 5,
         SteadyBar = 6
+    };
+
+    enum class ReportingPermission : size_t
+    {
+        Unsolicited = 0,
+        Solicited = 1
     };
 
     enum class LineFeedType : unsigned int
