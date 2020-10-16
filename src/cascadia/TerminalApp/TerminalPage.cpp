@@ -2587,6 +2587,7 @@ namespace winrt::TerminalApp::implementation
         {
             _mruTabs.RemoveAt(mruIndex);
             _mruTabs.InsertAt(0, _tabs.GetAt(index));
+            _UpdateTabSwitcherActions(true);
         }
     }
 
