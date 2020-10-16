@@ -2281,32 +2281,35 @@ std::wstring TextBuffer::GetHyperlinkUriFromId(uint16_t id) const
 // - The user-defined id
 // Return value:
 // - The internal hyperlink ID
-uint16_t TextBuffer::GetHyperlinkId(std::wstring_view params)
+uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
 {
-    uint16_t id = 0;
-    if (params.empty())
+    uint16_t numericId = 0;
+    if (id.empty())
     {
         // no custom id specified, return our internal count
-        id = _currentHyperlinkId;
+        numericId = _currentHyperlinkId;
         ++_currentHyperlinkId;
     }
     else
     {
         // assign _currentHyperlinkId if the custom id does not already exist
-        const auto result = _hyperlinkCustomIdMap.emplace(params, _currentHyperlinkId);
+        std::wstring newId{ id };
+        // hash the URL and add it to the custom ID - GH#7698
+        newId += L"%" + std::to_wstring(std::hash<std::wstring_view>{}(uri));
+        const auto result = _hyperlinkCustomIdMap.emplace(newId, _currentHyperlinkId);
         if (result.second)
         {
             // the custom id did not already exist
             ++_currentHyperlinkId;
         }
-        id = (*(result.first)).second;
+        numericId = (*(result.first)).second;
     }
     // _currentHyperlinkId could overflow, make sure its not 0
     if (_currentHyperlinkId == 0)
     {
         ++_currentHyperlinkId;
     }
-    return id;
+    return numericId;
 }
 
 // Method Description:
