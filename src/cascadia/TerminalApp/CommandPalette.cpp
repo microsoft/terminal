@@ -108,7 +108,7 @@ namespace winrt::TerminalApp::implementation
     //   or last visible item in the ListView.
     // Return Value:
     // - <none>
-    void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
+    void CommandPalette::SelectNextItem(const bool moveDown, const bool pageDown)
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
         const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
@@ -121,7 +121,7 @@ namespace winrt::TerminalApp::implementation
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
-        const auto newIndex = ((numItems + selected + (moveDown ? (pageButtonPressed ? numVisibleItems : 1) : (pageButtonPressed ? -numVisibleItems : -1))) % numItems);
+        const auto newIndex = ((numItems + selected + (moveDown ? (pageDown ? numVisibleItems : 1) : (pageDown ? -numVisibleItems : -1))) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
