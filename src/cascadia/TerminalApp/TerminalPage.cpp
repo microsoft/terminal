@@ -1178,7 +1178,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
-    {        
+    {
         if (_settings.GlobalSettings().UseTabSwitcher())
         {
             CommandPalette().SetTabActions(_mruTabActions);
@@ -1188,7 +1188,6 @@ namespace winrt::TerminalApp::implementation
             uint32_t tabCount = _mruTabActions.Size();
             auto newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
 
-            // If the cmdpal was still visible, this means we're just previewing through the open list.
             if (CommandPalette().Visibility() == Visibility::Visible)
             {
                 CommandPalette().SelectNextItem(bMoveRight);
