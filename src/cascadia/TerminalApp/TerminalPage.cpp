@@ -1359,9 +1359,9 @@ namespace winrt::TerminalApp::implementation
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
-        if (_tabs.Size() > 1 && _settings.GlobalSettings().ConfirmCloseAllTabs() && _isFirstClose)
+        if (_tabs.Size() > 1 && _settings.GlobalSettings().ConfirmCloseAllTabs() && !_displayingCloseDialog)
         {
-            _isFirstClose = false;
+            _displayingCloseDialog = true;
             _ShowCloseWarningDialog();
         }
         else
@@ -2033,7 +2033,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the close button of the content dialog is clicked.
-    //   This sets the flag _isFirstClose again, which was reset before
+    //   This resets the flag _displayingCloseDialog, which was set before
     //   opening the dialog. Otherwise, the Terminal app would be closed
     //   on the next close request without showing the warning dialog.
     // Arguments:
@@ -2042,7 +2042,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CloseWarningCloseButtonOnClick(WUX::Controls::ContentDialog /* sender */,
                                                        WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
-        _isFirstClose = true;
+        _displayingCloseDialog = false;
     }
 
     // Method Description:

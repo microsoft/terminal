@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
-        bool _isFirstClose{ true };
+        bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
