@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct KeyMapping : KeyMappingT<KeyMapping>
     {
         KeyMapping() = default;
+        com_ptr<KeyMapping> Copy() const;
 
         Model::ActionAndArgs TryLookup(TerminalControl::KeyChord const& chord) const;
         uint64_t Size() const;
