@@ -592,10 +592,10 @@ try
     }
 
     std::string name(ss.str());
-    const auto standartVariantColorIter = xorgAppStandardVariantColorTable.find(name);
-    if (standartVariantColorIter != xorgAppStandardVariantColorTable.end())
+    const auto standardVariantColorIter = xorgAppStandardVariantColorTable.find(name);
+    if (standardVariantColorIter != xorgAppStandardVariantColorTable.end())
     {
-        const auto standardAndVariantBaseColor = standartVariantColorIter->second;
+        const auto standardAndVariantBaseColor = standardVariantColorIter->second;
         if (variantIndex > 4)
         {
             return std::nullopt;
