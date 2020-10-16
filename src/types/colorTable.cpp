@@ -286,6 +286,14 @@ static constexpr std::array<til::color, 256> standardXterm256ColorTable{
     til::color{ 0xEE, 0xEE, 0xEE },
 };
 
+// Routine Description:
+// - Calculate XOrg app color variant with given base color and variant index.
+//   See also https://en.wikipedia.org/wiki/X11_color_names
+// Arguments:
+// - baseColor - The base color to use.
+// - variant - The variant index.
+// Return Value:
+// - The result color
 static constexpr til::color _calculateXorgAppColorVariant(til::color baseColor, size_t variant)
 {
     float ratio = 1.0f;
@@ -313,33 +321,32 @@ static constexpr til::color _calculateXorgAppColorVariant(til::color baseColor, 
         ::base::saturated_cast<uint8_t>(baseColor.b * ratio));
 }
 
-static constexpr til::presorted_static_map xorgAppStandardVariantColorTable
-{
-    std::pair{ "antiquewhite"sv, std::array<til::color, 2>{ til::color{ 250, 235, 215 }, til::color{ 255, 239, 219 }}},
+static constexpr til::presorted_static_map xorgAppStandardVariantColorTable{
+    std::pair{ "antiquewhite"sv, std::array<til::color, 2>{ til::color{ 250, 235, 215 }, til::color{ 255, 239, 219 } } },
     std::pair{ "brown"sv, std::array<til::color, 2>{ til::color{ 165, 42, 42 }, til::color{ 255, 64, 64 } } },
     std::pair{ "burlywood"sv, std::array<til::color, 2>{ til::color{ 222, 184, 135 }, til::color{ 255, 211, 155 } } },
     std::pair{ "cadetblue"sv, std::array<til::color, 2>{ til::color{ 95, 158, 160 }, til::color{ 152, 245, 255 } } },
     std::pair{ "chocolate"sv, std::array<til::color, 2>{ til::color{ 210, 105, 30 }, til::color{ 255, 127, 36 } } },
-    std::pair{ "coral"sv, std::array<til::color, 2>{ til::color{ 255, 127, 80 }, til::color{ 255, 114, 86 }}},
+    std::pair{ "coral"sv, std::array<til::color, 2>{ til::color{ 255, 127, 80 }, til::color{ 255, 114, 86 } } },
     std::pair{ "darkgoldenrod"sv, std::array<til::color, 2>{ til::color{ 184, 134, 11 }, til::color{ 255, 185, 15 } } },
-    std::pair{ "darkolivegreen"sv, std::array<til::color, 2>{ til::color{ 85, 107, 47 }} },
+    std::pair{ "darkolivegreen"sv, std::array<til::color, 2>{ til::color{ 85, 107, 47 } } },
     std::pair{ "darkorange"sv, std::array<til::color, 2>{ til::color{ 255, 140, 0 }, til::color{ 255, 127, 0 } } },
     std::pair{ "darkorchid"sv, std::array<til::color, 2>{ til::color{ 153, 50, 204 }, til::color{ 191, 62, 255 } } },
     std::pair{ "darkseagreen"sv, std::array<til::color, 2>{ til::color{ 143, 188, 143 }, til::color{ 193, 255, 193 } } },
     std::pair{ "darkslategray"sv, std::array<til::color, 2>{ til::color{ 47, 79, 79 }, til::color{ 151, 255, 255 } } },
-    std::pair{ "firebrick"sv, std::array<til::color, 2>{ til::color{ 178, 34, 34 }, til::color{ 255, 48, 48 }} },
+    std::pair{ "firebrick"sv, std::array<til::color, 2>{ til::color{ 178, 34, 34 }, til::color{ 255, 48, 48 } } },
     std::pair{ "goldenrod"sv, std::array<til::color, 2>{ til::color{ 218, 165, 32 }, til::color{ 255, 193, 37 } } },
-    std::pair{ "hotpink"sv, std::array<til::color, 2>{ til::color{ 255, 105, 180 }, til::color{ 255, 110, 180 }} },
-    std::pair{ "indianred"sv, std::array<til::color, 2>{ til::color{ 205, 92, 92 }, til::color{ 255, 106, 106 }}},
+    std::pair{ "hotpink"sv, std::array<til::color, 2>{ til::color{ 255, 105, 180 }, til::color{ 255, 110, 180 } } },
+    std::pair{ "indianred"sv, std::array<til::color, 2>{ til::color{ 205, 92, 92 }, til::color{ 255, 106, 106 } } },
     std::pair{ "khaki"sv, std::array<til::color, 2>{ til::color{ 240, 230, 140 }, til::color{ 255, 246, 143 } } },
     std::pair{ "lightblue"sv, std::array<til::color, 2>{ til::color{ 173, 216, 230 }, til::color{ 191, 239, 255 } } },
     std::pair{ "lightgoldenrod"sv, std::array<til::color, 2>{ til::color{ 238, 221, 130 }, til::color{ 255, 236, 139 } } },
     std::pair{ "lightpink"sv, std::array<til::color, 2>{ til::color{ 255, 182, 193 }, til::color{ 255, 174, 185 } } },
     std::pair{ "lightskyblue"sv, std::array<til::color, 2>{ til::color{ 135, 206, 250 }, til::color{ 176, 226, 255 } } },
     std::pair{ "lightsteelblue"sv, std::array<til::color, 2>{ til::color{ 176, 196, 222 }, til::color{ 202, 225, 255 } } },
-    std::pair{ "maroon"sv, std::array<til::color, 2>{ til::color{ 176, 48, 96 }, til::color{ 255, 52, 179 }} },
+    std::pair{ "maroon"sv, std::array<til::color, 2>{ til::color{ 176, 48, 96 }, til::color{ 255, 52, 179 } } },
     std::pair{ "mediumorchid"sv, std::array<til::color, 2>{ til::color{ 186, 85, 211 }, til::color{ 224, 102, 255 } } },
-    std::pair{ "mediumpurple"sv, std::array<til::color, 2>{ til::color{ 147, 112, 219 }, til::color{ 171, 130, 255 }} },
+    std::pair{ "mediumpurple"sv, std::array<til::color, 2>{ til::color{ 147, 112, 219 }, til::color{ 171, 130, 255 } } },
     std::pair{ "olivedrab"sv, std::array<til::color, 2>{ til::color{ 107, 142, 35 }, til::color{ 192, 255, 62 } } },
     std::pair{ "orchid"sv, std::array<til::color, 2>{ til::color{ 218, 112, 214 }, til::color{ 255, 131, 250 } } },
     std::pair{ "palegreen"sv, std::array<til::color, 2>{ til::color{ 152, 251, 152 }, til::color{ 154, 255, 154 } } },
@@ -348,7 +355,7 @@ static constexpr til::presorted_static_map xorgAppStandardVariantColorTable
     std::pair{ "pink"sv, std::array<til::color, 2>{ til::color{ 255, 192, 203 }, til::color{ 255, 181, 197 } } },
     std::pair{ "plum"sv, std::array<til::color, 2>{ til::color{ 221, 160, 221 }, til::color{ 255, 187, 255 } } },
     std::pair{ "purple"sv, std::array<til::color, 2>{ til::color{ 160, 32, 240 }, til::color{ 155, 48, 255 } } },
-    std::pair{ "rosybrown"sv, std::array<til::color, 2>{ til::color{ 188, 143, 143 }, til::color{ 255, 193, 193 }} },
+    std::pair{ "rosybrown"sv, std::array<til::color, 2>{ til::color{ 188, 143, 143 }, til::color{ 255, 193, 193 } } },
     std::pair{ "royalblue"sv, std::array<til::color, 2>{ til::color{ 65, 105, 225 }, til::color{ 72, 118, 255 } } },
     std::pair{ "salmon"sv, std::array<til::color, 2>{ til::color{ 250, 128, 114 }, til::color{ 255, 140, 105 } } },
     std::pair{ "seagreen"sv, std::array<til::color, 2>{ til::color{ 46, 139, 87 }, til::color{ 84, 255, 159 } } },
@@ -368,17 +375,17 @@ static constexpr til::presorted_static_map xorgAppVariantColorTable{
     std::pair{ "aquamarine"sv, til::color{ 127, 255, 212 } },
     std::pair{ "azure"sv, til::color{ 240, 255, 255 } },
     std::pair{ "bisque"sv, til::color{ 255, 228, 196 } },
-    std::pair{ "blue"sv,til::color{ 0, 0, 255 } },
-    std::pair{ "chartreuse"sv,til::color{ 127, 255, 0 } },
+    std::pair{ "blue"sv, til::color{ 0, 0, 255 } },
+    std::pair{ "chartreuse"sv, til::color{ 127, 255, 0 } },
     std::pair{ "cornsilk"sv, til::color{ 255, 248, 220 } },
-    std::pair{ "cyan"sv, til::color{ 0, 255, 255 }},
+    std::pair{ "cyan"sv, til::color{ 0, 255, 255 } },
     std::pair{ "deeppink"sv, til::color{ 255, 20, 147 } },
     std::pair{ "deepskyblue"sv, til::color{ 0, 191, 255 } },
-    std::pair{ "dodgerblue"sv,  til::color{ 30, 144, 255 } },
-    std::pair{ "gold"sv,  til::color{ 255, 215, 0 }},
+    std::pair{ "dodgerblue"sv, til::color{ 30, 144, 255 } },
+    std::pair{ "gold"sv, til::color{ 255, 215, 0 } },
     std::pair{ "green"sv, til::color{ 0, 255, 0 } },
-    std::pair{ "honeydew"sv,  til::color{ 240, 255, 240 } },
-    std::pair{ "ivory"sv,  til::color{ 255, 255, 240 } },
+    std::pair{ "honeydew"sv, til::color{ 240, 255, 240 } },
+    std::pair{ "ivory"sv, til::color{ 255, 255, 240 } },
     std::pair{ "lavenderblush"sv, til::color{ 255, 240, 245 } },
     std::pair{ "lemonchiffon"sv, til::color{ 255, 250, 205 } },
     std::pair{ "lightcyan"sv, til::color{ 224, 255, 255 } },
@@ -386,15 +393,15 @@ static constexpr til::presorted_static_map xorgAppVariantColorTable{
     std::pair{ "lightyellow"sv, til::color{ 255, 255, 224 } },
     std::pair{ "magenta"sv, til::color{ 255, 0, 255 } },
     std::pair{ "mistyrose"sv, til::color{ 255, 228, 225 } },
-    std::pair{ "navajowhite"sv,til::color{ 255, 222, 173 } },
-    std::pair{ "orange"sv,til::color{ 255, 165, 0 } },
-    std::pair{ "orangered"sv,  til::color{ 255, 69, 0 } },
+    std::pair{ "navajowhite"sv, til::color{ 255, 222, 173 } },
+    std::pair{ "orange"sv, til::color{ 255, 165, 0 } },
+    std::pair{ "orangered"sv, til::color{ 255, 69, 0 } },
     std::pair{ "peachpuff"sv, til::color{ 255, 218, 185 } },
     std::pair{ "red"sv, til::color{ 255, 0, 0 } },
     std::pair{ "seashell"sv, til::color{ 255, 245, 238 } },
-    std::pair{ "snow"sv,  til::color{ 255, 250, 250 } },
-    std::pair{ "springgreen"sv, til::color{ 0, 255, 127 }},
-    std::pair{ "tomato"sv,til::color{ 255, 99, 71 } },
+    std::pair{ "snow"sv, til::color{ 255, 250, 250 } },
+    std::pair{ "springgreen"sv, til::color{ 0, 255, 127 } },
+    std::pair{ "tomato"sv, til::color{ 255, 99, 71 } },
     std::pair{ "yellow"sv, til::color{ 255, 255, 0 } },
 };
 
@@ -547,6 +554,7 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 
 // Function Description:
 // - Parses a color from a string based on the XOrg app color name table.
+//   See also https://en.wikipedia.org/wiki/X11_color_names
 // Arguments:
 // - str: a string representation of the color name to parse
 // Return Value:
