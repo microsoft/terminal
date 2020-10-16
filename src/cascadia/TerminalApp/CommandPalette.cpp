@@ -101,8 +101,11 @@ namespace winrt::TerminalApp::implementation
     // - Moves the focus up or down the list of commands. If we're at the top,
     //   we'll loop around to the bottom, and vice-versa.
     // Arguments:
-    // - moveDown: if true, we're attempting to move to the next or a few next item in the
-    //   list. Otherwise, we're attempting to move to the previous or not very many previous.
+    // - moveDown: if true, we're attempting to move to either next or last visible item in the
+    //   list. Otherwise, we're attempting to move to either previous or first visible item.
+    //   Depends on the pageButtonPressed argument.
+    // - pageButtonPressed: if true, we're attempting to move to either first visible item
+    //   or last visible item in the ListView.
     // Return Value:
     // - <none>
     void CommandPalette::SelectNextItem(const bool moveDown, const bool pageButtonPressed)
