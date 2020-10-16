@@ -33,8 +33,7 @@ static constexpr std::string_view SchemeNameToken{ "${scheme.name}" };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    Command::Command() :
-        _subcommands{ winrt::single_threaded_map<winrt::hstring, Model::Command>() }
+    Command::Command()
     {
         _setAction(nullptr);
     }
@@ -49,22 +48,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         command->_IterateOn = _IterateOn;
 
         command->_originalJson = _originalJson;
-        for (auto kv : _subcommands)
+        if (HasNestedCommands())
         {
-            const auto subcmd{ winrt::get_self<Command>(kv.Value()) };
-            command->_subcommands.Insert(kv.Key(), *subcmd->Copy());
+            command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            for (auto kv : NestedCommands())
+            {
+                const auto subCmd{ winrt::get_self<Command>(kv.Value()) };
+                command->_subcommands.Insert(kv.Key(), *subCmd->Copy());
+            }
         }
         return command;
     }
 
-    IMapView<winrt::hstring, Model::Command> Command::NestedCommands()
+    IMapView<winrt::hstring, Model::Command> Command::NestedCommands() const
     {
-        return _subcommands.Size() > 0 ? _subcommands.GetView() : nullptr;
+        return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
-    bool Command::HasNestedCommands()
+    bool Command::HasNestedCommands() const
     {
-        return _subcommands.Size() > 0;
+        return _subcommands ? _subcommands.Size() > 0 : false;
     }
     // Function Description:
     // - attempt to get the name of this command from the provided json object.
@@ -153,6 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // will only be marked iterable on the first pass.
         if (const auto nestedCommandsJson{ json[JsonKey(CommandsKey)] })
         {
+            result->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
             // Initialize our list of subcommands.
             auto nestedWarnings = Command::LayerJson(result->_subcommands, nestedCommandsJson);
             // It's possible that the nested commands have some warnings

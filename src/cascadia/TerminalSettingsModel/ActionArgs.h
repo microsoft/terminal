@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto copy{ winrt::make_self<CopyTextArgs>() };
             copy->_SingleLine = _SingleLine;
             copy->_CopyFormatting = _CopyFormatting;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -171,7 +171,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<NewTabArgs>() };
             copy->_TerminalArgs = _TerminalArgs.Copy();
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -207,7 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<SwitchToTabArgs>() };
             copy->_TabIndex = _TabIndex;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -248,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<ResizePaneArgs>() };
             copy->_Direction = _Direction;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -289,7 +289,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<MoveFocusArgs>() };
             copy->_Direction = _Direction;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -323,7 +323,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<AdjustFontSizeArgs>() };
             copy->_Delta = _Delta;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -360,7 +360,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<SendInputArgs>() };
             copy->_Input = _Input;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -407,7 +407,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitStyle = _SplitStyle;
             copy->_TerminalArgs = _TerminalArgs.Copy();
             copy->_SplitMode = _SplitMode;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -441,7 +441,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<OpenSettingsArgs>() };
             copy->_Target = _Target;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -479,7 +479,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<SetColorSchemeArgs>() };
             copy->_SchemeName = _SchemeName;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -516,7 +516,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<SetTabColorArgs>() };
             copy->_TabColor = _TabColor;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -550,7 +550,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<RenameTabArgs>() };
             copy->_Title = _Title;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -590,7 +590,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<ExecuteCommandlineArgs>() };
             copy->_Commandline = _Commandline;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -624,7 +624,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<CloseOtherTabsArgs>() };
             copy->_Index = _Index;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 
@@ -658,7 +658,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<CloseTabsAfterArgs>() };
             copy->_Index = _Index;
-            return copy.as<IActionArgs>();
+            return *copy;
         }
     };
 }

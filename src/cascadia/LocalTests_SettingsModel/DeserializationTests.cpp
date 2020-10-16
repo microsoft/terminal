@@ -2431,5 +2431,10 @@ namespace SettingsModelLocalTests
         // test actions
         VERIFY_ARE_EQUAL(settings->_globals->_keymap->_keyShortcuts.size(), copyImpl->_globals->_keymap->_keyShortcuts.size());
         VERIFY_ARE_EQUAL(settings->_globals->_commands.Size(), copyImpl->_globals->_commands.Size());
+
+        // Test that changing the copy should not change the original
+        VERIFY_ARE_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
+        copyImpl->_globals->WordDelimiters(L"changed value");
+        VERIFY_ARE_NOT_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
     }
 }

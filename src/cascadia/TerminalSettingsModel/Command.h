@@ -48,8 +48,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                                            const Json::Value& json);
-        bool HasNestedCommands();
-        Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands();
+        bool HasNestedCommands() const;
+        Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 
@@ -63,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Json::Value _originalJson;
-        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands;
+        Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command> _subcommands{ nullptr };
 
         static std::vector<Model::Command> _expandCommand(Command* const expandable,
                                                           Windows::Foundation::Collections::IVectorView<Model::Profile> profiles,

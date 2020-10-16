@@ -94,7 +94,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_unparsedDefaultProfile = _unparsedDefaultProfile;
     globals->_defaultProfile = _defaultProfile;
     globals->_keymap = _keymap->Copy();
-    std::for_each(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), [globals](auto& warning) { globals->_keybindingsWarnings.push_back(warning); });
+    std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
 
     for (auto kv : _colorSchemes)
     {

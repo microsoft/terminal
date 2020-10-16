@@ -45,7 +45,6 @@ RSHIFT
 rx
 serializer
 SIZENS
-subcmd
 spsc
 STDCPP
 syscall
