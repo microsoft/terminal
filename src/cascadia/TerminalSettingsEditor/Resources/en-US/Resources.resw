@@ -648,4 +648,13 @@
   <data name="Profile_UseAcrylic.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the window will have an acrylic background. When unchecked, the window will have a plain, untextured background.</value>
   </data>
+  <data name="Settings_ResetSettingsButton.Content" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Settings_SaveSettingsButton.Content" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Settings_UnsavedSettingsWarning.Text" xml:space="preserve">
+    <value>⚠ You have unsaved changes.</value>
+  </data>
 </root>
