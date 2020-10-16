@@ -103,6 +103,10 @@ GlobalAppSettings GlobalAppSettings::CreateChild() const
 ```
 `_parent` serves as a reference for who to ask if a settings value was not provided by the user. `LaunchMode`, for example, will now have a getter/setter that looks similar to this:
 ```c++
+// _LaunchMode will now be a std::optional<LaunchMode> instead of a LaunchMode
+// - std::nullopt will mean that there is no user-set value
+// - otherwise, the value was explicitly set by the user
+
 // returns the resolved value for this setting
 LaunchMode GlobalAppSettings::LaunchMode()
 {
@@ -113,35 +117,46 @@ LaunchMode GlobalAppSettings::LaunchMode()
     return til::coalesce_value(_LaunchMode, _parent.LaunchMode(), LaunchMode::DefaultMode);
 }
 
-void GlobalAppSettings::LaunchMode(IReference<LaunchMode> val)
+// explicitly set the user-set value
+void GlobalAppSettings::LaunchMode(LaunchMode val)
 {
-    // if val is nullptr, we are explicitly saying that we want the inherited value
     _LaunchMode = val;
 }
 
-// returns the user set value for this setting
+// check if there is a user-set value
 // NOTE: This is important for the Settings UI to identify whether the user explicitly or implicitly set the presented value
-LaunchMode GlobalAppSettings::ExplicitLaunchMode()
+bool GlobalAppSettings::HasLaunchMode()
 {
-    return _LaunchMode;
+    return _LaunchMode.has_value();
+}
+
+// explicitly unset the user-set value (we want the inherited value)
+void GlobalAppSettings::ClearLaunchMode()
+{
+    return _LaunchMode = std::nullopt;
 }
 ```
 
-Additionally, each settings object will now have an `ApplyTo()` function. For `Profile`, it will look something like this:
+Additionally, `Profile` will now have an `ApplyTo()` function. It will look something like this:
 ```c++
-// layers the Profile settings onto another profile
+// layers my Profile settings onto the other Profile
 void Profile::ApplyTo(Profile profile) const
 {
-    if (_fontSize)
+    if (_fontSize.has_value())
     {
-        FontSize(_fontSize);
+        profile.FontSize(_fontSize);
     }
 
     // repeat for all settings
 }
 ```
 
-This functionality will be useful when layering the `profile.defaults` onto dynamic profiles.
+This functionality will be useful when layering the `profile.defaults` onto dynamic profiles. `profile.defaults` can now be saved to a `Profile` object, then applied onto other `Profile` objects. For dynamic profiles, we will...
+- create a `Profile` from the dynamic profile generator
+- apply `profile.defaults` onto this profile (via `ApplyTo`)
+- When reading `settings.json`, if there are modifications to this profile...
+  - create a new `Profile` with the above `Profile` as its parent (via `CreateChild()`)
+  - layer `settings.json` values onto the child
 
 As a result, the tracking and functionality of cascading settings is moved into the object model instead of keeping it as a json-only concept.
 
@@ -151,15 +166,15 @@ As `CascadiaSettings` loads the settings model, it will create children for each
 ```c++
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
-    _globals = _globals.CreateInheritedProfile();
+    _globals = _globals.CreateChild();
     _globals->LayerJson(json);
 
-    // repeat the same for Profiles/ColorSchemes...
+    // repeat the same for Profiles...
 }
 ```
 For `defaults.json`, `_globals` will now hold all of the values set in `defaults.json`. If any settings were omitted from the `defaults.json`, `_globals` will fallback to its parent (a `GlobalAppSettings` consisting purely of system-defined values).
 
-For `settings.json`, `_globals` will only hold the values set in `settings.json`. If any settings were omitted from `settings.json`, `_globals` will fallback to its parent (the `GlobalAppSettings` built from `defaults.json).
+For `settings.json`, `_globals` will only hold the values set in `settings.json`. If any settings were omitted from `settings.json`, `_globals` will fallback to its parent (the `GlobalAppSettings` built from `defaults.json`).
 
 This process becomes a bit more complex for `Profile` because it can fallback in the following order:
 1. `settings.json` profile
@@ -173,22 +188,48 @@ This process becomes a bit more complex for `Profile` because it can fallback in
 2. load dynamic profiles
    - append newly created profiles to `_profiles` (unchanged)
 3. load `settings.json` `profiles.defaults`
-   - layer `profile.defaults` onto `_profiles` (unchanged)
    - construct a `Profile` from `profiles.defaults`. Save as `Profile _profileDefaults`.
+   - layer `profile.defaults` onto `_profiles` (replace `LayerJson` with `ApplyTo`, but logic largely unchanged)
 4. load `settings.json` `profiles.list`
-   - if a matching profile exists, `CreateInheritedProfile` from the matching profile, and layer the json onto the child.
-   - otherwise, `CreateInheritedProfile` from `_profileDefaults`, and layer the json onto the clone.
+   - if a matching profile exists, `CreateChild` from the matching profile, and layer the json onto the child.
+   - otherwise, `CreateChild` from `_profileDefaults`, and layer the json onto the child.
+   - NOTE: `_profiles` must be updated such that the parent is removed
 
 Additionally, `_profileDefaults` will be exposed by `Profile CascadiaSettings::ProfileDefaults()`. This will enable [#7414](https://github.com/microsoft/terminal/pull/7414)'s implementation to spawn incoming commandline app tabs with the "Default" profile (as opposed to the "default profile").
 
 
-### CreateChild vs Copy
+#### Nullable Settings
+Some settings are explicitly allowed to be nullable (i.e. `Profile` `Foreground`). These settings will be stored as the following struct instead of a `std::optional<T>`:
+```c++
+template<typename T>
+struct NullableSetting
+{
+    IReference<T> setting{ nullptr };
+    bool set{ false };
+};
+```
+where...
+- `set` determines if the value was explicitly set by the user (if false, we should fall back)
+- `setting` records the actual user-set value (`nullptr` represents an explicit set to null)
 
-Settings objects will have `CreateChild()` and `Copy()`. `CreateChild()` is responsible for creating a new settings object that inherits undefined values from its parent. `Copy()` is responsible for recreating the contents of the settings object, including a reference to a copied parent.
+The API surface will experience the following small changes:
+- the getter/setter will output/input an `IReference<T>` instead of `T`
+- `Has...()` and `Clear...()` will reference/modify `set`
 
-The Settings UI will use `Copy()` to get a full copy of `CascadiaSettings` and data bind the UI to that copy. Thus, `Copy()` needs to be exposed in the IDL.
+
+### CreateChild() vs Copy()
+
+Settings objects will have `CreateChild()` and `Copy()`. `CreateChild()` is responsible for creating a new settings object that inherits undefined values from its parent. `Copy()` is responsible for recreating the contents of the settings object, including a reference to a copied parent (not the original parent).
 
 `CreateChild()` will only be used during (de)serialization to adequately interpret and update the JSON. `CreateChild()` enables, but is not explicitly used, for retrieving a value from a settings object. It can also be used to enable larger hierarchies for inheritance within the settings model.
+
+The Settings UI will use `Copy()` to get a deep copy of `CascadiaSettings` and data bind the UI to that copy. Thus, `Copy()` needs to be exposed in the IDL.
+
+It is important that `_parent` is handled properly when performing a deep copy. We need to be aware of the following errors:
+- referencing `_parent` will result in inheriting from an obsolete object tree
+- referencing a copy of `_parent` is ok as long as that `_parent` does not have multiple children. If it has multiple children, changes to the parent will not propagate to all of its children.
+
+When a `_parent` will be allowed to have multiple children, we must ensure that a singular `_parent` is still referenced by its multiple children. However, this is out of scope for serialization, and is more related to a discussion surrounding Profile inheritance as an exposed setting.
 
 
 ### Terminal Settings Model: Serialization and Deserialization
