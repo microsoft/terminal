@@ -89,7 +89,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _mruTabs;
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
         void _UpdateTabIndices();
@@ -207,7 +207,7 @@ namespace winrt::TerminalApp::implementation
 
         void _UnZoomIfNeeded();
 
-        void _UpdateTabSwitcherActions(bool mru);
+        void _UpdateTabSwitcherCommands(const bool mru);
         void _UpdateMRUTab(const uint32_t index);
 
 #pragma region ActionHandlers
