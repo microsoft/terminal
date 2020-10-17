@@ -117,9 +117,7 @@ namespace winrt::TerminalApp::implementation
         const int numVisibleItems = listHeight / itemHeight;
 
         auto selected = _filteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());/*
-        const auto lineHeight = ::base::saturated_cast<int>(_parentCommandText().LineHeight());
-        const int f = listHeight / lineHeight;*/
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
         // Wraparound math. By adding numItems and then calculating modulo numItems,
         // we clamp the values to the range [0, numItems) while still supporting moving
         // upward from 0 to numItems - 1.
