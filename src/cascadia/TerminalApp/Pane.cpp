@@ -823,11 +823,12 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
         const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
+        const bool eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
         // If animations are disabled, just skip this and go straight to
         // _CloseChild. Curiously, the pane opening animation doesn't need this,
         // and will skip straight to Completed when animations are disabled, but
         // this one doesn't seem to.
-        if (!animationsEnabledInOS || !animationsEnabledInApp)
+        if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
         {
             pane->_CloseChild(closeFirst);
             co_return;
