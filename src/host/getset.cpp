@@ -1567,7 +1567,7 @@ void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view params)
 {
     auto attr = screenInfo.GetAttributes();
-    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(params);
+    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
     screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
