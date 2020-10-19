@@ -2,7 +2,7 @@
 Do Not Translate or Localize
 
 This software incorporates material from third parties. Microsoft makes certain
-open source code available at http://3rdpartysource.microsoft.com, or you may
+open source code available at [http://3rdpartysource.microsoft.com](http://3rdpartysource.microsoft.com), or you may
 send a check or money order for US $5.00, including the product name, the open
 source component name, and version number, to:
 
@@ -20,7 +20,7 @@ General Public License.
 
 ## jsoncpp
 
-**Source**: https://github.com/open-source-parsers/jsoncpp
+**Source**: [https://github.com/open-source-parsers/jsoncpp](https://github.com/open-source-parsers/jsoncpp)
 
 ### License
 
@@ -50,7 +50,7 @@ SOFTWARE.
 
 ## chromium/base/numerics
 
-**Source**: https://github.com/chromium/chromium/tree/master/base/numerics
+**Source**: [https://github.com/chromium/chromium/tree/master/base/numerics](https://github.com/chromium/chromium/tree/master/base/numerics)
 
 ### License
 
@@ -86,7 +86,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## kimwalisch/libpopcnt
 
-**Source**: https://github.com/kimwalisch/libpopcnt
+**Source**: [https://github.com/kimwalisch/libpopcnt](https://github.com/kimwalisch/libpopcnt)
 
 ### License
 
@@ -122,7 +122,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## dynamic_bitset
 
-**Source**: https://github.com/pinam45/dynamic_bitset
+**Source**: [https://github.com/pinam45/dynamic_bitset](https://github.com/pinam45/dynamic_bitset)
 
 ### License
 
@@ -151,9 +151,9 @@ SOFTWARE.
 
 ```
 
-## &#x7b;fmt&#x7d;
+## \{fmt\}
 
-**Source**: https://github.com/fmtlib/fmt
+**Source**: [https://github.com/fmtlib/fmt](https://github.com/fmtlib/fmt)
 
 ### License
 
@@ -191,7 +191,7 @@ without including the above copyright and permission notices.
 
 ## interval_tree
 
-**Source**: https://github.com/ekg/IntervalTree
+**Source**: [https://github.com/ekg/IntervalTree](https://github.com/ekg/IntervalTree)
 
 ### License
 
