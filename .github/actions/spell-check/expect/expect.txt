@@ -6,7 +6,9 @@ ABANDONFONT
 ABCDEFGHIJKLMNO
 ABCG
 abf
+abgr
 abi
+ACCESSTOKEN
 acec
 acf
 acidev
@@ -23,6 +25,7 @@ addressof
 ADDSTRING
 ADDTOOL
 AEnd
+aef
 AFew
 AFill
 AFX
@@ -71,6 +74,7 @@ apps
 APPWINDOW
 appx
 appxbundle
+appxerror
 appxmanifest
 APrep
 apsect
@@ -188,6 +192,7 @@ buffersize
 buflen
 bugfix
 buildtransitive
+BUILDURI
 burriter
 BValue
 byref
@@ -293,6 +298,7 @@ codepage
 codepoint
 codeproject
 COINIT
+COLLECTIONURI
 colorizing
 colororacle
 colorref
@@ -352,6 +358,7 @@ conserv
 consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
+consolegit
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -422,6 +429,7 @@ cstdlib
 cstr
 cstring
 cstyle
+CSV
 CSwitch
 CText
 ctime
@@ -506,6 +514,7 @@ dealloc
 debian
 debolden
 debounce
+debugbreak
 DECALN
 DECANM
 DECAUPSS
@@ -529,6 +538,7 @@ DECOM
 deconstructed
 DECPCTERM
 DECRC
+DECREQTPARM
 DECRLM
 DECRQM
 DECRST
@@ -541,6 +551,7 @@ DECSCUSR
 DECSED
 DECSEL
 DECSET
+DECSLPP
 DECSLRM
 DECSMBV
 DECSMKR
@@ -593,6 +604,7 @@ df
 DFactory
 DFMT
 dh
+dhandler
 dialogbox
 diffing
 DINLINE
@@ -615,6 +627,8 @@ dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
+dmp
+dnceng
 DOCTYPE
 docx
 DONTCARE
@@ -637,6 +651,7 @@ DROPDOWNLIST
 DROPFILES
 drv
 dsm
+dst
 DSwap
 DTest
 dtor
@@ -680,6 +695,7 @@ Elems
 elif
 elseif
 emacs
+EMPTYBOX
 enabledelayedexpansion
 endian
 endif
@@ -703,6 +719,7 @@ errno
 errorlevel
 esa
 ETB
+etcoreapp
 ETW
 ETX
 EUDC
@@ -843,6 +860,7 @@ GETAUTOHIDEBAREX
 GETCARETWIDTH
 getch
 getchar
+GETCLIENTAREAANIMATION
 GETCOMMANDHISTORY
 GETCOMMANDHISTORYLENGTH
 GETCONSOLEINPUT
@@ -885,9 +903,11 @@ GETWHEELSCROLLCHARACTERS
 GETWHEELSCROLLCHARS
 GETWHEELSCROLLLINES
 getwriter
+GFEh
 Gfun
 gfx
 gh
+gitfilters
 github
 gitlab
 gle
@@ -944,6 +964,8 @@ hfile
 hfont
 hglobal
 hh
+hhh
+hhhh
 hhook
 hhx
 HIBYTE
@@ -981,6 +1003,7 @@ hpj
 hpp
 HPR
 HPROPSHEETPAGE
+HProvider
 HREDRAW
 hresult
 HRSRC
@@ -1058,6 +1081,8 @@ IInteract
 IInteractivity
 IIo
 IList
+imagemagick
+Imatch
 ime
 Imm
 IMouse
@@ -1074,7 +1099,6 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
-imagemagick
 inkscape
 inl
 INLINEPREFIX
@@ -1148,6 +1172,7 @@ iwch
 IWin
 IWindow
 IXaml
+IXMP
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1230,6 +1255,7 @@ linputfile
 Linq
 linux
 listbox
+listproperties
 listptr
 listptrsize
 lk
@@ -1250,6 +1276,7 @@ locstudio
 Loewen
 LOGFONT
 LOGFONTW
+logissue
 Loremipsumdolorsitamet
 lowercased
 loword
@@ -1374,6 +1401,7 @@ mimetype
 mincore
 mindbogglingly
 mingw
+minimizeall
 minkernel
 minwin
 minwindef
@@ -1522,8 +1550,8 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
-NOTOPMOST
 NOTNULL
+NOTOPMOST
 NOTRACK
 NOTSUPPORTED
 notypeopt
@@ -1535,6 +1563,7 @@ NOYIELD
 NOZORDER
 NPM
 npos
+nrcs
 NSTATUS
 ntapi
 ntcon
@@ -1612,8 +1641,8 @@ OSCBG
 OSCCT
 OSCFG
 OSCRCC
-OSCSCC
 OSCSCB
+OSCSCC
 OSCWT
 OSDEPENDSROOT
 osfhandle
@@ -1777,9 +1806,11 @@ prect
 prefast
 prefilled
 prefs
+preinstalled
 PRELOAD
 PREMULTIPLIED
 prepopulated
+presorted
 PREVENTPINNING
 PREVIEWLABEL
 PREVIEWWINDOW
@@ -1922,6 +1953,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
+Remoting
 renderengine
 rendersize
 reparent
@@ -1937,6 +1969,7 @@ resheader
 resizable
 resmimetype
 restrictedcapabilities
+restrictederrorinfo
 resw
 resx
 retval
@@ -1977,6 +2010,7 @@ roundtrip
 rparen
 RRF
 RRRGGGBB
+rsas
 rtcore
 RTEXT
 rtf
@@ -1993,6 +2027,7 @@ runformat
 runft
 RUNFULLSCREEN
 runsettings
+runtests
 runtimeclass
 runuia
 runut
@@ -2035,6 +2070,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
+Scs
 scursor
 sddl
 sdeleted
@@ -2140,6 +2176,7 @@ SND
 SOLIDBOX
 Solutiondir
 somefile
+SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
 SPACEBAR
@@ -2213,6 +2250,7 @@ subspan
 substr
 subsystemconsole
 subsystemwindows
+suiteless
 svg
 swapchain
 swapchainpanel
@@ -2264,6 +2302,7 @@ tcommandline
 tcommands
 tcon
 TDP
+TEAMPROJECT
 tearoff
 Teb
 techcommunity
@@ -2278,6 +2317,7 @@ TERMINALSCROLLING
 terminfo
 TEs
 testapp
+testbuildplatform
 testcon
 testd
 testdlls
@@ -2286,11 +2326,15 @@ testlab
 testlist
 testmd
 testmddefinition
+testmode
+testname
+testnameprefix
 TESTNULL
 testpass
 testpasses
 testtestabc
 testtesttesttesttest
+testtimeout
 TEXCOORD
 texel
 TExpected
@@ -2339,6 +2383,7 @@ Toolset
 tooltip
 TOPDOWNDIB
 TOPLEFT
+toplevel
 TOPRIGHT
 TOpt
 tosign
@@ -2447,6 +2492,7 @@ unpause
 Unregister
 Unregistering
 unte
+untests
 untextured
 untimes
 UPDATEDISPLAY
@@ -2544,6 +2590,7 @@ vstudio
 vswhere
 vtapp
 VTE
+VTID
 vtio
 vtmode
 vtpipeterm
@@ -2677,9 +2724,11 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wnwb
 workarea
 workaround
 workflow
+workitem
 wostream
 WOutside
 WOWARM
@@ -2723,6 +2772,7 @@ wtof
 wtoi
 wtw
 wtypes
+Wubi
 WUX
 WVerify
 wwaproj
@@ -2749,6 +2799,9 @@ XCount
 xdy
 xe
 XEncoding
+xes
+Xes
+XES
 xff
 XFile
 xlang
@@ -2758,6 +2811,8 @@ XMFLOAT
 xml
 xmlns
 xor
+xorg
+XOrg
 Xpath
 XPosition
 XResource
@@ -2768,6 +2823,7 @@ XSubstantial
 xtended
 xterm
 XTest
+xunit
 xutr
 xvalue
 XVIRTUALSCREEN

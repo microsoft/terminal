@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="init.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Pane.cpp">
+      <Filter>pane</Filter>
+    </ClCompile>
+    <ClCompile Include="Tab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
+    <ClCompile Include="Pane.LayoutSizeNode.cpp">
+      <Filter>pane</Filter>
+    </ClCompile>
+    <ClCompile Include="AppCommandlineArgs.cpp" />
+    <ClCompile Include="Commandline.cpp" />
+    <ClCompile Include="ColorHelper.cpp" />
+    <ClCompile Include="DebugTapConnection.cpp" />
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="TerminalSettings.cpp">
+      <Filter>settings</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="TerminalWarnings.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="App.base.h">
+      <Filter>app</Filter>
+    </ClInclude>
+    <ClInclude Include="Pane.h">
+      <Filter>pane</Filter>
+    </ClInclude>
+    <ClInclude Include="Tab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
+    <ClInclude Include="AppCommandlineArgs.h" />
+    <ClInclude Include="Commandline.h" />
+    <ClInclude Include="DebugTapConnection.h" />
+    <ClInclude Include="ColorHelper.h" />
+    <ClInclude Include="TerminalSettings.h">
+      <Filter>settings</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="AppLogic.idl">
+      <Filter>app</Filter>
+    </Midl>
+    <Midl Include="ActionArgs.idl">
+      <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="AppKeyBindings.idl">
+      <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="ShortcutActionDispatch.idl">
+      <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="Tab.idl">
+      <Filter>tab</Filter>
+    </Midl>
+    <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
+    <Midl Include="TerminalSettings.idl">
+      <Filter>settings</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="MinMaxCloseControl.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="TabRowControl.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="TerminalPage.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="TitlebarControl.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="ColorPickupFlyout.xaml">
+      <Filter>controls</Filter>
+    </Page>
+    <Page Include="CommandPalette.xaml">
+      <Filter>commandPalette</Filter>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="app">
+      <UniqueIdentifier>{21588d0a-fa81-4306-828d-c095af895b9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="settings">
+      <UniqueIdentifier>{27ff86d8-2a62-4787-b55a-2ec1db32abec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pane">
+      <UniqueIdentifier>{65477024-2ce1-4c53-8f30-5d68f3af3981}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="controls">
+      <UniqueIdentifier>{2455d67b-17ef-4cdd-ad9e-eb8ec4412e03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tab">
+      <UniqueIdentifier>{6d40e12f-b83f-462e-8f93-fa421f87b27e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="commandPalette">
+      <UniqueIdentifier>{2ad498e1-d8ea-4381-9464-a74c141bd7dd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Filter>app</Filter>
+    </ApplicationDefinition>
+  </ItemGroup>
+</Project>

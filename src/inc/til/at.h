@@ -39,6 +39,7 @@ namespace til
     {
 #pragma warning(suppress : 26482) // Suppress bounds.2 check for indexing with constant expressions
 #pragma warning(suppress : 26446) // Suppress bounds.4 check for subscript operator.
+#pragma warning(suppress : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
         return cont[i];
     }
 

@@ -378,7 +378,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
                                          { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
     if (match)
     {
-        const auto v = match.value();
+        const auto& v = match.value();
         if (!v.sequence.empty())
         {
             std::wstring modified{ v.sequence }; // Make a copy so we can modify it.
@@ -588,8 +588,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         }
     }
 
-    const auto senderFunc = [this](const std::wstring_view seq) noexcept
-    {
+    const auto senderFunc = [this](const std::wstring_view seq) noexcept {
         _SendInputSequence(seq);
     };
 

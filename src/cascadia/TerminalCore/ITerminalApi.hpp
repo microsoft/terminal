@@ -34,6 +34,7 @@ namespace Microsoft::Terminal::Core
         virtual bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
         virtual bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept = 0;
 
+        virtual bool WarningBell() noexcept = 0;
         virtual bool SetWindowTitle(std::wstring_view title) noexcept = 0;
 
         virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept = 0;
@@ -58,6 +59,9 @@ namespace Microsoft::Terminal::Core
         virtual bool IsVtInputEnabled() const = 0;
 
         virtual bool CopyToClipboard(std::wstring_view content) noexcept = 0;
+
+        virtual bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept = 0;
+        virtual bool EndHyperlink() noexcept = 0;
 
     protected:
         ITerminalApi() = default;

@@ -269,6 +269,24 @@ GdiEngine::~GdiEngine()
     _lineMetrics.underlineOffset = ascent - _lineMetrics.underlineOffset;
     _lineMetrics.strikethroughOffset = ascent - _lineMetrics.strikethroughOffset;
 
+    // For double underlines we need a second offset, just below the first,
+    // but with a bit of a gap (about double the grid line width).
+    _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset +
+                                    _lineMetrics.underlineWidth +
+                                    std::lround(fontSize * 0.05);
+
+    // However, we don't want the underline to extend past the bottom of the
+    // cell, so we clamp the offset to fit just inside.
+    const auto maxUnderlineOffset = Font.GetSize().Y - _lineMetrics.underlineWidth;
+    _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+    // But if the resulting gap isn't big enough even to register as a thicker
+    // line, it's better to place the second line slightly above the first.
+    if (_lineMetrics.underlineOffset2 < _lineMetrics.underlineOffset + _lineMetrics.gridlineWidth)
+    {
+        _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
+    }
+
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();
 

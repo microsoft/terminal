@@ -28,6 +28,7 @@ Revision History:
 #include "..\server\WaitQueue.h"
 
 #include "..\host\RenderData.hpp"
+#include "..\renderer\inc\BlinkingState.hpp"
 
 // clang-format off
 // Flags flags
@@ -125,6 +126,7 @@ public:
 
     COLORREF GetDefaultForeground() const noexcept;
     COLORREF GetDefaultBackground() const noexcept;
+    std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
     void SetTitlePrefix(const std::wstring& newTitlePrefix);
@@ -141,6 +143,7 @@ public:
     friend class SCREEN_INFORMATION;
     friend class CommonState;
     Microsoft::Console::CursorBlinker& GetCursorBlinker() noexcept;
+    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 
     CHAR_INFO AsCharInfo(const OutputCellView& cell) const noexcept;
 
@@ -157,6 +160,7 @@ private:
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;
+    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
 };
 
 #define ConsoleLocked() (ServiceLocator::LocateGlobals()->getConsoleInformation()->ConsoleLock.OwningThread == NtCurrentTeb()->ClientId.UniqueThread)

@@ -114,11 +114,11 @@
                 </StackPanel.Resources>
                 <Button Padding="5"
                     Click="ClearColorButton_Click"
-                    x:Name="ClearColorButton" x:Uid="TabColorClearButton" Content="Reset">
+                    x:Name="ClearColorButton" x:Uid="TabColorClearButton" CornerRadius="2" Content="Reset">
                 </Button>
                 <Button Padding="5"
                     Click="ShowColorPickerButton_Click"
-                    x:Name="CustomColorButton" x:Uid="TabColorCustomButton" Content="Custom...">
+                    x:Name="CustomColorButton" x:Uid="TabColorCustomButton" CornerRadius="2" Content="Custom...">
                 </Button>
             </StackPanel>
         </StackPanel>

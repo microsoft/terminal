@@ -35,6 +35,8 @@ constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 // The minimum delay between updating the TSF input control.
 constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 
+DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -70,6 +72,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _cursorTimer{},
+        _blinkTimer{},
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false },
@@ -79,6 +82,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         InitializeComponent();
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
+
+        auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
+        _terminal->SetWarningBellCallback(pfnWarningBell);
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -104,8 +110,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
-        auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
-        _terminal->SetWriteInputCallback(inputFn);
+        _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
+            _SendInputToConnection(wstr);
+        });
 
         _terminal->UpdateSettings(settings);
 
@@ -153,6 +160,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     scrollBar.Maximum(update.newMaximum);
                     scrollBar.Minimum(update.newMinimum);
                     scrollBar.ViewportSize(update.newViewportSize);
+                    scrollBar.LargeChange(std::max(update.newViewportSize - 1, 0.)); // scroll one "screenful" at a time when the scroll bar is clicked
 
                     control->_isInternalScrollBarUpdate = false;
                 }
@@ -296,6 +304,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
     }
+
+    // Method Description:
+    // - Writes the given sequence as input to the active terminal connection,
+    // Arguments:
+    // - wstr: the string of characters to write to the terminal connection.
+    // Return Value:
+    // - <none>
+    void TermControl::SendInput(const winrt::hstring& wstr)
+    {
+        _SendInputToConnection(wstr);
+    }
+
     void TermControl::ToggleRetroEffect()
     {
         auto lock = _terminal->LockForWriting();
@@ -684,6 +704,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBar().Minimum(0);
             ScrollBar().Value(0);
             ScrollBar().ViewportSize(bufferHeight);
+            ScrollBar().LargeChange(std::max<SHORT>(bufferHeight - 1, 0)); // scroll one "screenful" at a time when the scroll bar is clicked
 
             localPointerToThread->EnablePainting();
 
@@ -702,6 +723,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // The user has disabled cursor blinking
                 _cursorTimer = std::nullopt;
+            }
+
+            // Set up blinking attributes
+            BOOL animationsEnabled = TRUE;
+            SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+            if (animationsEnabled && blinkTime != INFINITE)
+            {
+                // Create a timer
+                DispatcherTimer blinkTimer;
+                blinkTimer.Interval(std::chrono::milliseconds(blinkTime));
+                blinkTimer.Tick({ get_weak(), &TermControl::_BlinkTimerTick });
+                blinkTimer.Start();
+                _blinkTimer.emplace(std::move(blinkTimer));
+            }
+            else
+            {
+                // The user has disabled blinking
+                _blinkTimer = std::nullopt;
             }
 
             // import value from WinUser (convert from milli-seconds to micro-seconds)
@@ -750,7 +789,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   normally. Namely, the keys we're concerned with are F7 down and Alt up.
     // Return value:
     // - Whether the key was handled.
-    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+    bool TermControl::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
     {
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
@@ -758,9 +797,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
             //   This is required as part of GH#6421.
-            // GH#6513 - make sure to set the scancode too, otherwise conpty
-            // will think this is a NUL
-            (void)_TrySendKeyEvent(VK_MENU, LOWORD(MapVirtualKeyW(VK_MENU, MAPVK_VK_TO_VSC)), modifiers, false);
+            (void)_TrySendKeyEvent(VK_MENU, scanCode, modifiers, false);
             handled = true;
         }
         else if (vkey == VK_F7 && down)
@@ -782,7 +819,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (!handled)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(VK_F7, 0, modifiers, true);
+                (void)_TrySendKeyEvent(VK_F7, scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
@@ -916,8 +953,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // flow through to the terminal.
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
+        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
@@ -1068,6 +1106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+            const auto ctrlEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
 
             if (_CanSendVTMouseInput())
             {
@@ -1108,7 +1147,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 // Update the selection appropriately
-                if (shiftEnabled && _terminal->IsSelectionActive())
+                if (ctrlEnabled && multiClickMapper == 1 &&
+                    !(_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
+                {
+                    _HyperlinkHandler(_terminal->GetHyperlinkAtPosition(terminalPosition));
+                }
+                else if (shiftEnabled && _terminal->IsSelectionActive())
                 {
                     // Shift+Click: only set expand on the "end" selection point
                     _terminal->SetSelectionEnd(terminalPosition, mode);
@@ -1141,7 +1185,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 else
                 {
-                    CopySelectionToClipboard(shiftEnabled);
+                    CopySelectionToClipboard(shiftEnabled, nullptr);
                 }
             }
         }
@@ -1233,6 +1277,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
+            const auto terminalPos = _GetTerminalPosition(point.Position());
+            if (terminalPos != _lastHoveredCell)
+            {
+                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
+                if (!uri.empty())
+                {
+                    // Update the tooltip with the URI
+                    HoveredUri().Text(uri);
+
+                    // Set the border thickness so it covers the entire cell
+                    const auto charSizeInPixels = CharacterDimensions();
+                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
+                    HyperlinkTooltipBorder().BorderThickness(newThickness);
+
+                    // Compute the location of the top left corner of the cell in DIPS
+                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+                    const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::size fontSize{ _actualFont.GetSize() };
+                    const til::point posInPixels{ startPos * fontSize };
+                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+
+                    // Move the border to the top left corner of the cell
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                }
+                _lastHoveredCell = terminalPos;
+
+                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
+                // If the hyperlink ID changed, trigger a redraw all (so this will happen both when we move
+                // onto a link and when we move off a link)
+                if (newId != _lastHoveredId)
+                {
+                    _renderEngine->UpdateHyperlinkHoveredId(newId);
+                    _renderer->TriggerRedrawAll();
+                    _lastHoveredId = newId;
+                }
+            }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch && _touchAnchor)
         {
@@ -1301,7 +1385,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Right clicks and middle clicks should not need to do anything when released.
             if (_settings.CopyOnSelect() && point.Properties().PointerUpdateKind() == Windows::UI::Input::PointerUpdateKind::LeftButtonReleased && _selectionNeedsToBeCopied)
             {
-                CopySelectionToClipboard();
+                CopySelectionToClipboard(false, nullptr);
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -1716,6 +1800,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer.value().Start();
         }
 
+        if (_blinkTimer.has_value())
+        {
+            _blinkTimer.value().Start();
+        }
+
         _UpdateSystemParameterSettings();
     }
 
@@ -1761,15 +1850,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer.value().Stop();
             _terminal->SetCursorOn(false);
         }
+
+        if (_blinkTimer.has_value())
+        {
+            _blinkTimer.value().Stop();
+        }
     }
 
     // Method Description:
-    // - Writes the given sequence as input to the active terminal connection,
+    // - Writes the given sequence as input to the active terminal connection.
+    // - This method has been overloaded to allow zero-copy winrt::param::hstring optimizations.
     // Arguments:
     // - wstr: the string of characters to write to the terminal connection.
     // Return Value:
     // - <none>
-    void TermControl::_SendInputToConnection(const std::wstring& wstr)
+    void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
+    {
+        _connection.WriteInput(wstr);
+    }
+
+    void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
         _connection.WriteInput(wstr);
     }
@@ -1969,6 +2069,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Toggle the blinking rendition state when called by the blink timer.
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    void TermControl::_BlinkTimerTick(Windows::Foundation::IInspectable const& /* sender */,
+                                      Windows::Foundation::IInspectable const& /* e */)
+    {
+        if (!_closing)
+        {
+            auto& renderTarget = *_renderer;
+            auto& blinkingState = _terminal->GetBlinkingState();
+            blinkingState.ToggleBlinkingRendition(renderTarget);
+        }
+    }
+
+    // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
     // - cursorPosition: in pixels, relative to the origin of the control
@@ -2060,6 +2176,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::_TerminalWarningBell()
+    {
+        _WarningBellHandlers(*this, nullptr);
+    }
+
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
     {
         _titleChangedHandlers(winrt::hstring{ wstr });
@@ -2071,9 +2192,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_CopyToClipboard(const std::wstring_view& wstr)
     {
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr),
-                                                                   winrt::hstring(L""),
-                                                                   winrt::hstring(L""));
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(wstr));
         _clipboardCopyHandlers(*this, *copyArgs);
     }
 
@@ -2137,7 +2256,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - singleLine: collapse all of the text to one line
-    bool TermControl::CopySelectionToClipboard(bool singleLine)
+    // - formats: which formats to copy (defined by action's CopyFormatting arg). nullptr
+    //             if we should defer which formats are copied to the global setting
+    bool TermControl::CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats)
     {
         if (_closing)
         {
@@ -2167,16 +2288,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
         // content, which is unexpected.
-        const auto htmlData = TextBuffer::GenHTML(bufferData,
-                                                  _actualFont.GetUnscaledSize().Y,
-                                                  _actualFont.GetFaceName(),
-                                                  _settings.DefaultBackground());
+        const auto htmlData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::HTML) ?
+                                  TextBuffer::GenHTML(bufferData,
+                                                      _actualFont.GetUnscaledSize().Y,
+                                                      _actualFont.GetFaceName(),
+                                                      _settings.DefaultBackground()) :
+                                  "";
 
         // convert to RTF format
-        const auto rtfData = TextBuffer::GenRTF(bufferData,
-                                                _actualFont.GetUnscaledSize().Y,
-                                                _actualFont.GetFaceName(),
-                                                _settings.DefaultBackground());
+        const auto rtfData = formats == nullptr || WI_IsFlagSet(formats.Value(), CopyFormat::RTF) ?
+                                 TextBuffer::GenRTF(bufferData,
+                                                    _actualFont.GetUnscaledSize().Y,
+                                                    _actualFont.GetFaceName(),
+                                                    _settings.DefaultBackground()) :
+                                 "";
 
         if (!_settings.CopyOnSelect())
         {
@@ -2187,7 +2312,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // send data up for clipboard
         auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData),
                                                                    winrt::to_hstring(htmlData),
-                                                                   winrt::to_hstring(rtfData));
+                                                                   winrt::to_hstring(rtfData),
+                                                                   formats);
         _clipboardCopyHandlers(*this, *copyArgs);
         return true;
     }
@@ -2813,6 +2939,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         e.DragUIOverride().IsGlyphVisible(false);
     }
 
+    // Method description:
+    // - Checks if the uri is valid and sends an event if so
+    // Arguments:
+    // - The uri
+    void TermControl::_HyperlinkHandler(const std::wstring_view uri)
+    {
+        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring{ uri });
+        _openHyperlinkHandlers(*this, *hyperlinkArgs);
+    }
+
     // Method Description:
     // - Produces the error dialog that notifies the user that rendering cannot proceed.
     winrt::fire_and_forget TermControl::_RendererEnteredErrorState()
@@ -2858,5 +2994,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
     // clang-format on
 }

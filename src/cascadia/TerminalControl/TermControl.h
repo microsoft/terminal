@@ -6,6 +6,7 @@
 #include "TermControl.g.h"
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
+#include "OpenHyperlinkEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -27,19 +28,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
     {
     public:
-        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf) :
+        CopyToClipboardEventArgs(hstring text) :
+            _text(text),
+            _html(),
+            _rtf(),
+            _formats(static_cast<CopyFormat>(0)) {}
+
+        CopyToClipboardEventArgs(hstring text, hstring html, hstring rtf, Windows::Foundation::IReference<CopyFormat> formats) :
             _text(text),
             _html(html),
-            _rtf(rtf) {}
+            _rtf(rtf),
+            _formats(formats) {}
 
         hstring Text() { return _text; };
         hstring Html() { return _html; };
         hstring Rtf() { return _rtf; };
+        Windows::Foundation::IReference<CopyFormat> Formats() { return _formats; };
 
     private:
         hstring _text;
         hstring _html;
         hstring _rtf;
+        Windows::Foundation::IReference<CopyFormat> _formats;
     };
 
     struct PasteFromClipboardEventArgs :
@@ -58,6 +68,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::function<void(std::wstring)> m_clipboardDataHandler;
     };
 
+    struct OpenHyperlinkEventArgs :
+        public OpenHyperlinkEventArgsT<OpenHyperlinkEventArgs>
+    {
+    public:
+        OpenHyperlinkEventArgs(hstring uri) :
+            _uri(uri) {}
+
+        hstring Uri() { return _uri; };
+
+    private:
+        hstring _uri;
+    };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -67,7 +90,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         hstring GetProfileName() const;
 
-        bool CopySelectionToClipboard(bool collapseText = false);
+        bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();
         Windows::Foundation::Size CharacterDimensions() const;
@@ -81,6 +104,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
 
+        void SendInput(const winrt::hstring& input);
         void ToggleRetroEffect();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
@@ -90,7 +114,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
-        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
@@ -123,7 +147,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
 
+        TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
@@ -176,10 +202,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<wchar_t> _leadingSurrogate;
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+
+        // Track the last cell we hovered over (used in pointerMovedHandler)
+        COORD _lastHoveredCell;
+        // Track the last hyperlink ID we hovered over
+        uint16_t _lastHoveredId;
 
         using Timestamp = uint64_t;
 
@@ -218,15 +250,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
+        void _HyperlinkHandler(const std::wstring_view uri);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
-        void _SendInputToConnection(const std::wstring& wstr);
+        void _SendInputToConnection(const winrt::hstring& wstr);
+        void _SendInputToConnection(std::wstring_view wstr);
         void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResizeUnderLock(const double newWidth, const double newHeight);
         void _RefreshSizeUnderLock();
+        void _TerminalWarningBell();
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalTabColorChanged(const std::optional<til::color> color);
         void _CopyToClipboard(const std::wstring_view& wstr);

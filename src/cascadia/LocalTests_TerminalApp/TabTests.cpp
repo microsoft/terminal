@@ -9,11 +9,11 @@
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/Tab.h"
 #include "../CppWinrtTailored.h"
-#include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -26,7 +26,7 @@ namespace TerminalAppLocalTests
     // an updated TAEF that will let us install framework packages when the test
     // package is deployed. Until then, these tests won't deploy in CI.
 
-    class TabTests : public JsonTestClass
+    class TabTests
     {
         // For this set of tests, we need to activate some XAML content. For
         // release builds, the application runs as a centennial application,
@@ -51,7 +51,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryCreateSettingsType);
         TEST_METHOD(TryCreateConnectionType);
         TEST_METHOD(TryCreateXamlObjects);
-        TEST_METHOD(TryCreateTab);
+
+        TEST_METHOD(TryInitializePage);
 
         TEST_METHOD(CreateSimpleTerminalXamlType);
         TEST_METHOD(CreateTerminalMuxXamlType);
@@ -63,13 +64,17 @@ namespace TerminalAppLocalTests
 
         TEST_CLASS_SETUP(ClassSetup)
         {
-            InitializeJsonReader();
+            return true;
+        }
+
+        TEST_METHOD_CLEANUP(MethodCleanup)
+        {
             return true;
         }
 
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                     std::shared_ptr<CascadiaSettings> initialSettings);
+                                     CascadiaSettings initialSettings);
     };
 
     void TabTests::EnsureTestsActivate()
@@ -120,35 +125,6 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(swapChainPanel, L"Try making a SwapChainPanel");
             winrt::Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollBar;
             VERIFY_IS_NOT_NULL(scrollBar, L"Try making a ScrollBar");
-        });
-
-        VERIFY_SUCCEEDED(result);
-    }
-
-    void TabTests::TryCreateTab()
-    {
-        // If you leave the Tab ptr owned by the RunOnUIThread lambda, it
-        // will crash when the test tears down. Not totally clear why, but make
-        // sure it's owned outside the lambda
-        winrt::com_ptr<winrt::TerminalApp::implementation::Tab> newTab{ nullptr };
-
-        auto result = RunOnUIThread([&newTab]() {
-            // Try creating all of:
-            // 1. one of our pure c++ types (Profile)
-            // 2. one of our c++winrt types (TerminalSettings, EchoConnection)
-            // 3. one of our types that uses MUX/Xaml (TermControl).
-            // 4. one of our types that uses MUX/Xaml in this dll (Tab).
-            // Just creating all of them is enough to know that everything is working.
-            const auto profileGuid{ Utils::CreateGuid() };
-            TerminalSettings settings{};
-            VERIFY_IS_NOT_NULL(settings);
-            winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
-            VERIFY_IS_NOT_NULL(conn);
-            winrt::Microsoft::Terminal::TerminalControl::TermControl term{ settings, conn };
-            VERIFY_IS_NOT_NULL(term);
-
-            newTab = winrt::make_self<winrt::TerminalApp::implementation::Tab>(profileGuid, term);
-            VERIFY_IS_NOT_NULL(newTab);
         });
 
         VERIFY_SUCCEEDED(result);
@@ -213,7 +189,7 @@ namespace TerminalAppLocalTests
     // Return Value:
     // - <none>
     void TabTests::_initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
-                                           std::shared_ptr<CascadiaSettings> initialSettings)
+                                           CascadiaSettings initialSettings)
     {
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
@@ -276,229 +252,248 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
+    void TabTests::TryInitializePage()
+    {
+        // This is a very simple test to prove we can create settings and a
+        // TerminalPage and not only create them successfully, but also create a
+        // tab using those settings successfully.
+
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        VERIFY_IS_NOT_NULL(settings0);
+
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
+
+        auto result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
     void TabTests::TryDuplicateBadTab()
     {
-        Log::Comment(L"This test regressed recently - it is temporarily disabled while GH#5169 is investigated");
-        Log::Result(WEX::Logging::TestResults::Skipped);
-        return;
+        // * Create a tab with a profile with GUID 1
+        // * Reload the settings so that GUID 1 is no longer in the list of profiles
+        // * Try calling _DuplicateTabViewItem on tab 1
+        // * No new tab should be created (and more importantly, the app should not crash)
+        //
+        // Created to test GH#2455
 
-        // // * Create a tab with a profile with GUID 1
-        // // * Reload the settings so that GUID 1 is no longer in the list of profiles
-        // // * Try calling _DuplicateTabViewItem on tab 1
-        // // * No new tab should be created (and more importantly, the app should not crash)
-        // //
-        // // Created to test GH#2455
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
 
-        // const std::string settingsJson0{ R"(
-        // {
-        //     "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-        //     "profiles": [
-        //         {
-        //             "name" : "profile0",
-        //             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-        //             "historySize": 1
-        //         },
-        //         {
-        //             "name" : "profile1",
-        //             "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-        //             "historySize": 2
-        //         }
-        //     ]
-        // })" };
+        const std::string settingsJson1{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
 
-        // const std::string settingsJson1{ R"(
-        // {
-        //     "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-        //     "profiles": [
-        //         {
-        //             "name" : "profile1",
-        //             "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-        //             "historySize": 2
-        //         }
-        //     ]
-        // })" };
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        VERIFY_IS_NOT_NULL(settings0);
 
-        // VerifyParseSucceeded(settingsJson0);
-        // auto settings0 = std::make_shared<CascadiaSettings>(false);
-        // VERIFY_IS_NOT_NULL(settings0);
-        // settings0->_ParseJsonString(settingsJson0, false);
-        // settings0->LayerJson(settings0->_userSettings);
-        // settings0->_ValidateSettings();
+        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
+        VERIFY_IS_NOT_NULL(settings1);
 
-        // VerifyParseSucceeded(settingsJson1);
-        // auto settings1 = std::make_shared<CascadiaSettings>(false);
-        // VERIFY_IS_NOT_NULL(settings1);
-        // settings1->_ParseJsonString(settingsJson1, false);
-        // settings1->LayerJson(settings1->_userSettings);
-        // settings1->_ValidateSettings();
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
 
-        // const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        // const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        // const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
 
-        // // This is super wacky, but we can't just initialize the
-        // // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
-        // // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
-        // // during TerminalPage::Create() below.
-        // //
-        // // Instead, create the winrt object, then get a com_ptr to the
-        // // implementation _from_ the winrt object. This seems to work, even if
-        // // it's weird.
-        // winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
-        // _initializeTerminalPage(page, settings0);
+        auto result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
 
-        // auto result = RunOnUIThread([&page]() {
-        //     VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-        // });
-        // VERIFY_SUCCEEDED(result);
+        Log::Comment(L"Duplicate the first tab");
+        result = RunOnUIThread([&page]() {
+            page->_DuplicateTabViewItem();
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
 
-        // Log::Comment(L"Duplicate the first tab");
-        // result = RunOnUIThread([&page]() {
-        //     page->_DuplicateTabViewItem();
-        //     VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
-        // });
-        // VERIFY_SUCCEEDED(result);
+        Log::Comment(NoThrowString().Format(
+            L"Change the settings of the TerminalPage so the first profile is "
+            L"no longer in the list of profiles"));
+        result = RunOnUIThread([&page, settings1]() {
+            page->_settings = settings1;
+        });
+        VERIFY_SUCCEEDED(result);
 
-        // Log::Comment(NoThrowString().Format(
-        //     L"Change the settings of the TerminalPage so the first profile is "
-        //     L"no longer in the list of profiles"));
-        // result = RunOnUIThread([&page, settings1]() {
-        //     page->_settings = settings1;
-        // });
-        // VERIFY_SUCCEEDED(result);
-
-        // Log::Comment(L"Duplicate the tab, and don't crash");
-        // result = RunOnUIThread([&page]() {
-        //     page->_DuplicateTabViewItem();
-        //     VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
-        // });
-        // VERIFY_SUCCEEDED(result);
+        Log::Comment(L"Duplicate the tab, and don't crash");
+        result = RunOnUIThread([&page]() {
+            page->_DuplicateTabViewItem();
+            VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
+        });
+        VERIFY_SUCCEEDED(result);
     }
 
     void TabTests::TryDuplicateBadPane()
     {
-        Log::Comment(L"This test regressed recently - it is temporarily disabled while GH#5169 is investigated");
-        Log::Result(WEX::Logging::TestResults::Skipped);
-        return;
+        // * Create a tab with a profile with GUID 1
+        // * Reload the settings so that GUID 1 is no longer in the list of profiles
+        // * Try calling _SplitPane(Duplicate) on tab 1
+        // * No new pane should be created (and more importantly, the app should not crash)
+        //
+        // Created to test GH#2455
 
-        // // * Create a tab with a profile with GUID 1
-        // // * Reload the settings so that GUID 1 is no longer in the list of profiles
-        // // * Try calling _SplitPane(Duplicate) on tab 1
-        // // * No new pane should be created (and more importantly, the app should not crash)
-        // //
-        // // Created to test GH#2455
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
 
-        // const std::string settingsJson0{ R"(
-        // {
-        //     "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-        //     "profiles": [
-        //         {
-        //             "name" : "profile0",
-        //             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-        //             "historySize": 1
-        //         },
-        //         {
-        //             "name" : "profile1",
-        //             "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-        //             "historySize": 2
-        //         }
-        //     ]
-        // })" };
+        const std::string settingsJson1{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
 
-        // const std::string settingsJson1{ R"(
-        // {
-        //     "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-        //     "profiles": [
-        //         {
-        //             "name" : "profile1",
-        //             "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-        //             "historySize": 2
-        //         }
-        //     ]
-        // })" };
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        VERIFY_IS_NOT_NULL(settings0);
 
-        // VerifyParseSucceeded(settingsJson0);
-        // auto settings0 = std::make_shared<CascadiaSettings>(false);
-        // VERIFY_IS_NOT_NULL(settings0);
-        // settings0->_ParseJsonString(settingsJson0, false);
-        // settings0->LayerJson(settings0->_userSettings);
-        // settings0->_ValidateSettings();
+        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
+        VERIFY_IS_NOT_NULL(settings1);
 
-        // VerifyParseSucceeded(settingsJson1);
-        // auto settings1 = std::make_shared<CascadiaSettings>(false);
-        // VERIFY_IS_NOT_NULL(settings1);
-        // settings1->_ParseJsonString(settingsJson1, false);
-        // settings1->LayerJson(settings1->_userSettings);
-        // settings1->_ValidateSettings();
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
 
-        // const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        // const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        // const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
 
-        // // This is super wacky, but we can't just initialize the
-        // // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
-        // // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
-        // // during TerminalPage::Create() below.
-        // //
-        // // Instead, create the winrt object, then get a com_ptr to the
-        // // implementation _from_ the winrt object. This seems to work, even if
-        // // it's weird.
-        // winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
-        // _initializeTerminalPage(page, settings0);
+        auto result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
 
-        // auto result = RunOnUIThread([&page]() {
-        //     VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-        // });
-        // VERIFY_SUCCEEDED(result);
+        result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(1, tab->GetLeafPaneCount());
+        });
+        VERIFY_SUCCEEDED(result);
 
-        // result = RunOnUIThread([&page]() {
-        //     VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-        //     auto tab = page->_GetStrongTabImpl(0);
-        //     VERIFY_ARE_EQUAL(1, tab->_GetLeafPaneCount());
-        // });
-        // VERIFY_SUCCEEDED(result);
+        Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
+        result = RunOnUIThread([&page]() {
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
-        // Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
-        // result = RunOnUIThread([&page]() {
-        //     page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, tab->GetLeafPaneCount());
+        });
+        VERIFY_SUCCEEDED(result);
 
-        //     VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-        //     auto tab = page->_GetStrongTabImpl(0);
-        //     VERIFY_ARE_EQUAL(2, tab->_GetLeafPaneCount());
-        // });
-        // VERIFY_SUCCEEDED(result);
+        Log::Comment(NoThrowString().Format(
+            L"Change the settings of the TerminalPage so the first profile is "
+            L"no longer in the list of profiles"));
+        result = RunOnUIThread([&page, settings1]() {
+            page->_settings = settings1;
+        });
+        VERIFY_SUCCEEDED(result);
 
-        // Log::Comment(NoThrowString().Format(
-        //     L"Change the settings of the TerminalPage so the first profile is "
-        //     L"no longer in the list of profiles"));
-        // result = RunOnUIThread([&page, settings1]() {
-        //     page->_settings = settings1;
-        // });
-        // VERIFY_SUCCEEDED(result);
+        Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
+        result = RunOnUIThread([&page]() {
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
 
-        // Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
-        // result = RunOnUIThread([&page]() {
-        //     page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2,
+                             tab->GetLeafPaneCount(),
+                             L"We should gracefully do nothing here - the profile no longer exists.");
+        });
+        VERIFY_SUCCEEDED(result);
 
-        //     VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
-        //     auto tab = page->_GetStrongTabImpl(0);
-        //     VERIFY_ARE_EQUAL(2,
-        //                      tab->_GetLeafPaneCount(),
-        //                      L"We should gracefully do nothing here - the profile no longer exists.");
-        // });
-        // VERIFY_SUCCEEDED(result);
-
-        // auto cleanup = wil::scope_exit([] {
-        //     auto result = RunOnUIThread([]() {
-        //         // There's something causing us to crash north of
-        //         // TSFInputControl::NotifyEnter, or LayoutRequested. It's very
-        //         // unclear what that issue is. Since these tests don't run in
-        //         // CI, simply log a message so that the dev running these tests
-        //         // knows it's expected.
-        //         Log::Comment(L"This test often crashes on cleanup, even when it succeeds. If it succeeded, then crashes, that's okay.");
-        //     });
-        //     VERIFY_SUCCEEDED(result);
-        // });
+        auto cleanup = wil::scope_exit([] {
+            auto result = RunOnUIThread([]() {
+                // There's something causing us to crash north of
+                // TSFInputControl::NotifyEnter, or LayoutRequested. It's very
+                // unclear what that issue is. Since these tests don't run in
+                // CI, simply log a message so that the dev running these tests
+                // knows it's expected.
+                Log::Comment(L"This test often crashes on cleanup, even when it succeeds. If it succeeded, then crashes, that's okay.");
+            });
+            VERIFY_SUCCEEDED(result);
+        });
     }
 
 }

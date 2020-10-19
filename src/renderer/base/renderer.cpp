@@ -870,6 +870,16 @@ IRenderEngine::GridLines Renderer::s_GetGridlines(const TextAttribute& textAttri
     {
         lines |= IRenderEngine::GridLines::Underline;
     }
+
+    if (textAttribute.IsDoublyUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::DoubleUnderline;
+    }
+
+    if (textAttribute.IsHyperlink())
+    {
+        lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+    }
     return lines;
 }
 

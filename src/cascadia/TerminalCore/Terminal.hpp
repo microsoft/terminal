@@ -6,7 +6,7 @@
 #include <conattrs.hpp>
 
 #include "../../buffer/out/textBuffer.hpp"
-#include "../../renderer/inc/IRenderData.hpp"
+#include "../../renderer/inc/BlinkingState.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
 
@@ -90,6 +90,7 @@ public:
     bool EraseCharacters(const size_t numChars) noexcept override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool WarningBell() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
@@ -111,6 +112,9 @@ public:
     bool IsVtInputEnabled() const noexcept override;
 
     bool CopyToClipboard(std::wstring_view content) noexcept override;
+
+    bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
+    bool EndHyperlink() noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -125,6 +129,9 @@ public:
 
     void TrySnapOnInput() override;
     bool IsTrackingMouseInput() const noexcept;
+
+    std::wstring GetHyperlinkAtPosition(const COORD position);
+    uint16_t GetHyperlinkIdAtPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -152,6 +159,8 @@ public:
     bool IsScreenReversed() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
+    const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
+    const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -167,6 +176,7 @@ public:
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
+    void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
@@ -178,6 +188,8 @@ public:
     bool IsCursorBlinkingAllowed() const noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
+
+    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -197,6 +209,7 @@ public:
 
 private:
     std::function<void(std::wstring&)> _pfnWriteInput;
+    std::function<void()> _pfnWarningBell;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
@@ -214,7 +227,9 @@ private:
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
     COLORREF _defaultBg;
+    CursorType _defaultCursorShape;
     bool _screenReversed;
+    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
 
     bool _snapOnInput;
     bool _altGrAliasing;

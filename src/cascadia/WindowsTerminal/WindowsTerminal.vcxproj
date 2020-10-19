@@ -18,6 +18,7 @@
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
+    <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -74,8 +75,9 @@
          so that the AppX Manifest contains their activatable classes. -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
 
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
   </ItemGroup>

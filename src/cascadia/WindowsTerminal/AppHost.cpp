@@ -6,14 +6,16 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
-
 #include "resource.h"
+
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
@@ -68,11 +70,11 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnDirectKeyEvent(vkey, down);
+        return _logic.OnDirectKeyEvent(vkey, scanCode, down);
     }
     return false;
 }
@@ -235,14 +237,14 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
-    winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
-    proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
-    proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
+    auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    proposedRect.left = static_cast<long>(initialPos.X);
+    proposedRect.top = static_cast<long>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;

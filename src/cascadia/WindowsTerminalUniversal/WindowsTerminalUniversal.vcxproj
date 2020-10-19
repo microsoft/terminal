@@ -145,7 +145,8 @@
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="..\TerminalApp\TerminalApp.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
+    <ProjectReference Include="..\TerminalApp\dll\TerminalApp.vcxproj">
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
     </ProjectReference>
   </ItemGroup>
