@@ -448,7 +448,7 @@ One could imagine that single instance mode is the combination of two properties
 * The user wants new invocation of `wt` to "glom" onto the most recently used
   window (the hypothetical `"glomToLastWindow": true` setting)
 * The user wants to prevent tab tear-out, or the ability for a `newWindow`
-  action to work. (hypothetically `"allowTabTearout": false`)
+  action to work. (hypothetically `"allowTabTearOut": false`)
 
 #### Scenario: Run `wt` in the current window
 
@@ -469,7 +469,7 @@ Since each window process will have it's own unique ID assigned to it by the
 monarch, then running a command in a given window with ID `N` should be as easy
 as something like:
 
-```
+```sh
 wt.exe --session N new-tab ; split-pane
 ```
 
@@ -540,11 +540,11 @@ registration of the global keybinding. This process would be some sort of
 long-running service that's started on boot. When it detects the global hotkey,
 it could attempt to instantiate a `Monarch` object.
 
-  * If it can't make one, then it can simply run a new instance of `wt.exe`,
-    because there's not yet a running Terminal window.
-  * Otherwise, it can communicate to the monarch that the global hotkey was
-    pressed, and the monarch will take care of delegating the activation to the
-    appropriate peasant window.
+* If it can't make one, then it can simply run a new instance of `wt.exe`,
+  because there's not yet a running Terminal window.
+* Otherwise, it can communicate to the monarch that the global hotkey was
+  pressed, and the monarch will take care of delegating the activation to the
+  appropriate peasant window.
 
 This would mitigate the need to have at least one copy of WT running already,
 and the user could press that keybinding at any time to start the terminal.
@@ -618,45 +618,48 @@ following mechanism:
 1. When `wt` is started as the target of a "defterm" invocation, the system will
    somehow pass us a `HANDLE` (or pair of `HANDLE`s) to indicate that we're
    being started to be the terminal for that commandline client.
-  - The details of the connection information aren't really important at this time.
+    - The details of the connection information aren't really important at this
+      time.
 
 Then we have two paths forward:
 
-2a. The `wt` that's spawned in this way should become the _content process_ for
-this connection, because it has the direct connection to the client that's
-attempting to start.
+#### Option A
 
-3a. This new content process will need a window. Depending on the configuration of the
-Terminal, the following could happen:
-  - the content process could discover that there's no existing Monarch process,
-    and that a new monarch should be created, with a reference to this content
-    process (as a first tab)
-  - The content process connects to the monarch, who then creates a new window
-    process who attaches to the content process. (A new window is created.)
-  - The content process connects to the monarch, who then tells an existing
-    window process to attaches to the content process. (The client opens as a
-    new tab either in the single instance or the most recent window, if glomming
-    is enabled.)
+2. The `wt` that's spawned in this way should become the _content process_ for
+   this connection, because it has the direct connection to the client that's
+   attempting to start.
+
+3. This new content process will need a window. Depending on the configuration
+   of the Terminal, the following could happen:
+    - the content process could discover that there's no existing Monarch process,
+      and that a new monarch should be created, with a reference to this content
+      process (as a first tab)
+    - The content process connects to the monarch, who then creates a new window
+      process who attaches to the content process. (A new window is created.)
+    - The content process connects to the monarch, who then tells an existing
+      window process to attaches to the content process. (The client opens as a
+      new tab either in the single instance or the most recent window, if glomming
+      is enabled.)
 
 **OR**
 
-2b. The `wt` that's spawned by the defterm connection is a new window process.
-It should create a new content process to handle this connection.
-  - the content process will need a way of being invoked by passing it handles
-    to the new client. This way, the content process can dupe these handles into
-    it's own process space, to be able to create the `ITerminalConnection` in
-    its own process space.
+2. The `wt` that's spawned by the defterm connection is a new window process.
+  It should create a new content process to handle this connection.
+    - the content process will need a way of being invoked by passing it handles
+      to the new client. This way, the content process can dupe these handles into
+      it's own process space, to be able to create the `ITerminalConnection` in
+      its own process space.
 
-3b. If this new window process is the monarch, then great! There are no other
+3. If this new window process is the monarch, then great! There are no other
 windows to glom onto, so create the tab in this window process.
 
-4b. It'll ask the monarch if it's in single instance mode, or if the monarch is
-configured to glom tabs onto the most recent window, instead of spawning new
-ones. If it is configured in such a way, the new peasant window process will
-pass the content process's GUID to the Peasant\* that _should_ be the window for
-that new client
-  - \*: note that this peasant could just be the monarch (in single instance
-    mode, for example).
+4. It'll ask the monarch if it's in single instance mode, or if the monarch is
+  configured to glom tabs onto the most recent window, instead of spawning new
+  ones. If it is configured in such a way, the new peasant window process will
+  pass the content process's GUID to the Peasant\* that _should_ be the window for
+  that new client
+    - \*: note that this peasant could just be the monarch (in single instance
+      mode, for example).
 
 <hr>
 
@@ -814,7 +817,7 @@ initial setup of the monarch/peasant relationship.
 ## Potential Issues
 
 
-#### Extensions & non-terminal content.
+### Extensions & non-terminal content
 
 We've now created a _very_ terminal-specific IPC mechanism for transferring
 _terminal_ state from one thread to another. However, what happens when we start
@@ -823,7 +826,7 @@ that's most often associated with the concept of extensions in the Terminal, but
 perhaps more relevantly could affect the Settings UI.
 
 The Settings UI is something we intend on shipping in the Terminal as a part of
-2.0, in the same timeframe much of the above work is expected to be done. We
+2.0, in the same time frame much of the above work is expected to be done. We
 also plan on hopefully making the Settings UI appear as its own tab within the
 Terminal. This would be the first example of having non-terminal content
 directly in the application. How would we support tearing out the Settings UI
@@ -840,7 +843,7 @@ Alternatively, we could pass some well-defined string / JSON blob from the
 source process to the target process, such that the extension could use that
 JSON to recreate whatever state the pane was last in. The extension would be
 able to control this content entirely.
-  - Maybe they want to pass a GUID that the new process will be able to user to
+- Maybe they want to pass a GUID that the new process will be able to user to
     `CreateInstance` the singleton for their UI and then dupe their swap chain
     to the new thread...
 
@@ -918,11 +921,11 @@ also need to consider how the content types should be identified and
 instantiated, but that's a questions that's deferred to a future "extensions"
 spec.
 
-#### Mixed elevation & Monarch / Peasant issues
+### Mixed elevation & Monarch / Peasant issues
 
 [TODO]: # TODO =================================================================
 
-#### Duplicating HANDLEs from content process to elevated window process
+### Duplicating HANDLEs from content process to elevated window process
 
 We can't just have the content process dupe the handle to the window process. If
 the content process is unelevated, and the window process is elevated (in a
@@ -934,17 +937,26 @@ duplicate handle. Fortunately, the `DuplicateHandle` function does allow a
 caller to duplicate from another process into your own process.
 
 
-#### Elevation and Extensions
+### Elevation and Extensions
 
 [TODO]: # TODO =================================================================
 
-showerthought (to make sure I don't forget): extensions should be disabled by default in elevated windows. The user can chose to enable them in elevated windows if they want. That setting needs to be hidden in a file that only admins can write to.
+Shower thought (to make sure I don't forget): extensions should be disabled by
+default in elevated windows. The user can chose to enable them in elevated
+windows if they want. That setting needs to be hidden in a file that only admins
+can write to.
 
-I suppose some extensions might be fine to run in unelevated content processes, but would probably be impossible to entirely prevent them from triggering code in the parent process.
+I suppose some extensions might be fine to run in unelevated content processes,
+but would probably be impossible to entirely prevent them from triggering code
+in the parent process.
 
-~~Like an extension running in the content process could try to trigger the "enable broadcast input" mode and then have its keystrokes sent to the elevated content procs~~ Actually, maybe not. The content process doesn't actually handle any keybindings, does it? That's all in the window process, so that's not terribly a concern.
+~~Like an extension running in the content process could try to trigger the
+"enable broadcast input" mode and then have its keystrokes sent to the elevated
+content procs~~ Actually, maybe not. The content process doesn't actually handle
+any keybindings, does it? That's all in the window process, so that's not
+terribly a concern.
 
-#### What happens to the content if the monarch dies unexpectedly?
+### What happens to the content if the monarch dies unexpectedly?
 
 What happens if you only have one window process, the monarch, and it
 throws an exception for whatever reason? Will the content processes also attempt
@@ -1030,18 +1042,18 @@ of each other.
 
 10. (Dependent on 9?) The core layer needs to be able to construct connections
     itself, rather than have one passed in to it.
-   - In the future we'll probably want this to be more extensible, but for now
+- In the future we'll probably want this to be more extensible, but for now
      we can probably just pass an enum for connection type, and an
      `IConnectionSettings` object to the core, and use the `ConnectionType` and
      setting to build the limited types of connection we currently have.
 
 11. (Dependent on 9, 10) `wt.exe` needs to be able to spawn as a content
     process, accepting a GUID for its ID, and spawning a single control core.
-   - When the content process is first spawned, it won't create the core or
+- When the content process is first spawned, it won't create the core or
      connection, nor will it have any settings. The first client to connect to
      the content process should make sure to set up the settings before
      initializing the control.
-   - A scratch XAML Island application might be a useful tool at this point, to
+- A scratch XAML Island application might be a useful tool at this point, to
      test hosting the content in another process (that's not a full-blown
      terminal instance).
 
@@ -1051,27 +1063,27 @@ of each other.
 
 13. (Dependent on 12) Terminal can drop tabs onto another WT window process by
     communicating the structure of the tab's panes and their content GUIDs.
-   - At this point, the tabs can't be torn out to create new windows, only move
+- At this point, the tabs can't be torn out to create new windows, only move
      between existing windows
-   - It might be hard to have the tab "attach" to the tab row of the other window.
-   - It might be easiest to do this after 1, and communicate to the new window
+- It might be hard to have the tab "attach" to the tab row of the other window.
+- It might be easiest to do this after 1, and communicate to the new window
      process the GUID of the old window process and the tab within the original
      window process, and just have the new window process ask the old window
      process what the structure of the tab is
-     - Though, the tab won't be in the original process's list of tabs anymore,
+  - Though, the tab won't be in the original process's list of tabs anymore,
        so that might not be helpful.
 
 14. `wt` accepts an initial position, size on the commandline.
 
 15. (Dependent on 13, 14) Tearing out a tab and dropping it _not_ on another WT
     window creates a new window for the tab.
-   - This will require and additional argument to `wt` for it to be able to
+- This will require and additional argument to `wt` for it to be able to
      inherit the structure of a given set of tabs. Either this will need to be
      passed on the cmdline, or the newly spawned process will need to be able to
      communicate with the original process to ask it what structure it should be
      building.
-   - Doing this after 1 might be helpful.
-   - Needs 14 to be able to specify the location of the new window.
+- Doing this after 1 might be helpful.
+- Needs 14 to be able to specify the location of the new window.
 
 <hr>
 
