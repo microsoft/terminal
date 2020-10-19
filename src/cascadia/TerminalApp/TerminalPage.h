@@ -5,8 +5,6 @@
 
 #include "TerminalPage.g.h"
 #include "Tab.h"
-#include "CascadiaSettings.h"
-#include "Profile.h"
 #include "AppKeyBindings.h"
 #include "TerminalSettings.h"
 
@@ -35,7 +33,7 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        winrt::fire_and_forget SetSettings(TerminalApp::CascadiaSettings settings, bool needRefreshUI);
+        winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
 
@@ -59,8 +57,8 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
-        void SetStartupActions(std::vector<winrt::TerminalApp::ActionAndArgs>& actions);
-        static std::vector<winrt::TerminalApp::ActionAndArgs> ConvertExecuteCommandlineToActions(const TerminalApp::ExecuteCommandlineArgs& args);
+        void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
 
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
@@ -88,7 +86,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
-        TerminalApp::CascadiaSettings _settings{ nullptr };
+        Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
@@ -112,8 +110,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
         StartupState _startupState{ StartupState::NotInitialized };
 
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> _startupActions;
-        winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::ActionAndArgs> actions, const bool initial);
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
+        winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
         void _ShowCloseWarningDialog();
@@ -122,7 +120,7 @@ namespace winrt::TerminalApp::implementation
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
-        void _OpenNewTab(const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs);
+        void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
         void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
@@ -132,7 +130,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
-        void _HookupKeyBindings(const TerminalApp::KeyMapping& keymap) noexcept;
+        void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
         void _UpdateTitle(const Tab& tab);
@@ -140,9 +138,9 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::TerminalApp::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::Command> commandsToExpand,
-                                                                                                                          Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles,
-                                                                                                                          Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::TerminalApp::ColorScheme> schemes);
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
+                                                                                                                                            Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,
+                                                                                                                                            Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::ColorScheme> schemes);
 
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
@@ -152,7 +150,7 @@ namespace winrt::TerminalApp::implementation
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const uint32_t tabIndex);
-        void _MoveFocus(const Direction& direction);
+        void _MoveFocus(const Microsoft::Terminal::Settings::Model::Direction& direction);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
@@ -167,8 +165,8 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(int delta);
-        void _SplitPane(const winrt::TerminalApp::SplitState splitType, const winrt::TerminalApp::SplitType splitMode = winrt::TerminalApp::SplitType::Manual, const winrt::TerminalApp::NewTerminalArgs& newTerminalArgs = nullptr);
-        void _ResizePane(const Direction& direction);
+        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
+        void _ResizePane(const Microsoft::Terminal::Settings::Model::Direction& direction);
         void _ScrollPage(int delta);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& keyChord);
 
@@ -182,7 +180,7 @@ namespace winrt::TerminalApp::implementation
 
         void _PasteText();
 
-        fire_and_forget _LaunchSettings(const winrt::TerminalApp::SettingsTarget target);
+        fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
@@ -209,43 +207,43 @@ namespace winrt::TerminalApp::implementation
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
-        void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleDuplicateTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleCloseTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleClosePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleScrollUp(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleScrollDown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleNextTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandlePrevTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSendInput(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSplitPane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleTogglePaneZoom(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleScrollUpPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleScrollDownPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleOpenSettings(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandlePasteText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSwitchToTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
-        void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleFind(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleResetFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleRetroEffect(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleFocusMode(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleFullscreen(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleAlwaysOnTop(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSetColorScheme(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleSetTabColor(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleOpenTabColorPicker(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleRenameTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleExecuteCommandline(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleToggleCommandPalette(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleCloseOtherTabs(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleCloseTabsAfter(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleOpenTabSearch(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenNewTabDropdown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleDuplicateTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleCloseTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleClosePane(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleScrollUp(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleScrollDown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleNextTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandlePrevTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleSendInput(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleSplitPane(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleTogglePaneZoom(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleScrollUpPage(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleScrollDownPage(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleOpenSettings(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandlePasteText(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleNewTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleSwitchToTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleResizePane(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleMoveFocus(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleCopyText(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleCloseWindow(const IInspectable&, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleAdjustFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleFind(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleResetFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleRetroEffect(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleFocusMode(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleFullscreen(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleAlwaysOnTop(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleSetColorScheme(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleSetTabColor(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleOpenTabColorPicker(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleRenameTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleExecuteCommandline(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleCommandPalette(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleCloseOtherTabs(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleCloseTabsAfter(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

@@ -83,6 +83,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
+        auto pfnWarningBell = std::bind(&TermControl::_TerminalWarningBell, this);
+        _terminal->SetWarningBellCallback(pfnWarningBell);
+
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
@@ -950,8 +953,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // flow through to the terminal.
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
+        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
@@ -2170,6 +2174,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
+    }
+
+    void TermControl::_TerminalWarningBell()
+    {
+        _WarningBellHandlers(*this, nullptr);
     }
 
     void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)

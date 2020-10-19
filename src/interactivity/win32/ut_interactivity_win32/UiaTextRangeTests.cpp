@@ -7,6 +7,7 @@
 #include "CommonState.hpp"
 
 #include "uiaTextRange.hpp"
+#include "../types/ScreenInfoUiaProviderBase.h"
 #include "../../../buffer/out/textBuffer.hpp"
 
 using namespace WEX::Common;
@@ -24,46 +25,65 @@ using namespace Microsoft::Console::Interactivity::Win32;
 // it not doing anything for its implementation because it is not used
 // during the unit tests below.
 
-class DummyElementProvider final : public IRawElementProviderSimple
+class DummyElementProvider final : public ScreenInfoUiaProviderBase
 {
 public:
-    // IUnknown methods
-    IFACEMETHODIMP_(ULONG)
-    AddRef()
-    {
-        return 1;
-    }
-
-    IFACEMETHODIMP_(ULONG)
-    Release()
-    {
-        return 1;
-    }
-    IFACEMETHODIMP QueryInterface(_In_ REFIID /*riid*/,
-                                  _COM_Outptr_result_maybenull_ void** /*ppInterface*/)
-    {
-        return E_NOTIMPL;
-    };
-
-    // IRawElementProviderSimple methods
-    IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* /*pOptions*/)
+    IFACEMETHODIMP Navigate(_In_ NavigateDirection /*direction*/,
+                            _COM_Outptr_result_maybenull_ IRawElementProviderFragment** /*ppProvider*/) override
     {
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID /*iid*/,
-                                      _COM_Outptr_result_maybenull_ IUnknown** /*ppInterface*/)
+    IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* /*pRect*/) override
     {
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID /*idProp*/,
-                                    _Out_ VARIANT* /*pVariant*/)
+    IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** /*ppProvider*/) override
     {
         return E_NOTIMPL;
     }
 
-    IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** /*ppProvider*/)
+    void ChangeViewport(const SMALL_RECT /*NewWindow*/)
+    {
+        return;
+    }
+
+    HRESULT GetSelectionRange(_In_ IRawElementProviderSimple* /*pProvider*/, const std::wstring_view /*wordDelimiters*/, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // degenerate range
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/, const std::wstring_view /*wordDelimiters*/, _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // degenerate range at cursor position
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
+                            const Cursor& /*cursor*/,
+                            const std::wstring_view /*wordDelimiters*/,
+                            _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // specific endpoint range
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
+                            const COORD /*start*/,
+                            const COORD /*end*/,
+                            const std::wstring_view /*wordDelimiters*/,
+                            _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
+    {
+        return E_NOTIMPL;
+    }
+
+    // range from a UiaPoint
+    HRESULT CreateTextRange(_In_ IRawElementProviderSimple* const /*pProvider*/,
+                            const UiaPoint /*point*/,
+                            const std::wstring_view /*wordDelimiters*/,
+                            _COM_Outptr_result_maybenull_ Microsoft::Console::Types::UiaTextRangeBase** /*ppUtr*/) override
     {
         return E_NOTIMPL;
     }
@@ -104,6 +124,12 @@ class UiaTextRangeTests
         int moveAmt;
         TextPatternRangeEndpoint endpoint;
         ExpectedResult expected;
+    };
+
+    struct ScrollTest
+    {
+        std::wstring comment;
+        short yPos;
     };
 
     static constexpr wchar_t* toString(TextUnit unit) noexcept
@@ -1136,58 +1162,188 @@ class UiaTextRangeTests
         // the UTR should refuse to move past the end.
 
         const auto bufferSize{ _pTextBuffer->GetSize() };
-        const til::point endInclusive = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
-        const auto endExclusive{ bufferSize.EndExclusive() };
+        const COORD origin{ bufferSize.Origin() };
+        const COORD lastLineStart{ bufferSize.Left(), bufferSize.BottomInclusive() };
+        const COORD secondToLastCharacterPos{ bufferSize.RightInclusive() - 1, bufferSize.BottomInclusive() };
+        const COORD endInclusive{ bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        const COORD endExclusive{ bufferSize.EndExclusive() };
 
-        // Iterate over each TextUnit. If the we don't support
+        // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
         // to the last one that was defined anyways.
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:textUnit", L"{0, 1, 2, 3, 4, 5, 6}")
+            TEST_METHOD_PROPERTY(L"Data:degenerate", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES();
+
+        int unit;
+        bool degenerate;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"textUnit", unit), L"Get TextUnit variant");
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"degenerate", degenerate), L"Get degenerate variant");
+        TextUnit textUnit{ static_cast<TextUnit>(unit) };
+
         Microsoft::WRL::ComPtr<UiaTextRange> utr;
         int moveAmt;
-        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        Log::Comment(NoThrowString().Format(L"Forward by %s", toString(textUnit)));
+
+        // Create an UTR at EndExclusive
+        if (degenerate)
         {
-            Log::Comment(NoThrowString().Format(L"Forward by %s", toString(static_cast<TextUnit>(unit))));
-
-            // Create a degenerate UTR at EndExclusive
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endExclusive, endExclusive));
+        }
+        else
+        {
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
-            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), 1, &moveAmt));
+        }
+        THROW_IF_FAILED(utr->Move(textUnit, 1, &moveAmt));
 
+        VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        VERIFY_ARE_EQUAL(0, moveAmt);
+
+        // write "temp" at (2,2)
+        const COORD writeTarget{ 2, 2 };
+        _pTextBuffer->Write({ L"temp" }, writeTarget);
+
+        // Verify expansion works properly
+        Log::Comment(NoThrowString().Format(L"Expand by %s", toString(textUnit)));
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(textUnit));
+        if (textUnit <= TextUnit::TextUnit_Character)
+        {
+            VERIFY_ARE_EQUAL(endInclusive, utr->_start);
             VERIFY_ARE_EQUAL(endExclusive, utr->_end);
-            VERIFY_ARE_EQUAL(0, moveAmt);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Word)
+        {
+            VERIFY_ARE_EQUAL(writeTarget, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Line)
+        {
+            VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+        else // textUnit <= TextUnit::TextUnit_Document:
+        {
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        }
+
+        // reset the UTR
+        if (degenerate)
+        {
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endExclusive, endExclusive));
+        }
+        else
+        {
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
         }
 
         // Verify that moving backwards still works properly
-        const COORD writeTarget{ 2, 2 };
-        _pTextBuffer->Write({ L"temp" }, writeTarget);
-        for (int unit = TextUnit::TextUnit_Character; unit != TextUnit::TextUnit_Document; ++unit)
+        Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(textUnit)));
+        THROW_IF_FAILED(utr->Move(textUnit, -1, &moveAmt));
+        VERIFY_ARE_EQUAL(-1, moveAmt);
+
+        // NOTE: If the range is degenerate, _start == _end before AND after the move.
+        if (textUnit <= TextUnit::TextUnit_Character)
         {
-            COORD expectedEnd;
-            switch (static_cast<TextUnit>(unit))
-            {
-            case TextUnit::TextUnit_Character:
-                expectedEnd = endInclusive;
-                break;
-            case TextUnit::TextUnit_Word:
-                expectedEnd = writeTarget;
-                break;
-            case TextUnit::TextUnit_Line:
-                expectedEnd = endExclusive;
-                break;
-            case TextUnit::TextUnit_Document:
-                expectedEnd = bufferSize.Origin();
-                break;
-            default:
-                continue;
-            }
+            // Special case: _end will always be endInclusive, because...
+            // -  degenerate --> it moves with _start to stay degenerate
+            // - !degenerate --> it excludes the last char, to select the second to last char
+            VERIFY_ARE_EQUAL(degenerate ? endInclusive : secondToLastCharacterPos, utr->_start);
+            VERIFY_ARE_EQUAL(endInclusive, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Word)
+        {
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(degenerate ? origin : writeTarget, utr->_end);
+        }
+        else if (textUnit <= TextUnit::TextUnit_Line)
+        {
+            VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
+            VERIFY_ARE_EQUAL(degenerate ? lastLineStart : endExclusive, utr->_end);
+        }
+        else // textUnit <= TextUnit::TextUnit_Document:
+        {
+            VERIFY_ARE_EQUAL(origin, utr->_start);
+            VERIFY_ARE_EQUAL(degenerate ? origin : endExclusive, utr->_end);
+        }
+    }
 
-            Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(static_cast<TextUnit>(unit))));
+    TEST_METHOD(MoveToPreviousWord)
+    {
+        // See GH#7742 for more details.
 
-            // Create a degenerate UTR at EndExclusive
-            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
-            THROW_IF_FAILED(utr->Move(static_cast<TextUnit>(unit), -1, &moveAmt));
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const COORD origin{ bufferSize.Origin() };
+        const COORD originExclusive{ origin.X, origin.Y + 1 };
 
-            VERIFY_ARE_EQUAL(expectedEnd, utr->_end);
-            VERIFY_ARE_EQUAL(-1, moveAmt);
+        _pTextBuffer->Write({ L"My name is Carlos" }, origin);
+
+        // Create degenerate UTR at origin
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, origin, origin));
+
+        // move forward by a word
+        int moveAmt;
+        THROW_IF_FAILED(utr->Move(TextUnit::TextUnit_Word, 1, &moveAmt));
+        VERIFY_ARE_EQUAL(1, moveAmt);
+        VERIFY_IS_TRUE(utr->IsDegenerate());
+
+        // Expand by word
+        BSTR text;
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Word));
+        THROW_IF_FAILED(utr->GetText(-1, &text));
+        VERIFY_ARE_EQUAL(L"name ", std::wstring_view{ text });
+
+        // Collapse utr (move end to start)
+        const COORD expectedStart{ 3, 0 };
+        THROW_IF_FAILED(utr->MoveEndpointByRange(TextPatternRangeEndpoint::TextPatternRangeEndpoint_End, utr.Get(), TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start));
+        VERIFY_ARE_EQUAL(expectedStart, utr->_start);
+        VERIFY_IS_TRUE(utr->IsDegenerate());
+
+        // Move back by a word
+        THROW_IF_FAILED(utr->Move(TextUnit::TextUnit_Word, -1, &moveAmt));
+        VERIFY_ARE_EQUAL(-1, moveAmt);
+
+        // Expand by character
+        THROW_IF_FAILED(utr->ExpandToEnclosingUnit(TextUnit::TextUnit_Character));
+        THROW_IF_FAILED(utr->GetText(-1, &text));
+        VERIFY_ARE_EQUAL(L"M", std::wstring_view{ text });
+    }
+
+    TEST_METHOD(ScrollIntoView)
+    {
+        const auto bufferSize{ _pTextBuffer->GetSize() };
+        const auto viewportSize{ _pUiaData->GetViewport() };
+
+        const std::vector<ScrollTest> testData{
+            { L"Origin", bufferSize.Top() },
+            { L"ViewportHeight From Top - 1", bufferSize.Top() + viewportSize.Height() - 1 },
+            { L"ViewportHeight From Top", bufferSize.Top() + viewportSize.Height() },
+            { L"ViewportHeight From Top + 1", bufferSize.Top() + viewportSize.Height() + 1 },
+            { L"ViewportHeight From Bottom - 1", bufferSize.BottomInclusive() - viewportSize.Height() - 1 },
+            { L"ViewportHeight From Bottom", bufferSize.BottomInclusive() - viewportSize.Height() },
+            { L"ViewportHeight From Bottom + 1", bufferSize.BottomInclusive() - viewportSize.Height() + 1 },
+
+            // GH#7839: ExclusiveEnd is a non-existent space,
+            // so scrolling to it when !alignToTop used to crash
+            { L"Exclusive End", bufferSize.BottomExclusive() }
+        };
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"Data:alignToTop", L"{false, true}")
+        END_TEST_METHOD_PROPERTIES();
+
+        bool alignToTop;
+        VERIFY_SUCCEEDED(TestData::TryGetValue(L"alignToTop", alignToTop), L"Get alignToTop variant");
+
+        Microsoft::WRL::ComPtr<UiaTextRange> utr;
+        for (const auto test : testData)
+        {
+            Log::Comment(test.comment.c_str());
+            const til::point pos{ bufferSize.Left(), test.yPos };
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, pos, pos));
+            VERIFY_SUCCEEDED(utr->ScrollIntoView(alignToTop));
         }
     }
 };

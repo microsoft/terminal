@@ -90,6 +90,7 @@ public:
     bool EraseCharacters(const size_t numChars) noexcept override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
+    bool WarningBell() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
@@ -175,6 +176,7 @@ public:
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
+    void SetWarningBellCallback(std::function<void()> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept;
     void SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
@@ -207,6 +209,7 @@ public:
 
 private:
     std::function<void(std::wstring&)> _pfnWriteInput;
+    std::function<void()> _pfnWarningBell;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const std::wstring_view&)> _pfnCopyToClipboard;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;

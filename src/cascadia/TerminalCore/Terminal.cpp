@@ -9,6 +9,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
@@ -963,6 +964,11 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
 void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
+}
+
+void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
+{
+    _pfnWarningBell.swap(pfn);
 }
 
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept

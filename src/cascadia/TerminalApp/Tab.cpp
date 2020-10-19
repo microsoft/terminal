@@ -8,13 +8,12 @@
 #include "Tab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "ActionAndArgs.h"
-#include "ActionArgs.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -230,11 +229,11 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
-            IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(_lastIconPath));
-            _tabViewItem.IconSource(GetColoredIcon<winrt::MUX::Controls::IconSource>(_lastIconPath));
+            IconSource(IconPathConverter::IconSourceWUX(_lastIconPath));
+            _tabViewItem.IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
 
             // Update SwitchToTab command's icon
-            SwitchToTabCommand().IconSource(IconSource());
+            SwitchToTabCommand().Icon(_lastIconPath);
         }
     }
 
@@ -304,7 +303,7 @@ namespace winrt::TerminalApp::implementation
     // - splitType: The type of split we want to create.
     // Return Value:
     // - True if the focused pane can be split. False otherwise.
-    bool Tab::CanSplitPane(winrt::TerminalApp::SplitState splitType)
+    bool Tab::CanSplitPane(SplitState splitType)
     {
         return _activePane->CanSplit(splitType);
     }
@@ -318,7 +317,7 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void Tab::SplitPane(winrt::TerminalApp::SplitState splitType, const GUID& profile, TermControl& control)
+    void Tab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
         auto [first, second] = _activePane->Split(splitType, profile, control);
         _activePane = first;
@@ -364,7 +363,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+    void Tab::ResizePane(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -378,7 +377,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+    void Tab::NavigateFocus(const Direction& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -629,8 +628,59 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
+        newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         _tabViewItem.ContextFlyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // - Creates a sub-menu containing menu items to close multiple tabs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the created MenuFlyoutSubItem
+    Controls::MenuFlyoutSubItem Tab::_CreateCloseSubMenu()
+    {
+        auto weakThis{ get_weak() };
+
+        // Close tabs after
+        _closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseTabsAfter();
+            }
+        });
+        _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
+
+        // Close other tabs
+        _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseOtherTabs();
+            }
+        });
+        _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
+
+        Controls::MenuFlyoutSubItem closeSubMenu;
+        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+
+        return closeSubMenu;
+    }
+
+    // Method Description:
+    // - Enable the Close menu items based on tab index and total number of tabs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_EnableCloseMenuItems()
+    {
+        // close other tabs is enabled only if there are other tabs
+        _closeOtherTabsMenuItem.IsEnabled(TabViewNumTabs() > 1);
+        // close tabs after is enabled only if there are other tabs on the right
+        _closeTabsAfterMenuItem.IsEnabled(TabViewIndex() < TabViewNumTabs() - 1);
     }
 
     // Method Description:
@@ -1078,25 +1128,44 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void Tab::_MakeSwitchToTabCommand()
     {
-        auto focusTabAction = winrt::make_self<implementation::ActionAndArgs>();
-        auto args = winrt::make_self<implementation::SwitchToTabArgs>();
-        args->TabIndex(_TabViewIndex);
+        SwitchToTabArgs args{ _TabViewIndex };
+        ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
 
-        focusTabAction->Action(ShortcutAction::SwitchToTab);
-        focusTabAction->Args(*args);
-
-        winrt::TerminalApp::Command command;
-        command.Action(*focusTabAction);
+        Command command;
+        command.Action(focusTabAction);
         command.Name(Title());
-        command.IconSource(IconSource());
+        command.Icon(_lastIconPath);
 
         SwitchToTabCommand(command);
     }
 
-    void Tab::UpdateTabViewIndex(const uint32_t idx)
+    void Tab::_CloseTabsAfter()
+    {
+        CloseTabsAfterArgs args{ _TabViewIndex };
+        ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
+
+        _dispatch.DoAction(closeTabsAfter);
+    }
+
+    void Tab::_CloseOtherTabs()
+    {
+        CloseOtherTabsArgs args{ _TabViewIndex };
+        ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
+
+        _dispatch.DoAction(closeOtherTabs);
+    }
+
+    void Tab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
     {
         TabViewIndex(idx);
-        SwitchToTabCommand().Action().Args().as<implementation::SwitchToTabArgs>()->TabIndex(idx);
+        TabViewNumTabs(numTabs);
+        _EnableCloseMenuItems();
+        SwitchToTabCommand().Action().Args().as<SwitchToTabArgs>().TabIndex(idx);
+    }
+
+    void Tab::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    {
+        _dispatch = dispatch;
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
