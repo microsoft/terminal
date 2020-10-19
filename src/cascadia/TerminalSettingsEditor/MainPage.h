@@ -3,8 +3,8 @@
 
 #pragma once
 
+#include "Utils.h"
 #include "MainPage.g.h"
-#include "ObjectModel/AppSettings.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "MainPage.h"
 #include "ColorSchemes.h"
+#include "ColorTableEntry.g.cpp"
 #include "ColorSchemes.g.cpp"
 
 using namespace winrt;

@@ -12,7 +12,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         Rendering();
         winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
-    }
+    };
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {

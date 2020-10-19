@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "ColorTableEntry.g.h"
 #include "ColorSchemes.g.h"
 #include "Utils.h"
 

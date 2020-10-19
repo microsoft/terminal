@@ -161,7 +161,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </Button>
                         </StackPanel>
                     </StackPanel>
-                    <TextBox x:Uid="Profile_BackgroundImage" x:Name="BackgroundImage" Margin="0,0,0,20" FontSize="15" Grid.Column="1" Grid.Row="0" Text="{x:Bind Profile.BackgroundImage, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
+                    <TextBox x:Uid="Profile_BackgroundImage" x:Name="BackgroundImage" Margin="0,0,0,20" FontSize="15" Grid.Column="1" Grid.Row="0" Text="{x:Bind Profile.BackgroundImagePath, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                     <Button x:Uid="Profile_BackgroundImageBrowse" Click="BackgroundImage_Click" Margin="5,0,0,0" Grid.Column="2" Grid.Row="0"/>
                     <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,100,0">
                         <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
