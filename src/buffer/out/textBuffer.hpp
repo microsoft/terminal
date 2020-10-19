@@ -182,7 +182,7 @@ public:
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
-    const size_t AddPatternRecognizer(const std::string_view regexString);
+    const size_t AddPatternRecognizer(const std::wstring_view regexString);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
 
 private:
@@ -232,7 +232,7 @@ private:
 
     void _PruneHyperlinks();
 
-    std::unordered_map<size_t, std::string> _IdsAndPatterns;
+    std::unordered_map<size_t, std::wstring> _IdsAndPatterns;
     size_t _currentPatternId;
 
 #ifdef UNIT_TESTING

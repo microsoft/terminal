@@ -82,7 +82,8 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
     // Add regex pattern recognizers to the buffer
     // For now, we only add the URI regex pattern
-    _hyperlinkPatternId = _buffer->AddPatternRecognizer(R"([a-z]+[:.].*?(?=\s))");
+    std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+    _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
 }
 
 // Method Description:

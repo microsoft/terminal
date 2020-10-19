@@ -2369,7 +2369,7 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 // - The regex pattern
 // Return value:
 // - An ID that the caller should associate with the given pattern
-const size_t TextBuffer::AddPatternRecognizer(const std::string_view regexString)
+const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexString)
 {
     ++_currentPatternId;
     _IdsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
@@ -2402,7 +2402,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     // for each pattern we know of, iterate through the string
     for (const auto& idAndPattern : _IdsAndPatterns)
     {
-        std::wregex regexObj{ til::u8u16(idAndPattern.second) };
+        std::wregex regexObj{ idAndPattern.second };
 
         // search through the run with our regex object
         auto words_begin = std::wsregex_iterator(concatAll.begin(), concatAll.end(), regexObj);
