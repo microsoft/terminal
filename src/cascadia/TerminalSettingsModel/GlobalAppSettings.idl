@@ -26,7 +26,8 @@ namespace Microsoft.Terminal.Settings.Model
         MaximizedFocusMode,
     };
 
-    [default_interface] runtimeclass GlobalAppSettings {
+    [default_interface] runtimeclass GlobalAppSettings : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
         Guid DefaultProfile;
         String UnparsedDefaultProfile();
 

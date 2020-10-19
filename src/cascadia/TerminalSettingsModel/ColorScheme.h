@@ -46,11 +46,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_array<Windows::UI::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
 
-        GETSET_PROPERTY(winrt::hstring, Name);
-        GETSET_COLORPROPERTY(Foreground); // defined in constructor
-        GETSET_COLORPROPERTY(Background); // defined in constructor
-        GETSET_COLORPROPERTY(SelectionBackground); // defined in constructor
-        GETSET_COLORPROPERTY(CursorColor); // defined in constructor
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_COLORPROPERTY(Foreground, _PropertyChangedHandlers); // defined in constructor
+        OBSERVABLE_GETSET_COLORPROPERTY(Background, _PropertyChangedHandlers); // defined in constructor
+        OBSERVABLE_GETSET_COLORPROPERTY(SelectionBackground, _PropertyChangedHandlers); // defined in constructor
+        OBSERVABLE_GETSET_COLORPROPERTY(CursorColor, _PropertyChangedHandlers); // defined in constructor
 
     private:
         std::array<til::color, COLOR_TABLE_SIZE> _table;
