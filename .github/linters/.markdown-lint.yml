@@ -34,7 +34,7 @@ MD026:
 MD029: false                  # Ordered list item prefix
 MD033: false                  # Allow inline HTML
 MD036: false                  # Emphasis used instead of a heading
-MO040: false                  # Allow ``` blocks in md files with no language specified
+MD040: false                  # Allow ``` blocks in md files with no language specified
 
 #################
 # Rules by tags #
