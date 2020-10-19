@@ -8,24 +8,19 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles::Profiles()
     {
-        m_profileModel = winrt::make<Model::implementation::ProfileModel>();
         InitializeComponent();
     }
 
-    Profiles::Profiles(Model::ProfileModel profile) :
-        m_profileModel{ profile }
+    Profiles::Profiles(Settings::Model::Profile profile)
     {
         InitializeComponent();
-    }
-
-    Model::ProfileModel Profiles::ProfileModel()
-    {
-        return m_profileModel;
+        Profile(profile);
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
@@ -69,10 +64,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     fire_and_forget Profiles::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
-
         FolderPicker picker;
         picker.SuggestedStartLocation(PickerLocationId::DocumentsLibrary);
-
         StorageFolder folder = co_await picker.PickSingleFolderAsync();
         if (folder != nullptr)
         {

@@ -4,20 +4,15 @@
 #pragma once
 
 #include "Rendering.g.h"
-#include "ObjectModel/GlobalSettingsModel.h"
+#include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Rendering : RenderingT<Rendering>
     {
         Rendering();
-
-        Model::GlobalSettingsModel GlobalSettingsModel();
-
-    private:
-        Model::GlobalSettingsModel m_globalSettingsModel{ nullptr };
-    };
-}
+        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+    }
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {

@@ -119,6 +119,22 @@ public:                                                                         
 private:                                                                            \
     til::color _##name{ __VA_ARGS__ };
 
+// Use this macro to quick implement both the getter and setter for an observable
+// color property. This should only be used for color types where there's no logic 
+// in the getter/setter beyond just accessing/updating the value.
+// This takes advantage of til::color
+#define OBSERVABLE_GETSET_COLORPROPERTY(name, event, ...)                           \
+public:                                                                             \
+    winrt::Windows::UI::Color name() const noexcept { return _##name; }             \
+    void name(const winrt::Windows::UI::Color& value) noexcept                      \
+    {                                                                               \
+        _##name = value;                                                            \
+        event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name });  \
+    }                                                                               \
+                                                                                    \
+private:                                                                            \
+    til::color _##name{ __VA_ARGS__ };
+
 // Use this macro to quickly implement both the getter and setter for an
 // observable property. This is similar to the GETSET_PROPERTY macro above,
 // except this will also raise a PropertyChanged event with the name of the
