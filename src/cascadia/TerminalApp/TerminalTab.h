@@ -98,7 +98,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
 
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
