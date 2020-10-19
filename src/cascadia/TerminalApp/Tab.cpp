@@ -36,6 +36,7 @@ namespace winrt::TerminalApp::implementation
 
         _MakeTabViewItem();
         _MakeSwitchToTabCommand();
+        _CreateContextMenu();
     }
 
     // Method Description:
@@ -107,8 +108,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called after construction of a Tab object to bind event handlers to its
-    //   associated Pane and TermControl object and to create the context menu of
-    //   the tab item
+    //   associated Pane and TermControl object
     // Arguments:
     // - control: reference to the TermControl object to bind event to
     // Return Value:
@@ -116,7 +116,6 @@ namespace winrt::TerminalApp::implementation
     void Tab::Initialize(const TermControl& control)
     {
         _BindEventHandlers(control);
-        _CreateContextMenu();
     }
 
     // Method Description:
