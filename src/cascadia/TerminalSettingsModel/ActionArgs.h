@@ -370,6 +370,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _TerminalArgs{ terminalArgs } {};
+        SplitPaneArgs(SplitType splitMode) :
+            _SplitMode{ splitMode } {};
         GETSET_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
         GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
         GETSET_PROPERTY(SplitType, SplitMode, SplitType::Manual);

@@ -1264,7 +1264,7 @@ namespace winrt::TerminalApp::implementation
             _tabContent.Children().Clear();
             activeTab->ExitZoom();
             // Re-attach the tab's content to the UI tree.
-            _tabContent.Children().Append(activeTab->GetRootElement());
+            _tabContent.Children().Append(activeTab->Content());
         }
     }
 
@@ -1955,7 +1955,7 @@ namespace winrt::TerminalApp::implementation
                 auto tab{ _GetStrongTabImpl(index) };
 
                 _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab->GetRootElement());
+                _tabContent.Children().Append(tab->Content());
 
                 // GH#7409: If the tab switcher is open, then we _don't_ want to
                 // automatically focus the new tab here. The tab switcher wants

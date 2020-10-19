@@ -62,6 +62,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryDuplicateBadTab);
         TEST_METHOD(TryDuplicateBadPane);
 
+        TEST_METHOD(TryZoomPane);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -496,4 +498,67 @@ namespace TerminalAppLocalTests
         });
     }
 
+    void TabTests::TryZoomPane()
+    {
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        VERIFY_IS_NOT_NULL(settings0);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
+
+        auto result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        // Log::Comment(L"Duplicate the first tab");
+        // result = RunOnUIThread([&page]() {
+        //     page->_DuplicateTabViewItem();
+        //     VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+        // });
+        // VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Create a second pane");
+        result = RunOnUIThread([&page]() {
+            SplitPaneArgs args{ SplitType::Duplicate };
+            ActionEventArgs eventArgs{ args };
+            // eventArgs.Args(args);
+            page->_HandleSplitPane(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Zoom in on the pane");
+        result = RunOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_TRUE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+    }
 }

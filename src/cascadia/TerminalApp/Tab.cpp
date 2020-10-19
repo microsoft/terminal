@@ -33,6 +33,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         _activePane = _rootPane;
+        Content(_rootPane->GetRootElement());
 
         _MakeTabViewItem();
         _MakeSwitchToTabCommand();
@@ -1107,6 +1108,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
+        Content(_zoomedPane->GetRootElement());
     }
     void Tab::ExitZoom()
     {
@@ -1114,6 +1116,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _UpdateTabHeader();
+        Content(_rootPane->GetRootElement());
     }
 
     bool Tab::IsZoomed()
