@@ -8,6 +8,7 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

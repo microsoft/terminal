@@ -1,9 +1,0 @@
-import "ObjectModel/GlobalSettings.idl";
-
-namespace Microsoft.Terminal.Settings.Editor.Model
-{
-    runtimeclass GlobalSettingsModel
-    {
-        GlobalSettings GlobalSettings { get; };
-    }
-}

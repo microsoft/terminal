@@ -30,15 +30,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <RadioButton x:Uid="Globals_ThemeDark" x:Name="DarkTheme"/>
                 <RadioButton x:Uid="Globals_ThemeLight" x:Name="LightTheme"/>
             </Controls:RadioButtons>
-            <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <!--TODO: Setting doesn't exist?-->
+            <!--<CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />-->
+            <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             <Controls:RadioButtons x:Uid="Globals_TabWidthMode" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                 <RadioButton x:Uid="Globals_TabWidthModeEqual" x:Name="EqualTabWidthMode"/>
                 <RadioButton x:Uid="Globals_TabWidthModeTitleLength" x:Name="TitleLengthTabWidthMode"/>
                 <RadioButton x:Uid="Globals_TabWidthModeCompact" x:Name="CompactTabWidthMode"/>
             </Controls:RadioButtons>
-            <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
         </StackPanel>
     </Grid>
 </Page>

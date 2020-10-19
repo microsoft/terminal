@@ -9,7 +9,6 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

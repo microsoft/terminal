@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Rendering.h"
 #include "Rendering.g.cpp"
-#include <ObjectModel\GlobalSettings.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
