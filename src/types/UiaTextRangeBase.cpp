@@ -784,7 +784,7 @@ try
         }
         else
         {
-            // we can align to the top so we'll just move the viewport
+            // we can't align to the top so we'll just move the viewport
             // to the bottom of the screen buffer
             newViewport.Bottom = bottomRow;
             newViewport.Top = bottomRow - viewportHeight + 1;
@@ -796,9 +796,13 @@ try
         // check if we can align to the bottom
         if (static_cast<unsigned int>(endScreenInfoRow) >= viewportHeight)
         {
+            // GH#7839: endScreenInfoRow may be ExclusiveEnd
+            //          ExclusiveEnd is past the bottomRow
+            //          so we need to clamp to the bottom row to stay in bounds
+
             // we can align to bottom
-            newViewport.Bottom = endScreenInfoRow;
-            newViewport.Top = endScreenInfoRow - viewportHeight + 1;
+            newViewport.Bottom = std::min(endScreenInfoRow, bottomRow);
+            newViewport.Top = base::ClampedNumeric<short>(newViewport.Bottom) - viewportHeight + 1;
         }
         else
         {
@@ -815,7 +819,8 @@ try
 
     Unlock.reset();
 
-    _ChangeViewport(newViewport);
+    const gsl::not_null<ScreenInfoUiaProviderBase*> provider = static_cast<ScreenInfoUiaProviderBase*>(_pProvider);
+    provider->ChangeViewport(newViewport);
 
     UiaTracing::TextRange::ScrollIntoView(alignToTop, *this);
     return S_OK;

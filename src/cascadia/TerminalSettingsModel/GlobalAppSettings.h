@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         GlobalAppSettings();
+        com_ptr<GlobalAppSettings> Copy() const;
 
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> ColorSchemes() noexcept;
         void AddColorScheme(const Model::ColorScheme& scheme);
@@ -76,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
         GETSET_PROPERTY(bool, UseTabSwitcher, true);
+        GETSET_PROPERTY(bool, DisableAnimations, false);
 
     private:
         hstring _unparsedDefaultProfile;

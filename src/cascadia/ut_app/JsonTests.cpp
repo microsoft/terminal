@@ -7,6 +7,7 @@
 #include "../TerminalSettingsModel/Profile.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "../LocalTests_SettingsModel/JsonTestClass.h"
+#include "../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;

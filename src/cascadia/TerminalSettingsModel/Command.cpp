@@ -38,12 +38,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _setAction(nullptr);
     }
 
-    IMapView<winrt::hstring, Model::Command> Command::NestedCommands()
+    com_ptr<Command> Command::Copy() const
+    {
+        auto command{ winrt::make_self<Command>() };
+        command->_Name = _Name;
+        command->_Action = _Action;
+        command->_KeyChordText = _KeyChordText;
+        command->_Icon = _Icon;
+        command->_IterateOn = _IterateOn;
+
+        command->_originalJson = _originalJson;
+        if (HasNestedCommands())
+        {
+            command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            for (auto kv : NestedCommands())
+            {
+                const auto subCmd{ winrt::get_self<Command>(kv.Value()) };
+                command->_subcommands.Insert(kv.Key(), *subCmd->Copy());
+            }
+        }
+        return command;
+    }
+
+    IMapView<winrt::hstring, Model::Command> Command::NestedCommands() const
     {
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
-    bool Command::HasNestedCommands()
+    bool Command::HasNestedCommands() const
     {
         return _subcommands ? _subcommands.Size() > 0 : false;
     }
@@ -149,9 +171,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return nullptr;
         }
 
-        // Only get the icon path right now. The icon needs to be resolved into
-        // an IconSource on the UI thread, which will be done by RefreshIcon.
-        JsonUtils::GetValueForKey(json, IconKey, result->_IconPath);
+        JsonUtils::GetValueForKey(json, IconKey, result->_Icon);
 
         // If we're a nested command, we can ignore the current action.
         if (!nested)
@@ -404,7 +424,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
                 // - Escape the profile name for JSON appropriately
                 auto escapedProfileName = _escapeForJson(til::u16u8(p.Name()));
-                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.ExpandedIconPath()));
+                auto escapedProfileIcon = _escapeForJson(til::u16u8(p.Icon()));
                 auto newJsonString = til::replace_needle_in_haystack(oldJsonString,
                                                                      ProfileNameToken,
                                                                      escapedProfileName);

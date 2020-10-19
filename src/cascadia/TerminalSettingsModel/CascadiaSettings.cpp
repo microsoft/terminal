@@ -66,6 +66,29 @@ CascadiaSettings::CascadiaSettings(winrt::hstring json) :
     _ValidateSettings();
 }
 
+winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::Copy() const
+{
+    // dynamic profile generators added by default
+    auto settings{ winrt::make_self<CascadiaSettings>() };
+    settings->_globals = _globals->Copy();
+    for (const auto profile : _profiles)
+    {
+        auto profImpl{ winrt::get_self<Profile>(profile) };
+        settings->_profiles.Append(*profImpl->Copy());
+    }
+    for (auto warning : _warnings)
+    {
+        settings->_warnings.Append(warning);
+    }
+    settings->_loadError = _loadError;
+    settings->_deserializationErrorMessage = _deserializationErrorMessage;
+    settings->_userSettingsString = _userSettingsString;
+    settings->_userSettings = _userSettings;
+    settings->_defaultSettings = _defaultSettings;
+    settings->_userDefaultProfileSettings = _userDefaultProfileSettings;
+    return *settings;
+}
+
 // Method Description:
 // - Finds a profile that matches the given GUID. If there is no profile in this
 //      settings object that matches, returns nullptr.
@@ -471,17 +494,23 @@ void CascadiaSettings::_ValidateMediaResources()
             }
         }
 
-        if (!profile.IconPath().empty())
+        if (!profile.Icon().empty())
         {
+            const auto iconPath{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.Icon().c_str()) };
             try
             {
-                winrt::Windows::Foundation::Uri imagePath{ profile.ExpandedIconPath() };
+                winrt::Windows::Foundation::Uri imagePath{ iconPath };
             }
             catch (...)
             {
-                // reset icon path
-                profile.IconPath(L"");
-                invalidIcon = true;
+                // Anything longer than 2 wchar_t's _isn't_ an emoji or symbol,
+                // so treat it as an invalid path.
+                if (iconPath.size() > 2)
+                {
+                    // reset icon path
+                    profile.Icon(L"");
+                    invalidIcon = true;
+                }
             }
         }
     }

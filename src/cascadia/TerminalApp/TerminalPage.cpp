@@ -7,7 +7,6 @@
 #include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
-#include <Mmsystem.h>
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
@@ -77,88 +76,6 @@ namespace winrt::TerminalApp::implementation
             if (command.HasNestedCommands())
             {
                 _recursiveUpdateCommandKeybindingLabels(settings, command.NestedCommands());
-            }
-        }
-    }
-
-    // Method Description:
-    // - Set the command's IconSource. Supports a variety of icons:
-    //    * If the icon is a path to an image, we'll use that.
-    //    * If it isn't, then we'll try and use the text as a FontIcon. If the
-    //      character is in the range of symbols reserved for the Segoe MDL2
-    //      Asserts, well treat it as such. Otherwise, we'll default to a Sego
-    //      UI icon, so things like emoji will work.
-    // - MUST BE CALLED ON THE UI THREAD.
-    // Arguments:
-    // - cmd - the command that we're updating IconSource for
-    // Return Value:
-    // - <none>
-    static void _refreshIcon(const Command& cmd)
-    {
-        if (cmd.IconPath().size() != 0)
-        {
-            cmd.IconSource(GetColoredIcon<winrt::WUX::Controls::IconSource>(cmd.IconPath()));
-
-            // If we fail to set the icon source using the "icon" as a path,
-            // let's try it as a symbol/emoji.
-            //
-            // Anything longer that 2 wchar_t's _isn't_ an emoji or symbol, so
-            // don't do this if it's just an invalid path.
-            if (cmd.IconSource() == nullptr && cmd.IconPath().size() <= 2)
-            {
-                try
-                {
-                    WUX::Controls::FontIconSource icon;
-                    const wchar_t ch = cmd.IconPath()[0];
-
-                    // The range of MDL2 Icons isn't explicitly defined, but
-                    // we're using this based off the table on:
-                    // https://docs.microsoft.com/en-us/windows/uwp/design/style/segoe-ui-symbol-font
-                    const bool isMDL2Icon = ch >= L'\uE700' && ch <= L'\uF8FF';
-                    if (isMDL2Icon)
-                    {
-                        icon.FontFamily(WUX::Media::FontFamily{ L"Segoe MDL2 Assets" });
-                    }
-                    else
-                    {
-                        // Note: you _do_ need to manually set the font here.
-                        icon.FontFamily(WUX::Media::FontFamily{ L"Segoe UI" });
-                    }
-                    icon.FontSize(12);
-                    icon.Glyph(cmd.IconPath());
-                    cmd.IconSource(icon);
-                }
-                CATCH_LOG();
-            }
-        }
-        if (cmd.IconSource() == nullptr)
-        {
-            // Set the default IconSource to a BitmapIconSource with a null source
-            // (instead of just nullptr) because there's a really weird crash when swapping
-            // data bound IconSourceElements in a ListViewTemplate (i.e. CommandPalette).
-            // Swapping between nullptr IconSources and non-null IconSources causes a crash
-            // to occur, but swapping between IconSources with a null source and non-null IconSources
-            // work perfectly fine :shrug:.
-            winrt::Windows::UI::Xaml::Controls::BitmapIconSource icon;
-            icon.UriSource(nullptr);
-            cmd.IconSource(icon);
-        }
-    }
-
-    static void _recursiveUpdateCommandIcons(IMapView<winrt::hstring, Command> commands)
-    {
-        for (const auto& nameAndCmd : commands)
-        {
-            const auto& command = nameAndCmd.Value();
-
-            // !!! LOAD-BEARING !!! If this is never called, then Commands will
-            // have a nullptr icon. If they do, a really weird crash can occur.
-            // MAKE SURE this is called once after a settings load.
-            _refreshIcon(command);
-
-            if (command.HasNestedCommands())
-            {
-                _recursiveUpdateCommandIcons(command.NestedCommands());
             }
         }
     }
@@ -312,6 +229,11 @@ namespace winrt::TerminalApp::implementation
                 page->CommandPalette().OnTabsChanged(s, e);
             }
         });
+
+        // Settings AllowDependentAnimations will affect whether animations are
+        // enabled application-wide, so we don't need to check it each time we
+        // want to create an animation.
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
@@ -530,9 +452,9 @@ namespace winrt::TerminalApp::implementation
 
             // If there's an icon set for this profile, set it as the icon for
             // this flyout item.
-            if (!profile.IconPath().empty())
+            if (!profile.Icon().empty())
             {
-                auto iconSource = GetColoredIcon<WUX::Controls::IconSource>(profile.ExpandedIconPath());
+                const auto iconSource{ IconPathConverter().IconSourceWUX(profile.Icon()) };
 
                 WUX::Controls::IconSourceElement iconElement;
                 iconElement.IconSource(iconSource);
@@ -545,6 +467,21 @@ namespace winrt::TerminalApp::implementation
                 // Contrast the default profile with others in font weight.
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
+
+            auto newTabRun = WUX::Documents::Run();
+            newTabRun.Text(RS_(L"NewTabRun/Text"));
+            auto newPaneRun = WUX::Documents::Run();
+            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+            newPaneRun.FontStyle(FontStyle::Italic);
+
+            auto textBlock = WUX::Controls::TextBlock{};
+            textBlock.Inlines().Append(newTabRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newPaneRun);
+
+            auto toolTip = WUX::Controls::ToolTip{};
+            toolTip.Content(textBlock);
+            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
 
             profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
@@ -735,8 +672,10 @@ namespace winrt::TerminalApp::implementation
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
 
+        newTabImpl->SetDispatch(*_actionDispatch);
+
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+        _UpdateTabIndices();
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -776,9 +715,9 @@ namespace winrt::TerminalApp::implementation
 
         // Set this tab's icon to the icon from the user's profile
         const auto profile = _settings.FindProfile(profileGuid);
-        if (profile != nullptr && !profile.IconPath().empty())
+        if (profile != nullptr && !profile.Icon().empty())
         {
-            newTabImpl->UpdateIcon(profile.ExpandedIconPath());
+            newTabImpl->UpdateIcon(profile.Icon());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -841,12 +780,6 @@ namespace winrt::TerminalApp::implementation
                                                               settings.InitialRows(),
                                                               settings.InitialCols(),
                                                               winrt::guid());
-        }
-
-        else if (hasConnectionType &&
-                 connectionType == TerminalConnection::TelnetConnection::ConnectionType())
-        {
-            connection = TerminalConnection::TelnetConnection(settings.Commandline());
         }
 
         else
@@ -1020,7 +953,7 @@ namespace winrt::TerminalApp::implementation
             const auto matchingProfile = _settings.FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                tab.UpdateIcon(matchingProfile.ExpandedIconPath());
+                tab.UpdateIcon(matchingProfile.Icon());
             }
             else
             {
@@ -1187,8 +1120,6 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
-
-        term.WarningBell({ this, &TerminalPage::_WarningBellHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
@@ -1850,18 +1781,6 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    // Method Description:
-    // - Plays a warning note when triggered by the BEL control character,
-    //   using the sound configured for the "Critical Stop" system event.
-    //   This matches the behavior of the Windows Console host.
-    // Arguments:
-    // - <none>
-    void TerminalPage::_WarningBellHandler(const IInspectable sender, const IInspectable eventArgs)
-    {
-        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-    }
-
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
     {
         try
@@ -2175,6 +2094,11 @@ namespace winrt::TerminalApp::implementation
         // the alwaysOnTop setting will be lost.
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
         _alwaysOnTopChangedHandlers(*this, nullptr);
+
+        // Settings AllowDependentAnimations will affect whether animations are
+        // enabled application-wide, so we don't need to check it each time we
+        // want to create an animation.
+        WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -2236,7 +2160,6 @@ namespace winrt::TerminalApp::implementation
                                                                        _settings.GlobalSettings().ColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
-        _recursiveUpdateCommandIcons(copyOfCommands.GetView());
 
         // Update the command palette when settings reload
         auto commandsCollection = winrt::single_threaded_vector<Command>();
@@ -2606,9 +2529,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTabIndices()
     {
-        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        const uint32_t size = _tabs.Size();
+        for (uint32_t i = 0; i < size; ++i)
         {
-            _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+            _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
         }
     }
 
