@@ -240,6 +240,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
+    com_ptr<ActionAndArgs> ActionAndArgs::Copy() const
+    {
+        auto copy{ winrt::make_self<ActionAndArgs>() };
+        copy->_Action = _Action;
+        copy->_Args = _Args.Copy();
+        return copy;
+    }
+
     winrt::hstring ActionAndArgs::GenerateName() const
     {
         // Use a magic static to initialize this map, because we won't be able

@@ -63,6 +63,53 @@ GlobalAppSettings::GlobalAppSettings() :
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
 }
 
+winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
+{
+    auto globals{ winrt::make_self<GlobalAppSettings>() };
+    globals->_InitialRows = _InitialRows;
+    globals->_InitialCols = _InitialCols;
+    globals->_AlwaysShowTabs = _AlwaysShowTabs;
+    globals->_ShowTitleInTitlebar = _ShowTitleInTitlebar;
+    globals->_ConfirmCloseAllTabs = _ConfirmCloseAllTabs;
+    globals->_Theme = _Theme;
+    globals->_TabWidthMode = _TabWidthMode;
+    globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
+    globals->_WordDelimiters = _WordDelimiters;
+    globals->_CopyOnSelect = _CopyOnSelect;
+    globals->_CopyFormatting = _CopyFormatting;
+    globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
+    globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
+    globals->_InitialPosition = _InitialPosition;
+    globals->_LaunchMode = _LaunchMode;
+    globals->_SnapToGridOnResize = _SnapToGridOnResize;
+    globals->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
+    globals->_SoftwareRendering = _SoftwareRendering;
+    globals->_ForceVTInput = _ForceVTInput;
+    globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
+    globals->_StartOnUserLogin = _StartOnUserLogin;
+    globals->_AlwaysOnTop = _AlwaysOnTop;
+    globals->_UseTabSwitcher = _UseTabSwitcher;
+    globals->_DisableAnimations = _DisableAnimations;
+
+    globals->_unparsedDefaultProfile = _unparsedDefaultProfile;
+    globals->_defaultProfile = _defaultProfile;
+    globals->_keymap = _keymap->Copy();
+    std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
+
+    for (auto kv : _colorSchemes)
+    {
+        const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
+        globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+    }
+
+    for (auto kv : _commands)
+    {
+        const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
+        globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
+    }
+    return globals;
+}
+
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::ColorScheme> GlobalAppSettings::ColorSchemes() noexcept
 {
     return _colorSchemes.GetView();

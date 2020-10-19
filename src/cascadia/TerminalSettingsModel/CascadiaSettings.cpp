@@ -66,6 +66,29 @@ CascadiaSettings::CascadiaSettings(winrt::hstring json) :
     _ValidateSettings();
 }
 
+winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::Copy() const
+{
+    // dynamic profile generators added by default
+    auto settings{ winrt::make_self<CascadiaSettings>() };
+    settings->_globals = _globals->Copy();
+    for (const auto profile : _profiles)
+    {
+        auto profImpl{ winrt::get_self<Profile>(profile) };
+        settings->_profiles.Append(*profImpl->Copy());
+    }
+    for (auto warning : _warnings)
+    {
+        settings->_warnings.Append(warning);
+    }
+    settings->_loadError = _loadError;
+    settings->_deserializationErrorMessage = _deserializationErrorMessage;
+    settings->_userSettingsString = _userSettingsString;
+    settings->_userSettings = _userSettings;
+    settings->_defaultSettings = _defaultSettings;
+    settings->_userDefaultProfileSettings = _userDefaultProfileSettings;
+    return *settings;
+}
+
 // Method Description:
 // - Finds a profile that matches the given GUID. If there is no profile in this
 //      settings object that matches, returns nullptr.
