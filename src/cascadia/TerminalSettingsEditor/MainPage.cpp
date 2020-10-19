@@ -22,18 +22,20 @@ namespace winrt
 
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Editor::Model::implementation;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    MainPage::MainPage()
+    winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings MainPage::_settingsSource{ nullptr };
+
+    MainPage::MainPage(CascadiaSettings settings)
     {
         InitializeComponent();
 
         // TODO GH#1564: When we actually connect this to Windows Terminal,
         //       this section will clone the active AppSettings
-        _settingsSource = AppSettings();
-        _settingsClone = _settingsSource.Clone();
+        MainPage::_settingsSource = settings;
+        _settingsClone = nullptr;
 
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Add new profile"), L"AddNew_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Always show tabs"), L"GlobalAppearance_Nav"));
@@ -62,6 +64,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Theme"), L"GlobalAppearance_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Window resize behavior"), L"Rendering_Nav"));
         SearchList.insert(std::pair<IInspectable, hstring>(Windows::Foundation::PropertyValue::CreateString(L"Word delimiters"), L"Interaction_Nav"));
+    }
+
+    CascadiaSettings MainPage::Settings()
+    {
+        return _settingsSource;
     }
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)

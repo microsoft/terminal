@@ -4,7 +4,6 @@
 #pragma once
 
 #include "Launch.g.h"
-#include "ObjectModel/GlobalSettingsModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -12,10 +11,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Launch : LaunchT<Launch>
     {
         Launch();
-        Model::GlobalSettingsModel GlobalSettingsModel();
-
-    private:
-        Model::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
     };
 }
 
