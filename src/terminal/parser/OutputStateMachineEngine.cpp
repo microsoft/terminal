@@ -905,23 +905,24 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 {
     params.clear();
     uri.clear();
-    const auto len = string.size();
-    const size_t midPos = string.find(';');
-    if (midPos != std::wstring::npos)
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() < 2)
     {
-        if (len != 1)
-        {
-            uri = string.substr(midPos + 1);
-            const auto paramStr = string.substr(0, midPos);
-            const auto idPos = paramStr.find(hyperlinkIDParameter);
-            if (idPos != std::wstring::npos)
-            {
-                params = paramStr.substr(idPos + hyperlinkIDParameter.size());
-            }
-        }
-        return true;
+        return false;
     }
-    return false;
+
+    const auto len = string.size();
+    if (len != 1)
+    {
+        uri = til::at(parts, 1);
+        const auto paramStr = til::at(parts, 0);
+        const auto idPos = paramStr.find(hyperlinkIDParameter);
+        if (idPos != std::wstring::npos)
+        {
+            params = paramStr.substr(idPos + hyperlinkIDParameter.size());
+        }
+    }
+    return true;
 }
 
 // Routine Description:
@@ -1005,22 +1006,22 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                                                    std::wstring& content,
                                                    bool& queryClipboard) const noexcept
 {
-    const size_t pos = string.find(';');
-    if (pos != std::wstring_view::npos)
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() < 2)
     {
-        const std::wstring_view substr = string.substr(pos + 1);
-        if (substr == L"?")
-        {
-            queryClipboard = true;
-            return true;
-        }
-        else
-        {
-            return Base64::s_Decode(substr, content);
-        }
+        return false;
     }
 
-    return false;
+    const std::wstring_view substr = til::at(parts, 1);
+    if (substr == L"?")
+    {
+        queryClipboard = true;
+        return true;
+    }
+    else
+    {
+        return Base64::s_Decode(substr, content);
+    }
 }
 
 // Method Description:
