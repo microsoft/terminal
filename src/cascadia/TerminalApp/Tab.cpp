@@ -517,8 +517,9 @@ namespace winrt::TerminalApp::implementation
                 if (tab->_zoomedPane)
                 {
                     co_await winrt::resume_foreground(tab->GetRootElement().Dispatcher());
+                    tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
-                    tab->Content(tab->GetRootElement());
+                    // tab->_zoomedPane = nullptr;
                     // if (tab->_focused)
                     // {
                     //     tab->_Focus();
