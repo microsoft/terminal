@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-08-12
+last updated: 2020-10-19
 issue id: #5000
 ---
 
@@ -260,7 +260,7 @@ drag-drop to initialize the structure of the window.
 For our own sanity, we'll want to ensure that tabs cannot be torn out from a
 "Preview" Windows Terminal window and dropped into a "Release" window. I'm not
 positive that the system will prevent that on our behalf, so I think it's
-important to call out that if this _is_ possible, we should expressely disallow
+important to call out that if this _is_ possible, we should expressly disallow
 it.
 
 #### Scenario: Mixed Elevation
@@ -323,7 +323,7 @@ down the idea as being impossible or terrible from a security perspective, so I
 believe that it _will_ be possible. We still need to do some research on the
 actual mechanisms for some token impersonation.
 
-### Monarch and Servant Processes
+### Monarch and Peasant Processes
 
 With the current design, it's easy to connect many content processes to a window
 process, and move those content processes easily between windows. However, we
@@ -334,12 +334,12 @@ commandline in a given WT window?
 
 In addition to the concept of Window and Content Processes, we'll also be
 introducing another type of categorization for window processes. These are
-"Monarch" and "Servant" processes. This will allow for the coordination across
+"Monarch" and "Peasant" processes. This will allow for the coordination across
 the various windows by the Monarch.
 
 There will only ever be one monarch process at a given time, and every other WT
-window process is a servant process. However, we want this system to be
-redundant, so that if the monarch ever dies, one of the remaining servant
+window process is a peasant process. However, we want this system to be
+redundant, so that if the monarch ever dies, one of the remaining peasant
 processes can take over for it. The new monarch will be chosen at random, so
 we'll call this a probabilistic elective monarchy.
 
@@ -364,14 +364,14 @@ Essentially, the probabilistic elective monarchy will work in the following way:
        to assign one to us.
      - If we do have an ID (from a previous monarch), then let the new monarch
        know that we exist.
-5. If we're a servant process, then `WaitForSingleObject` on a handle to the
+5. If we're a peasant process, then `WaitForSingleObject` on a handle to the
    monarch process. When the current monarch dies, go back to 3. At this point,
    we might be appointed the new monarch (by whatever process the OS uses to
    choose who the new server for `Monarch`s is.)
    - We're suggesting `WaitForSingleObject` here as opposed to having the
      monarch raise a WinRT event when it's closed, because it's possible that
      the monarch <!-- is assassinated --> closes unexpectedly, before it has an
-     opportunity to notify the servants.
+     opportunity to notify the peasants.
 
 By this mechanism, the processes will be able to communicate with the Monarch,
 who'll be responsible for managing any inter-process communication between
@@ -388,11 +388,11 @@ browser. This functionality is often referred to as "glomming", as the new tab
 "gloms" onto the existing window.
 
 Currently, the terminal does not support such a feature - every `wt` invocation
-creates a new window. With the monarch/servant architecture, it'll now be
+creates a new window. With the monarch/peasant architecture, it'll now be
 possible to enable such a scenario.
 
 As each window is activated, it will call a method on the `Monarch` object
-(hosted by the monarch process) which will indicate that "I am servant N, and
+(hosted by the monarch process) which will indicate that "I am peasant N, and
 I've been focused". The monarch will use those method calls to update its own
 internal stack of the most recently used windows.
 
@@ -420,7 +420,7 @@ one.
 
 In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is
 run, and it determines that it is not the monarch, it'll ask the monarch if it's
-in single instance mode. If it is, then the servant that's starting up will
+in single instance mode. If it is, then the peasant that's starting up will
 instead pass it's commandline arguments to the monarch process, and let the
 monarch handle them, then exit. In single instance mode the window will still be
 composed from a combination of a window process and multiple different content
@@ -475,9 +475,9 @@ wt.exe --session N new-tab ; split-pane
 
 (or for shorthand, `wt -s N new-tab ; split-pane`).
 
-This would create a new servant, who could then ask the monarch if there is a
-servant with ID `N`. If there is, then the servant can connect to that other
-servant, dispatch the current commandline to that other servant, and exit,
+This would create a new peasant, who could then ask the monarch if there is a
+peasant with ID `N`. If there is, then the peasant can connect to that other
+peasant, dispatch the current commandline to that other peasant, and exit,
 before ever creating a window. If this commandline instead creates a new monarch
 process, then there was _no_ other monarch, and so there must logically not be
 any other existing WT windows, and the `--session N` argument could be safely
@@ -493,8 +493,8 @@ like `wt --session last` or some other special value indicating "run this in the
 MRU window".
 
 That might be a simple, but **wrong**, implementation for "the current window".
-If the servants always raise an event when their window is focused, and the
-monarch keeps track of the MRU order for servants, then one could naively assume
+If the peasants always raise an event when their window is focused, and the
+monarch keeps track of the MRU order for peasants, then one could naively assume
 that the execution of `wt -s 0 <commands>` would always return the window the
 user was typing in, the current one. However, if someone were to do something
 like `sleep 10 ; wt -s 0 <commands>`, then the user could easily focus another
@@ -504,7 +504,7 @@ as the window executing the command.
 I'm not sure that there is a better solution for the `-s 0` scenario other than
 attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
 spawned and that's in it's environment variables, it could try and ask the
-monarch for the servant who's hosting the session corresponding to that GUID.
+monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
 
 In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
@@ -527,9 +527,9 @@ it fails to register the global hotkey, then the first window is closed, there's
 no way for the second process to track that and re-register as the handler for
 that key.
 
-With the addition of monarch/servant processes, this problem becomes much easier
+With the addition of monarch/peasant processes, this problem becomes much easier
 to solve. Now, the monarch process will _always_ be the process to register the
-shortcut key, whenever it's elected. If it dies and another servant is elected
+shortcut key, whenever it's elected. If it dies and another peasant is elected
 monarch, then the new monarch will register as the global hotkey handler.
 
 Then, the monarch can use it's pre-established channels of communication with
@@ -538,13 +538,13 @@ the other window processes to actually drive the response we're looking for.
 **Alternatively**, we could use an entirely other process to be in charge of the
 registration of the global keybinding. This process would be some sort of
 long-running service that's started on boot. When it detects the global hotkey,
-it could attmept to instantiate a `Monarch` object.
+it could attempt to instantiate a `Monarch` object.
 
   * If it can't make one, then it can simply run a new instance of `wt.exe`,
     because there's not yet a running Terminal window.
   * Otherwise, it can communicate to the monarch that the global hotkey was
     pressed, and the monarch will take care of delegating the activation to the
-    appropriate servant window.
+    appropriate peasant window.
 
 This would mitigate the need to have at least one copy of WT running already,
 and the user could press that keybinding at any time to start the terminal.
@@ -553,10 +553,10 @@ and the user could press that keybinding at any time to start the terminal.
 #### Rough interface design
 
 This is by no means definitive, but one could imagine the `Monarch` and
-`Servant` classes exposing the following WinRT projections:
+`Peasant` classes exposing the following WinRT projections:
 
 ```c#
-class Servant
+class Peasant
 {
     void AssignID(UInt64 id); // Should only be called by the monarch
     UInt64 GetID();
@@ -565,27 +565,27 @@ class Servant
     event TypedEventHandler<Object, Object> WindowActivated;
 }
 
-class Monarch : Servant
+class Monarch : Peasant
 {
-    UInt64 AddServant(Servant servant);
+    UInt64 AddPeasant(Peasant peasant);
     Boolean IsInSingleInstanceMode();
-    Servant GetServant(UInt64 servantID);
-    Servant GetMostRecentServant();
+    Peasant GetPeasant(UInt64 peasantID);
+    Peasant GetMostRecentPeasant();
 }
 ```
 
-The servant process can instantiate the `Servant` object itself, in it's process
-space. Initially, the `Servant` object won't have an ID assigned, and the call
-to `AddServant` on the `Monarch` will both cause the Monarch to assign the
-`Servant` an ID, and add it to the Monarch process's list of processes. If the
-`Servant` already had an ID assigned by a previous monarch, then the new monarch
-will simply re-use the value already existing in the `Servant`. Now, the monarch
-can call methods on the `Servant` object directly to trigger changes in the
-servant process.
+The peasant process can instantiate the `Peasant` object itself, in it's process
+space. Initially, the `Peasant` object won't have an ID assigned, and the call
+to `AddPeasant` on the `Monarch` will both cause the Monarch to assign the
+`Peasant` an ID, and add it to the Monarch process's list of processes. If the
+`Peasant` already had an ID assigned by a previous monarch, then the new monarch
+will simply re-use the value already existing in the `Peasant`. Now, the monarch
+can call methods on the `Peasant` object directly to trigger changes in the
+peasant process.
 
-Note that the monarch also needs to have a servant ID, because the monarch is
-really just a servant with the added responsibility of keeping track of the
-other servants as well.
+Note that the monarch also needs to have a peasant ID, because the monarch is
+really just a peasant with the added responsibility of keeping track of the
+other peasants as well.
 
 It's important that `ExecuteCommandline` takes a `currentDirectory` parameter.
 Consider the scenario `wt -s 0 -d .` - in this scenario, the process that's
@@ -602,7 +602,7 @@ vision for default terminals is that when a commandline application is started
 on Windows, instead of booting into `conhost.exe` as a default terminal, the
 system will instead boot up whatever application the user has set as their
 "default terminal application", whether that be the Windows Terminal or some
-other terminal app (ConEmu, mintty, Hyper, etc).
+other terminal app (ConEmu, MinTTY, Hyper, etc).
 
 This is another scenario that deserves its own full spec, though it warrants a
 special callout in this document as well.
@@ -652,10 +652,10 @@ windows to glom onto, so create the tab in this window process.
 
 4b. It'll ask the monarch if it's in single instance mode, or if the monarch is
 configured to glom tabs onto the most recent window, instead of spawning new
-ones. If it is configured in such a way, the new servant window process will
-pass the content process's GUID to the Servant\* that _should_ be the window for
+ones. If it is configured in such a way, the new peasant window process will
+pass the content process's GUID to the Peasant\* that _should_ be the window for
 that new client
-  - \*: note that this servant could just be the monarch (in single instance
+  - \*: note that this peasant could just be the monarch (in single instance
     mode, for example).
 
 <hr>
@@ -663,7 +663,7 @@ that new client
 This area is left intentionally vague, because we're not exactly sure what the
 API surface exposed for default terminal invocations will look like. Hopefully,
 it shows that however we do end up implementing support for default terminal
-apps, the proposed Window/Content/Monarch/Servant architecture will still be a
+apps, the proposed Window/Content/Monarch/Peasant architecture will still be a
 compatible solution.
 
 ## UI/UX Design
@@ -674,7 +674,7 @@ machinations of the Terminal processes.
 
 At the very least, resizes will occur off of the UI thread, which will help that
 scenario feel better. While resizes happen fairly responsively in Release
-builds, Debug builds used for development have fairly painful resizes occuring
+builds, Debug builds used for development have fairly painful resizes occurring
 on the UI thread, blocking all input until they're finished.
 
 Ideally, we'll want the tab that's being dragged to be able to show the contents
@@ -728,7 +728,7 @@ WT window are elevated.
 Furthermore, we'll want to ensure that there's nothing that an unelevated client
 process could do to trigger any sort of input callback in the parent window. If
 the parent window is an elevated window, with other elevated connections, then
-we don't want the uelevated content process to act as a vector by which
+we don't want the unelevated content process to act as a vector by which
 malicious software could hijack the elevated window.
 
 </td>
@@ -738,7 +738,7 @@ malicious software could hijack the elevated window.
 <td>
 
 This is probably the biggest concern in this section. Because there will now be
-many, many more processes in the process tree, it is imperitive that whenever
+many, many more processes in the process tree, it is imperative that whenever
 we're doing cross-process operations, we do them safely.
 
 Whenever we're working with an object that's hosted by another process, we'll
@@ -751,8 +751,8 @@ error message, but _continue running_.
 When the monarch process dies, we'll need to be able to reliably elect a new
 monarch. While we're electing a new monarch, and updating the new monarch,
 there's always the chance that the _new_ monarch is also killed (This is the
-"Pope Stephen II" scenario). In this scenario, if at any point a servant
-notices that the monarch has died, the servant will need to begin checking who
+"Pope Stephen II" scenario). In this scenario, if at any point a peasant
+notices that the monarch has died, the peasant will need to begin checking who
 the new monarch is again.
 
 There is certain to be a long tail of edge cases we'll discover as a product of
@@ -764,7 +764,7 @@ inter-process calls we might make. Some example situations might include:
 * When a process creates a new content process
 * When a content process is attached by a window
 * When a monarch is elected
-* when a servant receives its new ID from a monarch
+* when a peasant receives its new ID from a monarch
 * when either a window or content process _safely_ exits
 
 In any and all of these situations, we'll want to try and be as verbose as
@@ -805,7 +805,7 @@ spawning of new terminal instances, due to requiring cross-process hops for the
 instantiation of the content process.
 
 Additionally, minor delays are expected to be introduced during startup for the
-initial setup of the monarch/servant relationship.
+initial setup of the monarch/peasant relationship.
 
 </td>
 </tr>
@@ -823,8 +823,8 @@ that's most often associated with the concept of extensions in the Terminal, but
 perhaps more relevantly could affect the Settings UI.
 
 The Settings UI is something we intend on shipping in the Terminal as a part of
-2.0, in the same timefram much of the above work is expected to be done. We also
-plan on hopefully making the Settings UI appear as its own tab within the
+2.0, in the same timeframe much of the above work is expected to be done. We
+also plan on hopefully making the Settings UI appear as its own tab within the
 Terminal. This would be the first example of having non-terminal content
 directly in the application. How would we support tearing out the Settings UI
 tab into it's own window?
@@ -897,7 +897,7 @@ Lets examine some sample JSON<sup>[[2]](#footnote-2)</sup>
 ```
 
 Here, we've got two tabs that have been serialized.
-* The first has two panes, seperated with a horizontal split. It has also been
+* The first has two panes, separated with a horizontal split. It has also been
   renamed to "foo".
   - The first pane takes up 30% of the parent, and contains a `TermControl`. The
     content process for that control is identified by the content GUID
@@ -934,11 +934,21 @@ duplicate handle. Fortunately, the `DuplicateHandle` function does allow a
 caller to duplicate from another process into your own process.
 
 
+#### Elevation and Extensions
+
+[TODO]: # TODO =================================================================
+
+showerthought (to make sure I don't forget): extensions should be disabled by default in elevated windows. The user can chose to enable them in elevated windows if they want. That setting needs to be hidden in a file that only admins can write to.
+
+I suppose some extensions might be fine to run in unelevated content processes, but would probably be impossible to entirely prevent them from triggering code in the parent process.
+
+~~Like an extension running in the content process could try to trigger the "enable broadcast input" mode and then have its keystrokes sent to the elevated content procs~~ Actually, maybe not. The content process doesn't actually handle any keybindings, does it? That's all in the window process, so that's not terribly a concern.
+
 #### What happens to the content if the monarch dies unexpectedly?
 
 What happens if you only have one window process, the monarch, and it
 throws an exception for whatever reason? Will the content processes also attempt
-to be servants here? Or perhaps is there another mechanism by which the content
+to be peasants here? Or perhaps is there another mechanism by which the content
 processes can realize all the windows are gone and start a new window process
 who becomes the instant-monarch for all the still-living and remaining content
 processes?
@@ -969,17 +979,17 @@ of each other.
 
 <hr>
 
-1. Add Monarch/Servant capabilities to `wt` window processes.
+1. Add Monarch/Peasant capabilities to `wt` window processes.
    - This does not need to involve any actual UX functionality, simply have the
     WT instances communicate with one another to see who is the Monarch.
-   - The monarch will track and assign IDs to servants.
+   - The monarch will track and assign IDs to peasants.
 2. (Dependent on 1): Add support for running a `wt` commandline in an existing
    window
    - Monarch should assign simple IDs for use with the `wt` commandline
    - `0` should be reserved as an alias for "the current window"
 3. (Dependent on 1, maybe on 2): Add support for "single instance mode". New
-   servant windows will first ask the monarch if it's in single instance mode,
-   and pass the servant's commandline to the monarch if it is.
+   peasant windows will first ask the monarch if it's in single instance mode,
+   and pass the peasant's commandline to the monarch if it is.
 4. (Dependent on 1): Monarch registers for the global quake hotkey, and uses
    that to activate _the monarch_.
    - Pressing the key when a window is currently focused should minimize? Do nothing?
@@ -1095,7 +1105,7 @@ provided `type`.
   content as we're drag/dropping.
   - If we pursue this, then we'll need to make sure that we re-assign the window
     ID's as appropriate. the _new_ window (with the tabs that are being left
-    behind) should still have the same servant ID as the original window, which
+    behind) should still have the same peasant ID as the original window, which
     will now get a new ID (as to )
 * We could definitely do a `NewWindowFromTab(index:int?)` action that creates a
   new window from a current tab once this all lands.
@@ -1126,7 +1136,7 @@ provided `type`.
 
 ## Resources
 
-* [Tab Tearout in the community toolkit] - this document proved invaluable to
+* [Tab Tear-out in the community toolkit] - this document proved invaluable to
   the background of tearing a tab out of an application to create a new window.
 
 <!-- Footnotes -->
@@ -1140,6 +1150,6 @@ provided `type`.
 [#632]: https://github.com/microsoft/terminal/issues/632
 [#492]: https://github.com/microsoft/terminal/issues/492
 
-[Tab Tearout in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
+[Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle

@@ -1403,6 +1403,7 @@ mindbogglingly
 mingw
 minimizeall
 minkernel
+mintty
 minwin
 minwindef
 Mip
@@ -1594,6 +1595,7 @@ numlock
 numpad
 NUMSCROLL
 nupkg
+NVDA
 NVIDIA
 NVR
 Nx
