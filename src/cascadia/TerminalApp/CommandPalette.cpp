@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
     void FilteredCommand::UpdateFilter(winrt::hstring const& filter)
     {
         // If the filter was not changed we want to prevent the re-computation of matching
-        // that might result in triggerring a notification event
+        // that might result in triggering a notification event
         if (filter != _Filter)
         {
             Filter(filter);
