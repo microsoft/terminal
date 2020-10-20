@@ -24,6 +24,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         winrt::TerminalApp::HighlightedText _computeHighlightedName();
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
     };
 
     enum class CommandPaletteMode

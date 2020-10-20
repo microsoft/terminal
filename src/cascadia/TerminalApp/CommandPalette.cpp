@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
         _HighlightedName = _computeHighlightedName();
 
         // Recompute the highlighted name if the command name changes
-        _Command.PropertyChanged([weakThis{ get_weak() }](Windows::Foundation::IInspectable const& /*sender*/, Data::PropertyChangedEventArgs const& e) {
+        _commandChangedRevoker = _Command.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](Windows::Foundation::IInspectable const& /*sender*/, Data::PropertyChangedEventArgs const& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {
