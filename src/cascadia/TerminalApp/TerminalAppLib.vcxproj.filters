@@ -23,12 +23,14 @@
     <ClCompile Include="Commandline.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
-    <ClCompile Include="Jumplist.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.base.h">
       <Filter>app</Filter>
@@ -46,11 +48,13 @@
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
-    <ClInclude Include="Jumplist.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
       <Filter>app</Filter>
+    </Midl>
+    <Midl Include="ActionArgs.idl">
+      <Filter>settings</Filter>
     </Midl>
     <Midl Include="AppKeyBindings.idl">
       <Filter>settings</Filter>
@@ -62,12 +66,10 @@
       <Filter>tab</Filter>
     </Midl>
     <Midl Include="IDirectKeyListener.idl" />
+    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="IconPathConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

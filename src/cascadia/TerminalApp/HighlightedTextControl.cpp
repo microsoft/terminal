@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
         if (control)
         {
             // Replace all the runs on the TextBlock
-            // Use IsHighlighted to decide if the run should be hihglighted.
+            // Use IsHighlighted to decide if the run should be highlighted.
             // To do - export the highlighting style into XAML
             const auto inlinesCollection = control.TextView().Inlines();
             inlinesCollection.Clear();

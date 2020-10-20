@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
     void FilteredCommand::UpdateFilter(winrt::hstring const& filter)
     {
         // If the filter was not changed we want to prevent the re-computation of matching
-        // that might result in triggerrign a notification event
+        // that might result in triggerring a notification event
         if (filter != _Filter)
         {
             Filter(filter);
@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
     // Iterating through the filter and the command name it tries to associate the next filter character
     // with the first appearance of this character in the command name suffix.
     //
-    // E.g., for filter="clts" and name="close all tabs after this", the match will be "CLose TabS after this".
+    // E.g., for filter="c l t s" and name="close all tabs after this", the match will be "CLose TabS after this".
     //
     // The command name is then split into segments (groupings of matched and non matched characters).
     //
@@ -67,7 +67,7 @@ namespace winrt::TerminalApp::implementation
     // TODO: we probably need to merge this logic with _getWeight computation?
     //
     // Return Value:
-    // - The HighligtedText object initialized with the segments computed according to the algorithm above.
+    // - The HighlightedText object initialized with the segments computed according to the algorithm above.
     winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
@@ -991,10 +991,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Update filter for all commands
-        // It is important to modify the text highlihgting for commands
+        // It is important to modify the text highlighting for commands
         // that were not updated in the original observable vector.
         // For such command an update will trigger PropertyChanged notification
-        // to update teh view.
+        // to update the view.
         // This action will be trivial for the newly added commands - because their filter
         // was just computed.
         auto filter = _searchBox().Text();
