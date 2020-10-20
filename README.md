@@ -79,6 +79,7 @@ page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the
 release by installing the `windows-terminal` package:
 
 ```powershell
+scoop bucket add extras
 scoop install windows-terminal
 ```
 

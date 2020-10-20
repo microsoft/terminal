@@ -7,6 +7,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Boolean Equals(IActionArgs other);
         String GenerateName();
+        IActionArgs Copy();
     };
 
     interface IActionEventArgs
@@ -48,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
+        NewTerminalArgs Copy();
 
         String Commandline;
         String StartingDirectory;
