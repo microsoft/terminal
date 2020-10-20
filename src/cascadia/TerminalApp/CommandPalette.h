@@ -3,11 +3,29 @@
 
 #pragma once
 
+#include "HighlightedTextControl.h"
 #include "CommandPalette.g.h"
+#include "FilteredCommand.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
+    struct FilteredCommand : FilteredCommandT<FilteredCommand>
+    {
+        FilteredCommand() = default;
+        FilteredCommand(Microsoft::Terminal::Settings::Model::Command const& command);
+
+        void UpdateFilter(winrt::hstring const& filter);
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
+
+    private:
+        winrt::TerminalApp::HighlightedText _computeHighlightedName();
+    };
+
     enum class CommandPaletteMode
     {
         ActionMode = 0,
@@ -20,7 +38,7 @@ namespace winrt::TerminalApp::implementation
     {
         CommandPalette();
 
-        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> FilteredActions();
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
@@ -49,7 +67,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allCommands{ nullptr };
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _currentNestedCommands{ nullptr };
-        Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _nestedActionStack{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
@@ -79,7 +97,7 @@ namespace winrt::TerminalApp::implementation
 
         void _updateFilteredActions();
 
-        std::vector<Microsoft::Terminal::Settings::Model::Command> _collectFilteredActions();
+        std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
 
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
@@ -107,5 +125,6 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
+    BASIC_FACTORY(FilteredCommand);
     BASIC_FACTORY(CommandPalette);
 }

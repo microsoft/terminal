@@ -27,7 +27,6 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
-
   <ItemDefinitionGroup>
     <ClCompile>
       <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
@@ -35,7 +34,6 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
   </ItemDefinitionGroup>
-
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -58,6 +56,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TabRowControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="HighlightedTextControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ColorPickupFlyout.xaml">
@@ -85,6 +86,9 @@
     </ClInclude>
     <ClInclude Include="TabRowControl.h">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="HighlightedTextControl.h">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
@@ -142,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="TabRowControl.cpp">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="HighlightedTextControl.cpp">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
@@ -213,6 +220,10 @@
     </Midl>
     <Midl Include="TabRowControl.idl">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="HighlightedTextControl.idl">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ColorPickupFlyout.idl">
@@ -300,7 +311,6 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -310,7 +320,6 @@
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
-
   <!--
     By default, the PRI file will contain resource paths beginning with the
     project name. Since we enabled XBF embedding, this *also* includes App.xbf.
@@ -330,6 +339,5 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

@@ -114,7 +114,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     </UserControl.Resources>
 
     <Grid>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="6*" />
@@ -220,16 +219,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                 ItemsSource="{x:Bind FilteredActions}">
 
                 <ItemsControl.ItemTemplate >
-                    <DataTemplate x:DataType="SettingsModel:Command">
+                    <DataTemplate x:DataType="local:FilteredCommand">
 
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+                                  AutomationProperties.Name="{x:Bind Command.Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind Command.KeyChordText, Mode=OneWay}">
 
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="16"/>   <!-- icon -->
                                     <ColumnDefinition Width="Auto"/> <!-- command label -->
@@ -241,20 +239,21 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
-                                    IconSource="{x:Bind Icon,
+                                    IconSource="{x:Bind Command.Icon,
                                                         Mode=OneWay,
                                                         Converter={StaticResource IconSourceConverter}}"/>
 
-                                <TextBlock Grid.Column="1"
-                                       HorizontalAlignment="Left"
-                                       Text="{x:Bind Name, Mode=OneWay}" />
-
+                                <local:HighlightedTextControl
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
+                                
                                 <!-- The block for the key chord is only visible
                                 when there's actual text set as the label. See
                                 CommandKeyChordVisibilityConverter for details. -->
                                 <Border
                                     Grid.Column="2"
-                                    Visibility="{x:Bind KeyChordText,
+                                    Visibility="{x:Bind Command.KeyChordText,
                                                  Mode=OneWay,
                                                  Converter={StaticResource CommandKeyChordVisibilityConverter}}"
                                     Style="{ThemeResource KeyChordBorderStyle}"
@@ -265,7 +264,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <TextBlock
                                         Style="{ThemeResource KeyChordTextBlockStyle}"
                                         FontSize="12"
-                                        Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                                        Text="{x:Bind Command.KeyChordText, Mode=OneWay}" />
                                 </Border>
 
                                 <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
@@ -273,7 +272,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     FontFamily="Segoe MDL2 Assets"
                                     Glyph="&#xE70E;"
                                     HorizontalAlignment="Right"
-                                    Visibility="{x:Bind HasNestedCommands,
+                                    Visibility="{x:Bind Command.HasNestedCommands,
                                                  Mode=OneWay,
                                                  Converter={StaticResource HasNestedCommandsVisibilityConverter}}"
                                     Grid.Column="2">

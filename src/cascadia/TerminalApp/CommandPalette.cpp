@@ -7,6 +7,7 @@
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
+#include "FilteredCommand.g.cpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -19,12 +20,134 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
+    // This is a view model class that extends the Command model,
+    // by managing a highlighted text that is computed by matching search filter characters to command name
+    FilteredCommand::FilteredCommand(Microsoft::Terminal::Settings::Model::Command const& command) :
+        _Command(command),
+        _Filter(L"")
+    {
+        _HighlightedName = _computeHighlightedName();
+
+        // Recompute the highlighted name if the command name changes
+        _Command.PropertyChanged([weakThis{ get_weak() }](Windows::Foundation::IInspectable const& /*sender*/, Data::PropertyChangedEventArgs const& e) {
+            auto filteredCommand{ weakThis.get() };
+            if (filteredCommand && e.PropertyName() == L"Name")
+            {
+                filteredCommand->HighlightedName(filteredCommand->_computeHighlightedName());
+            }
+        });
+    }
+
+    void FilteredCommand::UpdateFilter(winrt::hstring const& filter)
+    {
+        // If the filter was not changed we want to prevent the re-computation of matching
+        // that might result in triggerrign a notification event
+        if (filter != _Filter)
+        {
+            Filter(filter);
+            HighlightedName(_computeHighlightedName());
+        }
+    }
+
+    // Method Description:
+    // - Looks up the filter characters within the command name.
+    // Iterating through the filter and the command name it tries to associate the next filter character
+    // with the first appearance of this character in the command name suffix.
+    //
+    // E.g., for filter="clts" and name="close all tabs after this", the match will be "CLose TabS after this".
+    //
+    // The command name is then split into segments (groupings of matched and non matched characters).
+    //
+    // E.g., the segments were the example above will be "CL", "ose ", "T", "ab", "S", "after this".
+    //
+    // The segments matching the filter characters are marked as highlighted.
+    //
+    // E.g., ("CL", true) ("ose ", false), ("T", true), ("ab", false), ("S", true), ("after this", false)
+    //
+    // TODO: we probably need to merge this logic with _getWeight computation?
+    //
+    // Return Value:
+    // - The HighligtedText object initialized with the segments computed according to the algorithm above.
+    winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
+    {
+        const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
+        auto commandName = _Command.Name();
+        bool isProcessingMatchedSegment = false;
+        uint32_t nextOffsetToReport = 0;
+        uint32_t currentOffset = 0;
+
+        for (const auto searchChar : _Filter)
+        {
+            const auto lowerCaseSearchChar = std::towlower(searchChar);
+            while (true)
+            {
+                if (currentOffset == commandName.size())
+                {
+                    // There are still unmatched filter characters but we finished scanning the name.
+                    // This should not happen, if we are processing only names that matched the filter
+                    throw winrt::hresult_invalid_argument();
+                }
+
+                auto isCurrentCharMatched = std::towlower(commandName[currentOffset]) == lowerCaseSearchChar;
+                if (isProcessingMatchedSegment != isCurrentCharMatched)
+                {
+                    // We reached the end of the region (matched character came after a series of unmatched or vice versa).
+                    // Conclude the segment and add it to the list.
+                    // Skip segment if it is empty (might happen when the first character of the name is matched)
+                    auto sizeToReport = currentOffset - nextOffsetToReport;
+                    if (sizeToReport > 0)
+                    {
+                        winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
+                        auto highlightedSegment = winrt::make_self<HighlightedTextSegment>(segment, isProcessingMatchedSegment);
+                        segments.Append(*highlightedSegment);
+                        nextOffsetToReport = currentOffset;
+                    }
+                    isProcessingMatchedSegment = isCurrentCharMatched;
+                }
+
+                currentOffset++;
+
+                if (isCurrentCharMatched)
+                {
+                    // We have matched this filter character, let's move to matching the next filter char
+                    break;
+                }
+            }
+        }
+
+        // Either the filter or the command name were fully processed.
+        // If we were in the middle of the matched segment - add it.
+        if (isProcessingMatchedSegment)
+        {
+            auto sizeToReport = currentOffset - nextOffsetToReport;
+            if (sizeToReport > 0)
+            {
+                winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
+                auto highlightedSegment = winrt::make_self<HighlightedTextSegment>(segment, true);
+                segments.Append(*highlightedSegment);
+                nextOffsetToReport = currentOffset;
+            }
+        }
+
+        // Now create a segment for all remaining characters.
+        // We will have remaining characters as long as the filter is shorter than the command name.
+        auto sizeToReport = commandName.size() - nextOffsetToReport;
+        if (sizeToReport > 0)
+        {
+            winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
+            auto highlightedSegment = winrt::make_self<HighlightedTextSegment>(segment, false);
+            segments.Append(*highlightedSegment);
+        }
+
+        return *winrt::make_self<HighlightedText>(segments);
+    }
+
     CommandPalette::CommandPalette() :
         _switcherStartIdx{ 0 }
     {
         InitializeComponent();
 
-        _filteredActions = winrt::single_threaded_observable_vector<Command>();
+        _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
         _nestedActionStack = winrt::single_threaded_vector<Command>();
         _currentNestedCommands = winrt::single_threaded_vector<Command>();
         _allCommands = winrt::single_threaded_vector<Command>();
@@ -132,9 +255,9 @@ namespace winrt::TerminalApp::implementation
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             const auto& selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto& command = selectedCommand.try_as<Command>())
+            if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
             {
-                const auto& actionAndArgs = command.Action();
+                const auto& actionAndArgs = filteredCommand.Command().Action();
                 _dispatch.DoAction(actionAndArgs);
             }
         }
@@ -198,9 +321,10 @@ namespace winrt::TerminalApp::implementation
             // Action, TabSwitch or TabSearchMode Mode: Dispatch the action of the selected command.
             if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                if (const auto selectedItem = _filteredActionsView().SelectedItem())
+                const auto& selectedCommand = _filteredActionsView().SelectedItem();
+                if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
                 {
-                    _dispatchCommand(selectedItem.try_as<Command>());
+                    _dispatchCommand(filteredCommand.Command());
                 }
             }
             // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
@@ -307,12 +431,10 @@ namespace winrt::TerminalApp::implementation
 
         if (!ctrlDown && !altDown && !shiftDown)
         {
-            if (const auto selectedItem = _filteredActionsView().SelectedItem())
+            const auto& selectedCommand = _filteredActionsView().SelectedItem();
+            if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
             {
-                if (const auto data = selectedItem.try_as<Command>())
-                {
-                    _dispatchCommand(data);
-                }
+                _dispatchCommand(filteredCommand.Command());
             }
         }
     }
@@ -356,7 +478,11 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
-        _dispatchCommand(e.ClickedItem().try_as<Command>());
+        const auto& selectedCommand = e.ClickedItem();
+        if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+        {
+            _dispatchCommand(filteredCommand.Command());
+        }
     }
 
     // Method Description:
@@ -380,6 +506,7 @@ namespace winrt::TerminalApp::implementation
         // Changing the value of the search box will trigger _filterTextChanged,
         // which will cause us to refresh the list of filterable commands.
         _searchBox().Text(L"");
+        _searchBox().Focus(FocusState::Programmatic);
     }
 
     // Method Description:
@@ -599,7 +726,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    Collections::IObservableVector<Command> CommandPalette::FilteredActions()
+    Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> CommandPalette::FilteredActions()
     {
         return _filteredActions;
     }
@@ -635,7 +762,8 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : commandsToFilter)
             {
-                _filteredActions.Append(action);
+                auto filteredCommand = winrt::make_self<FilteredCommand>(action);
+                _filteredActions.Append(*filteredCommand);
             }
         }
 
@@ -682,7 +810,7 @@ namespace winrt::TerminalApp::implementation
     // This is a helper struct to aid in sorting Commands by a given weighting.
     struct WeightedCommand
     {
-        Command command;
+        winrt::TerminalApp::FilteredCommand filteredCommand;
         int weight;
         int inOrderCounter;
 
@@ -693,13 +821,13 @@ namespace winrt::TerminalApp::implementation
                 // If two commands have the same weight, then we'll sort them alphabetically.
                 // If they both have the same name, fall back to the order in which they were
                 // pushed into the heap.
-                if (command.Name() == other.command.Name())
+                if (filteredCommand.Command().Name() == other.filteredCommand.Command().Name())
                 {
                     return inOrderCounter > other.inOrderCounter;
                 }
                 else
                 {
-                    return !_compareCommandNames(command, other.command);
+                    return !_compareCommandNames(filteredCommand.Command(), other.filteredCommand.Command());
                 }
             }
             return weight < other.weight;
@@ -714,9 +842,9 @@ namespace winrt::TerminalApp::implementation
     // - A collection that will receive the filtered actions
     // Return Value:
     // - <none>
-    std::vector<Command> CommandPalette::_collectFilteredActions()
+    std::vector<winrt::TerminalApp::FilteredCommand> CommandPalette::_collectFilteredActions()
     {
-        std::vector<Command> actions;
+        std::vector<winrt::TerminalApp::FilteredCommand> actions;
 
         winrt::hstring searchText{ _getTrimmedInput() };
         const bool addAll = searchText.empty();
@@ -734,7 +862,8 @@ namespace winrt::TerminalApp::implementation
             {
                 for (auto action : commandsToFilter)
                 {
-                    actions.push_back(action);
+                    auto filteredCommand = winrt::make_self<FilteredCommand>(action);
+                    actions.push_back(*filteredCommand);
                 }
 
                 return actions;
@@ -754,7 +883,8 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : sortedCommands)
             {
-                actions.push_back(action);
+                auto filteredCommand = winrt::make_self<FilteredCommand>(action);
+                actions.push_back(*filteredCommand);
             }
 
             return actions;
@@ -781,11 +911,12 @@ namespace winrt::TerminalApp::implementation
         uint32_t counter = 0;
         for (auto action : commandsToFilter)
         {
-            const auto weight = CommandPalette::_getWeight(searchText, action.Name());
+            auto filteredCommand = winrt::make_self<FilteredCommand>(action);
+            auto weight = _getWeight(searchText, action.Name());
             if (weight > 0)
             {
                 WeightedCommand wc;
-                wc.command = action;
+                wc.filteredCommand = filteredCommand.as<winrt::TerminalApp::FilteredCommand>();
                 wc.weight = weight;
                 wc.inOrderCounter = counter++;
 
@@ -801,7 +932,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto top = heap.top();
             heap.pop();
-            actions.push_back(top.command);
+            actions.push_back(top.filteredCommand);
         }
 
         return actions;
@@ -831,7 +962,7 @@ namespace winrt::TerminalApp::implementation
         {
             for (uint32_t j = i; j < _filteredActions.Size(); j++)
             {
-                if (_filteredActions.GetAt(j) == actions[i])
+                if (_filteredActions.GetAt(j).Command() == actions[i].Command())
                 {
                     for (uint32_t k = i; k < j; k++)
                     {
@@ -841,7 +972,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            if (_filteredActions.GetAt(i) != actions[i])
+            if (_filteredActions.GetAt(i).Command() != actions[i].Command())
             {
                 _filteredActions.InsertAt(i, actions[i]);
             }
@@ -857,6 +988,19 @@ namespace winrt::TerminalApp::implementation
         while (_filteredActions.Size() < actions.size())
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
+        }
+
+        // Update filter for all commands
+        // It is important to modify the text highlihgting for commands
+        // that were not updated in the original observable vector.
+        // For such command an update will trigger PropertyChanged notification
+        // to update teh view.
+        // This action will be trivial for the newly added commands - because their filter
+        // was just computed.
+        auto filter = _searchBox().Text();
+        for (auto action : _filteredActions)
+        {
+            action.UpdateFilter(filter);
         }
     }
 
