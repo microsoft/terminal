@@ -1262,9 +1262,10 @@ namespace winrt::TerminalApp::implementation
             // Remove the content from the tab first, so Pane::UnZoom can
             // re-attach the content to the tree w/in the pane
             _tabContent.Children().Clear();
+            // In ExitZoom, we'll change the Tab's Content(), triggering the
+            // content changed event, which will re-attach the tab's new content
+            // root to the tree.
             activeTab->ExitZoom();
-            // Re-attach the tab's content to the UI tree.
-            // _tabContent.Children().Append(activeTab->Content());
         }
     }
 

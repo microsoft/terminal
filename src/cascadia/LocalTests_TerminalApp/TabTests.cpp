@@ -501,6 +501,13 @@ namespace TerminalAppLocalTests
         });
     }
 
+    // Method Description:
+    // - This is a helper method for setting up a TerminalPage with some common
+    //   settings, and creating the first tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The initalized TerminalPage, ready to use.
     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
     {
         const std::string settingsJson0{ R"(
@@ -547,13 +554,6 @@ namespace TerminalAppLocalTests
 
     void TabTests::TryZoomPane()
     {
-        // Log::Comment(L"Duplicate the first tab");
-        // result = RunOnUIThread([&page]() {
-        //     page->_DuplicateTabViewItem();
-        //     VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
-        // });
-        // VERIFY_SUCCEEDED(result);
-
         auto page = _commonSetup();
 
         Log::Comment(L"Create a second pane");
@@ -673,8 +673,19 @@ namespace TerminalAppLocalTests
             page->_HandleClosePane(nullptr, eventArgs);
 
             auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        // Introduce a slight delay to let the events finish propogating
+        Sleep(250);
+
+        Log::Comment(L"Check to ensure there's only one pane left.");
+
+        result = RunOnUIThread([&page]() {
+            auto firstTab = page->_GetStrongTabImpl(0);
             VERIFY_ARE_EQUAL(1, firstTab->GetLeafPaneCount());
-            VERIFY_IS_TRUE(firstTab->IsZoomed());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
     }

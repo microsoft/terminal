@@ -24,7 +24,6 @@ namespace winrt::TerminalApp::implementation
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-        winrt::Windows::UI::Xaml::UIElement GetRootElement();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 

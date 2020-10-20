@@ -62,24 +62,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Get the root UIElement of this Tab's root pane.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The UIElement acting as root of the Tab's root pane.
-    UIElement Tab::GetRootElement()
-    {
-        if (_zoomedPane)
-        {
-            return _zoomedPane->GetRootElement();
-        }
-        else
-        {
-            return _rootPane->GetRootElement();
-        }
-    }
-
-    // Method Description:
     // - Returns nullptr if no children of this tab were the last control to be
     //   focused, or the TermControl that _was_ the last control to be focused (if
     //   there was one).
@@ -517,7 +499,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (tab->_zoomedPane)
                 {
-                    co_await winrt::resume_foreground(tab->GetRootElement().Dispatcher());
+                    co_await winrt::resume_foreground(tab->Content().Dispatcher());
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
                     // tab->_zoomedPane = nullptr;
