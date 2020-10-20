@@ -507,7 +507,7 @@ namespace TerminalAppLocalTests
     // Arguments:
     // - <none>
     // Return Value:
-    // - The initalized TerminalPage, ready to use.
+    // - The initialized TerminalPage, ready to use.
     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
     {
         const std::string settingsJson0{ R"(
@@ -620,7 +620,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        Log::Comment(L"Move focus. This will cause us to unzoom.");
+        Log::Comment(L"Move focus. This will cause us to un-zoom.");
         result = RunOnUIThread([&page]() {
             // Set up action
             MoveFocusArgs args{ Direction::Left };
@@ -665,7 +665,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        Log::Comment(L"Close Pane. This should cause us to unzoom, and remove the second pane from the tree");
+        Log::Comment(L"Close Pane. This should cause us to un-zoom, and remove the second pane from the tree");
         result = RunOnUIThread([&page]() {
             // Set up action
             ActionEventArgs eventArgs{};
@@ -677,7 +677,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        // Introduce a slight delay to let the events finish propogating
+        // Introduce a slight delay to let the events finish propagating
         Sleep(250);
 
         Log::Comment(L"Check to ensure there's only one pane left.");
