@@ -97,11 +97,11 @@ To start, each settings object will now have a `CreateChild()` function. For `Gl
 GlobalAppSettings GlobalAppSettings::CreateChild() const
 {
     GlobalAppSettings child {};
-    child._parent = this;
+    child._parents.append(this);
     return child;
 }
 ```
-`_parent` serves as a reference for who to ask if a settings value was not provided by the user. `LaunchMode`, for example, will now have a getter/setter that looks similar to this:
+`std::vector<T> _parents` serves as a reference for who to ask if a settings value was not provided by the user. `LaunchMode`, for example, will now have a getter/setter that looks similar to this:
 ```c++
 // _LaunchMode will now be a std::optional<LaunchMode> instead of a LaunchMode
 // - std::nullopt will mean that there is no user-set value
@@ -114,7 +114,7 @@ LaunchMode GlobalAppSettings::LaunchMode()
     //  - user set value
     //  - inherited value
     //  - system set value
-    return til::coalesce_value(_LaunchMode, _parent.LaunchMode(), LaunchMode::DefaultMode);
+    return til::coalesce_value(_LaunchMode, _parents[0].LaunchMode(), _parents[1].LaunchMode(), ..., LaunchMode::DefaultMode);
 }
 
 // explicitly set the user-set value
@@ -151,12 +151,7 @@ void Profile::ApplyTo(Profile profile) const
 }
 ```
 
-This functionality will be useful when layering the `profile.defaults` onto dynamic profiles. `profile.defaults` can now be saved to a `Profile` object, then applied onto other `Profile` objects. For dynamic profiles, we will...
-- create a `Profile` from the dynamic profile generator
-- apply `profile.defaults` onto this profile (via `ApplyTo`)
-- When reading `settings.json`, if there are modifications to this profile...
-  - create a new `Profile` with the above `Profile` as its parent (via `CreateChild()`)
-  - layer `settings.json` values onto the child
+This functionality operates similar to `LayerJson()`, except that you operate with a serialized object, as opposed to a JSON blob.
 
 As a result, the tracking and functionality of cascading settings is moved into the object model instead of keeping it as a json-only concept.
 
@@ -189,11 +184,14 @@ This process becomes a bit more complex for `Profile` because it can fallback in
    - append newly created profiles to `_profiles` (unchanged)
 3. load `settings.json` `profiles.defaults`
    - construct a `Profile` from `profiles.defaults`. Save as `Profile _profileDefaults`.
-   - layer `profile.defaults` onto `_profiles` (replace `LayerJson` with `ApplyTo`, but logic largely unchanged)
+   - `CreateChild()` for each existing profile
+   - add `_profileDefaults` as the first parent to each child (`_parents=[_profileDefaults, <value from generator/defaults.json> ]`)
+   - replace each `Profile` in `_profiles` with the child
 4. load `settings.json` `profiles.list`
    - if a matching profile exists, `CreateChild` from the matching profile, and layer the json onto the child.
-   - otherwise, `CreateChild` from `_profileDefaults`, and layer the json onto the child.
-   - NOTE: `_profiles` must be updated such that the parent is removed
+      - NOTE: we do _not_ include `_profileDefaults` as a parent here, because it is already an ancestor
+   - otherwise, `CreateChild()` from `_profileDefaults`, and layer the json onto the child.
+   - As before, `_profiles` must be updated such that the parent is removed
 
 Additionally, `_profileDefaults` will be exposed by `Profile CascadiaSettings::ProfileDefaults()`. This will enable [#7414](https://github.com/microsoft/terminal/pull/7414)'s implementation to spawn incoming commandline app tabs with the "Default" profile (as opposed to the "default profile").
 
@@ -225,12 +223,46 @@ Settings objects will have `CreateChild()` and `Copy()`. `CreateChild()` is resp
 
 The Settings UI will use `Copy()` to get a deep copy of `CascadiaSettings` and data bind the UI to that copy. Thus, `Copy()` needs to be exposed in the IDL.
 
-It is important that `_parent` is handled properly when performing a deep copy. We need to be aware of the following errors:
-- referencing `_parent` will result in inheriting from an obsolete object tree
-- referencing a copy of `_parent` is ok as long as that `_parent` does not have multiple children. If it has multiple children, changes to the parent will not propagate to all of its children.
+#### Copying _parents
+It is important that `_parents` is handled properly when performing a deep copy. We need to be aware of the following errors:
+- referencing `_parents` will result in inheriting from an obsolete object tree
+- referencing a copy of `_parents` can result in losing the meaning of a reference
+  - For example, `profile.defaults` is a parent to each presented profile. When a change occurs to `profile.defaults`, that change should impact all profiles. An improper copy may only apply the change to one of the presented profiles
 
-When a `_parent` will be allowed to have multiple children, we must ensure that a singular `_parent` is still referenced by its multiple children. However, this is out of scope for serialization, and is more related to a discussion surrounding Profile inheritance as an exposed setting.
+The hierarchy we have created has evolved into a directed acyclic graph (DAG). For example, the hierarchy for profiles will appear similar to the following:
 
+![Profile Inheritance DAG Example](Inheritance-DAG.png)
+
+In order to preserve `profile.defaults` as a referenced parent to each profile, a copy of the DAG can be performed using the following algorithm:
+```python
+# Function to clone a graph. To do this, we start
+# reading the original graph depth-wise, recursively
+# If we encounter an unvisited node in original graph,
+# we initialize a new instance of Node for
+# cloned graph with key of original node
+def cloneGraph(oldSource, newSource, visited):
+    clone = None
+    if visited[oldSource.key] is False and oldSource.adj is not None:
+        for old in oldSource.adj:
+
+            # Below check is for backtracking, so new
+            # nodes don't get initialized everytime
+            if clone is None or(clone is not None and clone.key != old.key):
+                clone = Node(old.key, [])
+            newSource.adj.append(clone)
+            cloneGraph(old, clone, visited)
+
+            # Once, all neighbors for that particular node
+            # are created in cloned graph, code backtracks
+            # and exits from that node, mark the node as
+            # visited in original graph, and traverse the
+            # next unvisited
+            visited[old.key] = True
+    return newSource
+```
+Source: https://www.geeksforgeeks.org/clone-directed-acyclic-graph/
+
+This algorithm operates in O(n) time and space where `n` is the number of profiles presented.
 
 ### Terminal Settings Model: Serialization and Deserialization
 
