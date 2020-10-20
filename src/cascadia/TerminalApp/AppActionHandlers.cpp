@@ -396,7 +396,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleOpenTabRenamer(const IInspectable& /*sender*/,
-                                             const TerminalApp::ActionEventArgs& args)
+                                             const ActionEventArgs& args)
     {
         auto activeTab = _GetFocusedTab();
         if (activeTab)

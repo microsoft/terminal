@@ -214,7 +214,7 @@ namespace winrt::TerminalApp::implementation
         }
         case ShortcutAction::OpenTabRenamer:
         {
-            _OpenTabRenamerHandlers(*this, *eventArgs);
+            _OpenTabRenamerHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ExecuteCommandline:
