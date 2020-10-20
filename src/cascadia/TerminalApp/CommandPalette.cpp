@@ -150,11 +150,15 @@ namespace winrt::TerminalApp::implementation
    // - <none>
     void CommandPalette::GoEnd(const bool end)
     {
-        auto selected = _filteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
-
-        const auto newIndex = ((numItems + selected + (end ? ((numItems * 2 - 1) - selected) : -selected)) % numItems);
-        _filteredActionsView().SelectedIndex(newIndex);
+        const auto lastIndex = ::base::saturated_cast<int>(_filteredActionsView().Items().Size() - 1);
+        if (end)
+        {
+            _filteredActionsView().SelectedIndex(lastIndex);
+        }
+        else
+        {
+            _filteredActionsView().SelectedIndex(0);
+        }
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
