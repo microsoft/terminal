@@ -38,12 +38,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _setAction(nullptr);
     }
 
-    IMapView<winrt::hstring, Model::Command> Command::NestedCommands()
+    com_ptr<Command> Command::Copy() const
+    {
+        auto command{ winrt::make_self<Command>() };
+        command->_Name = _Name;
+        command->_Action = _Action;
+        command->_KeyChordText = _KeyChordText;
+        command->_Icon = _Icon;
+        command->_IterateOn = _IterateOn;
+
+        command->_originalJson = _originalJson;
+        if (HasNestedCommands())
+        {
+            command->_subcommands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
+            for (auto kv : NestedCommands())
+            {
+                const auto subCmd{ winrt::get_self<Command>(kv.Value()) };
+                command->_subcommands.Insert(kv.Key(), *subCmd->Copy());
+            }
+        }
+        return command;
+    }
+
+    IMapView<winrt::hstring, Model::Command> Command::NestedCommands() const
     {
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
-    bool Command::HasNestedCommands()
+    bool Command::HasNestedCommands() const
     {
         return _subcommands ? _subcommands.Size() > 0 : false;
     }

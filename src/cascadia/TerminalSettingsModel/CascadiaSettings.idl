@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass CascadiaSettings {
         CascadiaSettings(String json);
+        CascadiaSettings Copy();
 
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
