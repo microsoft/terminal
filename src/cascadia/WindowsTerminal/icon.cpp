@@ -57,7 +57,12 @@ static wchar_t* _GetActiveAppIcon()
         if (WI_IsFlagSet(hcInfo.dwFlags, HCF_HIGHCONTRASTON))
         {
             WI_SetFlag(iconClass, IconClass::Variant_HC);
-            WI_UpdateFlag(iconClass, IconClass::Variant_HC_White, wcsstr(hcInfo.lpszDefaultScheme, L"White") != nullptr);
+
+            if (hcInfo.lpszDefaultScheme)
+            {
+                const std::wstring_view theme{ hcInfo.lpszDefaultScheme };
+                WI_UpdateFlag(iconClass, IconClass::Variant_HC_White, theme.find(L"White") != std::wstring_view::npos);
+            }
         }
     }
 
@@ -69,8 +74,20 @@ static wchar_t* _GetActiveAppIcon()
 void UpdateWindowIconForActiveMetrics(HWND window)
 {
     auto iconResource{ _GetActiveAppIcon() };
-    HANDLE smallIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR) };
-    HANDLE largeIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR) };
-    SendMessageW(window, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(smallIcon));
-    SendMessageW(window, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(largeIcon));
+
+    // These handles are loaded with LR_SHARED, so they are safe to "leak".
+    HANDLE smallIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED) };
+    LOG_LAST_ERROR_IF_NULL(smallIcon);
+
+    HANDLE largeIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED) };
+    LOG_LAST_ERROR_IF_NULL(largeIcon);
+
+    if (smallIcon)
+    {
+        SendMessageW(window, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(smallIcon));
+    }
+    if (largeIcon)
+    {
+        SendMessageW(window, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(largeIcon));
+    }
 }
