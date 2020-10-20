@@ -101,14 +101,30 @@ namespace winrt::TerminalApp::implementation
     // - Moves the focus up or down the list of commands. If we're at the top,
     //   we'll loop around to the bottom, and vice-versa.
     // Arguments:
-    // - moveDown: if true, we're attempting to move to either next or last visible item in the
-    //   list. Otherwise, we're attempting to move to either previous or first visible item.
-    //   Depends on the pageUpDown argument.
-    // - pageUpDown: if true, we're attempting to move to either first visible item
-    //   or last visible item in the ListView.
+    // - moveDown: if true, we're attempting to move to the next item in the
+    //   list. Otherwise, we're attempting to move to the previous.
     // Return Value:
     // - <none>
-    void CommandPalette::SelectNextItem(const bool moveDown, const bool pageUpDown, const bool homeEnd)
+    void CommandPalette::SelectNextItem(const bool moveDown)
+    {
+        const auto selected = _filteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+        // Wraparound math. By adding numItems and then calculating modulo numItems,
+        // we clamp the values to the range [0, numItems) while still supporting moving
+        // upward from 0 to numItems - 1.
+        const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+   // Method Description:
+   // - Scrolls the focus up or down the list of commands.
+   // Arguments:
+   // - pageDown: if true, we're attempting to move to last visible item in the
+   //   list. Otherwise, we're attempting to move to first visible item.
+   // Return Value:
+   // - <none>
+    void CommandPalette::ScrollDown(const bool pageDown)
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
         const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
@@ -118,10 +134,26 @@ namespace winrt::TerminalApp::implementation
 
         auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
-        // Wraparound math. By adding numItems and then calculating modulo numItems,
-        // we clamp the values to the range [0, numItems) while still supporting moving
-        // upward from 0 to numItems - 1.
-        const auto newIndex = ((numItems + selected + (moveDown ? (pageUpDown ? numVisibleItems : homeEnd ? (numItems * 2 - 1) - selected : 1) : (pageUpDown ? -numVisibleItems : homeEnd ? -selected : -1))) % numItems);
+
+        const auto newIndex = ((numItems + selected + (pageDown ? numVisibleItems : -numVisibleItems)) % numItems);
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+   // Method Description:
+   // - Moves the focus either to top item or end item in the list of commands.
+   // Arguments:
+   // - end: if true, we're attempting to move to last item in the
+   //   list. Otherwise, we're attempting to move to first item.
+   //   Depends on the pageUpDown argument.
+   // Return Value:
+   // - <none>
+    void CommandPalette::GoEnd(const bool end)
+    {
+        auto selected = _filteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+
+        const auto newIndex = ((numItems + selected + (end ? ((numItems * 2 - 1) - selected) : -selected)) % numItems);
         _filteredActionsView().SelectedIndex(newIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
@@ -143,12 +175,12 @@ namespace winrt::TerminalApp::implementation
             auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
             if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
             {
-                SelectNextItem(false, false, false);
+                SelectNextItem(false);
                 e.Handled(true);
             }
             else
             {
-                SelectNextItem(true, false, false);
+                SelectNextItem(true);
                 e.Handled(true);
             }
         }
@@ -170,35 +202,35 @@ namespace winrt::TerminalApp::implementation
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
-            SelectNextItem(false, false, false);
+            SelectNextItem(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::Down)
         {
             // Action Mode: Move focus to the previous item in the list.
-            SelectNextItem(true, false, false);
+            SelectNextItem(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageUp)
         {
             // Action Mode: Move focus to the previous item in the list.
-            SelectNextItem(false, true, false);
+            ScrollDown(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
             // Action Mode: Move focus to the previous item in the list.
-            SelectNextItem(true, true, false);
+            ScrollDown(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Home)
         {
-            SelectNextItem(false, false, true);
+            GoEnd(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::End)
         {
-            SelectNextItem(true, false, true);
+            GoEnd(true);
             e.Handled(false);
         }
         else if (key == VirtualKey::Enter)

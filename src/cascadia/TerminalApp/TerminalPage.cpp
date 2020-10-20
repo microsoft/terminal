@@ -1211,7 +1211,7 @@ namespace winrt::TerminalApp::implementation
             {
                 if (CommandPalette().Visibility() == Visibility::Visible)
                 {
-                    CommandPalette().SelectNextItem(bMoveRight, false, false);
+                    CommandPalette().SelectNextItem(bMoveRight);
                 }
 
                 CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
