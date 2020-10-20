@@ -3233,7 +3233,7 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\x1b]8;;\x9c");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
-        
+
         // Let's try more complicated params and URLs
         mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x9c");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);

@@ -925,8 +925,9 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
                 params = part.substr(idPos + hyperlinkIDParameter.size());
             }
         }
+        return true;
     }
-    return true;
+    return false;
 }
 
 // Routine Description:
@@ -1014,14 +1015,14 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
     if (pos != std::wstring_view::npos)
     {
         const std::wstring_view substr = string.substr(pos + 1);
-        if (substr == L"?")	
-        {	
-            queryClipboard = true;	
-            return true;	
-        }	
-        else	
-        {	
-            return Base64::s_Decode(substr, content);	
+        if (substr == L"?")
+        {
+            queryClipboard = true;
+            return true;
+        }
+        else
+        {
+            return Base64::s_Decode(substr, content);
         }
     }
 
