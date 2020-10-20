@@ -132,10 +132,10 @@ namespace winrt::TerminalApp::implementation
             // a pane is zoomed, then it's currently in the UI tree, and should
             // be removed before it's re-added in Pane::Restore
             _tabContent.Children().Clear();
-            activeTab->ToggleZoom();
 
-            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
-            // _UpdatedSelectedTab(_tabView.SelectedIndex());
+            // Togging the zoom on the tab will cause the tab to inform us of
+            // the new root Content for this tab.
+            activeTab->ToggleZoom();
         }
         args.Handled(true);
     }
