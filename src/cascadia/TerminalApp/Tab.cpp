@@ -766,6 +766,12 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // We'll only process KeyUp event if `_receivedKeyDown` is true
+        tabTextBox.KeyDown([weakThis](const IInspectable&, Input::KeyRoutedEventArgs const&) {
+            auto tab{ weakThis.get() };
+            tab->_receivedKeyDown = true;
+        });
+
         // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
         // remove the TextBox from the UI tree, then the following KeyUp
         // will bubble to the NewTabButton, which we don't want to have
@@ -773,7 +779,7 @@ namespace winrt::TerminalApp::implementation
         tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
             auto tab{ weakThis.get() };
             auto textBox{ sender.try_as<Controls::TextBox>() };
-            if (tab && textBox)
+            if (tab && textBox && tab->_receivedKeyDown)
             {
                 switch (e.OriginalKey())
                 {
@@ -787,6 +793,8 @@ namespace winrt::TerminalApp::implementation
                     tab->_UpdateTitle();
                     break;
                 }
+
+                tab->_receivedKeyDown = false;
             }
         });
 
