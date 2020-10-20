@@ -471,18 +471,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (FAILED(_settingsLoadedResult))
         {
-            winrt::hstring titleKey;
-            winrt::hstring textKey;
-            if (_settingsLoadedResult == E_ACCESSDENIED)
-            {
-                titleKey = USES_RESOURCE(L"WriteToSettingsFailedTitle");
-                textKey = USES_RESOURCE(L"WriteToSettingsFailedText");
-            }
-            else
-            {
-                titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
-                textKey = USES_RESOURCE(L"InitialJsonParseErrorText");
-            }
+            const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
+            const winrt::hstring textKey = USES_RESOURCE(L"InitialJsonParseErrorText");
             _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
         }
         else if (_settingsLoadedResult == S_FALSE)

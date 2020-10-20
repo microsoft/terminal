@@ -324,4 +324,7 @@
   <data name="ToggleRetroEffectCommandKey" xml:space="preserve">
     <value>Toggle retro terminal effect</value>
   </data>
+  <data name="WriteSettingsFailed" xml:space="preserve">
+    <value>We could not write to your settings file. Check the permissions on that file.</value>
+  </data>
 </root>

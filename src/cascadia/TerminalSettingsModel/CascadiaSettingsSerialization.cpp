@@ -185,7 +185,14 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             // We should re-parse, but not re-layer
             resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
 
-            _WriteSettings(resultPtr->_userSettingsString);
+            try
+            {
+                _WriteSettings(resultPtr->_userSettingsString);
+            }
+            catch (...)
+            {
+                throw SettingsTypedDeserializationException{ winrt::to_string((RS_(L"WriteSettingsFailed"))) };
+            }
         }
 
         // If this throws, the app will catch it and use the default settings
