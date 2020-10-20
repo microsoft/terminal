@@ -12,14 +12,16 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Flyout x:Key="ColorPickerFlyout">
+        <!--TODO: Don't be like me and put a whole control in resoures bc it's shared.
+                  Find a different way to dedupe the buttons/flyouts. -->
+        <!--<Flyout x:Key="ColorPickerFlyout">
             <ColorPicker IsColorSliderVisible="False"
                          IsColorChannelTextInputVisible="False"
                          IsHexInputVisible="False"
                          IsAlphaEnabled="False"
                          IsAlphaSliderVisible="True"
                          IsAlphaTextInputVisible="True" />
-        </Flyout>
+        </Flyout>-->
     </Page.Resources>
     
     <Pivot>
@@ -95,8 +97,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2"
-                                    Flyout="{StaticResource ColorPickerFlyout}">
+                                    CornerRadius="2">
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker IsColorSliderVisible="False"
+                                                     IsColorChannelTextInputVisible="False"
+                                                     IsHexInputVisible="False"
+                                                     IsAlphaEnabled="False"
+                                                     IsAlphaSliderVisible="True"
+                                                     IsAlphaTextInputVisible="True" />       
+                                    </Flyout>
+                                </Button.Flyout>
                             </Button>
                         </StackPanel>
                         <DropDownButton x:Uid="Profile_ColorScheme" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
@@ -124,8 +135,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2"
-                                    Flyout="{StaticResource ColorPickerFlyout}">
+                                    CornerRadius="2">
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker IsColorSliderVisible="False"
+                                                     IsColorChannelTextInputVisible="False"
+                                                     IsHexInputVisible="False"
+                                                     IsAlphaEnabled="False"
+                                                     IsAlphaSliderVisible="True"
+                                                     IsAlphaTextInputVisible="True" />
+                                    </Flyout>
+                                </Button.Flyout>
                             </Button>
                         </StackPanel>
                         <StackPanel x:Uid="Profile_BackgroundColorToolTip"
@@ -140,8 +160,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2"
-                                    Flyout="{StaticResource ColorPickerFlyout}">
+                                    CornerRadius="2">
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker IsColorSliderVisible="False"
+                                                     IsColorChannelTextInputVisible="False"
+                                                     IsHexInputVisible="False"
+                                                     IsAlphaEnabled="False"
+                                                     IsAlphaSliderVisible="True"
+                                                     IsAlphaTextInputVisible="True" />
+                                    </Flyout>
+                                </Button.Flyout>
                             </Button>
                         </StackPanel>
                         <StackPanel x:Uid="Profile_SelectionBackgroundColorToolTip"
@@ -156,8 +185,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Height="37"
                                     Width="37"
                                     Margin="10,22,0,0"
-                                    CornerRadius="2"
-                                    Flyout="{StaticResource ColorPickerFlyout}">
+                                    CornerRadius="2">
+                                <Button.Flyout>
+                                    <Flyout>
+                                        <ColorPicker IsColorSliderVisible="False"
+                                                     IsColorChannelTextInputVisible="False"
+                                                     IsHexInputVisible="False"
+                                                     IsAlphaEnabled="False"
+                                                     IsAlphaSliderVisible="True"
+                                                     IsAlphaTextInputVisible="True" />
+                                    </Flyout>
+                                </Button.Flyout>
                             </Button>
                         </StackPanel>
                     </StackPanel>

@@ -12,8 +12,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                           Foundation::IInspectable const& /* parameter */,
                                                           hstring const& /* language */)
     {
-        til::color test{ winrt::unbox_value<winrt::Windows::UI::Color>(value) };
-        auto hex = winrt::to_hstring(test.ToHexString().data());
+        til::color color{ winrt::unbox_value<winrt::Windows::UI::Color>(value) };
+        auto hex = winrt::to_hstring(color.ToHexString().data());
         return winrt::box_value(hex);
     }
 

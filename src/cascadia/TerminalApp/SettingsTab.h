@@ -26,7 +26,6 @@ namespace winrt::TerminalApp::implementation
     struct SettingsTab : SettingsTabT<SettingsTab>
     {
     public:
-        SettingsTab() = delete;
         SettingsTab(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
         winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
