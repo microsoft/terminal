@@ -70,6 +70,49 @@ Profile::Profile(guid guid) :
 {
 }
 
+winrt::com_ptr<Profile> Profile::Copy() const
+{
+    auto profile{ winrt::make_self<Profile>() };
+    profile->_Name = _Name;
+    profile->_Source = _Source;
+    profile->_Hidden = _Hidden;
+    profile->_Icon = _Icon;
+    profile->_CloseOnExit = _CloseOnExit;
+    profile->_TabTitle = _TabTitle;
+    profile->_TabColor = _TabColor;
+    profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
+    profile->_UseAcrylic = _UseAcrylic;
+    profile->_AcrylicOpacity = _AcrylicOpacity;
+    profile->_ScrollState = _ScrollState;
+    profile->_FontFace = _FontFace;
+    profile->_FontSize = _FontSize;
+    profile->_FontWeight = _FontWeight;
+    profile->_Padding = _Padding;
+    profile->_Commandline = _Commandline;
+    profile->_StartingDirectory = _StartingDirectory;
+    profile->_BackgroundImagePath = _BackgroundImagePath;
+    profile->_BackgroundImageOpacity = _BackgroundImageOpacity;
+    profile->_BackgroundImageStretchMode = _BackgroundImageStretchMode;
+    profile->_AntialiasingMode = _AntialiasingMode;
+    profile->_RetroTerminalEffect = _RetroTerminalEffect;
+    profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
+    profile->_SoftwareRendering = _SoftwareRendering;
+    profile->_ColorSchemeName = _ColorSchemeName;
+    profile->_Foreground = _Foreground;
+    profile->_Background = _Background;
+    profile->_SelectionBackground = _SelectionBackground;
+    profile->_CursorColor = _CursorColor;
+    profile->_HistorySize = _HistorySize;
+    profile->_SnapOnInput = _SnapOnInput;
+    profile->_AltGrAliasing = _AltGrAliasing;
+    profile->_CursorShape = _CursorShape;
+    profile->_CursorHeight = _CursorHeight;
+    profile->_Guid = _Guid;
+    profile->_ConnectionType = _ConnectionType;
+    profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
+    return profile;
+}
+
 // Method Description:
 // - Generates a Json::Value which is a "stub" of this profile. This stub will
 //   have enough information that it could be layered with this profile.
