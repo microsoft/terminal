@@ -289,12 +289,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
-
-    // StartingDirectory is nullable. But WinRT does not allow IReference<hstring> to be exposed in the IDL.
-    // Exposing it as an IInspectable is a workaround for this issue.
-    std::optional<std::wstring> startDir{ std::nullopt };
-    _StartingDirectory.set = JsonUtils::GetValueForKey(json, StartingDirectoryKey, startDir);
-    _StartingDirectory.setting = startDir ? PropertyValue::CreateString(*startDir) : nullptr;
+    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
@@ -347,18 +342,12 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
 {
-    const auto path{ StartingDirectory() };
-    const auto pathString{ path.as<winrt::Windows::Foundation::IReference<winrt::hstring>>() };
-    if (pathString == nullptr)
+    if (_StartingDirectory)
     {
-        // Translate explicit null to empty string
-        // This is interpreted on the other end as "current directory for process"
-        return L"";
+        return winrt::hstring{ Profile::EvaluateStartingDirectory(_StartingDirectory->c_str()) };
     }
-    else
-    {
-        return winrt::hstring{ Profile::EvaluateStartingDirectory(pathString.Value().c_str()) };
-    }
+    // treated as "inherit directory from parent process"
+    return L"";
 }
 
 // Method Description:
@@ -568,38 +557,3 @@ void Profile::ConnectionType(const winrt::guid& conType) noexcept
 {
     _ConnectionType = conType;
 }
-
-#pragma region StartingDirectory
-bool Profile::HasStartingDirectory() const
-{
-    return _StartingDirectory.set;
-};
-
-winrt::Windows::Foundation::IInspectable Profile::StartingDirectory() const
-{
-    const auto val{ _getStartingDirectoryImpl() };
-    return val.set ? val.setting : nullptr;
-};
-
-void Profile::StartingDirectory(const winrt::Windows::Foundation::IInspectable& value)
-{
-    // Set the value if...
-    // - the value is not set already
-    // - both values are not null
-    // - both values are not the same string
-    auto myVal{ _StartingDirectory.setting.as<winrt::Windows::Foundation::IReference<winrt::hstring>>() };
-    auto otherVal{ value.as<winrt::Windows::Foundation::IReference<winrt::hstring>>() };
-    if (!HasStartingDirectory() ||
-        !myVal == !otherVal ||
-        myVal.Value() == otherVal.Value())
-    {
-        _StartingDirectory.setting = value;
-        _StartingDirectory.set = true;
-    }
-}
-
-void Profile::ClearStartingDirectory()
-{
-    _StartingDirectory.set = false;
-};
-#pragma endregion

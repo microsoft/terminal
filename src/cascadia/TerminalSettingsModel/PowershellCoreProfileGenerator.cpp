@@ -310,8 +310,7 @@ std::vector<Profile> PowershellCoreProfileGenerator::GenerateProfiles()
         const auto name = psI.Name();
         auto profile{ CreateDefaultProfile(name) };
         profile.Commandline(psI.executablePath.wstring());
-        const auto startDir{ winrt::Windows::Foundation::PropertyValue::CreateString(DEFAULT_STARTING_DIRECTORY) };
-        profile.StartingDirectory(startDir);
+        profile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
         profile.ColorSchemeName(L"Campbell");
 
         profile.Icon(WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON);

@@ -71,13 +71,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
-        // StartingDirectory is a nullable hstring. The IDL does not allow
-        // hstring to be nullable. So we must expose it as an IInspectable
-        bool HasStartingDirectory() const;
-        winrt::Windows::Foundation::IInspectable StartingDirectory() const;
-        void StartingDirectory(const winrt::Windows::Foundation::IInspectable& value);
-        void ClearStartingDirectory();
-
         GETSET_SETTING(guid, Guid);
         GETSET_SETTING(hstring, Name, L"Default");
         GETSET_SETTING(hstring, Source);
@@ -100,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(hstring, Padding, DEFAULT_PADDING);
 
         GETSET_SETTING(hstring, Commandline, L"cmd.exe");
+        GETSET_SETTING(hstring, StartingDirectory);
 
         GETSET_SETTING(hstring, BackgroundImagePath);
         GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
@@ -148,28 +142,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             /*no value was found*/
             return std::nullopt;
-        };
-
-        NullableString _StartingDirectory{};
-        NullableString _getStartingDirectoryImpl() const
-        {
-            /*return user set value*/
-            if (HasStartingDirectory())
-            {
-                return _StartingDirectory;
-            }
-
-            /*user set value was not set*/
-            /*iterate through parents to find a value*/
-            for (auto parent : _parents)
-            {
-                auto val{ parent->_getStartingDirectoryImpl() };
-                if (val.set)
-                {
-                    return val;
-                }
-            } /*no value was found*/
-            return { nullptr, false };
         };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

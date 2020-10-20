@@ -92,7 +92,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasStartingDirectory();
         void ClearStartingDirectory();
-        IInspectable StartingDirectory;
+        String StartingDirectory;
         String EvaluatedStartingDirectory { get; };
 
         Boolean HasBackgroundImagePath();

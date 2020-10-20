@@ -73,14 +73,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::Windows::Foundation::IReference<T> setting{ nullptr };
         bool set{ false };
     };
-
-    // hstrings cannot be exposed in IDLs as nullable
-    // We can get around that by treating it as an IInspectable
-    struct NullableString
-    {
-        winrt::Windows::Foundation::IInspectable setting{ nullptr };
-        bool set{ false };
-    };
 }
 
 // Use this macro to quickly implement both getters and the setter for an
