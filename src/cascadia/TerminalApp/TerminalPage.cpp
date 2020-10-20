@@ -2542,7 +2542,7 @@ namespace winrt::TerminalApp::implementation
     // - rowsToScroll - the number of rows to scroll
     // Return Value:
     // - delta - Signed delta, where a negative value means scrolling up.
-    int TerminalPage::_ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll) const
+    int TerminalPage::_ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll)
     {
         return scrollDirection == ScrollUp ? -1 * rowsToScroll : rowsToScroll;
     }

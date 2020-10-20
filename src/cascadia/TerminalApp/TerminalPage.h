@@ -211,7 +211,7 @@ namespace winrt::TerminalApp::implementation
 
         void _UnZoomIfNeeded();
 
-        int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll) const;
+        static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
