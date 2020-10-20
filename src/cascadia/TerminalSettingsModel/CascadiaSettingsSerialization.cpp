@@ -638,12 +638,6 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         auto childImpl{ parent->CreateChild() };
         childImpl->LayerJson(profileJson);
 
-        if (_userDefaultProfileSettings)
-        {
-            // Add profile.defaults as the _first_ parent to the child
-            childImpl->InsertParent(0, _userDefaultProfileSettings);
-        }
-
         // replace parent in _profiles with child
         _profiles.SetAt(*profileIndex, *childImpl);
     }

@@ -59,10 +59,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
-        bool HasGuid() const noexcept;
-        winrt::guid Guid() const;
-        void Guid(const winrt::guid& guid) noexcept;
-
         bool HasConnectionType() const noexcept;
         winrt::guid ConnectionType() const noexcept;
         void ConnectionType(const winrt::guid& conType) noexcept;
@@ -82,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void StartingDirectory(const winrt::Windows::Foundation::IInspectable& value);
         void ClearStartingDirectory();
 
+        GETSET_SETTING(guid, Guid);
         GETSET_SETTING(hstring, Name, L"Default");
         GETSET_SETTING(hstring, Source);
         GETSET_SETTING(bool, Hidden, false);
@@ -130,7 +127,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
 
     private:
-        std::optional<winrt::guid> _Guid{ std::nullopt };
         std::optional<winrt::guid> _ConnectionType{ std::nullopt };
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _getBackgroundImageAlignmentImpl() const

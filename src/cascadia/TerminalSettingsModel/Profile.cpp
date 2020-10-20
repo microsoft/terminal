@@ -178,7 +178,9 @@ winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Prof
 // - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
-    if (!_Guid.has_value())
+    // guid was not set
+    const auto myGuid{ Guid() };
+    if (myGuid == winrt::guid{})
     {
         return false;
     }
@@ -187,7 +189,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     // should _definitely_ not layer.
     if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) })
     {
-        if (otherGuid.value() != *_Guid)
+        if (otherGuid.value() != myGuid)
         {
             return false;
         }
@@ -551,23 +553,6 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
     }
 }
 #pragma endregion
-
-bool Profile::HasGuid() const noexcept
-{
-    return _Guid.has_value();
-}
-
-winrt::guid Profile::Guid() const
-{
-    // This can throw if we never had our guid set to a legitimate value.
-    THROW_HR_IF_MSG(E_FAIL, !_Guid.has_value(), "Profile._guid always expected to have a value");
-    return *_Guid;
-}
-
-void Profile::Guid(const winrt::guid& guid) noexcept
-{
-    _Guid = guid;
-}
 
 bool Profile::HasConnectionType() const noexcept
 {
