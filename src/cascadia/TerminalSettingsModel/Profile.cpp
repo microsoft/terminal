@@ -111,6 +111,13 @@ winrt::com_ptr<Profile> Profile::Copy() const
     profile->_ConnectionType = _ConnectionType;
     profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
     profile->_BellStyle = _BellStyle;
+
+    // TODO CARLOS: copy parents instead of parent
+    //if (_parent)
+    //{
+    //    profile->_parent = _parent->Copy();
+    //}
+
     return profile;
 }
 
@@ -585,7 +592,8 @@ bool Profile::HasStartingDirectory() const
 
 winrt::Windows::Foundation::IInspectable Profile::StartingDirectory() const
 {
-    return _getStartingDirectoryImpl();
+    const auto val{ _getStartingDirectoryImpl() };
+    return val.set ? val.setting : nullptr;
 };
 
 void Profile::StartingDirectory(const winrt::Windows::Foundation::IInspectable& value)

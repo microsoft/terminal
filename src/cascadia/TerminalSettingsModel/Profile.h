@@ -135,21 +135,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _getBackgroundImageAlignmentImpl() const
         {
-            return _BackgroundImageAlignment ?
-                       _BackgroundImageAlignment :
-                       (_parent ?
-                            _parent->_getBackgroundImageAlignmentImpl() :
-                            std::nullopt);
+            /*return user set value*/
+            if (_BackgroundImageAlignment)
+            {
+                return _BackgroundImageAlignment;
+            }
+
+            /*user set value was not set*/ /*iterate through parents to find a value*/
+            for (auto parent : _parents)
+            {
+                if (auto val{ parent->_getBackgroundImageAlignmentImpl() })
+                {
+                    return val;
+                }
+            }
+
+            /*no value was found*/
+            return std::nullopt;
         };
 
         NullableString _StartingDirectory{};
-        winrt::Windows::Foundation::IInspectable _getStartingDirectoryImpl() const
+        NullableString _getStartingDirectoryImpl() const
         {
-            return HasStartingDirectory() ?
-                       _StartingDirectory.setting :
-                       (_parent ?
-                            _parent->_getStartingDirectoryImpl() :
-                            nullptr);
+            /*return user set value*/
+            if (HasStartingDirectory())
+            {
+                return _StartingDirectory;
+            }
+
+            /*user set value was not set*/
+            /*iterate through parents to find a value*/
+            for (auto parent : _parents)
+            {
+                auto val{ parent->_getStartingDirectoryImpl() };
+                if (val.set)
+                {
+                    return val;
+                }
+            } /*no value was found*/
+            return { nullptr, false };
         };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

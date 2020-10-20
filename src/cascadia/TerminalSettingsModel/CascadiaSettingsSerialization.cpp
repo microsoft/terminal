@@ -638,6 +638,12 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         auto childImpl{ parent->CreateChild() };
         childImpl->LayerJson(profileJson);
 
+        if (_userDefaultProfileSettings)
+        {
+            // Add profile.defaults as the _first_ parent to the child
+            childImpl->InsertParent(0, _userDefaultProfileSettings);
+        }
+
         // replace parent in _profiles with child
         _profiles.SetAt(*profileIndex, *childImpl);
     }
@@ -745,10 +751,19 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         _userDefaultProfileSettings = winrt::make_self<Profile>();
         _userDefaultProfileSettings->LayerJson(defaultSettings);
 
-        for (auto profile : _profiles)
+        const auto numOfProfiles{ _profiles.Size() };
+        for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
         {
-            auto profileImpl = winrt::get_self<Profile>(profile);
-            _userDefaultProfileSettings->ApplyTo(profileImpl);
+            // create a child, so we inherit from the defaults.json layer
+            auto parentProj{ _profiles.GetAt(profileIndex) };
+            auto parentImpl{ winrt::get_self<Profile>(parentProj) };
+            auto childImpl{ parentImpl->CreateChild() };
+
+            // Add profile.defaults as the _first_ parent to the child
+            childImpl->InsertParent(0, _userDefaultProfileSettings);
+
+            // replace parent in _profiles with child
+            _profiles.SetAt(profileIndex, *childImpl);
         }
     }
 }

@@ -73,18 +73,24 @@ void GlobalAppSettings::_FinalizeInheritance()
 {
     // TODO CARLOS: Crash invoking IActionAndArgs->Copy
     //_keymap = _parent->_keymap->Copy();
-    _keymap = _parent->_keymap;
-    std::copy(_parent->_keybindingsWarnings.begin(), _parent->_keybindingsWarnings.end(), std::back_inserter(_keybindingsWarnings));
-    for (auto kv : _parent->_colorSchemes)
-    {
-        const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
-        _colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
-    }
 
-    for (auto kv : _parent->_commands)
+    // Globals only ever has 1 parent
+    FAIL_FAST_IF(_parents.size() > 1);
+    for (auto parent : _parents)
     {
-        const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
-        _commands.Insert(kv.Key(), *commandImpl->Copy());
+        _keymap = parent->_keymap;
+        std::copy(parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end(), std::back_inserter(_keybindingsWarnings));
+        for (auto kv : parent->_colorSchemes)
+        {
+            const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
+            _colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+        }
+
+        for (auto kv : parent->_commands)
+        {
+            const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
+            _commands.Insert(kv.Key(), *commandImpl->Copy());
+        }
     }
 }
 
@@ -133,6 +139,13 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     {
         const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
         globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
+    }
+
+    // Globals only ever has 1 parent
+    FAIL_FAST_IF(_parents.size() > 1);
+    for (auto parent : _parents)
+    {
+        globals->InsertParent(parent->Copy());
     }
     return globals;
 }
@@ -186,11 +199,24 @@ void GlobalAppSettings::ClearUnparsedDefaultProfile()
 
 std::optional<winrt::hstring> GlobalAppSettings::_getUnparsedDefaultProfileImpl() const
 {
-    return _UnparsedDefaultProfile ?
-               _UnparsedDefaultProfile :
-               (_parent ?
-                    _parent->_getUnparsedDefaultProfileImpl() :
-                    std::nullopt);
+    /*return user set value*/
+    if (_UnparsedDefaultProfile)
+    {
+        return _UnparsedDefaultProfile;
+    }
+
+    /*user set value was not set*/
+    /*iterate through parents to find a value*/
+    for (auto parent : _parents)
+    {
+        if (auto val{ parent->_getUnparsedDefaultProfileImpl() })
+        {
+            return val;
+        }
+    }
+
+    /*no value was found*/
+    return std::nullopt;
 }
 #pragma endregion
 
