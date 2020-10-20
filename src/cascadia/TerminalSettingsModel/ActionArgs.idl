@@ -94,6 +94,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
+        MoveFocusArgs(Direction direction);
         Direction Direction { get; };
     };
 

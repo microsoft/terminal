@@ -255,6 +255,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
+        MoveFocusArgs(Model::Direction direction) :
+            _Direction{ direction } {};
+
         GETSET_PROPERTY(Model::Direction, Direction, Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
@@ -675,6 +678,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);
+    BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);

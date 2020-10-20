@@ -1264,7 +1264,7 @@ namespace winrt::TerminalApp::implementation
             _tabContent.Children().Clear();
             activeTab->ExitZoom();
             // Re-attach the tab's content to the UI tree.
-            _tabContent.Children().Append(activeTab->Content());
+            // _tabContent.Children().Append(activeTab->Content());
         }
     }
 
