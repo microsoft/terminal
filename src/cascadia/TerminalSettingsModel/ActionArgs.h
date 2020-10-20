@@ -694,6 +694,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
             return { *args, {} };
         }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ScrollUpArgs>() };
+            copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
+        }
     };
 
     struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
@@ -721,6 +727,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto args = winrt::make_self<ScrollDownArgs>();
             JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
             return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ScrollDownArgs>() };
+            copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
         }
     };
 }
