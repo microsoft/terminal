@@ -176,37 +176,43 @@ _Ret_range_(0, cbAnsi)
     ULONG i, j;
     for (i = 0, j = 0; i < cchUnicode && j < cbAnsi; i++, j++)
     {
-        if (IsGlyphFullWidth(TmpUni[i]))
+        ULONG const NumBytes = sizeof(AsciiDbcs);
+
+        // Try to convert to OEM. On failure, use the default character as a replacement.
+        if (!ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR)&AsciiDbcs[0], NumBytes))
         {
-            ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR)&AsciiDbcs[0], NumBytes);
-            if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
-            {
-                if (j < cbAnsi - 1)
-                { // -1 is safe DBCS in buffer
-                    pchAnsi[j] = AsciiDbcs[0];
-                    j++;
-                    pchAnsi[j] = AsciiDbcs[1];
-                    AsciiDbcs[1] = 0;
-                }
-                else
-                {
-                    pchAnsi[j] = AsciiDbcs[0];
-                    break;
-                }
+            AsciiDbcs[0] = gci.CPInfo.DefaultChar[0];
+            AsciiDbcs[1] = gci.CPInfo.DefaultChar[1];
+        }
+
+        // If the first character is a lead byte, try to store them both.
+        if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
+        {
+            // If we have enough space to store them both, do so..
+            if (j < cbAnsi - 1)
+            { // -1 off cbAnsi combined with less than means 2 bytes are left in the buffer
+                pchAnsi[j] = AsciiDbcs[0];
+                j++;
+                pchAnsi[j] = AsciiDbcs[1];
+                AsciiDbcs[1] = 0;
             }
             else
             {
                 pchAnsi[j] = AsciiDbcs[0];
-                AsciiDbcs[1] = 0;
+                // We ran out of space to store AsciiDbcs[1].... fall down below and stuff it for later.
+                break;
             }
         }
         else
         {
-            ConvertToOem(gci.CP, &TmpUni[i], 1, &pchAnsi[j], 1);
+            // If it's not a lead byte, something strange is happening. So just store the 1 byte and discard the second.
+            pchAnsi[j] = AsciiDbcs[0];
+            AsciiDbcs[1] = 0;
         }
+        
     }
 
+    // If we could not store the second byte of the double byte sequence because we ran out of space...
     if (AsciiDbcs[1])
     {
         try
