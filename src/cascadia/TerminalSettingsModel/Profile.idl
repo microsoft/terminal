@@ -16,8 +16,7 @@ namespace Microsoft.Terminal.Settings.Model
         Audible
     };
 
-    [default_interface] runtimeclass Profile : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
+    [default_interface] runtimeclass Profile {
         Profile();
         Profile(Guid guid);
 

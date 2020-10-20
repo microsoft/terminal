@@ -72,7 +72,6 @@ void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexce
 {
     _unparsedDefaultProfile.clear();
     _defaultProfile = defaultProfile;
-    _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"DefaultProfile" });
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
