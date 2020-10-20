@@ -425,7 +425,7 @@ try
 catch (...)
 {
     LOG_CAUGHT_EXCEPTION();
-    return std::vector<std::wstring_view>();
+    return {};
 }
 
 // Routine Description:
