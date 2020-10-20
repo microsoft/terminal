@@ -72,7 +72,9 @@ Profile::Profile(guid guid) :
 
 winrt::com_ptr<Profile> Profile::Copy() const
 {
+    // copy the private members
     auto profile{ winrt::make_self<Profile>() };
+    profile->_Guid = _Guid;
     profile->_Name = _Name;
     profile->_Source = _Source;
     profile->_Hidden = _Hidden;
@@ -107,10 +109,11 @@ winrt::com_ptr<Profile> Profile::Copy() const
     profile->_AltGrAliasing = _AltGrAliasing;
     profile->_CursorShape = _CursorShape;
     profile->_CursorHeight = _CursorHeight;
-    profile->_Guid = _Guid;
-    profile->_ConnectionType = _ConnectionType;
-    profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
     profile->_BellStyle = _BellStyle;
+
+    // copy settings that did not use the GETSET macro
+    profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
+    profile->_ConnectionType = _ConnectionType;
 
     // TODO CARLOS: copy parents instead of parent
     //if (_parent)
@@ -414,52 +417,6 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 {
     const auto& source = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
     return !source.isNull();
-}
-
-// Function Description:
-// - Apply each of the current Profile's settings values onto the given Profile, if it is set
-// Arguments:
-// - profile: the Profile to be updated
-// Return Value:
-// - <None>
-void Profile::ApplyTo(Profile* profile) const
-{
-    APPLY_OUT(Name);
-    APPLY_OUT(Source);
-    APPLY_OUT(Hidden);
-    APPLY_OUT(Icon);
-    APPLY_OUT(CloseOnExit);
-    APPLY_OUT(TabTitle);
-    APPLY_OUT(TabColor);
-    APPLY_OUT(SuppressApplicationTitle);
-    APPLY_OUT(UseAcrylic);
-    APPLY_OUT(AcrylicOpacity);
-    APPLY_OUT(ScrollState);
-    APPLY_OUT(FontFace);
-    APPLY_OUT(FontSize);
-    APPLY_OUT(FontWeight);
-    APPLY_OUT(Padding);
-    APPLY_OUT(Commandline);
-    APPLY_OUT(StartingDirectory);
-    APPLY_OUT(BackgroundImagePath);
-    APPLY_OUT(BackgroundImageOpacity);
-    APPLY_OUT(BackgroundImageStretchMode);
-    APPLY_OUT(BackgroundImageAlignment);
-    APPLY_OUT(AntialiasingMode);
-    APPLY_OUT(RetroTerminalEffect);
-    APPLY_OUT(ForceFullRepaintRendering);
-    APPLY_OUT(SoftwareRendering);
-    APPLY_OUT(ColorSchemeName);
-    APPLY_OUT(Foreground);
-    APPLY_OUT(Background);
-    APPLY_OUT(SelectionBackground);
-    APPLY_OUT(CursorColor);
-    APPLY_OUT(HistorySize);
-    APPLY_OUT(SnapOnInput);
-    APPLY_OUT(AltGrAliasing);
-    APPLY_OUT(CursorShape);
-    APPLY_OUT(CursorHeight);
-    APPLY_OUT(BellStyle);
 }
 
 // Function Description:

@@ -45,11 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void InsertParent(size_t index, com_ptr<T> parent)
         {
-            auto pos{ _parents.begin() };
-            for (size_t i=0; i<index; ++i)
-            {
-                ++pos;
-            }
+            auto pos{ _parents.begin() + index };
             _parents.insert(pos, parent);
         }
 
@@ -197,11 +193,3 @@ private:                                                                        
         /*no value was found*/                                                                      \
         return { nullptr, false };                                                                  \
     };
-
-// Use this macro for Profile::ApplyTo
-// Checks if a given setting is set, and if it is, sets it on profile
-#define APPLY_OUT(setting)                \
-    if (Has##setting())                   \
-    {                                     \
-        profile->_##setting = _##setting; \
-    }

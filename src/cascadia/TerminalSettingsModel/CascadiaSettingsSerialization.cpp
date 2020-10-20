@@ -650,11 +650,11 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         {
             auto profile{ winrt::make_self<Profile>() };
 
-            // GH#2325: If we have a set of default profile settings, apply them here.
+            // GH#2325: If we have a set of default profile settings, set that as my parent.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
             {
-                profile = _userDefaultProfileSettings->CreateChild();
+                profile->InsertParent(0,_userDefaultProfileSettings);
             }
 
             profile->LayerJson(profileJson);

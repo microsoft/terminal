@@ -71,14 +71,11 @@ GlobalAppSettings::GlobalAppSettings() :
 // - <none>
 void GlobalAppSettings::_FinalizeInheritance()
 {
-    // TODO CARLOS: Crash invoking IActionAndArgs->Copy
-    //_keymap = _parent->_keymap->Copy();
-
     // Globals only ever has 1 parent
     FAIL_FAST_IF(_parents.size() > 1);
     for (auto parent : _parents)
     {
-        _keymap = parent->_keymap;
+        _keymap = parent->_keymap->Copy();
         std::copy(parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end(), std::back_inserter(_keybindingsWarnings));
         for (auto kv : parent->_colorSchemes)
         {
@@ -123,10 +120,9 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DisableAnimations = _DisableAnimations;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
+    globals->_validDefaultProfile = _validDefaultProfile;
     globals->_defaultProfile = _defaultProfile;
-    // TODO CARLOS: Crash invoking IActionAndArgs->Copy
-    //globals->_keymap = _keymap->Copy();
-    globals->_keymap = _keymap;
+    globals->_keymap = _keymap->Copy();
     std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
 
     for (auto kv : _colorSchemes)
