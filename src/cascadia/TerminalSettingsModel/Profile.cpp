@@ -338,7 +338,15 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
-    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+
+    // StartingDirectory is "nullable". But we represent a null starting directory as the empty string
+    // When null is set in the JSON, we empty initialize startDir (empty string), and set StartingDirectory to that
+    // Without this, we're accidentally setting StartingDirectory to nullopt instead.
+    hstring startDir;
+    if (JsonUtils::GetValueForKey(json, StartingDirectoryKey, startDir))
+    {
+        _StartingDirectory = startDir;
+    }
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
