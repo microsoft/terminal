@@ -511,20 +511,6 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
     for (const auto& profile : _profiles)
     {
-        if (profile.Guid() == winrt::guid{})
-        {
-            // If the profile doesn't have a guid, it's a name-only profile.
-            // During validation, we'll generate a GUID for the profile, but
-            // validation occurs after this. We should ignore these types of
-            // profiles.
-            // If a dynamic profile was generated _without_ a GUID, we also
-            // don't want it serialized here. The first check in
-            // Profile::ShouldBeLayered checks that the profile has a guid. For a
-            // dynamic profile without a GUID, that'll _never_ be true, so it
-            // would be impossible to be layered.
-            continue;
-        }
-
         // Skip profiles that are in the user settings or the default settings.
         if (isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {

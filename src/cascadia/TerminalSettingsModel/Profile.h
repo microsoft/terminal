@@ -73,7 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
-        GETSET_SETTING(guid, Guid);
+        GETSET_SETTING(guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         GETSET_SETTING(hstring, Name, L"Default");
         GETSET_SETTING(hstring, Source);
         GETSET_SETTING(bool, Hidden, false);

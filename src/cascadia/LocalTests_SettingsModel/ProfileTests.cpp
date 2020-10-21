@@ -87,7 +87,7 @@ namespace SettingsModelLocalTests
         // A profile _can_ be layered with itself, though what's the point?
         VERIFY_IS_FALSE(profile3->ShouldBeLayered(profile1Json));
         VERIFY_IS_FALSE(profile3->ShouldBeLayered(profile2Json));
-        VERIFY_IS_FALSE(profile3->ShouldBeLayered(profile3Json));
+        VERIFY_IS_TRUE(profile3->ShouldBeLayered(profile3Json));
     }
 
     void ProfileTests::LayerProfileProperties()

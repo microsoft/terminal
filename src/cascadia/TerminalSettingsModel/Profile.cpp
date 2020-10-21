@@ -183,10 +183,7 @@ Json::Value Profile::GenerateStub() const
     Json::Value stub;
 
     ///// Profile-specific settings /////
-    if (_Guid.has_value())
-    {
-        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(*_Guid));
-    }
+    stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(Guid()));
 
     stub[JsonKey(NameKey)] = winrt::to_string(Name());
 
@@ -224,40 +221,34 @@ winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Prof
 // - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
-    // guid was not set
-    const auto myGuid{ Guid() };
-    if (myGuid == winrt::guid{})
-    {
-        return false;
-    }
-
     // First, check that GUIDs match. This is easy. If they don't match, they
     // should _definitely_ not layer.
-    if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) })
+    const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) };
+    const auto otherSource{ JsonUtils::GetValueForKey<std::optional<winrt::hstring>>(json, SourceKey) };
+    if (otherGuid)
     {
-        if (otherGuid.value() != myGuid)
+        if (otherGuid.value() != Guid())
         {
             return false;
         }
     }
     else
     {
-        // If the other json object didn't have a GUID, we definitely don't want
-        // to layer. We technically might have the same name, and would
-        // auto-generate the same guid, but they should be treated as different
-        // profiles.
-        return false;
+        // If the other json object didn't have a GUID,
+        // check if we auto-generate the same guid using the name and source.
+        const auto otherName{ JsonUtils::GetValueForKey<std::optional<winrt::hstring>>(json, NameKey) };
+        if (Guid() != _GenerateGuidForProfile(otherName ? *otherName : L"Default", otherSource ? *otherSource : L""))
+        {
+            return false;
+        }
     }
-
-    std::optional<std::wstring> otherSource;
-    bool otherHadSource = JsonUtils::GetValueForKey(json, SourceKey, otherSource);
 
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
     const auto mySource{ Source() };
     if (!mySource.empty())
     {
-        if (otherHadSource)
+        if (otherSource.has_value())
         {
             // If we have a source and the other has a source, compare them!
             sourceMatches = *otherSource == mySource;
