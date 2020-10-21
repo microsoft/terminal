@@ -45,7 +45,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         Profile();
         Profile(guid guid);
-        com_ptr<Profile> Copy() const;
         static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>> visited = {});
 
         Json::Value GenerateStub() const;

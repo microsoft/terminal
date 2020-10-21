@@ -148,7 +148,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
             {
                 // We have not visited this Profile yet,
                 // copy contents of sourceParent to clone
-                winrt::com_ptr<Profile> clone{ sourceParent->Copy() };
+                winrt::com_ptr<Profile> clone{ _CopyMembers(sourceParent) };
 
                 // add the new copy to the cloneGraph
                 cloneGraph->InsertParent(clone);
