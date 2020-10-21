@@ -235,7 +235,7 @@ namespace winrt::TerminalApp::implementation
         else if (key == VirtualKey::End)
         {
             GoEnd(true);
-            e.Handled(false);
+            e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
         {
