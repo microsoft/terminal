@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="InitialJsonParseErrorText" xml:space="preserve">
-    <value>There was an error when loading the settings.</value>
+    <value>Settings could not be loaded from file. Check for syntax errors, including trailing commas.</value>
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
     <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the "defaultProfile" matches the GUID of one of your profiles.</value>
@@ -468,5 +468,8 @@
   </data>
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
+  </data>
+  <data name="FailedToWriteToSettings" xml:space="preserve">
+    <value>We could not write to your settings file. Check the permissions on that file to ensure that the read-only flag is not set and that write access is granted.</value>
   </data>
 </root>

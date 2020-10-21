@@ -106,6 +106,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     {
         auto settings = LoadDefaults();
         auto resultPtr = winrt::get_self<CascadiaSettings>(settings);
+        resultPtr->ClearWarnings();
 
         // GH 3588, we need this below to know if the user chose something that wasn't our default.
         // Collect it up here in case it gets modified by any of the other layers between now and when
@@ -191,7 +192,8 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             }
             catch (...)
             {
-                throw SettingsTypedDeserializationException{ winrt::to_string((RS_(L"WriteSettingsFailed"))) };
+
+                resultPtr->AppendWarning(SettingsLoadWarnings::FailedToWriteToSettings);
             }
         }
 

@@ -134,6 +134,16 @@ IVectorView<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> C
     return _warnings.GetView();
 }
 
+void CascadiaSettings::ClearWarnings()
+{
+    _warnings.Clear();
+}
+
+void CascadiaSettings::AppendWarning(SettingsLoadWarnings warning)
+{
+    _warnings.Append(warning);
+}
+
 winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadErrors> CascadiaSettings::GetLoadingError()
 {
     return _loadError;
@@ -156,8 +166,6 @@ winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
 // - <none>
 void CascadiaSettings::_ValidateSettings()
 {
-    _warnings.Clear();
-
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
