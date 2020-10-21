@@ -70,7 +70,7 @@ Profile::Profile(guid guid) :
 {
 }
 
-winrt::com_ptr<Profile> Profile::_CopyMembers(winrt::com_ptr<Profile> source)
+winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     // copy the private members
     auto profile{ winrt::make_self<Profile>() };
@@ -128,7 +128,7 @@ winrt::com_ptr<Profile> Profile::_CopyMembers(winrt::com_ptr<Profile> source)
 // - visited - a map of which Profiles have been visited, and, if so, a reference to the Profile's clone
 // Return Value:
 // - a clone in both inheritance structure and Profile values of sourceGraph
-winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> sourceGraph, winrt::com_ptr<Profile> cloneGraph, std::unordered_map<void*, winrt::com_ptr<Profile>> visited)
+winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> sourceGraph, winrt::com_ptr<Profile> cloneGraph, std::unordered_map<void*, winrt::com_ptr<Profile>>& visited)
 {
     // If this is an unexplored Profile
     //   and we have parents...
@@ -139,7 +139,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
         {
             // If we visited this Profile already...
             auto kv{ visited.find(sourceParent.get()) };
-            if (visited.find(sourceParent.get()) != visited.end())
+            if (kv != visited.end())
             {
                 // add this Profile's clone as a parent
                 cloneGraph->InsertParent(kv->second);
@@ -148,7 +148,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
             {
                 // We have not visited this Profile yet,
                 // copy contents of sourceParent to clone
-                winrt::com_ptr<Profile> clone{ _CopyMembers(sourceParent) };
+                winrt::com_ptr<Profile> clone{ CopySettings(sourceParent) };
 
                 // add the new copy to the cloneGraph
                 cloneGraph->InsertParent(clone);
@@ -391,12 +391,13 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
 {
-    if (_StartingDirectory)
+    auto path{ StartingDirectory() };
+    if (!path.empty())
     {
-        return winrt::hstring{ Profile::EvaluateStartingDirectory(_StartingDirectory->c_str()) };
+        return winrt::hstring{ Profile::EvaluateStartingDirectory(path.c_str()) };
     }
     // treated as "inherit directory from parent process"
-    return L"";
+    return path;
 }
 
 // Method Description:

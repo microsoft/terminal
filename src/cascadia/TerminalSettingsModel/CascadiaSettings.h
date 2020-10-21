@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _PrependSchemaDirective();
         bool _AppendDynamicProfilesToUserSettings();
         std::string _ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const;
+        void _CopyProfileInheritanceTree(CascadiaSettings* cloneSettings) const;
 
         void _ApplyDefaultsFromUserSettings();
 

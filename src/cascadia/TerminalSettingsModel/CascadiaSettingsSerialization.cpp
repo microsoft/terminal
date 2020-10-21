@@ -635,10 +635,22 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         auto parentProj{ _profiles.GetAt(*profileIndex) };
         auto parent{ winrt::get_self<Profile>(parentProj) };
 
-        // We don't actually need to CreateChild() here.
-        // When we loaded Profile.Defaults, we created an empty child already.
-        // So this just populates the empty child
-        parent->LayerJson(profileJson);
+        if (_userDefaultProfileSettings)
+        {
+            // We don't actually need to CreateChild() here.
+            // When we loaded Profile.Defaults, we created an empty child already.
+            // So this just populates the empty child
+            parent->LayerJson(profileJson);
+        }
+        else
+        {
+            // otherwise, add a new inheritance layer
+            auto childImpl{ parent->CreateChild() };
+            childImpl->LayerJson(profileJson);
+
+            // replace parent in _profiles with child
+            _profiles.SetAt(*profileIndex, *childImpl);
+        }
     }
     else
     {

@@ -23,15 +23,17 @@ Author(s):
 #include <DefaultSettings.h>
 
 // fwdecl unittest classes
-namespace TerminalAppLocalTests
+namespace SettingsModelLocalTests
 {
-    class SettingsTests;
+    class DeserializationTests;
     class ProfileTests;
+    class ColorSchemeTests;
+    class KeyBindingsTests;
 };
 namespace TerminalAppUnitTests
 {
-    class JsonTests;
     class DynamicProfileTests;
+    class JsonTests;
 };
 
 // GUID used for generating GUIDs at runtime, for profiles that did not have a
@@ -45,7 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         Profile();
         Profile(guid guid);
-        static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>> visited = {});
+        static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
+        static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
@@ -147,12 +150,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
 
-        static com_ptr<Profile> _CopyMembers(com_ptr<Profile> source);
-
-        friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::ProfileTests;
-        friend class TerminalAppUnitTests::JsonTests;
+        friend class SettingsModelLocalTests::DeserializationTests;
+        friend class SettingsModelLocalTests::ProfileTests;
+        friend class SettingsModelLocalTests::ColorSchemeTests;
+        friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
+        friend class TerminalAppUnitTests::JsonTests;
     };
 }
 
