@@ -54,9 +54,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return _parents;
         }
 
-    protected:
         std::vector<com_ptr<T>> _parents{};
 
+    protected:
         // Method Description:
         // - Actions to be performed after a child was created. Generally used to set
         //   any extraneous data from the parent into the child.

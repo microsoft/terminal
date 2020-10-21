@@ -88,6 +88,16 @@ static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view
     }
 }
 
+static void _AddNodeAndParentLinks(std::set<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile*>& s, std::wstringstream& wsGraph, winrt::Microsoft::Terminal::Settings::Model::implementation::Profile* p)
+{
+    s.emplace(p);
+    for (const auto& pParent : p->_parents)
+    {
+        wsGraph << fmt::format(L"    n_{0} -> n_{1};\n", (void*)p, (void*)pParent.get());
+        _AddNodeAndParentLinks(s, wsGraph, pParent.get());
+    }
+}
+
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
@@ -241,6 +251,40 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
                     TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             }
         }
+
+        // CONVERT RESULTPTR INTO GRAPHVIZ
+        std::wstringstream wsGraph;
+        wsGraph << L"digraph inheritance {\n    node [shape=record]; rankdir=LR;\n";
+        std::set<implementation::Profile*> seenSet;
+        for (const auto& p : resultPtr->_profiles)
+        {
+            auto raw{ winrt::get_self<implementation::Profile>(p) };
+            wsGraph << fmt::format(LR"(    n_{0} [color=blue];)"
+                                   "\n",
+                                   (void*)raw);
+            _AddNodeAndParentLinks(seenSet, wsGraph, raw);
+        }
+        for (auto& p : seenSet)
+        {
+            if (p == resultPtr->_userDefaultProfileSettings.get())
+                wsGraph << fmt::format(LR"(    n_{0} [label="P.D."];)"
+                                       "\n",
+                                       (void*)p);
+            else if (!p->Source().empty())
+                wsGraph << fmt::format(LR"(    n_{0} [label="{1}|{2}"];)"
+                                       "\n",
+                                       (void*)p,
+                                       std::wstring_view{ p->Name() },
+                                       std::wstring_view{ p->Source() });
+            else
+                wsGraph << fmt::format(LR"(    n_{0} [label="{1}"];)"
+                                       "\n",
+                                       (void*)p,
+                                       std::wstring_view{ p->Name() });
+        }
+        wsGraph << L"}\n";
+        auto finalGraphString{ wsGraph.str() };
+        OutputDebugStringW(finalGraphString.c_str());
 
         return *resultPtr;
     }
