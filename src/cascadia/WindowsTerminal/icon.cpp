@@ -4,50 +4,9 @@
 #include "pch.h"
 #include "resource.h"
 
-#include "winrt/Windows.ApplicationModel.h"
-
-// clang-format off
-enum class IconClass : uint8_t {
-    None             = 0,
-    Version_Pre      = 0b00000001,
-    Version_Dev      = 0b00000010,
-    Variant_HC       = 0b00000100,
-    Variant_HC_White = 0b00001000,
-};
-
-DEFINE_ENUM_FLAG_OPERATORS(IconClass);
-
-static constexpr std::array<std::pair<IconClass, int>, 9> s_iconClassMapping{
-    std::pair{ IconClass::None,                                                              IDI_APPICON },
-    std::pair{ IconClass::Version_Pre,                                                       IDI_APPICON_PRE },
-    std::pair{ IconClass::Version_Dev,                                                       IDI_APPICON_DEV },
-
-    // High Contrast
-    std::pair{ IconClass::Variant_HC,                                                        IDI_APPICON_HC_B },
-    std::pair{ IconClass::Variant_HC | IconClass::Variant_HC_White,                          IDI_APPICON_HC_W },
-    std::pair{ IconClass::Version_Pre | IconClass::Variant_HC,                               IDI_APPICON_PRE_HC_B },
-    std::pair{ IconClass::Version_Pre | IconClass::Variant_HC | IconClass::Variant_HC_White, IDI_APPICON_PRE_HC_W },
-    std::pair{ IconClass::Version_Dev | IconClass::Variant_HC,                               IDI_APPICON_DEV_HC_B },
-    std::pair{ IconClass::Version_Dev | IconClass::Variant_HC | IconClass::Variant_HC_White, IDI_APPICON_DEV_HC_W },
-};
-// clang-format on
-
-static wchar_t* _GetActiveAppIcon()
+static int _GetActiveAppIconResource()
 {
-    auto iconClass{ IconClass::None };
-    try
-    {
-        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
-        const auto id{ package.Id() };
-        const auto name{ id.FullName() };
-        const std::wstring_view nameView{ name };
-        WI_UpdateFlag(iconClass, IconClass::Version_Pre, nameView.find(L"Preview") != std::wstring_view::npos);
-        WI_UpdateFlag(iconClass, IconClass::Version_Dev, nameView.find(L"Dev") != std::wstring_view::npos);
-    }
-    catch (...)
-    {
-        // Just fall through and assume that we're un-badged.
-    }
+    auto iconResource{ IDI_APPICON };
 
     HIGHCONTRASTW hcInfo{};
     hcInfo.cbSize = sizeof(hcInfo);
@@ -56,24 +15,21 @@ static wchar_t* _GetActiveAppIcon()
     {
         if (WI_IsFlagSet(hcInfo.dwFlags, HCF_HIGHCONTRASTON))
         {
-            WI_SetFlag(iconClass, IconClass::Variant_HC);
+            iconResource = IDI_APPICON_HC_BLACK;
 
-            if (hcInfo.lpszDefaultScheme)
+            if (0x00FFFFFF == GetSysColor(COLOR_WINDOW)) // white window color == white high contrast
             {
-                const std::wstring_view theme{ hcInfo.lpszDefaultScheme };
-                WI_UpdateFlag(iconClass, IconClass::Variant_HC_White, theme.find(L"White") != std::wstring_view::npos);
+                iconResource = IDI_APPICON_HC_WHITE;
             }
         }
     }
 
-    const auto found{ std::find_if(s_iconClassMapping.cbegin(), s_iconClassMapping.cend(), [&](auto&& entry) { return entry.first == iconClass; }) };
-    const auto resource{ found != s_iconClassMapping.cend() ? found->second : IDI_APPICON };
-    return MAKEINTRESOURCEW(resource);
+    return iconResource;
 }
 
 void UpdateWindowIconForActiveMetrics(HWND window)
 {
-    auto iconResource{ _GetActiveAppIcon() };
+    auto iconResource{ MAKEINTRESOURCEW(_GetActiveAppIconResource()) };
 
     // These handles are loaded with LR_SHARED, so they are safe to "leak".
     HANDLE smallIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED) };
