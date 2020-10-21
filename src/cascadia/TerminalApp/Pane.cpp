@@ -657,6 +657,16 @@ void Pane::_CloseChild(const bool closeFirst)
         if (_lastActive)
         {
             _control.Focus(FocusState::Programmatic);
+
+            // See GH#7252
+            // Manually fire off the GotFocus event. Typically, this is done
+            // automatically when the control gets focused. However, if we're
+            // `exit`ing a zoomed pane, then the other sibling isn't in the UI
+            // tree currently. So the above call to Focus won't actually focus
+            // the control. Because Tab is relying on GotFocus to know who the
+            // active pane in the tree is, without this call, _no one_ will be
+            // the active pane any longer.
+            _GotFocusHandlers(shared_from_this());
         }
 
         _UpdateBorders();

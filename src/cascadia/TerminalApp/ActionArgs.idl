@@ -87,6 +87,7 @@ namespace TerminalApp
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
+        MoveFocusArgs(Direction direction);
         Direction Direction { get; };
     };
 
@@ -102,6 +103,9 @@ namespace TerminalApp
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode);
+
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };

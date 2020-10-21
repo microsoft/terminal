@@ -214,6 +214,9 @@ namespace winrt::TerminalApp::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
+        MoveFocusArgs(TerminalApp::Direction direction) :
+            _Direction{ direction } {};
+
         GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
@@ -308,6 +311,11 @@ namespace winrt::TerminalApp::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
+        SplitPaneArgs(winrt::TerminalApp::SplitState style, const winrt::TerminalApp::NewTerminalArgs& terminalArgs) :
+            _SplitStyle{ style },
+            _TerminalArgs{ terminalArgs } {};
+        SplitPaneArgs(SplitType splitMode) :
+            _SplitMode{ splitMode } {};
         GETSET_PROPERTY(winrt::TerminalApp::SplitState, SplitStyle, winrt::TerminalApp::SplitState::Automatic);
         GETSET_PROPERTY(winrt::TerminalApp::NewTerminalArgs, TerminalArgs, nullptr);
         GETSET_PROPERTY(winrt::TerminalApp::SplitType, SplitMode, winrt::TerminalApp::SplitType::Manual);
@@ -553,4 +561,6 @@ namespace winrt::TerminalApp::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
     BASIC_FACTORY(NewTerminalArgs);
+    BASIC_FACTORY(MoveFocusArgs);
+    BASIC_FACTORY(SplitPaneArgs);
 }

@@ -7,5 +7,6 @@ namespace TerminalApp
     {
         String Title { get; };
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
+        Windows.UI.Xaml.UIElement Content { get; };
     }
 }

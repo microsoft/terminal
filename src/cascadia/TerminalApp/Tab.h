@@ -24,7 +24,6 @@ namespace winrt::TerminalApp::implementation
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-        winrt::Windows::UI::Xaml::UIElement GetRootElement();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
@@ -76,6 +75,8 @@ namespace winrt::TerminalApp::implementation
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::IconSource, IconSource, _PropertyChangedHandlers, nullptr);
+
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::UIElement, Content, _PropertyChangedHandlers, nullptr);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
