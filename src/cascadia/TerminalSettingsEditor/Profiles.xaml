@@ -12,7 +12,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d">
 
     <Page.Resources>
-        <!--TODO: Don't be like me and put a whole control in resoures bc it's shared.
+        <!--TODO: Don't be like me and put a whole control in resources bc it's shared.
                   Find a different way to dedupe the buttons/flyouts. -->
         <!--<Flyout x:Key="ColorPickerFlyout">
             <ColorPicker IsColorSliderVisible="False"
