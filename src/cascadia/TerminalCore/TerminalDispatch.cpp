@@ -368,14 +368,14 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
-bool TerminalDispatch::SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept
 {
-    return _SetResetPrivateModes(params, true);
+    return _PrivateModeParamsHelper(param, true);
 }
 
-bool TerminalDispatch::ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept
 {
-    return _SetResetPrivateModes(params, false);
+    return _PrivateModeParamsHelper(param, false);
 }
 
 // Method Description:
@@ -400,31 +400,9 @@ bool TerminalDispatch::EndHyperlink() noexcept
 }
 
 // Routine Description:
-// - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
-//     All params in the rgParams will attempt to be executed, even if one
-//     fails, to allow us to successfully re/set params that are chained with
-//     params we don't yet support.
-// Arguments:
-// - params - array of params to set/reset
-// - enable - True for set, false for unset.
-// Return Value:
-// - True if ALL params were handled successfully. False otherwise.
-bool TerminalDispatch::_SetResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> params, const bool enable) noexcept
-{
-    // because the user might chain together params we don't support with params we DO support, execute all
-    // params in the sequence, and only return failure if we failed at least one of them
-    size_t failures = 0;
-    for (const auto& p : params)
-    {
-        failures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
-    }
-    return failures == 0;
-}
-
-// Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:
-// - params - array of params to set/reset
+// - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
@@ -503,8 +481,7 @@ bool TerminalDispatch::SoftReset() noexcept
     //     success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     // }
 
-    const auto opt = DispatchTypes::GraphicsOptions::Off;
-    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+    success = SetGraphicsRendition({}) && success; // Normal rendition.
 
     // // Reset the saved cursor state.
     // // Note that XTerm only resets the main buffer state, but that

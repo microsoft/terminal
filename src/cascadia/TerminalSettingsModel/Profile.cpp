@@ -57,6 +57,9 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
+static constexpr std::string_view BellStyleKey{ "bellStyle" };
+
+static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
 
 Profile::Profile()
 {
@@ -65,6 +68,49 @@ Profile::Profile()
 Profile::Profile(guid guid) :
     _Guid(guid)
 {
+}
+
+winrt::com_ptr<Profile> Profile::Copy() const
+{
+    auto profile{ winrt::make_self<Profile>() };
+    profile->_Name = _Name;
+    profile->_Source = _Source;
+    profile->_Hidden = _Hidden;
+    profile->_Icon = _Icon;
+    profile->_CloseOnExit = _CloseOnExit;
+    profile->_TabTitle = _TabTitle;
+    profile->_TabColor = _TabColor;
+    profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
+    profile->_UseAcrylic = _UseAcrylic;
+    profile->_AcrylicOpacity = _AcrylicOpacity;
+    profile->_ScrollState = _ScrollState;
+    profile->_FontFace = _FontFace;
+    profile->_FontSize = _FontSize;
+    profile->_FontWeight = _FontWeight;
+    profile->_Padding = _Padding;
+    profile->_Commandline = _Commandline;
+    profile->_StartingDirectory = _StartingDirectory;
+    profile->_BackgroundImagePath = _BackgroundImagePath;
+    profile->_BackgroundImageOpacity = _BackgroundImageOpacity;
+    profile->_BackgroundImageStretchMode = _BackgroundImageStretchMode;
+    profile->_AntialiasingMode = _AntialiasingMode;
+    profile->_RetroTerminalEffect = _RetroTerminalEffect;
+    profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
+    profile->_SoftwareRendering = _SoftwareRendering;
+    profile->_ColorSchemeName = _ColorSchemeName;
+    profile->_Foreground = _Foreground;
+    profile->_Background = _Background;
+    profile->_SelectionBackground = _SelectionBackground;
+    profile->_CursorColor = _CursorColor;
+    profile->_HistorySize = _HistorySize;
+    profile->_SnapOnInput = _SnapOnInput;
+    profile->_AltGrAliasing = _AltGrAliasing;
+    profile->_CursorShape = _CursorShape;
+    profile->_CursorHeight = _CursorHeight;
+    profile->_Guid = _Guid;
+    profile->_ConnectionType = _ConnectionType;
+    profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
+    return profile;
 }
 
 // Method Description:
@@ -241,20 +287,43 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
+
+    JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 }
 
 // Method Description:
+// - Either Returns this profile's background image path, if one is set, expanding
 // - Returns this profile's background image path, if one is set, expanding
 //   any environment variables in the path, if there are any.
+// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
 // Return Value:
-// - This profile's expanded background image path / the empty string.
+// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
     if (_BackgroundImagePath.empty())
     {
         return _BackgroundImagePath;
     }
-    return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    // checks if the user would like to copy their desktop wallpaper
+    // if so, replaces the path with the desktop wallpaper's path
+    else if (_BackgroundImagePath == to_hstring(DesktopWallpaperEnum))
+    {
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            return winrt::hstring{ (desktopWallpaper) };
+        }
+        else
+        {
+            return winrt::hstring{ L"" };
+        }
+    }
+    else
+    {
+        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+    }
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const

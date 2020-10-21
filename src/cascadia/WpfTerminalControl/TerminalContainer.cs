@@ -66,7 +66,18 @@ namespace Microsoft.Terminal.Wpf
         /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
         /// on user action.
         /// </summary>
-        public bool AutoFill { get; set; } = true;
+        internal bool AutoResize { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the size of the parent user control that hosts the terminal hwnd.
+        /// </summary>
+        /// <remarks>Control size is in device independent units, but for simplicity all sizes should be scaled.</remarks>
+        internal Size TerminalControlSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the terminal renderer.
+        /// </summary>
+        internal Size TerminalRendererSize { get; set; }
 
         /// <summary>
         /// Gets the current character rows available to the terminal.
@@ -77,18 +88,6 @@ namespace Microsoft.Terminal.Wpf
         /// Gets the current character columns available to the terminal.
         /// </summary>
         internal int Columns { get; private set; }
-
-        /// <summary>
-        /// Gets the maximum amount of character rows that can fit in this control.
-        /// </summary>
-        /// <remarks>This will be in sync with <see cref="Rows"/> unless <see cref="AutoFill"/> is set to false.</remarks>
-        internal int MaxRows { get; private set; }
-
-        /// <summary>
-        /// Gets the maximum amount of character columns that can fit in this control.
-        /// </summary>
-        /// <remarks>This will be in sync with <see cref="Columns"/> unless <see cref="AutoFill"/> is set to false.</remarks>
-        internal int MaxColumns { get; private set; }
 
         /// <summary>
         /// Gets the window handle of the terminal.
@@ -141,7 +140,7 @@ namespace Microsoft.Terminal.Wpf
 
             if (!this.RenderSize.IsEmpty)
             {
-                this.TriggerResize(this.RenderSize);
+                this.Resize(this.TerminalControlSize);
             }
         }
 
@@ -160,11 +159,10 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Triggers a refresh of the terminal with the given size.
+        /// Triggers a resize of the terminal with the given size, redrawing the rendered text.
         /// </summary>
         /// <param name="renderSize">Size of the rendering window.</param>
-        /// <returns>Tuple with rows and columns.</returns>
-        internal (int rows, int columns) TriggerResize(Size renderSize)
+        internal void Resize(Size renderSize)
         {
             if (renderSize.Width == 0 || renderSize.Height == 0)
             {
@@ -173,18 +171,17 @@ namespace Microsoft.Terminal.Wpf
 
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
-            NativeMethods.COORD dimensions;
             NativeMethods.TerminalTriggerResize(
                 this.terminal,
-                Convert.ToInt16(renderSize.Width * dpiScale.DpiScaleX),
-                Convert.ToInt16(renderSize.Height * dpiScale.DpiScaleY),
-                out dimensions);
+                Convert.ToInt16(renderSize.Width),
+                Convert.ToInt16(renderSize.Height),
+                out NativeMethods.COORD dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
+            this.TerminalRendererSize = renderSize;
 
             this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
-            return (dimensions.Y, dimensions.X);
         }
 
         /// <summary>
@@ -192,8 +189,7 @@ namespace Microsoft.Terminal.Wpf
         /// </summary>
         /// <param name="rows">Number of rows to show.</param>
         /// <param name="columns">Number of columns to show.</param>
-        /// <returns><see cref="long"/> pair with the new width and height size in pixels for the renderer.</returns>
-        internal (int width, int height) Resize(uint rows, uint columns)
+        internal void Resize(uint rows, uint columns)
         {
             if (rows == 0)
             {
@@ -213,20 +209,41 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out dimensionsInPixels);
 
-            // If AutoFill is true, keep Rows and Columns in sync with MaxRows and MaxColumns.
-            // Otherwise, MaxRows and MaxColumns will be set on startup and on control resize by the user.
-            if (this.AutoFill)
-            {
-                this.MaxColumns = dimensions.X;
-                this.MaxRows = dimensions.Y;
-            }
-
             this.Columns = dimensions.X;
             this.Rows = dimensions.Y;
 
-            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+            this.TerminalRendererSize = new Size()
+            {
+                Width = dimensionsInPixels.cx,
+                Height = dimensionsInPixels.cy,
+            };
 
-            return (dimensionsInPixels.cx, dimensionsInPixels.cy);
+            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+        }
+
+        /// <summary>
+        /// Calculates the rows and columns that would fit in the given size.
+        /// </summary>
+        /// <param name="size">DPI scaled size.</param>
+        /// <returns>Amount of rows and columns that would fit the given size.</returns>
+        internal (uint columns, uint rows) CalculateRowsAndColumns(Size size)
+        {
+            NativeMethods.TerminalCalculateResize(this.terminal, (short)size.Width, (short)size.Height, out NativeMethods.COORD dimensions);
+
+            return ((uint)dimensions.X, (uint)dimensions.Y);
+        }
+
+        /// <summary>
+        /// Triggers the terminal resize event if more space is available in the terminal control.
+        /// </summary>
+        internal void RaiseResizedIfDrawSpaceIncreased()
+        {
+            (var columns, var rows) = this.CalculateRowsAndColumns(this.TerminalControlSize);
+
+            if (this.Columns < columns || this.Rows < rows)
+            {
+                this.connection?.Resize(rows, columns);
+            }
         }
 
         /// <inheritdoc/>
@@ -353,21 +370,23 @@ namespace Microsoft.Terminal.Wpf
 
                         NativeMethods.COORD dimensions;
 
-                        // We only trigger a resize if we want to fill to maximum size.
-                        if (this.AutoFill)
+                        if (this.AutoResize)
                         {
                             NativeMethods.TerminalTriggerResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
 
                             this.Columns = dimensions.X;
                             this.Rows = dimensions.Y;
-                            this.MaxColumns = dimensions.X;
-                            this.MaxRows = dimensions.Y;
+
+                            this.TerminalRendererSize = new Size()
+                            {
+                                Width = windowpos.cx,
+                                Height = windowpos.cy,
+                            };
                         }
                         else
                         {
-                            NativeMethods.TerminalCalculateResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
-                            this.MaxColumns = dimensions.X;
-                            this.MaxRows = dimensions.Y;
+                            // Calculate the new columns and rows that fit the total control size and alert the control to redraw the margins.
+                            NativeMethods.TerminalCalculateResize(this.terminal, (short)this.TerminalControlSize.Width, (short)this.TerminalControlSize.Height, out dimensions);
                         }
 
                         this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);

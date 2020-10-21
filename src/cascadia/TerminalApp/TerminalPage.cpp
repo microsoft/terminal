@@ -7,7 +7,6 @@
 #include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
-#include <Mmsystem.h>
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
@@ -44,6 +43,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _mruTabActions{ winrt::single_threaded_vector<Command>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
     {
         InitializeComponent();
@@ -221,13 +221,6 @@ namespace winrt::TerminalApp::implementation
             if (CommandPalette().Visibility() == Visibility::Collapsed)
             {
                 _CommandPaletteClosed(nullptr, nullptr);
-            }
-        });
-
-        _tabs.VectorChanged([weakThis{ get_weak() }](auto&& s, auto&& e) {
-            if (auto page{ weakThis.get() })
-            {
-                page->CommandPalette().OnTabsChanged(s, e);
             }
         });
 
@@ -469,6 +462,21 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
+            auto newTabRun = WUX::Documents::Run();
+            newTabRun.Text(RS_(L"NewTabRun/Text"));
+            auto newPaneRun = WUX::Documents::Run();
+            newPaneRun.Text(RS_(L"NewPaneRun/Text"));
+            newPaneRun.FontStyle(FontStyle::Italic);
+
+            auto textBlock = WUX::Controls::TextBlock{};
+            textBlock.Inlines().Append(newTabRun);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(newPaneRun);
+
+            auto toolTip = WUX::Controls::ToolTip{};
+            toolTip.Content(textBlock);
+            WUX::Controls::ToolTipService::SetToolTip(profileMenuItem, toolTip);
+
             profileMenuItem.Click([profileIndex, weakThis{ get_weak() }](auto&&, auto&&) {
                 if (auto page{ weakThis.get() })
                 {
@@ -657,9 +665,12 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
+        _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
+
+        newTabImpl->SetDispatch(*_actionDispatch);
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
-        newTabImpl->UpdateTabViewIndex(_tabs.Size() - 1);
+        _UpdateTabIndices();
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, *newTabImpl);
@@ -1032,6 +1043,13 @@ namespace winrt::TerminalApp::implementation
         auto tab{ _GetStrongTabImpl(tabIndex) };
         tab->Shutdown();
 
+        uint32_t mruIndex;
+        if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
+        {
+            _mruTabActions.RemoveAt(mruIndex);
+            CommandPalette().SetTabActions(_mruTabActions);
+        }
+
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
@@ -1105,8 +1123,6 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler when the terminal wants to paste data from the Clipboard.
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
-        term.WarningBell({ this, &TerminalPage::_WarningBellHandler });
-
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
@@ -1162,28 +1178,33 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (_settings.GlobalSettings().UseTabSwitcher())
+        {
+            CommandPalette().SetTabActions(_mruTabActions);
+
+            // Since ATS is always MRU, our focused tab index is always 0.
+            // So, going next should go to index 1, and going prev should wrap to the end.
+            uint32_t tabCount = _mruTabActions.Size();
+            auto newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
+
+            if (CommandPalette().Visibility() == Visibility::Visible)
+            {
+                CommandPalette().SelectNextItem(bMoveRight);
+            }
+            else
+            {
+                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
+        }
+        else if (auto index{ _GetFocusedTabIndex() })
         {
             uint32_t tabCount = _tabs.Size();
             // Wraparound math. By adding tabCount and then calculating modulo tabCount,
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
-            const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-
-            if (_settings.GlobalSettings().UseTabSwitcher())
-            {
-                if (CommandPalette().Visibility() == Visibility::Visible)
-                {
-                    CommandPalette().SelectNextItem(bMoveRight);
-                }
-
-                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().Visibility(Visibility::Visible);
-            }
-            else
-            {
-                _SelectTab(newTabIndex);
-            }
+            auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            _SelectTab(newTabIndex);
         }
     }
 
@@ -1767,18 +1788,6 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    // Method Description:
-    // - Plays a warning note when triggered by the BEL control character,
-    //   using the sound configured for the "Critical Stop" system event.
-    //   This matches the behavior of the Windows Console host.
-    // Arguments:
-    // - <none>
-    void TerminalPage::_WarningBellHandler(const IInspectable sender, const IInspectable eventArgs)
-    {
-        const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-        PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-    }
-
     void TerminalPage::_OpenHyperlinkHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs)
     {
         try
@@ -1901,10 +1910,6 @@ namespace winrt::TerminalApp::implementation
                 _rearrangeTo = eventArgs.Index();
             }
         }
-        else
-        {
-            _UpdateCommandsForPalette();
-        }
 
         _UpdateTabView();
     }
@@ -1958,6 +1963,7 @@ namespace winrt::TerminalApp::implementation
                 if (CommandPalette().Visibility() != Visibility::Visible)
                 {
                     tab->SetFocused(true);
+                    _UpdateMRUTab(index);
                 }
 
                 // Raise an event that our title changed
@@ -2493,6 +2499,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             _GetStrongTabImpl(index.value())->SetFocused(true);
+            _UpdateMRUTab(index.value());
         }
     }
 
@@ -2527,9 +2534,31 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UpdateTabIndices()
     {
-        for (uint32_t i = 0; i < _tabs.Size(); ++i)
+        const uint32_t size = _tabs.Size();
+        for (uint32_t i = 0; i < size; ++i)
         {
-            _GetStrongTabImpl(i)->UpdateTabViewIndex(i);
+            _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
+        }
+    }
+
+    // Method Description:
+    // - Bumps the tab in its in-order index up to the top of the mru list.
+    // Arguments:
+    // - index: the in-order index of the tab to bump.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateMRUTab(const uint32_t index)
+    {
+        uint32_t mruIndex;
+        auto command = _tabs.GetAt(index).SwitchToTabCommand();
+        if (_mruTabActions.IndexOf(command, mruIndex))
+        {
+            if (mruIndex > 0)
+            {
+                _mruTabActions.RemoveAt(mruIndex);
+                _mruTabActions.InsertAt(0, command);
+                CommandPalette().SetTabActions(_mruTabActions);
+            }
         }
     }
 

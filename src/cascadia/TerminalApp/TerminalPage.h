@@ -89,6 +89,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
         void _UpdateTabIndices();
@@ -174,7 +175,6 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _PasteFromClipboardHandler(const IInspectable sender,
                                                           const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
-        void _WarningBellHandler(const IInspectable sender, const IInspectable eventArgs);
         void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
@@ -205,6 +205,9 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        void _UpdateTabSwitcherCommands(const bool mru);
+        void _UpdateMRUTab(const uint32_t index);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
