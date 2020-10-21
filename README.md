@@ -6,8 +6,8 @@ This repository contains the source code for:
 * [Windows Terminal Preview](https://aka.ms/terminal-preview)
 * The Windows console host (`conhost.exe`)
 * Components shared between the two projects
-* [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
-* [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples)
+* [ColorTool](https://github.com/microsoft/terminal/tree/main/src/tools/ColorTool)
+* [Sample projects](https://github.com/microsoft/terminal/tree/main/samples)
   that show how to consume the Windows Console APIs
 
 Related repositories include:
@@ -105,7 +105,7 @@ here](/doc/terminal-v2-roadmap.md) and will be updated as the project proceeds.
 
 Project|Build Status
 ---|---
-Terminal|[![Terminal Build Status](https://dev.azure.com/ms/Terminal/_apis/build/status/Terminal%20CI?branchName=master)](https://dev.azure.com/ms/Terminal/_build?definitionId=136)
+Terminal|[![Terminal Build Status](https://dev.azure.com/ms/terminal/_apis/build/status/terminal%20CI?branchName=main)](https://dev.azure.com/ms/terminal/_build?definitionId=136)
 ColorTool|![Colortool Build Status](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
 
 ---
@@ -241,7 +241,7 @@ enhance Windows Terminal\!
 
 ***BEFORE you start work on a feature/fix***, please read & follow our
 [Contributor's
-Guide](https://github.com/microsoft/terminal/blob/master/CONTRIBUTING.md) to
+Guide](https://github.com/microsoft/terminal/blob/main/CONTRIBUTING.md) to
 help avoid any wasted or duplicate effort.
 
 ## Communicating with the Team
@@ -340,10 +340,10 @@ Please review these brief docs below about our coding practices.
 This is a work in progress as we learn what we'll need to provide people in
 order to be effective contributors to our project.
 
-* [Coding Style](https://github.com/Microsoft/Terminal/blob/master/doc/STYLE.md)
-* [Code Organization](https://github.com/Microsoft/Terminal/blob/master/doc/ORGANIZATION.md)
-* [Exceptions in our legacy codebase](https://github.com/Microsoft/Terminal/blob/master/doc/EXCEPTIONS.md)
-* [Helpful smart pointers and macros for interfacing with Windows in WIL](https://github.com/Microsoft/Terminal/blob/master/doc/WIL.md)
+* [Coding Style](https://github.com/microsoft/terminal/blob/main/doc/STYLE.md)
+* [Code Organization](https://github.com/microsoft/terminal/blob/main/doc/ORGANIZATION.md)
+* [Exceptions in our legacy codebase](https://github.com/microsoft/terminal/blob/main/doc/EXCEPTIONS.md)
+* [Helpful smart pointers and macros for interfacing with Windows in WIL](https://github.com/microsoft/terminal/blob/main/doc/WIL.md)
 
 ---
 
