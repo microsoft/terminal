@@ -44,6 +44,9 @@
     <ClInclude Include="AddProfile.h">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ColorToHexConverter.h">
+      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClInclude>
@@ -77,18 +80,9 @@
     <ClInclude Include="NewTabOptionPanelControl.h">
       <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ObjectModel\AppSettings.h" />
-    <ClInclude Include="ObjectModel\ColorScheme.h" />
-    <ClInclude Include="ObjectModel\ColorSchemeModel.h" />
-    <ClInclude Include="ObjectModel\GlobalSettings.h" />
-    <ClInclude Include="ObjectModel\GlobalSettingsModel.h" />
-    <ClInclude Include="ObjectModel\Profile.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="MainPage.h">
       <DependentUpon>MainPage.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ObjectModel\ProfileModel.h">
-      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Profiles.h">
       <DependentUpon>Profiles.xaml</DependentUpon>
@@ -152,6 +146,9 @@
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ColorToHexConverter.cpp">
+      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
@@ -185,12 +182,6 @@
     <ClCompile Include="NewTabOptionPanelControl.cpp">
       <DependentUpon>NewTabOptionPanelControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ObjectModel\AppSettings.cpp" />
-    <ClCompile Include="ObjectModel\ColorScheme.cpp" />
-    <ClCompile Include="ObjectModel\ColorSchemeModel.cpp" />
-    <ClCompile Include="ObjectModel\GlobalSettings.cpp" />
-    <ClCompile Include="ObjectModel\GlobalSettingsModel.cpp" />
-    <ClCompile Include="ObjectModel\Profile.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -198,9 +189,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="ObjectModel\ProfileModel.cpp">
-      <DependentUpon>ObjectModel/ProfileModel.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Profiles.cpp">
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -215,7 +203,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="ObjectModel\ColorScheme.idl" />
+    <Midl Include="ColorToHexConverter.idl" />
     <Midl Include="Home.idl">
       <DependentUpon>Home.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -241,11 +229,6 @@
       <DependentUpon>Interaction.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="ObjectModel\ColorSchemeModel.idl" />
-    <Midl Include="ObjectModel\GlobalSettings.idl" />
-    <Midl Include="ObjectModel\GlobalSettingsModel.idl" />
-    <Midl Include="ObjectModel\Profile.idl" />
-    <Midl Include="ObjectModel\ProfileModel.idl" />
     <Midl Include="Rendering.idl">
       <DependentUpon>Rendering.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -284,6 +267,17 @@
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -292,6 +286,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
-
+  
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
+

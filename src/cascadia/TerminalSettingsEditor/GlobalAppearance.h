@@ -4,7 +4,6 @@
 #pragma once
 
 #include "GlobalAppearance.g.h"
-#include "ObjectModel/GlobalSettingsModel.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -12,11 +11,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance>
     {
         GlobalAppearance();
-
-        Model::GlobalSettingsModel GlobalSettingsModel();
-
-    private:
-        Model::GlobalSettingsModel m_globalSettingsModel{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
     };
 }
 

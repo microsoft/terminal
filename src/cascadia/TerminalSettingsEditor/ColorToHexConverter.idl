@@ -1,0 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass ColorToHexConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        ColorToHexConverter();
+    };
+}

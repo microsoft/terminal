@@ -1,14 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "ObjectModel/GlobalSettingsModel.idl";
-
 namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass Interaction : Windows.UI.Xaml.Controls.Page
     {
         Interaction();
-
-        Microsoft.Terminal.Settings.Editor.Model.GlobalSettingsModel GlobalSettingsModel { get; };
+        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
     }
 }

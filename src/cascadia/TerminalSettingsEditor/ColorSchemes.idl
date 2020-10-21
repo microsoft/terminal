@@ -1,13 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "ObjectModel/ColorSchemeModel.idl";
-
 namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
     {
         ColorSchemes();
-        Microsoft.Terminal.Settings.Editor.Model.ColorSchemeModel ColorSchemeModel { get; };
+
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
+        Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
+        Windows.Foundation.Collections.IObservableVector<String> ColorSchemeList { get; };
+    }
+
+    [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Name { get; };
+        IInspectable Index { get; };
+        Windows.UI.Color Color;
+
+        Windows.UI.Xaml.Media.Brush ColorToBrush(Windows.UI.Color color);
     }
 }

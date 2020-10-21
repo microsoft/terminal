@@ -4,22 +4,21 @@
 #include "pch.h"
 #include "Launch.h"
 #include "Launch.g.cpp"
-#include <ObjectModel\GlobalSettings.h>
+#include "MainPage.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Launch::Launch()
     {
-        m_globalSettingsModel = winrt::make<Model::implementation::GlobalSettingsModel>();
         InitializeComponent();
     }
 
-    Model::GlobalSettingsModel Launch::GlobalSettingsModel()
+    GlobalAppSettings Launch::GlobalSettings()
     {
-        return m_globalSettingsModel;
+        return MainPage::Settings().GlobalSettings();
     }
-
 }

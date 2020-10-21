@@ -17,7 +17,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalTab : TerminalTabT<TerminalTab>
     {
     public:
-        TerminalTab() = delete;
         TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
@@ -98,7 +97,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
 
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };

@@ -2,99 +2,111 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "MainPage.h"
 #include "ColorSchemes.h"
+#include "ColorTableEntry.g.cpp"
 #include "ColorSchemes.g.cpp"
-#include <ObjectModel\ColorScheme.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
+using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    ColorSchemes::ColorSchemes()
+    static constexpr std::array<std::string_view, 16> TableColors = {
+        "Black",
+        "Red",
+        "Green",
+        "Yellow",
+        "Blue",
+        "Purple",
+        "Cyan",
+        "White",
+        "Bright Black",
+        "Bright Red",
+        "Bright Green",
+        "Bright Yellow",
+        "Bright Blue",
+        "Bright Purple",
+        "Bright Cyan",
+        "Bright White"
+    };
+
+    ColorSchemes::ColorSchemes() :
+        _ColorSchemeList{ single_threaded_observable_vector<hstring>() },
+        _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
-        m_colorSchemeModel = winrt::make<Model::implementation::ColorSchemeModel>();
         InitializeComponent();
+
+        // Initialize our list of color schemes and initially set color scheme and table.
+        auto colorSchemeMap = MainPage::Settings().GlobalSettings().ColorSchemes();
+        for (const auto& pair : MainPage::Settings().GlobalSettings().ColorSchemes())
+        {
+            _ColorSchemeList.Append(pair.Key());
+        }
     }
 
-    Model::ColorSchemeModel ColorSchemes::ColorSchemeModel()
+    IObservableVector<hstring> ColorSchemes::ColorSchemeList()
     {
-        return m_colorSchemeModel;
+        return _ColorSchemeList;
     }
 
-    void ColorSchemes::Background_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
+    void ColorSchemes::ColorSchemeSelectionChanged(IInspectable const& /*sender*/,
+                                                   SelectionChangedEventArgs const& args)
     {
-        m_colorSchemeModel.ColorScheme().Background(event.NewColor());
+        //  Update the color scheme this page is modifying
+        auto str = winrt::unbox_value<hstring>(args.AddedItems().GetAt(0));
+        auto colorScheme = MainPage::Settings().GlobalSettings().ColorSchemes().Lookup(str);
+        CurrentColorScheme(colorScheme);
+        _UpdateColorTable(colorScheme);
     }
-    void ColorSchemes::Foreground_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
+
+    void ColorSchemes::_UpdateColorSchemeList()
     {
-        m_colorSchemeModel.ColorScheme().Foreground(event.NewColor());
+        auto colorSchemeMap = MainPage::Settings().GlobalSettings().ColorSchemes();
+        for (const auto& pair : MainPage::Settings().GlobalSettings().ColorSchemes())
+        {
+            _ColorSchemeList.Append(pair.Key());
+        }
     }
-    void ColorSchemes::Black_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
+
+    void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
+                                          ColorChangedEventArgs const& /*args*/)
     {
-        m_colorSchemeModel.ColorScheme().Black(event.NewColor());
+        if (auto picker = sender.try_as<ColorPicker>())
+        {
+            // TODO: Commented out for now because Tag currently won't bind to an index correctly.
+            // The idea is this function will grab the index from the tag and call SetColorTableEntry.
+            //auto index = winrt::unbox_value<uint8_t>(picker.Tag());
+            //CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
+        }
     }
-    void ColorSchemes::BrightBlack_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
+
+    // Update the Page's displayed color table
+    void ColorSchemes::_UpdateColorTable(const Model::ColorScheme& colorScheme)
     {
-        m_colorSchemeModel.ColorScheme().BrightBlack(event.NewColor());
+        _CurrentColorTable.Clear();
+        for (uint8_t i = 0; i < TableColors.size(); ++i)
+        {
+            auto entry = winrt::make<ColorTableEntry>(i, colorScheme.Table()[i]);
+            _CurrentColorTable.Append(entry);
+        }
     }
-    void ColorSchemes::Blue_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
+
+    ColorTableEntry::ColorTableEntry(uint32_t index, Windows::UI::Color color)
     {
-        m_colorSchemeModel.ColorScheme().Blue(event.NewColor());
+        Index(winrt::box_value(index));
+        Color(color);
+        Name(to_hstring(TableColors[index]));
     }
-    void ColorSchemes::BrightBlue_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
+
+    Windows::UI::Xaml::Media::Brush ColorTableEntry::ColorToBrush(Windows::UI::Color color)
     {
-        m_colorSchemeModel.ColorScheme().BrightBlue(event.NewColor());
-    }
-    void ColorSchemes::Cyan_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().Cyan(event.NewColor());
-    }
-    void ColorSchemes::BrightCyan_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().BrightCyan(event.NewColor());
-    }
-    void ColorSchemes::Green_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().Green(event.NewColor());
-    }
-    void ColorSchemes::BrightGreen_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().BrightGreen(event.NewColor());
-    }
-    void ColorSchemes::Purple_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().Purple(event.NewColor());
-    }
-    void ColorSchemes::BrightPurple_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().BrightPurple(event.NewColor());
-    }
-    void ColorSchemes::Red_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().Red(event.NewColor());
-    }
-    void ColorSchemes::BrightRed_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().BrightRed(event.NewColor());
-    }
-    void ColorSchemes::White_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().White(event.NewColor());
-    }
-    void ColorSchemes::BrightWhite_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().BrightWhite(event.NewColor());
-    }
-    void ColorSchemes::Yellow_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().Yellow(event.NewColor());
-    }
-    void ColorSchemes::BrightYellow_ColorChanged(ColorPicker const&, ColorChangedEventArgs const& event)
-    {
-        m_colorSchemeModel.ColorScheme().BrightYellow(event.NewColor());
+        return SolidColorBrush(color);
     }
 }

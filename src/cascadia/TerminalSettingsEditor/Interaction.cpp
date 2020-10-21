@@ -4,21 +4,21 @@
 #include "pch.h"
 #include "Interaction.h"
 #include "Interaction.g.cpp"
-#include <ObjectModel\GlobalSettings.h>
+#include "MainPage.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Interaction::Interaction()
     {
-        m_globalSettingsModel = winrt::make<Model::implementation::GlobalSettingsModel>();
         InitializeComponent();
     }
 
-    Model::GlobalSettingsModel Interaction::GlobalSettingsModel()
+    GlobalAppSettings Interaction::GlobalSettings()
     {
-        return m_globalSettingsModel;
+        return MainPage::Settings().GlobalSettings();
     }
 }

@@ -24,17 +24,18 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettingsModel.GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                 <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
                 <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>
                 <RadioButton x:Uid="Globals_LaunchSizeFullscreen" x:Name="FullscreenLaunchSize"/>
             </Controls:RadioButtons>
-            <TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettingsModel.GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
+            <!--TODO: Converter here for launch position into the cols and rows number boxes-->
+            <!--<TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
             <Controls:NumberBox x:Uid="Globals_InitialCols"
                                     x:Name="InitialCols"
-                                    Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialCols, Mode=TwoWay}"
+                                    Value="{x:Bind GlobalSettings.InitialCols, Mode=TwoWay}"
                                     Margin="0,0,0,20"
                                     FontSize="15"
                                     SpinButtonPlacementMode="Compact" 
@@ -43,16 +44,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     ToolTipService.Placement="Mouse"/>
             <Controls:NumberBox x:Uid="Globals_InitialRows"
                                 x:Name="InitialRows"
-                                    Value="{x:Bind GlobalSettingsModel.GlobalSettings.InitialRows, Mode=TwoWay}"
+                                    Value="{x:Bind GlobalSettings.InitialRows, Mode=TwoWay}"
                                     Margin="0,0,0,20"
                                     FontSize="15"
                                     SpinButtonPlacementMode="Compact" 
                                     SmallChange="10"
                                     LargeChange="100"
-                                    ToolTipService.Placement="Mouse"/>
+                                    ToolTipService.Placement="Mouse"/>-->
         </StackPanel>
-        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
-            <CheckBox x:Uid="Globals_DisableDynamicProfiles" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.DisableDynamicProfiles, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-        </StackPanel>
+        <!--TODO: Setting doesn't exist?-->
+        <!--<StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
+            <CheckBox x:Uid="Globals_DisableDynamicProfiles" IsChecked="{x:Bind GlobalSettings.DisableDynamicProfiles, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+        </StackPanel>-->
     </Grid>
 </Page>

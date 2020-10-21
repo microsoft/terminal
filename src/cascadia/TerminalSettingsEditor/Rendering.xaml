@@ -26,8 +26,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <TextBlock x:Uid="Globals_RenderingDisclaimer"
                    Style="{StaticResource BodyTextBlockStyle}"
                    Margin="0,0,0,20" />
-            <CheckBox x:Uid="Globals_ForceFullRepaint" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <CheckBox x:Uid="Globals_SoftwareRendering" IsChecked="{x:Bind GlobalSettingsModel.GlobalSettings.SoftwareRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_ForceFullRepaint" IsChecked="{x:Bind GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            <CheckBox x:Uid="Globals_SoftwareRendering" IsChecked="{x:Bind GlobalSettings.SoftwareRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
         </StackPanel>
     </Grid>
 </Page>
