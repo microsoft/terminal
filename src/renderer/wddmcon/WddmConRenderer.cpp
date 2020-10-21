@@ -278,7 +278,7 @@ bool WddmConEngine::IsInitialized()
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
 
-            NewChar->Character = clusters.at(i).GetTextAsSingle();
+            NewChar->Character = til::at(clusters, i).GetTextAsSingle();
             NewChar->Attribute = _currentLegacyColorAttribute;
         }
 

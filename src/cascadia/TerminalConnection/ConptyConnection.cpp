@@ -3,13 +3,10 @@
 
 #include "pch.h"
 
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
-
 #include "ConptyConnection.h"
 
 #include <windows.h>
+#include <userenv.h>
 
 #include "ConptyConnection.g.cpp"
 
@@ -97,8 +94,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             environment.clear();
         });
 
-        // Populate the environment map with the current environment.
-        RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment));
+        {
+            const auto newEnvironmentBlock{ Utils::CreateEnvironmentBlock() };
+            // Populate the environment map with the current environment.
+            RETURN_IF_FAILED(Utils::UpdateEnvironmentMapW(environment, newEnvironmentBlock.get()));
+        }
 
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -449,6 +449,25 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         return 0;
+    }
+
+    // Function Description:
+    // - This function will be called (by C++/WinRT) after the final outstanding reference to
+    //   any given connection instance is released.
+    //   When a client application exits, its termination will wait for the output thread to
+    //   run down. However, because our teardown is somewhat complex, our last reference may
+    //   be owned by the very output thread that the client wait threadpool is blocked on.
+    //   During destruction, we'll try to release any outstanding handles--including the one
+    //   we have to the threadpool wait. As you might imagine, this takes us right to deadlock
+    //   city.
+    //   Deferring the final destruction of the connection to a background thread that can't
+    //   be awaiting our destruction breaks the deadlock.
+    // Arguments:
+    // - connection: the final living reference to an outgoing connection
+    winrt::fire_and_forget ConptyConnection::final_release(std::unique_ptr<ConptyConnection> connection)
+    {
+        co_await winrt::resume_background(); // move to background
+        connection.reset(); // explicitly destruct
     }
 
 }

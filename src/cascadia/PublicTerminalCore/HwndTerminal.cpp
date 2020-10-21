@@ -16,6 +16,10 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
 static constexpr bool _IsMouseMessage(UINT uMsg)
 {
     return uMsg == WM_LBUTTONDOWN || uMsg == WM_LBUTTONUP || uMsg == WM_LBUTTONDBLCLK ||
@@ -75,6 +79,8 @@ try
                 case WM_RBUTTONUP:
                     ReleaseCapture();
                     break;
+                default:
+                    break;
                 }
 
                 // Suppress all mouse events that made it into the terminal.
@@ -128,6 +134,8 @@ try
             terminal->_hwnd.release();
             terminal->Teardown();
             return 0;
+        default:
+            break;
         }
     }
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -234,7 +242,7 @@ HRESULT HwndTerminal::Initialize()
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
     _terminal->SetDefaultBackground(RGB(12, 12, 12));
     _terminal->SetDefaultForeground(RGB(204, 204, 204));
-    _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept { _WriteTextToConnection(input); });
+    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
     _multiClickTime = std::chrono::milliseconds{ GetDoubleClickTime() };
@@ -425,7 +433,15 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
     publicTerminal->SendOutput(data);
 }
 
-HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
+/// <summary>
+/// Triggers a terminal resize using the new width and height in pixel.
+/// </summary>
+/// <param name="terminal">Terminal pointer.</param>
+/// <param name="width">New width of the terminal in pixels.</param>
+/// <param name="height">New height of the terminal in pixels</param>
+/// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
+/// <returns>HRESULT of the attempted resize.</returns>
+HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -438,8 +454,53 @@ HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double heig
         static_cast<int>(height),
         0));
 
-    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+    const SIZE windowSize{ width, height };
     return publicTerminal->Refresh(windowSize, dimensions);
+}
+
+/// <summary>
+/// Helper method for resizing the terminal using character column and row counts
+/// </summary>
+/// <param name="terminal">Pointer to the terminal object.</param>
+/// <param name="dimensionsInCharacters">New terminal size in row and column count.</param>
+/// <param name="dimensionsInPixels">Out parameter with the new size of the renderer.</param>
+/// <returns>HRESULT of the attempted resize.</returns>
+HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensionsInCharacters, _Out_ SIZE* dimensionsInPixels)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, dimensionsInPixels);
+
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto viewInCharacters = Viewport::FromDimensions({ 0, 0 }, { (dimensionsInCharacters.X), (dimensionsInCharacters.Y) });
+    const auto viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
+
+    dimensionsInPixels->cx = viewInPixels.Width();
+    dimensionsInPixels->cy = viewInPixels.Height();
+
+    COORD unused{ 0, 0 };
+
+    return TerminalTriggerResize(terminal, viewInPixels.Width(), viewInPixels.Height(), &unused);
+}
+
+/// <summary>
+/// Calculates the amount of rows and columns that fit in the provided width and height.
+/// </summary>
+/// <param name="terminal">Terminal pointer</param>
+/// <param name="width">Width of the terminal area to calculate.</param>
+/// <param name="height">Height of the terminal area to calculate.</param>
+/// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
+/// <returns>HRESULT of the calculation.</returns>
+HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { width, height });
+    const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
+
+    dimensions->X = viewInCharacters.Width();
+    dimensions->Y = viewInCharacters.Height();
+
+    return S_OK;
 }
 
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
@@ -645,7 +706,13 @@ try
         cursorPosition = coordsToTransform;
     }
 
-    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta);
+    const TerminalInput::MouseButtonState state{
+        WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
+        WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
+        WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
+    };
+
+    return _terminal->SendMouseEvent(cursorPosition / fontSize, uMsg, getControlKeyState(), wheelDelta, state);
 }
 catch (...)
 {
@@ -721,6 +788,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
 
         publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
         publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+        publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
@@ -743,18 +811,6 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     COORD dimensions = {};
     const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
     publicTerminal->Refresh(windowSize, &dimensions);
-}
-
-// Resizes the terminal to the specified rows and columns.
-HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-
-    auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->ClearSelection();
-    publicTerminal->_renderer->TriggerRedrawAll();
-
-    return publicTerminal->_terminal->UserResize(dimensions);
 }
 
 void _stdcall TerminalBlinkCursor(void* terminal)

@@ -6,7 +6,9 @@ ABANDONFONT
 ABCDEFGHIJKLMNO
 ABCG
 abf
+abgr
 abi
+ACCESSTOKEN
 acec
 acf
 acidev
@@ -23,6 +25,7 @@ addressof
 ADDSTRING
 ADDTOOL
 AEnd
+aef
 AFew
 AFill
 AFX
@@ -71,6 +74,7 @@ apps
 APPWINDOW
 appx
 appxbundle
+appxerror
 appxmanifest
 APrep
 apsect
@@ -99,7 +103,6 @@ AStomps
 ASYNCWINDOWPOS
 atch
 ATest
-atg
 attr
 ATTRCOLOR
 aumid
@@ -160,7 +163,6 @@ bitsavers
 bitset
 BKCOLOR
 BKGND
-BKMK
 Bksp
 blog
 Blt
@@ -190,6 +192,7 @@ buffersize
 buflen
 bugfix
 buildtransitive
+BUILDURI
 burriter
 BValue
 byref
@@ -295,7 +298,7 @@ codepage
 codepoint
 codeproject
 COINIT
-colo
+COLLECTIONURI
 colorizing
 colororacle
 colorref
@@ -352,10 +355,10 @@ conpty
 conptylib
 consecteturadipiscingelit
 conserv
-consoleaccessibility
 consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
+consolegit
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -426,6 +429,7 @@ cstdlib
 cstr
 cstring
 cstyle
+CSV
 CSwitch
 CText
 ctime
@@ -509,6 +513,7 @@ dealloc
 debian
 debolden
 debounce
+debugbreak
 DECALN
 DECANM
 DECAUPSS
@@ -532,6 +537,7 @@ DECOM
 deconstructed
 DECPCTERM
 DECRC
+DECREQTPARM
 DECRLM
 DECRQM
 DECRST
@@ -544,6 +550,7 @@ DECSCUSR
 DECSED
 DECSEL
 DECSET
+DECSLPP
 DECSLRM
 DECSMBV
 DECSMKR
@@ -596,6 +603,7 @@ df
 DFactory
 DFMT
 dh
+dhandler
 dialogbox
 diffing
 DINLINE
@@ -618,6 +626,8 @@ dllmain
 DLLVERSIONINFO
 DLOAD
 DLOOK
+dmp
+dnceng
 DOCTYPE
 docx
 DONTCARE
@@ -640,7 +650,7 @@ DROPDOWNLIST
 DROPFILES
 drv
 dsm
-Dst
+dst
 DSwap
 DTest
 dtor
@@ -683,7 +693,7 @@ Elems
 elif
 elseif
 emacs
-emptybox
+EMPTYBOX
 enabledelayedexpansion
 endian
 endif
@@ -707,6 +717,7 @@ errno
 errorlevel
 esa
 ETB
+etcoreapp
 ETW
 ETX
 EUDC
@@ -752,7 +763,6 @@ fdw
 fea
 fesb
 FFDE
-FFF
 FFrom
 FGCOLOR
 fgetc
@@ -769,7 +779,6 @@ FILETYPE
 FILEW
 FILLATTR
 FILLCONSOLEOUTPUT
-Filledbox
 FILTERONPASTE
 finalizer
 FINDCASE
@@ -821,7 +830,6 @@ fsproj
 fstream
 fte
 Ftm
-fullcolor
 fullscreen
 fullwidth
 func
@@ -850,6 +858,7 @@ GETAUTOHIDEBAREX
 GETCARETWIDTH
 getch
 getchar
+GETCLIENTAREAANIMATION
 GETCOMMANDHISTORY
 GETCOMMANDHISTORYLENGTH
 GETCONSOLEINPUT
@@ -892,9 +901,11 @@ GETWHEELSCROLLCHARACTERS
 GETWHEELSCROLLCHARS
 GETWHEELSCROLLLINES
 getwriter
+GFEh
 Gfun
 gfx
 gh
+gitfilters
 github
 gitlab
 gle
@@ -951,6 +962,8 @@ hfile
 hfont
 hglobal
 hh
+hhh
+hhhh
 hhook
 hhx
 HIBYTE
@@ -988,6 +1001,7 @@ hpj
 hpp
 HPR
 HPROPSHEETPAGE
+HProvider
 HREDRAW
 hresult
 HRSRC
@@ -1011,7 +1025,6 @@ hwheel
 hwnd
 HWNDPARENT
 hxx
-hyperlink
 IAccessibility
 IAction
 IApi
@@ -1034,7 +1047,6 @@ ICore
 IData
 IDCANCEL
 IDD
-IDefault
 IDesktop
 IDictionary
 IDISHWND
@@ -1067,6 +1079,8 @@ IInteract
 IInteractivity
 IIo
 IList
+imagemagick
+Imatch
 ime
 Imm
 IMouse
@@ -1083,7 +1097,6 @@ INITCOMMONCONTROLSEX
 INITDIALOG
 initguid
 INITMENU
-imagemagick
 inkscape
 inl
 INLINEPREFIX
@@ -1157,6 +1170,7 @@ iwch
 IWin
 IWindow
 IXaml
+IXMP
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1239,6 +1253,7 @@ linputfile
 Linq
 linux
 listbox
+listproperties
 listptr
 listptrsize
 lk
@@ -1259,6 +1274,7 @@ locstudio
 Loewen
 LOGFONT
 LOGFONTW
+logissue
 Loremipsumdolorsitamet
 lowercased
 loword
@@ -1383,8 +1399,8 @@ mimetype
 mincore
 mindbogglingly
 mingw
+minimizeall
 minkernel
-minmax
 minwin
 minwindef
 Mip
@@ -1532,8 +1548,8 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
-NOTOPMOST
 NOTNULL
+NOTOPMOST
 NOTRACK
 NOTSUPPORTED
 notypeopt
@@ -1545,7 +1561,7 @@ NOYIELD
 NOZORDER
 NPM
 npos
-NRCS
+nrcs
 NSTATUS
 ntapi
 ntcon
@@ -1623,8 +1639,8 @@ OSCBG
 OSCCT
 OSCFG
 OSCRCC
-OSCSCC
 OSCSCB
+OSCSCC
 OSCWT
 OSDEPENDSROOT
 osfhandle
@@ -1722,7 +1738,6 @@ pguid
 pgup
 PHANDLE
 phhook
-phsl
 phwnd
 pid
 pidl
@@ -1752,7 +1767,6 @@ POBJECT
 Podcast
 POINTSLIST
 POLYTEXTW
-popclip
 popd
 POPF
 poppack
@@ -1790,9 +1804,11 @@ prect
 prefast
 prefilled
 prefs
+preinstalled
 PRELOAD
 PREMULTIPLIED
 prepopulated
+presorted
 PREVENTPINNING
 PREVIEWLABEL
 PREVIEWWINDOW
@@ -1935,7 +1951,7 @@ REGSTR
 reingest
 Relayout
 RELBINPATH
-remoting
+Remoting
 renderengine
 rendersize
 reparent
@@ -1943,7 +1959,6 @@ reparenting
 replatformed
 Replymessage
 repositorypath
-rerendered
 rescap
 Resequence
 Reserialize
@@ -1952,6 +1967,7 @@ resheader
 resizable
 resmimetype
 restrictedcapabilities
+restrictederrorinfo
 resw
 resx
 retval
@@ -1989,10 +2005,10 @@ RMENU
 roadmap
 robomac
 roundtrip
-ROWSTOSCROLL
 rparen
 RRF
 RRRGGGBB
+rsas
 rtcore
 RTEXT
 rtf
@@ -2009,6 +2025,7 @@ runformat
 runft
 RUNFULLSCREEN
 runsettings
+runtests
 runtimeclass
 runuia
 runut
@@ -2051,7 +2068,7 @@ SCROLLSCALE
 SCROLLSCREENBUFFER
 Scrollup
 Scrolluppage
-SCS
+Scs
 scursor
 sddl
 sdeleted
@@ -2121,7 +2138,6 @@ Shl
 shlguid
 shlobj
 shlwapi
-shobjidl
 SHORTPATH
 SHOWCURSOR
 SHOWMAXIMIZED
@@ -2158,6 +2174,7 @@ SND
 SOLIDBOX
 Solutiondir
 somefile
+SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
 SPACEBAR
@@ -2194,14 +2211,11 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
-stdarg
 stdcall
-stddef
 stderr
 stdexcept
 stdin
 stdio
-stdlib
 STDMETHODCALLTYPE
 STDMETHODIMP
 stdout
@@ -2234,6 +2248,7 @@ subspan
 substr
 subsystemconsole
 subsystemwindows
+suiteless
 svg
 swapchain
 swapchainpanel
@@ -2285,6 +2300,7 @@ tcommandline
 tcommands
 tcon
 TDP
+TEAMPROJECT
 tearoff
 Teb
 techcommunity
@@ -2295,11 +2311,11 @@ telnetd
 telnetpp
 templated
 terminalcore
-terminalnuget
 TERMINALSCROLLING
 terminfo
 TEs
 testapp
+testbuildplatform
 testcon
 testd
 testdlls
@@ -2308,11 +2324,15 @@ testlab
 testlist
 testmd
 testmddefinition
+testmode
+testname
+testnameprefix
 TESTNULL
 testpass
 testpasses
 testtestabc
 testtesttesttesttest
+testtimeout
 TEXCOORD
 texel
 TExpected
@@ -2351,7 +2371,6 @@ TMult
 tmultiple
 tmux
 todo
-Tofill
 tofrom
 tokenhelpers
 tokenized
@@ -2362,6 +2381,7 @@ Toolset
 tooltip
 TOPDOWNDIB
 TOPLEFT
+toplevel
 TOPRIGHT
 TOpt
 tosign
@@ -2447,7 +2467,6 @@ undef
 Unescape
 unexpand
 Unfocus
-unfocuses
 unhighlighting
 unhosted
 unicode
@@ -2470,6 +2489,7 @@ unpause
 Unregister
 Unregistering
 unte
+untests
 untextured
 untimes
 UPDATEDISPLAY
@@ -2567,6 +2587,7 @@ vstudio
 vswhere
 vtapp
 VTE
+VTID
 vtio
 vtmode
 vtpipeterm
@@ -2700,9 +2721,11 @@ WNDCLASSW
 Wndproc
 WNegative
 WNull
+wnwb
 workarea
 workaround
 workflow
+workitem
 wostream
 WOutside
 WOWARM
@@ -2746,6 +2769,7 @@ wtof
 wtoi
 wtw
 wtypes
+Wubi
 WUX
 WVerify
 wwaproj
@@ -2753,33 +2777,29 @@ WWith
 wx
 wxh
 xa
-xab
 xact
 xamarin
 xaml
 Xamlmeta
 xargs
 xaz
-xb
-xbc
 xbf
 xbutton
 XBUTTONDBLCLK
 XBUTTONDOWN
 XBUTTONUP
-xca
 XCast
-xce
 XCENTER
 XColors
 xcopy
 XCount
-xdd
 xdy
 xe
 XEncoding
+xes
+Xes
+XES
 xff
-xffff
 XFile
 xlang
 XManifest
@@ -2788,6 +2808,8 @@ XMFLOAT
 xml
 xmlns
 xor
+xorg
+XOrg
 Xpath
 XPosition
 XResource
@@ -2798,6 +2820,7 @@ XSubstantial
 xtended
 xterm
 XTest
+xunit
 xutr
 xvalue
 XVIRTUALSCREEN

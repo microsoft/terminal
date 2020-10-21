@@ -22,11 +22,19 @@
        at the winmd we build to generate type info.
        In general, cppwinrt projects all want this.
   -->
-  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='false'">
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true'">
     <MinimalCoreWin>true</MinimalCoreWin>
     <AppContainerApplication>true</AppContainerApplication>
     <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='true'">
+    <!-- Some of our projects include the cppwinrt build options to
+         just build cppwinrt things, but don't want the store bits
+         in full swing. MinimalCoreWin != false means "don't let me
+         use win32 APIs"
+    -->
+    <MinimalCoreWin>false</MinimalCoreWin>
   </PropertyGroup>
 
   <!-- This is magic that tells msbuild to link against the Desktop platform
@@ -89,7 +97,7 @@
       <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectName).def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="Exists('$(ProjectName).def')">$(ProjectName).def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
 

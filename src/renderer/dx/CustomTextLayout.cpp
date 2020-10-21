@@ -847,57 +847,113 @@ CATCH_RETURN();
         auto mutableOrigin = origin;
 
         // Draw each run separately.
-        for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
+        for (INT32 runIndex = 0; runIndex < gsl::narrow<INT32>(_runs.size()); ++runIndex)
         {
             // Get the run
             const Run& run = _runs.at(runIndex);
 
-            // Prepare the glyph run and description objects by converting our
-            // internal storage representation into something that matches DWrite's structures.
-            DWRITE_GLYPH_RUN glyphRun;
-            glyphRun.bidiLevel = run.bidiLevel;
-            glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
-            glyphRun.fontFace = run.fontFace.Get();
-            glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
-            glyphRun.glyphCount = run.glyphCount;
-            glyphRun.glyphIndices = &_glyphIndices.at(run.glyphStart);
-            glyphRun.glyphOffsets = &_glyphOffsets.at(run.glyphStart);
-            glyphRun.isSideways = false;
-
-            DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
-            glyphRunDescription.clusterMap = _glyphClusters.data();
-            glyphRunDescription.localeName = _localeName.data();
-            glyphRunDescription.string = _text.data();
-            glyphRunDescription.stringLength = run.textLength;
-            glyphRunDescription.textPosition = run.textStart;
-
-            // Calculate the origin for the next run based on the amount of space
-            // that would be consumed. We are doing this calculation now, not after,
-            // because if the text is RTL then we need to advance immediately, before the
-            // write call since DirectX expects the origin to the RIGHT of the text for RTL.
-            const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
-                                                     _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
-                                                     mutableOrigin.x);
-
-            // Check for RTL, if it is, apply space adjustment.
-            if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
+            if (!WI_IsFlagSet(run.bidiLevel, 1))
             {
-                mutableOrigin.x = postOriginX;
+                RETURN_IF_FAILED(_DrawGlyphRun(clientDrawingContext, renderer, mutableOrigin, run));
             }
+            // This is the RTL behavior. We will advance to the last contiguous RTL run, draw that,
+            // and then keep on going backwards from there, and then move runIndex beyond.
+            // Let's say we have runs abcdEFGh, where runs EFG are RTL.
+            // Then we will draw them in the order abcdGFEh
+            else
+            {
+                const INT32 originalRunIndex = runIndex;
+                INT32 lastIndexRTL = runIndex;
 
-            // Try to draw it
-            RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
-                                                    mutableOrigin.x,
-                                                    mutableOrigin.y,
-                                                    DWRITE_MEASURING_MODE_NATURAL,
-                                                    &glyphRun,
-                                                    &glyphRunDescription,
-                                                    run.drawingEffect.Get()));
+                // Step 1: Get to the last contiguous RTL run from here
+                while (lastIndexRTL < gsl::narrow<INT32>(_runs.size()) - 1) // only could ever advance if there's something left
+                {
+                    const Run& nextRun = _runs.at(gsl::narrow_cast<size_t>(lastIndexRTL + 1));
+                    if (WI_IsFlagSet(nextRun.bidiLevel, 1))
+                    {
+                        lastIndexRTL++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
-            // Either way, we should be at this point by the end of writing this sequence,
-            // whether it was LTR or RTL.
+                // Go from the last to the first and draw
+                for (runIndex = lastIndexRTL; runIndex >= originalRunIndex; runIndex--)
+                {
+                    const Run& currentRun = _runs.at(runIndex);
+                    RETURN_IF_FAILED(_DrawGlyphRun(clientDrawingContext, renderer, mutableOrigin, currentRun));
+                }
+                runIndex = lastIndexRTL; // and the for loop will take the increment to the last one
+            }
+        }
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+// Routine Description:
+// - Draw the given run
+// - The origin is updated to be after the run.
+// Arguments:
+// - clientDrawingContext - Optional pointer to information that the renderer might need
+//                          while attempting to graphically place the text onto the screen
+// - renderer - The interface to be used for actually putting text onto the screen
+// - origin - pixel point of top left corner on final surface for drawing
+// - run - the run to be drawn
+[[nodiscard]] HRESULT CustomTextLayout::_DrawGlyphRun(_In_opt_ void* clientDrawingContext,
+                                                      gsl::not_null<IDWriteTextRenderer*> renderer,
+                                                      D2D_POINT_2F& mutableOrigin,
+                                                      const Run& run) noexcept
+{
+    try
+    {
+        // Prepare the glyph run and description objects by converting our
+        // internal storage representation into something that matches DWrite's structures.
+        DWRITE_GLYPH_RUN glyphRun;
+        glyphRun.bidiLevel = run.bidiLevel;
+        glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
+        glyphRun.fontFace = run.fontFace.Get();
+        glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
+        glyphRun.glyphCount = run.glyphCount;
+        glyphRun.glyphIndices = &_glyphIndices.at(run.glyphStart);
+        glyphRun.glyphOffsets = &_glyphOffsets.at(run.glyphStart);
+        glyphRun.isSideways = false;
+
+        DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
+        glyphRunDescription.clusterMap = _glyphClusters.data();
+        glyphRunDescription.localeName = _localeName.data();
+        glyphRunDescription.string = _text.data();
+        glyphRunDescription.stringLength = run.textLength;
+        glyphRunDescription.textPosition = run.textStart;
+
+        // Calculate the origin for the next run based on the amount of space
+        // that would be consumed. We are doing this calculation now, not after,
+        // because if the text is RTL then we need to advance immediately, before the
+        // write call since DirectX expects the origin to the RIGHT of the text for RTL.
+        const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
+                                                 _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
+                                                 mutableOrigin.x);
+
+        // Check for RTL, if it is, apply space adjustment.
+        if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
+        {
             mutableOrigin.x = postOriginX;
         }
+
+        // Try to draw it
+        RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
+                                                mutableOrigin.x,
+                                                mutableOrigin.y,
+                                                DWRITE_MEASURING_MODE_NATURAL,
+                                                &glyphRun,
+                                                &glyphRunDescription,
+                                                run.drawingEffect.Get()));
+
+        // Either way, we should be at this point by the end of writing this sequence,
+        // whether it was LTR or RTL.
+        mutableOrigin.x = postOriginX;
     }
     CATCH_RETURN();
     return S_OK;

@@ -3,17 +3,17 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/ColorScheme.h"
-#include "../TerminalApp/Profile.h"
-#include "../TerminalApp/CascadiaSettings.h"
-#include "../TerminalApp/LegacyProfileGeneratorNamespaces.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/Profile.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../TerminalSettingsModel/LegacyProfileGeneratorNamespaces.h"
 
-#include "../LocalTests_TerminalApp/JsonTestClass.h"
+#include "../LocalTests_SettingsModel/JsonTestClass.h"
 
 #include "TestDynamicProfileGenerator.h"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
@@ -63,7 +63,7 @@ namespace TerminalAppUnitTests
         gen.pfnGenerate = []() {
             std::vector<Profile> profiles;
             Profile p0;
-            p0.SetName(L"profile0");
+            p0.Name(L"profile0");
             profiles.push_back(p0);
             return profiles;
         };
@@ -71,8 +71,8 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest", gen.GetNamespace());
         std::vector<Profile> profiles = gen.GenerateProfiles();
         VERIFY_ARE_EQUAL(1u, profiles.size());
-        VERIFY_ARE_EQUAL(L"profile0", profiles.at(0).GetName());
-        VERIFY_IS_FALSE(profiles.at(0)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"profile0", profiles.at(0).Name());
+        VERIFY_IS_FALSE(profiles.at(0).HasGuid());
     }
 
     void DynamicProfileTests::TestSimpleGenerateMultipleGenerators()
@@ -81,7 +81,7 @@ namespace TerminalAppUnitTests
         gen0->pfnGenerate = []() {
             std::vector<Profile> profiles;
             Profile p0;
-            p0.SetName(L"profile0");
+            p0.Name(L"profile0");
             profiles.push_back(p0);
             return profiles;
         };
@@ -89,23 +89,23 @@ namespace TerminalAppUnitTests
         gen1->pfnGenerate = []() {
             std::vector<Profile> profiles;
             Profile p0;
-            p0.SetName(L"profile1");
+            p0.Name(L"profile1");
             profiles.push_back(p0);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
 
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
 
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).HasGuid());
 
-        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(1).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).HasGuid());
     }
 
     void DynamicProfileTests::TestGenGuidsForProfiles()
@@ -119,7 +119,7 @@ namespace TerminalAppUnitTests
         gen0->pfnGenerate = []() {
             std::vector<Profile> profiles;
             Profile p0;
-            p0.SetName(L"profile0"); // this is _profiles.at(2)
+            p0.Name(L"profile0"); // this is _profiles.at(2)
             profiles.push_back(p0);
             return profiles;
         };
@@ -127,72 +127,72 @@ namespace TerminalAppUnitTests
         gen1->pfnGenerate = []() {
             std::vector<Profile> profiles;
             Profile p0, p1;
-            p0.SetName(L"profile0"); // this is _profiles.at(3)
-            p1.SetName(L"profile1"); // this is _profiles.at(4)
+            p0.Name(L"profile0"); // this is _profiles.at(3)
+            p1.Name(L"profile1"); // this is _profiles.at(4)
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
 
         Profile p0, p1;
-        p0.SetName(L"profile0"); // this is _profiles.at(0)
-        p1.SetName(L"profile1"); // this is _profiles.at(1)
-        settings._profiles.push_back(p0);
-        settings._profiles.push_back(p1);
+        p0.Name(L"profile0"); // this is _profiles.GetAt(0)
+        p1.Name(L"profile1"); // this is _profiles.GetAt(1)
+        settings->_profiles.Append(p0);
+        settings->_profiles.Append(p1);
 
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(5u, settings._profiles.size());
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(5u, settings->_profiles.Size());
 
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(0)._guid.has_value());
-        VERIFY_IS_FALSE(settings._profiles.at(0)._source.has_value());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(1)._guid.has_value());
-        VERIFY_IS_FALSE(settings._profiles.at(1)._source.has_value());
+        VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(1).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(2).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(2)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(2).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).HasGuid());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(3).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(3)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(3).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).HasGuid());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(4).GetName());
-        VERIFY_IS_FALSE(settings._profiles.at(4)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(4)._source.has_value());
+        VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(4).Name());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(4).HasGuid());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(4).Source().empty());
 
-        settings._ValidateProfilesHaveGuid();
+        settings->_ValidateProfilesHaveGuid();
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(4)._guid.has_value());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(4).HasGuid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0)._guid.value(),
-                             settings._profiles.at(1)._guid.value());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0)._guid.value(),
-                             settings._profiles.at(2)._guid.value());
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0)._guid.value(),
-                             settings._profiles.at(3)._guid.value());
+        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(0).Guid(),
+                             settings->_profiles.GetAt(1).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(0).Guid(),
+                             settings->_profiles.GetAt(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(0).Guid(),
+                             settings->_profiles.GetAt(3).Guid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1)._guid.value(),
-                             settings._profiles.at(4)._guid.value());
+        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(1).Guid(),
+                             settings->_profiles.GetAt(4).Guid());
 
-        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3)._guid.value(),
-                             settings._profiles.at(4)._guid.value());
+        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(3).Guid(),
+                             settings->_profiles.GetAt(4).Guid());
     }
 
     void DynamicProfileTests::DontLayerUserProfilesOnDynamicProfiles()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string userProfiles{ R"(
         {
@@ -211,65 +211,66 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 };
-            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 }, p1{ guid1 };
-            p0.SetName(L"profile0"); // this is _profiles.at(1)
-            p1.SetName(L"profile1"); // this is _profiles.at(2)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
+            p0.Name(L"profile0"); // this is _profiles.at(1)
+            p1.Name(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
 
         Log::Comment(NoThrowString().Format(
             L"All profiles with the same name have the same GUID. However, they"
             L" will not be layered, because they have different sources"));
 
         // parse userProfiles as the user settings
-        settings._ParseJsonString(userProfiles, false);
-        VERIFY_ARE_EQUAL(0u, settings._profiles.size(), L"Just parsing the user settings doesn't actually layer them");
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        settings.LayerJson(settings._userSettings);
-        VERIFY_ARE_EQUAL(5u, settings._profiles.size());
+        settings->_ParseJsonString(userProfiles, false);
+        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size(), L"Just parsing the user settings doesn't actually layer them");
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(5u, settings->_profiles.Size());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
-        VERIFY_IS_FALSE(settings._profiles.at(3)._source.has_value());
-        VERIFY_IS_FALSE(settings._profiles.at(4)._source.has_value());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).Source().empty());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(4).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings._profiles.at(0)._source.value());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1)._source.value());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2)._source.value());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings->_profiles.GetAt(0).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(1).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(2).Source());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(4)._guid.has_value());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(4).HasGuid());
 
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0)._guid.value());
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1)._guid.value());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2)._guid.value());
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(3)._guid.value());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(4)._guid.value());
+        VERIFY_ARE_EQUAL(guid0, settings->_profiles.GetAt(0).Guid());
+        VERIFY_ARE_EQUAL(guid0, settings->_profiles.GetAt(1).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings->_profiles.GetAt(2).Guid());
+        VERIFY_ARE_EQUAL(guid0, settings->_profiles.GetAt(3).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings->_profiles.GetAt(4).Guid());
     }
 
     void DynamicProfileTests::DoLayerUserProfilesOnDynamicsWhenSourceMatches()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string userProfiles{ R"(
         {
@@ -290,57 +291,58 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 };
-            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 }, p1{ guid1 };
-            p0.SetName(L"profile0"); // this is _profiles.at(1)
-            p1.SetName(L"profile1"); // this is _profiles.at(2)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
+            p0.Name(L"profile0"); // this is _profiles.at(1)
+            p1.Name(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
 
         Log::Comment(NoThrowString().Format(
             L"All profiles with the same name have the same GUID. However, they"
             L" will not be layered, because they have different source's"));
 
         // parse userProfiles as the user settings
-        settings._ParseJsonString(userProfiles, false);
-        VERIFY_ARE_EQUAL(0u, settings._profiles.size(), L"Just parsing the user settings doesn't actually layer them");
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
-        settings.LayerJson(settings._userSettings);
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+        settings->_ParseJsonString(userProfiles, false);
+        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size(), L"Just parsing the user settings doesn't actually layer them");
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings._profiles.at(0)._source.value());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1)._source.value());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2)._source.value());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings->_profiles.GetAt(0).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(1).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(2).Source());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
 
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0)._guid.value());
-        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1)._guid.value());
-        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2)._guid.value());
+        VERIFY_ARE_EQUAL(guid0, settings->_profiles.GetAt(0).Guid());
+        VERIFY_ARE_EQUAL(guid0, settings->_profiles.GetAt(1).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings->_profiles.GetAt(2).Guid());
 
-        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
-        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings->_profiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings->_profiles.GetAt(2).Name());
     }
 
     void DynamicProfileTests::TestDontRunDisabledGenerators()
@@ -359,7 +361,7 @@ namespace TerminalAppUnitTests
         auto gen0GenerateFn = []() {
             std::vector<Profile> profiles;
             Profile p0;
-            p0.SetName(L"profile0");
+            p0.Name(L"profile0");
             profiles.push_back(p0);
             return profiles;
         };
@@ -367,8 +369,8 @@ namespace TerminalAppUnitTests
         auto gen1GenerateFn = []() {
             std::vector<Profile> profiles;
             Profile p0, p1;
-            p0.SetName(L"profile1");
-            p1.SetName(L"profile2");
+            p0.Name(L"profile1");
+            p1.Name(L"profile2");
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
@@ -377,8 +379,8 @@ namespace TerminalAppUnitTests
         auto gen2GenerateFn = []() {
             std::vector<Profile> profiles;
             Profile p0, p1;
-            p0.SetName(L"profile3");
-            p1.SetName(L"profile4");
+            p0.Name(L"profile3");
+            p1.Name(L"profile4");
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
@@ -387,7 +389,7 @@ namespace TerminalAppUnitTests
         {
             Log::Comment(NoThrowString().Format(
                 L"Case 1: Disable a single profile generator"));
-            CascadiaSettings settings{ false };
+            auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
 
             auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
             auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
@@ -395,64 +397,64 @@ namespace TerminalAppUnitTests
             gen0->pfnGenerate = gen0GenerateFn;
             gen1->pfnGenerate = gen1GenerateFn;
             gen2->pfnGenerate = gen2GenerateFn;
-            settings._profileGenerators.emplace_back(std::move(gen0));
-            settings._profileGenerators.emplace_back(std::move(gen1));
-            settings._profileGenerators.emplace_back(std::move(gen2));
+            settings->_profileGenerators.emplace_back(std::move(gen0));
+            settings->_profileGenerators.emplace_back(std::move(gen1));
+            settings->_profileGenerators.emplace_back(std::move(gen2));
 
             // Parse as the user settings:
-            settings._ParseJsonString(settings0String, false);
-            settings._LoadDynamicProfiles();
+            settings->_ParseJsonString(settings0String, false);
+            settings->_LoadDynamicProfiles();
 
-            VERIFY_ARE_EQUAL(4u, settings._profiles.size());
-            VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
-            VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
-            VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
-            VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
-            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(0)._source.value());
-            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1)._source.value());
-            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(2)._source.value());
-            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(3)._source.value());
-            VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
-            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(1)._name);
-            VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(2)._name);
-            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(3)._name);
+            VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
+            VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
+            VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
+            VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
+            VERIFY_IS_FALSE(settings->_profiles.GetAt(3).Source().empty());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(0).Source());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(1).Source());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings->_profiles.GetAt(2).Source());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings->_profiles.GetAt(3).Source());
+            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(2).Name());
+            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(3).Name());
         }
 
         {
             Log::Comment(NoThrowString().Format(
                 L"Case 2: Disable multiple profile generators"));
-            CascadiaSettings settings{ false };
+            auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
             auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
             auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
             auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.2");
             gen0->pfnGenerate = gen0GenerateFn;
             gen1->pfnGenerate = gen1GenerateFn;
             gen2->pfnGenerate = gen2GenerateFn;
-            settings._profileGenerators.emplace_back(std::move(gen0));
-            settings._profileGenerators.emplace_back(std::move(gen1));
-            settings._profileGenerators.emplace_back(std::move(gen2));
+            settings->_profileGenerators.emplace_back(std::move(gen0));
+            settings->_profileGenerators.emplace_back(std::move(gen1));
+            settings->_profileGenerators.emplace_back(std::move(gen2));
 
             // Parse as the user settings:
-            settings._ParseJsonString(settings1String, false);
-            settings._LoadDynamicProfiles();
+            settings->_ParseJsonString(settings1String, false);
+            settings->_LoadDynamicProfiles();
 
-            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
-            VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
-            VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
-            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(0)._source.value());
-            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(1)._source.value());
-            VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(0)._name);
-            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
+            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
+            VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
+            VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings->_profiles.GetAt(0).Source());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings->_profiles.GetAt(1).Source());
+            VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(1).Name());
         }
     }
 
     void DynamicProfileTests::TestLegacyProfilesMigrate()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        GUID guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
-        GUID guid4 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid4 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}");
 
         const std::string settings0String{ R"(
         {
@@ -489,17 +491,18 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.PowershellCore");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 };
-            p0.SetName(L"profile0");
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            p0.Name(L"profile0");
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Wsl");
         gen1->pfnGenerate = [guid2, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid1 }, p1{ guid2 };
-            p0.SetName(L"profile1");
-            p1.SetName(L"profile2");
+            Profile p0 = winrt::make<implementation::Profile>(guid1);
+            Profile p1 = winrt::make<implementation::Profile>(guid2);
+            p0.Name(L"profile1");
+            p1.Name(L"profile2");
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
@@ -507,60 +510,60 @@ namespace TerminalAppUnitTests
         auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Azure");
         gen2->pfnGenerate = [guid3]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid3 };
-            p0.SetName(L"profile3");
+            Profile p0 = winrt::make<implementation::Profile>(guid3);
+            p0.Name(L"profile3");
             profiles.push_back(p0);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
-        settings._profileGenerators.emplace_back(std::move(gen2));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
+        settings->_profileGenerators.emplace_back(std::move(gen2));
 
-        settings._ParseJsonString(settings0String, false);
-        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
+        settings->_ParseJsonString(settings0String, false);
+        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size());
 
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.PowershellCore", settings._profiles.at(0)._source.value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(1)._source.value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(2)._source.value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings._profiles.at(3)._source.value());
-        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
-        VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(2)._name);
-        VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(3)._name);
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).Source().empty());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.PowershellCore", settings->_profiles.GetAt(0).Source());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings->_profiles.GetAt(1).Source());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings->_profiles.GetAt(2).Source());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings->_profiles.GetAt(3).Source());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(3).Name());
 
-        settings.LayerJson(settings._userSettings);
-        VERIFY_ARE_EQUAL(5u, settings._profiles.size());
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(5u, settings->_profiles.Size());
 
-        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
-        VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
-        VERIFY_IS_FALSE(settings._profiles.at(4)._source.has_value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.PowershellCore", settings._profiles.at(0)._source.value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(1)._source.value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(2)._source.value());
-        VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings._profiles.at(3)._source.value());
-        // settings._profiles.at(4) does not have a source
-        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0)._name);
-        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings._profiles.at(1)._name);
-        VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings._profiles.at(2)._name);
-        VERIFY_ARE_EQUAL(L"profile3FromUserSettings", settings._profiles.at(3)._name);
-        VERIFY_ARE_EQUAL(L"profile4FromUserSettings", settings._profiles.at(4)._name);
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
+        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).Source().empty());
+        VERIFY_IS_TRUE(settings->_profiles.GetAt(4).Source().empty());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.PowershellCore", settings->_profiles.GetAt(0).Source());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings->_profiles.GetAt(1).Source());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings->_profiles.GetAt(2).Source());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings->_profiles.GetAt(3).Source());
+        // settings->_profiles.GetAt(4) does not have a source
+        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings->_profiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings->_profiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"profile3FromUserSettings", settings->_profiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(L"profile4FromUserSettings", settings->_profiles.GetAt(4).Name());
     }
 
     void DynamicProfileTests::UserProfilesWithInvalidSourcesAreIgnored()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string settings0String{ R"(
         {
@@ -585,40 +588,41 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 };
-            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 }, p1{ guid1 };
-            p0.SetName(L"profile0"); // this is _profiles.at(1)
-            p1.SetName(L"profile1"); // this is _profiles.at(2)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
+            p0.Name(L"profile0"); // this is _profiles.at(1)
+            p1.Name(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
 
-        settings._ParseJsonString(settings0String, false);
-        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
+        settings->_ParseJsonString(settings0String, false);
+        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size());
 
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
 
-        settings.LayerJson(settings._userSettings);
-        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
     }
 
     void DynamicProfileTests::UserProfilesFromDisabledSourcesDontAppear()
     {
-        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        winrt::guid guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
 
         const std::string settings0String{ R"(
         {
@@ -644,34 +648,35 @@ namespace TerminalAppUnitTests
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 };
-            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            p0.Name(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles;
-            Profile p0{ guid0 }, p1{ guid1 };
-            p0.SetName(L"profile0"); // this shouldn't be in the profiles at all
-            p1.SetName(L"profile1"); // this shouldn't be in the profiles at all
+            Profile p0 = winrt::make<implementation::Profile>(guid0);
+            Profile p1 = winrt::make<implementation::Profile>(guid1);
+            p0.Name(L"profile0"); // this shouldn't be in the profiles at all
+            p1.Name(L"profile1"); // this shouldn't be in the profiles at all
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
         };
 
-        CascadiaSettings settings{ false };
-        settings._profileGenerators.emplace_back(std::move(gen0));
-        settings._profileGenerators.emplace_back(std::move(gen1));
+        auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
+        settings->_profileGenerators.emplace_back(std::move(gen0));
+        settings->_profileGenerators.emplace_back(std::move(gen1));
 
-        settings._ParseJsonString(settings0String, false);
-        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
+        settings->_ParseJsonString(settings0String, false);
+        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size());
 
-        settings._LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(1u, settings._profiles.size());
+        settings->_LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(1u, settings->_profiles.Size());
 
-        settings.LayerJson(settings._userSettings);
-        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        settings->LayerJson(settings->_userSettings);
+        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
     }
 
 };

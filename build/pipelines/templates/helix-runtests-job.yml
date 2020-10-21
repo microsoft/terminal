@@ -1,0 +1,131 @@
+parameters:
+  name: 'RunTestsInHelix'
+  dependsOn: ''
+  condition: ''
+  testSuite: ''
+  # If a Pipeline runs this template more than once, this parameter should be unique per build flavor to differentiate the
+  # the different test runs:
+  helixType: 'test/devtest' 
+  artifactName: 'drop'
+  maxParallel: 4
+  rerunPassesRequiredToAvoidFailure: 5
+  taefQuery: ''
+  # if 'useBuildOutputFromBuildId' is set, we will default to using a build from this pipeline:
+  useBuildOutputFromPipeline: $(System.DefinitionId)
+  matrix: 
+    # Release_x86:
+    #   buildPlatform: 'x86'
+    #   buildConfiguration: 'release'
+    #   openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
+    #   closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
+    Release_x64:
+      buildPlatform: 'x64'
+      buildConfiguration: 'release'
+      openHelixTargetQueues: 'windows.10.amd64.client19h1.open.xaml'
+      closedHelixTargetQueues: 'windows.10.amd64.client19h1.xaml'
+
+jobs:
+- job: ${{ parameters.name }}
+  dependsOn: ${{ parameters.dependsOn }}
+  condition: ${{ parameters.condition }}
+  pool:
+    vmImage: 'windows-2019'
+  timeoutInMinutes: 120
+  strategy:
+    maxParallel: ${{ parameters.maxParallel }}
+    matrix: ${{ parameters.matrix }}
+  variables:
+    artifactsDir: $(Build.SourcesDirectory)\Artifacts
+    taefPath: $(Build.SourcesDirectory)\build\Helix\packages\taef.redist.wlk.10.57.200731005-develop\build\Binaries\$(buildPlatform)
+    helixCommonArgs: '/binaryLogger:$(Build.SourcesDirectory)/${{parameters.name}}.$(buildPlatform).$(buildConfiguration).binlog /p:HelixBuild=$(Build.BuildId).$(buildPlatform).$(buildConfiguration) /p:Platform=$(buildPlatform) /p:Configuration=$(buildConfiguration) /p:HelixType=${{parameters.helixType}} /p:TestSuite=${{parameters.testSuite}} /p:ProjFilesPath=$(Build.ArtifactStagingDirectory) /p:rerunPassesRequiredToAvoidFailure=${{parameters.rerunPassesRequiredToAvoidFailure}}'
+
+      
+  steps:
+  - task: CmdLine@1
+    displayName: 'Display build machine environment variables'
+    inputs:
+      filename: 'set'
+      
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 5.2.0'
+    inputs:
+      versionSpec: 5.2.0
+
+  - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+    displayName: 'NuGet restore build/Helix/packages.config'
+    inputs:
+      restoreSolution: build/Helix/packages.config
+      feedsToUse: config
+      nugetConfigPath: nuget.config
+      restoreDirectory: packages
+
+  - task: DownloadBuildArtifacts@0 
+    condition:
+      and(succeeded(),eq(variables['useBuildOutputFromBuildId'],''))
+    inputs: 
+      artifactName: ${{ parameters.artifactName }} 
+      downloadPath: '$(artifactsDir)'
+
+  - task: DownloadBuildArtifacts@0 
+    condition:
+      and(succeeded(),ne(variables['useBuildOutputFromBuildId'],''))
+    inputs: 
+      buildType: specific
+      buildVersionToDownload: specific
+      project: $(System.TeamProjectId)
+      pipeline: ${{ parameters.useBuildOutputFromPipeline }}
+      buildId: $(useBuildOutputFromBuildId)
+      artifactName: ${{ parameters.artifactName }} 
+      downloadPath: '$(artifactsDir)'
+
+  - task: CmdLine@1
+    displayName: 'Display Artifact Directory payload contents'
+    inputs:
+      filename: 'dir'
+      arguments: '/s $(artifactsDir)'
+
+  - task: powershell@2
+    displayName: 'PrepareHelixPayload.ps1'
+    inputs:
+      targetType: filePath
+      filePath: build\Helix\PrepareHelixPayload.ps1
+      arguments: -Platform '$(buildPlatform)' -Configuration '$(buildConfiguration)' -ArtifactName '${{ parameters.artifactName }}'
+      
+  - task: CmdLine@1
+    displayName: 'Display Helix payload contents'
+    inputs:
+      filename: 'dir'
+      arguments: '/s $(Build.SourcesDirectory)\HelixPayload'
+
+  - template: helix-createprojfile-steps.yml
+    parameters:
+      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\TerminalApp.LocalTests.dll'
+      outputProjFileName: 'RunTestsInHelix-TerminalAppLocalTests.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+      
+  - template: helix-createprojfile-steps.yml
+    parameters:
+      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
+      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\Conhost.UIA.Tests.dll'
+      outputProjFileName: 'RunTestsInHelix-HostTestsUIA.proj'
+      testSuite: '${{ parameters.testSuite }}'
+      taefQuery: ${{ parameters.taefQuery }}
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish generated .proj files'
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: ${{ parameters.artifactName }}
+      
+  - task: DotNetCoreCLI@2
+    displayName: 'Run tests in Helix (open queues)'
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+    inputs:
+      command: custom
+      projects: build\Helix\RunTestsInHelix.proj
+      custom: msbuild
+      arguments: '$(helixCommonArgs) /p:IsExternal=true /p:Creator=Terminal /p:HelixTargetQueues=$(openHelixTargetQueues)'
+

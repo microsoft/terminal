@@ -62,6 +62,10 @@ void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
 {
     ClearAllAreas();
 
+    // MSFT:29219348 only hide the cursor after the IME produces a string.
+    // See notes in convarea.cpp ImeStartComposition().
+    SaveCursorVisibility();
+
     // Save copies of the composition message in case we need to redraw it as things scroll/resize
     _text = text;
     _attributes.assign(attributes.begin(), attributes.end());

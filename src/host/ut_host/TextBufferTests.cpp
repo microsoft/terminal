@@ -148,10 +148,14 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+    TEST_METHOD(MoveByWord);
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
     TEST_METHOD(GetText);
+
+    TEST_METHOD(HyperlinkTrim);
+    TEST_METHOD(NoHyperlinkTrim);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -2062,7 +2066,7 @@ void TextBufferTests::GetWordBoundaries()
         { { 79, 0 },    {{ 10, 0 },      { 5, 0 }} },
 
         // tests for second line of text
-        { {  0, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  0, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  1, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
         { {  3, 1 },     {{ 2, 1 },       { 2, 1 }} },
@@ -2126,6 +2130,87 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::MoveByWord()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::vector<std::wstring> text = { L"word other",
+                                             L"  more   words" };
+    WriteLinesToBuffer(text, *_buffer);
+
+    // Test Data:
+    // - COORD - starting position
+    // - COORD - expected result (moving forwards)
+    // - COORD - expected result (moving backwards)
+    struct ExpectedResult
+    {
+        COORD moveForwards;
+        COORD moveBackwards;
+    };
+
+    struct Test
+    {
+        COORD startPos;
+        ExpectedResult expected;
+    };
+
+    // Set testData for GetWordStart tests
+    // clang-format off
+    std::vector<Test> testData = {
+        // tests for first line of text
+        { {  0, 0 },    {{  5, 0 },      { 0, 0 }} },
+        { {  1, 0 },    {{  5, 0 },      { 1, 0 }} },
+        { {  3, 0 },    {{  5, 0 },      { 3, 0 }} },
+        { {  4, 0 },    {{  5, 0 },      { 4, 0 }} },
+        { {  5, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { {  6, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 20, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 79, 0 },    {{  2, 1 },      { 0, 0 }} },
+
+        // tests for second line of text
+        { {  0, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  1, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  2, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  3, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  5, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  6, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  7, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  9, 1 },     {{ 9, 1 },       { 2, 1 }} },
+        { { 10, 1 },     {{10, 1 },       { 2, 1 }} },
+        { { 20, 1 },     {{20, 1 },       { 2, 1 }} },
+        { { 79, 1 },     {{79, 1 },       { 2, 1 }} },
+    };
+    // clang-format on
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:movingForwards", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool movingForwards;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"movingForwards", movingForwards), L"Get movingForwards variant");
+
+    const std::wstring_view delimiters = L" ";
+    const COORD lastCharPos = _buffer->GetLastNonSpaceCharacter();
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        auto pos{ test.startPos };
+        const auto result = movingForwards ?
+                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToPreviousWord(pos, delimiters);
+        const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
+        VERIFY_ARE_EQUAL(expected, pos);
+
+        // if we moved, result is true and pos != startPos.
+        // otherwise, result is false and pos == startPos.
+        VERIFY_ARE_EQUAL(result, pos != test.startPos);
     }
 }
 
@@ -2442,4 +2527,85 @@ void TextBufferTests::GetText()
         // Verify expected output and actual output are the same
         VERIFY_ARE_EQUAL(expectedText, result);
     }
+}
+
+// This tests that when we increment the circular buffer, obsolete hyperlink references
+// are removed from the hyperlink map
+void TextBufferTests::HyperlinkTrim()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    const auto url = L"test.url";
+    const auto otherUrl = L"other.url";
+    const auto customId = L"CustomId";
+    const auto otherCustomId = L"OtherCustomId";
+
+    // Set a hyperlink id in the first row and add a hyperlink to our map
+    const COORD pos{ 70, 0 };
+    const auto id = _buffer->GetHyperlinkId(url, customId);
+    TextAttribute newAttr{ 0x7f };
+    newAttr.SetHyperlinkId(id);
+    _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
+    _buffer->AddHyperlinkToMap(url, id);
+
+    // Set a different hyperlink id somewhere else in the buffer
+    const COORD otherPos{ 70, 5 };
+    const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
+    newAttr.SetHyperlinkId(otherId);
+    _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
+    _buffer->AddHyperlinkToMap(otherUrl, otherId);
+
+    // Increment the circular buffer
+    _buffer->IncrementCircularBuffer();
+
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, std::hash<std::wstring_view>{}(otherUrl));
+
+    // The hyperlink reference that was only in the first row should be deleted from the map
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
+    // Since there was a custom id, that should be deleted as well
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(finalCustomId), _buffer->_hyperlinkCustomIdMap.end());
+
+    // The other hyperlink reference should not be deleted
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap[otherId], otherUrl);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalOtherCustomId], otherId);
+}
+
+// This tests that when we increment the circular buffer, non-obsolete hyperlink references
+// do not get removed from the hyperlink map
+void TextBufferTests::NoHyperlinkTrim()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    const auto url = L"test.url";
+    const auto customId = L"CustomId";
+
+    // Set a hyperlink id in the first row and add a hyperlink to our map
+    const COORD pos{ 70, 0 };
+    const auto id = _buffer->GetHyperlinkId(url, customId);
+    TextAttribute newAttr{ 0x7f };
+    newAttr.SetHyperlinkId(id);
+    _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
+    _buffer->AddHyperlinkToMap(url, id);
+
+    // Set the same hyperlink id somewhere else in the buffer
+    const COORD otherPos{ 70, 5 };
+    _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
+
+    // Increment the circular buffer
+    _buffer->IncrementCircularBuffer();
+
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+
+    // The hyperlink reference should not be deleted from the map since it is still present in the buffer
+    VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
 }

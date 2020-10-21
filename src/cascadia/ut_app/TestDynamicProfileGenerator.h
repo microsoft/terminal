@@ -13,7 +13,7 @@ Author(s):
 - Mike Griese - August 2019
 --*/
 
-#include "../TerminalApp/IDynamicProfileGenerator.h"
+#include "../TerminalSettingsModel/IDynamicProfileGenerator.h"
 
 namespace TerminalAppUnitTests
 {
@@ -21,7 +21,7 @@ namespace TerminalAppUnitTests
 };
 
 class TerminalAppUnitTests::TestDynamicProfileGenerator final :
-    public TerminalApp::IDynamicProfileGenerator
+    public Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator
 {
 public:
     TestDynamicProfileGenerator(std::wstring_view ns) :
@@ -29,16 +29,16 @@ public:
 
     std::wstring_view GetNamespace() override { return _namespace; };
 
-    std::vector<TerminalApp::Profile> GenerateProfiles() override
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> GenerateProfiles() override
     {
         if (pfnGenerate)
         {
             return pfnGenerate();
         }
-        return std::vector<TerminalApp::Profile>{};
+        return std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile>{};
     }
 
     std::wstring _namespace;
 
-    std::function<std::vector<TerminalApp::Profile>()> pfnGenerate{ nullptr };
+    std::function<std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile>()> pfnGenerate{ nullptr };
 };
