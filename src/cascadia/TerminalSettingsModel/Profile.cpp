@@ -135,7 +135,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
     if (visited.find(sourceGraph.get()) == visited.end() && !sourceGraph->_parents.empty())
     {
         // iterate through all of our parents to copy them
-        for (auto sourceParent : sourceGraph->_parents)
+        for (const auto& sourceParent : sourceGraph->_parents)
         {
             // If we visited this Profile already...
             auto kv{ visited.find(sourceParent.get()) };
@@ -160,9 +160,6 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
                 // save it to the map in case somebody else references it
                 visited[sourceParent.get()] = clone;
             }
-
-            // if clone is empty, this is the end of the inheritance line
-            // otherwise, it is populated with the contents of its parent
         }
     }
 

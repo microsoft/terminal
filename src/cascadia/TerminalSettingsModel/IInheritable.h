@@ -30,6 +30,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto child{ winrt::make_self<T>() };
 
+            // set "this" as the parent.
+            // However, "this" is an IInheritable, so we need to cast it as T (the impl winrt type)
+            //  to pass ownership over to the com_ptr.
             com_ptr<T> parent;
             winrt::copy_from_abi(parent, const_cast<T*>(static_cast<const T*>(this)));
             child->InsertParent(parent);
@@ -49,7 +52,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _parents.insert(pos, parent);
         }
 
-        std::vector<com_ptr<T>> ExportParents()
+        // Method Description:
+        // - Exports list of parents as an immutable view.
+        // Arguments:
+        // - <none>
+        // Return Value:
+        // - <none>
+        const std::vector<com_ptr<T>> ExportParents()
         {
             return _parents;
         }

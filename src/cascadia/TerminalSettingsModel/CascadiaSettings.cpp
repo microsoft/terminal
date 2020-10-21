@@ -81,7 +81,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     settings->_userSettings = _userSettings;
     settings->_defaultSettings = _defaultSettings;
 
-    _CopyProfileInheritanceTree(settings.get());
+    _CopyProfileInheritanceTree(settings);
 
     return *settings;
 }
@@ -92,14 +92,14 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 // - cloneSettings: the CascadiaSettings we're copying the inheritance tree to
 // Return Value:
 // - <none>
-void CascadiaSettings::_CopyProfileInheritanceTree(CascadiaSettings* cloneSettings) const
+void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettings>& cloneSettings) const
 {
     // Our profiles inheritance graph doesn't have a formal root.
     // However, if we create a dummy Profile, and set _profiles as the parent,
     //  we now have a root. So we'll do just that, then copy the inheritance graph
     //  from the dummyRoot.
     auto dummyRootSource{ winrt::make_self<Profile>() };
-    for (auto profile : _profiles)
+    for (const auto& profile : _profiles)
     {
         winrt::com_ptr<Profile> profileImpl;
         profileImpl.copy_from(winrt::get_self<Profile>(profile));
@@ -121,8 +121,8 @@ void CascadiaSettings::_CopyProfileInheritanceTree(CascadiaSettings* cloneSettin
 
     // All of the parents of the dummy root clone are _profiles.
     // Export the parents and add them to the settings clone.
-    auto cloneParents{ dummyRootClone->ExportParents() };
-    for (auto profile : cloneParents)
+    const auto cloneParents{ dummyRootClone->ExportParents() };
+    for (const auto& profile : cloneParents)
     {
         cloneSettings->_profiles.Append(*profile);
     }
