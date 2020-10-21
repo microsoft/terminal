@@ -526,9 +526,13 @@ const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const no
 
 void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
 {
-    if (!HasBackgroundImageAlignment() || std::get<HorizontalAlignment>(*_BackgroundImageAlignment) != value)
+    if (HasBackgroundImageAlignment())
     {
         std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
+    }
+    else
+    {
+        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
     }
 }
 
@@ -540,9 +544,13 @@ const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexce
 
 void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
 {
-    if (!HasBackgroundImageAlignment() || std::get<VerticalAlignment>(*_BackgroundImageAlignment) != value)
+    if (HasBackgroundImageAlignment())
     {
         std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
+    }
+    else
+    {
+        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
     }
 }
 #pragma endregion

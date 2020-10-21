@@ -71,13 +71,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     template<typename T>
     struct NullableSetting
     {
-        winrt::Windows::Foundation::IReference<T> setting{ nullptr };
+        std::optional<T> setting{ std::nullopt };
         bool set{ false };
     };
 }
 
 // Use this macro to quickly implement both getters and the setter for an
-// inheritable and observable setting property. This is similar to the GETSET_PROPERTY macro, except...
+// inheritable setting property. This is similar to the GETSET_PROPERTY macro, except...
 // - Has(): checks if the user explicitly set a value for this setting
 // - Getter(): return the resolved value
 // - Setter(): set the value directly
@@ -137,64 +137,73 @@ private:                                                                    \
     };
 
 // This macro is similar to the one above, but is reserved for optional settings
-// like Profile.StartingDirectory and Profile.Foreground (where null is interpreted
+// like Profile.Foreground (where null is interpreted
 // as an acceptable value, rather than "inherit")
 // "type" is exposed as an IReference
-#define GETSET_NULLABLE_SETTING(type, name, ...)                                                    \
-public:                                                                                             \
-    /* Returns true if the user explicitly set the value, false otherwise*/                         \
-    bool Has##name() const                                                                          \
-    {                                                                                               \
-        return _##name.set;                                                                         \
-    };                                                                                              \
-                                                                                                    \
-    /* Returns the resolved value for this setting */                                               \
-    /* fallback: user set value --> inherited value --> system set value */                         \
-    winrt::Windows::Foundation::IReference<type> name() const                                       \
-    {                                                                                               \
-        const auto val{ _get##name##Impl() };                                                       \
-        return val.set ? val.setting : winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ }; \
-    };                                                                                              \
-                                                                                                    \
-    /* Overwrite the user set value */                                                              \
-    /* Dispatch event if value changed */                                                           \
-    void name(const winrt::Windows::Foundation::IReference<type>& value)                            \
-    {                                                                                               \
-        if (!Has##name() /*value was not set*/                                                      \
-            || _##name.setting != value) /*set value is different*/                                 \
-        {                                                                                           \
-            _##name.setting = value;                                                                \
-            _##name.set = true;                                                                     \
-        }                                                                                           \
-    };                                                                                              \
-                                                                                                    \
-    /* Clear the user set value */                                                                  \
-    /* Dispatch event if value changed */                                                           \
-    void Clear##name()                                                                              \
-    {                                                                                               \
-        _##name.set = false;                                                                        \
-    };                                                                                              \
-                                                                                                    \
-private:                                                                                            \
-    NullableSetting<type> _##name{};                                                                \
-    NullableSetting<type> _get##name##Impl() const                                                  \
-    {                                                                                               \
-        /*return user set value*/                                                                   \
-        if (Has##name())                                                                            \
-        {                                                                                           \
-            return _##name;                                                                         \
-        }                                                                                           \
-                                                                                                    \
-        /*user set value was not set*/                                                              \
-        /*iterate through parents to find a value*/                                                 \
-        for (auto parent : _parents)                                                                \
-        {                                                                                           \
-            auto val{ parent->_get##name##Impl() };                                                 \
-            if (val.set)                                                                            \
-            {                                                                                       \
-                return val;                                                                         \
-            }                                                                                       \
-        }                                                                                           \
-        /*no value was found*/                                                                      \
-        return { nullptr, false };                                                                  \
+#define GETSET_NULLABLE_SETTING(type, name, ...)                            \
+public:                                                                     \
+    /* Returns true if the user explicitly set the value, false otherwise*/ \
+    bool Has##name() const                                                  \
+    {                                                                       \
+        return _##name.set;                                                 \
+    };                                                                      \
+                                                                            \
+    /* Returns the resolved value for this setting */                       \
+    /* fallback: user set value --> inherited value --> system set value */ \
+    winrt::Windows::Foundation::IReference<type> name() const               \
+    {                                                                       \
+        const auto val{ _get##name##Impl() };                               \
+        if (val.set)                                                        \
+        {                                                                   \
+            if (val.setting)                                                \
+            {                                                               \
+                return *val.setting;                                        \
+            }                                                               \
+            return nullptr;                                                 \
+        }                                                                   \
+        return winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ }; \
+    };                                                                      \
+                                                                            \
+    /* Overwrite the user set value */                                      \
+    void name(const winrt::Windows::Foundation::IReference<type>& value)    \
+    {                                                                       \
+        if (value) /*set value is different*/                               \
+        {                                                                   \
+            _##name.setting = value.Value();                                \
+        }                                                                   \
+        else                                                                \
+        {                                                                   \
+            _##name.setting = std::nullopt;                                 \
+        }                                                                   \
+        _##name.set = true;                                                 \
+    };                                                                      \
+                                                                            \
+    /* Clear the user set value */                                          \
+    void Clear##name()                                                      \
+    {                                                                       \
+        _##name.set = false;                                                \
+    };                                                                      \
+                                                                            \
+private:                                                                    \
+    NullableSetting<type> _##name{};                                        \
+    NullableSetting<type> _get##name##Impl() const                          \
+    {                                                                       \
+        /*return user set value*/                                           \
+        if (Has##name())                                                    \
+        {                                                                   \
+            return _##name;                                                 \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find a value*/                         \
+        for (auto parent : _parents)                                        \
+        {                                                                   \
+            auto val{ parent->_get##name##Impl() };                         \
+            if (val.set)                                                    \
+            {                                                               \
+                return val;                                                 \
+            }                                                               \
+        }                                                                   \
+        /*no value was found*/                                              \
+        return { std::nullopt, false };                                     \
     };
