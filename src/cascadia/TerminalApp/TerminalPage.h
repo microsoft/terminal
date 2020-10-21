@@ -89,7 +89,9 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::ITab> _tabs;
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
         winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const ITab& tab) const;
+
         void _UpdateTabIndices();
 
         winrt::Microsoft::Terminal::Settings::Model::Command _switchToSettingsCommand{ nullptr };
@@ -211,6 +213,8 @@ namespace winrt::TerminalApp::implementation
         void _ReapplyCompactTabSize();
 
         void _MakeSwitchToTabCommand(const ITab& tab, const uint32_t index);
+        void _UpdateTabSwitcherCommands(const bool mru);
+        void _UpdateMRUTab(const uint32_t index);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

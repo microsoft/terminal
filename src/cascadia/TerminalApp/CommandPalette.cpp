@@ -615,6 +615,12 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
+    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
+    {
+        _allTabActions = tabs;
+        _updateFilteredActions();
+    }
+
     void CommandPalette::EnableCommandPaletteMode()
     {
         _switchToMode(CommandPaletteMode::ActionMode);
@@ -974,45 +980,6 @@ namespace winrt::TerminalApp::implementation
 
         ParentCommandName(L"");
         _currentNestedCommands.Clear();
-    }
-
-    // Method Description:
-    // - Listens for changes to TerminalPage's _tabs vector. Updates our vector of
-    //   tab switching commands accordingly.
-    // Arguments:
-    // - s: The vector being listened to.
-    // - e: The vector changed args that tells us whether a change, insert, or removal was performed
-    //      on the listened-to vector.
-    // Return Value:
-    // - <none>
-    void CommandPalette::OnTabsChanged(const IInspectable& s, const IVectorChangedEventArgs& e)
-    {
-        if (auto tabList = s.try_as<IObservableVector<TerminalApp::ITab>>())
-        {
-            auto idx = e.Index();
-            auto changedEvent = e.CollectionChange();
-
-            switch (changedEvent)
-            {
-            case CollectionChange::ItemChanged:
-            {
-                break;
-            }
-            case CollectionChange::ItemInserted:
-            {
-                auto tab = tabList.GetAt(idx);
-                _allTabActions.InsertAt(idx, tab.SwitchToTabCommand());
-                break;
-            }
-            case CollectionChange::ItemRemoved:
-            {
-                _allTabActions.RemoveAt(idx);
-                break;
-            }
-            }
-
-            _updateFilteredActions();
-        }
     }
 
     void CommandPalette::EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx)
