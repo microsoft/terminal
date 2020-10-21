@@ -793,7 +793,10 @@ namespace winrt::TerminalApp::implementation
                     tab->_UpdateTitle();
                     break;
                 }
+            }
 
+            if (tab)
+            {
                 tab->_receivedKeyDown = false;
             }
         });
