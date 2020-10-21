@@ -192,7 +192,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             }
             catch (...)
             {
-
                 resultPtr->AppendWarning(SettingsLoadWarnings::FailedToWriteToSettings);
             }
         }
