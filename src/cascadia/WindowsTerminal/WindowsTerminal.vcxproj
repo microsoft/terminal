@@ -155,6 +155,7 @@
     <!-- **END VC LIBS HACK** -->
   </Target>
 
+  <Import Project="$(OpenConsoleDir)\build\rules\Branding.targets" />
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
   <Import Project="..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets" Condition="Exists('..\..\..\packages\Terminal.ThemeHelpers.0.2.200324001\build\native\Terminal.ThemeHelpers.targets')" />
 </Project>
