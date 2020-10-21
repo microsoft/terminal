@@ -120,7 +120,11 @@ static std::wstring_view _getExePath()
 // - <none>
 winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
+    // make sure to copy the settings _before_ the co_await
+    const auto settingsCopy = settings.Copy();
+
     co_await winrt::resume_background();
+
     try
     {
         auto jumplistInstance = winrt::create_instance<ICustomDestinationList>(CLSID_DestinationList, CLSCTX_ALL);
@@ -135,7 +139,7 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
         THROW_IF_FAILED(jumplistItems->Clear());
 
         // Update the list of profiles.
-        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.Profiles().GetView()));
+        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), settingsCopy.Profiles().GetView()));
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.
