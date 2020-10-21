@@ -2566,12 +2566,13 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateMRUTab(const uint32_t index)
     {
         uint32_t mruIndex;
-        if (_mruTabActions.IndexOf(_tabs.GetAt(index).SwitchToTabCommand(), mruIndex))
+        auto command = _tabs.GetAt(index).SwitchToTabCommand();
+        if (_mruTabActions.IndexOf(command, mruIndex))
         {
             if (mruIndex > 0)
             {
                 _mruTabActions.RemoveAt(mruIndex);
-                _mruTabActions.InsertAt(0, _tabs.GetAt(index).SwitchToTabCommand());
+                _mruTabActions.InsertAt(0, command);
                 CommandPalette().SetTabActions(_mruTabActions);
             }
         }
