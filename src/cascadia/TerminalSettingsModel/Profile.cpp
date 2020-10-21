@@ -70,58 +70,104 @@ Profile::Profile(guid guid) :
 {
 }
 
-winrt::com_ptr<Profile> Profile::Copy() const
+winrt::com_ptr<Profile> Profile::_CopyMembers(winrt::com_ptr<Profile> source)
 {
     // copy the private members
     auto profile{ winrt::make_self<Profile>() };
-    profile->_Guid = _Guid;
-    profile->_Name = _Name;
-    profile->_Source = _Source;
-    profile->_Hidden = _Hidden;
-    profile->_Icon = _Icon;
-    profile->_CloseOnExit = _CloseOnExit;
-    profile->_TabTitle = _TabTitle;
-    profile->_TabColor = _TabColor;
-    profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
-    profile->_UseAcrylic = _UseAcrylic;
-    profile->_AcrylicOpacity = _AcrylicOpacity;
-    profile->_ScrollState = _ScrollState;
-    profile->_FontFace = _FontFace;
-    profile->_FontSize = _FontSize;
-    profile->_FontWeight = _FontWeight;
-    profile->_Padding = _Padding;
-    profile->_Commandline = _Commandline;
-    profile->_StartingDirectory = _StartingDirectory;
-    profile->_BackgroundImagePath = _BackgroundImagePath;
-    profile->_BackgroundImageOpacity = _BackgroundImageOpacity;
-    profile->_BackgroundImageStretchMode = _BackgroundImageStretchMode;
-    profile->_AntialiasingMode = _AntialiasingMode;
-    profile->_RetroTerminalEffect = _RetroTerminalEffect;
-    profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
-    profile->_SoftwareRendering = _SoftwareRendering;
-    profile->_ColorSchemeName = _ColorSchemeName;
-    profile->_Foreground = _Foreground;
-    profile->_Background = _Background;
-    profile->_SelectionBackground = _SelectionBackground;
-    profile->_CursorColor = _CursorColor;
-    profile->_HistorySize = _HistorySize;
-    profile->_SnapOnInput = _SnapOnInput;
-    profile->_AltGrAliasing = _AltGrAliasing;
-    profile->_CursorShape = _CursorShape;
-    profile->_CursorHeight = _CursorHeight;
-    profile->_BellStyle = _BellStyle;
+    profile->_Guid = source->_Guid;
+    profile->_Name = source->_Name;
+    profile->_Source = source->_Source;
+    profile->_Hidden = source->_Hidden;
+    profile->_Icon = source->_Icon;
+    profile->_CloseOnExit = source->_CloseOnExit;
+    profile->_TabTitle = source->_TabTitle;
+    profile->_TabColor = source->_TabColor;
+    profile->_SuppressApplicationTitle = source->_SuppressApplicationTitle;
+    profile->_UseAcrylic = source->_UseAcrylic;
+    profile->_AcrylicOpacity = source->_AcrylicOpacity;
+    profile->_ScrollState = source->_ScrollState;
+    profile->_FontFace = source->_FontFace;
+    profile->_FontSize = source->_FontSize;
+    profile->_FontWeight = source->_FontWeight;
+    profile->_Padding = source->_Padding;
+    profile->_Commandline = source->_Commandline;
+    profile->_StartingDirectory = source->_StartingDirectory;
+    profile->_BackgroundImagePath = source->_BackgroundImagePath;
+    profile->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
+    profile->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
+    profile->_AntialiasingMode = source->_AntialiasingMode;
+    profile->_RetroTerminalEffect = source->_RetroTerminalEffect;
+    profile->_ForceFullRepaintRendering = source->_ForceFullRepaintRendering;
+    profile->_SoftwareRendering = source->_SoftwareRendering;
+    profile->_ColorSchemeName = source->_ColorSchemeName;
+    profile->_Foreground = source->_Foreground;
+    profile->_Background = source->_Background;
+    profile->_SelectionBackground = source->_SelectionBackground;
+    profile->_CursorColor = source->_CursorColor;
+    profile->_HistorySize = source->_HistorySize;
+    profile->_SnapOnInput = source->_SnapOnInput;
+    profile->_AltGrAliasing = source->_AltGrAliasing;
+    profile->_CursorShape = source->_CursorShape;
+    profile->_CursorHeight = source->_CursorHeight;
+    profile->_BellStyle = source->_BellStyle;
 
     // copy settings that did not use the GETSET macro
-    profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
-    profile->_ConnectionType = _ConnectionType;
-
-    // TODO CARLOS: copy parents instead of parent
-    //if (_parent)
-    //{
-    //    profile->_parent = _parent->Copy();
-    //}
+    profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
+    profile->_ConnectionType = source->_ConnectionType;
 
     return profile;
+}
+
+// Method Description:
+// - Creates a copy of the inheritance graph by performing a depth-first traversal recursively.
+//   Profiles are recorded as visited via the "visited" parameter.
+//   Unvisited Profiles are copied into the "cloneGraph" parameter, then marked as visited.
+// Arguments:
+// - sourceGraph - the graph of Profile's we're cloning
+// - cloneGraph - the clone of sourceGraph that is being constructed
+// - visited - a map of which Profiles have been visited, and, if so, a reference to the Profile's clone
+// Return Value:
+// - a clone in both inheritance structure and Profile values of sourceGraph
+winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> sourceGraph, winrt::com_ptr<Profile> cloneGraph, std::unordered_map<void*, winrt::com_ptr<Profile>> visited)
+{
+    // If this is an unexplored Profile
+    //   and we have parents...
+    if (visited.find(sourceGraph.get()) == visited.end() && !sourceGraph->_parents.empty())
+    {
+        // iterate through all of our parents to copy them
+        for (auto sourceParent : sourceGraph->_parents)
+        {
+            // If we visited this Profile already...
+            auto kv{ visited.find(sourceParent.get()) };
+            if (visited.find(sourceParent.get()) != visited.end())
+            {
+                // add this Profile's clone as a parent
+                cloneGraph->InsertParent(kv->second);
+            }
+            else
+            {
+                // We have not visited this Profile yet,
+                // copy contents of sourceParent to clone
+                winrt::com_ptr<Profile> clone{ sourceParent->Copy() };
+
+                // add the new copy to the cloneGraph
+                cloneGraph->InsertParent(clone);
+
+                // copy the sub-graph at "clone"
+                CloneInheritanceGraph(sourceParent, clone, visited);
+
+                // mark clone as "visited"
+                // save it to the map in case somebody else references it
+                visited[sourceParent.get()] = clone;
+            }
+
+            // if clone is empty, this is the end of the inheritance line
+            // otherwise, it is populated with the contents of its parent
+        }
+    }
+
+    // we have no more to explore down this path.
+    return cloneGraph;
 }
 
 // Method Description:

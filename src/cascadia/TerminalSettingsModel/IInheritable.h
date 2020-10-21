@@ -49,6 +49,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _parents.insert(pos, parent);
         }
 
+        std::vector<com_ptr<T>> ExportParents()
+        {
+            return _parents;
+        }
+
     protected:
         std::vector<com_ptr<T>> _parents{};
 

@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Profile();
         Profile(guid guid);
         com_ptr<Profile> Copy() const;
+        static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>> visited = {});
 
         Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
@@ -146,6 +147,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
+
+        static com_ptr<Profile> _CopyMembers(com_ptr<Profile> source);
 
         friend class TerminalAppLocalTests::SettingsTests;
         friend class TerminalAppLocalTests::ProfileTests;

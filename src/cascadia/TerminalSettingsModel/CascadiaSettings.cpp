@@ -71,11 +71,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // dynamic profile generators added by default
     auto settings{ winrt::make_self<CascadiaSettings>() };
     settings->_globals = _globals->Copy();
-    for (const auto profile : _profiles)
-    {
-        auto profImpl{ winrt::get_self<Profile>(profile) };
-        settings->_profiles.Append(*profImpl->Copy());
-    }
     for (auto warning : _warnings)
     {
         settings->_warnings.Append(warning);
@@ -86,6 +81,26 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     settings->_userSettings = _userSettings;
     settings->_defaultSettings = _defaultSettings;
     settings->_userDefaultProfileSettings = _userDefaultProfileSettings;
+
+    // Our profiles inheritance graph doesn't have a formal root.
+    // However, if we create a dummy Profile, and set _profiles as the parent,
+    //  we now have a root. So we'll do just that, and
+    auto dummyRootSource{ winrt::make_self<Profile>() };
+    for (auto profile : _profiles)
+    {
+        winrt::com_ptr<Profile> profileImpl;
+        profileImpl.copy_from(winrt::get_self<Profile>(profile));
+        dummyRootSource->InsertParent(profileImpl);
+    }
+    auto dummyRootClone{ winrt::make_self<Profile>() };
+    Profile::CloneInheritanceGraph(dummyRootSource, dummyRootClone);
+
+    auto cloneParents{ dummyRootClone->ExportParents() };
+    for (auto profile : cloneParents)
+    {
+        settings->_profiles.Append(*profile);
+    }
+
     return *settings;
 }
 

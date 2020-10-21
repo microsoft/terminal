@@ -81,6 +81,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestRebindNestedCommand);
 
         TEST_METHOD(TestCopy);
+        TEST_METHOD(TestCloneInheritanceTree);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -2456,5 +2457,69 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
         copyImpl->_globals->WordDelimiters(L"changed value");
         VERIFY_ARE_NOT_EQUAL(settings->_globals->WordDelimiters(), copyImpl->_globals->WordDelimiters());
+    }
+
+    void DeserializationTests::TestCloneInheritanceTree()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+            "profiles":
+            {
+                "defaults": {
+                    "name": "PROFILE DEFAULTS",
+                },
+                "list": [
+                    {
+                        "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+                        "name": "CMD"
+                    },
+                    {
+                        "guid": "{61c54bbd-2222-5271-96e7-009a87ff44bf}",
+                        "name": "PowerShell"
+                    },
+                    {
+                        "guid": "{61c54bbd-3333-5271-96e7-009a87ff44bf}"
+                    }
+                ]
+            }
+        })" };
+
+        VerifyParseSucceeded(settingsJson);
+
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+        settings->_ParseJsonString(settingsJson, false);
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
+
+        DebugBreak();
+        const auto copy{ settings->Copy() };
+        const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
+
+        // test globals
+        VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), copyImpl->_globals->DefaultProfile());
+
+        // test profiles
+        VERIFY_ARE_EQUAL(settings->_profiles.Size(), copyImpl->_profiles.Size());
+        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Name(), copyImpl->_profiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(1).Name(), copyImpl->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(2).Name(), copyImpl->_profiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings->Name(), copyImpl->_userDefaultProfileSettings->Name());
+
+        // Modifying profile.defaults should...
+        VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings->HasName(), copyImpl->_userDefaultProfileSettings->HasName());
+        copyImpl->_userDefaultProfileSettings->Name(L"changed value");
+
+        // keep the same name for the first two profiles
+        VERIFY_ARE_EQUAL(settings->_profiles.Size(), copyImpl->_profiles.Size());
+        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Name(), copyImpl->_profiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(1).Name(), copyImpl->_profiles.GetAt(1).Name());
+
+        // change the name for the one that inherited it from profile.defaults
+        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(2).Name(), copyImpl->_profiles.GetAt(2).Name());
+
+        // profile.defaults should be different between the two graphs
+        VERIFY_ARE_NOT_EQUAL(settings->_userDefaultProfileSettings->HasName(), copyImpl->_userDefaultProfileSettings->HasName());
+        VERIFY_ARE_NOT_EQUAL(settings->_userDefaultProfileSettings->Name(), copyImpl->_userDefaultProfileSettings->Name());
     }
 }
