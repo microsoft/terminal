@@ -8,7 +8,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // color is a universal integral 8bpp RGBA (0-255) color type implicitly convertible to/from
     // a number of other color types.
 #pragma warning(push)
-    // we can't depend on GSL here (some libraries use BLOCK_GSL), so we use static_cast for explicit narrowing
+    // we can't depend on GSL here, so we use static_cast for explicit narrowing
 #pragma warning(disable : 26472)
     struct color
     {

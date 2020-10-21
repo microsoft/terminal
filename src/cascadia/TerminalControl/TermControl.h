@@ -285,7 +285,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
-        bool _TryHandleKeyBinding(const WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
+        bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
+        void _ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
         bool _TrySendMouseEvent(Windows::UI::Input::PointerPoint const& point);
         bool _CanSendVTMouseInput();
