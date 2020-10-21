@@ -1903,10 +1903,6 @@ namespace winrt::TerminalApp::implementation
                 _rearrangeTo = eventArgs.Index();
             }
         }
-        else
-        {
-            _UpdateCommandsForPalette();
-        }
 
         _UpdateTabView();
     }
