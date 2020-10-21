@@ -91,6 +91,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
         void _UpdateTabIndices();
@@ -206,6 +207,9 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        void _UpdateTabSwitcherCommands(const bool mru);
+        void _UpdateMRUTab(const uint32_t index);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
