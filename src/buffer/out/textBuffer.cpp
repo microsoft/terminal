@@ -2192,6 +2192,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Finish copying remaining parameters from the old text buffer to the new one
         newBuffer.CopyProperties(oldBuffer);
         newBuffer.CopyHyperlinkMaps(oldBuffer);
+        newBuffer.CopyPatterns(oldBuffer);
 
         // If we found where to put the cursor while placing characters into the buffer,
         //   just put the cursor there. Otherwise we have to advance manually.
@@ -2374,6 +2375,15 @@ const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexStrin
     ++_currentPatternId;
     _IdsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
     return _currentPatternId;
+}
+
+// Method Description:
+// - Copies the patterns the other buffer knows about into this one
+// Arguments:
+// - The other buffer
+void TextBuffer::CopyPatterns(const TextBuffer& OtherBuffer)
+{
+    _IdsAndPatterns = OtherBuffer._IdsAndPatterns;
 }
 
 // Method Description:

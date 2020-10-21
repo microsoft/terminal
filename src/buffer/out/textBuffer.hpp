@@ -183,6 +183,7 @@ public:
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
     const size_t AddPatternRecognizer(const std::wstring_view regexString);
+    void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
 
 private:
