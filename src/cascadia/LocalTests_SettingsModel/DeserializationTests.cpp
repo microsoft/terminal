@@ -2254,6 +2254,7 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
+        commands = settings->_globals->Commands();
         _logCommandNames(commands);
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(0u, commands.Size());
@@ -2348,6 +2349,7 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings1Json, false);
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
+        commands = settings->_globals->Commands();
         _logCommandNames(commands);
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(1u, commands.Size());
