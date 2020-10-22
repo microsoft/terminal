@@ -547,3 +547,83 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
     }
 }
 #pragma endregion
+
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// - the JsonObject representing this instance
+Json::Value Profile::ToJson() const
+{
+    Json::Value json{ Json::ValueType::objectValue };
+
+    // Profile-specific Settings
+    JsonUtils::SetValueForKey(json, NameKey, _Name);
+    JsonUtils::SetValueForKey(json, GuidKey, _Guid);
+    JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
+
+    // Core Settings
+    if (_Foreground.set)
+    {
+        JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground.setting);
+    }
+    if (_Background.set)
+    {
+        JsonUtils::SetValueForKey(json, BackgroundKey, _Background.setting);
+    }
+    if (_SelectionBackground.set)
+    {
+        JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting);
+    }
+    if (_CursorColor.set)
+    {
+        JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor.setting);
+    }
+    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
+
+    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
+    JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
+    JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
+    JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
+    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
+    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
+
+    // Control Settings
+    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
+    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
+    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
+    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
+    JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
+    JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
+    JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
+    JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
+
+    // PermissiveStringConverter is unnecessary for serialization
+    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+
+    JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
+
+    // StartingDirectory is "nullable". But we represent a null starting directory as the empty string.
+    // So during serialization, we'll write this out as an empty string, instead of "null"
+    JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
+    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
+    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
+
+    if (_TabColor.set)
+    {
+        JsonUtils::SetValueForKey(json, TabColorKey, _TabColor.setting);
+    }
+
+    JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+    return json;
+}

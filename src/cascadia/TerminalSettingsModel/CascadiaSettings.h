@@ -74,6 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
+        Json::Value ToJson() const;
+
         static hstring SettingsPath();
         static hstring DefaultSettingsPath();
 

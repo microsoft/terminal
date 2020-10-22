@@ -66,6 +66,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             using Type = typename std::decay<T>::type;
             static constexpr bool IsOptional = false;
+            static constexpr bool IsString = false;
         };
 
         template<typename TOpt>
@@ -73,6 +74,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             using Type = typename std::decay<TOpt>::type;
             static constexpr bool IsOptional = true;
+            static constexpr bool IsString = false;
         };
 
         template<typename TOpt>
@@ -80,6 +82,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             using Type = typename std::decay<TOpt>::type;
             static constexpr bool IsOptional = true;
+            static constexpr bool IsString = false;
         };
 
         template<>
@@ -87,6 +90,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             using Type = typename ::winrt::hstring;
             static constexpr bool IsOptional = true;
+            static constexpr bool IsString = true;
         };
     }
 
@@ -108,6 +112,13 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::optional<std::string> key;
         Json::Value jsonValue;
         std::string expectedType;
+    };
+
+    class SerializationError : public std::runtime_error
+    {
+    public:
+        SerializationError() :
+            runtime_error("failed to serialize") {}
     };
 
     template<typename T>
@@ -455,7 +466,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                     return { pair.first.data() };
                 }
             }
-            FAIL_FAST();
+            throw SerializationError();
         }
 
         std::string TypeDescription() const
@@ -697,7 +708,32 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
     {
         // demand guarantees that it will return a value or throw an exception
-        *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
+        auto out{ json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) };
+        if constexpr (Detail::DeduceOptional<T>::IsOptional)
+        {
+            // FOR OPTION TYPES
+            // - if we have a value, set the value
+            // - otherwise, ignore it and don't write it out
+            if constexpr (Detail::DeduceOptional<T>::IsString)
+            {
+                // special handling for strings:
+                //   We consider them optional so that they can be zero-constructed
+                //    and we store it as an empty string
+                //   However, we need to differentiate between hstring and optional<hstring>
+                *out = conv.ToJson(target);
+            }
+            else
+            {
+                if (target)
+                {
+                    *out = conv.ToJson(*target);
+                }
+            }
+        }
+        else
+        {
+            *out = conv.ToJson(target);
+        }
     }
 
     // SetValueForKey, type-deduced, with automatic converter

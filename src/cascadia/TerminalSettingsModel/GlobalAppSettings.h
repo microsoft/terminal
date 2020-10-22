@@ -46,6 +46,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
+        Json::Value ToJson() const;
+
         std::vector<SettingsLoadWarnings> KeybindingsWarnings() const;
 
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> Commands() noexcept;

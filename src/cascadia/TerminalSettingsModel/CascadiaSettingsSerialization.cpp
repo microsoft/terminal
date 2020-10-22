@@ -28,10 +28,12 @@ static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Wi
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
 static constexpr std::string_view SchemaKey{ "$schema" };
+static constexpr std::string_view SchemaValue{ "https://aka.ms/terminal-profiles-schema" };
 static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
-static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
+static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
@@ -221,7 +223,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             }
 
             // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-            auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
+            auto userKeybindings = resultPtr->_userSettings[JsonKey(LegacyKeybindingsKey)];
             if (!userKeybindings.empty())
             {
                 // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
@@ -1037,4 +1039,44 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
         return Json::Value::nullSingleton();
     }
     return json[JsonKey(DisabledProfileSourcesKey)];
+}
+
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// the JsonObject representing this instance
+Json::Value CascadiaSettings::ToJson() const
+{
+    // top-level json object
+    // directly inject "globals" and "$schema" into here
+    Json::Value json{ _globals->ToJson() };
+    JsonUtils::SetValueForKey(json, SchemaKey, JsonKey(SchemaValue));
+
+    // "profiles" will always be serialized as an object
+    Json::Value profiles{ Json::ValueType::objectValue };
+    profiles[JsonKey(DefaultSettingsKey)] = _userDefaultProfileSettings->ToJson();
+    profiles[JsonKey(ProfilesListKey)] = { Json::ValueType::arrayValue };
+    for (const auto& entry : _profiles)
+    {
+        const auto prof{ winrt::get_self<implementation::Profile>(entry) };
+        json[JsonKey(ProfilesKey)].append(prof->ToJson());
+    }
+    json[JsonKey(ProfilesKey)] = profiles;
+
+    // "schemes" will be an accumulation of _all_ the color schemes
+    Json::Value schemes{ Json::ValueType::arrayValue };
+    for (const auto& entry : _globals->ColorSchemes())
+    {
+        const auto scheme{ winrt::get_self<implementation::ColorScheme>(entry.Value()) };
+        json[JsonKey(SchemesKey)].append(scheme->ToJson());
+    }
+    json[JsonKey(SchemesKey)] = schemes;
+
+    // "actions" whatever blob we had in the file, we inject here
+    json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
+    json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
+
+    return json;
 }
