@@ -137,22 +137,6 @@ void GlobalAppSettings::ClearLaunchMode()
 }
 ```
 
-Additionally, `Profile` will now have an `ApplyTo()` function. It will look something like this:
-```c++
-// layers my Profile settings onto the other Profile
-void Profile::ApplyTo(Profile profile) const
-{
-    if (_fontSize.has_value())
-    {
-        profile.FontSize(_fontSize);
-    }
-
-    // repeat for all settings
-}
-```
-
-This functionality operates similar to `LayerJson()`, except that you operate with a serialized object, as opposed to a JSON blob.
-
 As a result, the tracking and functionality of cascading settings is moved into the object model instead of keeping it as a json-only concept.
 
 #### Updates to CascadiaSettings
@@ -262,7 +246,9 @@ def cloneGraph(oldSource, newSource, visited):
 ```
 Source: https://www.geeksforgeeks.org/clone-directed-acyclic-graph/
 
-This algorithm operates in O(n) time and space where `n` is the number of profiles presented.
+This algorithm operates in O(n) time and space where `n` is the number of profiles presented. The above algorithm will be slightly modified to...
+- hold a separate reference to profile.defaults `Profile` in the `CascadiaSettings` clone
+- visited will be a map of pointers to the cloned `Profile`. This ensures that profiles reference the same `Profile`, over creating a new copy
 
 ### Terminal Settings Model: Serialization and Deserialization
 
