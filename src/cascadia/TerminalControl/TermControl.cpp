@@ -110,7 +110,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
-            _terminal->ClearPatternTree();
             _updatePatternLocations->Run();
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);

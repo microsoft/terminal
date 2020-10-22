@@ -1133,7 +1133,9 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 void Terminal::UpdatePatterns() noexcept
 {
     auto lock = LockForWriting();
+    auto oldTree = _patternIntervalTree;
     _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _InvalidatePatternTree(oldTree);
     _InvalidatePatternTree(_patternIntervalTree);
 }
 
