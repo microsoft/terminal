@@ -2561,7 +2561,7 @@ namespace winrt::TerminalApp::implementation
     int TerminalPage::_ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll)
     {
         return scrollDirection == ScrollUp ? -1 * rowsToScroll : rowsToScroll;
-	}
+    }
 
     // Method Description:
     // - Bumps the tab in its in-order index up to the top of the mru list.
