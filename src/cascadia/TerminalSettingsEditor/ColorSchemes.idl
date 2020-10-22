@@ -3,9 +3,11 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ColorSchemes();
+
+        static Windows.UI.Xaml.Media.Brush ColorToBrush(Windows.UI.Color color);
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
         Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
@@ -15,9 +17,7 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass ColorTableEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Name { get; };
-        IInspectable Index { get; };
+        IInspectable Index;
         Windows.UI.Color Color;
-
-        Windows.UI.Xaml.Media.Brush ColorToBrush(Windows.UI.Color color);
     }
 }

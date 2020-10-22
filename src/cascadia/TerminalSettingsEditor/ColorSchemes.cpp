@@ -49,6 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _ColorSchemeList.Append(pair.Key());
         }
+        
     }
 
     IObservableVector<hstring> ColorSchemes::ColorSchemeList()
@@ -76,14 +77,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     void ColorSchemes::ColorPickerChanged(IInspectable const& sender,
-                                          ColorChangedEventArgs const& /*args*/)
+                                          ColorChangedEventArgs const& args)
     {
         if (auto picker = sender.try_as<ColorPicker>())
         {
-            // TODO: Commented out for now because Tag currently won't bind to an index correctly.
-            // The idea is this function will grab the index from the tag and call SetColorTableEntry.
-            //auto index = winrt::unbox_value<uint8_t>(picker.Tag());
-            //CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
+            if (auto tag = picker.Tag())
+            {
+                auto index = winrt::unbox_value<uint8_t>(tag);
+                CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
+            }
         }
     }
 
@@ -98,15 +100,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    ColorTableEntry::ColorTableEntry(uint32_t index, Windows::UI::Color color)
-    {
-        Index(winrt::box_value(index));
-        Color(color);
-        Name(to_hstring(TableColors[index]));
-    }
-
-    Windows::UI::Xaml::Media::Brush ColorTableEntry::ColorToBrush(Windows::UI::Color color)
+    Windows::UI::Xaml::Media::Brush ColorSchemes::ColorToBrush(Windows::UI::Color color)
     {
         return SolidColorBrush(color);
+    }
+
+    ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)
+    {
+        Name(to_hstring(TableColors[index]));
+        Index(winrt::box_value<uint8_t>(index));
+        Color(color);
     }
 }

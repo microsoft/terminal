@@ -37,11 +37,11 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Orientation="Horizontal">
                 <TextBox Header="{x:Bind Name, Mode=OneWay}"
                          Text="{x:Bind Color, Converter={StaticResource ColorToHexConverter}, Mode=TwoWay}"
-                         HorizontalAlignment="Left"/>
-                <Button Background="{x:Bind ColorToBrush(Color), Mode=OneWay}">
+                         HorizontalAlignment="Left" />
+                <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(Color), Mode=OneWay}">
                     <Button.Flyout>
                         <Flyout>
-                            <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
+                            <ColorPicker Tag="{x:Bind Index, Mode=TwoWay}"
                                          Color="{x:Bind Color, Mode=TwoWay}"
                                          IsColorSliderVisible="False"
                                          IsColorChannelTextInputVisible="False"
@@ -58,7 +58,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          ColumnSpacing="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -83,12 +84,88 @@ the MIT License. See LICENSE in the project root for license information. -->
         </StackPanel>
 
         <ScrollViewer Grid.Row="2"
-                      Grid.Column="0"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto">
+                      Grid.Column="0">
             <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}"
-                          ItemTemplate="{StaticResource ColorTableTemplate}">
+                          ItemTemplate="{StaticResource ColorTableTemplate}" Width="587">
+            </ItemsControl>
+        </ScrollViewer>
+
+        <ScrollViewer Grid.Row="2"
+                      Grid.Column="1">
+            <ItemsControl>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Header="Foreground"
+                             Text="{x:Bind CurrentColorScheme.Foreground, Converter={StaticResource ColorToHexConverter}, Mode=TwoWay}"
+                             HorizontalAlignment="Left" />
+                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.Foreground), Mode=OneWay}">
+                        <Button.Flyout>
+                            <Flyout>
+                                <ColorPicker Color="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"
+                                             IsColorSliderVisible="False"
+                                             IsColorChannelTextInputVisible="False"
+                                             IsHexInputVisible="False"
+                                             IsAlphaEnabled="False"
+                                             IsAlphaSliderVisible="True"
+                                             IsAlphaTextInputVisible="True" />
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Header="Background"
+                             Text="{x:Bind CurrentColorScheme.Background, Converter={StaticResource ColorToHexConverter}, Mode=TwoWay}"
+                             HorizontalAlignment="Left" />
+                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.Background), Mode=OneWay}">
+                        <Button.Flyout>
+                            <Flyout>
+                                <ColorPicker Color="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}"
+                                             IsColorSliderVisible="False"
+                                             IsColorChannelTextInputVisible="False"
+                                             IsHexInputVisible="False"
+                                             IsAlphaEnabled="False"
+                                             IsAlphaSliderVisible="True"
+                                             IsAlphaTextInputVisible="True" />
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Header="Cursor Color"
+                             Text="{x:Bind CurrentColorScheme.CursorColor, Converter={StaticResource ColorToHexConverter}, Mode=TwoWay}"
+                             HorizontalAlignment="Left" />
+                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.CursorColor), Mode=OneWay}">
+                        <Button.Flyout>
+                            <Flyout>
+                                <ColorPicker Color="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}"
+                                             IsColorSliderVisible="False"
+                                             IsColorChannelTextInputVisible="False"
+                                             IsHexInputVisible="False"
+                                             IsAlphaEnabled="False"
+                                             IsAlphaSliderVisible="True"
+                                             IsAlphaTextInputVisible="True" />
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Header="Selection Background"
+                             Text="{x:Bind CurrentColorScheme.SelectionBackground, Converter={StaticResource ColorToHexConverter}, Mode=TwoWay}"
+                             HorizontalAlignment="Left" />
+                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.SelectionBackground), Mode=OneWay}" RenderTransformOrigin="0.541,0.946">
+                        <Button.Flyout>
+                            <Flyout>
+                                <ColorPicker Color="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}"
+                                             IsColorSliderVisible="False"
+                                             IsColorChannelTextInputVisible="False"
+                                             IsHexInputVisible="False"
+                                             IsAlphaEnabled="False"
+                                             IsAlphaSliderVisible="True"
+                                             IsAlphaTextInputVisible="True" />
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
             </ItemsControl>
         </ScrollViewer>
     </Grid>
