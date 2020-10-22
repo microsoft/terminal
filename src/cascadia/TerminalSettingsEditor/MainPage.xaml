@@ -44,15 +44,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <muxc:NavigationViewItem.MenuItems>
                         <muxc:NavigationViewItem x:Uid="Nav_Launch"
                                                  Tag="Launch_Nav">
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xEA86;"/>
+                                <FontIcon Glyph="&#xE7B5;"/>
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem x:Uid="Nav_Interaction"
                                                  Tag="Interaction_Nav">
-                            <!-- Couldn't find cursor alone -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE7C9;"/>
                             </muxc:NavigationViewItem.Icon>
@@ -60,7 +58,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <muxc:NavigationViewItem x:Uid="Nav_Rendering"
                                                  Tag="Rendering_Nav" >
-                            <!-- Couldn't find cursor alone -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE7F8;"/>
                             </muxc:NavigationViewItem.Icon>
@@ -72,13 +69,12 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <muxc:NavigationViewItem x:Uid="Nav_Appearance" Tag="Appearance_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE790;"/>
+                        <FontIcon Glyph="&#xE771;"/>
                     </muxc:NavigationViewItem.Icon>
 
                     <muxc:NavigationViewItem.MenuItems>
                         <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
                                                  Tag="GlobalAppearance_Nav">
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
@@ -86,9 +82,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
                                                  Tag="ColorSchemes_Nav">
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;"/>
+                                <FontIcon Glyph="&#xE790;"/>
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
                     </muxc:NavigationViewItem.MenuItems>
@@ -98,20 +93,18 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <muxc:NavigationViewItem x:Uid="Nav_Profiles"
                                          Tag="Profiles_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE770;"/>
+                        <FontIcon Glyph="&#xE756;"/>
                     </muxc:NavigationViewItem.Icon>
 
                     <muxc:NavigationViewItem.MenuItems>
                         <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
                                                  Tag="GlobalProfile_Nav">
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem Tag="CmdPrompt_Nav" >
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;" />
                             </muxc:NavigationViewItem.Icon>
@@ -119,7 +112,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem Tag="Powershell_Nav" >
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;" />
                             </muxc:NavigationViewItem.Icon>
@@ -127,7 +119,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem Tag="Ubuntu_Nav" >
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;" />
                             </muxc:NavigationViewItem.Icon>
@@ -135,7 +126,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem Tag="Powershell7_Nav" >
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;" />
                             </muxc:NavigationViewItem.Icon>
@@ -144,7 +134,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"
                                                  Tag="AddNew_Nav" >
-                            <!-- Couldn't find spaceship -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE710;" />
                             </muxc:NavigationViewItem.Icon>
