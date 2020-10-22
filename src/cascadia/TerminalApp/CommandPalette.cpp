@@ -148,10 +148,10 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::FilteredCommand>();
-        _nestedActionStack = winrt::single_threaded_vector<Command>();
-        _currentNestedCommands = winrt::single_threaded_vector<Command>();
-        _allCommands = winrt::single_threaded_vector<Command>();
-        _allTabActions = winrt::single_threaded_vector<Command>();
+        _nestedActionStack = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _allTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -324,7 +324,7 @@ namespace winrt::TerminalApp::implementation
                 const auto& selectedCommand = _filteredActionsView().SelectedItem();
                 if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
                 {
-                    _dispatchCommand(filteredCommand.Command());
+                    _dispatchCommand(filteredCommand);
                 }
             }
             // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
@@ -434,7 +434,7 @@ namespace winrt::TerminalApp::implementation
             const auto& selectedCommand = _filteredActionsView().SelectedItem();
             if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
             {
-                _dispatchCommand(filteredCommand.Command());
+                _dispatchCommand(filteredCommand);
             }
         }
     }
@@ -481,7 +481,7 @@ namespace winrt::TerminalApp::implementation
         const auto& selectedCommand = e.ClickedItem();
         if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
         {
-            _dispatchCommand(filteredCommand.Command());
+            _dispatchCommand(filteredCommand);
         }
     }
 
@@ -518,7 +518,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A list of Commands to filter.
-    Collections::IVector<Command> CommandPalette::_commandsToFilter()
+    Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_commandsToFilter()
     {
         switch (_currentMode)
         {
@@ -533,7 +533,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _allTabActions;
         case CommandPaletteMode::CommandlineMode:
-            return winrt::single_threaded_vector<Command>();
+            return winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         default:
             return _allCommands;
         }
@@ -548,21 +548,23 @@ namespace winrt::TerminalApp::implementation
     // - command: the Command to dispatch. This might be null.
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommand(const Command& command)
+    void CommandPalette::_dispatchCommand(winrt::TerminalApp::FilteredCommand const& filteredCommand)
     {
-        if (command)
+        if (filteredCommand)
         {
-            if (command.HasNestedCommands())
+            if (filteredCommand.Command().HasNestedCommands())
             {
                 // If this Command had subcommands, then don't dispatch the
                 // action. Instead, display a new list of commands for the user
                 // to pick from.
-                _nestedActionStack.Append(command);
-                ParentCommandName(command.Name());
+                _nestedActionStack.Append(filteredCommand);
+                ParentCommandName(filteredCommand.Command().Name());
                 _currentNestedCommands.Clear();
-                for (const auto& nameAndCommand : command.NestedCommands())
+                for (const auto& nameAndCommand : filteredCommand.Command().NestedCommands())
                 {
-                    _currentNestedCommands.Append(nameAndCommand.Value());
+                    const auto action = nameAndCommand.Value();
+                    auto nestedFilteredCommand = winrt::make_self<FilteredCommand>(action);
+                    _currentNestedCommands.Append(*nestedFilteredCommand);
                 }
 
                 _updateUIForStackChange();
@@ -579,7 +581,7 @@ namespace winrt::TerminalApp::implementation
                 // palette like the Tab Switcher will be able to have the last laugh.
                 _close();
 
-                const auto actionAndArgs = command.Action();
+                const auto actionAndArgs = filteredCommand.Command().Action();
                 _dispatch.DoAction(actionAndArgs);
 
                 TraceLoggingWrite(
@@ -738,7 +740,12 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
-        _allCommands = actions;
+        _allCommands.Clear();
+        for (const auto action : actions)
+        {
+            auto filteredCommand = winrt::make_self<FilteredCommand>(action);
+            _allCommands.Append(*filteredCommand);
+        }
         _updateFilteredActions();
     }
 
@@ -762,8 +769,7 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : commandsToFilter)
             {
-                auto filteredCommand = winrt::make_self<FilteredCommand>(action);
-                _filteredActions.Append(*filteredCommand);
+                _filteredActions.Append(action);
             }
         }
 
@@ -800,10 +806,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareCommandNames(const Command& lhs, const Command& rhs)
+    static bool _compareCommandNames(const winrt::TerminalApp::FilteredCommand& lhs, const winrt::TerminalApp::FilteredCommand& rhs)
     {
-        std::wstring_view leftName{ lhs.Name() };
-        std::wstring_view rightName{ rhs.Name() };
+        std::wstring_view leftName{ lhs.Command().Name() };
+        std::wstring_view rightName{ rhs.Command().Name() };
         return leftName.compare(rightName) < 0;
     }
 
@@ -827,7 +833,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    return !_compareCommandNames(filteredCommand.Command(), other.filteredCommand.Command());
+                    return !_compareCommandNames(filteredCommand, other.filteredCommand);
                 }
             }
             return weight < other.weight;
@@ -862,15 +868,14 @@ namespace winrt::TerminalApp::implementation
             {
                 for (auto action : commandsToFilter)
                 {
-                    auto filteredCommand = winrt::make_self<FilteredCommand>(action);
-                    actions.push_back(*filteredCommand);
+                    actions.push_back(action);
                 }
 
                 return actions;
             }
 
             // Add all the commands, but make sure they're sorted alphabetically.
-            std::vector<Command> sortedCommands;
+            std::vector<winrt::TerminalApp::FilteredCommand> sortedCommands;
             sortedCommands.reserve(commandsToFilter.Size());
 
             for (auto action : commandsToFilter)
@@ -883,8 +888,7 @@ namespace winrt::TerminalApp::implementation
 
             for (auto action : sortedCommands)
             {
-                auto filteredCommand = winrt::make_self<FilteredCommand>(action);
-                actions.push_back(*filteredCommand);
+                actions.push_back(action);
             }
 
             return actions;
@@ -911,12 +915,11 @@ namespace winrt::TerminalApp::implementation
         uint32_t counter = 0;
         for (auto action : commandsToFilter)
         {
-            auto filteredCommand = winrt::make_self<FilteredCommand>(action);
-            auto weight = _getWeight(searchText, action.Name());
+            auto weight = _getWeight(searchText, action.Command().Name());
             if (weight > 0)
             {
                 WeightedCommand wc;
-                wc.filteredCommand = filteredCommand.as<winrt::TerminalApp::FilteredCommand>();
+                wc.filteredCommand = action;
                 wc.weight = weight;
                 wc.inOrderCounter = counter++;
 
@@ -1145,7 +1148,10 @@ namespace winrt::TerminalApp::implementation
             case CollectionChange::ItemInserted:
             {
                 auto tab = tabList.GetAt(idx);
-                _allTabActions.InsertAt(idx, tab.SwitchToTabCommand());
+
+                const auto action = tab.SwitchToTabCommand();
+                auto filteredCommand = winrt::make_self<FilteredCommand>(action);
+                _allTabActions.InsertAt(idx, *filteredCommand);
                 break;
             }
             case CollectionChange::ItemRemoved:

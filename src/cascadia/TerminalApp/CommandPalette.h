@@ -74,14 +74,14 @@ namespace winrt::TerminalApp::implementation
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allCommands{ nullptr };
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _currentNestedCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _allCommands{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _currentNestedCommands{ nullptr };
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _nestedActionStack{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _commandsToFilter();
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
 
         bool _lastFilterTextWasEmpty{ true };
 
@@ -120,13 +120,13 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allTabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _allTabActions{ nullptr };
         uint32_t _switcherStartIdx;
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
-        void _dispatchCommand(const Microsoft::Terminal::Settings::Model::Command& command);
+        void _dispatchCommand(winrt::TerminalApp::FilteredCommand const& command);
         void _dispatchCommandline();
         void _dismissPalette();
     };
