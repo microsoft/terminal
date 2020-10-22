@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
-        GETSET_PROPERTY(winrt::hstring, Title, L"Settings");
+        GETSET_PROPERTY(winrt::hstring, Title);
         GETSET_PROPERTY(winrt::hstring, Icon);
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, nullptr);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);

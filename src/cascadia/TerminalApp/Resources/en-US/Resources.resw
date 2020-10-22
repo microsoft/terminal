@@ -213,12 +213,12 @@
     <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
-    <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
-    <comment>{Locked="\"keys\"","&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+    <comment>{Locked="\"keys\"","•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
-    <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
-    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+    <value>• Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
+    <comment>{Locked="•"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="LegacyGlobalsProperty" xml:space="preserve">
     <value>The "globals" property is deprecated - your settings might need updating. </value>
@@ -468,5 +468,8 @@
   </data>
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
+  </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Settings</value>
   </data>
 </root>
