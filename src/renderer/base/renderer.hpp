@@ -80,7 +80,7 @@ namespace Microsoft::Console::Render
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
-        void UpdateLastHoveredInterval(const interval_tree::IntervalTree<til::point, size_t>::interval newInterval);
+        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> newInterval);
 
     private:
         std::deque<IRenderEngine*> _rgpEngines;
@@ -90,7 +90,7 @@ namespace Microsoft::Console::Render
         std::unique_ptr<IRenderThread> _pThread;
         bool _destructing = false;
 
-        interval_tree::IntervalTree<til::point, size_t>::interval _hoveredInterval;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
 
         void _NotifyPaintFrame();
 

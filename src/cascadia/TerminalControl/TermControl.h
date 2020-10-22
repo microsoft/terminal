@@ -217,7 +217,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
 
-        interval_tree::IntervalTree<til::point, size_t>::interval _lastHoveredInterval;
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
 
         using Timestamp = uint64_t;
 

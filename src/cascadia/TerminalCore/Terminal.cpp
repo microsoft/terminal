@@ -429,10 +429,10 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
     }
     // also look through our known pattern locations in our pattern interval tree
     const auto result = GetHyperlinkIntervalFromPosition(position);
-    if (result.value == _hyperlinkPatternId)
+    if (result.has_value() && result.value().value == _hyperlinkPatternId)
     {
-        const auto start = result.start;
-        const auto end = result.stop;
+        const auto start = result.value().start;
+        const auto end = result.value().stop;
         std::wstring uri;
 
         const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
@@ -463,7 +463,7 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The position
 // Return value:
 // - The interval representing the start and end coordinates
-PointTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
     const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
     if (results.size() > 0)
@@ -476,7 +476,7 @@ PointTree::interval Terminal::GetHyperlinkIntervalFromPosition(const COORD posit
             }
         }
     }
-    return PointTree::interval();
+    return std::optional<PointTree::interval>{};
 }
 
 // Method Description:

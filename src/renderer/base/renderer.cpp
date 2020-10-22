@@ -915,7 +915,9 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     // For now, we dash underline patterns and switch to regular underline on hover
     if (_pData->GetPatternId(coordTarget).size() > 0)
     {
-        if (_hoveredInterval.start <= til::point{ coordTarget } && til::point{ coordTarget } <= _hoveredInterval.stop)
+        if (_hoveredInterval.has_value() &&
+            _hoveredInterval.value().start <= til::point{ coordTarget } &&
+            til::point{ coordTarget } <= _hoveredInterval.value().stop)
         {
             lines |= IRenderEngine::GridLines::Underline;
         }
@@ -1241,7 +1243,7 @@ void Renderer::ResetErrorStateAndResume()
     EnablePainting();
 }
 
-void Renderer::UpdateLastHoveredInterval(const PointTree::interval newInterval)
+void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval> newInterval)
 {
     _hoveredInterval = newInterval;
 }
