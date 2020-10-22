@@ -92,7 +92,5 @@ namespace Microsoft.Terminal.TerminalControl
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
-
-        Int32 GetRowsToScroll();
     }
 }
