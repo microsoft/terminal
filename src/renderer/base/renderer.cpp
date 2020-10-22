@@ -1243,7 +1243,7 @@ void Renderer::ResetErrorStateAndResume()
     EnablePainting();
 }
 
-void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval> newInterval)
+void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)
 {
     _hoveredInterval = newInterval;
 }
