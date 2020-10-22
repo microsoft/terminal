@@ -57,39 +57,40 @@ the MIT License. See LICENSE in the project root for license information. -->
         </DataTemplate>
     </Page.Resources>
 
-
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
-        <TextBlock x:Uid="ColorScheme_ColorSchemes"
+    <ScrollViewer>
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="ColorScheme_ColorSchemes"
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20"
                    Grid.Row="0" />
 
-        <StackPanel Grid.Row="1"
+            <StackPanel Grid.Row="1"
                     Grid.Column="0">
-            <ComboBox x:Name="ColorSchemeComboBox"
+                <ComboBox x:Name="ColorSchemeComboBox"
                       SelectedIndex="0"
                       ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                       SelectionChanged="ColorSchemeSelectionChanged" Width="160">
-            </ComboBox>
-        </StackPanel>
+                </ComboBox>
+            </StackPanel>
 
-        <ScrollViewer Grid.Row="2"
+            <ScrollViewer Grid.Row="2"
                       Grid.Column="0"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto">
-            <ItemsControl x:Name="ColorTableControl"
+                <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}"
                           ItemTemplate="{StaticResource ColorTableTemplate}">
-            </ItemsControl>
-        </ScrollViewer>
-    </Grid>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
+    </ScrollViewer>
 </Page>

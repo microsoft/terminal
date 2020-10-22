@@ -9,52 +9,53 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
-
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          Margin="0,12,0,0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
-        <TextBlock x:Uid="Globals_Startup"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Margin="0,0,0,20" />
-        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
-                <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>
-                <RadioButton x:Uid="Globals_LaunchSizeFullscreen" x:Name="FullscreenLaunchSize"/>
-            </Controls:RadioButtons>
-            <!--TODO: Converter here for launch position into the cols and rows number boxes-->
-            <!--<TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
-            <Controls:NumberBox x:Uid="Globals_InitialCols"
-                                    x:Name="InitialCols"
-                                    Value="{x:Bind GlobalSettings.InitialCols, Mode=TwoWay}"
-                                    Margin="0,0,0,20"
-                                    FontSize="15"
-                                    SpinButtonPlacementMode="Compact" 
-                                    SmallChange="10"
-                                    LargeChange="100"
-                                    ToolTipService.Placement="Mouse"/>
-            <Controls:NumberBox x:Uid="Globals_InitialRows"
-                                x:Name="InitialRows"
-                                    Value="{x:Bind GlobalSettings.InitialRows, Mode=TwoWay}"
-                                    Margin="0,0,0,20"
-                                    FontSize="15"
-                                    SpinButtonPlacementMode="Compact" 
-                                    SmallChange="10"
-                                    LargeChange="100"
-                                    ToolTipService.Placement="Mouse"/>-->
-        </StackPanel>
-        <!--TODO: Setting doesn't exist?-->
-        <!--<StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
-            <CheckBox x:Uid="Globals_DisableDynamicProfiles" IsChecked="{x:Bind GlobalSettings.DisableDynamicProfiles, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-        </StackPanel>-->
-    </Grid>
+    <ScrollViewer>
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Margin="0,12,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="Globals_Startup"
+                       Style="{StaticResource SubheaderTextBlockStyle}"
+                       Margin="0,0,0,20" />
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+                <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
+                    <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
+                    <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>
+                    <RadioButton x:Uid="Globals_LaunchSizeFullscreen" x:Name="FullscreenLaunchSize"/>
+                </Controls:RadioButtons>
+                <!--TODO: Converter here for launch position into the cols and rows number boxes-->
+                <!--<TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
+                <Controls:NumberBox x:Uid="Globals_InitialCols"
+                                        x:Name="InitialCols"
+                                        Value="{x:Bind GlobalSettings.InitialCols, Mode=TwoWay}"
+                                        Margin="0,0,0,20"
+                                        FontSize="15"
+                                        SpinButtonPlacementMode="Compact" 
+                                        SmallChange="10"
+                                        LargeChange="100"
+                                        ToolTipService.Placement="Mouse"/>
+                <Controls:NumberBox x:Uid="Globals_InitialRows"
+                                    x:Name="InitialRows"
+                                        Value="{x:Bind GlobalSettings.InitialRows, Mode=TwoWay}"
+                                        Margin="0,0,0,20"
+                                        FontSize="15"
+                                        SpinButtonPlacementMode="Compact" 
+                                        SmallChange="10"
+                                        LargeChange="100"
+                                        ToolTipService.Placement="Mouse"/>-->
+            </StackPanel>
+            <!--TODO: Setting doesn't exist?-->
+            <!--<StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,100,0">
+                <CheckBox x:Uid="Globals_DisableDynamicProfiles" IsChecked="{x:Bind GlobalSettings.DisableDynamicProfiles, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            </StackPanel>-->
+        </Grid>
+    </ScrollViewer>
 </Page>

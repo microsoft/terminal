@@ -17,62 +17,63 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Page.Resources>
-
-    <Frame x:Name="frame">
-        <Frame.ContentTransitions>
-            <TransitionCollection>
-                <NavigationThemeTransition/>
-            </TransitionCollection>
-        </Frame.ContentTransitions>
-        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-            Margin="0,12,0,0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
-        <TextBlock Grid.Row="0"
-                    Text="Windows Terminal Settings"
-                    Style="{StaticResource HeaderTextBlockStyle}"
-                    TextAlignment="Center"
-                    Margin="0,0,0,20" />
-        <GridView Grid.Row="1"
-                    x:Name="HomeGridView"
-                    ItemsSource="{x:Bind HomeViewModel.HomeGridItems}"
-                    ItemContainerStyle="{StaticResource GridViewItemStyle}"
-                    IsItemClickEnabled="True"
-                    SelectionMode="None"
-                    ItemClick="HomeGridItemClickHandler">
-            <GridView.ItemTemplate>
-                <DataTemplate x:DataType="local:HomeGridItem">
-                    <UserControl>
-                        <Grid
-                        x:Name="homeGridItemRoot"
-                        Width="344"
-                        Height="140"
-                        Padding="12"
-                        Background="{ThemeResource SystemControlBackgroundListLowBrush}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <RelativePanel Grid.Column="1" Grid.ColumnSpan="2" Margin="16,6,0,0">
-                                <TextBlock
-                                x:Name="titleText"
-                                Style="{StaticResource SubheaderTextBlockStyle}"
-                                Text="{x:Bind Title}"
-                                Foreground="{ThemeResource SystemControlForegroundAccentBrush}"
-                                TextLineBounds="TrimToCapHeight"
-                                TextWrapping="NoWrap" />
-                            </RelativePanel>
-                        </Grid>
-                    </UserControl>
-                </DataTemplate>
-            </GridView.ItemTemplate>
-        </GridView>
-    </Grid>
-    </Frame>
+    <ScrollViewer>
+        <Frame x:Name="frame">
+            <Frame.ContentTransitions>
+                <TransitionCollection>
+                    <NavigationThemeTransition/>
+                </TransitionCollection>
+            </Frame.ContentTransitions>
+            <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                Margin="0,12,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="0"
+                        Text="Windows Terminal Settings"
+                        Style="{StaticResource HeaderTextBlockStyle}"
+                        TextAlignment="Center"
+                        Margin="0,0,0,20" />
+            <GridView Grid.Row="1"
+                        x:Name="HomeGridView"
+                        ItemsSource="{x:Bind HomeViewModel.HomeGridItems}"
+                        ItemContainerStyle="{StaticResource GridViewItemStyle}"
+                        IsItemClickEnabled="True"
+                        SelectionMode="None"
+                        ItemClick="HomeGridItemClickHandler">
+                <GridView.ItemTemplate>
+                    <DataTemplate x:DataType="local:HomeGridItem">
+                        <UserControl>
+                            <Grid
+                            x:Name="homeGridItemRoot"
+                            Width="344"
+                            Height="140"
+                            Padding="12"
+                            Background="{ThemeResource SystemControlBackgroundListLowBrush}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <RelativePanel Grid.Column="1" Grid.ColumnSpan="2" Margin="16,6,0,0">
+                                    <TextBlock
+                                    x:Name="titleText"
+                                    Style="{StaticResource SubheaderTextBlockStyle}"
+                                    Text="{x:Bind Title}"
+                                    Foreground="{ThemeResource SystemControlForegroundAccentBrush}"
+                                    TextLineBounds="TrimToCapHeight"
+                                    TextWrapping="NoWrap" />
+                                </RelativePanel>
+                            </Grid>
+                        </UserControl>
+                    </DataTemplate>
+                </GridView.ItemTemplate>
+            </GridView>
+        </Grid>
+        </Frame>
+    </ScrollViewer>
 </Page>
