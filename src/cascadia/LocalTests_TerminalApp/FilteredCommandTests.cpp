@@ -38,7 +38,7 @@ namespace TerminalAppLocalTests
                 }                
             ],
             "keybindings": [
-                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "Split pane" }
+                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "AAAAAABBBBBBCCC" }
             ]
         })" };
 
@@ -46,15 +46,15 @@ namespace TerminalAppLocalTests
         const auto commands = settings.GlobalSettings().Commands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
 
-        const auto command = commands.Lookup(L"Split pane");
+        const auto command = commands.Lookup(L"AAAAAABBBBBBCCC");
         VERIFY_IS_NOT_NULL(command);
-        VERIFY_ARE_EQUAL(command.Name(), L"Split pane");
+        VERIFY_ARE_EQUAL(command.Name(), L"AAAAAABBBBBBCCC");
         {
             Log::Comment(L"Testing command name segmentation with no filter");
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
-            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"Split pane");
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
             VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
         }
         {
@@ -63,53 +63,53 @@ namespace TerminalAppLocalTests
             filteredCommand->_Filter = L"";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
-            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"Split pane");
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
             VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
         }
         {
             Log::Comment(L"Testing command name segmentation with filter equals to the string");
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
-            filteredCommand->_Filter = L"Split pane";
+            filteredCommand->_Filter = L"AAAAAABBBBBBCCC";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 1u);
-            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"Split pane");
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
             VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
         }
         {
             Log::Comment(L"Testing command name segmentation with filter with first character matching");
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
-            filteredCommand->_Filter = L"S";
+            filteredCommand->_Filter = L"A";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 2u);
-            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"S");
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"A");
             VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
-            VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"plit pane");
+            VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"AAAAABBBBBBCCC");
             VERIFY_IS_FALSE(segments.GetAt(1).IsHighlighted());
         }
         {
             Log::Comment(L"Testing command name segmentation with filter with other case");
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
-            filteredCommand->_Filter = L"s";
+            filteredCommand->_Filter = L"a";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 2u);
-            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"S");
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"A");
             VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
-            VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"plit pane");
+            VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"AAAAABBBBBBCCC");
             VERIFY_IS_FALSE(segments.GetAt(1).IsHighlighted());
         }
         {
             Log::Comment(L"Testing command name segmentation with filter matching several characters");
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
-            filteredCommand->_Filter = L"spp";
+            filteredCommand->_Filter = L"ab";
             auto segments = filteredCommand->_computeHighlightedName().Segments();
             VERIFY_ARE_EQUAL(segments.Size(), 4u);
-            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"Sp");
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"A");
             VERIFY_IS_TRUE(segments.GetAt(0).IsHighlighted());
-            VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"lit ");
+            VERIFY_ARE_EQUAL(segments.GetAt(1).TextSegment(), L"AAAAA");
             VERIFY_IS_FALSE(segments.GetAt(1).IsHighlighted());
-            VERIFY_ARE_EQUAL(segments.GetAt(2).TextSegment(), L"p");
+            VERIFY_ARE_EQUAL(segments.GetAt(2).TextSegment(), L"B");
             VERIFY_IS_TRUE(segments.GetAt(2).IsHighlighted());
-            VERIFY_ARE_EQUAL(segments.GetAt(3).TextSegment(), L"ane");
+            VERIFY_ARE_EQUAL(segments.GetAt(3).TextSegment(), L"BBBBBCCC");
             VERIFY_IS_FALSE(segments.GetAt(3).IsHighlighted());
         }
         {
