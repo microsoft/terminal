@@ -117,13 +117,13 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
-   // Method Description:
-   // - Scrolls the focus up or down the list of commands.
-   // Arguments:
-   // - pageDown: if true, we're attempting to move to last visible item in the
-   //   list. Otherwise, we're attempting to move to first visible item.
-   // Return Value:
-   // - <none>
+    // Method Description:
+    // - Scrolls the focus up or down the list of commands.
+    // Arguments:
+    // - pageDown: if true, we're attempting to move to last visible item in the
+    //   list. Otherwise, we're attempting to move to first visible item.
+    // Return Value:
+    // - <none>
     void CommandPalette::ScrollDown(const bool pageDown)
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
@@ -140,14 +140,14 @@ namespace winrt::TerminalApp::implementation
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
-   // Method Description:
-   // - Moves the focus either to top item or end item in the list of commands.
-   // Arguments:
-   // - end: if true, we're attempting to move to last item in the
-   //   list. Otherwise, we're attempting to move to first item.
-   //   Depends on the pageUpDown argument.
-   // Return Value:
-   // - <none>
+    // Method Description:
+    // - Moves the focus either to top item or end item in the list of commands.
+    // Arguments:
+    // - end: if true, we're attempting to move to last item in the
+    //   list. Otherwise, we're attempting to move to first item.
+    //   Depends on the pageUpDown argument.
+    // Return Value:
+    // - <none>
     void CommandPalette::GoEnd(const bool end)
     {
         const auto lastIndex = ::base::saturated_cast<int>(_filteredActionsView().Items().Size() - 1);
