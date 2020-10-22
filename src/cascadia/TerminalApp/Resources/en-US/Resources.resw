@@ -469,4 +469,7 @@
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Settings</value>
+  </data>
 </root>
