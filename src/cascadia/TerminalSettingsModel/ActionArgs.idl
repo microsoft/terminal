@@ -94,6 +94,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
+        MoveFocusArgs(Direction direction);
         Direction Direction { get; };
     };
 
@@ -109,7 +110,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitState style, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode);
+
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
