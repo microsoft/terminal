@@ -43,6 +43,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::Tab>() },
+        _mruTabActions{ winrt::single_threaded_vector<Command>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
     {
         InitializeComponent();
@@ -220,13 +221,6 @@ namespace winrt::TerminalApp::implementation
             if (CommandPalette().Visibility() == Visibility::Collapsed)
             {
                 _CommandPaletteClosed(nullptr, nullptr);
-            }
-        });
-
-        _tabs.VectorChanged([weakThis{ get_weak() }](auto&& s, auto&& e) {
-            if (auto page{ weakThis.get() })
-            {
-                page->CommandPalette().OnTabsChanged(s, e);
             }
         });
 
@@ -671,6 +665,7 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTabImpl = winrt::make_self<Tab>(profileGuid, term);
         _tabs.Append(*newTabImpl);
+        _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
 
         newTabImpl->SetDispatch(*_actionDispatch);
 
@@ -1048,6 +1043,13 @@ namespace winrt::TerminalApp::implementation
         auto tab{ _GetStrongTabImpl(tabIndex) };
         tab->Shutdown();
 
+        uint32_t mruIndex;
+        if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
+        {
+            _mruTabActions.RemoveAt(mruIndex);
+            CommandPalette().SetTabActions(_mruTabActions);
+        }
+
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
@@ -1140,6 +1142,16 @@ namespace winrt::TerminalApp::implementation
                 {
                     page->_UpdateTitle(*tab);
                 }
+                else if (args.PropertyName() == L"Content")
+                {
+                    if (tab == page->_GetFocusedTab())
+                    {
+                        page->_tabContent.Children().Clear();
+                        page->_tabContent.Children().Append(tab->Content());
+
+                        tab->SetFocused(true);
+                    }
+                }
             }
         });
 
@@ -1176,28 +1188,33 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (_settings.GlobalSettings().UseTabSwitcher())
+        {
+            CommandPalette().SetTabActions(_mruTabActions);
+
+            // Since ATS is always MRU, our focused tab index is always 0.
+            // So, going next should go to index 1, and going prev should wrap to the end.
+            uint32_t tabCount = _mruTabActions.Size();
+            auto newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
+
+            if (CommandPalette().Visibility() == Visibility::Visible)
+            {
+                CommandPalette().SelectNextItem(bMoveRight);
+            }
+            else
+            {
+                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().Visibility(Visibility::Visible);
+            }
+        }
+        else if (auto index{ _GetFocusedTabIndex() })
         {
             uint32_t tabCount = _tabs.Size();
             // Wraparound math. By adding tabCount and then calculating modulo tabCount,
             // we clamp the values to the range [0, tabCount) while still supporting moving
             // leftward from 0 to tabCount - 1.
-            const auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-
-            if (_settings.GlobalSettings().UseTabSwitcher())
-            {
-                if (CommandPalette().Visibility() == Visibility::Visible)
-                {
-                    CommandPalette().SelectNextItem(bMoveRight);
-                }
-
-                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().Visibility(Visibility::Visible);
-            }
-            else
-            {
-                _SelectTab(newTabIndex);
-            }
+            auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            _SelectTab(newTabIndex);
         }
     }
 
@@ -1252,9 +1269,10 @@ namespace winrt::TerminalApp::implementation
             // Remove the content from the tab first, so Pane::UnZoom can
             // re-attach the content to the tree w/in the pane
             _tabContent.Children().Clear();
+            // In ExitZoom, we'll change the Tab's Content(), triggering the
+            // content changed event, which will re-attach the tab's new content
+            // root to the tree.
             activeTab->ExitZoom();
-            // Re-attach the tab's content to the UI tree.
-            _tabContent.Children().Append(activeTab->GetRootElement());
         }
     }
 
@@ -1903,10 +1921,6 @@ namespace winrt::TerminalApp::implementation
                 _rearrangeTo = eventArgs.Index();
             }
         }
-        else
-        {
-            _UpdateCommandsForPalette();
-        }
 
         _UpdateTabView();
     }
@@ -1945,7 +1959,7 @@ namespace winrt::TerminalApp::implementation
                 auto tab{ _GetStrongTabImpl(index) };
 
                 _tabContent.Children().Clear();
-                _tabContent.Children().Append(tab->GetRootElement());
+                _tabContent.Children().Append(tab->Content());
 
                 // GH#7409: If the tab switcher is open, then we _don't_ want to
                 // automatically focus the new tab here. The tab switcher wants
@@ -1960,6 +1974,7 @@ namespace winrt::TerminalApp::implementation
                 if (CommandPalette().Visibility() != Visibility::Visible)
                 {
                     tab->SetFocused(true);
+                    _UpdateMRUTab(index);
                 }
 
                 // Raise an event that our title changed
@@ -2495,6 +2510,7 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             _GetStrongTabImpl(index.value())->SetFocused(true);
+            _UpdateMRUTab(index.value());
         }
     }
 
@@ -2533,6 +2549,27 @@ namespace winrt::TerminalApp::implementation
         for (uint32_t i = 0; i < size; ++i)
         {
             _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
+        }
+    }
+
+    // Method Description:
+    // - Bumps the tab in its in-order index up to the top of the mru list.
+    // Arguments:
+    // - index: the in-order index of the tab to bump.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_UpdateMRUTab(const uint32_t index)
+    {
+        uint32_t mruIndex;
+        auto command = _tabs.GetAt(index).SwitchToTabCommand();
+        if (_mruTabActions.IndexOf(command, mruIndex))
+        {
+            if (mruIndex > 0)
+            {
+                _mruTabActions.RemoveAt(mruIndex);
+                _mruTabActions.InsertAt(0, command);
+                CommandPalette().SetTabActions(_mruTabActions);
+            }
         }
     }
 
