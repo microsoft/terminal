@@ -53,12 +53,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Method Description:
-        // - Exports list of parents as an immutable view.
+        // - Exports list of parents as an view.
         // Arguments:
         // - <none>
         // Return Value:
         // - <none>
-        const std::vector<com_ptr<T>> ExportParents()
+        const std::vector<com_ptr<T>>& Parents()
         {
             return _parents;
         }

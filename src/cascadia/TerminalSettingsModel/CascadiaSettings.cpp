@@ -120,8 +120,8 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
     Profile::CloneInheritanceGraph(dummyRootSource, dummyRootClone, visited);
 
     // All of the parents of the dummy root clone are _profiles.
-    // Export the parents and add them to the settings clone.
-    const auto cloneParents{ dummyRootClone->ExportParents() };
+    // Get the parents and add them to the settings clone.
+    const auto cloneParents{ dummyRootClone->Parents() };
     for (const auto& profile : cloneParents)
     {
         cloneSettings->_profiles.Append(*profile);
