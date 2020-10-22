@@ -62,6 +62,10 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryDuplicateBadTab);
         TEST_METHOD(TryDuplicateBadPane);
 
+        TEST_METHOD(TryZoomPane);
+        TEST_METHOD(MoveFocusFromZoomedPane);
+        TEST_METHOD(CloseZoomedPane);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -75,6 +79,7 @@ namespace TerminalAppLocalTests
     private:
         void _initializeTerminalPage(winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage>& page,
                                      CascadiaSettings initialSettings);
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
     };
 
     void TabTests::EnsureTestsActivate()
@@ -496,4 +501,192 @@ namespace TerminalAppLocalTests
         });
     }
 
+    // Method Description:
+    // - This is a helper method for setting up a TerminalPage with some common
+    //   settings, and creating the first tab.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The initialized TerminalPage, ready to use.
+    winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
+    {
+        const std::string settingsJson0{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "historySize": 2
+                }
+            ]
+        })" };
+
+        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        VERIFY_IS_NOT_NULL(settings0);
+
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        // This is super wacky, but we can't just initialize the
+        // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
+        // the lambda. We'll crash trying to get a weak_ref to the TerminalPage
+        // during TerminalPage::Create() below.
+        //
+        // Instead, create the winrt object, then get a com_ptr to the
+        // implementation _from_ the winrt object. This seems to work, even if
+        // it's weird.
+        winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> page{ nullptr };
+        _initializeTerminalPage(page, settings0);
+
+        auto result = RunOnUIThread([&page]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        return page;
+    }
+
+    void TabTests::TryZoomPane()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Create a second pane");
+        auto result = RunOnUIThread([&page]() {
+            SplitPaneArgs args{ SplitType::Duplicate };
+            ActionEventArgs eventArgs{ args };
+            // eventArgs.Args(args);
+            page->_HandleSplitPane(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Zoom in on the pane");
+        result = RunOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_TRUE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Zoom out of the pane");
+        result = RunOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::MoveFocusFromZoomedPane()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Create a second pane");
+        auto result = RunOnUIThread([&page]() {
+            // Set up action
+            SplitPaneArgs args{ SplitType::Duplicate };
+            ActionEventArgs eventArgs{ args };
+            page->_HandleSplitPane(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Zoom in on the pane");
+        result = RunOnUIThread([&page]() {
+            // Set up action
+            ActionEventArgs eventArgs{};
+
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_TRUE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Move focus. This will cause us to un-zoom.");
+        result = RunOnUIThread([&page]() {
+            // Set up action
+            MoveFocusArgs args{ Direction::Left };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleMoveFocus(nullptr, eventArgs);
+
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::CloseZoomedPane()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Create a second pane");
+        auto result = RunOnUIThread([&page]() {
+            // Set up action
+            SplitPaneArgs args{ SplitType::Duplicate };
+            ActionEventArgs eventArgs{ args };
+            page->_HandleSplitPane(nullptr, eventArgs);
+            auto firstTab = page->_GetStrongTabImpl(0);
+
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Zoom in on the pane");
+        result = RunOnUIThread([&page]() {
+            // Set up action
+            ActionEventArgs eventArgs{};
+
+            page->_HandleTogglePaneZoom(nullptr, eventArgs);
+
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
+            VERIFY_IS_TRUE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        Log::Comment(L"Close Pane. This should cause us to un-zoom, and remove the second pane from the tree");
+        result = RunOnUIThread([&page]() {
+            // Set up action
+            ActionEventArgs eventArgs{};
+
+            page->_HandleClosePane(nullptr, eventArgs);
+
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+
+        // Introduce a slight delay to let the events finish propagating
+        Sleep(250);
+
+        Log::Comment(L"Check to ensure there's only one pane left.");
+
+        result = RunOnUIThread([&page]() {
+            auto firstTab = page->_GetStrongTabImpl(0);
+            VERIFY_ARE_EQUAL(1, firstTab->GetLeafPaneCount());
+            VERIFY_IS_FALSE(firstTab->IsZoomed());
+        });
+        VERIFY_SUCCEEDED(result);
+    }
 }

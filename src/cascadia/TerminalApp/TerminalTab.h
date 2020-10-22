@@ -22,7 +22,6 @@ namespace winrt::TerminalApp::implementation
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
-        winrt::Windows::UI::Xaml::FrameworkElement Content();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
@@ -84,6 +83,8 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewNumTabs, _PropertyChangedHandlers, 0);
+
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, _PropertyChangedHandlers, nullptr);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };

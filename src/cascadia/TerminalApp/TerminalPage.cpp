@@ -1136,6 +1136,16 @@ namespace winrt::TerminalApp::implementation
                 {
                     page->_UpdateTitle(*tab);
                 }
+                else if (args.PropertyName() == L"Content")
+                {
+                    if (*tab == page->_GetFocusedTab())
+                    {
+                        page->_tabContent.Children().Clear();
+                        page->_tabContent.Children().Append(tab->Content());
+
+                        tab->Focus(FocusState::Programmatic);
+                    }
+                }
             }
         });
 
@@ -1256,9 +1266,10 @@ namespace winrt::TerminalApp::implementation
                     // Remove the content from the tab first, so Pane::UnZoom can
                     // re-attach the content to the tree w/in the pane
                     _tabContent.Children().Clear();
+                    // In ExitZoom, we'll change the Tab's Content(), triggering the
+                    // content changed event, which will re-attach the tab's new content
+                    // root to the tree.
                     activeTab->ExitZoom();
-                    // Re-attach the tab's content to the UI tree.
-                    _tabContent.Children().Append(activeTab->Content());
                 }
             }
         }
