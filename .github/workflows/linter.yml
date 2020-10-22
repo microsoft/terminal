@@ -16,7 +16,7 @@ name: Lint Code Base
 #############################
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 ###############
 # Set the Job #
@@ -37,15 +37,18 @@ jobs:
       ##########################
       - name: Checkout Code
         uses: actions/checkout@v2
-
+        with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
+          
       ################################
       # Run Linter against code base #
       ################################
       - name: Lint Code Base
-        uses: github/super-linter@v3.10.0
+        uses: github/super-linter@v3
         env:
           VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: master
+          DEFAULT_BRANCH: main
           MARKDOWN_CONFIG_FILE: .markdown-lint.yml
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_EDITORCONFIG: false
