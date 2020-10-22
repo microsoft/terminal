@@ -52,12 +52,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _parents.insert(pos, parent);
         }
 
-        // Method Description:
-        // - Exports list of parents as an view.
-        // Arguments:
-        // - <none>
-        // Return Value:
-        // - <none>
         const std::vector<com_ptr<T>>& Parents()
         {
             return _parents;
