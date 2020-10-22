@@ -110,6 +110,9 @@ namespace winrt::TerminalApp::implementation
 
         void _updateFilteredActions();
 
+        void _populateFilteredActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& vectorToPopulate,
+                                      Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
+
         std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
 
         static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);

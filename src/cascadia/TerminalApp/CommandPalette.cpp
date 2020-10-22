@@ -807,18 +807,22 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
-        _allCommands.Clear();
+        _populateFilteredActions(_allCommands, actions);
+    }
+
+    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabActions)
+    {
+        _populateFilteredActions(_allTabActions, tabActions);
+    }
+
+    void CommandPalette::_populateFilteredActions(Collections::IVector<winrt::TerminalApp::FilteredCommand> const& vectorToPopulate, Collections::IVector<Command> const& actions)
+    {
+        vectorToPopulate.Clear();
         for (const auto action : actions)
         {
             auto filteredCommand = winrt::make_self<FilteredCommand>(action);
-            _allCommands.Append(*filteredCommand);
+            vectorToPopulate.Append(*filteredCommand);
         }
-        _updateFilteredActions();
-    }
-
-    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
-    {
-        _allTabActions = tabs;
         _updateFilteredActions();
     }
 
