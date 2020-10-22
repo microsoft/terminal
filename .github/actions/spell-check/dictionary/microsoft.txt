@@ -32,6 +32,7 @@ tasklist
 tdbuildteamid
 vcruntime
 visualstudio
+VSTHRD
 wlk
 wslpath
 wtl

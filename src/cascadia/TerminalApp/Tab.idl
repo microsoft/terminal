@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
@@ -9,5 +10,9 @@ namespace TerminalApp
         Windows.UI.Xaml.Controls.IconSource IconSource { get; };
         Microsoft.Terminal.Settings.Model.Command SwitchToTabCommand { get; };
         UInt32 TabViewIndex { get; };
+
+        Windows.UI.Xaml.UIElement Content { get; };
+
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

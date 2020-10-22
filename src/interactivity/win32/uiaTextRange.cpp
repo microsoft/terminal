@@ -77,12 +77,6 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     return S_OK;
 }
 
-void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
-{
-    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
-    provider->ChangeViewport(NewWindow);
-}
-
 void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 {
     ClientToScreen(_getWindowHandle(), clientPoint);

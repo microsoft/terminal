@@ -895,7 +895,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // keybindings on the keyUp, then we'll still send the keydown to the
         // connected terminal application, and something like ctrl+shift+T will
         // emit a ^T to the pipe.
-        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, modifiers))
+        if (!modifiers.IsAltGrPressed() && keyDown && _TryHandleKeyBinding(vkey, scanCode, modifiers))
         {
             e.Handled(true);
             return;
@@ -917,8 +917,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Attempt to handle this key combination as a key binding
     // Arguments:
     // - vkey: The vkey of the key pressed.
+    // - scanCode: The scan code of the key pressed.
     // - modifiers: The ControlKeyStates representing the modifier key states.
-    bool TermControl::_TryHandleKeyBinding(const WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
+    bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
         auto bindings = _settings.KeyBindings();
         if (!bindings)
@@ -926,12 +927,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return false;
         }
 
-        return bindings.TryKeyChord({
+        auto success = bindings.TryKeyChord({
             modifiers.IsCtrlPressed(),
             modifiers.IsAltPressed(),
             modifiers.IsShiftPressed(),
             vkey,
         });
+        if (!success)
+        {
+            return false;
+        }
+
+        // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
+        // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
+        // The following is used to manually "consume" such dead keys and clear them from the keyboard state.
+        _ClearKeyboardState(vkey, scanCode);
+        return true;
+    }
+
+    // Method Description:
+    // - Discards currently pressed dead keys.
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - scanCode: The scan code of the key pressed.
+    void TermControl::_ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept
+    {
+        std::array<BYTE, 256> keyState;
+        if (!GetKeyboardState(keyState.data()))
+        {
+            return;
+        }
+
+        // As described in "Sometimes you *want* to interfere with the keyboard's state buffer":
+        //   http://archives.miloush.net/michkap/archive/2006/09/10/748775.html
+        // > "The key here is to keep trying to pass stuff to ToUnicode until -1 is not returned."
+        std::array<wchar_t, 16> buffer;
+        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
+        {
+        }
     }
 
     // Method Description:
@@ -941,6 +974,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Makes the cursor briefly visible during typing.
     // Arguments:
     // - vkey: The vkey of the key pressed.
+    // - scanCode: The scan code of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
     // - keyDown: If true, the key was pressed, otherwise the key was released.
     bool TermControl::_TrySendKeyEvent(const WORD vkey,
@@ -953,8 +987,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // flow through to the terminal.
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
+        // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey))
+        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();

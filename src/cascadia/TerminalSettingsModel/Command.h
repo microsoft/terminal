@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Command : CommandT<Command>
     {
         Command();
+        com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings);
@@ -47,8 +48,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static std::vector<SettingsLoadWarnings> LayerJson(Windows::Foundation::Collections::IMap<winrt::hstring, Model::Command>& commands,
                                                            const Json::Value& json);
-        bool HasNestedCommands();
-        Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands();
+        bool HasNestedCommands() const;
+        Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 

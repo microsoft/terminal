@@ -33,9 +33,11 @@ namespace winrt::TerminalApp::implementation
         });
 
         _activePane = _rootPane;
+        Content(_rootPane->GetRootElement());
 
         _MakeTabViewItem();
         _MakeSwitchToTabCommand();
+        _CreateContextMenu();
     }
 
     // Method Description:
@@ -58,24 +60,6 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTitle();
         _RecalculateAndApplyTabColor();
-    }
-
-    // Method Description:
-    // - Get the root UIElement of this Tab's root pane.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The UIElement acting as root of the Tab's root pane.
-    UIElement Tab::GetRootElement()
-    {
-        if (_zoomedPane)
-        {
-            return _zoomedPane->GetRootElement();
-        }
-        else
-        {
-            return _rootPane->GetRootElement();
-        }
     }
 
     // Method Description:
@@ -107,8 +91,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called after construction of a Tab object to bind event handlers to its
-    //   associated Pane and TermControl object and to create the context menu of
-    //   the tab item
+    //   associated Pane and TermControl object
     // Arguments:
     // - control: reference to the TermControl object to bind event to
     // Return Value:
@@ -116,7 +99,6 @@ namespace winrt::TerminalApp::implementation
     void Tab::Initialize(const TermControl& control)
     {
         _BindEventHandlers(control);
-        _CreateContextMenu();
     }
 
     // Method Description:
@@ -510,6 +492,22 @@ namespace winrt::TerminalApp::implementation
                 tab->_RecalculateAndApplyTabColor();
             }
         });
+
+        // Add a Closed event handler to the Pane. If the pane closes out from
+        // underneath us, and it's zoomed, we want to be able to make sure to
+        // update our state accordingly to un-zoom that pane. See GH#7252.
+        pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+            if (auto tab{ weakThis.get() })
+            {
+                if (tab->_zoomedPane)
+                {
+                    co_await winrt::resume_foreground(tab->Content().Dispatcher());
+
+                    tab->Content(tab->_rootPane->GetRootElement());
+                    tab->ExitZoom();
+                }
+            }
+        });
     }
 
     // Method Description:
@@ -593,8 +591,59 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(chooseColorMenuItem);
         newTabFlyout.Items().Append(renameTabMenuItem);
         newTabFlyout.Items().Append(menuSeparator);
+        newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         _tabViewItem.ContextFlyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // - Creates a sub-menu containing menu items to close multiple tabs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the created MenuFlyoutSubItem
+    Controls::MenuFlyoutSubItem Tab::_CreateCloseSubMenu()
+    {
+        auto weakThis{ get_weak() };
+
+        // Close tabs after
+        _closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseTabsAfter();
+            }
+        });
+        _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
+
+        // Close other tabs
+        _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_CloseOtherTabs();
+            }
+        });
+        _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
+
+        Controls::MenuFlyoutSubItem closeSubMenu;
+        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
+        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
+        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
+
+        return closeSubMenu;
+    }
+
+    // Method Description:
+    // - Enable the Close menu items based on tab index and total number of tabs
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::_EnableCloseMenuItems()
+    {
+        // close other tabs is enabled only if there are other tabs
+        _closeOtherTabsMenuItem.IsEnabled(TabViewNumTabs() > 1);
+        // close tabs after is enabled only if there are other tabs on the right
+        _closeTabsAfterMenuItem.IsEnabled(TabViewIndex() < TabViewNumTabs() - 1);
     }
 
     // Method Description:
@@ -1020,6 +1069,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
+        Content(_zoomedPane->GetRootElement());
     }
     void Tab::ExitZoom()
     {
@@ -1027,6 +1077,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _UpdateTabHeader();
+        Content(_rootPane->GetRootElement());
     }
 
     bool Tab::IsZoomed()
@@ -1053,10 +1104,33 @@ namespace winrt::TerminalApp::implementation
         SwitchToTabCommand(command);
     }
 
-    void Tab::UpdateTabViewIndex(const uint32_t idx)
+    void Tab::_CloseTabsAfter()
+    {
+        CloseTabsAfterArgs args{ _TabViewIndex };
+        ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
+
+        _dispatch.DoAction(closeTabsAfter);
+    }
+
+    void Tab::_CloseOtherTabs()
+    {
+        CloseOtherTabsArgs args{ _TabViewIndex };
+        ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
+
+        _dispatch.DoAction(closeOtherTabs);
+    }
+
+    void Tab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
     {
         TabViewIndex(idx);
+        TabViewNumTabs(numTabs);
+        _EnableCloseMenuItems();
         SwitchToTabCommand().Action().Args().as<SwitchToTabArgs>().TabIndex(idx);
+    }
+
+    void Tab::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    {
+        _dispatch = dispatch;
     }
 
     DEFINE_EVENT(Tab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

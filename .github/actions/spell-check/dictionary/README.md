@@ -18,3 +18,4 @@ it'll be accepted).
 | [Microsoft](microsoft.txt) | Microsoft brand items |
 | [Fonts](fonts.txt) | Font names |
 | [Names](names.txt) | Names of people |
+| [Colors](colors.txt) | Names of color |

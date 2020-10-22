@@ -215,8 +215,8 @@ actions manually.
       the tab context menu or the control context menu.
 
 <!-- Footnotes -->
-[Command Palette Spec]: https://github.com/microsoft/terminal/blob/master/doc/specs/%232046%20-%20Command%20Palette.md
-[New Tab Menu Customization Spec]: https://github.com/microsoft/terminal/blob/master/doc/specs/%231571%20-%20New%20Tab%20Menu%20Customization.md
+[Command Palette Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%232046%20-%20Command%20Palette.md
+[New Tab Menu Customization Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%231571%20-%20New%20Tab%20Menu%20Customization.md
 
 [#1571]: https://github.com/microsoft/terminal/issues/1571
 [#1912]: https://github.com/microsoft/terminal/issues/1912

@@ -7,6 +7,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Boolean Equals(IActionArgs other);
         String GenerateName();
+        IActionArgs Copy();
     };
 
     interface IActionEventArgs
@@ -48,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
+        NewTerminalArgs Copy();
 
         String Commandline;
         String StartingDirectory;
@@ -92,6 +94,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
+        MoveFocusArgs(Direction direction);
         Direction Direction { get; };
     };
 
@@ -107,7 +110,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitState style, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode);
+
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
@@ -141,11 +146,13 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass CloseOtherTabsArgs : IActionArgs
     {
+        CloseOtherTabsArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
     [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
     {
+        CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 }

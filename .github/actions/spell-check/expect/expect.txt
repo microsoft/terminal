@@ -537,6 +537,7 @@ DECOM
 deconstructed
 DECPCTERM
 DECRC
+DECREQTPARM
 DECRLM
 DECRQM
 DECRST
@@ -961,6 +962,8 @@ hfile
 hfont
 hglobal
 hh
+hhh
+hhhh
 hhook
 hhx
 HIBYTE
@@ -998,6 +1001,7 @@ hpj
 hpp
 HPR
 HPROPSHEETPAGE
+HProvider
 HREDRAW
 hresult
 HRSRC
@@ -2792,6 +2796,9 @@ XCount
 xdy
 xe
 XEncoding
+xes
+Xes
+XES
 xff
 XFile
 xlang
@@ -2801,6 +2808,8 @@ XMFLOAT
 xml
 xmlns
 xor
+xorg
+XOrg
 Xpath
 XPosition
 XResource
