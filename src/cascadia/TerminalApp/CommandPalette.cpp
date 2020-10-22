@@ -747,9 +747,12 @@ namespace winrt::TerminalApp::implementation
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
     static bool _compareCommandNames(const Command& lhs, const Command& rhs)
     {
-        std::wstring_view leftName{ lhs.Name() };
-        std::wstring_view rightName{ rhs.Name() };
-        return leftName.compare(rightName) < 0;
+        // Pay attention that obtaining the facet and the locale involves a critical section.
+        // Irrelevant concern for now as no contention is expected.
+        const auto& userLocaleFacet = std::use_facet<std::collate<wchar_t>>(std::locale(""));
+        const auto lhsName = lhs.Name();
+        const auto rhsName = rhs.Name();
+        return userLocaleFacet.compare(lhsName.data(), lhsName.data() + lhsName.size(), rhsName.data(), rhsName.data() + rhsName.size()) < 0;
     }
 
     // This is a helper struct to aid in sorting Commands by a given weighting.
