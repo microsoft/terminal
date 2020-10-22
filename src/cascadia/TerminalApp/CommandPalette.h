@@ -8,6 +8,12 @@
 #include "FilteredCommand.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class FilteredCommandTests;
+};
+
 namespace winrt::TerminalApp::implementation
 {
     struct FilteredCommand : FilteredCommandT<FilteredCommand>
@@ -25,6 +31,8 @@ namespace winrt::TerminalApp::implementation
     private:
         winrt::TerminalApp::HighlightedText _computeHighlightedName();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
+
+        friend class TerminalAppLocalTests::FilteredCommandTests;
     };
 
     enum class CommandPaletteMode
