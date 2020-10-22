@@ -89,6 +89,10 @@ namespace winrt::TerminalApp::implementation
             _RefreshUIForSettingsReload();
         }
 
+        // Upon settings update we reload the system settings for scrolling as well.
+        // TODO: consider reloading this value periodically.
+        _systemRowsToScroll = _ReadSystemRowsToScroll();
+
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
@@ -1422,7 +1426,19 @@ namespace winrt::TerminalApp::implementation
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            auto realRowsToScroll = rowsToScroll == nullptr ? _GetActiveControl().GetRowsToScroll() : rowsToScroll.Value();
+            uint32_t realRowsToScroll;
+            if (rowsToScroll == nullptr)
+            {
+                // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
+                realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
+                                       focusedTab->GetActiveTerminalControl().GetViewHeight() :
+                                       _systemRowsToScroll;
+            }
+            else
+            {
+                // use the custom value specified in the command
+                realRowsToScroll = rowsToScroll.Value();
+            }
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
             focusedTab->Scroll(scrollDelta);
         }
@@ -2561,6 +2577,27 @@ namespace winrt::TerminalApp::implementation
     int TerminalPage::_ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll)
     {
         return scrollDirection == ScrollUp ? -1 * rowsToScroll : rowsToScroll;
+    }
+
+    // Method Description:
+    // - Reads system settings for scrolling (based on the step of the mouse scroll).
+    // Upon failure fallbacks to default.
+    // Return Value:
+    // - The number of rows to scroll or a magic value of WHEEL_PAGESCROLL
+    // indicating that we need to scroll an entire view height
+    uint32_t TerminalPage::_ReadSystemRowsToScroll()
+    {
+        uint32_t systemRowsToScroll;
+        if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &systemRowsToScroll, 0))
+        {
+            LOG_LAST_ERROR();
+
+            // If SystemParametersInfoW fails, which it shouldn't, fall back to
+            // Windows' default value.
+            return DefaultRowsToScroll;
+        }
+
+        return systemRowsToScroll;
     }
 
     // Method Description:

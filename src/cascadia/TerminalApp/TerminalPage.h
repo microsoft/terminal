@@ -12,6 +12,8 @@
 
 #include "AppCommandlineArgs.h"
 
+static constexpr uint32_t DefaultRowsToScroll{ 3 };
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -107,6 +109,8 @@ namespace winrt::TerminalApp::implementation
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
+
+        uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
@@ -213,6 +217,7 @@ namespace winrt::TerminalApp::implementation
         void _UnZoomIfNeeded();
 
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
+        static uint32_t _ReadSystemRowsToScroll();
 
         void _UpdateTabSwitcherCommands(const bool mru);
         void _UpdateMRUTab(const uint32_t index);
