@@ -407,6 +407,7 @@ namespace winrt::TerminalApp::implementation
     void Tab::ActivateTabRenamer()
     {
         _inRename = true;
+        _receivedKeyDown = false;
         _UpdateTabHeader();
     }
 
@@ -766,7 +767,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // We'll only process KeyUp event if `_receivedKeyDown` is true
+        // We'll only process the KeyUp event if we received an initial KeyDown event first.
+        // Avoids issue immediately closing the tab rename when we see the enter KeyUp event that was
+        // sent to the command palette to trigger the openTabRenamer action in the first place.
         tabTextBox.KeyDown([weakThis](const IInspectable&, Input::KeyRoutedEventArgs const&) {
             auto tab{ weakThis.get() };
             tab->_receivedKeyDown = true;
@@ -793,11 +796,6 @@ namespace winrt::TerminalApp::implementation
                     tab->_UpdateTitle();
                     break;
                 }
-            }
-
-            if (tab)
-            {
-                tab->_receivedKeyDown = false;
             }
         });
 
