@@ -550,18 +550,3 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
     }
 }
 #pragma endregion
-
-bool Profile::HasConnectionType() const noexcept
-{
-    return _ConnectionType.has_value();
-}
-
-winrt::guid Profile::ConnectionType() const noexcept
-{
-    return *_ConnectionType;
-}
-
-void Profile::ConnectionType(const winrt::guid& conType) noexcept
-{
-    _ConnectionType = conType;
-}
