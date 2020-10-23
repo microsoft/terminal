@@ -83,6 +83,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 
         Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
+        void ClearWarnings();
+        void AppendWarning(SettingsLoadWarnings warning);
         Windows::Foundation::IReference<SettingsLoadErrors> GetLoadingError();
         hstring GetSerializationErrorMessage();
 
