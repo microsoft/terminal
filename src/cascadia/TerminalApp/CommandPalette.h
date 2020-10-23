@@ -57,9 +57,11 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _nestedActionStack{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+        std::locale _userLocale;
+
+        static std::locale _loadUserLocale();
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _commandsToFilter();
-        std::string _userLocaleName;
 
         bool _lastFilterTextWasEmpty{ true };
 

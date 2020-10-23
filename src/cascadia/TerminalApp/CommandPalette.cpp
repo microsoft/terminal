@@ -30,18 +30,7 @@ namespace winrt::TerminalApp::implementation
         _allCommands = winrt::single_threaded_vector<Command>();
         _allTabActions = winrt::single_threaded_vector<Command>();
 
-        wchar_t localeName[LOCALE_NAME_MAX_LENGTH] = { 0 };
-        auto localeNameSize = GetUserDefaultLocaleName(localeName, ARRAYSIZE(localeName));
-        if (localeNameSize == 0)
-        {
-            LOG_LAST_ERROR();
-            _userLocaleName = std::locale().name();
-        }
-        else
-        {
-            std::wstring loadedLocale(localeName);
-            _userLocaleName = til::u16u8(loadedLocale);
-        }
+        _userLocale = _loadUserLocale();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -108,6 +97,26 @@ namespace winrt::TerminalApp::implementation
         });
 
         _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
+    }
+
+    // Method Description:
+    // - Attempts to load user locale, to further use it when sorting the actions in the filtered view
+    // Return Value:
+    // - The user level locale, upon failure returns a default locale
+    std::locale CommandPalette::_loadUserLocale()
+    {
+        // Loading user locale name explicitly using GetUserDefaultLocaleName,
+        // as std:locale("") crashes on some setups
+        wchar_t userLocaleName[LOCALE_NAME_MAX_LENGTH] = { 0 };
+        auto localeNameSize = GetUserDefaultLocaleName(userLocaleName, ARRAYSIZE(userLocaleName));
+        if (localeNameSize == 0)
+        {
+            LOG_LAST_ERROR();
+            return std::locale();
+        }
+
+        std::wstring loadedLocale(userLocaleName);
+        return std::locale::locale(til::u16u8(loadedLocale));
     }
 
     // Method Description:
@@ -760,10 +769,9 @@ namespace winrt::TerminalApp::implementation
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
     bool CommandPalette::_compareCommandNames(const Command& lhs, const Command& rhs)
     {
-        // Pay attention that obtaining the facet and the locale involves a critical section.
+        // Pay attention that obtaining the facet involves a critical section.
         // Irrelevant concern for now as no contention is expected.
-        const auto userLocale = std::locale::locale(_userLocaleName);
-        const auto& userLocaleFacet = std::use_facet<std::collate<wchar_t>>(userLocale);
+        const auto& userLocaleFacet = std::use_facet<std::collate<wchar_t>>(_userLocale);
         const auto lhsName = lhs.Name();
         const auto rhsName = rhs.Name();
         return userLocaleFacet.compare(lhsName.data(), lhsName.data() + lhsName.size(), rhsName.data(), rhsName.data() + rhsName.size()) < 0;
@@ -775,7 +783,7 @@ namespace winrt::TerminalApp::implementation
         Command command;
         int weight;
         int inOrderCounter;
-        std::function<bool(const Command&, const Command&)> nameComparator;
+        std::function<bool(const Command&, const Command&)> pfnCompareCommandNames;
 
         bool operator<(const WeightedCommand& other) const
         {
@@ -790,7 +798,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    return !nameComparator(command, other.command);
+                    return !pfnCompareCommandNames(command, other.command);
                 }
             }
             return weight < other.weight;
@@ -813,7 +821,7 @@ namespace winrt::TerminalApp::implementation
         const bool addAll = searchText.empty();
 
         auto commandsToFilter = _commandsToFilter();
-        auto pfnCompareCommands = std::bind(&CommandPalette::_compareCommandNames, this, std::placeholders::_1, std::placeholders::_2);
+        auto pfnCompareCommandNames = std::bind(&CommandPalette::_compareCommandNames, this, std::placeholders::_1, std::placeholders::_2);
 
         // If there's no filter text, then just add all the commands in order to the list.
         // - TODO GH#6647:Possibly add the MRU commands first in order, followed
@@ -842,7 +850,7 @@ namespace winrt::TerminalApp::implementation
             }
             std::sort(sortedCommands.begin(),
                       sortedCommands.end(),
-                      pfnCompareCommands);
+                      pfnCompareCommandNames);
 
             for (auto action : sortedCommands)
             {
@@ -881,7 +889,7 @@ namespace winrt::TerminalApp::implementation
                 wc.command = action;
                 wc.weight = weight;
                 wc.inOrderCounter = counter++;
-                wc.nameComparator = pfnCompareCommands;
+                wc.pfnCompareCommandNames = pfnCompareCommandNames;
 
                 heap.push(wc);
             }
