@@ -106,6 +106,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     {
         auto settings = LoadDefaults();
         auto resultPtr = winrt::get_self<CascadiaSettings>(settings);
+        resultPtr->ClearWarnings();
 
         // GH 3588, we need this below to know if the user chose something that wasn't our default.
         // Collect it up here in case it gets modified by any of the other layers between now and when
@@ -185,7 +186,14 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             // We should re-parse, but not re-layer
             resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
 
-            _WriteSettings(resultPtr->_userSettingsString);
+            try
+            {
+                _WriteSettings(resultPtr->_userSettingsString);
+            }
+            catch (...)
+            {
+                resultPtr->AppendWarning(SettingsLoadWarnings::FailedToWriteToSettings);
+            }
         }
 
         // If this throws, the app will catch it and use the default settings

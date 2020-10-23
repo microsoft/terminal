@@ -34,6 +34,10 @@ namespace winrt::TerminalApp::implementation
 
         void SelectNextItem(const bool moveDown);
 
+        void ScrollDown(const bool pageDown);
+
+        void GoEnd(const bool end);
+
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
 
