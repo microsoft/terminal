@@ -1612,6 +1612,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                           const Windows::Foundation::Point point,
                                           const bool isLeftButtonPressed)
     {
+        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        _terminal->ClearPatternTree();
+
         const auto currentOffset = ScrollBar().Value();
 
         // negative = down, positive = up
@@ -1640,8 +1643,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _SetEndSelectionPointAtCursor(point);
         }
 
-        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
-        _terminal->ClearPatternTree();
         _updatePatternLocations->Run();
     }
 
@@ -2247,6 +2248,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        // Clear the regex pattern tree so the renderer does not try to render them while scrolling
+        _terminal->ClearPatternTree();
+
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
 
         ScrollBarUpdate update;
@@ -2257,7 +2261,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         update.newValue = viewTop;
 
         _updateScrollBar->Run(update);
-        _terminal->ClearPatternTree();
         _updatePatternLocations->Run();
     }
 

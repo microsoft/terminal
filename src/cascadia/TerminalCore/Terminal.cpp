@@ -1140,12 +1140,14 @@ void Terminal::UpdatePatterns() noexcept
 }
 
 // Method Description:
-// - Clears our interval pattern tree
+// - Clears and invalidates the interval pattern tree
 // - This is called to prevent the renderer from rendering patterns while the
 //   visible region is changing
 void Terminal::ClearPatternTree() noexcept
 {
+    auto oldTree = _patternIntervalTree;
     _patternIntervalTree = {};
+    _InvalidatePatternTree(oldTree);
 }
 
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
