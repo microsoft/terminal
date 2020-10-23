@@ -1057,12 +1057,13 @@ Json::Value CascadiaSettings::ToJson() const
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
     profiles[JsonKey(DefaultSettingsKey)] = _userDefaultProfileSettings->ToJson();
-    profiles[JsonKey(ProfilesListKey)] = { Json::ValueType::arrayValue };
+    Json::Value profilesList{ Json::ValueType::arrayValue };
     for (const auto& entry : _profiles)
     {
         const auto prof{ winrt::get_self<implementation::Profile>(entry) };
-        json[JsonKey(ProfilesKey)].append(prof->ToJson());
+        profilesList.append(prof->ToJson());
     }
+    profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;
 
     // "schemes" will be an accumulation of _all_ the color schemes
@@ -1070,7 +1071,7 @@ Json::Value CascadiaSettings::ToJson() const
     for (const auto& entry : _globals->ColorSchemes())
     {
         const auto scheme{ winrt::get_self<implementation::ColorScheme>(entry.Value()) };
-        json[JsonKey(SchemesKey)].append(scheme->ToJson());
+        schemes.append(scheme->ToJson());
     }
     json[JsonKey(SchemesKey)] = schemes;
 

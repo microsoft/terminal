@@ -353,6 +353,7 @@ Json::Value GlobalAppSettings::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
+    // Exclude DebugFeatures from the list below
     // clang-format off
     JsonUtils::SetValueForKey(json, DefaultProfileKey,              _UnparsedDefaultProfile);
     JsonUtils::SetValueForKey(json, AlwaysShowTabsKey,              _AlwaysShowTabs);
@@ -371,7 +372,6 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);
     JsonUtils::SetValueForKey(json, TabWidthModeKey,                _TabWidthMode);
     JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
-    JsonUtils::SetValueForKey(json, DebugFeaturesKey,               _DebugFeaturesEnabled);
     JsonUtils::SetValueForKey(json, ForceFullRepaintRenderingKey,   _ForceFullRepaintRendering);
     JsonUtils::SetValueForKey(json, SoftwareRenderingKey,           _SoftwareRendering);
     JsonUtils::SetValueForKey(json, ForceVTInputKey,                _ForceVTInput);

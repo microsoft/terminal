@@ -707,8 +707,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T, typename Converter>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
     {
-        // demand guarantees that it will return a value or throw an exception
-        auto out{ json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) };
+        std::optional<Json::Value> out;
         if constexpr (Detail::DeduceOptional<T>::IsOptional)
         {
             // FOR OPTION TYPES
@@ -720,19 +719,28 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 //   We consider them optional so that they can be zero-constructed
                 //    and we store it as an empty string
                 //   However, we need to differentiate between hstring and optional<hstring>
-                *out = conv.ToJson(target);
+                out = conv.ToJson(target);
             }
             else
             {
                 if (target)
                 {
-                    *out = conv.ToJson(*target);
+                    out = conv.ToJson(*target);
                 }
             }
         }
         else
         {
-            *out = conv.ToJson(target);
+            out = conv.ToJson(target);
+        }
+
+        if (out)
+        {
+            // demand guarantees that it will return a value or throw an exception
+            // _Only_ call it if we are writing a value. Otherwise, we'll write the key
+            //   in the json, and initialize it's value to "null". Instead, we use "out"
+            //   to completely omit writing this setting if we don't have a value.
+            *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = *out;
         }
     }
 

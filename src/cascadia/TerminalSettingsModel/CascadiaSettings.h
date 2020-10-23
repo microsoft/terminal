@@ -29,6 +29,7 @@ Author(s):
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
 {
+    class SerializationTests;
     class DeserializationTests;
     class ProfileTests;
     class ColorSchemeTests;
@@ -146,6 +147,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateKeybindings();
         void _ValidateNoGlobalsKey();
 
+        friend class SettingsModelLocalTests::SerializationTests;
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;

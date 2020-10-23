@@ -61,7 +61,6 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::GlobalSettings()
     {
-        DebugBreak();
         // This needs to be in alphabetical order.
         const std::string globalsString{
             "{"
@@ -70,7 +69,6 @@ namespace SettingsModelLocalTests
             "\"confirmCloseAllTabs\": true,"
             "\"copyFormatting\": \"all\","
             "\"copyOnSelect\": false,"
-            "\"debugFeatures\": true,"
             "\"defaultProfile\": \"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}\","
             "\"experimental.input.forceVT\": false,"
             "\"experimental.rendering.forceFullRepaint\": false,"
@@ -113,42 +111,41 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::Profile()
     {
-        DebugBreak();
+        // This needs to be in alphabetical order.
         const std::string profileString{
             "{"
-            "\"name\": \"Windows PowerShell\","
-            "\"guid\": \"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}\","
-            "\"hidden\": false,"
-            "\"foreground\": \"#AABBCC\","
-            "\"background\": \"#BBCCAA\","
-            "\"selectionBackground\": \"#CCAABB\","
-            "\"cursorColor\": \"#CCBBAA\","
-            "\"colorScheme\": \"Campbell\","
-            "\"historySize\": 9001,"
-            "\"snapOnInput\": true,"
             "\"altGrAliasing\": true,"
-            "\"cursorHeight\": null,"
-            "\"cursorShape\": \"bar\","
-            "\"tabTitle\": null,"
-            "\"fontWeight\": \"normal\","
-            //"\"connectionType\": null,"
-            "\"commandline\": \"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\","
-            "\"fontFace\": \"Cascadia Mono\","
-            "\"fontSize\": 12,"
-            "\"useAcrylic\": false,"
-            "\"suppressApplicationTitle\": false,"
-            "\"closeOnExit\": \"graceful\","
-            "\"padding\": \"8, 8, 8, 8\","
-            "\"scrollbarState\": \"visible\","
-            "\"startingDirectory\": \"%USERPROFILE%\","
-            "\"icon\": \"ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png\","
-            "\"backgroundImage\": null,"
+            "\"antialiasingMode\": \"grayscale\","
+            "\"background\": \"#BBCCAA\","
+            "\"backgroundImage\": \"made_you_look.jpeg\","
+            "\"backgroundImageAlignment\": \"center\","
             "\"backgroundImageOpacity\": 1.0,"
             "\"backgroundImageStretchMode\": \"uniformToFill\","
-            "\"backgroundImageAlignment\": \"center\","
+            "\"closeOnExit\": \"graceful\","
+            "\"colorScheme\": \"Campbell\","
+            "\"commandline\": \"%SystemRoot%\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\","
+            "\"cursorColor\": \"#CCBBAA\","
+            "\"cursorHeight\": 10,"
+            "\"cursorShape\": \"bar\","
             "\"experimental.retroTerminalEffect\": false,"
-            "\"antialiasingMode\": \"grayscale\""
+            "\"fontFace\": \"Cascadia Mono\","
+            "\"fontSize\": 12,"
+            "\"fontWeight\": \"normal\","
+            "\"foreground\": \"#AABBCC\","
+            "\"guid\": \"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}\","
+            "\"hidden\": false,"
+            "\"historySize\": 9001,"
+            "\"icon\": \"ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png\","
+            "\"name\": \"Windows PowerShell\","
+            "\"padding\": \"8, 8, 8, 8\","
+            "\"scrollbarState\": \"visible\","
+            "\"selectionBackground\": \"#CCAABB\","
+            "\"snapOnInput\": true,"
+            "\"startingDirectory\": \"%USERPROFILE%\","
+            "\"suppressApplicationTitle\": false,"
             "\"tabColor\": \"#0C0C0C\","
+            "\"tabTitle\": \"Cool Tab\","
+            "\"useAcrylic\": false"
             "}"
         };
 
@@ -160,9 +157,9 @@ namespace SettingsModelLocalTests
 
         auto roundtripTest = [this](auto jsonString) {
             const auto json{ VerifyParseSucceeded(jsonString) };
-            const auto globals{ implementation::Profile::FromJson(json) };
+            const auto profile{ implementation::Profile::FromJson(json) };
 
-            const auto result{ globals->ToJson() };
+            const auto result{ profile->ToJson() };
 
             VERIFY_ARE_EQUAL(jsonString, toString(result));
         };
@@ -173,47 +170,112 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::ColorScheme()
     {
-        DebugBreak();
+        // This needs to be in alphabetical order.
         const std::string schemeString{ "{"
-                                        "\"name\" : \"Campbell\","
-                                        "\"foreground\" : \"#F2F2F2\","
-                                        "\"background\" : \"#0C0C0C\","
-                                        "\"selectionBackground\" : \"#131313\","
-                                        "\"cursorColor\" : \"#FFFFFF\","
-                                        "\"black\" : \"#0C0C0C\","
-                                        "\"red\" : \"#C50F1F\","
-                                        "\"green\" : \"#13A10E\","
-                                        "\"yellow\" : \"#C19C00\""
-                                        "\"blue\" : \"#0037DA\","
-                                        "\"purple\" : \"#881798\","
-                                        "\"cyan\" : \"#3A96DD\","
-                                        "\"white\" : \"#CCCCCC\","
-                                        "\"brightBlack\" : \"#767676\","
-                                        "\"brightRed\" : \"#E74856\","
-                                        "\"brightGreen\" : \"#16C60C\","
-                                        "\"brightYellow\" : \"#F9F1A5\","
-                                        "\"brightBlue\" : \"#3B78FF\","
-                                        "\"brightPurple\" : \"#B4009E\","
-                                        "\"brightCyan\" : \"#61D6D6\","
-                                        "\"brightWhite\" : \"#F2F2F2\""
+                                        "\"background\": \"#0C0C0C\","
+                                        "\"black\": \"#0C0C0C\","
+                                        "\"blue\": \"#0037DA\","
+                                        "\"brightBlack\": \"#767676\","
+                                        "\"brightBlue\": \"#3B78FF\","
+                                        "\"brightCyan\": \"#61D6D6\","
+                                        "\"brightGreen\": \"#16C60C\","
+                                        "\"brightPurple\": \"#B4009E\","
+                                        "\"brightRed\": \"#E74856\","
+                                        "\"brightWhite\": \"#F2F2F2\","
+                                        "\"brightYellow\": \"#F9F1A5\","
+                                        "\"cursorColor\": \"#FFFFFF\","
+                                        "\"cyan\": \"#3A96DD\","
+                                        "\"foreground\": \"#F2F2F2\","
+                                        "\"green\": \"#13A10E\","
+                                        "\"name\": \"Campbell\","
+                                        "\"purple\": \"#881798\","
+                                        "\"red\": \"#C50F1F\","
+                                        "\"selectionBackground\": \"#131313\","
+                                        "\"white\": \"#CCCCCC\","
+                                        "\"yellow\": \"#C19C00\""
                                         "}" };
 
         const auto json{ VerifyParseSucceeded(schemeString) };
-        const auto profile{ implementation::ColorScheme::FromJson(json) };
+        const auto scheme{ implementation::ColorScheme::FromJson(json) };
 
-        const auto result{ profile->ToJson() };
-        VERIFY_ARE_EQUAL(json, result);
+        const auto result{ scheme->ToJson() };
+        VERIFY_ARE_EQUAL(schemeString, toString(result));
     }
 
     void SerializationTests::CascadiaSettings()
     {
         DebugBreak();
-        const std::string settingsString{ "" };
+        // clang-format off
+        // This needs to be in alphabetical order.
+        const std::string settingsString{   "{"
+                                                "\"$schema\": \"https://aka.ms/terminal-profiles-schema\","
+                                                "\"actions\": ["
+                                                    "{\"command\": {\"action\": \"renameTab\",\"input\": \"Liang Tab\"},\"keys\": \"ctrl+t\"}"
+                                                "],"
+                                                "\"defaultProfile\": \"{61c54bbd-1111-5271-96e7-009a87ff44bf}\","
+                                                "\"keybindings\": ["
+                                                    "{\"command\": {\"action\": \"sendInput\",\"input\": \"VT Griese Mode\"},\"keys\": \"ctrl+k\"}"
+                                                "],"
+                                                "\"profiles\": {"
+                                                    "\"defaults\": {"
+                                                        "\"fontFace\": \"Zamora Code\""
+                                                    "},"
+                                                    "\"list\": ["
+                                                        "{"
+                                                            "\"fontFace\": \"Cascadia Code\","
+                                                            "\"guid\": \"{61c54bbd-1111-5271-96e7-009a87ff44bf}\","
+                                                            "\"name\": \"HowettShell\""
+                                                        "},"
+                                                        "{"
+                                                            "\"antialiasingMode\": \"aliased\","
+                                                            "\"name\": \"NiksaShell\""
+                                                        "},"
+                                                        "{"
+                                                            "\"name\": \"BhojwaniShell\","
+                                                            "\"source\": \"local\""
+                                                        "}"
+                                                    "]"
+                                                "},"
+                                                "\"schemes\": ["
+                                                    "{"
+                                                        "\"background\": \"#3C0315\","
+                                                        "\"black\": \"#282A2E\","
+                                                        "\"blue\": \"#0170C5\","
+                                                        "\"brightBlack\": \"#676E7A\","
+                                                        "\"brightBlue\": \"#5C98C5\","
+                                                        "\"brightCyan\": \"#8ABEB7\","
+                                                        "\"brightGreen\": \"#B5D680\","
+                                                        "\"brightPurple\": \"#AC79BB\","
+                                                        "\"brightRed\": \"#BD6D85\","
+                                                        "\"brightWhite\": \"#FFFFFD\","
+                                                        "\"brightYellow\": \"#FFFD76\","
+                                                        "\"cursorColor\": \"#FFFFFD\","
+                                                        "\"cyan\": \"#3F8D83\","
+                                                        "\"foreground\": \"#FFFFFD\","
+                                                        "\"green\": \"#76AB23\","
+                                                        "\"name\": \"Cinnamon Roll\","
+                                                        "\"purple\": \"#7D498F\","
+                                                        "\"red\": \"#BD0940\","
+                                                        "\"selectionBackground\": \"#FFFFFF\","
+                                                        "\"white\": \"#FFFFFD\","
+                                                        "\"yellow\": \"#E0DE48\""
+                                                    "}"
+                                                "]"
+                                            "}" };
+        // clang-format on
 
-        const auto json{ VerifyParseSucceeded(settingsString) };
-        const auto settings{ implementation::CascadiaSettings::FromJson(json) };
+        auto settings{ winrt::make_self<implementation::CascadiaSettings>(false) };
+        settings->_ParseJsonString(settingsString, false);
+        settings->_ApplyDefaultsFromUserSettings();
+        settings->LayerJson(settings->_userSettings);
+        settings->_ValidateSettings();
 
+        // TODO CARLOS:
+        // - temp/DebugBreak is only for testing. Remove after we're done here.
+        // - NiksaShell prints out a guid, when it shouldn't be
+        // - BhojwaniShell is missing entirely
         const auto result{ settings->ToJson() };
-        VERIFY_ARE_EQUAL(json, result);
+        const auto temp{ toString(result) };
+        VERIFY_ARE_EQUAL(settingsString, toString(result));
     }
 }

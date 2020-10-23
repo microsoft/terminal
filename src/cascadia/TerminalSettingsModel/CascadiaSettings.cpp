@@ -509,7 +509,8 @@ void CascadiaSettings::_ValidateAllSchemesExist()
         const auto schemeName = profile.ColorSchemeName();
         if (!_globals->ColorSchemes().HasKey(schemeName))
         {
-            profile.ColorSchemeName({ L"Campbell" });
+            // Clear the user set color scheme. We'll just fallback instead.
+            profile.ClearColorSchemeName();
             foundInvalidScheme = true;
         }
     }
