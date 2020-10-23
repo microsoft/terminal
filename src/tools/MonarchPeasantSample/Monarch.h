@@ -5,7 +5,7 @@
 #include "../cascadia/inc/cppwinrt_utils.h"
 
 // 50dba6cd-2222-4b12-8363-5e06f5d0082c
-static constexpr GUID Monarch_clsid{
+constexpr GUID Monarch_clsid{
     0x50dba6cd,
     0x2222,
     0x4b12,
@@ -17,6 +17,7 @@ namespace winrt::MonarchPeasantSample::implementation
     struct Monarch : public MonarchT<Monarch>, public PeasantBase
     {
         Monarch();
+        ~Monarch();
 
         uint64_t AddPeasant(winrt::MonarchPeasantSample::Peasant peasant)
         {

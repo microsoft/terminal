@@ -4,7 +4,7 @@
 #include "../cascadia/inc/cppwinrt_utils.h"
 
 // 50dba6cd-1111-4b12-8363-5e06f5d0082c
-static constexpr GUID Peasant_clsid{
+constexpr GUID Peasant_clsid{
     0x50dba6cd,
     0x1111,
     0x4b12,
@@ -17,7 +17,7 @@ namespace winrt::MonarchPeasantSample::implementation
     {
         void AssignID(uint64_t id) { id; }
         uint64_t GetID() { return 42; }
-        uint64_t GetPID() { return 69; }
+        uint64_t GetPID() { return GetCurrentProcessId(); }
         bool ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory)
         {
             args;
