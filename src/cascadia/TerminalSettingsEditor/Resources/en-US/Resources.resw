@@ -153,6 +153,9 @@
   <data name="ColorScheme_ColorSchemes.Text" xml:space="preserve">
     <value>Color schemes</value>
   </data>
+  <data name="ColorScheme_CursorColor.Header" xml:space="preserve">
+    <value>Cursor color</value>
+  </data>
   <data name="ColorScheme_Cyan.Header" xml:space="preserve">
     <value>Cyan</value>
   </data>
@@ -164,6 +167,9 @@
   </data>
   <data name="ColorScheme_Purple.Header" xml:space="preserve">
     <value>Purple</value>
+  </data>
+  <data name="ColorScheme_SelectionBackground.Header" xml:space="preserve">
+    <value>Selection background</value>
   </data>
   <data name="ColorScheme_Red.Header" xml:space="preserve">
     <value>Red</value>
