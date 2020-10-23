@@ -15,8 +15,8 @@ namespace winrt::MonarchPeasantSample::implementation
 {
     struct PeasantBase
     {
-        void AssignID(uint64_t id) { id; }
-        uint64_t GetID() { return 42; }
+        void AssignID(uint64_t id) { _id = id; }
+        uint64_t GetID() { return _id; }
         uint64_t GetPID() { return GetCurrentProcessId(); }
         bool ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory)
         {
@@ -27,6 +27,7 @@ namespace winrt::MonarchPeasantSample::implementation
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
+        uint64_t _id{ 0 };
     };
 
     struct Peasant : public PeasantT<Peasant>, public PeasantBase

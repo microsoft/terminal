@@ -17,6 +17,7 @@ namespace winrt::MonarchPeasantSample::implementation
     Monarch::Monarch()
     {
         printf("Instantiated a Monarch\n");
+        _peasants = winrt::single_threaded_observable_vector<winrt::MonarchPeasantSample::Peasant>();
     }
     Monarch::~Monarch()
     {
@@ -24,5 +25,12 @@ namespace winrt::MonarchPeasantSample::implementation
         std::unique_lock<std::mutex> lk(m);
         dtored = true;
         cv.notify_one();
+    }
+    uint64_t Monarch::AddPeasant(winrt::MonarchPeasantSample::Peasant peasant)
+    {
+        _peasants.Append(peasant);
+        peasant.AssignID(++_nextPeasantID);
+        printf("Added a new peasant, assigned them the ID=%d\n", _nextPeasantID);
+        return _nextPeasantID;
     }
 }

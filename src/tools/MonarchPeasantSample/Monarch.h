@@ -19,11 +19,7 @@ namespace winrt::MonarchPeasantSample::implementation
         Monarch();
         ~Monarch();
 
-        uint64_t AddPeasant(winrt::MonarchPeasantSample::Peasant peasant)
-        {
-            peasant;
-            return 1234;
-        }
+        uint64_t AddPeasant(winrt::MonarchPeasantSample::Peasant peasant);
         bool IsInSingleInstanceMode() { return false; }
         winrt::MonarchPeasantSample::Peasant GetPeasant(uint64_t peasantID)
         {
@@ -31,6 +27,10 @@ namespace winrt::MonarchPeasantSample::implementation
             return nullptr;
         }
         winrt::MonarchPeasantSample::Peasant GetMostRecentPeasant() { return nullptr; }
+
+    private:
+        uint64_t _nextPeasantID{ 1 };
+        Windows::Foundation::Collections::IObservableVector<winrt::MonarchPeasantSample::Peasant> _peasants{ nullptr };
     };
 }
 

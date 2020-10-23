@@ -71,17 +71,36 @@ winrt::MonarchPeasantSample::Monarch instantiateAMonarch()
     return monarch;
 }
 
-void areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch)
+bool areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch, const bool logPIDs = false)
 {
     auto kingPID = monarch.GetPID();
     auto ourPID = GetCurrentProcessId();
-    if (ourPID == kingPID)
+    if (logPIDs)
     {
-        printf("We're the king - our PID is %d\n", ourPID);
+        if (ourPID == kingPID)
+        {
+            printf("We're the king - our PID is %d\n", ourPID);
+        }
+        else
+        {
+            printf("we're a lowly peasant - the king is %d\n", kingPID);
+        }
+    }
+    return (ourPID == kingPID);
+}
+
+MonarchPeasantSample::IPeasant getOurPeasant(const winrt::MonarchPeasantSample::Monarch& monarch)
+{
+    if (areWeTheKing(monarch))
+    {
+        auto iPeasant = monarch.try_as<winrt::MonarchPeasantSample::IPeasant>();
     }
     else
     {
-        printf("we're a lowly peasant - the king is %d\n", kingPID);
+        auto peasant = winrt::make_self<MonarchPeasantSample::implementation::Peasant>();
+        auto ourID = monarch.AddPeasant(*peasant);
+        printf("The monarch assigned us the ID %d\n", ourID);
+        return *peasant;
     }
 }
 
@@ -90,19 +109,15 @@ void printPeasants(const winrt::MonarchPeasantSample::Monarch& monarch)
     printf("This is unimplemented\n");
 }
 
-void app()
+void monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
+                    const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
-    registerAsMonarch();
-    auto monarch = instantiateAMonarch();
-    areWeTheKing(monarch);
-
     bool exitRequested = false;
+    printf("Press `l` to list peasants, `q` to quit\n");
+
     while (!exitRequested)
     {
-        printf("-----------------------------\n");
-        printf("input a command (l, q): ");
         const auto ch = _getch();
-
         if (ch == 'l')
         {
             printPeasants(monarch);
@@ -111,6 +126,38 @@ void app()
         {
             exitRequested = true;
         }
+    }
+}
+void peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
+                    const winrt::MonarchPeasantSample::IPeasant& peasant)
+{
+    bool exitRequested = false;
+    printf("Press `q` to quit\n");
+
+    while (!exitRequested)
+    {
+        const auto ch = _getch();
+        if (ch == 'q')
+        {
+            exitRequested = true;
+        }
+    }
+}
+
+void app()
+{
+    registerAsMonarch();
+    auto monarch = instantiateAMonarch();
+    const bool isMonarch = areWeTheKing(monarch, true);
+    auto peasant = getOurPeasant(monarch);
+
+    if (isMonarch)
+    {
+        monarchAppLoop(monarch, peasant);
+    }
+    else
+    {
+        peasantAppLoop(monarch, peasant);
     }
 }
 
