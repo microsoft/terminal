@@ -8,6 +8,8 @@ using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 
+HANDLE g_hInput = nullptr;
+
 ////////////////////////////////////////////////////////////////////////////////
 std::mutex m;
 std::condition_variable cv;
@@ -94,6 +96,7 @@ MonarchPeasantSample::IPeasant getOurPeasant(const winrt::MonarchPeasantSample::
     if (areWeTheKing(monarch))
     {
         auto iPeasant = monarch.try_as<winrt::MonarchPeasantSample::IPeasant>();
+        return iPeasant;
     }
     else
     {
@@ -128,20 +131,106 @@ void monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
         }
     }
 }
+bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& monarch,
+                      const winrt::MonarchPeasantSample::IPeasant& peasant)
+{
+    DWORD cNumRead, fdwMode, i;
+    INPUT_RECORD irInBuf[128];
+
+    if (!ReadConsoleInput(g_hInput, // input buffer handle
+                          irInBuf, // buffer to read into
+                          128, // size of read buffer
+                          &cNumRead)) // number of records read
+    {
+        printf("\x1b[31mReadConsoleInput failed\x1b[m\n");
+        ExitProcess(0);
+    }
+    for (i = 0; i < cNumRead; i++)
+    {
+        switch (irInBuf[i].EventType)
+        {
+        case KEY_EVENT: // keyboard input
+            auto key = irInBuf[i].Event.KeyEvent;
+            // KeyEventProc(irInBuf[i].Event.KeyEvent);
+            if (key.bKeyDown == false && key.uChar.UnicodeChar == L'q')
+            {
+                return true;
+            }
+            break;
+
+        case MOUSE_EVENT: // mouse input
+            // MouseEventProc(irInBuf[i].Event.MouseEvent);
+            break;
+
+        case WINDOW_BUFFER_SIZE_EVENT: // scrn buf. resizing
+            // ResizeEventProc( irInBuf[i].Event.WindowBufferSizeEvent );
+            break;
+
+        case FOCUS_EVENT: // disregard focus events
+            break;
+
+        case MENU_EVENT: // disregard menu events
+            break;
+
+        default:
+            printf("\x1b[33mUnknown event from ReadConsoleInput - this is probably impossible\x1b[m\n");
+            ExitProcess(0);
+            break;
+        }
+    }
+
+    return false;
+}
 void peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
                     const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
+    wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, monarch.GetPID()) };
+    printf("handle for the monarch process is %d\n", hMonarch.get());
+
+    g_hInput = GetStdHandle(STD_INPUT_HANDLE);
+    printf("handle for the console input is %d\n", g_hInput);
+
+    HANDLE handlesToWaitOn[2]{ hMonarch.get(), g_hInput };
+
     bool exitRequested = false;
     printf("Press `q` to quit\n");
 
     while (!exitRequested)
     {
-        const auto ch = _getch();
-        if (ch == 'q')
+        printf("Beginning wait...\n");
+        auto waitResult = WaitForMultipleObjects(2, handlesToWaitOn, false, INFINITE);
+
+        switch (waitResult)
         {
+        // handlesToWaitOn[0] was signaled
+        case WAIT_OBJECT_0 + 0:
+            printf("First event was signaled.\n");
+            printf("THE KING IS DEAD\n");
             exitRequested = true;
+            break;
+
+        // handlesToWaitOn[1] was signaled
+        case WAIT_OBJECT_0 + 1:
+            printf("Second event was signaled.\n");
+            exitRequested = peasantReadInput(monarch, peasant);
+            break;
+
+        case WAIT_TIMEOUT:
+            printf("Wait timed out. This should be impossible.\n");
+            break;
+
+        // Return value is invalid.
+        default:
+        {
+            auto gle = GetLastError();
+            printf("WaitForMultipleObjects returned: %d\n", waitResult);
+            printf("Wait error: %d\n", gle);
+            ExitProcess(0);
+        }
         }
     }
+
+    printf("Bottom of peasantAppLoop\n");
 }
 
 void app()
