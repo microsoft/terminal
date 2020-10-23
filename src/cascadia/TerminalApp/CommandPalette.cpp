@@ -106,8 +106,8 @@ namespace winrt::TerminalApp::implementation
     std::locale CommandPalette::_loadUserLocale()
     {
         // Loading user locale name explicitly using GetUserDefaultLocaleName,
-        // as std:locale("") crashes on some setups
-        wchar_t userLocaleName[LOCALE_NAME_MAX_LENGTH] = { 0 };
+        // as std:locale("") crashes on some setups.
+        wchar_t userLocaleName[LOCALE_NAME_MAX_LENGTH + 1];
         auto localeNameSize = GetUserDefaultLocaleName(userLocaleName, ARRAYSIZE(userLocaleName));
         if (localeNameSize == 0)
         {
@@ -115,7 +115,7 @@ namespace winrt::TerminalApp::implementation
             return std::locale();
         }
 
-        std::wstring loadedLocale(userLocaleName);
+        std::wstring loadedLocale{ userLocaleName, gsl::narrow<unsigned int>(localeNameSize) };
         return std::locale::locale(til::u16u8(loadedLocale));
     }
 
