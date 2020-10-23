@@ -169,8 +169,6 @@ namespace Microsoft.Terminal.Wpf
                 throw new ArgumentException(nameof(renderSize), "Terminal column or row count cannot be 0.");
             }
 
-            var dpiScale = VisualTreeHelper.GetDpi(this);
-
             NativeMethods.TerminalTriggerResize(
                 this.terminal,
                 Convert.ToInt16(renderSize.Width),
