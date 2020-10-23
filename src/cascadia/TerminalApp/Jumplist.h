@@ -20,7 +20,7 @@ struct IShellLinkW;
 class Jumplist
 {
 public:
-    static HRESULT UpdateJumplist(const winrt::TerminalApp::CascadiaSettings& settings) noexcept;
+    static winrt::fire_and_forget UpdateJumplist(const winrt::TerminalApp::CascadiaSettings& settings) noexcept;
 
 private:
     [[nodiscard]] static HRESULT _updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles) noexcept;
