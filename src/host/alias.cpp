@@ -1141,7 +1141,7 @@ size_t Alias::s_ReplaceMacros(std::wstring& str,
 // - If we found a matching alias, this will be the processed data
 //   and lineCount is updated to the new number of lines.
 // - If we didn't match and process an alias, return an empty string.
-std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
+std::wstring Alias::s_MatchAndCopyAlias(const std::wstring_view sourceText,
                                         const std::wstring& exeName,
                                         size_t& lineCount)
 {

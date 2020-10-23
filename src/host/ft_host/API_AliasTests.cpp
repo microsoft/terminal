@@ -437,3 +437,10 @@ void AliasTests::TestCookedAlphaPermutations()
         VERIFY_ARE_EQUAL(expected, recvInput);
     }
 }
+
+// TODO tests:
+// - leaving behind a lead/trail byte
+// - leaving behind a lead/trail byte and having more data
+// -- doing it in a loop/continuously.
+// - read it char by char
+// - change the codepage in the middle of reading and/or between commands

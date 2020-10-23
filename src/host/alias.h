@@ -24,7 +24,7 @@ public:
                                           const std::wstring& exeName,
                                           DWORD& lines);
 
-    static std::wstring s_MatchAndCopyAlias(const std::wstring& sourceText,
+    static std::wstring s_MatchAndCopyAlias(const std::wstring_view sourceText,
                                             const std::wstring& exeName,
                                             size_t& lineCount);
 
