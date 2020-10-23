@@ -24,7 +24,6 @@ namespace winrt::TerminalApp::implementation
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-        winrt::Windows::UI::Xaml::UIElement GetRootElement();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
@@ -87,6 +86,8 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewNumTabs, _PropertyChangedHandlers, 0);
+
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::UIElement, Content, _PropertyChangedHandlers, nullptr);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };

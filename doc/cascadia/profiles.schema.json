@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
+  "$id": "https://github.com/microsoft/terminal/blob/main/doc/cascadia/profiles.schema.json",
   "$schema": "https://json-schema.org/draft/2019-09/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
