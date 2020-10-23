@@ -59,6 +59,7 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _commandsToFilter();
+        std::string _userLocaleName;
 
         bool _lastFilterTextWasEmpty{ true };
 
@@ -106,6 +107,8 @@ namespace winrt::TerminalApp::implementation
         void _dispatchCommand(const Microsoft::Terminal::Settings::Model::Command& command);
         void _dispatchCommandline();
         void _dismissPalette();
+
+        bool _compareCommandNames(const Microsoft::Terminal::Settings::Model::Command& lhs, const Microsoft::Terminal::Settings::Model::Command& rhs);
     };
 }
 
