@@ -19,18 +19,18 @@ namespace winrt::MonarchPeasantSample::implementation
         Monarch();
         ~Monarch();
 
-        uint64_t AddPeasant(winrt::MonarchPeasantSample::Peasant peasant);
+        uint64_t AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant);
         bool IsInSingleInstanceMode() { return false; }
-        winrt::MonarchPeasantSample::Peasant GetPeasant(uint64_t peasantID)
+        winrt::MonarchPeasantSample::IPeasant GetPeasant(uint64_t peasantID)
         {
             peasantID;
             return nullptr;
         }
-        winrt::MonarchPeasantSample::Peasant GetMostRecentPeasant() { return nullptr; }
+        winrt::MonarchPeasantSample::IPeasant GetMostRecentPeasant() { return nullptr; }
 
     private:
         uint64_t _nextPeasantID{ 1 };
-        Windows::Foundation::Collections::IObservableVector<winrt::MonarchPeasantSample::Peasant> _peasants{ nullptr };
+        Windows::Foundation::Collections::IObservableMap<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants{ nullptr };
     };
 }
 

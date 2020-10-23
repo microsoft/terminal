@@ -85,7 +85,7 @@ bool areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch, const boo
         }
         else
         {
-            printf("we're a lowly peasant - the king is %d\n", kingPID);
+            printf("We're a lowly peasant - the king is %d\n", kingPID);
         }
     }
     return (ourPID == kingPID);
@@ -112,7 +112,7 @@ void printPeasants(const winrt::MonarchPeasantSample::Monarch& monarch)
     printf("This is unimplemented\n");
 }
 
-void monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
+bool monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
                     const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
     bool exitRequested = false;
@@ -130,7 +130,9 @@ void monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
             exitRequested = true;
         }
     }
+    return true;
 }
+
 bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& monarch,
                       const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
@@ -181,14 +183,14 @@ bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& monarch,
 
     return false;
 }
-void peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
+bool peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
                     const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
     wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, monarch.GetPID()) };
-    printf("handle for the monarch process is %d\n", hMonarch.get());
+    // printf("handle for the monarch process is %d\n", hMonarch.get());
 
     g_hInput = GetStdHandle(STD_INPUT_HANDLE);
-    printf("handle for the console input is %d\n", g_hInput);
+    // printf("handle for the console input is %d\n", g_hInput);
 
     HANDLE handlesToWaitOn[2]{ hMonarch.get(), g_hInput };
 
@@ -206,7 +208,8 @@ void peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
         case WAIT_OBJECT_0 + 0:
             printf("First event was signaled.\n");
             printf("THE KING IS DEAD\n");
-            exitRequested = true;
+            // Return false here - this will trigger us to find the new monarch
+            return false;
             break;
 
         // handlesToWaitOn[1] was signaled
@@ -231,22 +234,48 @@ void peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
     }
 
     printf("Bottom of peasantAppLoop\n");
+    return true;
 }
 
 void app()
 {
     registerAsMonarch();
+    bool exitRequested = false;
+
     auto monarch = instantiateAMonarch();
-    const bool isMonarch = areWeTheKing(monarch, true);
+    bool isMonarch = areWeTheKing(monarch, true);
     auto peasant = getOurPeasant(monarch);
 
-    if (isMonarch)
+    while (!exitRequested)
     {
-        monarchAppLoop(monarch, peasant);
-    }
-    else
-    {
-        peasantAppLoop(monarch, peasant);
+        if (isMonarch)
+        {
+            exitRequested = monarchAppLoop(monarch, peasant);
+        }
+        else
+        {
+            exitRequested = peasantAppLoop(monarch, peasant);
+            if (!exitRequested)
+            {
+                monarch = instantiateAMonarch();
+                isMonarch = areWeTheKing(monarch, true);
+                printf("LONG LIVE THE KING\n");
+                if (isMonarch)
+                {
+                    // TODO: If we've been elected monarch, then we need to make
+                    // sure that we're one of the listed peasants (right?) We
+                    // probably don't _only_ need to do this during the
+                    // election, we probably _always need to do this.
+                    //
+                    // we'll loop back into the monarchAppLoop
+                }
+                else
+                {
+                    // Add us to the new monarch
+                    monarch.AddPeasant(peasant);
+                }
+            }
+        }
     }
 }
 

@@ -6,9 +6,9 @@ namespace MonarchPeasantSample
     {
         Monarch();
 
-        UInt64 AddPeasant(Peasant peasant);
+        UInt64 AddPeasant(IPeasant peasant);
         Boolean IsInSingleInstanceMode();
-        Peasant GetPeasant(UInt64 peasantID);
-        Peasant GetMostRecentPeasant();
+        IPeasant GetPeasant(UInt64 peasantID);
+        IPeasant GetMostRecentPeasant();
     };
 }

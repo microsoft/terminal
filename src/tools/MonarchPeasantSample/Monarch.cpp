@@ -17,7 +17,7 @@ namespace winrt::MonarchPeasantSample::implementation
     Monarch::Monarch()
     {
         printf("Instantiated a Monarch\n");
-        _peasants = winrt::single_threaded_observable_vector<winrt::MonarchPeasantSample::Peasant>();
+        _peasants = winrt::single_threaded_observable_map<uint64_t, winrt::MonarchPeasantSample::IPeasant>();
     }
     Monarch::~Monarch()
     {
@@ -26,11 +26,24 @@ namespace winrt::MonarchPeasantSample::implementation
         dtored = true;
         cv.notify_one();
     }
-    uint64_t Monarch::AddPeasant(winrt::MonarchPeasantSample::Peasant peasant)
+    uint64_t Monarch::AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant)
     {
-        _peasants.Append(peasant);
-        peasant.AssignID(++_nextPeasantID);
-        printf("Added a new peasant, assigned them the ID=%d\n", _nextPeasantID);
-        return _nextPeasantID;
+        // TODO: This whole algo is terrible. There's gotta be a better way of
+        // finding the first opening in a non-consecutive map of int->object
+        auto providedID = peasant.GetID();
+
+        if (providedID == 0)
+        {
+            peasant.AssignID(_nextPeasantID++);
+            printf("Assigned the peasant the ID %lld\n", peasant.GetID());
+        }
+        else
+        {
+            printf("Peasant already had an ID, %lld\n", peasant.GetID());
+            _nextPeasantID = providedID >= _nextPeasantID ? providedID + 1 : _nextPeasantID;
+        }
+        _peasants.Insert(peasant.GetID(), peasant);
+        printf("(the next new peasant will get the ID %lld)\n", _nextPeasantID);
+        return peasant.GetID();
     }
 }
