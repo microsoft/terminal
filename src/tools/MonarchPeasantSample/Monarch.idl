@@ -1,0 +1,14 @@
+import "Peasant.idl";
+
+namespace MonarchPeasantSample
+{
+    [default_interface] runtimeclass Monarch : IPeasant
+    {
+        Monarch();
+
+        UInt64 AddPeasant(Peasant peasant);
+        Boolean IsInSingleInstanceMode();
+        Peasant GetPeasant(UInt64 peasantID);
+        Peasant GetMostRecentPeasant();
+    };
+}
