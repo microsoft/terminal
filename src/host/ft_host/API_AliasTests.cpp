@@ -64,6 +64,7 @@ class AliasTests
         TEST_METHOD_PROPERTY(L"Data:outputcp", L"{437, 932}")
         TEST_METHOD_PROPERTY(L"Data:inputmode", L"{487, 481}") // 487 is 0x1e7, 485 is 0x1e1 (ENABLE_LINE_INPUT on/off)
         TEST_METHOD_PROPERTY(L"Data:outputmode", L"{7}")
+        TEST_METHOD_PROPERTY(L"Data:font", L"{Consolas, MS Gothic}")
     END_TEST_METHOD()
         
 };
@@ -326,23 +327,36 @@ void AliasTests::TestCookedTextEntry()
 void AliasTests::TestCookedAlphaPermutations()
 {
     DWORD inputcp, outputcp, inputmode, outputmode;
+    String font;
 
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"inputcp", inputcp), L"Get input cp");
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"outputcp", outputcp), L"Get output cp");
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"inputmode", inputmode), L"Get input mode");
     VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"outputmode", outputmode), L"Get output mode");
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"font", font), L"Get font");
+
+    std::wstring wstrFont{ font };
+    if (wstrFont == L"MS Gothic")
+    {
+        // MS Gothic... but in full width characters and the katakana representation...
+        // MS GOSHIKKU romanized...
+        wstrFont = L"\xff2d\xff33\x0020\x30b4\x30b7\x30c3\x30af";
+    }
 
     const auto in = GetStdInputHandle();
     const auto out = GetStdOutputHandle();
 
-    Log::Comment(L"Backup original modes and codepages.");
+    Log::Comment(L"Backup original modes and codepages and font.");
 
     DWORD originalInMode, originalOutMode, originalInputCP, originalOutputCP;
+    CONSOLE_FONT_INFOEX originalFont = { 0 };
+    originalFont.cbSize = sizeof(originalFont);
     
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(out, &originalOutMode));
     originalInputCP = GetConsoleCP();
     originalOutputCP = GetConsoleOutputCP();
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(out, FALSE, &originalFont));
 
     auto restoreModesOnExit = wil::scope_exit([&]
     {
@@ -350,14 +364,20 @@ void AliasTests::TestCookedAlphaPermutations()
         SetConsoleMode(out, originalOutMode);
         SetConsoleCP(originalInputCP);
         SetConsoleOutputCP(originalOutputCP);
+        SetCurrentConsoleFontEx(out, FALSE, &originalFont);
     });
 
-    Log::Comment(L"Apply our modes and codepages.");
-
+    Log::Comment(L"Apply our modes and codepages and font.");
+    
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, inputmode));
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(out, outputmode));
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(inputcp));
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(outputcp));
+
+    auto ourFont = originalFont;
+    wmemcpy_s(ourFont.FaceName, ARRAYSIZE(ourFont.FaceName), wstrFont.data(), wstrFont.size());
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(out, FALSE, &ourFont));
 
     const wchar_t alpha = L'\u03b1';
     const std::string alpha437 = "\xe0";
@@ -388,5 +408,32 @@ void AliasTests::TestCookedAlphaPermutations()
 
     recvInput.resize(read);
 
-    VERIFY_ARE_EQUAL(expected, recvInput);
+    // corruption magic
+    // In MS Gothic, alpha is full width (2 columns)
+    // In Consolas, alpha is half width (1 column)
+    // Alpha itself is an ambiguous character, meaning the console finds the width
+    // by asking the font.
+    // Unfortunately, there's some code mixed up in the cooked read for a long time where
+    // the width is used as a predictor of how many bytes it will consume.
+    // In this specific combination of using a font where the ambiguous alpha is half width,
+    // the output code page doesn't support double bytes, and the input code page does...
+    // The result is stomped with a null as the conversion fails thinking it doesn't have enough space.
+    if (wstrFont == L"Consolas" && inputcp == 932 && outputcp == 437)
+    {
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(recvInput.size(), 1);
+
+        VERIFY_ARE_EQUAL('\x00', recvInput[0]);
+
+        if (WI_IsFlagSet(inputmode, ENABLE_LINE_INPUT))
+        {
+            VERIFY_IS_GREATER_THAN_OR_EQUAL(recvInput.size(), 3);
+            VERIFY_ARE_EQUAL('\r', recvInput[1]);
+            VERIFY_ARE_EQUAL('\n', recvInput[2]);
+        }
+    }
+    // end corruption magic
+    else
+    {
+        VERIFY_ARE_EQUAL(expected, recvInput);
+    }
 }
