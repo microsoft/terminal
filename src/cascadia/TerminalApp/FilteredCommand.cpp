@@ -198,7 +198,7 @@ namespace winrt::TerminalApp::implementation
 
             if (segment.IsHighlighted())
             {
-                // Give extra point for each consequitive match
+                // Give extra point for each consecutive match
                 result += (segmentSize <= 1) ? segmentSize : 1 + 2 * (segmentSize - 1);
 
                 // Give extra point if this segment is at the beginning of a word
@@ -229,9 +229,9 @@ namespace winrt::TerminalApp::implementation
 
         if (firstWeight == secondWeight)
         {
-            std::wstring_view firsttName{ first.Command().Name() };
+            std::wstring_view firstName{ first.Command().Name() };
             std::wstring_view secondName{ second.Command().Name() };
-            return firsttName.compare(secondName) < 0;
+            return firstName.compare(secondName) < 0;
         }
 
         return firstWeight > secondWeight;
