@@ -22,13 +22,17 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateFilter(winrt::hstring const& filter);
 
+        bool Compare(winrt::TerminalApp::FilteredCommand const& other);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(int, Weight, _PropertyChangedHandlers);
 
     private:
         winrt::TerminalApp::HighlightedText _computeHighlightedName();
+        int _computeWeight();
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
 
         friend class TerminalAppLocalTests::FilteredCommandTests;

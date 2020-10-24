@@ -23,7 +23,8 @@ namespace winrt::TerminalApp::implementation
     // by managing a highlighted text that is computed by matching search filter characters to command name
     FilteredCommand::FilteredCommand(Microsoft::Terminal::Settings::Model::Command const& command) :
         _Command(command),
-        _Filter(L"")
+        _Filter(L""),
+        _Weight(0)
     {
         _HighlightedName = _computeHighlightedName();
 
@@ -33,6 +34,7 @@ namespace winrt::TerminalApp::implementation
             if (filteredCommand && e.PropertyName() == L"Name")
             {
                 filteredCommand->HighlightedName(filteredCommand->_computeHighlightedName());
+                filteredCommand->Weight(filteredCommand->_computeWeight());
             }
         });
     }
@@ -139,5 +141,89 @@ namespace winrt::TerminalApp::implementation
         }
 
         return *winrt::make_self<winrt::TerminalApp::implementation::HighlightedText>(segments);
+    }
+
+    // Function Description:
+    // - Calculates a "weighting" by which should be used to order a command
+    //   name relative to other names, given a specific search string.
+    //   Currently, this is based off of two factors:
+    //   * The weight is incremented once for each matched character of the
+    //     search text.
+    //   * If a matching character from the search text was found at the start
+    //     of a word in the name, then we increment the weight again.
+    //     * For example, for a search string "sp", we want "Split Pane" to
+    //       appear in the list before "Close Pane"
+    //   * Consecutive matches will be weighted higher than matches with
+    //     characters in between the search characters.
+    // - This will return 0 if the command should not be shown. If all the
+    //   characters of search text appear in order in `name`, then this function
+    //   will return a positive number. There can be any number of characters
+    //   separating consecutive characters in searchText.
+    //   * For example:
+    //      "name": "New Tab"
+    //      "name": "Close Tab"
+    //      "name": "Close Pane"
+    //      "name": "[-] Split Horizontal"
+    //      "name": "[ | ] Split Vertical"
+    //      "name": "Next Tab"
+    //      "name": "Prev Tab"
+    //      "name": "Open Settings"
+    //      "name": "Open Media Controls"
+    //   * "open" should return both "**Open** Settings" and "**Open** Media Controls".
+    //   * "Tab" would return "New **Tab**", "Close **Tab**", "Next **Tab**" and "Prev
+    //     **Tab**".
+    //   * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
+    //     S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
+    //     Controls".
+    //   * "sv" would return "[ | ] Split Vertical" (by matching the **S** in
+    //     "Split", then the **V** in "Vertical").
+    // Arguments:
+    // - searchText: the string of text to search for in `name`
+    // - name: the name to check
+    // Return Value:
+    // - the relative weight of this match
+    int FilteredCommand::_computeWeight()
+    {
+        int result = 0;
+        bool isNextSegmentWordBeginning = true;
+
+        for (const auto& segment : _HighlightedName.Segments())
+        {
+            const auto& segmentText = segment.TextSegment();
+            const auto segmentSize = segmentText.size();
+
+            if (segment.IsHighlighted())
+            {
+                // Give extra point for each consequitive match
+                result += (segmentSize <= 1) ? segmentSize : 1 + 2 * (segmentSize - 1);
+
+                // Give extra point if this segment is at the beginning of a word
+                if (isNextSegmentWordBeginning)
+                {
+                    result++;
+                }
+            }
+            
+            isNextSegmentWordBeginning = segmentSize > 0 && segmentText[segmentSize - 1] == L' ';
+        }
+
+        return result;
+    }
+    
+    bool FilteredCommand::Compare(winrt::TerminalApp::FilteredCommand const& other)
+    {
+        if (_Weight < other.Weight())
+        {
+            return true;
+        }
+
+        if (_Weight > other.Weight())
+        {
+            return false;
+        }
+
+        std::wstring_view leftName{ Command().Name() };
+        std::wstring_view rightName{ other.Command().Name() };
+        return leftName.compare(rightName) < 0;        
     }
 }
