@@ -116,7 +116,10 @@ namespace TerminalAppLocalTests
             Log::Comment(L"Testing command name segmentation with non matching filter");
             const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
             filteredCommand->_Filter = L"abcd";
-            VERIFY_THROWS(filteredCommand->_computeHighlightedName(), winrt::hresult_invalid_argument);
+            auto segments = filteredCommand->_computeHighlightedName().Segments();
+            VERIFY_ARE_EQUAL(segments.Size(), 1u);
+            VERIFY_ARE_EQUAL(segments.GetAt(0).TextSegment(), L"AAAAAABBBBBBCCC");
+            VERIFY_IS_FALSE(segments.GetAt(0).IsHighlighted());
         }
     }
 }
