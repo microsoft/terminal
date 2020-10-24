@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - This callback is triggered when the Text property is changed. Responsible for updating the view
     // Arguments:
-    // - o - dependecny object that was modified, expected to be an instance of this control
+    // - o - dependency object that was modified, expected to be an instance of this control
     // - e - event arguments of the property changed event fired by the event system upon Text property change.
     // The new value is expected to be an instance of HighlightedText
     void HighlightedTextControl::_onTextChanged(DependencyObject const& o, DependencyPropertyChangedEventArgs const& e)
