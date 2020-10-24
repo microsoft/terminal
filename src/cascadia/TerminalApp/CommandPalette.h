@@ -3,9 +3,8 @@
 
 #pragma once
 
-#include "HighlightedTextControl.h"
+#include "FilteredCommand.h"
 #include "CommandPalette.g.h"
-#include "FilteredCommand.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
@@ -16,25 +15,6 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct FilteredCommand : FilteredCommandT<FilteredCommand>
-    {
-        FilteredCommand() = default;
-        FilteredCommand(Microsoft::Terminal::Settings::Model::Command const& command);
-
-        void UpdateFilter(winrt::hstring const& filter);
-
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
-
-    private:
-        winrt::TerminalApp::HighlightedText _computeHighlightedName();
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
-
-        friend class TerminalAppLocalTests::FilteredCommandTests;
-    };
-
     enum class CommandPaletteMode
     {
         ActionMode = 0,
@@ -141,6 +121,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    BASIC_FACTORY(FilteredCommand);
     BASIC_FACTORY(CommandPalette);
 }

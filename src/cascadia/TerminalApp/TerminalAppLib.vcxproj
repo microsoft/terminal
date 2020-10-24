@@ -92,12 +92,14 @@
     <ClInclude Include="HighlightedTextControl.h">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClInclude>
+	<ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="CommandPalette.h">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
@@ -152,12 +154,14 @@
     <ClCompile Include="HighlightedTextControl.cpp">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClCompile>
+	<ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="CommandPalette.cpp">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
@@ -228,6 +232,7 @@
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+	<Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -236,6 +241,7 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="IconPathConverter.idl" />

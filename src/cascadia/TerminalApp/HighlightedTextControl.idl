@@ -1,25 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "HighlightedText.idl";
+
 namespace TerminalApp
-{    
-    [default_interface] runtimeclass HighlightedTextSegment : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        HighlightedTextSegment();
-        HighlightedTextSegment(String text, Boolean isMatched);
-
-        String TextSegment { get; };
-        Boolean IsHighlighted { get; };
-    }
-
-    [default_interface] runtimeclass HighlightedText : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        HighlightedText();
-        HighlightedText(Windows.Foundation.Collections.IObservableVector<HighlightedTextSegment> segments);
-
-        Windows.Foundation.Collections.IObservableVector<HighlightedTextSegment> Segments;
-    }
-
+{
     [default_interface] runtimeclass HighlightedTextControl : Windows.UI.Xaml.Controls.Control
     {
         HighlightedTextControl();

@@ -6,8 +6,6 @@
 #include "HighlightedTextControl.h"
 
 #include "HighlightedTextControl.g.cpp"
-#include "HighlightedTextSegment.g.cpp"
-#include "HighlightedText.g.cpp"
 
 using namespace winrt;
 using namespace winrt::TerminalApp;
@@ -21,17 +19,9 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    HighlightedTextSegment::HighlightedTextSegment(winrt::hstring const& textSegment, bool isHighlighted) :
-        _TextSegment(textSegment),
-        _IsHighlighted(isHighlighted)
-    {
-    }
-
-    HighlightedText::HighlightedText(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::HighlightedTextSegment> const& segments) :
-        _Segments(segments)
-    {
-    }
-
+    // Our control exposes a "Text" property to be used with Data Binding
+    // To allow this we need to register a Dependency Property Identifier to be used by the property system
+    // (https://docs.microsoft.com/en-us/windows/uwp/xaml-platform/custom-dependency-properties)
     DependencyProperty HighlightedTextControl::_textProperty = DependencyProperty::Register(
         L"Text",
         xaml_typename<winrt::TerminalApp::HighlightedText>(),
@@ -43,11 +33,17 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    // Method Description:
+    // - Returns the Identifier of the "Text" dependency property
     DependencyProperty HighlightedTextControl::TextProperty()
     {
         return _textProperty;
     }
 
+    // Method Description:
+    // - Returns the TextBlock view used to render the highlighted text
+    // Can be used when the Text property change is triggered by the event system to update the view
+    // We need to expose it rather than simply bind a data source because we update the runs in code-behind
     Controls::TextBlock HighlightedTextControl::TextView()
     {
         return _textView();
@@ -63,12 +59,18 @@ namespace winrt::TerminalApp::implementation
         SetValue(_textProperty, winrt::box_value(value));
     }
 
+    // Method Description:
+    // - This callback is triggered when the Text property is changed. Responsible for updating the view
+    // Arguments:
+    // - o - dependecny object that was modified, expected to be an instance of this control
+    // - e - event arguments of the property changed event fired by the event system upon Text property change.
+    // The new value is expected to be an instance of HighlightedText
     void HighlightedTextControl::_onTextChanged(DependencyObject const& o, DependencyPropertyChangedEventArgs const& e)
     {
         const auto control = o.try_as<winrt::TerminalApp::HighlightedTextControl>();
         const auto highlightedText = e.NewValue().try_as<winrt::TerminalApp::HighlightedText>();
 
-        if (control)
+        if (control && highlightedText)
         {
             // Replace all the runs on the TextBlock
             // Use IsHighlighted to decide if the run should be highlighted.
