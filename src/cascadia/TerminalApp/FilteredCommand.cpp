@@ -47,6 +47,7 @@ namespace winrt::TerminalApp::implementation
         {
             Filter(filter);
             HighlightedName(_computeHighlightedName());
+            Weight(_computeWeight());
         }
     }
 
@@ -85,8 +86,11 @@ namespace winrt::TerminalApp::implementation
                 if (currentOffset == commandName.size())
                 {
                     // There are still unmatched filter characters but we finished scanning the name.
-                    // This should not happen, if we are processing only names that matched the filter
-                    throw winrt::hresult_invalid_argument();
+                    // In this case we return the entire command name as unmatched
+                    auto entireNameSegment = winrt::make_self<HighlightedTextSegment>(commandName, false);
+                    segments.Clear();
+                    segments.Append(*entireNameSegment);
+                    return *winrt::make_self<HighlightedText>(segments);
                 }
 
                 auto isCurrentCharMatched = std::towlower(commandName[currentOffset]) == lowerCaseSearchChar;
@@ -140,7 +144,7 @@ namespace winrt::TerminalApp::implementation
             segments.Append(*highlightedSegment);
         }
 
-        return *winrt::make_self<winrt::TerminalApp::implementation::HighlightedText>(segments);
+        return *winrt::make_self<HighlightedText>(segments);
     }
 
     // Function Description:
@@ -203,27 +207,33 @@ namespace winrt::TerminalApp::implementation
                     result++;
                 }
             }
-            
+
             isNextSegmentWordBeginning = segmentSize > 0 && segmentText[segmentSize - 1] == L' ';
         }
 
         return result;
     }
-    
-    bool FilteredCommand::Compare(winrt::TerminalApp::FilteredCommand const& other)
+
+    // Function Description:
+    // - Implementation of Compare for FilteredCommand interface.
+    // Compares firs command with the second command, first by weight, then by name.
+    // In the case of a tie prefers the first command
+    // Arguments:
+    // - other: another instance of Filtered Command interface
+    // Return Value:
+    // - Returns true if the first is "bigger" (aka should appear first)
+    int FilteredCommand::Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second)
     {
-        if (_Weight < other.Weight())
+        auto firstWeight{ first.Weight() };
+        auto secondWeight{ second.Weight() };
+
+        if (firstWeight == secondWeight)
         {
-            return true;
+            std::wstring_view firsttName{ first.Command().Name() };
+            std::wstring_view secondName{ second.Command().Name() };
+            return firsttName.compare(secondName) < 0;
         }
 
-        if (_Weight > other.Weight())
-        {
-            return false;
-        }
-
-        std::wstring_view leftName{ Command().Name() };
-        std::wstring_view rightName{ other.Command().Name() };
-        return leftName.compare(rightName) < 0;        
+        return firstWeight > secondWeight;
     }
 }

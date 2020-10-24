@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
 
         void UpdateFilter(winrt::hstring const& filter);
 
-        bool Compare(winrt::TerminalApp::FilteredCommand const& other);
+        static int Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, _PropertyChangedHandlers);

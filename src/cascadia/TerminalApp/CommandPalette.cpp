@@ -767,45 +767,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
-    static bool _compareCommandNames(const winrt::TerminalApp::FilteredCommand& lhs, const winrt::TerminalApp::FilteredCommand& rhs)
-    {
-        std::wstring_view leftName{ lhs.Command().Name() };
-        std::wstring_view rightName{ rhs.Command().Name() };
-        return leftName.compare(rightName) < 0;
-    }
-
-    // This is a helper struct to aid in sorting Commands by a given weighting.
-    struct WeightedCommand
-    {
-        winrt::TerminalApp::FilteredCommand filteredCommand;
-        int weight;
-        int inOrderCounter;
-
-        bool operator<(const WeightedCommand& other) const
-        {
-            if (weight == other.weight)
-            {
-                // If two commands have the same weight, then we'll sort them alphabetically.
-                // If they both have the same name, fall back to the order in which they were
-                // pushed into the heap.
-                if (filteredCommand.Command().Name() == other.filteredCommand.Command().Name())
-                {
-                    return inOrderCounter > other.inOrderCounter;
-                }
-                else
-                {
-                    return !_compareCommandNames(filteredCommand, other.filteredCommand);
-                }
-            }
-            return weight < other.weight;
-        }
-    };
-
     // Method Description:
     // - Produce a list of filtered actions to reflect the current contents of
-    //   the input box. For more details on which commands will be displayed,
-    //   see `_getWeight`.
+    //   the input box.
     // Arguments:
     // - A collection that will receive the filtered actions
     // Return Value:
@@ -815,98 +779,30 @@ namespace winrt::TerminalApp::implementation
         std::vector<winrt::TerminalApp::FilteredCommand> actions;
 
         winrt::hstring searchText{ _getTrimmedInput() };
-        const bool addAll = searchText.empty();
 
         auto commandsToFilter = _commandsToFilter();
-
-        // If there's no filter text, then just add all the commands in order to the list.
-        // - TODO GH#6647:Possibly add the MRU commands first in order, followed
-        //   by the rest of the commands.
-        if (addAll)
+        for (const auto& action : commandsToFilter)
         {
-            // If TabSwitcherMode, just add all as is. We don't want
-            // them to be sorted alphabetically.
-            if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::TabSwitchMode)
-            {
-                for (auto action : commandsToFilter)
-                {
-                    actions.push_back(action);
-                }
+            // Update filter for all commands
+            // This will modify the highlighting but will also lead to recomputation of weight (and consequently sorting).
+            // Pay attention that it already updates the highlighting in the UI
+            action.UpdateFilter(searchText);
 
-                return actions;
-            }
-
-            // Add all the commands, but make sure they're sorted alphabetically.
-            std::vector<winrt::TerminalApp::FilteredCommand> sortedCommands;
-            sortedCommands.reserve(commandsToFilter.Size());
-
-            for (auto action : commandsToFilter)
-            {
-                sortedCommands.push_back(action);
-            }
-            std::sort(sortedCommands.begin(),
-                      sortedCommands.end(),
-                      _compareCommandNames);
-
-            for (auto action : sortedCommands)
+            // if there is active search we skip commands with 0 weight
+            if (searchText.empty() || action.Weight() > 0)
             {
                 actions.push_back(action);
             }
-
-            return actions;
         }
 
-        // Here, there was some filter text.
-        // Show these actions in a weighted order.
-        // - Matching the first character of a word, then the first char of a
-        //   subsequent word seems better than just "the order they appear in
-        //   the list".
-        // - TODO GH#6647:"Recently used commands" ordering also seems valuable.
-        //      * This could be done by weighting the recently used commands
-        //        higher the more recently they were used, then weighting all
-        //        the unused commands as 1
-
-        // Use a priority queue to order commands so that "better" matches
-        // appear first in the list. The ordering will be determined by the
-        // match weight produced by _getWeight.
-        std::priority_queue<WeightedCommand> heap;
-
-        // TODO GH#7205: Find a better way to ensure that WCs of the same
-        // weight and name stay in the order in which they were pushed onto
-        // the PQ.
-        uint32_t counter = 0;
-        for (auto action : commandsToFilter)
-        {
-            auto weight = _getWeight(searchText, action.Command().Name());
-            if (weight > 0)
-            {
-                WeightedCommand wc;
-                wc.filteredCommand = action;
-                wc.weight = weight;
-                wc.inOrderCounter = counter++;
-
-                heap.push(wc);
-            }
-        }
-
-        // At this point, all the commands in heap are matches. We've also
-        // sorted commands with the same weight alphabetically.
-        // Remove everything in-order from the queue, and add to the list of
-        // filtered actions.
-        while (!heap.empty())
-        {
-            auto top = heap.top();
-            heap.pop();
-            actions.push_back(top.filteredCommand);
-        }
-
+        // Add all the commands, but make sure they're sorted.
+        std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
         return actions;
     }
 
     // Method Description:
     // - Update our list of filtered actions to reflect the current contents of
-    //   the input box. For more details on which commands will be displayed,
-    //   see `_getWeight`.
+    //   the input box.
     // Arguments:
     // - <none>
     // Return Value:
@@ -954,105 +850,6 @@ namespace winrt::TerminalApp::implementation
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
         }
-
-        // Update filter for all commands
-        // It is important to modify the text highlighting for commands
-        // that were not updated in the original observable vector.
-        // For such command an update will trigger PropertyChanged notification
-        // to update the view.
-        // This action will be trivial for the newly added commands - because their filter
-        // was just computed.
-        auto filter = _searchBox().Text();
-        for (const auto& action : _filteredActions)
-        {
-            action.UpdateFilter(filter);
-        }
-    }
-
-    // Function Description:
-    // - Calculates a "weighting" by which should be used to order a command
-    //   name relative to other names, given a specific search string.
-    //   Currently, this is based off of two factors:
-    //   * The weight is incremented once for each matched character of the
-    //     search text.
-    //   * If a matching character from the search text was found at the start
-    //     of a word in the name, then we increment the weight again.
-    //     * For example, for a search string "sp", we want "Split Pane" to
-    //       appear in the list before "Close Pane"
-    //   * Consecutive matches will be weighted higher than matches with
-    //     characters in between the search characters.
-    // - This will return 0 if the command should not be shown. If all the
-    //   characters of search text appear in order in `name`, then this function
-    //   will return a positive number. There can be any number of characters
-    //   separating consecutive characters in searchText.
-    //   * For example:
-    //      "name": "New Tab"
-    //      "name": "Close Tab"
-    //      "name": "Close Pane"
-    //      "name": "[-] Split Horizontal"
-    //      "name": "[ | ] Split Vertical"
-    //      "name": "Next Tab"
-    //      "name": "Prev Tab"
-    //      "name": "Open Settings"
-    //      "name": "Open Media Controls"
-    //   * "open" should return both "**Open** Settings" and "**Open** Media Controls".
-    //   * "Tab" would return "New **Tab**", "Close **Tab**", "Next **Tab**" and "Prev
-    //     **Tab**".
-    //   * "P" would return "Close **P**ane", "[-] S**p**lit Horizontal", "[ | ]
-    //     S**p**lit Vertical", "**P**rev Tab", "O**p**en Settings" and "O**p**en Media
-    //     Controls".
-    //   * "sv" would return "[ | ] Split Vertical" (by matching the **S** in
-    //     "Split", then the **V** in "Vertical").
-    // Arguments:
-    // - searchText: the string of text to search for in `name`
-    // - name: the name to check
-    // Return Value:
-    // - the relative weight of this match
-    int CommandPalette::_getWeight(const winrt::hstring& searchText,
-                                   const winrt::hstring& name)
-    {
-        int totalWeight = 0;
-        bool lastWasSpace = true;
-
-        auto it = name.cbegin();
-
-        for (auto searchChar : searchText)
-        {
-            searchChar = std::towlower(searchChar);
-            // Advance the iterator to the next character that we're looking
-            // for.
-
-            bool lastWasMatch = true;
-            while (true)
-            {
-                // If we are at the end of the name string, we haven't found
-                // it.
-                if (it == name.cend())
-                {
-                    return false;
-                }
-
-                // found it
-                if (std::towlower(*it) == searchChar)
-                {
-                    break;
-                }
-
-                lastWasSpace = *it == L' ';
-                ++it;
-                lastWasMatch = false;
-            }
-
-            // Advance the iterator by one character so that we don't
-            // end up on the same character in the next iteration.
-            ++it;
-
-            totalWeight += 1;
-            totalWeight += lastWasSpace ? 1 : 0;
-            totalWeight += (lastWasMatch) ? 1 : 0;
-        }
-
-        return totalWeight;
     }
 
     void CommandPalette::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)

@@ -18,6 +18,5 @@ namespace TerminalApp
         Int32 Weight;
 
         void UpdateFilter(String filter);
-        void Compare(FilteredCommand other);
     }
 }
