@@ -2541,6 +2541,8 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
         auto fillAttributes = GetAttributes();
         fillAttributes.SetStandardErase();
         row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
+        // The row should also be single width to start with.
+        row.SetLineRendition(LineRendition::SingleWidth);
     }
 }
 

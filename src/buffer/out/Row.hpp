@@ -21,6 +21,7 @@ Revision History:
 #pragma once
 
 #include "AttrRow.hpp"
+#include "LineRendition.hpp"
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
 #include "CharRow.hpp"
@@ -48,6 +49,9 @@ public:
     const ATTR_ROW& GetAttrRow() const noexcept { return _attrRow; }
     ATTR_ROW& GetAttrRow() noexcept { return _attrRow; }
 
+    LineRendition GetLineRendition() const noexcept { return _lineRendition; }
+    void SetLineRendition(const LineRendition lineRendition) noexcept { _lineRendition = lineRendition; }
+
     SHORT GetId() const noexcept { return _id; }
     void SetId(const SHORT id) noexcept { _id = id; }
 
@@ -70,6 +74,7 @@ public:
 private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
+    LineRendition _lineRendition;
     SHORT _id;
     unsigned short _rowWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
