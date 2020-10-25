@@ -698,6 +698,19 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 }
 
 // Routine Description:
+// - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
+// Arguments:
+// - rendition - Determines whether the line will be rendered as single width, double
+//   width, or as one half of a double height line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetLineRendition(const LineRendition /*rendition*/)
+{
+    // TODO
+    return false;
+}
+
+// Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
 //       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
 // Arguments:

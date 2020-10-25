@@ -265,6 +265,22 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->LockingShiftRight(3);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
         break;
+    case EscActionCodes::DECDHL_DoubleHeightLineTop:
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        break;
+    case EscActionCodes::DECDHL_DoubleHeightLineBottom:
+        _dispatch->SetLineRendition(LineRendition::DoubleHeightBottom);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
+        break;
+    case EscActionCodes::DECSWL_SingleWidthLine:
+        _dispatch->SetLineRendition(LineRendition::SingleWidth);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSWL);
+        break;
+    case EscActionCodes::DECDWL_DoubleWidthLine:
+        _dispatch->SetLineRendition(LineRendition::DoubleWidth);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDWL);
+        break;
     case EscActionCodes::DECALN_ScreenAlignmentPattern:
         success = _dispatch->ScreenAlignmentPattern();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECALN);
