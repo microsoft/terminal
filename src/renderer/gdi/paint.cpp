@@ -603,6 +603,8 @@ using namespace Microsoft::Console::Render;
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(bottom);
     }
+    break;
+
     case CursorType::EmptyBox:
     {
         RECT top, left, right, bottom;
