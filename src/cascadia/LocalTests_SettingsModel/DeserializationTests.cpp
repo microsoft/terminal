@@ -2573,7 +2573,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(settings->Profiles().Size(), copyImpl->Profiles().Size());
 
             // so we should only have one parent, instead of two
-            auto srcProfile{  winrt::get_self<implementation::Profile>(settings->Profiles().GetAt(0)) };
+            auto srcProfile{ winrt::get_self<implementation::Profile>(settings->Profiles().GetAt(0)) };
             auto copyProfile{ winrt::get_self<implementation::Profile>(copyImpl->Profiles().GetAt(0)) };
             VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 0u);
             VERIFY_ARE_EQUAL(srcProfile->Parents().size(), copyProfile->Parents().size());
