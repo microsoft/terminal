@@ -2523,5 +2523,63 @@ namespace SettingsModelLocalTests
         // profile.defaults should be different between the two graphs
         VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings->HasName(), copyImpl->_userDefaultProfileSettings->HasName());
         VERIFY_ARE_NOT_EQUAL(settings->_userDefaultProfileSettings->Name(), copyImpl->_userDefaultProfileSettings->Name());
+
+        Log::Comment(L"Test empty profiles.defaults");
+        const std::string emptyPDJson{ R"(
+        {
+            "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+            "profiles":
+            {
+                "defaults": {
+                },
+                "list": [
+                    {
+                        "guid": "{61c54bbd-2222-5271-96e7-009a87ff44bf}",
+                        "name": "PowerShell"
+                    }
+                ]
+            }
+        })" };
+
+        const std::string missingPDJson{ R"(
+        {
+            "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+            "profiles":
+            [
+                {
+                    "guid": "{61c54bbd-2222-5271-96e7-009a87ff44bf}",
+                    "name": "PowerShell"
+                }
+            ]
+        })" };
+
+        auto verifyEmptyPD = [this](const std::string json) {
+            VerifyParseSucceeded(json);
+
+            auto settings{ winrt::make_self<implementation::CascadiaSettings>() };
+            settings->_ParseJsonString(json, false);
+            settings->_ApplyDefaultsFromUserSettings();
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateSettings();
+
+            const auto copy{ settings->Copy() };
+            const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
+
+            // test optimization: if we don't have profiles.defaults, don't add it to the tree
+            VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
+            VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings, copyImpl->_userDefaultProfileSettings);
+
+            VERIFY_ARE_EQUAL(settings->Profiles().Size(), 1u);
+            VERIFY_ARE_EQUAL(settings->Profiles().Size(), copyImpl->Profiles().Size());
+
+            // so we should only have one parent, instead of two
+            auto srcProfile{  winrt::get_self<implementation::Profile>(settings->Profiles().GetAt(0)) };
+            auto copyProfile{ winrt::get_self<implementation::Profile>(copyImpl->Profiles().GetAt(0)) };
+            VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 0u);
+            VERIFY_ARE_EQUAL(srcProfile->Parents().size(), copyProfile->Parents().size());
+        };
+
+        verifyEmptyPD(emptyPDJson);
+        verifyEmptyPD(missingPDJson);
     }
 }

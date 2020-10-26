@@ -725,7 +725,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
     auto defaultSettings{ Json::Value::null };
     if (const auto profiles{ _userSettings[JsonKey(ProfilesKey)] })
     {
-        if (profiles.isObject())
+        if (profiles.isObject() && !profiles[JsonKey(DefaultSettingsKey)].empty())
         {
             defaultSettings = profiles[JsonKey(DefaultSettingsKey)];
         }
