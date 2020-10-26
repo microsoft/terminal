@@ -201,8 +201,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Alpha is specified
             if (workingString.size() == 8)
             {
-                color.a = ::base::checked_cast<uint8_t>(std::stoi(str.substr(0, 2), nullptr, 16));
-                workingString = str.substr(2);
+                color.a = ::base::checked_cast<uint8_t>(std::stoi(workingString.substr(0, 2), nullptr, 16));
+                workingString = workingString.substr(2);
             }
             else
             {
