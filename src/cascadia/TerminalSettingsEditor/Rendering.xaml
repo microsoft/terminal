@@ -9,25 +9,26 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
-
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          Margin="0,12,0,0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
-        <TextBlock x:Uid="Globals_Rendering"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Margin="0,0,0,20" />
-        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-            <TextBlock x:Uid="Globals_RenderingDisclaimer"
-                   Style="{StaticResource BodyTextBlockStyle}"
-                   Margin="0,0,0,20" />
-            <CheckBox x:Uid="Globals_ForceFullRepaint" IsChecked="{x:Bind GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            <CheckBox x:Uid="Globals_SoftwareRendering" IsChecked="{x:Bind GlobalSettings.SoftwareRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-        </StackPanel>
-    </Grid>
+    <ScrollViewer>
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Margin="0,12,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Uid="Globals_Rendering"
+                       Style="{StaticResource SubheaderTextBlockStyle}"
+                       Margin="0,0,0,20" />
+            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
+                <TextBlock x:Uid="Globals_RenderingDisclaimer"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       Margin="0,0,0,20" />
+                <CheckBox x:Uid="Globals_ForceFullRepaint" IsChecked="{x:Bind GlobalSettings.ForceFullRepaintRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_SoftwareRendering" IsChecked="{x:Bind GlobalSettings.SoftwareRendering, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
 </Page>

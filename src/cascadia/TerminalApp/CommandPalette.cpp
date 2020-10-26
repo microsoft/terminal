@@ -118,6 +118,51 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Scrolls the focus up or down the list of commands.
+    // Arguments:
+    // - pageDown: if true, we're attempting to move to the last visible item in the
+    //   list. Otherwise, we're attempting to move to the first visible item.
+    // Return Value:
+    // - <none>
+    void CommandPalette::ScrollDown(const bool pageDown)
+    {
+        const auto container = _filteredActionsView().ContainerFromIndex(0);
+        const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
+        const auto itemHeight = ::base::saturated_cast<int>(item.ActualHeight());
+        const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
+        const int numVisibleItems = listHeight / itemHeight;
+
+        auto selected = _filteredActionsView().SelectedIndex();
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+
+        const auto newIndex = ((numItems + selected + (pageDown ? numVisibleItems : -numVisibleItems)) % numItems);
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+    // Method Description:
+    // - Moves the focus either to the top item or to the end item in the list of commands.
+    // Arguments:
+    // - end: if true, we're attempting to move to the last item in the
+    //   list. Otherwise, we're attempting to move to the first item.
+    //   Depends on the pageUpDown argument.
+    // Return Value:
+    // - <none>
+    void CommandPalette::GoEnd(const bool end)
+    {
+        const auto lastIndex = ::base::saturated_cast<int>(_filteredActionsView().Items().Size() - 1);
+        if (end)
+        {
+            _filteredActionsView().SelectedIndex(lastIndex);
+        }
+        else
+        {
+            _filteredActionsView().SelectedIndex(0);
+        }
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+    // Method Description:
     // - Called when the command selection changes. We'll use this in the tab
     //   switcher to "preview" tabs as the user navigates the list of tabs. To
     //   do that, we'll dispatch the switch to tab command for this tab, but not
@@ -191,6 +236,30 @@ namespace winrt::TerminalApp::implementation
         {
             // Action Mode: Move focus to the previous item in the list.
             SelectNextItem(true);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::PageUp)
+        {
+            // Action Mode: Move focus to the first visible item in the list.
+            ScrollDown(false);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::PageDown)
+        {
+            // Action Mode: Move focus to the last visible item in the list.
+            ScrollDown(true);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::Home)
+        {
+            // Action Mode: Move focus to the first item in the list.
+            GoEnd(false);
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::End)
+        {
+            // Action Mode: Move focus to the last item in the list.
+            GoEnd(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)

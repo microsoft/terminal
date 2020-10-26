@@ -42,9 +42,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
     </Page.Resources>
 
-
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          ColumnSpacing="10">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -55,38 +53,38 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
         <TextBlock x:Uid="ColorScheme_ColorSchemes"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Margin="0,0,0,20"
-                   Grid.Row="0" />
+                Style="{StaticResource SubheaderTextBlockStyle}"
+                Margin="0,0,0,20"
+                Grid.Row="0" />
 
         <StackPanel Grid.Row="1"
                     Grid.Column="0">
             <ComboBox x:Name="ColorSchemeComboBox"
-                      SelectedIndex="0"
-                      ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                      SelectionChanged="ColorSchemeSelectionChanged" Width="160">
+                    SelectedIndex="0"
+                    ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                    SelectionChanged="ColorSchemeSelectionChanged" Width="160">
             </ComboBox>
         </StackPanel>
 
         <ScrollViewer Grid.Row="2"
                       Grid.Column="0">
             <ItemsControl x:Name="ColorTableControl"
-                          ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}">
+                            ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:ColorTableEntry">
                         <StackPanel Orientation="Horizontal">
                             <TextBox Header="{x:Bind Name, Mode=OneWay}"
-                                     Text="{x:Bind Color, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
-                                     Tag="{x:Bind Index, Mode=OneWay}"
-                                     HorizontalAlignment="Left"
-                                     GotFocus="TextBoxGotFocus"
-                                     LostFocus="TextBoxLostFocus"/>
+                                        Text="{x:Bind Color, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
+                                        Tag="{x:Bind Index, Mode=OneWay}"
+                                        HorizontalAlignment="Left"
+                                        GotFocus="TextBoxGotFocus"
+                                        LostFocus="TextBoxLostFocus"/>
                             <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(Color), Mode=OneWay}">
                                 <Button.Flyout>
                                     <Flyout>
                                         <ColorPicker Tag="{x:Bind Index, Mode=TwoWay}"
-                                                     Color="{x:Bind Color, Mode=TwoWay}"
-                                                     ColorChanged="ColorPickerChanged"/>
+                                                        Color="{x:Bind Color, Mode=TwoWay}"
+                                                        ColorChanged="ColorPickerChanged"/>
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>

@@ -33,6 +33,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         _activePane = _rootPane;
+        Content(_rootPane->GetRootElement());
 
         _MakeTabViewItem();
         _CreateContextMenu();
@@ -58,24 +59,6 @@ namespace winrt::TerminalApp::implementation
 
         UpdateTitle();
         _RecalculateAndApplyTabColor();
-    }
-
-    // Method Description:
-    // - Get the root UIElement of this Tab's root pane.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The UIElement acting as root of the Tab's root pane.
-    FrameworkElement TerminalTab::Content()
-    {
-        if (_zoomedPane)
-        {
-            return _zoomedPane->GetRootElement();
-        }
-        else
-        {
-            return _rootPane->GetRootElement();
-        }
     }
 
     // Method Description:
@@ -482,6 +465,22 @@ namespace winrt::TerminalApp::implementation
             {
                 tab->_UpdateActivePane(sender);
                 tab->_RecalculateAndApplyTabColor();
+            }
+        });
+
+        // Add a Closed event handler to the Pane. If the pane closes out from
+        // underneath us, and it's zoomed, we want to be able to make sure to
+        // update our state accordingly to un-zoom that pane. See GH#7252.
+        pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+            if (auto tab{ weakThis.get() })
+            {
+                if (tab->_zoomedPane)
+                {
+                    co_await winrt::resume_foreground(tab->Content().Dispatcher());
+
+                    tab->Content(tab->_rootPane->GetRootElement());
+                    tab->ExitZoom();
+                }
             }
         });
     }
@@ -1045,6 +1044,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
+        Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
     {
@@ -1052,6 +1052,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _UpdateTabHeader();
+        Content(_rootPane->GetRootElement());
     }
 
     bool TerminalTab::IsZoomed()
