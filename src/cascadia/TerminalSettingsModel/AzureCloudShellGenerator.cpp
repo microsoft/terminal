@@ -33,7 +33,7 @@ std::vector<Profile> AzureCloudShellGenerator::GenerateProfiles()
 
     if (AzureConnection::IsAzureConnectionAvailable())
     {
-        auto azureCloudShellProfile{ CreateDefaultProfile(L"Azure Cloud Shell") };
+        auto azureCloudShellProfile{ CreateDefaultProfile(L"Azure Cloud Shell", GetNamespace()) };
         azureCloudShellProfile.Commandline(L"Azure");
         azureCloudShellProfile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
         azureCloudShellProfile.ColorSchemeName(L"Vintage");

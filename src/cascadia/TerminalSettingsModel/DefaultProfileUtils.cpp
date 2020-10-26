@@ -13,12 +13,13 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 //   guid and name.
 // Arguments:
 // - name: the name of the new profile.
+// - source: the source of the new profile.
 // Return Value:
 // - A Profile, ready to be filled in
-winrt::Microsoft::Terminal::Settings::Model::Profile CreateDefaultProfile(const std::wstring_view name)
+winrt::Microsoft::Terminal::Settings::Model::Profile CreateDefaultProfile(const std::wstring_view name, const std::wstring_view source)
 {
-    const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
-                                                                           gsl::as_bytes(gsl::make_span(name))) };
+    const winrt::guid profileGuid{ winrt::Microsoft::Terminal::Settings::Model::implementation::Profile::GenerateGuidForProfile(winrt::hstring{ name }, winrt::hstring{ source }) };
+
     auto newProfile = winrt::make<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profileGuid);
     newProfile.Name(name);
 

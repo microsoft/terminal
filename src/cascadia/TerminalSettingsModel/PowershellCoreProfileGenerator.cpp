@@ -308,7 +308,7 @@ std::vector<Profile> PowershellCoreProfileGenerator::GenerateProfiles()
     for (const auto& psI : psInstances)
     {
         const auto name = psI.Name();
-        auto profile{ CreateDefaultProfile(name) };
+        auto profile{ CreateDefaultProfile(name, GetNamespace()) };
         profile.Commandline(psI.executablePath.wstring());
         profile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
         profile.ColorSchemeName(L"Campbell");
