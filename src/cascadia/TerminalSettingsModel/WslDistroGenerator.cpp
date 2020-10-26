@@ -124,7 +124,7 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
             {
                 distName.resize(firstChar);
             }
-            auto WSLDistro{ CreateDefaultProfile(distName, GetNamespace()) };
+            auto WSLDistro{ CreateDefaultProfile(distName) };
 
             WSLDistro.Commandline(L"wsl.exe -d " + distName);
             WSLDistro.ColorSchemeName(L"Campbell");

@@ -60,7 +60,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring ExpandedBackgroundImagePath() const;
         void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
-        static guid GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
         bool HasBackgroundImageAlignment() const noexcept;
@@ -70,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
         void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
-        GETSET_SETTING(guid, Guid, GenerateGuidForProfile(Name(), Source()));
+        GETSET_SETTING(guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         GETSET_SETTING(hstring, Name, L"Default");
         GETSET_SETTING(hstring, Source);
         GETSET_SETTING(bool, Hidden, false);
@@ -144,6 +143,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
 
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
+
+        static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;

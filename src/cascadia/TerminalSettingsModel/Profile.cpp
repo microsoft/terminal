@@ -237,7 +237,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
         // If the other json object didn't have a GUID,
         // check if we auto-generate the same guid using the name and source.
         const auto otherName{ JsonUtils::GetValueForKey<std::optional<winrt::hstring>>(json, NameKey) };
-        if (Guid() != GenerateGuidForProfile(otherName ? *otherName : L"Default", otherSource ? *otherSource : L""))
+        if (Guid() != _GenerateGuidForProfile(otherName ? *otherName : L"Default", otherSource ? *otherSource : L""))
         {
             return false;
         }
@@ -437,7 +437,7 @@ void Profile::GenerateGuidIfNecessary() noexcept
     {
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
-        _Guid = Profile::GenerateGuidForProfile(Name(), Source());
+        _Guid = Profile::_GenerateGuidForProfile(Name(), Source());
 
         TraceLoggingWrite(
             g_hSettingsModelProvider,
@@ -468,7 +468,7 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 // - name: The name to generate a unique GUID from
 // Return Value:
 // - a uuidv5 GUID generated from the given name.
-winrt::guid Profile::GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept
+winrt::guid Profile::_GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept
 {
     // If we have a _source, then we can from a dynamic profile generator. Use
     // our source to build the namespace guid, instead of using the default GUID.
@@ -500,7 +500,7 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     const auto name{ JsonUtils::GetValueForKey<hstring>(json, NameKey) };
     const auto source{ JsonUtils::GetValueForKey<hstring>(json, SourceKey) };
 
-    return Profile::GenerateGuidForProfile(name, source);
+    return Profile::_GenerateGuidForProfile(name, source);
 }
 
 #pragma region BackgroundImageAlignment
