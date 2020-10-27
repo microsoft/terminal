@@ -103,6 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 auto index = winrt::unbox_value<uint8_t>(tag);
                 CurrentColorScheme().SetColorTableEntry(index, args.NewColor());
+                _CurrentColorTable.GetAt(index).Color(args.NewColor());
             }
         }
     }
@@ -121,94 +122,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto entry = winrt::make<ColorTableEntry>(i, colorScheme.Table()[i]);
             _CurrentColorTable.Append(entry);
         }
-    }
-
-    // Function Description:
-    // - Called when a TextBox receives focus. We use this to save
-    //   the text before any changes are made in case an invalid
-    //   hex code is entered in a TextBox.
-    // Arguments:
-    // - sender: the textbox that raised the event.
-    // Return Value:
-    // - <none>
-    void ColorSchemes::TextBoxGotFocus(IInspectable const& sender,
-                                       RoutedEventArgs const& /*args*/)
-    {
-        if (auto textBox = sender.try_as<TextBox>())
-        {
-            // Save the text of the textbox being modified.
-            _textBoxSavedText = textBox.Text();
-        }
-    }
-
-    // Function Description:
-    // - Called when a TextBox loses focus. We use this handler along with
-    //   a OneWay binding to the color because it gives us the ability to revert
-    //   the text in a TextBox back to the original hex color if an invalid
-    //   hex color is given.
-    //   Since this handler is used for both color table TextBoxes and non color table
-    //   boxes, we use the Tag property of the TextBox to identify what color to update.
-    //   If the Tag is an integer, we need to update a color in the color table. If the Tag
-    //   is a string, we need to update one of the Foreground, Background, etc, colors.
-    // Arguments:
-    // - sender: the textbox that just lost focus.
-    // Return Value:
-    // - <none>
-    void ColorSchemes::TextBoxLostFocus(IInspectable const& sender,
-                                        RoutedEventArgs const& /*args*/)
-    {
-        if (auto textBox = sender.try_as<TextBox>())
-        {
-            if (auto tag = textBox.Tag())
-            {
-                til::color newColor;
-                try
-                {
-                    newColor = til::color::HexToColor(textBox.Text().c_str());
-                }
-                catch (...)
-                {
-                    // If the string wasn't a valid hex string, revert it back to the original color
-                    textBox.Text(_textBoxSavedText);
-                    return;
-                }
-
-                // The tag is either an index to our color table, or a string representing the
-                // colors not in the color table (e.g. Foreground, Background).
-                auto propertyValue = tag.as<IPropertyValue>();
-                if (propertyValue.Type() == Windows::Foundation::PropertyType::UInt8)
-                {
-                    auto index = winrt::unbox_value<uint8_t>(tag);
-                    CurrentColorScheme().SetColorTableEntry(index, newColor);
-                    CurrentColorTable().GetAt(index).Color(newColor);
-                }
-                else if (propertyValue.Type() == Windows::Foundation::PropertyType::String)
-                {
-                    auto colorID = winrt::unbox_value<hstring>(tag);
-                    if (colorID == L"Foreground")
-                    {
-                        CurrentColorScheme().Foreground(newColor);
-                    }
-                    else if (colorID == L"Background")
-                    {
-                        CurrentColorScheme().Background(newColor);
-                    }
-                    else if (colorID == L"CursorColor")
-                    {
-                        CurrentColorScheme().CursorColor(newColor);
-                    }
-                    else if (colorID == L"SelectionBackground")
-                    {
-                        CurrentColorScheme().SelectionBackground(newColor);
-                    }
-                }
-            }
-        }
-    }
-
-    Windows::UI::Xaml::Media::Brush ColorSchemes::ColorToBrush(Windows::UI::Color color)
-    {
-        return SolidColorBrush(color);
     }
 
     ColorTableEntry::ColorTableEntry(uint8_t index, Windows::UI::Color color)

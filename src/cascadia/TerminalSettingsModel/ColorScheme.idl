@@ -3,8 +3,7 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    [default_interface] runtimeclass ColorScheme : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
+    [default_interface] runtimeclass ColorScheme {
         String Name;
 
         Windows.UI.Color Foreground;

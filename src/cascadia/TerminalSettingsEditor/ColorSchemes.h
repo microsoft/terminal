@@ -15,8 +15,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static Windows::UI::Xaml::Media::Brush ColorToBrush(Windows::UI::Color color);
 
-        void TextBoxGotFocus(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& args);
-        void TextBoxLostFocus(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& args);
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
 
@@ -32,8 +30,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
-
-        winrt::hstring _textBoxSavedText;
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>

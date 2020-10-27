@@ -16,13 +16,13 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Style TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,0,20"/>
         </Style>
-
+        
         <Style TargetType="Button">
             <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
-            <Setter Property="Height" Value="37" />
-            <Setter Property="Width" Value="37" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="100" />
             <Setter Property="FontSize" Value="15" />
-            <Setter Property="Margin" Value="10,22,0,0" />
+            <Setter Property="Margin" Value="10,0,0,20" />
             <Setter Property="CornerRadius" Value="2"/>
         </Style>
 
@@ -34,57 +34,63 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Style TargetType="ColorPicker">
             <Setter Property="IsColorSliderVisible" Value="False"/>
             <Setter Property="IsColorChannelTextInputVisible" Value="False"/>
-            <Setter Property="IsHexInputVisible" Value="False"/>
+            <Setter Property="IsHexInputVisible" Value="True"/>
             <Setter Property="IsAlphaSliderVisible" Value="True"/>
             <Setter Property="IsAlphaTextInputVisible" Value="True"/>
         </Style>
 
+        <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
         <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
     </Page.Resources>
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
-        <TextBlock x:Uid="ColorScheme_ColorSchemes"
-                Style="{StaticResource SubheaderTextBlockStyle}"
-                Margin="0,0,0,20"
-                Grid.Row="0" />
+    <ScrollViewer>
+        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="1"
-                    Grid.Column="0">
-            <ComboBox x:Name="ColorSchemeComboBox"
-                    SelectedIndex="0"
-                    ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                    SelectionChanged="ColorSchemeSelectionChanged" Width="160">
-            </ComboBox>
-        </StackPanel>
+            <TextBlock x:Uid="ColorScheme_ColorSchemes"
+                       Style="{StaticResource SubheaderTextBlockStyle}"
+                       Margin="10,0,0,20"
+                       Grid.Row="0" />
 
-        <ScrollViewer Grid.Row="2"
-                      Grid.Column="0">
+            <StackPanel Grid.Row="1"
+                        Grid.Column="0">
+                <ComboBox x:Name="ColorSchemeComboBox"
+                          Margin="10,0,0,0"
+                          SelectedIndex="0"
+                          ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                          SelectionChanged="ColorSchemeSelectionChanged" Width="160">
+                </ComboBox>
+            </StackPanel>
+
             <ItemsControl x:Name="ColorTableControl"
-                            ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}">
+                          ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}"
+                          Grid.Row="2"
+                          Grid.Column="0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid Orientation="Horizontal"
+                                       MaximumRowsOrColumns="4"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="local:ColorTableEntry">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBox Header="{x:Bind Name, Mode=OneWay}"
-                                        Text="{x:Bind Color, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
-                                        Tag="{x:Bind Index, Mode=OneWay}"
-                                        HorizontalAlignment="Left"
-                                        GotFocus="TextBoxGotFocus"
-                                        LostFocus="TextBoxLostFocus"/>
-                            <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(Color), Mode=OneWay}">
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind Name, Mode=OneWay}"
+                                       Margin="10,0,0,10"/>
+                            <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                                 <Button.Flyout>
                                     <Flyout>
                                         <ColorPicker Tag="{x:Bind Index, Mode=TwoWay}"
-                                                        Color="{x:Bind Color, Mode=TwoWay}"
-                                                        ColorChanged="ColorPickerChanged"/>
+                                                     Color="{x:Bind Color, Mode=TwoWay}"
+                                                     ColorChanged="ColorPickerChanged"/>
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>
@@ -92,72 +98,54 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-        </ScrollViewer>
 
-        <ScrollViewer Grid.Row="2"
-                      Grid.Column="1">
-            <ItemsControl>
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Uid="ColorScheme_Foreground"
-                             Text="{x:Bind CurrentColorScheme.Foreground, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
-                             HorizontalAlignment="Left"
-                             Tag="Foreground"
-                             GotFocus="TextBoxGotFocus"
-                             LostFocus="TextBoxLostFocus"/>
-                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.Foreground), Mode=OneWay}">
+            <ItemsControl Grid.Row="2"
+                          Grid.Column="1">
+                <StackPanel Orientation="Vertical" Height="59">
+                    <TextBlock x:Uid="ColorScheme_Foreground"
+                               Margin="10,0,0,10"/>
+                    <Button Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
-                                <ColorPicker Color="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}" />
+                                <ColorPicker x:Name="ForegroundPicker" Color="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}" />
                             </Flyout>
                         </Button.Flyout>
                     </Button>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Uid="ColorScheme_Background"
-                             Text="{x:Bind CurrentColorScheme.Background, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
-                             HorizontalAlignment="Left"
-                             Tag="Background"
-                             GotFocus="TextBoxGotFocus"
-                             LostFocus="TextBoxLostFocus"/>
-                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.Background), Mode=OneWay}">
+                <StackPanel Orientation="Vertical" Height="59">
+                    <TextBlock x:Uid="ColorScheme_Background"
+                               Margin="10,0,0,10"/>
+                    <Button Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
-                                <ColorPicker Color="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}" />
+                                <ColorPicker x:Name="BackgroundPicker" Color="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}" />
                             </Flyout>
                         </Button.Flyout>
                     </Button>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Uid="ColorScheme_CursorColor"
-                             Text="{x:Bind CurrentColorScheme.CursorColor, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
-                             HorizontalAlignment="Left"
-                             Tag="CursorColor"
-                             GotFocus="TextBoxGotFocus"
-                             LostFocus="TextBoxLostFocus"/>
-                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.CursorColor), Mode=OneWay}">
+                <StackPanel Orientation="Vertical" Height="59">
+                    <TextBlock x:Uid="ColorScheme_CursorColor"
+                               Margin="10,0,0,10"/>
+                    <Button Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
-                                <ColorPicker Color="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}" />
+                                <ColorPicker x:Name="CursorColorPicker" Color="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}" />
                             </Flyout>
                         </Button.Flyout>
                     </Button>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBox x:Uid="ColorScheme_SelectionBackground"
-                             Text="{x:Bind CurrentColorScheme.SelectionBackground, Converter={StaticResource ColorToHexConverter}, Mode=OneWay}"
-                             HorizontalAlignment="Left"
-                             Tag="SelectionBackground"
-                             GotFocus="TextBoxGotFocus"
-                             LostFocus="TextBoxLostFocus"/>
-                    <Button Background="{x:Bind local:ColorSchemes.ColorToBrush(CurrentColorScheme.SelectionBackground), Mode=OneWay}">
+                <StackPanel Orientation="Vertical" Height="59">
+                    <TextBlock x:Uid="ColorScheme_SelectionBackground"
+                               Margin="10,0,0,10"/>
+                    <Button Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
-                                <ColorPicker Color="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}" />
+                                <ColorPicker x:Name="SelectionBackgroundPicker" Color="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}" />
                             </Flyout>
                         </Button.Flyout>
                     </Button>
                 </StackPanel>
             </ItemsControl>
-        </ScrollViewer>
-    </Grid>
+        </Grid>
+    </ScrollViewer>
 </Page>
