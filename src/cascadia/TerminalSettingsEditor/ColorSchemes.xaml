@@ -16,7 +16,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Style TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,0,20"/>
         </Style>
-        
+
         <Style TargetType="Button">
             <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
             <Setter Property="Height" Value="30" />
