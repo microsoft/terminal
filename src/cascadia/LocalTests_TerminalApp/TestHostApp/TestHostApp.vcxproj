@@ -15,6 +15,7 @@
     <OutputSubDir>Tests\Data</OutputSubDir>
     <UseWmXml>true</UseWmXml>
     <ConfigurationType>Application</ConfigurationType>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
 
     <!--
     These two properties are very important!
