@@ -362,4 +362,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         return RS_(L"CloseTabsAfterDefaultCommandKey");
     }
+
+    winrt::hstring ScrollUpArgs::GenerateName() const
+    {
+        if (_RowsToScroll)
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ScrollUpSeveralRowsCommandKey")),
+                            _RowsToScroll.Value())
+            };
+        }
+        return RS_(L"ScrollUpCommandKey");
+    }
+
+    winrt::hstring ScrollDownArgs::GenerateName() const
+    {
+        if (_RowsToScroll)
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ScrollDownSeveralRowsCommandKey")),
+                            _RowsToScroll.Value())
+            };
+        }
+        return RS_(L"ScrollDownCommandKey");
+    }
 }
