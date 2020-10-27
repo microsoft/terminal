@@ -233,6 +233,14 @@ namespace winrt::TerminalApp::implementation
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
+        // If the tab switcher isn't currently open, then update the tab switch
+        // order on a reload. If the switcher is open, we don't want to change
+        // the ordering out from underneath the user.
+        if (CommandPalette().Visibility() != Visibility::Visible)
+        {
+            CommandPalette().SetTabSwitchOrder(_settings.GlobalSettings().TabSwitcherMode());
+        }
+
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
         // window will be, so they can subdivide that space.
@@ -1258,11 +1266,6 @@ namespace winrt::TerminalApp::implementation
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
-            uint32_t tabCount = _tabs.Size();
-            // Wraparound math. By adding tabCount and then calculating modulo tabCount,
-            // we clamp the values to the range [0, tabCount) while still supporting moving
-            // leftward from 0 to tabCount - 1.
-            auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
             _SelectTab(newTabIndex);
         }
     }
