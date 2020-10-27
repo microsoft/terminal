@@ -91,7 +91,6 @@ public:
     bool SecondaryDeviceAttributes() noexcept override { return false; } // DA2
     bool TertiaryDeviceAttributes() noexcept override { return false; } // DA3
     bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
-    bool RequestTerminalParameters(const DispatchTypes::ReportingPermission /*permission*/) noexcept override { return false; } // DECREQTPARM
 
     bool DesignateCodingSystem(const VTID /*codingSystem*/) noexcept override { return false; } // DOCS
     bool Designate94Charset(const size_t /*gsetNumber*/, const VTID /*charset*/) noexcept override { return false; } // SCS

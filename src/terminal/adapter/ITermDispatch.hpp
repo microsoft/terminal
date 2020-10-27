@@ -97,7 +97,6 @@ public:
     virtual bool SecondaryDeviceAttributes() = 0; // DA2
     virtual bool TertiaryDeviceAttributes() = 0; // DA3
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
-    virtual bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) = 0; // DECREQTPARM
 
     virtual bool DesignateCodingSystem(const VTID codingSystem) = 0; // DOCS
     virtual bool Designate94Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS

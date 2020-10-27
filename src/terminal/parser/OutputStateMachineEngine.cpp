@@ -469,10 +469,6 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, gsl::span<const 
     case CsiActionCodes::DA3_TertiaryDeviceAttributes:
         success = _VerifyDeviceAttributesParams(parameters);
         break;
-    case CsiActionCodes::DECREQTPARM_RequestTerminalParameters:
-        success = _dispatch->RequestTerminalParameters(parameters.at(0));
-        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECREQTPARM);
-        break;
     case CsiActionCodes::SU_ScrollUp:
     case CsiActionCodes::SD_ScrollDown:
         success = _GetScrollDistance(parameters, distance);
