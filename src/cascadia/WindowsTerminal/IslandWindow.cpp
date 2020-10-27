@@ -539,6 +539,9 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
         case 3:
             // sets the progress indicator to an indeterminate state
             _taskbar->SetProgressState(_window.get(), TBPF_INDETERMINATE);
+        case 4:
+            // sets the progress indicator to a pause state
+            _taskbar->SetProgressState(_window.get(), TBPF_PAUSED);
         default:
             break;
         }

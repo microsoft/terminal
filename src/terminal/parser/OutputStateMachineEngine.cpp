@@ -960,7 +960,7 @@ bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view strin
             const auto progressStr = stateAndProgress.substr(delimPos + 1);
             state = std::stoi(til::u16u8(stateStr));
             progress = std::stoi(til::u16u8(progressStr));
-            if (state < 0 || state > 3 || progress < 0 || progress > 100)
+            if (state < 0 || state > 4 || progress < 0 || progress > 100)
             {
                 return false;
             }
