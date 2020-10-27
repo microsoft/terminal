@@ -37,9 +37,8 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
-static constexpr std::string_view UseTabSwitcherKey{ "useTabSwitcher" };
+static constexpr std::string_view TabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
-static constexpr std::string_view TabSwitchOrderKey{ "tabSwitchOrder" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -89,7 +88,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
     globals->_AlwaysOnTop = _AlwaysOnTop;
-    globals->_UseTabSwitcher = _UseTabSwitcher;
+    globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
 
     globals->_unparsedDefaultProfile = _unparsedDefaultProfile;
@@ -200,11 +199,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
-    JsonUtils::GetValueForKey(json, UseTabSwitcherKey, _UseTabSwitcher);
+    JsonUtils::GetValueForKey(json, TabSwitcherModeKey, _TabSwitcherMode);
 
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
-
-    JsonUtils::GetValueForKey(json, TabSwitchOrderKey, _TabSwitcherMode);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy

@@ -55,14 +55,14 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherOrder)
-{
-    static constexpr std::array<pair_type, 3> mappings = {
-        pair_type{ "default", ValueType::Default },
-        pair_type{ "inOrder", ValueType::InOrder },
-        pair_type{ "mru", ValueType::MostRecentlyUsed }
-    };
-};
+//JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherOrder)
+//{
+//    static constexpr std::array<pair_type, 3> mappings = {
+//        pair_type{ "default", ValueType::Default },
+//        pair_type{ "inOrder", ValueType::InOrder },
+//        pair_type{ "mru", ValueType::MostRecentlyUsed }
+//    };
+//};
 
 JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
 {
@@ -350,4 +350,26 @@ JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
         pair_type{ "alt", ValueType::Menu },
         pair_type{ "shift", ValueType::Shift },
     };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "mru", ValueType::MostRecentlyUsed },
+        pair_type{ "inOrder", ValueType::InOrder },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::MostRecentlyUsed : ValueType::Disabled;
+        }
+        return BaseEnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseEnumMapper::CanConvert(json) || json.isBool();
+    }
 };

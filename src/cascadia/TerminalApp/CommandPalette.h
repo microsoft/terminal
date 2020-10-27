@@ -41,7 +41,7 @@ namespace winrt::TerminalApp::implementation
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
-        void SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherOrder order);
+        void SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherMode order);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -101,7 +101,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _inOrderTabActions{ nullptr };
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _mruTabActions{ nullptr };
         uint32_t _switcherStartIdx;
-        winrt::Microsoft::Terminal::Settings::Model::TabSwitcherOrder _tabSwitchOrder{ Microsoft::Terminal::Settings::Model::TabSwitcherOrder::MostRecentlyUsed };
+        winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitchOrder{ Microsoft::Terminal::Settings::Model::TabSwitcherMode::MostRecentlyUsed };
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;

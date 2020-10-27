@@ -475,7 +475,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSearchMode:
             return _inOrderTabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _tabSwitchOrder == TabSwitcherOrder::InOrder ? _inOrderTabActions : _mruTabActions;
+            return _tabSwitchOrder == TabSwitcherMode::InOrder ? _inOrderTabActions : _mruTabActions;
         case CommandPaletteMode::CommandlineMode:
             return winrt::single_threaded_vector<Command>();
         default:
@@ -1075,7 +1075,7 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherOrder order)
+    void CommandPalette::SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherMode order)
     {
         _tabSwitchOrder = order;
         _updateFilteredActions();

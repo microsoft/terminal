@@ -1200,18 +1200,18 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        bool useInOrderTabIndex = true;
+        bool useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() == TabSwitcherMode::MostRecentlyUsed;
 
         auto newTabIndex = 0;
 
-        if (_settings.GlobalSettings().UseTabSwitcher())
-        {
-            useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() == TabSwitcherOrder::InOrder;
-        }
-        else
-        {
-            useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() != TabSwitcherOrder::MostRecentlyUsed;
-        }
+        // if ()
+        // {
+        //     useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() == TabSwitcherOrder::InOrder;
+        // }
+        // else
+        // {
+        //     useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() != TabSwitcherOrder::MostRecentlyUsed;
+        // }
 
         if (useInOrderTabIndex)
         {
@@ -1235,7 +1235,9 @@ namespace winrt::TerminalApp::implementation
             newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
         }
 
-        if (_settings.GlobalSettings().UseTabSwitcher())
+        const bool useTabSwitcher = _settings.GlobalSettings().TabSwitcherMode() != TabSwitcherMode::Disabled;
+
+        if (useTabSwitcher)
         {
             // Set up the list of in-order tabs
             // TODO: de-dupe this with _HandleOpenTabSearch

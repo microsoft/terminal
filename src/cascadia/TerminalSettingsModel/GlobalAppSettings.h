@@ -76,9 +76,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
-        GETSET_PROPERTY(bool, UseTabSwitcher, true);
+        GETSET_PROPERTY(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::MostRecentlyUsed);
         GETSET_PROPERTY(bool, DisableAnimations, false);
-        GETSET_PROPERTY(Model::TabSwitcherOrder, TabSwitcherMode, TabSwitcherOrder::Default);
 
     private:
         hstring _unparsedDefaultProfile;
