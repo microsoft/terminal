@@ -38,6 +38,8 @@ mikemaccana
 miloush
 miniksa
 niksa
+nvaccess
+nvda
 oising
 oldnewthing
 osgwiki
