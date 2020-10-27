@@ -26,6 +26,13 @@ namespace Microsoft.Terminal.Settings.Model
         MaximizedFocusMode,
     };
 
+    enum TabSwitcherOrder
+    {
+        Default,
+        InOrder,
+        MostRecentlyUsed,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
         String UnparsedDefaultProfile();
@@ -54,6 +61,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean AlwaysOnTop;
         Boolean UseTabSwitcher;
         Boolean DisableAnimations;
+        TabSwitcherOrder TabSwitcherMode;
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

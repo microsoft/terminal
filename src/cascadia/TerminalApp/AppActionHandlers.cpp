@@ -502,7 +502,7 @@ namespace winrt::TerminalApp::implementation
         {
             tabCommands.Append(tab.SwitchToTabCommand());
         }
-        CommandPalette().SetTabActions(tabCommands);
+        CommandPalette().SetInOrderTabActions(tabCommands);
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);

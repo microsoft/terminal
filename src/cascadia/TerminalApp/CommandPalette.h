@@ -23,7 +23,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
-        void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
+        void SetInOrderTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
+        void SetMRUTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
         void EnableCommandPaletteMode();
@@ -40,6 +41,7 @@ namespace winrt::TerminalApp::implementation
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
+        void SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherOrder order);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -57,7 +59,6 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _nestedActionStack{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
-
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _commandsToFilter();
 
         bool _lastFilterTextWasEmpty{ true };
@@ -97,8 +98,10 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allTabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _inOrderTabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _mruTabActions{ nullptr };
         uint32_t _switcherStartIdx;
+        winrt::Microsoft::Terminal::Settings::Model::TabSwitcherOrder _tabSwitchOrder{ Microsoft::Terminal::Settings::Model::TabSwitcherOrder::MostRecentlyUsed };
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;

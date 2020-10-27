@@ -55,6 +55,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherOrder)
+{
+    static constexpr std::array<pair_type, 3> mappings = {
+        pair_type{ "default", ValueType::Default },
+        pair_type{ "inOrder", ValueType::InOrder },
+        pair_type{ "mru", ValueType::MostRecentlyUsed }
+    };
+};
+
 JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
 {
     // reduce repetition

@@ -28,7 +28,8 @@ namespace winrt::TerminalApp::implementation
         _nestedActionStack = winrt::single_threaded_vector<Command>();
         _currentNestedCommands = winrt::single_threaded_vector<Command>();
         _allCommands = winrt::single_threaded_vector<Command>();
-        _allTabActions = winrt::single_threaded_vector<Command>();
+        _inOrderTabActions = winrt::single_threaded_vector<Command>();
+        _mruTabActions = winrt::single_threaded_vector<Command>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -472,8 +473,9 @@ namespace winrt::TerminalApp::implementation
 
             return _allCommands;
         case CommandPaletteMode::TabSearchMode:
+            return _inOrderTabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _allTabActions;
+            return _tabSwitchOrder == TabSwitcherOrder::InOrder ? _inOrderTabActions : _mruTabActions;
         case CommandPaletteMode::CommandlineMode:
             return winrt::single_threaded_vector<Command>();
         default:
@@ -684,9 +686,15 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
+    void CommandPalette::SetInOrderTabActions(Collections::IVector<Command> const& tabs)
     {
-        _allTabActions = tabs;
+        _inOrderTabActions = tabs;
+        _updateFilteredActions();
+    }
+
+    void CommandPalette::SetMRUTabActions(Collections::IVector<Command> const& tabs)
+    {
+        _mruTabActions = tabs;
         _updateFilteredActions();
     }
 
@@ -1066,4 +1074,11 @@ namespace winrt::TerminalApp::implementation
 
         _updateFilteredActions();
     }
+
+    void CommandPalette::SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherOrder order)
+    {
+        _tabSwitchOrder = order;
+        _updateFilteredActions();
+    }
+
 }

@@ -1051,7 +1051,7 @@ namespace winrt::TerminalApp::implementation
         if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
         {
             _mruTabActions.RemoveAt(mruIndex);
-            CommandPalette().SetTabActions(_mruTabActions);
+            CommandPalette().SetMRUTabActions(_mruTabActions);
         }
 
         _tabs.RemoveAt(tabIndex);
@@ -1192,22 +1192,67 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
+        bool useInOrderTabIndex = true;
+
+        auto newTabIndex = 0;
+
         if (_settings.GlobalSettings().UseTabSwitcher())
         {
-            CommandPalette().SetTabActions(_mruTabActions);
+            useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() == TabSwitcherOrder::InOrder;
+        }
+        else
+        {
+            useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() != TabSwitcherOrder::MostRecentlyUsed;
+        }
 
-            // Since ATS is always MRU, our focused tab index is always 0.
+        if (useInOrderTabIndex)
+        {
+            // Determine what the next in-order tab index is
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                uint32_t tabCount = _tabs.Size();
+                // Wraparound math. By adding tabCount and then calculating modulo tabCount,
+                // we clamp the values to the range [0, tabCount) while still supporting moving
+                // leftward from 0 to tabCount - 1.
+                newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            }
+        }
+        else
+        {
+            // determine what the next "most recently used" index is.
+
+            // In this case, our focused tab index (in the MRU ordering) is always 0.
             // So, going next should go to index 1, and going prev should wrap to the end.
             uint32_t tabCount = _mruTabActions.Size();
-            auto newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
+            newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
+        }
+
+        if (_settings.GlobalSettings().UseTabSwitcher())
+        {
+            // Set up the list of in-order tabs
+            // TODO: de-dupe this with _HandleOpenTabSearch
+            auto tabCommands = winrt::single_threaded_vector<Command>();
+            for (const auto& tab : _tabs)
+            {
+                tabCommands.Append(tab.SwitchToTabCommand());
+            }
+            CommandPalette().SetInOrderTabActions(tabCommands);
+            ////////////////////////////////////////////////////////////////////
+            // Also set up the list of MRU tabs
+            CommandPalette().SetMRUTabActions(_mruTabActions);
 
             if (CommandPalette().Visibility() == Visibility::Visible)
             {
+                // If the tab switcher is currently open, don't change its mode.
+                // Just select the new tab.
                 CommandPalette().SelectNextItem(bMoveRight);
             }
             else
             {
+                // Otherwise, set up the tab switcher in the selected mode, with
+                // the given ordering, and make it visible.
                 CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+                CommandPalette().SetTabSwitchOrder(_settings.GlobalSettings().TabSwitcherMode());
                 CommandPalette().Visibility(Visibility::Visible);
             }
         }
@@ -2625,7 +2670,7 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabActions.RemoveAt(mruIndex);
                 _mruTabActions.InsertAt(0, command);
-                CommandPalette().SetTabActions(_mruTabActions);
+                CommandPalette().SetMRUTabActions(_mruTabActions);
             }
         }
     }

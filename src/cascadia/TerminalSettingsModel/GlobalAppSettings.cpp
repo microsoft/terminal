@@ -39,6 +39,7 @@ static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 static constexpr std::string_view UseTabSwitcherKey{ "useTabSwitcher" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
+static constexpr std::string_view TabSwitchOrderKey{ "tabSwitchOrder" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -202,6 +203,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, UseTabSwitcherKey, _UseTabSwitcher);
 
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
+
+    JsonUtils::GetValueForKey(json, TabSwitchOrderKey, _TabSwitcherMode);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy

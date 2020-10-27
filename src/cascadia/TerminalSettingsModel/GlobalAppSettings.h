@@ -78,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
         GETSET_PROPERTY(bool, UseTabSwitcher, true);
         GETSET_PROPERTY(bool, DisableAnimations, false);
+        GETSET_PROPERTY(Model::TabSwitcherOrder, TabSwitcherMode, TabSwitcherOrder::Default);
 
     private:
         hstring _unparsedDefaultProfile;
