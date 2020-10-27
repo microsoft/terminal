@@ -47,8 +47,8 @@ namespace Microsoft.Terminal.TerminalControl
 
     runtimeclass SetTaskbarProgressEventArgs
     {
-        Int64 State { get; };
-        Int64 Progress { get; };
+        UInt64 State { get; };
+        UInt64 Progress { get; };
     }
 
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener

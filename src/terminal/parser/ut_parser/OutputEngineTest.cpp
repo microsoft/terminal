@@ -1456,6 +1456,11 @@ public:
         return true;
     }
 
+    bool SetTaskbarProgress(const size_t /*state*/, const size_t /*progress*/) noexcept override
+    {
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
