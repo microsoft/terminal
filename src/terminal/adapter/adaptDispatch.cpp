@@ -432,10 +432,9 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = SHORT_MAX;
+    srScroll.Right = _pConApi->PrivateGetLineWidth(cursor.Y) - 1;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -534,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = csbiex.dwSize.X - coordStartPosition.X;
+        nLength = _pConApi->PrivateGetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 

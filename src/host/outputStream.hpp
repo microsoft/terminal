@@ -67,6 +67,7 @@ public:
 
     bool PrivateSetCurrentLineRendition(const LineRendition lineRendition) override;
     bool PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
+    SHORT PrivateGetLineWidth(const size_t row) const override;
 
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override;

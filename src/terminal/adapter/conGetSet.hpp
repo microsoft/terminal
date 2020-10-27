@@ -42,6 +42,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool PrivateSetCurrentLineRendition(const LineRendition lineRendition) = 0;
         virtual bool PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow) = 0;
+        virtual SHORT PrivateGetLineWidth(const size_t row) const = 0;
 
         virtual bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                                size_t& eventsWritten) = 0;

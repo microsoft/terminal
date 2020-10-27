@@ -263,6 +263,13 @@ public:
         return false;
     }
 
+    SHORT PrivateGetLineWidth(const size_t /*row*/) const
+    {
+        Log::Comment(L"PrivateGetLineWidth MOCK called...");
+
+        return _bufferSize.X;
+    }
+
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override
     {

@@ -211,6 +211,19 @@ bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow
     return true;
 }
 
+// Method Description:
+// - Returns the number of cells that will fit on the specified row when
+//   rendered with its current line rendition.
+// Arguments:
+// - row: The row number of the line to measure
+// Return Value:
+// - the number of cells that will fit on the line
+SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
+{
+    const auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    return textBuffer.GetLineWidth(row);
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
