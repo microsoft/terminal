@@ -120,7 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _PrependSchemaDirective();
         bool _AppendDynamicProfilesToUserSettings();
         std::string _ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const;
-        void _CopyProfileInheritanceTree(com_ptr<CascadiaSettings>& cloneSettings) const;
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> _CopyProfileInheritanceTree(Windows::Foundation::Collections::IVectorView<Model::Profile> profiles, winrt::com_ptr<Profile> profileDefaultsClone) const;
 
         void _ApplyDefaultsFromUserSettings();
 

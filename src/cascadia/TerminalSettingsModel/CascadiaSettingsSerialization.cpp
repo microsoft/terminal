@@ -1063,6 +1063,11 @@ Json::Value CascadiaSettings::ToJson() const
         const auto prof{ winrt::get_self<implementation::Profile>(entry) };
         profilesList.append(prof->ToJson());
     }
+    for (const auto& entry : _hiddenProfiles)
+    {
+        const auto prof{ winrt::get_self<implementation::Profile>(entry) };
+        profilesList.append(prof->ToJson());
+    }
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;
 
