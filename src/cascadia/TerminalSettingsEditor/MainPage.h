@@ -13,6 +13,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MainPage() = delete;
         MainPage(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
 
+        void OpenJsonKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args);
+        void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);
         void SettingsNav_Loaded(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
         void SettingsNav_BackRequested(Microsoft::UI::Xaml::Controls::NavigationView const&, Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& args);
@@ -27,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SearchSettings(hstring query, winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& autoBox);
 
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings Settings();
+
+        WINRT_CALLBACK(OpenJson, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
 
     private:
         // XAML should data-bind to the _settingsClone

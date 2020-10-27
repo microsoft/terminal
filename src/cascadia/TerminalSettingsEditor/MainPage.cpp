@@ -236,4 +236,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             contentFrame.Navigate(xaml_typename<Editor::Keybindings>());
         }
     }
+
+    void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
+    {
+        _OpenJsonHandlers(nullptr, nullptr);
+    }
+
+    void MainPage::OpenJsonKeyDown(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args)
+    {
+        if (args.Key() == Windows::System::VirtualKey::Enter)
+        {
+            _OpenJsonHandlers(nullptr, nullptr);
+        }
+    }
 }
