@@ -2269,10 +2269,9 @@ namespace winrt::TerminalApp::implementation
 
         for (const auto& tab : _tabs)
         {
-            auto tabImpl{ _GetStrongTabImpl(tab) };
-            if (tabImpl->GetTabViewItem().ContextFlyout())
+            if (tab.TabViewItem().ContextFlyout())
             {
-                tabImpl->GetTabViewItem().ContextFlyout().Hide();
+                tab.TabViewItem().ContextFlyout().Hide();
             }
         }
     }
