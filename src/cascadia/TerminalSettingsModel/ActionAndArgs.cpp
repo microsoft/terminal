@@ -129,6 +129,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
         { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
         { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
+        { ShortcutAction::ScrollUp, ScrollUpArgs::FromJson },
+        { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
