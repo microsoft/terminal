@@ -2227,7 +2227,7 @@ namespace winrt::TerminalApp::implementation
             _newTabButton.Flyout().Hide();
         }
 
-        for (auto tab : _tabs)
+        for (const auto& tab : _tabs)
         {
             auto tabImpl{ _GetStrongTabImpl(tab) };
             if (tabImpl->GetTabViewItem().ContextFlyout())
