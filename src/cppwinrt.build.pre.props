@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+    <!-- this will trigger the use of a project-specific out dir -->
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+  </PropertyGroup>
+
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.props')" />
@@ -52,7 +57,6 @@
   -->
   <PropertyGroup>
     <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
-    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
   </PropertyGroup>
 
   <PropertyGroup Label="Configuration">
