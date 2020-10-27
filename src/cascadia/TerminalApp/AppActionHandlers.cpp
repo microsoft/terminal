@@ -488,7 +488,7 @@ namespace winrt::TerminalApp::implementation
                                             const TerminalApp::ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        auto tabCommands = winrt::single_threaded_vector<Command>();
+        auto tabCommands = winrt::single_threaded_vector<TerminalApp::Command>();
         for (const auto& tab : _tabs)
         {
             tabCommands.Append(tab.SwitchToTabCommand());

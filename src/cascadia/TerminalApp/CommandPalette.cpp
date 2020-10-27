@@ -692,7 +692,7 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
+    void CommandPalette::SetTabActions(Collections::IVector<TerminalApp::Command> const& tabs)
     {
         _allTabActions = tabs;
         _updateFilteredActions();
