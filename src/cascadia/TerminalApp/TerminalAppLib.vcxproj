@@ -73,6 +73,9 @@
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ITab.h">
+      <DependentUpon>ITab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalTab.h">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
@@ -132,6 +135,9 @@
     </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ITab.cpp">
+      <DependentUpon>ITab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalTab.cpp">
       <DependentUpon>TerminalTab.idl</DependentUpon>

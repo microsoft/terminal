@@ -4,6 +4,7 @@
 #pragma once
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
+#include "ITab.h"
 #include "TerminalTab.g.h"
 
 // fwdecl unittest classes
@@ -14,7 +15,7 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TerminalTab : TerminalTabT<TerminalTab>
+    struct TerminalTab : TerminalTabT<TerminalTab, ITab>
     {
     public:
         TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
@@ -65,8 +66,6 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
-
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
@@ -78,11 +77,12 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
 
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
+
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
         // This is needed since Tab is going to be managing its own SwitchToTab command.
-        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewIndex, _PropertyChangedHandlers, 0);
+        GETSET_PROPERTY(uint32_t, TabViewIndex, 0);
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
-        OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewNumTabs, _PropertyChangedHandlers, 0);
+        GETSET_PROPERTY(uint32_t, TabViewNumTabs, 0);
 
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, _PropertyChangedHandlers, nullptr);
 
@@ -108,8 +108,6 @@ namespace winrt::TerminalApp::implementation
         void _MakeTabViewItem();
 
         void _CreateContextMenu();
-        winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
-        void _EnableCloseMenuItems();
 
         void _RefreshVisualState();
 
@@ -127,9 +125,6 @@ namespace winrt::TerminalApp::implementation
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);
         void _ClearTabBackgroundColor();
-
-        void _CloseTabsAfter();
-        void _CloseOtherTabs();
 
         friend class ::TerminalAppLocalTests::TabTests;
     };
