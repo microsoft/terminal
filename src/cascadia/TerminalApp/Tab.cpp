@@ -185,6 +185,7 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedControl)
         {
             lastFocusedControl.Focus(FocusState::Programmatic);
+            lastFocusedControl.SendTaskbarProgressEvent();
         }
     }
 

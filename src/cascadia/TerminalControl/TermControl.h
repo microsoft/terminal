@@ -156,6 +156,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
+        void SendTaskbarProgressEvent();
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -231,6 +233,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         COORD _lastHoveredCell;
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
+
+        size_t _taskbarState;
+        size_t _taskbarProgress;
 
         using Timestamp = uint64_t;
 

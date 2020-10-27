@@ -530,11 +530,13 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
             break;
         case 1:
             // sets the progress value to value given by the 'progress' parameter
+            _taskbar->SetProgressState(_window.get(), TBPF_NORMAL);
             _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
         case 2:
             // sets the progress indicator to an error state
             _taskbar->SetProgressState(_window.get(), TBPF_ERROR);
+            _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
         case 3:
             // sets the progress indicator to an indeterminate state
@@ -542,6 +544,7 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
         case 4:
             // sets the progress indicator to a pause state
             _taskbar->SetProgressState(_window.get(), TBPF_PAUSED);
+            _taskbar->SetProgressValue(_window.get(), progress, 100);
         default:
             break;
         }

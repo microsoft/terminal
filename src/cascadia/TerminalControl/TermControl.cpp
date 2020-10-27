@@ -76,7 +76,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false },
-        _searchBox{ nullptr }
+        _searchBox{ nullptr },
+        _taskbarState{ 0 },
+        _taskbarProgress{ 0 }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -2277,15 +2279,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    // - Sets our internal knowledge of the taskbar's state and progress, then
+    //   sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
     //   to set the progress indicator on the taskbar
     // Arguments:
     // - state: the state with which to set the progress indicator
     // - progress: the progress with which to set the progress indicator (only used if state is 1)
     void TermControl::_SetTaskbarProgress(const size_t state, const size_t progress)
     {
-        auto setTaskbarProgressArgs = winrt::make_self<SetTaskbarProgressEventArgs>(state, progress);
-        _setTaskbarProgressHandlers(*this, *setTaskbarProgressArgs);
+        _taskbarState = state;
+        _taskbarProgress = progress;
+        SendTaskbarProgressEvent();
     }
 
     hstring TermControl::Title()
@@ -3032,6 +3036,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto coreColor = _terminal->GetTabColor();
         return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
+    }
+
+    // Method Description:
+    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    //   to set the progress indicator on the taskbar
+    void TermControl::SendTaskbarProgressEvent()
+    {
+        auto setTaskbarProgressArgs = winrt::make_self<SetTaskbarProgressEventArgs>(_taskbarState, _taskbarProgress);
+        _setTaskbarProgressHandlers(*this, *setTaskbarProgressArgs);
     }
 
     // -------------------------------- WinRT Events ---------------------------------
