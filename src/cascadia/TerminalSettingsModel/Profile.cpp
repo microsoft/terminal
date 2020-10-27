@@ -72,7 +72,6 @@ Profile::Profile(guid guid) :
 
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
-    // copy the private members
     auto profile{ winrt::make_self<Profile>() };
     profile->_Guid = source->_Guid;
     profile->_Name = source->_Name;
@@ -110,8 +109,6 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_CursorShape = source->_CursorShape;
     profile->_CursorHeight = source->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
-
-    // copy settings that did not use the GETSET macro
     profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
 
