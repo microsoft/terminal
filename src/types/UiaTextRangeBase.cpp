@@ -544,7 +544,7 @@ std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLeng
         // otherwise, we'll FailFast catastrophically
         if (!bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true))
         {
-            throw E_FAIL;
+            THROW_HR(E_FAIL);
         }
 
         // convert _end to be inclusive
