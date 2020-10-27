@@ -59,7 +59,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring EvaluatedStartingDirectory() const;
         hstring ExpandedBackgroundImagePath() const;
-        void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values

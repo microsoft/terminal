@@ -424,27 +424,6 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     }
 }
 
-// Method Description:
-// - If this profile never had a GUID set for it, generate a runtime GUID for
-//   the profile. If a profile had their guid manually set to {0}, this method
-//   will _not_ change the profile's GUID.
-void Profile::GenerateGuidIfNecessary() noexcept
-{
-    if (!_getGuidImpl().has_value())
-    {
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        _Guid = Profile::_GenerateGuidForProfile(Name(), Source());
-
-        TraceLoggingWrite(
-            g_hSettingsModelProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-    }
-}
-
 // Function Description:
 // - Returns true if the given JSON object represents a dynamic profile object.
 //   If it is a dynamic profile object, we should make sure to only layer the

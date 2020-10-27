@@ -272,7 +272,6 @@ namespace SettingsModelLocalTests
 
         // TODO CARLOS:
         // - temp/DebugBreak is only for testing. Remove after we're done here.
-        // - NiksaShell prints out a guid, when it shouldn't be
         // - BhojwaniShell is missing entirely
         const auto result{ settings->ToJson() };
         const auto temp{ toString(result) };

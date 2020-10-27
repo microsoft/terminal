@@ -136,7 +136,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _ValidateSettings();
         void _ValidateProfilesExist();
-        void _ValidateProfilesHaveGuid();
         void _ValidateDefaultProfileExists();
         void _ValidateNoDuplicateProfiles();
         void _ResolveDefaultProfile();
