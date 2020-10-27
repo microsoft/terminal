@@ -943,7 +943,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 // - state: where to store the state value once we parse it
 // - progress: where to store the progress value once we parse it
 // Return Value:
-// - true if we succesfully parsed the string, false otherwise
+// - true if we successfully parsed the string, false otherwise
 bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view string,
                                                    size_t& state,
                                                    size_t& progress) const

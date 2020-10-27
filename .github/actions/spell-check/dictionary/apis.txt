@@ -24,6 +24,7 @@ IExplorer
 IMap
 IObject
 IStorage
+ITaskbar
 llabs
 LCID
 lround
@@ -32,6 +33,7 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOPROGRESS
 NOREDIRECTIONBITMAP
 oaidl
 ocidl
@@ -51,6 +53,7 @@ spsc
 STDCPP
 strchr
 syscall
+TBPF
 tmp
 tx
 userenv
