@@ -25,7 +25,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void AutoSuggestBox_QuerySubmitted(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs args);
         void AutoSuggestBox_SuggestionChosen(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxSuggestionChosenEventArgs args);
         void SearchSettings(hstring query, winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& autoBox);
-
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings Settings();
 
     private:
@@ -33,6 +32,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // When "save" is pressed, _settingsSource = _settingsClone
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsSource;
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsClone{ nullptr };
+
+        static void _OpenJSONOnClick();
+        static fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
     };
 }
 

@@ -15,6 +15,13 @@
 #include "Keybindings.h"
 #include "AddProfile.h"
 
+#include <LibraryResources.h>
+
+#include <winrt/Windows.Storage.h>
+#include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
+#include <ShlDisp.h>
+#include "../../../../../../../Program Files (x86)/Windows Kits/10/Include/10.0.19041.0/um/shellapi.h"
+
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -23,6 +30,8 @@ namespace winrt
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::System;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -198,6 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring globalAppearancePage = L"GlobalAppearance_Nav";
 
         const hstring keybindingsPage = L"Keyboard_Nav";
+        const hstring openJSON = L"OpenJSON_Nav";
 
         if (clickedItemTag == homePage)
         {
@@ -234,6 +244,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == keybindingsPage)
         {
             contentFrame.Navigate(xaml_typename<Editor::Keybindings>());
+        }
+        else if (clickedItemTag == openJSON)
+        {
+            _OpenJSONOnClick();
+        }
+    }
+
+    void MainPage::_OpenJSONOnClick()
+    {
+        /*const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);*/
+        /*const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;*/
+        const auto target = SettingsTarget::SettingsFile;
+        _LaunchSettings(target);
+    }
+
+    fire_and_forget MainPage::_LaunchSettings(const SettingsTarget target)
+    {
+        // This will switch the execution of the function to a background (not
+        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        // (used for retrieving the path to the file) will crash on the UI
+        // thread, because the main thread is a STA.
+        co_await winrt::resume_background();
+
+        auto openFile = [](const auto& filePath) {
+            HINSTANCE res = ShellExecute(nullptr, nullptr, filePath.c_str(), nullptr, nullptr, SW_SHOW);
+            if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+            {
+                ShellExecute(nullptr, nullptr, L"notepad", filePath.c_str(), nullptr, SW_SHOW);
+            }
+        };
+
+        switch (target)
+        {
+        case SettingsTarget::DefaultsFile:
+            openFile(CascadiaSettings::DefaultSettingsPath());
+            break;
+        case SettingsTarget::SettingsFile:
+            openFile(CascadiaSettings::SettingsPath());
+            break;
+        case SettingsTarget::AllFiles:
+            openFile(CascadiaSettings::DefaultSettingsPath());
+            openFile(CascadiaSettings::SettingsPath());
+            break;
         }
     }
 }

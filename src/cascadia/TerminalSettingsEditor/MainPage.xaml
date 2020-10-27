@@ -150,7 +150,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             </muxc:NavigationView.MenuItems>
             <muxc:NavigationView.PaneFooter>
-                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON">
+                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON"
+                                         Tag="OpenJSON_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </muxc:NavigationViewItem.Icon>
