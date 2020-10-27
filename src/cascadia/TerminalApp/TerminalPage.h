@@ -12,6 +12,8 @@
 
 #include "AppCommandlineArgs.h"
 
+static constexpr uint32_t DefaultRowsToScroll{ 3 };
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -26,6 +28,12 @@ namespace winrt::TerminalApp::implementation
         NotInitialized = 0,
         InStartup = 1,
         Initialized = 2
+    };
+
+    enum ScrollDirection : int
+    {
+        ScrollUp = 0,
+        ScrollDown = 1
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -102,6 +110,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
 
+        uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
+
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
 
@@ -165,10 +175,10 @@ namespace winrt::TerminalApp::implementation
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
-        void _Scroll(int delta);
+        void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::Direction& direction);
-        void _ScrollPage(int delta);
+        void _ScrollPage(ScrollDirection scrollDirection);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& keyChord);
 
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
@@ -205,6 +215,9 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
+        static uint32_t _ReadSystemRowsToScroll();
 
         void _UpdateTabSwitcherCommands(const bool mru);
         void _UpdateMRUTab(const uint32_t index);

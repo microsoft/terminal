@@ -1,5 +1,5 @@
 {
-  "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
+  "$id": "https://github.com/microsoft/terminal/blob/main/doc/cascadia/profiles.schema.json",
   "$schema": "https://json-schema.org/draft/2019-09/schema#",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
@@ -441,6 +441,38 @@
         }
       ]
     },
+    "ScrollUpAction": {
+      "description": "Arguments for a scrollUp action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "scrollUp" },
+            "rowsToScroll": {
+              "type": ["integer", "null"],
+              "default": null,
+              "description": "Scroll up rowsToScroll lines. If no value is provided, use the system-level defaults."
+            }
+          }
+        }
+      ]
+    },
+    "ScrollDownAction": {
+      "description": "Arguments for a scrollDown action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "scrollDown" },
+            "rowsToScroll": {
+              "type": ["integer", "null"],
+              "default": null,
+              "description": "Scroll down rowsToScroll lines. If no value is provided, use the system-level defaults."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -462,6 +494,8 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/ScrollUpAction" },
+              { "$ref": "#/definitions/ScrollDownAction" },
               { "type": "null" }
             ]
         },
