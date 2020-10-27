@@ -102,10 +102,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::string _userSettingsString;
         Json::Value _userSettings;
         Json::Value _defaultSettings;
-        Json::Value _userDefaultProfileSettings{ Json::Value::null };
+        winrt::com_ptr<Profile> _userDefaultProfileSettings{ nullptr };
 
         void _LayerOrCreateProfile(const Json::Value& profileJson);
         winrt::com_ptr<implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
+        std::optional<uint32_t> _FindMatchingProfileIndex(const Json::Value& profileJson);
         void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
         winrt::com_ptr<implementation::ColorScheme> _FindMatchingColorScheme(const Json::Value& schemeJson);
         void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
@@ -114,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _PrependSchemaDirective();
         bool _AppendDynamicProfilesToUserSettings();
         std::string _ApplyFirstRunChangesToSettingsTemplate(std::string_view settingsTemplate) const;
+        void _CopyProfileInheritanceTree(com_ptr<CascadiaSettings>& cloneSettings) const;
 
         void _ApplyDefaultsFromUserSettings();
 

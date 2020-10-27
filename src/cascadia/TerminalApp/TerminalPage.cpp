@@ -756,17 +756,10 @@ namespace winrt::TerminalApp::implementation
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
-        winrt::guid connectionType{};
+        winrt::guid connectionType = profile.ConnectionType();
         winrt::guid sessionGuid{};
 
-        const auto hasConnectionType = profile.HasConnectionType();
-        if (hasConnectionType)
-        {
-            connectionType = profile.ConnectionType();
-        }
-
-        if (hasConnectionType &&
-            connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
+        if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
