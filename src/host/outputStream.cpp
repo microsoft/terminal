@@ -196,6 +196,21 @@ bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition l
     return true;
 }
 
+// Method Description:
+// - Resets the line rendition attribute to SingleWidth for a specified range
+//   of row numbers.
+// Arguments:
+// - startRow: The row number of first line to be modified
+// - endRow: The row number following the last line to be modified
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow)
+{
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.ResetLineRenditionRange(startRow, endRow);
+    return true;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:

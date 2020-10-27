@@ -66,6 +66,7 @@ public:
     bool PrivateSetTextAttributes(const TextAttribute& attrs) override;
 
     bool PrivateSetCurrentLineRendition(const LineRendition lineRendition) override;
+    bool PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
 
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override;

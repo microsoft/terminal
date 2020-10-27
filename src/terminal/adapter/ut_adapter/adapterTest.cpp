@@ -256,6 +256,13 @@ public:
         return false;
     }
 
+    bool PrivateResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
+    {
+        Log::Comment(L"PrivateResetLineRenditionRange MOCK called...");
+
+        return false;
+    }
+
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override
     {

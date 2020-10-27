@@ -826,6 +826,14 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
     }
 }
 
+void TextBuffer::ResetLineRenditionRange(const size_t startRow, const size_t endRow)
+{
+    for (auto row = startRow; row < endRow; row++)
+    {
+        GetRowByOffset(row).SetLineRendition(LineRendition::SingleWidth);
+    }
+}
+
 LineRendition TextBuffer::GetLineRendition(const size_t row) const
 {
     return GetRowByOffset(row).GetLineRendition();
