@@ -5,7 +5,7 @@ import "ITab.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass TerminalTab : ITab, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass TerminalTab : ITab
     {
     }
 }

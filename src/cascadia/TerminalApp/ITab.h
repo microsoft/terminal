@@ -16,10 +16,10 @@ namespace winrt::TerminalApp::implementation
     struct ITab : ITabT<ITab>
     {
     public:
-        void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
+        virtual void Focus(winrt::Windows::UI::Xaml::FocusState focusState) = 0;
         winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
 
-        void Shutdown();
+        virtual void Shutdown();
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
         void UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs);
@@ -33,11 +33,12 @@ namespace winrt::TerminalApp::implementation
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
         GETSET_PROPERTY(uint32_t, TabViewNumTabs, 0);
 
-        GETSET_PROPERTY(winrt::hstring, Title);
-        GETSET_PROPERTY(winrt::hstring, Icon);
-        GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, nullptr);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
-        GETSET_PROPERTY(winrt::Windows::UI::Xaml::Controls::Page, Content, nullptr);
+
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, _PropertyChangedHandlers, nullptr);
 
     protected:
         winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
@@ -45,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
-        void _CreateContextMenu();
+        virtual void _CreateContextMenu();
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutSubItem _CreateCloseSubMenu();
         void _EnableCloseMenuItems();
         void _CloseTabsAfter();

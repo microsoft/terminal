@@ -26,8 +26,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
-        void Focus(winrt::Windows::UI::Xaml::FocusState focusState);
-        winrt::Windows::UI::Xaml::FocusState FocusState() const noexcept;
+        void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
         winrt::fire_and_forget Scroll(const int delta);
 
@@ -47,7 +46,7 @@ namespace winrt::TerminalApp::implementation
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
 
-        void Shutdown();
+        void Shutdown() override;
         void ClosePane();
 
         void SetTabText(winrt::hstring title);
@@ -66,25 +65,9 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
-        WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
-
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
-
-        GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
-
-        // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
-        // This is needed since Tab is going to be managing its own SwitchToTab command.
-        GETSET_PROPERTY(uint32_t, TabViewIndex, 0);
-        // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
-        GETSET_PROPERTY(uint32_t, TabViewNumTabs, 0);
-
-        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, _PropertyChangedHandlers, nullptr);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -97,8 +80,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
 
-        winrt::Windows::UI::Xaml::FocusState _focusState{ winrt::Windows::UI::Xaml::FocusState::Unfocused };
-
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
@@ -107,7 +88,7 @@ namespace winrt::TerminalApp::implementation
 
         void _MakeTabViewItem();
 
-        void _CreateContextMenu();
+        void _CreateContextMenu() override;
 
         void _RefreshVisualState();
 

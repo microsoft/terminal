@@ -2595,6 +2595,11 @@ namespace winrt::TerminalApp::implementation
             _tabs.Append(*newTabImpl);
             _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
 
+            newTabImpl->SetDispatch(*_actionDispatch);
+
+            // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
+            _UpdateTabIndices();
+
             // Don't capture a strong ref to the tab. If the tab is removed as this
             // is called, we don't really care anymore about handling the event.
             auto weakTab = make_weak(newTabImpl);

@@ -29,6 +29,8 @@ namespace winrt::TerminalApp::implementation
     public:
         SettingsTab(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
 
+        void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
+
     private:
         void _MakeTabViewItem();
         winrt::fire_and_forget _CreateIcon();

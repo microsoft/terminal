@@ -90,20 +90,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Returns the focus state of this Tab. Unfocused means this tab is not focused,
-    //   and any other FocusState means that this tab is focused. For any set of tabs,
-    //   there should only be one tab that is marked as focused, though each tab has
-    //   no control over the other tabs in the set.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - A FocusState enum value
-    WUX::FocusState TerminalTab::FocusState() const noexcept
-    {
-        return _focusState;
-    }
-
-    // Method Description:
     // - Updates our focus state. If we're gaining focus, make sure to transfer
     //   focus to the last focused terminal control in our tree of controls.
     // Arguments:
@@ -189,12 +175,8 @@ namespace winrt::TerminalApp::implementation
             Icon(_lastIconPath);
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
 
-            // TODO CARLOS: We crash without this check :(
-            if (auto cmd{ SwitchToTabCommand() })
-            {
-                // Update SwitchToTab command's icon
-                SwitchToTabCommand().Icon(_lastIconPath);
-            }
+            // Update SwitchToTab command's icon
+            SwitchToTabCommand().Icon(_lastIconPath);
         }
     }
 
@@ -232,12 +214,8 @@ namespace winrt::TerminalApp::implementation
             // Bubble our current tab text to anyone who's listening for changes.
             Title(_GetActiveTitle());
 
-            // TODO CARLOS: We crash without this check :(
-            if (auto cmd = SwitchToTabCommand())
-            {
-                // Update SwitchToTab command's name
-                cmd.Name(Title());
-            }
+            // Update SwitchToTab command's name
+            SwitchToTabCommand().Name(Title());
 
             // Update the UI to reflect the changed
             _UpdateTabHeader();

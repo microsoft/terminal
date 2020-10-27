@@ -21,22 +21,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    // Method Description:
-    // - Focus the settings UI
-    // Arguments:
-    // - focusState: The FocusState mode by which focus is to be obtained.
-    // Return Value:
-    // - <none>
-    void ITab::Focus(WUX::FocusState focusState)
-    {
-        _focusState = focusState;
-
-        if (_focusState != FocusState::Unfocused)
-        {
-            Content().Focus(focusState);
-        }
-    }
-
     WUX::FocusState ITab::FocusState() const noexcept
     {
         return _focusState;
