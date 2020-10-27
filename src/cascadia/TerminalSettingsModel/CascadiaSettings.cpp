@@ -71,11 +71,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // dynamic profile generators added by default
     auto settings{ winrt::make_self<CascadiaSettings>() };
     settings->_globals = _globals->Copy();
-    for (const auto profile : _profiles)
-    {
-        auto profImpl{ winrt::get_self<Profile>(profile) };
-        settings->_profiles.Append(*profImpl->Copy());
-    }
     for (auto warning : _warnings)
     {
         settings->_warnings.Append(warning);
@@ -85,8 +80,52 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     settings->_userSettingsString = _userSettingsString;
     settings->_userSettings = _userSettings;
     settings->_defaultSettings = _defaultSettings;
-    settings->_userDefaultProfileSettings = _userDefaultProfileSettings;
+
+    _CopyProfileInheritanceTree(settings);
+
     return *settings;
+}
+
+// Method Description:
+// - Copies the inheritance tree for profiles and hooks them up to a clone CascadiaSettings
+// Arguments:
+// - cloneSettings: the CascadiaSettings we're copying the inheritance tree to
+// Return Value:
+// - <none>
+void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettings>& cloneSettings) const
+{
+    // Our profiles inheritance graph doesn't have a formal root.
+    // However, if we create a dummy Profile, and set _profiles as the parent,
+    //  we now have a root. So we'll do just that, then copy the inheritance graph
+    //  from the dummyRoot.
+    auto dummyRootSource{ winrt::make_self<Profile>() };
+    for (const auto& profile : _profiles)
+    {
+        winrt::com_ptr<Profile> profileImpl;
+        profileImpl.copy_from(winrt::get_self<Profile>(profile));
+        dummyRootSource->InsertParent(profileImpl);
+    }
+
+    auto dummyRootClone{ winrt::make_self<Profile>() };
+    std::unordered_map<void*, winrt::com_ptr<Profile>> visited{};
+
+    if (_userDefaultProfileSettings)
+    {
+        // profile.defaults must be saved to CascadiaSettings
+        // So let's do that manually first, and add that to visited
+        cloneSettings->_userDefaultProfileSettings = Profile::CopySettings(_userDefaultProfileSettings);
+        visited[_userDefaultProfileSettings.get()] = cloneSettings->_userDefaultProfileSettings;
+    }
+
+    Profile::CloneInheritanceGraph(dummyRootSource, dummyRootClone, visited);
+
+    // All of the parents of the dummy root clone are _profiles.
+    // Get the parents and add them to the settings clone.
+    const auto cloneParents{ dummyRootClone->Parents() };
+    for (const auto& profile : cloneParents)
+    {
+        cloneSettings->_profiles.Append(*profile);
+    }
 }
 
 // Method Description:

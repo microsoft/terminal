@@ -156,4 +156,14 @@ namespace Microsoft.Terminal.Settings.Model
         CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
+
+    [default_interface] runtimeclass ScrollUpArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ScrollDownArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
 }
