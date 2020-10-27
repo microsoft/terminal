@@ -13,8 +13,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         ColorSchemes();
 
-        static Windows::UI::Xaml::Media::Brush ColorToBrush(Windows::UI::Color color);
-
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
 
