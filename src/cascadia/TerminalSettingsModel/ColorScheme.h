@@ -47,8 +47,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_array<Windows::UI::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
 
-        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-
         GETSET_PROPERTY(winrt::hstring, Name);
         GETSET_COLORPROPERTY(Foreground); // defined in constructor
         GETSET_COLORPROPERTY(Background); // defined in constructor

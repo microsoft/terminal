@@ -190,31 +190,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             return wss.str();
         }
-        static til::color HexToColor(const std::wstring str)
-        {
-            THROW_HR_IF(E_INVALIDARG, str.size() != 9 && str.size() != 7);
-            THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
-
-            std::wstring workingString = str.substr(1);
-            til::color color;
-
-            // Alpha is specified
-            if (workingString.size() == 8)
-            {
-                color.a = ::base::checked_cast<uint8_t>(std::stoi(workingString.substr(0, 2), nullptr, 16));
-                workingString = workingString.substr(2);
-            }
-            else
-            {
-                color.a = 255;
-            }
-
-            color.r = ::base::checked_cast<uint8_t>(std::stoi(workingString.substr(0, 2), nullptr, 16));
-            color.g = ::base::checked_cast<uint8_t>(std::stoi(workingString.substr(2, 2), nullptr, 16));
-            color.b = ::base::checked_cast<uint8_t>(std::stoi(workingString.substr(4, 2), nullptr, 16));
-
-            return color;
-        }
     };
 #pragma warning(pop)
 }
