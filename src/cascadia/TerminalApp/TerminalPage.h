@@ -91,7 +91,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
-        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
+        Windows::Foundation::Collections::IVector<TerminalApp::Command> _mruTabActions;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
         void _UpdateTabIndices();
