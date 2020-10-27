@@ -1005,6 +1005,16 @@ void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) no
     _pfnBackgroundColorChanged.swap(pfn);
 }
 
+// Method Description:
+// - Allows settings a callback for settings the taskbar progress indicator
+// Arguments:
+// - pfn: a function callback that takes 2 size_t parameters, one indicating the progress state
+//        and the other indicating the progress value
+void Microsoft::Terminal::Core::Terminal::SetTaskbarProgressCallback(std::function<void(const size_t, const size_t)> pfn) noexcept
+{
+    _pfnSetTaskbarProgress.swap(pfn);
+}
+
 void Terminal::_InitializeColorTable()
 try
 {

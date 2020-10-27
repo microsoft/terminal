@@ -80,6 +80,16 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 }
 
 // Method Description:
+// - Event handler to update the taskbar progress indicator
+// Arguments:
+// - sender: not used
+// - args: contains the progress state/value needed to set the taskbar progress
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Microsoft::Terminal::TerminalControl::SetTaskbarProgressEventArgs& args)
+{
+    _window->SetTaskbarProgress(args.State(), args.Progress());
+}
+
+// Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the app logic for processing.
 // - If the logic determined there's an error while processing that commandline,
@@ -171,6 +181,7 @@ void AppHost::Initialize()
 
     _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
+    _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
 
     _window->UpdateTitle(_logic.Title());
 

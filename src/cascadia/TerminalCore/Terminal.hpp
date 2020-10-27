@@ -115,6 +115,8 @@ public:
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+
+    bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -183,6 +185,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
+    void SetTaskbarProgressCallback(std::function<void(const size_t, const size_t)> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -216,6 +219,7 @@ private:
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
+    std::function<void(const size_t, const size_t)> _pfnSetTaskbarProgress;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;

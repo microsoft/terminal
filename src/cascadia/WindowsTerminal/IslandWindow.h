@@ -35,6 +35,8 @@ public:
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
+    void SetTaskbarProgress(const size_t state, const size_t progress);
+
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
@@ -73,6 +75,9 @@ protected:
     void _ApplyWindowSize();
 
     LONG _getDesiredWindowStyle() const;
+
+    ITaskbarList3* _taskbar;
+    bool _taskbarInitialized{ false };
 
 private:
     // This minimum width allows for width the tabs fit

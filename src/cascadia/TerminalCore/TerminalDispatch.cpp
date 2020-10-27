@@ -399,6 +399,18 @@ bool TerminalDispatch::EndHyperlink() noexcept
     return _terminalApi.EndHyperlink();
 }
 
+// Method Description:
+// - Updates the taskbar progress indicator
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - true
+bool TerminalDispatch::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+{
+    return _terminalApi.SetTaskbarProgress(state, progress);
+}
+
 // Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:

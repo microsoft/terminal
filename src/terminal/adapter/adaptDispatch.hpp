@@ -123,6 +123,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 
+        bool SetTaskbarProgress(const size_t state, const size_t progress) override;
+
     private:
         enum class ScrollDirection
         {

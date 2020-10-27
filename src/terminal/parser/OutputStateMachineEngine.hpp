@@ -160,6 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
             Hyperlink = 8,
+            SetTaskbarProgress = 9,
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,
@@ -187,6 +188,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ParseHyperlink(const std::wstring_view string,
                              std::wstring& params,
                              std::wstring& uri) const;
+
+        bool _GetTaskbarProgress(const std::wstring_view string,
+                                 size_t& state,
+                                 size_t& progress) const;
 
         void _ClearLastChar() noexcept;
     };

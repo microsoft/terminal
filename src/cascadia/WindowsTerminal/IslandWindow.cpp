@@ -258,6 +258,16 @@ void IslandWindow::Initialize()
 
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _source.Content(_rootGrid);
+
+    // initialize the taskbar object
+    HRESULT hr = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_taskbar));
+    if (SUCCEEDED(hr))
+    {
+        if (SUCCEEDED(_taskbar->HrInit()))
+        {
+            _taskbarInitialized = true;
+        }
+    }
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -500,6 +510,35 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
                      0,
                      0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+}
+
+// Method Description:
+// - Sets the taskbar progress indicator
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
+{
+    if (_taskbarInitialized)
+    {
+        switch (state)
+        {
+        case 0:
+            // removes the taskbar progress indicator
+            _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
+            break;
+        case 1:
+            // sets the progress value to value given by the 'progress' parameter
+            _taskbar->SetProgressValue(_window.get(), progress, 100);
+            break;
+        case 2:
+            // sets the progress indicator to an error state
+            _taskbar->SetProgressState(_window.get(), TBPF_ERROR);
+            break;
+        default:
+            break;
+        }
     }
 }
 

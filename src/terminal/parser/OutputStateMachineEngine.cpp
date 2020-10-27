@@ -647,6 +647,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     bool queryClipboard = false;
     std::vector<size_t> tableIndexes;
     std::vector<DWORD> colors;
+    size_t state = 0;
+    size_t progress = 0;
 
     switch (parameter)
     {
@@ -671,6 +673,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         break;
     case OscActionCodes::Hyperlink:
         success = _ParseHyperlink(string, params, uri);
+        break;
+    case OscActionCodes::SetTaskbarProgress:
+        success = _GetTaskbarProgress(string, state, progress);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -738,6 +743,9 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             {
                 success = _dispatch->AddHyperlink(uri, params);
             }
+            break;
+        case OscActionCodes::SetTaskbarProgress:
+            success = _dispatch->SetTaskbarProgress(state, progress);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -920,6 +928,40 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
             }
         }
         return true;
+    }
+    return false;
+}
+
+// Routine Description:
+// - OSC 9 ; 4 ; state ; progress ST
+//       state: the state to set the taskbar progress indicator to
+//       progress: the progress value to set the taskbar progress indicator with
+// - Parses out the 'state' and 'progress' parameters from the OSC string so
+//   that we can use them to set the taskbar progress indicator
+// Arguments:
+// - string: the string to parse
+// - state: where to store the state value once we parse it
+// - progress: where to store the progress value once we parse it
+// Return Value:
+// - true if we succesfully parsed the string, false otherwise
+bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view string,
+                                                   size_t& state,
+                                                   size_t& progress) const
+{
+    const size_t midPos = string.find(';');
+    if (midPos != std::wstring::npos)
+    {
+        const auto subParam = string.substr(0, midPos);
+        if (std::stoi(til::u16u8(subParam)) == 4)
+        {
+            const auto stateAndProgress = string.substr(midPos + 1);
+            const size_t delimPos = stateAndProgress.find(';');
+            const auto stateStr = stateAndProgress.substr(0, delimPos);
+            const auto progressStr = stateAndProgress.substr(delimPos + 1);
+            state = std::stoi(til::u16u8(stateStr));
+            progress = std::stoi(til::u16u8(progressStr));
+            return true;
+        }
     }
     return false;
 }

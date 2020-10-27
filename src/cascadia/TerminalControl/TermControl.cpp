@@ -104,6 +104,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
+        auto pfnSetTaskbarProgress = std::bind(&TermControl::_SetTaskbarProgress, this, std::placeholders::_1, std::placeholders::_2);
+        _terminal->SetTaskbarProgressCallback(pfnSetTaskbarProgress);
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -2273,6 +2276,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _tsfTryRedrawCanvas->Run();
     }
 
+    // Method Description:
+    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    //   to set the progress indicator on the taskbar
+    // Arguments:
+    // - state: the state with which to set the progress indicator
+    // - progress: the progress with which to set the progress indicator (only used if state is 1)
+    void TermControl::_SetTaskbarProgress(const size_t state, const size_t progress)
+    {
+        auto setTaskbarProgressArgs = winrt::make_self<SetTaskbarProgressEventArgs>(state, progress);
+        _setTaskbarProgressHandlers(*this, *setTaskbarProgressArgs);
+    }
+
     hstring TermControl::Title()
     {
         hstring hstr{ _terminal->GetConsoleTitle() };
@@ -3029,5 +3044,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, TerminalControl::SetTaskbarProgressEventArgs);
     // clang-format on
 }

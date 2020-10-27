@@ -2383,6 +2383,16 @@ bool AdaptDispatch::EndHyperlink()
     return _pConApi->PrivateEndHyperlink();
 }
 
+// Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::SetTaskbarProgress(const size_t /*state*/, const size_t /*progress*/)
+{
+    return false;
+}
+
 // Routine Description:
 // - Determines whether we should pass any sequence that manipulates
 //   TerminalInput's input generator through the PTY. It encapsulates
