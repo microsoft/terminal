@@ -23,6 +23,8 @@ namespace winrt
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::System;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -239,14 +241,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
     {
-        _OpenJsonHandlers(nullptr, nullptr);
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+        const auto target = altPressed ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+        _OpenJsonHandlers(nullptr, target);
     }
 
     void MainPage::OpenJsonKeyDown(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args)
     {
-        if (args.Key() == Windows::System::VirtualKey::Enter)
+        if (args.Key() == VirtualKey::Enter)
         {
-            _OpenJsonHandlers(nullptr, nullptr);
+            const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
+            _OpenJsonHandlers(nullptr, target);
         }
     }
 }

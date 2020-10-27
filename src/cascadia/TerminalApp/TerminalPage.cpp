@@ -2572,10 +2572,10 @@ namespace winrt::TerminalApp::implementation
         if (!_switchToSettingsCommand)
         {
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
-            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
+            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
                 {
-                    page->_LaunchSettings(SettingsTarget::SettingsFile);
+                    page->_LaunchSettings(e);
                 }
             });
 

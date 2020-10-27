@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings Settings();
 
-        WINRT_CALLBACK(OpenJson, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+        TYPED_EVENT(OpenJson, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget);
 
     private:
         // XAML should data-bind to the _settingsClone
