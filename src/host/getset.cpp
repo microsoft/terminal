@@ -1410,6 +1410,10 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     {
         cursorPosition.X = 0;
     }
+    else
+    {
+        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
+    }
 
     return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
 }
@@ -1427,7 +1431,8 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 
     const SMALL_RECT viewport = screenInfo.GetActiveBuffer().GetViewport().ToInclusive();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    newCursorPosition = screenInfo.GetTextBuffer().ClampPositionWithinLine(newCursorPosition);
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.

@@ -128,6 +128,7 @@ public:
     boolean IsDoubleWidthLine(const size_t row) const;
 
     SHORT GetLineWidth(const size_t row) const;
+    COORD ClampPositionWithinLine(const COORD position) const;
 
     void Reset();
 

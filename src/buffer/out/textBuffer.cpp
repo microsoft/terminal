@@ -821,6 +821,8 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             const size_t fillLength = GetSize().Width() - fillOffset;
             const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
             row.WriteCells(fillData, fillOffset, false);
+            // We also need to make sure the cursor is clamped within the new width.
+            GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
         _NotifyPaint(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
     }
@@ -848,6 +850,12 @@ SHORT TextBuffer::GetLineWidth(const size_t row) const
 {
     const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
     return GetSize().Width() >> scale;
+}
+
+COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
+{
+    const SHORT rightmostColumn = GetLineWidth(position.Y) - 1;
+    return { std::min(position.X, rightmostColumn), position.Y };
 }
 
 // Routine Description:

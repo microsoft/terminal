@@ -125,7 +125,9 @@ bool ConhostInternalGetSet::SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BU
 // - true if successful (see DoSrvSetConsoleCursorPosition). false otherwise.
 bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
 {
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(_io.GetActiveOutputBuffer(), position));
+    auto& info = _io.GetActiveOutputBuffer();
+    const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
+    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
 }
 
 // Routine Description:
