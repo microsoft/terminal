@@ -249,6 +249,13 @@ public:
         return _privateSetTextAttributesResult;
     }
 
+    bool PrivateSetCurrentLineRendition(const LineRendition /*lineRendition*/)
+    {
+        Log::Comment(L"PrivateSetCurrentLineRendition MOCK called...");
+
+        return false;
+    }
+
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override
     {

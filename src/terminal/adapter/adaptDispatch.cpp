@@ -704,10 +704,9 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 //   width, or as one half of a double height line.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetLineRendition(const LineRendition /*rendition*/)
+bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
 {
-    // TODO
-    return false;
+    return _pConApi->PrivateSetCurrentLineRendition(rendition);
 }
 
 // Routine Description:

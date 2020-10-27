@@ -182,6 +182,20 @@ bool ConhostInternalGetSet::PrivateSetTextAttributes(const TextAttribute& attrs)
     return true;
 }
 
+// Method Description:
+// - Sets the line rendition attribute for the current row of the active screen
+//   buffer. This controls how character cells are scaled when the row is rendered.
+// Arguments:
+// - lineRendition: The new LineRendition attribute to use
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::PrivateSetCurrentLineRendition(const LineRendition lineRendition)
+{
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.SetCurrentLineRendition(lineRendition);
+    return true;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:

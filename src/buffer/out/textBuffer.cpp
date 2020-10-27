@@ -801,6 +801,47 @@ void TextBuffer::SetCurrentAttributes(const TextAttribute& currentAttributes) no
     _currentAttributes = currentAttributes;
 }
 
+void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
+{
+    const auto cursorPosition = GetCursor().GetPosition();
+    const auto rowIndex = cursorPosition.Y;
+    auto& row = GetRowByOffset(rowIndex);
+    if (row.GetLineRendition() != lineRendition)
+    {
+        row.SetLineRendition(lineRendition);
+        // If the line rendition has changed, the row can no longer be wrapped.
+        row.SetWrapForced(false);
+        // And if it's no longer single width, the right half of the row should be erased.
+        if (lineRendition != LineRendition::SingleWidth)
+        {
+            const auto fillChar = L' ';
+            auto fillAttrs = GetCurrentAttributes();
+            fillAttrs.SetStandardErase();
+            const size_t fillOffset = GetLineWidth(rowIndex);
+            const size_t fillLength = GetSize().Width() - fillOffset;
+            const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+            row.WriteCells(fillData, fillOffset, false);
+        }
+        _NotifyPaint(Viewport::FromDimensions({ 0, rowIndex }, { GetSize().Width(), 1 }));
+    }
+}
+
+LineRendition TextBuffer::GetLineRendition(const size_t row) const
+{
+    return GetRowByOffset(row).GetLineRendition();
+}
+
+boolean TextBuffer::IsDoubleWidthLine(const size_t row) const
+{
+    return GetLineRendition(row) != LineRendition::SingleWidth;
+}
+
+SHORT TextBuffer::GetLineWidth(const size_t row) const
+{
+    const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
+    return GetSize().Width() >> scale;
+}
+
 // Routine Description:
 // - Resets the text contents of this buffer with the default character
 //   and the default current color attributes

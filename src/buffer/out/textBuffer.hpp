@@ -122,6 +122,12 @@ public:
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
+    void SetCurrentLineRendition(const LineRendition lineRendition);
+    LineRendition GetLineRendition(const size_t row) const;
+    boolean IsDoubleWidthLine(const size_t row) const;
+
+    SHORT GetLineWidth(const size_t row) const;
+
     void Reset();
 
     [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
