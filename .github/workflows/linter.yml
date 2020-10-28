@@ -40,7 +40,7 @@ jobs:
         with:
           # Full git history is needed to get a proper list of changed files within `super-linter`
           fetch-depth: 0
-          
+
       ################################
       # Run Linter against code base #
       ################################
@@ -52,3 +52,5 @@ jobs:
           MARKDOWN_CONFIG_FILE: .markdown-lint.yml
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_EDITORCONFIG: false
+          # The json linter doesn't like JSONC, which we use all over. So just disable it.
+          VALIDATE_JSON: false
