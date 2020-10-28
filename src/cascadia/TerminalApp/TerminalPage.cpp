@@ -425,10 +425,10 @@ namespace winrt::TerminalApp::implementation
 
         const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
-        auto const profileCount = gsl::narrow_cast<int>(_settings.Profiles().Size());
+        auto const profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
-            const auto profile = _settings.Profiles().GetAt(profileIndex);
+            const auto profile = _settings.ActiveProfiles().GetAt(profileIndex);
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
             // Add the keyboard shortcuts based on the number of profiles defined
@@ -2066,7 +2066,7 @@ namespace winrt::TerminalApp::implementation
         _HookupKeyBindings(_settings.KeyMap());
 
         // Refresh UI elements
-        auto profiles = _settings.Profiles();
+        auto profiles = _settings.ActiveProfiles();
         for (const auto& profile : profiles)
         {
             const auto profileGuid = profile.Guid();
@@ -2179,7 +2179,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateCommandsForPalette()
     {
         IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().Commands(),
-                                                                       _settings.Profiles().GetView(),
+                                                                       _settings.ActiveProfiles().GetView(),
                                                                        _settings.GlobalSettings().ColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
