@@ -1189,6 +1189,19 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Updates the command palette (tab switcher) with a list of actions
+    //   reflecting the current in-order list of tabs.
+    void TerminalPage::_UpdatePaletteWithInOrderTabs()
+    {
+        auto tabCommands = winrt::single_threaded_vector<Command>();
+        for (const auto& tab : _tabs)
+        {
+            tabCommands.Append(tab.SwitchToTabCommand());
+        }
+        CommandPalette().SetInOrderTabActions(tabCommands);
+    }
+
+    // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
@@ -1204,18 +1217,19 @@ namespace winrt::TerminalApp::implementation
             if (auto index{ _GetFocusedTabIndex() })
             {
                 uint32_t tabCount = _tabs.Size();
-                // Wraparound math. By adding tabCount and then calculating modulo tabCount,
-                // we clamp the values to the range [0, tabCount) while still supporting moving
-                // leftward from 0 to tabCount - 1.
+                // Wraparound math. By adding tabCount and then calculating
+                // modulo tabCount, we clamp the values to the range [0,
+                // tabCount) while still supporting moving leftward from 0 to
+                // tabCount - 1.
                 newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
             }
         }
         else
         {
-            // determine what the next "most recently used" index is.
-
-            // In this case, our focused tab index (in the MRU ordering) is always 0.
-            // So, going next should go to index 1, and going prev should wrap to the end.
+            // Determine what the next "most recently used" index is.
+            // In this case, our focused tab index (in the MRU ordering) is
+            // always 0. So, going next should go to index 1, and going prev
+            // should wrap to the end.
             uint32_t tabCount = _mruTabActions.Size();
             newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
         }
@@ -1225,14 +1239,7 @@ namespace winrt::TerminalApp::implementation
         if (useTabSwitcher)
         {
             // Set up the list of in-order tabs
-            // TODO: de-dupe this with _HandleOpenTabSearch
-            auto tabCommands = winrt::single_threaded_vector<Command>();
-            for (const auto& tab : _tabs)
-            {
-                tabCommands.Append(tab.SwitchToTabCommand());
-            }
-            CommandPalette().SetInOrderTabActions(tabCommands);
-            ////////////////////////////////////////////////////////////////////
+            _UpdatePaletteWithInOrderTabs();
             // Also set up the list of MRU tabs
             CommandPalette().SetMRUTabActions(_mruTabActions);
 

@@ -684,8 +684,20 @@
         },
         "useTabSwitcher": {
           "default": true,
-          "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
-          "type": "boolean"
+          "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", the tab switcher will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "enum": [
+                "mru",
+                "inOrder",
+                "disabled",
+              ],
+              "type": "string"
+            }
+          ]
         }
       },
       "required": [

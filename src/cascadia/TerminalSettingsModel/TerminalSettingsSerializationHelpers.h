@@ -354,9 +354,10 @@ JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(3) = {
         pair_type{ "mru", ValueType::MostRecentlyUsed },
         pair_type{ "inOrder", ValueType::InOrder },
+        pair_type{ "disabled", ValueType::Disabled },
     };
 
     auto FromJson(const Json::Value& json)
