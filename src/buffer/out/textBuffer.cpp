@@ -2384,6 +2384,7 @@ const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexStrin
 void TextBuffer::CopyPatterns(const TextBuffer& OtherBuffer)
 {
     _IdsAndPatterns = OtherBuffer._IdsAndPatterns;
+    _currentPatternId = OtherBuffer._currentPatternId;
 }
 
 // Method Description:
