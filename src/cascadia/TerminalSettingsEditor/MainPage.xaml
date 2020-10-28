@@ -26,18 +26,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         IsBackButtonVisible="Auto"
                         IsBackEnabled="True"
                         BackRequested="SettingsNav_BackRequested">
-            <muxc:NavigationView.AutoSuggestBox>
-                <AutoSuggestBox PlaceholderText="Search"
-                                QueryIcon="Find"
-                                TextChanged="AutoSuggestBox_TextChanged"
-                                QuerySubmitted="AutoSuggestBox_QuerySubmitted"
-                                SuggestionChosen="AutoSuggestBox_SuggestionChosen"/>
-            </muxc:NavigationView.AutoSuggestBox>
             <muxc:NavigationView.MenuItems>
 
-                <muxc:NavigationViewItem x:Uid="Nav_Home"
-                                         Icon="Home"
-                                         Tag="Home_Nav"/>
                 <muxc:NavigationViewItem x:Uid="Nav_General"
                                          Icon="Globe"
                                          Tag="General_Nav">
@@ -102,34 +92,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE909;"/>
                             </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="CmdPrompt_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="CmdPrompt_Page">Command Prompt</TextBlock>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="Powershell_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Powershell_Page">Windows Powershell</TextBlock>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="Ubuntu_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Ubuntu_Page">Ubuntu</TextBlock>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="Powershell7_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Powershell7_Page">PowerShell 7</TextBlock>
                         </muxc:NavigationViewItem>
 
                         <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"

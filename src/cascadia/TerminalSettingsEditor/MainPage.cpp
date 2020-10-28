@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
         {
             const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
-            const hstring homeNav = L"Home_Nav";
+            const hstring homeNav = L"General_Nav";
             const hstring itemTag = unbox_value<hstring>(item.Tag());
 
             if (itemTag == homeNav)
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        contentFrame().Navigate(xaml_typename<Editor::Home>());
+        contentFrame().Navigate(xaml_typename<Editor::Launch>());
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
@@ -183,7 +183,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::Navigate(Controls::Frame contentFrame, hstring clickedItemTag)
     {
-        const hstring homePage = L"Home_Nav";
         const hstring generalPage = L"General_Nav";
         const hstring launchSubpage = L"Launch_Nav";
         const hstring interactionSubpage = L"Interaction_Nav";
@@ -197,13 +196,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const hstring colorSchemesPage = L"ColorSchemes_Nav";
         const hstring globalAppearancePage = L"GlobalAppearance_Nav";
 
-        const hstring keybindingsPage = L"Keyboard_Nav";
-
-        if (clickedItemTag == homePage)
-        {
-            contentFrame.Navigate(xaml_typename<Editor::Home>());
-        }
-        else if (clickedItemTag == launchSubpage)
+        if (clickedItemTag == launchSubpage)
         {
             contentFrame.Navigate(xaml_typename<Editor::Launch>());
         }
@@ -230,10 +223,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalAppearancePage)
         {
             contentFrame.Navigate(xaml_typename<Editor::GlobalAppearance>());
-        }
-        else if (clickedItemTag == keybindingsPage)
-        {
-            contentFrame.Navigate(xaml_typename<Editor::Keybindings>());
         }
     }
 }
