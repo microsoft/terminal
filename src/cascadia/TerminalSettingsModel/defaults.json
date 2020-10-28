@@ -287,6 +287,8 @@
         { "command": "find", "keys": "ctrl+shift+f" },
         { "command": "toggleRetroEffect" },
         { "command": "openTabColorPicker" },
+        { "command": "renameTab" },
+        { "command": "openTabRenamer" },
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
 
         // Tab Management
