@@ -1058,7 +1058,7 @@ Json::Value CascadiaSettings::ToJson() const
     Json::Value profiles{ Json::ValueType::objectValue };
     profiles[JsonKey(DefaultSettingsKey)] = _userDefaultProfileSettings->ToJson();
     Json::Value profilesList{ Json::ValueType::arrayValue };
-    for (const auto& entry : _profiles)
+    for (const auto& entry : _allProfiles)
     {
         const auto prof{ winrt::get_self<implementation::Profile>(entry) };
         profilesList.append(prof->ToJson());

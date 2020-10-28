@@ -204,7 +204,6 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::CascadiaSettings()
     {
-        DebugBreak();
         // clang-format off
         // This needs to be in alphabetical order.
         const std::string settingsString{   "{"
@@ -227,12 +226,12 @@ namespace SettingsModelLocalTests
                                                             "\"name\": \"HowettShell\""
                                                         "},"
                                                         "{"
-                                                            "\"antialiasingMode\": \"aliased\","
-                                                            "\"name\": \"NiksaShell\""
+                                                            "\"hidden\": true,"
+                                                            "\"name\": \"BhojwaniShell\""
                                                         "},"
                                                         "{"
-                                                            "\"name\": \"BhojwaniShell\","
-                                                            "\"source\": \"local\""
+                                                            "\"antialiasingMode\": \"aliased\","
+                                                            "\"name\": \"NiksaShell\""
                                                         "}"
                                                     "]"
                                                 "},"
