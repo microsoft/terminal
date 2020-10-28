@@ -4,7 +4,7 @@
 #pragma once
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
-#include "ITab.h"
+#include "TabBase.h"
 #include "TerminalTab.g.h"
 
 // fwdecl unittest classes
@@ -15,7 +15,7 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TerminalTab : TerminalTabT<TerminalTab, ITab>
+    struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
     {
     public:
         TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);

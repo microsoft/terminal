@@ -16,7 +16,7 @@ Author(s):
 --*/
 
 #pragma once
-#include "ITab.h"
+#include "TabBase.h"
 #include "SettingsTab.g.h"
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
@@ -24,7 +24,7 @@ Author(s):
 
 namespace winrt::TerminalApp::implementation
 {
-    struct SettingsTab : SettingsTabT<SettingsTab, ITab>
+    struct SettingsTab : SettingsTabT<SettingsTab, TabBase>
     {
     public:
         SettingsTab(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);

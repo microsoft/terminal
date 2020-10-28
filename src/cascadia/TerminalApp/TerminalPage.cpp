@@ -43,7 +43,7 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::ITab>() },
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabActions{ winrt::single_threaded_vector<Command>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
     {
@@ -1324,7 +1324,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a com_ptr to the currently focused tab. This might return null,
     //   so make sure to check the result!
-    winrt::TerminalApp::ITab TerminalPage::_GetFocusedTab()
+    winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab()
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
@@ -2571,7 +2571,7 @@ namespace winrt::TerminalApp::implementation
         for (uint32_t i = 0; i < size; ++i)
         {
             auto tab{ _tabs.GetAt(i) };
-            auto tabImpl{ winrt::get_self<ITab>(tab) };
+            auto tabImpl{ winrt::get_self<TabBase>(tab) };
             tabImpl->UpdateTabViewIndex(i, size);
         }
     }
@@ -2640,7 +2640,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::ITab& tab) const
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab) const
     {
         if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
         {
@@ -2682,7 +2682,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_MakeSwitchToTabCommand(const TerminalApp::ITab& tab, const uint32_t index)
+    void TerminalPage::_MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index)
     {
         SwitchToTabArgs args{ index };
         ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
