@@ -144,7 +144,7 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
 winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfile(winrt::guid profileGuid) const noexcept
 {
     const winrt::guid guid{ profileGuid };
-    for (auto profile : _allProfiles)
+    for (const auto& profile : _allProfiles)
     {
         try
         {
@@ -258,7 +258,7 @@ void CascadiaSettings::_ValidateSettings()
 
     // Remove hidden profiles _after_ re-ordering. The re-ordering uses the raw
     // json, and will get confused if the profile isn't in the list.
-    _RemoveHiddenProfiles();
+    _UpdateActiveProfiles();
 
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
@@ -444,11 +444,9 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
     //   pIndex = the pIndex of the profile with guid==guids[gIndex]
     //   profiles.swap(pIndex <-> gIndex)
     // This is O(N^2), which is kinda rough. I'm sure there's a better way
-    //uint32_t gIndex = 0;
     for (uint32_t gIndex = 0; gIndex < guidOrder.size(); gIndex++)
     {
-        auto guid = guidOrder.at(gIndex);
-        guid = guidOrder.at(gIndex);
+        const auto guid = guidOrder.at(gIndex);
         for (uint32_t pIndex = gIndex; pIndex < _allProfiles.Size(); pIndex++)
         {
             auto profileGuid = _allProfiles.GetAt(pIndex).Guid();
@@ -464,14 +462,16 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 }
 
 // Method Description:
-// - generates the list of active profiles from the list of all profiles
+// - Updates the list of active profiles from the list of all profiles
+// - If there are no active profiles (all profiles are hidden), throw a SettingsException
 // - Does not set any warnings.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_RemoveHiddenProfiles()
+void CascadiaSettings::_UpdateActiveProfiles()
 {
+    _activeProfiles.Clear();
     for (auto const& profile : _allProfiles)
     {
         if (!profile.Hidden())

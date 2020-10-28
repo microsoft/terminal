@@ -680,7 +680,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(true, settings->_allProfiles.GetAt(1).Hidden());
 
             settings->_ReorderProfilesToMatchUserSettingsOrder();
-            settings->_RemoveHiddenProfiles();
+            settings->_UpdateActiveProfiles();
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(1u, settings->_activeProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile1", settings->_activeProfiles.GetAt(0).Name());
@@ -710,7 +710,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(true, settings->_allProfiles.GetAt(3).Hidden());
 
             settings->_ReorderProfilesToMatchUserSettingsOrder();
-            settings->_RemoveHiddenProfiles();
+            settings->_UpdateActiveProfiles();
             VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
             VERIFY_ARE_EQUAL(2u, settings->_activeProfiles.Size());
             VERIFY_ARE_EQUAL(L"profile5", settings->_activeProfiles.GetAt(0).Name());
@@ -1238,7 +1238,7 @@ namespace SettingsModelLocalTests
             settings->_ParseJsonString(settingsWithProfiles, false);
             settings->LayerJson(settings->_userSettings);
 
-            settings->_RemoveHiddenProfiles();
+            settings->_UpdateActiveProfiles();
             Log::Comment(NoThrowString().Format(
                 L"settingsWithProfiles successfully parsed and validated"));
             VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
@@ -1253,7 +1253,7 @@ namespace SettingsModelLocalTests
             bool caughtExpectedException = false;
             try
             {
-                settings->_RemoveHiddenProfiles();
+                settings->_UpdateActiveProfiles();
             }
             catch (const implementation::SettingsException& ex)
             {

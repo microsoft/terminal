@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateNoDuplicateProfiles();
         void _ResolveDefaultProfile();
         void _ReorderProfilesToMatchUserSettingsOrder();
-        void _RemoveHiddenProfiles();
+        void _UpdateActiveProfiles();
         void _ValidateAllSchemesExist();
         void _ValidateMediaResources();
         void _ValidateKeybindings();
