@@ -13,7 +13,6 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -49,6 +48,9 @@
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="EnumMappings.h">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
@@ -99,6 +101,9 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="EnumMappings.cpp">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -116,6 +121,7 @@
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
+    <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
   </ItemGroup>
@@ -176,7 +182,6 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -198,6 +203,5 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

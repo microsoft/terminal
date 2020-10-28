@@ -1,0 +1,9 @@
+// Copyright (c) Microsoft Corporation
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass EnumMappings {
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
+    }
+}

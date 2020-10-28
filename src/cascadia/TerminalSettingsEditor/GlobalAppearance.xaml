@@ -25,10 +25,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                <Controls:RadioButtons x:Uid="Globals_Theme" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                    <RadioButton x:Uid="Globals_ThemeDefault" x:Name="DefaultTheme"/>
-                    <RadioButton x:Uid="Globals_ThemeDark" x:Name="DarkTheme"/>
-                    <RadioButton x:Uid="Globals_ThemeLight" x:Name="LightTheme"/>
+                <Controls:RadioButtons x:Uid="Globals_Theme"
+                                       Margin="0,0,0,20"
+                                       FontSize="15"
+                                       ToolTipService.Placement="Mouse"
+                                       ItemsSource="{x:Bind ElementThemes}"
+                                       SelectionChanged="ElementThemeSelected">
+                    <Controls:RadioButtons.ItemTemplate>
+                        <DataTemplate x:DataType="local:EnumEntry">
+                            <RadioButton Content="{x:Bind EnumName}" IsChecked="{x:Bind IsActive}"/>
+                        </DataTemplate>
+                    </Controls:RadioButtons.ItemTemplate>
                 </Controls:RadioButtons>
                 <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTabsInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                 <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
