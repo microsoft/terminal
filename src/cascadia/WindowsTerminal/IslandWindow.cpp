@@ -362,6 +362,9 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             return 0;
         }
         CATCH_LOG();
+    case WM_THEMECHANGED:
+        UpdateWindowIconForActiveMetrics(_window.get());
+        return 0;
     }
 
     // TODO: handle messages here...
