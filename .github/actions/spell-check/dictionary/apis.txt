@@ -56,6 +56,7 @@ spsc
 STDCPP
 strchr
 syscall
+THEMECHANGED
 tmp
 tx
 UPDATEINIFILE
