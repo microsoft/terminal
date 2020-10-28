@@ -3,7 +3,7 @@
 
 #pragma once
 #include "inc/cppwinrt_utils.h"
-#include "ITab.g.h"
+#include "TabBase.g.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -13,7 +13,7 @@ namespace TerminalAppLocalTests
 
 namespace winrt::TerminalApp::implementation
 {
-    struct ITab : ITabT<ITab>
+    struct TabBase : TabBaseT<TabBase>
     {
     public:
         virtual void Focus(winrt::Windows::UI::Xaml::FocusState focusState) = 0;

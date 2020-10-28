@@ -3,8 +3,8 @@
 
 #include "pch.h"
 #include <LibraryResources.h>
-#include "ITab.h"
-#include "ITab.g.cpp"
+#include "TabBase.h"
+#include "TabBase.g.cpp"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -21,14 +21,14 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    WUX::FocusState ITab::FocusState() const noexcept
+    WUX::FocusState TabBase::FocusState() const noexcept
     {
         return _focusState;
     }
 
     // Method Description:
     // - Prepares this tab for being removed from the UI hierarchy
-    void ITab::Shutdown()
+    void TabBase::Shutdown()
     {
         // TODO: Does/Will the settings UI need some shutdown procedures?
         Content(nullptr);
@@ -42,7 +42,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ITab::_CreateContextMenu()
+    void TabBase::_CreateContextMenu()
     {
         auto weakThis{ get_weak() };
 
@@ -74,7 +74,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the created MenuFlyoutSubItem
-    Controls::MenuFlyoutSubItem ITab::_CreateCloseSubMenu()
+    Controls::MenuFlyoutSubItem TabBase::_CreateCloseSubMenu()
     {
         auto weakThis{ get_weak() };
 
@@ -110,7 +110,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void ITab::_EnableCloseMenuItems()
+    void TabBase::_EnableCloseMenuItems()
     {
         // close other tabs is enabled only if there are other tabs
         _closeOtherTabsMenuItem.IsEnabled(TabViewNumTabs() > 1);
@@ -118,7 +118,7 @@ namespace winrt::TerminalApp::implementation
         _closeTabsAfterMenuItem.IsEnabled(TabViewIndex() < TabViewNumTabs() - 1);
     }
 
-    void ITab::_CloseTabsAfter()
+    void TabBase::_CloseTabsAfter()
     {
         CloseTabsAfterArgs args{ _TabViewIndex };
         ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
@@ -126,7 +126,7 @@ namespace winrt::TerminalApp::implementation
         _dispatch.DoAction(closeTabsAfter);
     }
 
-    void ITab::_CloseOtherTabs()
+    void TabBase::_CloseOtherTabs()
     {
         CloseOtherTabsArgs args{ _TabViewIndex };
         ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
@@ -134,7 +134,7 @@ namespace winrt::TerminalApp::implementation
         _dispatch.DoAction(closeOtherTabs);
     }
 
-    void ITab::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
+    void TabBase::UpdateTabViewIndex(const uint32_t idx, const uint32_t numTabs)
     {
         TabViewIndex(idx);
         TabViewNumTabs(numTabs);
@@ -142,7 +142,7 @@ namespace winrt::TerminalApp::implementation
         SwitchToTabCommand().Action().Args().as<SwitchToTabArgs>().TabIndex(idx);
     }
 
-    void ITab::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
+    void TabBase::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
     }
