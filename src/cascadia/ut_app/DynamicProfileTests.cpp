@@ -166,12 +166,6 @@ namespace TerminalAppUnitTests
         VERIFY_IS_FALSE(settings->_allProfiles.GetAt(4).HasGuid());
         VERIFY_IS_FALSE(settings->_allProfiles.GetAt(4).Source().empty());
 
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(4).HasGuid());
-
         VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(0).Guid(),
                              settings->_allProfiles.GetAt(1).Guid());
         VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(0).Guid(),
