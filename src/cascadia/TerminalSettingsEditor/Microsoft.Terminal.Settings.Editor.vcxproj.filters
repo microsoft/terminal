@@ -18,8 +18,6 @@
     <ClInclude Include="EnumRadioButton.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="HomeGridItem.idl" />
-    <Midl Include="SettingsEditorViewModel.idl" />
     <Midl Include="ColorToBrushConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
@@ -39,7 +37,6 @@
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="ColorSchemes.xaml" />
     <Page Include="Globals.xaml" />
-    <Page Include="Home.xaml" />
     <Page Include="Interaction.xaml" />
     <Page Include="Keybindings.xaml" />
     <Page Include="Launch.xaml" />

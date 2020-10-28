@@ -26,18 +26,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         IsBackButtonVisible="Auto"
                         IsBackEnabled="True"
                         BackRequested="SettingsNav_BackRequested">
-            <muxc:NavigationView.AutoSuggestBox>
-                <AutoSuggestBox PlaceholderText="Search"
-                                QueryIcon="Find"
-                                TextChanged="AutoSuggestBox_TextChanged"
-                                QuerySubmitted="AutoSuggestBox_QuerySubmitted"
-                                SuggestionChosen="AutoSuggestBox_SuggestionChosen"/>
-            </muxc:NavigationView.AutoSuggestBox>
             <muxc:NavigationView.MenuItems>
 
-                <muxc:NavigationViewItem x:Uid="Nav_Home"
-                                         Icon="Home"
-                                         Tag="Home_Nav"/>
                 <muxc:NavigationViewItem x:Uid="Nav_General"
                                          Icon="Globe"
                                          Tag="General_Nav">
@@ -104,34 +94,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </muxc:NavigationViewItem.Icon>
                         </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem Tag="CmdPrompt_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="CmdPrompt_Page">Command Prompt</TextBlock>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="Powershell_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Powershell_Page">Windows Powershell</TextBlock>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="Ubuntu_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Ubuntu_Page">Ubuntu</TextBlock>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem Tag="Powershell7_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;" />
-                            </muxc:NavigationViewItem.Icon>
-                            <TextBlock Tag="Powershell7_Page">PowerShell 7</TextBlock>
-                        </muxc:NavigationViewItem>
-
                         <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"
                                                  Tag="AddNew_Nav" >
                             <muxc:NavigationViewItem.Icon>
@@ -142,15 +104,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.MenuItems>
                 </muxc:NavigationViewItem>
 
-
-                <muxc:NavigationViewItem Icon="Keyboard"
-                                        Tag="Keyboard_Nav">
-                    <TextBlock Tag="Keyboard_Page">Keyboard</TextBlock>
-                </muxc:NavigationViewItem>
-
             </muxc:NavigationView.MenuItems>
             <muxc:NavigationView.PaneFooter>
-                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON">
+                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON" Tapped="OpenJsonTapped" KeyDown="OpenJsonKeyDown">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </muxc:NavigationViewItem.Icon>
@@ -164,13 +120,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Frame x:Name="contentFrame"
                        Margin="20"
                        Grid.Row="0"></Frame>
-                <Grid Height="100" Grid.Row="1">
+                <Grid Height="100" Grid.Row="1" BorderBrush="{ThemeResource SystemBaseLowColor}" BorderThickness="0,1,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"></ColumnDefinition>
-                        <ColumnDefinition Width="200"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning" Grid.Column="0" Foreground="Goldenrod" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" TextAlignment="Left" Margin="30,0,0,0"/>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
+                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning" Visibility="Collapsed" Foreground="Goldenrod" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" TextAlignment="Left" Margin="30,0,0,0"/>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
                         <Button x:Uid="Settings_ResetSettingsButton" FontSize="15" ToolTipService.Placement="Mouse"/>
                         <Button x:Uid="Settings_SaveSettingsButton" FontSize="15" Style="{StaticResource AccentButtonStyle}" Margin="10,0,0,0"/>
                     </StackPanel>
