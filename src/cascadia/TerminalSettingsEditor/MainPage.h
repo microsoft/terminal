@@ -19,13 +19,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         bool On_BackRequested();
         static void Navigate(Windows::UI::Xaml::Controls::Frame contentFrame, hstring clickedItemTag);
 
-        std::map<IInspectable, hstring> SearchList;
-
-        void AutoSuggestBox_TextChanged(Windows::Foundation::IInspectable const& sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxTextChangedEventArgs args);
-        void AutoSuggestBox_QuerySubmitted(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxQuerySubmittedEventArgs args);
-        void AutoSuggestBox_SuggestionChosen(const winrt::Windows::UI::Xaml::Controls::AutoSuggestBox sender, const winrt::Windows::UI::Xaml::Controls::AutoSuggestBoxSuggestionChosenEventArgs args);
-        void SearchSettings(hstring query, winrt::Windows::UI::Xaml::Controls::AutoSuggestBox& autoBox);
-
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings Settings();
 
     private:
