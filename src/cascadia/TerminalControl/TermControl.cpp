@@ -76,9 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false },
-        _searchBox{ nullptr },
-        _taskbarState{ 0 },
-        _taskbarProgress{ 0 }
+        _searchBox{ nullptr }
     {
         _EnsureStaticInitialization();
         InitializeComponent();
@@ -106,8 +104,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
-        auto pfnSetTaskbarProgress = std::bind(&TermControl::_SetTaskbarProgress, this, std::placeholders::_1, std::placeholders::_2);
-        _terminal->SetTaskbarProgressCallback(pfnSetTaskbarProgress);
+        auto pfnTaskbarProgressChanged = std::bind(&TermControl::TaskbarProgressChanged, this);
+        _terminal->TaskbarProgressChangedCallback(pfnTaskbarProgressChanged);
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
@@ -2278,20 +2276,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _tsfTryRedrawCanvas->Run();
     }
 
-    // Method Description:
-    // - Sets our internal knowledge of the taskbar's state and progress, then
-    //   sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
-    //   to set the progress indicator on the taskbar
-    // Arguments:
-    // - state: the state with which to set the progress indicator
-    // - progress: the progress with which to set the progress indicator (only used if state is 1)
-    void TermControl::_SetTaskbarProgress(const size_t state, const size_t progress)
-    {
-        _taskbarState = state;
-        _taskbarProgress = progress;
-        SendTaskbarProgressEvent();
-    }
-
     hstring TermControl::Title()
     {
         hstring hstr{ _terminal->GetConsoleTitle() };
@@ -3041,10 +3025,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
     //   to set the progress indicator on the taskbar
-    void TermControl::SendTaskbarProgressEvent()
+    void TermControl::TaskbarProgressChanged()
     {
-        auto setTaskbarProgressArgs = winrt::make_self<SetTaskbarProgressEventArgs>(_taskbarState, _taskbarProgress);
+        auto setTaskbarProgressArgs = winrt::make_self<SetTaskbarProgressEventArgs>(_terminal->GetTaskbarState(), _terminal->GetTaskbarProgress());
         _setTaskbarProgressHandlers(*this, *setTaskbarProgressArgs);
+    }
+
+    const size_t TermControl::GetTaskbarState() const noexcept
+    {
+        return _terminal->GetTaskbarState();
+    }
+
+    const size_t TermControl::GetTaskbarProgress() const noexcept
+    {
+        return _terminal->GetTaskbarProgress();
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -156,7 +156,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
-        void SendTaskbarProgressEvent();
+        void TaskbarProgressChanged();
+        const size_t GetTaskbarState() const noexcept;
+        const size_t GetTaskbarProgress() const noexcept;
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
@@ -168,7 +170,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, TerminalControl::SetTaskbarProgressEventArgs);
-
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
@@ -234,9 +235,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
 
-        size_t _taskbarState;
-        size_t _taskbarProgress;
-
         using Timestamp = uint64_t;
 
         // imported from WinUser
@@ -292,7 +290,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CopyToClipboard(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
         void _TerminalCursorPositionChanged();
-        void _SetTaskbarProgress(const size_t state, const size_t progress);
 
         void _MouseScrollHandler(const double mouseDelta, const Windows::Foundation::Point point, const bool isLeftButtonPressed);
         void _MouseZoomHandler(const double delta);

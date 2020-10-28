@@ -610,6 +610,8 @@ bool Terminal::EndHyperlink() noexcept
 // - true
 bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
 {
-    _pfnSetTaskbarProgress(state, progress);
+    _taskbarState = state;
+    _taskbarProgress = progress;
+    _pfnTaskbarProgressChanged();
     return true;
 }

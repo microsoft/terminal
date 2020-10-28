@@ -97,7 +97,9 @@ namespace Microsoft.Terminal.TerminalControl
         void SendInput(String input);
         void ToggleRetroEffect();
 
-        void SendTaskbarProgressEvent();
+        void TaskbarProgressChanged();
+        UInt64 GetTaskbarState();
+        UInt64 GetTaskbarProgress();
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;

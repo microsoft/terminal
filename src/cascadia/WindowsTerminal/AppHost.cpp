@@ -84,9 +84,10 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 // Arguments:
 // - sender: not used
 // - args: contains the progress state/value needed to set the taskbar progress
-void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Microsoft::Terminal::TerminalControl::SetTaskbarProgressEventArgs& args)
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::SetTaskbarProgressEventArgs& /*args*/)
 {
-    _window->SetTaskbarProgress(gsl::narrow<size_t>(args.State()), gsl::narrow<size_t>(args.Progress()));
+    auto control = sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>();
+    _window->SetTaskbarProgress(gsl::narrow<size_t>(control.GetTaskbarState()), gsl::narrow<size_t>(control.GetTaskbarProgress()));
 }
 
 // Method Description:
