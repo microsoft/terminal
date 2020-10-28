@@ -45,6 +45,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
         _UpdateColorSchemeList();
+
+        // Initialize our color table view model with 16 dummy colors
+        // so that on a ColorScheme selection change, we can loop through
+        // each ColorTableEntry and just change its color. Performing a
+        // clear and 16 appends doesn't seem to update the color pickers
+        // very accurately.
+        for (uint8_t i = 0; i < TableColorNames.size(); ++i)
+        {
+            auto entry = winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 });
+            _CurrentColorTable.Append(entry);
+        }
     }
 
     IObservableVector<hstring> ColorSchemes::ColorSchemeList()
@@ -116,11 +127,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::_UpdateColorTable(const Model::ColorScheme& colorScheme)
     {
-        _CurrentColorTable.Clear();
         for (uint8_t i = 0; i < TableColorNames.size(); ++i)
         {
-            auto entry = winrt::make<ColorTableEntry>(i, colorScheme.Table()[i]);
-            _CurrentColorTable.Append(entry);
+            _CurrentColorTable.GetAt(i).Color(colorScheme.Table()[i]);
         }
     }
 
