@@ -45,6 +45,7 @@ SUMS$
 \.tar$
 \.tgz$
 \.ttf$
+\.vsdx$
 \.woff
 \.xcf$
 \.xls

@@ -442,6 +442,38 @@
         }
       ]
     },
+    "ScrollUpAction": {
+      "description": "Arguments for a scrollUp action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "scrollUp" },
+            "rowsToScroll": {
+              "type": ["integer", "null"],
+              "default": null,
+              "description": "Scroll up rowsToScroll lines. If no value is provided, use the system-level defaults."
+            }
+          }
+        }
+      ]
+    },
+    "ScrollDownAction": {
+      "description": "Arguments for a scrollDown action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "scrollDown" },
+            "rowsToScroll": {
+              "type": ["integer", "null"],
+              "default": null,
+              "description": "Scroll down rowsToScroll lines. If no value is provided, use the system-level defaults."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -463,6 +495,8 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/ScrollUpAction" },
+              { "$ref": "#/definitions/ScrollDownAction" },
               { "type": "null" }
             ]
         },

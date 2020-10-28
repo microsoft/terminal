@@ -89,6 +89,10 @@ namespace winrt::TerminalApp::implementation
             _RefreshUIForSettingsReload();
         }
 
+        // Upon settings update we reload the system settings for scrolling as well.
+        // TODO: consider reloading this value periodically.
+        _systemRowsToScroll = _ReadSystemRowsToScroll();
+
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
         if (auto page{ weakThis.get() })
@@ -752,17 +756,10 @@ namespace winrt::TerminalApp::implementation
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
-        winrt::guid connectionType{};
+        winrt::guid connectionType = profile.ConnectionType();
         winrt::guid sessionGuid{};
 
-        const auto hasConnectionType = profile.HasConnectionType();
-        if (hasConnectionType)
-        {
-            connectionType = profile.ConnectionType();
-        }
-
-        if (hasConnectionType &&
-            connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
+        if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
@@ -1414,16 +1411,30 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
-    //      down a number of lines. Negative values of `delta` will move the
-    //      view up, and positive values will move the viewport down.
+    //      down a number of lines.
     // Arguments:
-    // - delta: a number of lines to move the viewport relative to the current viewport.
-    void TerminalPage::_Scroll(int delta)
+    // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
+    // - rowsToScroll: a number of lines to move the viewport. If not provided we will use a system default.
+    void TerminalPage::_Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll)
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
             auto focusedTab{ _GetStrongTabImpl(*index) };
-            focusedTab->Scroll(delta);
+            uint32_t realRowsToScroll;
+            if (rowsToScroll == nullptr)
+            {
+                // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
+                realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
+                                       focusedTab->GetActiveTerminalControl().GetViewHeight() :
+                                       _systemRowsToScroll;
+            }
+            else
+            {
+                // use the custom value specified in the command
+                realRowsToScroll = rowsToScroll.Value();
+            }
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
+            focusedTab->Scroll(scrollDelta);
         }
     }
 
@@ -1541,12 +1552,9 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
     //      down a page. The page length will be dependent on the terminal view height.
-    //      Negative values of `delta` will move the view up by one page, and positive values
-    //      will move the viewport down by one page.
     // Arguments:
-    // - delta: The direction to move the view relative to the current viewport(it
-    //      is clamped between -1 and 1)
-    void TerminalPage::_ScrollPage(int delta)
+    // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
+    void TerminalPage::_ScrollPage(ScrollDirection scrollDirection)
     {
         auto indexOpt = _GetFocusedTabIndex();
         // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
@@ -1555,11 +1563,11 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        delta = std::clamp(delta, -1, 1);
         const auto control = _GetActiveControl();
         const auto termHeight = control.GetViewHeight();
         auto focusedTab{ _GetStrongTabImpl(*indexOpt) };
-        focusedTab->Scroll(termHeight * delta);
+        auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
+        focusedTab->Scroll(scrollDelta);
     }
 
     // Method Description:
@@ -2227,6 +2235,15 @@ namespace winrt::TerminalApp::implementation
         {
             _newTabButton.Flyout().Hide();
         }
+
+        for (const auto& tab : _tabs)
+        {
+            auto tabImpl{ _GetStrongTabImpl(tab) };
+            if (tabImpl->GetTabViewItem().ContextFlyout())
+            {
+                tabImpl->GetTabViewItem().ContextFlyout().Hide();
+            }
+        }
     }
 
     // Method Description:
@@ -2551,6 +2568,39 @@ namespace winrt::TerminalApp::implementation
         {
             _GetStrongTabImpl(i)->UpdateTabViewIndex(i, size);
         }
+    }
+
+    // Method Description:
+    // - Computes the delta for scrolling the tab's viewport.
+    // Arguments:
+    // - scrollDirection - direction (up / down) to scroll
+    // - rowsToScroll - the number of rows to scroll
+    // Return Value:
+    // - delta - Signed delta, where a negative value means scrolling up.
+    int TerminalPage::_ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll)
+    {
+        return scrollDirection == ScrollUp ? -1 * rowsToScroll : rowsToScroll;
+    }
+
+    // Method Description:
+    // - Reads system settings for scrolling (based on the step of the mouse scroll).
+    // Upon failure fallbacks to default.
+    // Return Value:
+    // - The number of rows to scroll or a magic value of WHEEL_PAGESCROLL
+    // indicating that we need to scroll an entire view height
+    uint32_t TerminalPage::_ReadSystemRowsToScroll()
+    {
+        uint32_t systemRowsToScroll;
+        if (!SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &systemRowsToScroll, 0))
+        {
+            LOG_LAST_ERROR();
+
+            // If SystemParametersInfoW fails, which it shouldn't, fall back to
+            // Windows' default value.
+            return DefaultRowsToScroll;
+        }
+
+        return systemRowsToScroll;
     }
 
     // Method Description:

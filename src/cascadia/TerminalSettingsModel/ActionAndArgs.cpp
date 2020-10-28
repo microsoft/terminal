@@ -131,6 +131,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
         { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
         { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
+        { ShortcutAction::ScrollUp, ScrollUpArgs::FromJson },
+        { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -246,7 +248,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto copy{ winrt::make_self<ActionAndArgs>() };
         copy->_Action = _Action;
-        copy->_Args = _Args.Copy();
+        copy->_Args = _Args ? _Args.Copy() : IActionArgs{ nullptr };
         return copy;
     }
 
