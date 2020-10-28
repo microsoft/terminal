@@ -22,9 +22,9 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SettingsTab::SettingsTab(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings)
+    SettingsTab::SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI)
     {
-        Content(winrt::Microsoft::Terminal::Settings::Editor::MainPage(settings));
+        Content(settingsUI);
 
         _MakeTabViewItem();
         _CreateContextMenu();

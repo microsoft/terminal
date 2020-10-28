@@ -2587,7 +2587,15 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_switchToSettingsCommand)
         {
-            auto newTabImpl = winrt::make_self<SettingsTab>(_settings);
+            winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
+            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
+                if (auto page{ weakThis.get() })
+                {
+                    page->_LaunchSettings(e);
+                }
+            });
+
+            auto newTabImpl = winrt::make_self<SettingsTab>(sui);
             _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
             // Add the new tab to the list of our tabs.
