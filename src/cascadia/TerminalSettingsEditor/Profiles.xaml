@@ -243,17 +243,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                        <CheckBox x:Uid="Profile_Hidden" ToolTipService.Placement="Mouse" />
-                        <CheckBox x:Uid="Profile_SuppressApplicationTitle" ToolTipService.Placement="Mouse" />
-                        <Controls:RadioButtons x:Uid="Profile_AntialiasingMode" Margin="0,0,0,10" ToolTipService.Placement="Mouse">
+                        <CheckBox x:Uid="Profile_Hidden" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                        <CheckBox x:Uid="Profile_SuppressApplicationTitle" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                        <Controls:RadioButtons x:Uid="Profile_AntialiasingMode" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                             <RadioButton x:Uid="Profile_AntialiasingModeGrayscale" x:Name="antialiasingTextGrayscale"/>
                             <RadioButton x:Uid="Profile_AntialiasingModeClearType" x:Name="antialiasingTextClearType"/>
                             <RadioButton x:Uid="Profile_AntialiasingModeAliased" x:Name="antialiasingTextAliased"/>
                         </Controls:RadioButtons>
-                        <CheckBox x:Uid="Profile_AltGrAliasing" ToolTipService.Placement="Mouse" />
-                        <CheckBox x:Uid="Profile_SnapOnInput" ToolTipService.Placement="Mouse" />
-                        <Controls:NumberBox x:Uid="Profile_HistorySize" Margin="0,0,0,10" Value="9001" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="100" ToolTipService.Placement="Mouse" />
-                        <Controls:RadioButtons x:Uid="Profile_CloseOnExit" Margin="0,0,0,10" ToolTipService.Placement="Mouse">
+                        <CheckBox x:Uid="Profile_AltGrAliasing" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                        <CheckBox x:Uid="Profile_SnapOnInput" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                        <Controls:NumberBox x:Uid="Profile_HistorySize" Margin="0,0,0,20" FontSize="15" Value="9001" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="100" ToolTipService.Placement="Mouse" />
+                        <Controls:RadioButtons x:Uid="Profile_CloseOnExit" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                             <RadioButton x:Uid="Profile_CloseOnExitGraceful" x:Name="closeOnExitGraceful"/>
                             <RadioButton x:Uid="Profile_CloseOnExitAlways" x:Name="closeOnExitAlways"/>
                             <RadioButton x:Uid="Profile_CloseOnExitNever" x:Name="closeOnExitNever"/>

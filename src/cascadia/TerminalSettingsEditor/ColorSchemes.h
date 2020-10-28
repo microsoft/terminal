@@ -18,9 +18,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> ColorSchemeList();
 
+        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ColorScheme, CurrentColorScheme, _PropertyChangedHandlers, nullptr);
-        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
 
     private:
         Windows::Foundation::Collections::IObservableVector<winrt::hstring> _ColorSchemeList{ nullptr };
@@ -32,14 +33,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>
     {
     public:
-        ColorTableEntry() = default;
-        ColorTableEntry(uint32_t index, Windows::UI::Color color);
-
-        Windows::UI::Xaml::Media::Brush ColorToBrush(Windows::UI::Color color);
+        ColorTableEntry(uint8_t index, Windows::UI::Color color);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(IInspectable, Index, _PropertyChangedHandlers, nullptr);
+        OBSERVABLE_GETSET_PROPERTY(IInspectable, Index, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(Windows::UI::Color, Color, _PropertyChangedHandlers);
     };
 }

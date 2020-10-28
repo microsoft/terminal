@@ -46,6 +46,8 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestSetTabColorArgs);
 
+        TEST_METHOD(TestScrollArgs);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -450,6 +452,91 @@ namespace SettingsModelLocalTests
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.SingleLine());
+        }
+    }
+
+    void KeyBindingsTests::TestScrollArgs()
+    {
+        const std::string bindings0String{ R"([
+            { "keys": ["up"], "command": "scrollUp" },
+            { "keys": ["down"], "command": "scrollDown" },
+            { "keys": ["ctrl+up"], "command": { "action": "scrollUp" } },
+            { "keys": ["ctrl+down"], "command": { "action": "scrollDown" } },
+            { "keys": ["ctrl+shift+up"], "command": { "action": "scrollUp", "rowsToScroll": 10 } },
+            { "keys": ["ctrl+shift+down"], "command": { "action": "scrollDown", "rowsToScroll": 10 } }
+        ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto keymap = winrt::make_self<implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(6u, keymap->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ false, false, false, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ScrollUp, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ScrollUpArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.RowsToScroll());
+        }
+        {
+            KeyChord kc{ false, false, false, static_cast<int32_t>(VK_DOWN) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ScrollDown, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ScrollDownArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.RowsToScroll());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ScrollUp, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ScrollUpArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.RowsToScroll());
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>(VK_DOWN) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ScrollDown, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ScrollDownArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NULL(realArgs.RowsToScroll());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ScrollUp, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ScrollUpArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.RowsToScroll());
+            VERIFY_ARE_EQUAL(10u, realArgs.RowsToScroll().Value());
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>(VK_DOWN) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ScrollDown, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ScrollDownArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_IS_NOT_NULL(realArgs.RowsToScroll());
+            VERIFY_ARE_EQUAL(10u, realArgs.RowsToScroll().Value());
+        }
+        {
+            const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "scrollDown", "rowsToScroll": -1 } }])" };
+            const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
+            auto invalidKeyMap = winrt::make_self<implementation::KeyMapping>();
+            VERIFY_IS_NOT_NULL(invalidKeyMap);
+            VERIFY_ARE_EQUAL(0u, invalidKeyMap->_keyShortcuts.size());
+            VERIFY_THROWS(invalidKeyMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
     }
 }

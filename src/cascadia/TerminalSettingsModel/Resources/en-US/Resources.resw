@@ -267,13 +267,21 @@
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
   </data>
   <data name="ScrollDownCommandKey" xml:space="preserve">
-    <value>Scroll down one line</value>
+    <value>Scroll down</value>
+  </data>
+  <data name="ScrollDownSeveralRowsCommandKey" xml:space="preserve">
+    <value>Scroll down {0} line(s)</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
   </data>
   <data name="ScrollDownPageCommandKey" xml:space="preserve">
     <value>Scroll down one page</value>
   </data>
   <data name="ScrollUpCommandKey" xml:space="preserve">
-    <value>Scroll up one line</value>
+    <value>Scroll up</value>
+  </data>
+  <data name="ScrollUpSeveralRowsCommandKey" xml:space="preserve">
+    <value>Scroll up {0} line(s)</value>
+    <comment>{0} will be replaced with the number of lines to scroll"</comment>
   </data>
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
     <value>Scroll up one page</value>

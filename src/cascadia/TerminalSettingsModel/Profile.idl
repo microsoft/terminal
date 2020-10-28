@@ -20,59 +20,157 @@ namespace Microsoft.Terminal.Settings.Model
         Profile();
         Profile(Guid guid);
 
+        Boolean HasName();
+        void ClearName();
         String Name;
+
         Boolean HasGuid();
         Guid Guid;
+
+        Boolean HasSource();
+        void ClearSource();
         String Source;
+
         Boolean HasConnectionType();
         Guid ConnectionType;
+
+        Boolean HasHidden();
+        void ClearHidden();
         Boolean Hidden;
 
+        Boolean HasIcon();
+        void ClearIcon();
         String Icon;
 
+        Boolean HasCloseOnExit();
+        void ClearCloseOnExit();
         CloseOnExitMode CloseOnExit;
+
+        Boolean HasTabTitle();
+        void ClearTabTitle();
         String TabTitle;
+
+        Boolean HasTabColor();
+        void ClearTabColor();
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
+
+        Boolean HasSuppressApplicationTitle();
+        void ClearSuppressApplicationTitle();
         Boolean SuppressApplicationTitle;
 
+        Boolean HasUseAcrylic();
+        void ClearUseAcrylic();
         Boolean UseAcrylic;
+
+        Boolean HasAcrylicOpacity();
+        void ClearAcrylicOpacity();
         Double AcrylicOpacity;
+
+        Boolean HasScrollState();
+        void ClearScrollState();
         Microsoft.Terminal.TerminalControl.ScrollbarState ScrollState;
 
+        Boolean HasFontFace();
+        void ClearFontFace();
         String FontFace;
+
+        Boolean HasFontSize();
+        void ClearFontSize();
         Int32 FontSize;
+
+        Boolean HasFontWeight();
+        void ClearFontWeight();
         Windows.UI.Text.FontWeight FontWeight;
+
+        Boolean HasPadding();
+        void ClearPadding();
         String Padding;
 
+        Boolean HasCommandline();
+        void ClearCommandline();
         String Commandline;
+
+        Boolean HasStartingDirectory();
+        void ClearStartingDirectory();
         String StartingDirectory;
         String EvaluatedStartingDirectory { get; };
 
+        Boolean HasBackgroundImagePath();
+        void ClearBackgroundImagePath();
         String BackgroundImagePath;
         String ExpandedBackgroundImagePath { get; };
+
+        Boolean HasBackgroundImageOpacity();
+        void ClearBackgroundImageOpacity();
         Double BackgroundImageOpacity;
+
+        Boolean HasBackgroundImageStretchMode();
+        void ClearBackgroundImageStretchMode();
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
+
+        Boolean HasBackgroundImageAlignment();
+        void ClearBackgroundImageAlignment();
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 
+        Boolean HasAntialiasingMode();
+        void ClearAntialiasingMode();
         Microsoft.Terminal.TerminalControl.TextAntialiasingMode AntialiasingMode;
+
+        Boolean HasRetroTerminalEffect();
+        void ClearRetroTerminalEffect();
         Boolean RetroTerminalEffect;
+
+        Boolean HasForceFullRepaintRendering();
+        void ClearForceFullRepaintRendering();
         Boolean ForceFullRepaintRendering;
+
+        Boolean HasSoftwareRendering();
+        void ClearSoftwareRendering();
         Boolean SoftwareRendering;
 
+        Boolean HasColorSchemeName();
+        void ClearColorSchemeName();
         String ColorSchemeName;
+
+        Boolean HasForeground();
+        void ClearForeground();
         Windows.Foundation.IReference<Windows.UI.Color> Foreground;
+
+        Boolean HasBackground();
+        void ClearBackground();
         Windows.Foundation.IReference<Windows.UI.Color> Background;
+
+        Boolean HasSelectionBackground();
+        void ClearSelectionBackground();
         Windows.Foundation.IReference<Windows.UI.Color> SelectionBackground;
+
+        Boolean HasCursorColor();
+        void ClearCursorColor();
         Windows.Foundation.IReference<Windows.UI.Color> CursorColor;
 
+        Boolean HasHistorySize();
+        void ClearHistorySize();
         Int32 HistorySize;
+
+        Boolean HasSnapOnInput();
+        void ClearSnapOnInput();
         Boolean SnapOnInput;
+
+        Boolean HasAltGrAliasing();
+        void ClearAltGrAliasing();
         Boolean AltGrAliasing;
 
+        Boolean HasCursorShape();
+        void ClearCursorShape();
         Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
+
+        Boolean HasCursorHeight();
+        void ClearCursorHeight();
         UInt32 CursorHeight;
 
+        Boolean HasBellStyle();
+        void ClearBellStyle();
         BellStyle BellStyle;
     }
 }
