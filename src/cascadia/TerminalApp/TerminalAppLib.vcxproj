@@ -11,12 +11,6 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-    <!--
       This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
       We have to do this to overcome a layout issue in the WAP packaging project.
       When we do this, the XBF ends up in resources.pri.
@@ -260,11 +254,6 @@
     manually include the winmds as References below -->
   </ItemGroup>
   <PropertyGroup>
-    <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
-    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
-  </PropertyGroup>
-  <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
     https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
     just has a bug in it.-->
@@ -276,25 +265,25 @@
     propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
     <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Editor">
-      <HintPath>$(_BinRoot)Microsoft.Terminal.Settings.Editor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Editor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Model">
-      <HintPath>$(_BinRoot)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

@@ -16,8 +16,6 @@
     <!-- IMPORTANT! Xaml Islands only works on >= 17709 -->
     <!-- IMPORTANT! cppwinrt.pre.props specifies 17134 -->
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <!-- DON'T REDIRECT OUR OUTPUT -->
-    <NoOutputRedirection>true</NoOutputRedirection>
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
   </PropertyGroup>
 
@@ -59,6 +57,7 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
+    <ClCompile Include="icon.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WindowsTerminal.rc" />

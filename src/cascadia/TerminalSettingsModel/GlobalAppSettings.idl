@@ -28,31 +28,104 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
-        String UnparsedDefaultProfile();
+        Boolean HasUnparsedDefaultProfile();
+        void ClearUnparsedDefaultProfile();
+        String UnparsedDefaultProfile;
 
+        Boolean HasInitialRows();
+        void ClearInitialRows();
         Int32 InitialRows;
+
+        Boolean HasInitialCols();
+        void ClearInitialCols();
         Int32 InitialCols;
+
+        Boolean HasAlwaysShowTabs();
+        void ClearAlwaysShowTabs();
         Boolean AlwaysShowTabs;
+
+        Boolean HasShowTitleInTitlebar();
+        void ClearShowTitleInTitlebar();
         Boolean ShowTitleInTitlebar;
+
+        Boolean HasConfirmCloseAllTabs();
+        void ClearConfirmCloseAllTabs();
         Boolean ConfirmCloseAllTabs;
+
+        Boolean HasTheme();
+        void ClearTheme();
         Windows.UI.Xaml.ElementTheme Theme;
+
+        Boolean HasTabWidthMode();
+        void ClearTabWidthMode();
         Microsoft.UI.Xaml.Controls.TabViewWidthMode TabWidthMode;
+
+        Boolean HasShowTabsInTitlebar();
+        void ClearShowTabsInTitlebar();
         Boolean ShowTabsInTitlebar;
+
+        Boolean HasWordDelimiters();
+        void ClearWordDelimiters();
         String WordDelimiters;
+
+        Boolean HasCopyOnSelect();
+        void ClearCopyOnSelect();
         Boolean CopyOnSelect;
+
+        Boolean HasCopyFormatting();
+        void ClearCopyFormatting();
         Microsoft.Terminal.TerminalControl.CopyFormat CopyFormatting;
+
+        Boolean HasWarnAboutLargePaste();
+        void ClearWarnAboutLargePaste();
         Boolean WarnAboutLargePaste;
+
+        Boolean HasWarnAboutMultiLinePaste();
+        void ClearWarnAboutMultiLinePaste();
         Boolean WarnAboutMultiLinePaste;
+
+        Boolean HasInitialPosition();
+        void ClearInitialPosition();
         LaunchPosition InitialPosition;
+
+        Boolean HasLaunchMode();
+        void ClearLaunchMode();
         LaunchMode LaunchMode;
+
+        Boolean HasSnapToGridOnResize();
+        void ClearSnapToGridOnResize();
         Boolean SnapToGridOnResize;
+
+        Boolean HasForceFullRepaintRendering();
+        void ClearForceFullRepaintRendering();
         Boolean ForceFullRepaintRendering;
+
+        Boolean HasSoftwareRendering();
+        void ClearSoftwareRendering();
         Boolean SoftwareRendering;
+
+        Boolean HasForceVTInput();
+        void ClearForceVTInput();
         Boolean ForceVTInput;
+
+        Boolean HasDebugFeaturesEnabled();
+        void ClearDebugFeaturesEnabled();
         Boolean DebugFeaturesEnabled;
+
+        Boolean HasStartOnUserLogin();
+        void ClearStartOnUserLogin();
         Boolean StartOnUserLogin;
+
+        Boolean HasAlwaysOnTop();
+        void ClearAlwaysOnTop();
         Boolean AlwaysOnTop;
+
+        Boolean HasUseTabSwitcher();
+        void ClearUseTabSwitcher();
         Boolean UseTabSwitcher;
+
+        Boolean HasDisableAnimations();
+        void ClearDisableAnimations();
         Boolean DisableAnimations;
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();

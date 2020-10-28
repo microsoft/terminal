@@ -2,6 +2,7 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A021EDFF-45C8-4DC2-BEF7-36E1B3B8CFE8}</ProjectGuid>
+    <ProjectName>TestHostApp</ProjectName>
     <RootNamespace>TestHostApp</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
@@ -14,7 +15,7 @@
     <OutputSubDir>Tests\Data</OutputSubDir>
     <UseWmXml>true</UseWmXml>
     <ConfigurationType>Application</ConfigurationType>
-    <NoOutputRedirection>true</NoOutputRedirection>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
 
     <!--
     These two properties are very important!
@@ -110,9 +111,6 @@
 
   <PropertyGroup>
     <!-- Some helper paths to find our test code -->
-    <_TestBinRoot>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)</_TestBinRoot>
-    <_CppWinrtBinRoot>$(OpenConsoleDir)\$(Platform)\$(Configuration)</_CppWinrtBinRoot>
-    <_CppWinrtBinRoot Condition="'$(Platform)'=='Win32'">$(OpenConsoleDir)\$(Configuration)</_CppWinrtBinRoot>
     <_TAEFPlatformName>$(Platform)</_TAEFPlatformName>
     <_TAEFPlatformName Condition="'$(Platform)'=='Win32'">x86</_TAEFPlatformName>
   </PropertyGroup>
@@ -147,7 +145,7 @@
       rules instead.
     -->
     <ItemGroup>
-        <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
+        <TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll"/>
     </ItemGroup>
 
     <!-- Copy the AppxManifest.xml to another file, because when TAEF is
@@ -156,11 +154,11 @@
     <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\TestHostAppXManifest.xml" />
 
     <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
-    <Copy SourceFiles="$(_TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll"
+    <Copy SourceFiles="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll"
           DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
 
     <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
-    <Copy SourceFiles="$(_TestBinRoot)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll"
+    <Copy SourceFiles="$(OpenConsoleCommonOutDir)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll"
           DestinationFiles="$(TargetDir)\SettingsModel.LocalTests.dll" />
 
     <!-- Copy some dlls which TerminalConnection is dependent upon that didn't

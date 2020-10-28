@@ -78,13 +78,185 @@ This separation leaves `AppKeyBindings` with the responsibility of detecting and
  `KeyMapping` handles the (de)serialization and navigation of the key bindings.
 
 
+### Fallback Value
+
+Cascading settings allows our settings model to be constructed in layers (i.e. settings.json values override defaults.json values). With the upcoming introduction of the Settings UI and serialization, it is important to know where a setting value comes from. Consider a Settings UI displaying the following information:
+```json
+    // <profile>: <color scheme value>
+    "defaults": "Solarized", // profiles.defaults
+    "A": "Raspberry", // profile A
+    "B": "Tango", // profile B
+    "C": "Solarized" // profile C
+```
+If `profiles.defaults` gets changed to `"Tango"` via the Settings UI, it is unclear if profile C's value should be updated as well. We need profile C to record if it's value is inherited from profile.defaults or explicitly set by the user.
+
+#### Object Model Inheritance
+
+To start, each settings object will now have a `CreateChild()` function. For `GlobalAppSettings`, it will look something like this:
+```c++
+GlobalAppSettings GlobalAppSettings::CreateChild() const
+{
+    GlobalAppSettings child {};
+    child._parents.append(this);
+    return child;
+}
+```
+`std::vector<T> _parents` serves as a reference for who to ask if a settings value was not provided by the user. `LaunchMode`, for example, will now have a getter/setter that looks similar to this:
+```c++
+// _LaunchMode will now be a std::optional<LaunchMode> instead of a LaunchMode
+// - std::nullopt will mean that there is no user-set value
+// - otherwise, the value was explicitly set by the user
+
+// returns the resolved value for this setting
+LaunchMode GlobalAppSettings::LaunchMode()
+{
+    // fallback tree:
+    //  - user set value
+    //  - inherited value
+    //  - system set value
+    return til::coalesce_value(_LaunchMode, _parents[0].LaunchMode(), _parents[1].LaunchMode(), ..., LaunchMode::DefaultMode);
+}
+
+// explicitly set the user-set value
+void GlobalAppSettings::LaunchMode(LaunchMode val)
+{
+    _LaunchMode = val;
+}
+
+// check if there is a user-set value
+// NOTE: This is important for the Settings UI to identify whether the user explicitly or implicitly set the presented value
+bool GlobalAppSettings::HasLaunchMode()
+{
+    return _LaunchMode.has_value();
+}
+
+// explicitly unset the user-set value (we want the inherited value)
+void GlobalAppSettings::ClearLaunchMode()
+{
+    return _LaunchMode = std::nullopt;
+}
+```
+
+As a result, the tracking and functionality of cascading settings is moved into the object model instead of keeping it as a json-only concept.
+
+#### Updates to CascadiaSettings
+
+As `CascadiaSettings` loads the settings model, it will create children for each component of the settings model and layer the new values on top of it. Thus, `LayerJson` will look something like this:
+```c++
+void CascadiaSettings::LayerJson(const Json::Value& json)
+{
+    _globals = _globals.CreateChild();
+    _globals->LayerJson(json);
+
+    // repeat the same for Profiles...
+}
+```
+For `defaults.json`, `_globals` will now hold all of the values set in `defaults.json`. If any settings were omitted from the `defaults.json`, `_globals` will fallback to its parent (a `GlobalAppSettings` consisting purely of system-defined values).
+
+For `settings.json`, `_globals` will only hold the values set in `settings.json`. If any settings were omitted from `settings.json`, `_globals` will fallback to its parent (the `GlobalAppSettings` built from `defaults.json`).
+
+This process becomes a bit more complex for `Profile` because it can fallback in the following order:
+1. `settings.json` profile
+2. `settings.json` `profiles.defaults`
+3. (if a dynamic profile) the hardcoded value in the dynamic profile generator
+4. `defaults.json` profile
+
+`CascadiaSettings` must do the following...
+1. load `defaults.json`
+   - append newly created profiles to `_profiles` (unchanged)
+2. load dynamic profiles
+   - append newly created profiles to `_profiles` (unchanged)
+3. load `settings.json` `profiles.defaults`
+   - construct a `Profile` from `profiles.defaults`. Save as `Profile _profileDefaults`.
+   - `CreateChild()` for each existing profile
+   - add `_profileDefaults` as the first parent to each child (`_parents=[_profileDefaults, <value from generator/defaults.json> ]`)
+   - replace each `Profile` in `_profiles` with the child
+4. load `settings.json` `profiles.list`
+   - if a matching profile exists, `CreateChild` from the matching profile, and layer the json onto the child.
+      - NOTE: we do _not_ include `_profileDefaults` as a parent here, because it is already an ancestor
+   - otherwise, `CreateChild()` from `_profileDefaults`, and layer the json onto the child.
+   - As before, `_profiles` must be updated such that the parent is removed
+
+Additionally, `_profileDefaults` will be exposed by `Profile CascadiaSettings::ProfileDefaults()`. This will enable [#7414](https://github.com/microsoft/terminal/pull/7414)'s implementation to spawn incoming commandline app tabs with the "Default" profile (as opposed to the "default profile").
+
+
+#### Nullable Settings
+Some settings are explicitly allowed to be nullable (i.e. `Profile` `Foreground`). These settings will be stored as the following struct instead of a `std::optional<T>`:
+```c++
+template<typename T>
+struct NullableSetting
+{
+    IReference<T> setting{ nullptr };
+    bool set{ false };
+};
+```
+where...
+- `set` determines if the value was explicitly set by the user (if false, we should fall back)
+- `setting` records the actual user-set value (`nullptr` represents an explicit set to null)
+
+The API surface will experience the following small changes:
+- the getter/setter will output/input an `IReference<T>` instead of `T`
+- `Has...()` and `Clear...()` will reference/modify `set`
+
+
+### CreateChild() vs Copy()
+
+Settings objects will have `CreateChild()` and `Copy()`. `CreateChild()` is responsible for creating a new settings object that inherits undefined values from its parent. `Copy()` is responsible for recreating the contents of the settings object, including a reference to a copied parent (not the original parent).
+
+`CreateChild()` will only be used during (de)serialization to adequately interpret and update the JSON. `CreateChild()` enables, but is not explicitly used, for retrieving a value from a settings object. It can also be used to enable larger hierarchies for inheritance within the settings model.
+
+The Settings UI will use `Copy()` to get a deep copy of `CascadiaSettings` and data bind the UI to that copy. Thus, `Copy()` needs to be exposed in the IDL.
+
+#### Copying _parents
+It is important that `_parents` is handled properly when performing a deep copy. We need to be aware of the following errors:
+- referencing `_parents` will result in inheriting from an obsolete object tree
+- referencing a copy of `_parents` can result in losing the meaning of a reference
+  - For example, `profile.defaults` is a parent to each presented profile. When a change occurs to `profile.defaults`, that change should impact all profiles. An improper copy may only apply the change to one of the presented profiles
+
+The hierarchy we have created has evolved into a directed acyclic graph (DAG). For example, the hierarchy for profiles will appear similar to the following:
+
+![Profile Inheritance DAG Example](Inheritance-DAG.png)
+
+In order to preserve `profile.defaults` as a referenced parent to each profile, a copy of the DAG can be performed using the following algorithm:
+```python
+# Function to clone a graph. To do this, we start
+# reading the original graph depth-wise, recursively
+# If we encounter an unvisited node in original graph,
+# we initialize a new instance of Node for
+# cloned graph with key of original node
+def cloneGraph(oldSource, newSource, visited):
+    clone = None
+    if visited[oldSource.key] is False and oldSource.adj is not None:
+        for old in oldSource.adj:
+
+            # Below check is for backtracking, so new
+            # nodes don't get initialized everytime
+            if clone is None or(clone is not None and clone.key != old.key):
+                clone = Node(old.key, [])
+            newSource.adj.append(clone)
+            cloneGraph(old, clone, visited)
+
+            # Once, all neighbors for that particular node
+            # are created in cloned graph, code backtracks
+            # and exits from that node, mark the node as
+            # visited in original graph, and traverse the
+            # next unvisited
+            visited[old.key] = True
+    return newSource
+```
+Source: https://www.geeksforgeeks.org/clone-directed-acyclic-graph/
+
+This algorithm operates in O(n) time and space where `n` is the number of profiles presented. The above algorithm will be slightly modified to...
+- hold a separate reference to profile.defaults `Profile` in the `CascadiaSettings` clone
+- visited will be a map of pointers to the cloned `Profile`. This ensures that profiles reference the same `Profile`, over creating a new copy
+
 ### Terminal Settings Model: Serialization and Deserialization
 
 Introducing these `Microsoft.Terminal.Settings.Model` WinRT objects also allow the serialization and deserialization
  logic from TerminalApp to be moved to TerminalSettings. `JsonUtils` introduces several quick and easy methods
- for setting serialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
+ for setting deserialization. This will be moved into the `Microsoft.Terminal.Settings.Model` namespace too.
 
-Deserialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
+Serialization will be an extension of the existing `JsonUtils` `ConversionTrait` struct template. `ConversionTrait`
  already includes `FromJson` and `CanConvert`. Serialization would be handled by a `ToJson` function.
 
 

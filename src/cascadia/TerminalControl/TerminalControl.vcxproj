@@ -19,12 +19,6 @@
          projects compile properly when they depend on this "Microsoft.winmd."
     -->
     <CppWinRTNamespaceMergeDepth>3</CppWinRTNamespaceMergeDepth>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
     <XamlComponentResourceLocation>nested</XamlComponentResourceLocation>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
