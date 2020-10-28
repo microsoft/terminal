@@ -65,15 +65,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleScrollUp(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        _Scroll(-1);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<ScrollUpArgs>();
+        if (realArgs)
+        {
+            _Scroll(ScrollUp, realArgs.RowsToScroll());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollDown(const IInspectable& /*sender*/,
                                          const ActionEventArgs& args)
     {
-        _Scroll(1);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<ScrollDownArgs>();
+        if (realArgs)
+        {
+            _Scroll(ScrollDown, realArgs.RowsToScroll());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
@@ -133,10 +141,9 @@ namespace winrt::TerminalApp::implementation
             // be removed before it's re-added in Pane::Restore
             _tabContent.Children().Clear();
 
+            // Togging the zoom on the tab will cause the tab to inform us of
+            // the new root Content for this tab.
             activeTab->ToggleZoom();
-
-            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
-            _UpdatedSelectedTab(_tabView.SelectedIndex());
         }
         args.Handled(true);
     }
@@ -144,14 +151,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _ScrollPage(-1);
+        _ScrollPage(ScrollUp);
         args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollDownPage(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _ScrollPage(1);
+        _ScrollPage(ScrollDown);
         args.Handled(true);
     }
 
@@ -489,6 +496,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
+        // Tab search is always in-order.
+        auto tabCommands = winrt::single_threaded_vector<Command>();
+        for (const auto& tab : _tabs)
+        {
+            tabCommands.Append(tab.SwitchToTabCommand());
+        }
+        CommandPalette().SetTabActions(tabCommands);
+
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
 

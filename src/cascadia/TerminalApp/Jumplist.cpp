@@ -118,8 +118,13 @@ static std::wstring_view _getExePath()
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
+winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
+    // make sure to capture the settings _before_ the co_await
+    const auto strongSettings = settings;
+
+    co_await winrt::resume_background();
+
     try
     {
         auto jumplistInstance = winrt::create_instance<ICustomDestinationList>(CLSID_DestinationList, CLSCTX_ALL);
@@ -131,10 +136,10 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 
         // It's easier to clear the list and re-add everything. The settings aren't
         // updated often, and there likely isn't a huge amount of items to add.
-        RETURN_IF_FAILED(jumplistItems->Clear());
+        THROW_IF_FAILED(jumplistItems->Clear());
 
         // Update the list of profiles.
-        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.Profiles().GetView()));
+        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), strongSettings.Profiles().GetView()));
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.
@@ -142,13 +147,11 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
         // Add the items to the jumplist Task section.
         // The Tasks section is immutable by the user, unlike the destinations
         // section that can have its items pinned and removed.
-        RETURN_IF_FAILED(jumplistInstance->AddUserTasks(jumplistItems.get()));
+        THROW_IF_FAILED(jumplistInstance->AddUserTasks(jumplistItems.get()));
 
-        RETURN_IF_FAILED(jumplistInstance->CommitList());
-
-        return S_OK;
+        THROW_IF_FAILED(jumplistInstance->CommitList());
     }
-    CATCH_RETURN();
+    CATCH_LOG();
 }
 
 // Method Description:

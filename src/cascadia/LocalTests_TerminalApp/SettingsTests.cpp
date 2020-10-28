@@ -499,6 +499,7 @@ namespace TerminalAppLocalTests
 
         const std::string settings0String{ R"(
         {
+            "defaultProfile": "profile5",
             "profiles": [
                 {
                     "name" : "profile0",

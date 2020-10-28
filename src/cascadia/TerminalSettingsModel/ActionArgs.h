@@ -22,6 +22,8 @@
 #include "ExecuteCommandlineArgs.g.h"
 #include "CloseOtherTabsArgs.g.h"
 #include "CloseTabsAfterArgs.g.h"
+#include "ScrollUpArgs.g.h"
+#include "ScrollDownArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -255,6 +257,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
         MoveFocusArgs() = default;
+        MoveFocusArgs(Model::Direction direction) :
+            _Direction{ direction } {};
+
         GETSET_PROPERTY(Model::Direction, Direction, Direction::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
@@ -370,6 +375,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _TerminalArgs{ terminalArgs } {};
+        SplitPaneArgs(SplitType splitMode) :
+            _SplitMode{ splitMode } {};
         GETSET_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
         GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
         GETSET_PROPERTY(SplitType, SplitMode, SplitType::Manual);
@@ -665,6 +672,74 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
+    {
+        ScrollUpArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+
+        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ScrollUpArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_RowsToScroll == _RowsToScroll;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ScrollUpArgs>();
+            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ScrollUpArgs>() };
+            copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
+        }
+    };
+
+    struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
+    {
+        ScrollDownArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+
+        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ScrollDownArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_RowsToScroll == _RowsToScroll;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ScrollDownArgs>();
+            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ScrollDownArgs>() };
+            copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
+        }
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -673,6 +748,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);
+    BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);

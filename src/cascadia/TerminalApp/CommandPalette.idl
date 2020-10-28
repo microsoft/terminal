@@ -19,6 +19,7 @@ namespace TerminalApp
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Command> FilteredActions { get; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
+        void SetTabActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> tabs);
         void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
         void EnableCommandPaletteMode();
 
@@ -27,6 +28,5 @@ namespace TerminalApp
         void SetDispatch(ShortcutActionDispatch dispatch);
 
         void EnableTabSwitcherMode(Boolean searchMode, UInt32 startIdx);
-        void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
     }
 }
