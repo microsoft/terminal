@@ -167,10 +167,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Grid Height="100" Grid.Row="1">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"></ColumnDefinition>
-                        <ColumnDefinition Width="200"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning" Grid.Column="0" Foreground="Goldenrod" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" TextAlignment="Left" Margin="30,0,0,0"/>
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
+                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning" Visibility="Collapsed" Foreground="Goldenrod" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" TextAlignment="Left" Margin="30,0,0,0"/>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
                         <Button x:Uid="Settings_ResetSettingsButton" FontSize="15" ToolTipService.Placement="Mouse"/>
                         <Button x:Uid="Settings_SaveSettingsButton" FontSize="15" Style="{StaticResource AccentButtonStyle}" Margin="10,0,0,0"/>
                     </StackPanel>
