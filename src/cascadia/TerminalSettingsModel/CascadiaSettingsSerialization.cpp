@@ -1040,6 +1040,18 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 }
 
 // Method Description:
+// - Write the current state of CascadiaSettings to our settings.json file
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::Export() const
+{
+    const auto json{ ToJson() };
+    _WriteSettings(json.toStyledString());
+}
+
+// Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
 // - <none>
