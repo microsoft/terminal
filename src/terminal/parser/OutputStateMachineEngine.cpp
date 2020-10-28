@@ -938,6 +938,8 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 //       progress: the progress value to set the taskbar progress indicator with
 // - Parses out the 'state' and 'progress' parameters from the OSC string so
 //   that we can use them to set the taskbar progress indicator
+// - This follows the ConEmu style, more details here:
+//   https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
 // Arguments:
 // - string: the string to parse
 // - state: where to store the state value once we parse it
@@ -948,26 +950,18 @@ bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view strin
                                                    size_t& state,
                                                    size_t& progress) const
 {
-    const size_t midPos = string.find(';');
-    if (midPos != std::wstring::npos)
+    const auto parts = Utils::SplitString(string, L';');
+    if (parts.size() != 3 || std::stoi(til::u16u8(parts.at(0))) != 4)
     {
-        const auto subParam = string.substr(0, midPos);
-        if (std::stoi(til::u16u8(subParam)) == 4)
-        {
-            const auto stateAndProgress = string.substr(midPos + 1);
-            const size_t delimPos = stateAndProgress.find(';');
-            const auto stateStr = stateAndProgress.substr(0, delimPos);
-            const auto progressStr = stateAndProgress.substr(delimPos + 1);
-            state = std::stoi(til::u16u8(stateStr));
-            progress = std::stoi(til::u16u8(progressStr));
-            if (state < 0 || state > 4 || progress < 0 || progress > 100)
-            {
-                return false;
-            }
-            return true;
-        }
+        return false;
     }
-    return false;
+    state = std::stoi(til::u16u8(parts.at(1)));
+    progress = std::stoi(til::u16u8(parts.at(2)));
+    if (state < 0 || state > 4 || progress < 0 || progress > 100)
+    {
+        return false;
+    }
+    return true;
 }
 
 // Routine Description:
