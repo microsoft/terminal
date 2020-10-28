@@ -71,7 +71,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </StackPanel>
 
             <ItemsControl x:Name="ColorTableControl"
-                          ItemsSource="{x:Bind CurrentColorTable, Mode=TwoWay}"
+                          ItemsSource="{x:Bind CurrentColorTable, Mode=OneWay}"
                           Grid.Row="2"
                           Grid.Column="0">
                 <ItemsControl.ItemsPanel>
@@ -88,8 +88,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                                 <Button.Flyout>
                                     <Flyout>
-                                        <ColorPicker Tag="{x:Bind Index, Mode=TwoWay}"
-                                                     Color="{x:Bind Color, Mode=TwoWay}"
+                                        <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
+                                                     Color="{x:Bind Color, Mode=OneWay}"
                                                      ColorChanged="ColorPickerChanged"/>
                                     </Flyout>
                                 </Button.Flyout>
