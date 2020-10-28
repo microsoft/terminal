@@ -663,9 +663,30 @@ void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, si
 // - The start and end coords
 void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
 {
-    const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
-    SMALL_RECT region{ 0, start.Y, rowSize - 1, end.Y };
-    _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    if (start.Y == end.Y)
+    {
+        SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
+    else
+    {
+        const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
+
+        // invalidate the first line
+        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+
+        if ((end.Y - start.Y) > 1)
+        {
+            // invalidate the lines in between the first and last line
+            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        }
+
+        // invalidate the last line
+        region = til::rectangle(0, end.Y, end.X, end.Y);
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
 }
 
 // Method Description:
