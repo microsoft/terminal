@@ -233,14 +233,6 @@ namespace winrt::TerminalApp::implementation
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
-        // If the tab switcher isn't currently open, then update the tab switch
-        // order on a reload. If the switcher is open, we don't want to change
-        // the ordering out from underneath the user.
-        if (CommandPalette().Visibility() != Visibility::Visible)
-        {
-            CommandPalette().SetTabSwitchOrder(_settings.GlobalSettings().TabSwitcherMode());
-        }
-
         // Once the page is actually laid out on the screen, trigger all our
         // startup actions. Things like Panes need to know at least how big the
         // window will be, so they can subdivide that space.
@@ -1200,19 +1192,12 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        bool useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() == TabSwitcherMode::MostRecentlyUsed;
+        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
 
+        // First, determine what the index of the newly selected tab should be.
+        // This changes if we're doing an in-order traversal vs a MRU traversal.
         auto newTabIndex = 0;
-
-        // if ()
-        // {
-        //     useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() == TabSwitcherOrder::InOrder;
-        // }
-        // else
-        // {
-        //     useInOrderTabIndex = _settings.GlobalSettings().TabSwitcherMode() != TabSwitcherOrder::MostRecentlyUsed;
-        // }
-
         if (useInOrderTabIndex)
         {
             // Determine what the next in-order tab index is
@@ -1235,7 +1220,7 @@ namespace winrt::TerminalApp::implementation
             newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
         }
 
-        const bool useTabSwitcher = _settings.GlobalSettings().TabSwitcherMode() != TabSwitcherMode::Disabled;
+        const bool useTabSwitcher = tabSwitchMode != TabSwitcherMode::Disabled;
 
         if (useTabSwitcher)
         {
@@ -1261,8 +1246,8 @@ namespace winrt::TerminalApp::implementation
             {
                 // Otherwise, set up the tab switcher in the selected mode, with
                 // the given ordering, and make it visible.
+                CommandPalette().SetTabSwitchOrder(tabSwitchMode);
                 CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().SetTabSwitchOrder(_settings.GlobalSettings().TabSwitcherMode());
                 CommandPalette().Visibility(Visibility::Visible);
             }
         }
@@ -2179,6 +2164,14 @@ namespace winrt::TerminalApp::implementation
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
+
+        // If the tab switcher isn't currently open, then update the tab switch
+        // order on a reload. If the switcher is open, we don't want to change
+        // the ordering out from underneath the user.
+        if (CommandPalette().Visibility() != Visibility::Visible)
+        {
+            CommandPalette().SetTabSwitchOrder(_settings.GlobalSettings().TabSwitcherMode());
+        }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

@@ -52,9 +52,9 @@ namespace winrt::TerminalApp::implementation
                 if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
-                    _filteredActionsView().Focus(FocusState::Keyboard);
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+                    _filteredActionsView().Focus(FocusState::Keyboard);
 
                     // Do this right after becoming visible so we can quickly catch scenarios where
                     // modifiers aren't held down (e.g. command palette invocation).
@@ -62,9 +62,9 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
+                    _filteredActionsView().SelectedIndex(0);
                     _searchBox().Focus(FocusState::Programmatic);
                     _updateFilteredActions();
-                    _filteredActionsView().SelectedIndex(0);
                 }
 
                 TraceLoggingWrite(

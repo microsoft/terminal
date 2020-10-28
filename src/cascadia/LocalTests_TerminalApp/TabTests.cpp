@@ -14,10 +14,25 @@ using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::System;
+using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Text;
+
+namespace winrt
+{
+    namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
+    using IInspectable = Windows::Foundation::IInspectable;
+}
 
 namespace TerminalAppLocalTests
 {
@@ -66,6 +81,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(MoveFocusFromZoomedPane);
         TEST_METHOD(CloseZoomedPane);
 
+        TEST_METHOD(NextMRUTab);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -81,6 +98,13 @@ namespace TerminalAppLocalTests
                                      CascadiaSettings initialSettings);
         winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> _commonSetup();
     };
+
+    template<typename TFunction>
+    void TestOnUIThread(const TFunction& function)
+    {
+        const auto result = RunOnUIThread(function);
+        VERIFY_SUCCEEDED(result);
+    }
 
     void TabTests::EnsureTestsActivate()
     {
@@ -513,16 +537,31 @@ namespace TerminalAppLocalTests
         const std::string settingsJson0{ R"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "showTabsInTitlebar": false,
             "profiles": [
                 {
                     "name" : "profile0",
                     "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "tabTitle" : "Profile 0",
                     "historySize": 1
                 },
                 {
                     "name" : "profile1",
                     "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "tabTitle" : "Profile 1",
                     "historySize": 2
+                },
+                {
+                    "name" : "profile2",
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
+                    "tabTitle" : "Profile 2",
+                    "historySize": 3
+                },
+                {
+                    "name" : "profile3",
+                    "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}",
+                    "tabTitle" : "Profile 3",
+                    "historySize": 4
                 }
             ]
         })" };
@@ -688,5 +727,126 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::NextMRUTab()
+    {
+        // This is a test for GH#8025 - we want to make sure that we can do both
+        // in-order and MRU tab traversal, using the tab switcher and with the
+        // tab switcher disabled.
+
+        auto page = _commonSetup();
+
+        Log::Comment(L"Create a second tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+
+        Log::Comment(L"Create a third tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 2 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(3u, page->_tabs.Size());
+
+        Log::Comment(L"Create a fourth tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 3 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(4u, page->_tabs.Size());
+
+        TestOnUIThread([&page]() {
+            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
+        });
+
+        Log::Comment(L"Select the second tab");
+        TestOnUIThread([&page]() {
+            page->_SelectTab(1);
+        });
+
+        TestOnUIThread([&page]() {
+            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
+        });
+
+        Log::Comment(L"Change the tab switch order to MRU switching");
+        TestOnUIThread([&page]() {
+            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
+            page->CommandPalette().SetTabSwitchOrder(page->_settings.GlobalSettings().TabSwitcherMode());
+        });
+
+        Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
+        TestOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleNextTab(nullptr, eventArgs);
+        });
+
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Hide the command palette, to confirm the selection");
+            // If you don't do this, the palette will just stay open, and the
+            // next time we call _HandleNextTab, we'll continue traversing the
+            // MRU list, instead of just hoping one entry.
+            page->CommandPalette().Visibility(Visibility::Collapsed);
+        });
+
+        TestOnUIThread([&page]() {
+            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
+        });
+
+        Log::Comment(L"Switch to the next MRU tab, which is the second tab");
+        TestOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleNextTab(nullptr, eventArgs);
+        });
+
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Hide the command palette, to confirm the selection");
+            // If you don't do this, the palette will just stay open, and the
+            // next time we call _HandleNextTab, we'll continue traversing the
+            // MRU list, instead of just hoping one entry.
+            page->CommandPalette().Visibility(Visibility::Collapsed);
+        });
+
+        TestOnUIThread([&page]() {
+            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(1u, focusedIndex, L"Verify the second tab is the focused one");
+        });
+
+        Log::Comment(L"Change the tab switch order to in-order switching");
+        page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::InOrder);
+
+        Log::Comment(L"Switch to the next in-order tab, which is the third tab");
+        TestOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleNextTab(nullptr, eventArgs);
+        });
+        TestOnUIThread([&page]() {
+            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(2u, focusedIndex, L"Verify the third tab is the focused one");
+        });
+
+        Log::Comment(L"Change the tab switch order to not use the tab switcher (which is in-order always)");
+        page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::Disabled);
+
+        Log::Comment(L"Switch to the next in-order tab, which is the fourth tab");
+        TestOnUIThread([&page]() {
+            ActionEventArgs eventArgs{};
+            page->_HandleNextTab(nullptr, eventArgs);
+        });
+        TestOnUIThread([&page]() {
+            uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
+            VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
+        });
     }
 }
