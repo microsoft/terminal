@@ -367,8 +367,6 @@ void CascadiaSettings::_LoadDynamicProfiles()
                 auto profiles = generator->GenerateProfiles();
                 for (auto& profile : profiles)
                 {
-                    // If the profile did not have a GUID when it was generated,
-                    // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
                     profile.Source(generatorNamespace);
 
                     _allProfiles.Append(profile);
