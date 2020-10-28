@@ -401,6 +401,11 @@ public:
     {
         return {};
     }
+
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    {
+        return {};
+    }
 };
 
 void VtIoTests::RendererDtorAndThread()

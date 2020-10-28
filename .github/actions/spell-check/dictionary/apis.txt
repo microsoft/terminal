@@ -53,6 +53,7 @@ rx
 serializer
 SIZENS
 spsc
+sregex
 STDCPP
 strchr
 syscall
@@ -62,6 +63,7 @@ tx
 UPDATEINIFILE
 userenv
 wcstoui
+wsregex
 XDocument
 XElement
 XParse
