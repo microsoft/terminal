@@ -23,7 +23,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings { get; };
 
-        Windows.Foundation.Collections.IObservableVector<Profile> Profiles { get; };
+        Windows.Foundation.Collections.IObservableVector<Profile> AllProfiles { get; };
+        Windows.Foundation.Collections.IObservableVector<Profile> ActiveProfiles { get; };
 
         KeyMapping KeyMap { get; };
 
