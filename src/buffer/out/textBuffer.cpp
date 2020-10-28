@@ -2373,7 +2373,7 @@ void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexString)
 {
     ++_currentPatternId;
-    _IdsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
+    _idsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
     return _currentPatternId;
 }
 
@@ -2383,7 +2383,7 @@ const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexStrin
 // - The other buffer
 void TextBuffer::CopyPatterns(const TextBuffer& OtherBuffer)
 {
-    _IdsAndPatterns = OtherBuffer._IdsAndPatterns;
+    _idsAndPatterns = OtherBuffer._idsAndPatterns;
     _currentPatternId = OtherBuffer._currentPatternId;
 }
 
@@ -2411,7 +2411,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     }
 
     // for each pattern we know of, iterate through the string
-    for (const auto& idAndPattern : _IdsAndPatterns)
+    for (const auto& idAndPattern : _idsAndPatterns)
     {
         std::wregex regexObj{ idAndPattern.second };
 

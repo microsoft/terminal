@@ -233,7 +233,7 @@ private:
 
     void _PruneHyperlinks();
 
-    std::unordered_map<size_t, std::wstring> _IdsAndPatterns;
+    std::unordered_map<size_t, std::wstring> _idsAndPatterns;
     size_t _currentPatternId;
 
 #ifdef UNIT_TESTING
