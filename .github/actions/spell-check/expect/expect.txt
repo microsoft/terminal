@@ -2824,3 +2824,5 @@ zsh
 zu
 zxcvbnm
 zy
+LPMINMAXINFO
+MINMAXINFO

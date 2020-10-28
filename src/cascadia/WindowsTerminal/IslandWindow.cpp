@@ -278,13 +278,13 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 }
 
 // Method Description:
-// - Handles a WM_GETMINMAXINFO message, issed before the window sizing starts.
+// - Handles a WM_GETMINMAXINFO message, issued before the window sizing starts.
 //   This message allows to modify the minimal and maximal dimensions of the window.
 //   We focus on minimal dimensions here
 //   (the maximal dimension will be calculate upon maximizing)
-//   Our goal is to protect agains to downsizing to less than minimal allowed dimensions,
+//   Our goal is to protect against to downsizing to less than minimal allowed dimensions,
 //   that might occur in the scenarios, where _OnSizing is bypassed.
-//   An example of such scenario, is anchoring the window to the top/bottorm screen border
+//   An example of such scenario, is anchoring the window to the top/bottom screen border
 //   in order to maximize window height (GH# 8026).
 //   The computation is similar to what we do in _OnSizing:
 //   we need to consider both the client area and non-client exclusive area sizes,
