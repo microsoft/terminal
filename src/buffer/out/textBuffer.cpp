@@ -2350,11 +2350,13 @@ std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
 }
 
 // Method Description:
-// - Copies the hyperlink/customID maps of the old buffer into this one
+// - Copies the hyperlink/customID maps of the old buffer into this one,
+//   also copies currentHyperlinkId
 // Arguments:
 // - The other buffer
 void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
 {
     _hyperlinkMap = other._hyperlinkMap;
     _hyperlinkCustomIdMap = other._hyperlinkCustomIdMap;
+    _currentHyperlinkId = other._currentHyperlinkId;
 }
