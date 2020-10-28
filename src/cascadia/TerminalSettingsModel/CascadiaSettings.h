@@ -67,7 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Model::CascadiaSettings LoadUniversal();
 
         Model::GlobalAppSettings GlobalSettings() const;
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> Profiles() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
         Model::KeyMapping KeyMap() const noexcept;
 
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
@@ -92,7 +93,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         com_ptr<GlobalAppSettings> _globals;
-        Windows::Foundation::Collections::IObservableVector<Model::Profile> _profiles;
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles;
+        Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles;
         Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings;
         Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
         hstring _deserializationErrorMessage;
