@@ -81,6 +81,8 @@ private:
     // This minimum width allows for width the tabs fit
     static constexpr long minimumWidth = 460L;
 
-    // This minimum width allows for height the tabs fit
+    // We run with no height requirement for client area,
+    // though the total height will take into account the non-client area
+    // and the requirements of components hosted in the client area
     static constexpr long minimumHeight = 0L;
 };
