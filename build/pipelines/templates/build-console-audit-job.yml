@@ -8,7 +8,9 @@ jobs:
   variables:
     BuildConfiguration: AuditMode
     BuildPlatform: ${{ parameters.platform }}
-  pool: { vmImage: windows-2019 }
+  pool: "windevbuildagents"
+  # The public pool is also an option!
+  # pool: { vmImage: windows-2019 }
 
   steps:
   - checkout: self
