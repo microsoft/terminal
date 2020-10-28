@@ -253,7 +253,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::OpenJsonKeyDown(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args)
     {
-        if (args.Key() == VirtualKey::Enter)
+        if (args.Key() == VirtualKey::Enter || args.Key() == VirtualKey::Space)
         {
             const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
             _OpenJsonHandlers(nullptr, target);
