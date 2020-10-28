@@ -82,14 +82,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     settings->_userSettings = _userSettings;
     settings->_defaultSettings = _defaultSettings;
 
-    // profile.defaults must be saved to CascadiaSettings
-    // So let's copy it over manually first
-    if (_userDefaultProfileSettings)
-    {
-        settings->_userDefaultProfileSettings = Profile::CopySettings(_userDefaultProfileSettings);
-    }
-    settings->_profiles = _CopyProfileInheritanceTree(_profiles.GetView(), settings->_userDefaultProfileSettings);
-    settings->_hiddenProfiles = _CopyProfileInheritanceTree(_hiddenProfiles.GetView(), settings->_userDefaultProfileSettings);
+    _CopyProfileInheritanceTree(settings);
 
     return *settings;
 }
@@ -100,7 +93,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 // - cloneSettings: the CascadiaSettings we're copying the inheritance tree to
 // Return Value:
 // - <none>
-IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> CascadiaSettings::_CopyProfileInheritanceTree(IVectorView<Model::Profile> profiles, winrt::com_ptr<Profile> profileDefaultsClone) const
+void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettings>& cloneSettings) const
 {
     // Our profiles inheritance graph doesn't have a formal root.
     // However, if we create a dummy Profile, and set _profiles as the parent,
@@ -117,17 +110,18 @@ IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> Cascadia
     auto dummyRootClone{ winrt::make_self<Profile>() };
     std::unordered_map<void*, winrt::com_ptr<Profile>> visited{};
 
-    if (_userDefaultProfileSettings && profileDefaultsClone)
+    if (_userDefaultProfileSettings)
     {
-        // add profile.defaults to visited
-        visited[_userDefaultProfileSettings.get()] = profileDefaultsClone;
+        // profile.defaults must be saved to CascadiaSettings
+        // So let's do that manually first, and add that to visited
+        cloneSettings->_userDefaultProfileSettings = Profile::CopySettings(_userDefaultProfileSettings);
+        visited[_userDefaultProfileSettings.get()] = cloneSettings->_userDefaultProfileSettings;
     }
 
     Profile::CloneInheritanceGraph(dummyRootSource, dummyRootClone, visited);
 
     // All of the parents of the dummy root clone are _profiles.
     // Get the parents and add them to the settings clone.
-    IObservableVector<Model::Profile> result{ winrt::single_threaded_observable_vector<Model::Profile>() };
     const auto cloneParents{ dummyRootClone->Parents() };
     for (const auto& profile : cloneParents)
     {
@@ -137,7 +131,6 @@ IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> Cascadia
             cloneSettings->_activeProfiles.Append(*profile);
         }
     }
-    return result;
 }
 
 // Method Description:
