@@ -426,10 +426,10 @@ namespace winrt::TerminalApp::implementation
 
         const auto defaultProfileGuid = _settings.GlobalSettings().DefaultProfile();
         // the number of profiles should not change in the loop for this to work
-        auto const profileCount = gsl::narrow_cast<int>(_settings.Profiles().Size());
+        auto const profileCount = gsl::narrow_cast<int>(_settings.ActiveProfiles().Size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
-            const auto profile = _settings.Profiles().GetAt(profileIndex);
+            const auto profile = _settings.ActiveProfiles().GetAt(profileIndex);
             auto profileMenuItem = WUX::Controls::MenuFlyoutItem{};
 
             // Add the keyboard shortcuts based on the number of profiles defined
@@ -2091,7 +2091,7 @@ namespace winrt::TerminalApp::implementation
         _HookupKeyBindings(_settings.KeyMap());
 
         // Refresh UI elements
-        auto profiles = _settings.Profiles();
+        auto profiles = _settings.ActiveProfiles();
         for (const auto& profile : profiles)
         {
             const auto profileGuid = profile.Guid();
@@ -2211,7 +2211,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateCommandsForPalette()
     {
         IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().Commands(),
-                                                                       _settings.Profiles().GetView(),
+                                                                       _settings.ActiveProfiles().GetView(),
                                                                        _settings.GlobalSettings().ColorSchemes());
 
         _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
@@ -2588,7 +2588,15 @@ namespace winrt::TerminalApp::implementation
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_switchToSettingsCommand)
         {
-            auto newTabImpl = winrt::make_self<SettingsTab>(_settings);
+            winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
+            sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
+                if (auto page{ weakThis.get() })
+                {
+                    page->_LaunchSettings(e);
+                }
+            });
+
+            auto newTabImpl = winrt::make_self<SettingsTab>(sui);
             _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
             // Add the new tab to the list of our tabs.

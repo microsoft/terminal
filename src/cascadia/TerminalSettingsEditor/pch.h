@@ -32,6 +32,7 @@
 #include <winrt/Windows.Storage.Pickers.h>
 
 #include <winrt/Windows.UI.h>
+#include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Xaml.h>
