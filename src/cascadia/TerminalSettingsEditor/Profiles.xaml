@@ -87,12 +87,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <Controls:NumberBox x:Uid="Profile_FontSize" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
                             <TextBox x:Uid="Profile_FontWeight" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
                             <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                            <Controls:RadioButtons x:Uid="Profile_CursorShape" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                                <RadioButton x:Uid="Profile_CursorShapeBar" x:Name="CursorShapeBar"/>
-                                <RadioButton x:Uid="Profile_CursorShapeVintage" x:Name="CursorShapeVintage"/>
-                                <RadioButton x:Uid="Profile_CursorShapeUnderscore" x:Name="CursorShapeUnderscore"/>
-                                <RadioButton x:Uid="Profile_CursorShapeFilledBox" x:Name="CursorShapeFilledBox"/>
-                                <RadioButton x:Uid="Profile_CursorShapeEmptyBox" x:Name="CursorShapeEmptyBox"/>
+                            <Controls:RadioButtons x:Uid="Profile_CursorShape"
+                                                   x:Name="CursorShapeButtons"
+                                                   Margin="0,0,0,20"
+                                                   FontSize="15"
+                                                   ToolTipService.Placement="Mouse"
+                                                   x:DefaultBindMode="OneWay"
+                                                   ItemsSource="{x:Bind CursorShapes}"
+                                                   SelectionChanged="CursorShapeSelected">
+                                <Controls:RadioButtons.ItemTemplate>
+                                    <DataTemplate x:DataType="local:EnumEntry">
+                                        <RadioButton Content="{x:Bind EnumName}"/>
+                                    </DataTemplate>
+                                </Controls:RadioButtons.ItemTemplate>
                             </Controls:RadioButtons>
                             <Controls:NumberBox x:Uid="Profile_CursorHeight" Margin="0,0,0,20" FontSize="15" Value="100" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
                             <StackPanel x:Uid="Profile_CursorColorToolTip"

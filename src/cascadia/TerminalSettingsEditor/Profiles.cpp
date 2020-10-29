@@ -21,7 +21,8 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles::Profiles() :
-        _ScrollStates{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _ScrollStates{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _CursorShapes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
 
     {
         InitializeComponent();
@@ -37,6 +38,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (value == Profile().ScrollState())
             {
                 ScrollbarVisibilityButtons().SelectedItem(entry);
+            }
+        }
+
+        auto cursorShapeMap = EnumMappings::CursorShape();
+        for (auto [key, value] : cursorShapeMap)
+        {
+            auto enumName = LocalizedNameForEnumName(L"Profile_CursorShape", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<CursorStyle>(value));
+            _ScrollStates.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == Profile().CursorShape())
+            {
+                CursorShapeButtons().SelectedItem(entry);
             }
         }
     }
@@ -112,6 +127,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
             {
                 Profile().ScrollState(winrt::unbox_value<ScrollbarState>(item->EnumValue()));
+            }
+        }
+    }
+
+    IObservableVector<Editor::EnumEntry> Profiles::CursorShapes()
+    {
+        return _CursorShapes;
+    }
+
+    void Profiles::CursorShapeSelected(IInspectable const& /*sender*/,
+                                       SelectionChangedEventArgs const& args)
+    {
+        if (args.AddedItems().Size() > 0)
+        {
+            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
+            {
+                Profile().CursorShape(winrt::unbox_value<CursorStyle>(item->EnumValue()));
             }
         }
     }
