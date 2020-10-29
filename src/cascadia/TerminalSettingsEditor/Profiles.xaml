@@ -22,6 +22,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                          IsAlphaSliderVisible="True"
                          IsAlphaTextInputVisible="True" />
         </Flyout>-->
+        <local:FontWeightConverter x:Key="FontWeightConverter"/>
     </Page.Resources>
     <ScrollViewer>
         <Pivot>
@@ -75,7 +76,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
                         <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,100,0">
                             <Controls:NumberBox x:Uid="Profile_FontSize" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
-                            <TextBox x:Uid="Profile_FontWeight" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
+                            <TextBox x:Uid="Profile_FontWeight" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.FontWeight, Converter={StaticResource FontWeightConverter}, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                             <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                             <Controls:RadioButtons x:Uid="Profile_CursorShape" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                                 <RadioButton x:Uid="Profile_CursorShapeBar" x:Name="CursorShapeBar"/>
