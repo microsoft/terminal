@@ -37,7 +37,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 ThemeButtons().SelectedItem(entry);
             }
         }
-
     }
 
     IObservableVector<Editor::EnumEntry> GlobalAppearance::ElementThemes()
