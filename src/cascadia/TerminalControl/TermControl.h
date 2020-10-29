@@ -141,7 +141,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
-        void TaskbarProgressChanged();
+        winrt::fire_and_forget TaskbarProgressChanged();
         const size_t GetTaskbarState() const noexcept;
         const size_t GetTaskbarProgress() const noexcept;
 

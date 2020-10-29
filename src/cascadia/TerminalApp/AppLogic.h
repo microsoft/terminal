@@ -51,6 +51,9 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
+        size_t GetLastActiveControlTaskbarState();
+        size_t GetLastActiveControlTaskbarProgress();
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
         // -------------------------------- WinRT Events ---------------------------------

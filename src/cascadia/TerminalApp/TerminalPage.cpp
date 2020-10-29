@@ -1871,9 +1871,9 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - eventArgs: the arguments specifying how to set the progress indicator
-    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs)
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
     {
-        _setTaskbarProgressHandlers(sender, eventArgs);
+        _setTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2233,6 +2233,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
+    }
+
+    size_t TerminalPage::GetLastActiveControlTaskbarState()
+    {
+        const auto tab = _GetFocusedTab();
+        if (tab)
+        {
+            return tab->GetActiveTerminalControl().GetTaskbarState();
+        }
+        return {};
+    }
+
+    size_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    {
+        const auto tab = _GetFocusedTab();
+        if (tab)
+        {
+            return tab->GetActiveTerminalControl().GetTaskbarProgress();
+        }
+        return {};
     }
 
     // Method Description:

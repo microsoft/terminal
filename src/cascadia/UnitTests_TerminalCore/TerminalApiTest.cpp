@@ -351,28 +351,40 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
     auto& stateMachine = *(term._stateMachine);
 
     // Initial values for taskbar state and progress should be 0
-    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 0);
-    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 0);
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Set some values for taskbar state and progress through state machine
     stateMachine.ProcessString(L"\x1b]9;4;1;50\x9c");
-    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 1);
-    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 50);
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(50));
 
     // Reset to 0
     stateMachine.ProcessString(L"\x1b]9;4;0;0\x9c");
-    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 0);
-    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 0);
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Set an out of bounds value for state
     stateMachine.ProcessString(L"\x1b]9;4;5;50\x9c");
     // Nothing should have changed (dispatch should have returned false)
-    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 0);
-    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 0);
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Set an out of bounds value for progress
     stateMachine.ProcessString(L"\x1b]9;4;1;999\x9c");
     // Progress should have been clamped to 100
-    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 1);
-    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 100);
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(100));
+
+    // Don't specify any params
+    stateMachine.ProcessString(L"\x1b]9;4\x9c");
+    // State and progress should both be reset to 0
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
+
+    // Specify additional params
+    stateMachine.ProcessString(L"\x1b]9;4;1;80;123\x9c");
+    // Additional params should be ignored, state and progress still set normally
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
 }

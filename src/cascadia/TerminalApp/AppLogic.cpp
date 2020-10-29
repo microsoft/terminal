@@ -990,6 +990,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    size_t AppLogic::GetLastActiveControlTaskbarState()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarState();
+        }
+        return {};
+    }
+
+    size_t AppLogic::GetLastActiveControlTaskbarProgress()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarProgress();
+        }
+        return {};
+    }
+
     // Method Description:
     // - Sets the initial commandline to process on startup, and attempts to
     //   parse it. Commands will be parsed into a list of ShortcutActions that

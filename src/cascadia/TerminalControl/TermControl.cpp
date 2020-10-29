@@ -107,8 +107,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
-        auto pfnTaskbarProgressChanged = std::bind(&TermControl::TaskbarProgressChanged, this);
-        _terminal->TaskbarProgressChangedCallback(pfnTaskbarProgressChanged);
+        _terminal->TaskbarProgressChangedCallback([&]() { TermControl::TaskbarProgressChanged(); });
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
@@ -3070,8 +3069,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
     //   to set the progress indicator on the taskbar
-    void TermControl::TaskbarProgressChanged()
+    winrt::fire_and_forget TermControl::TaskbarProgressChanged()
     {
+        co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
         _setTaskbarProgressHandlers(*this, nullptr);
     }
 
