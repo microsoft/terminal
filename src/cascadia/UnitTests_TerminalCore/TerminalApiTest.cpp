@@ -38,6 +38,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(AddHyperlink);
         TEST_METHOD(AddHyperlinkCustomId);
         TEST_METHOD(AddHyperlinkCustomIdDifferentUri);
+
+        TEST_METHOD(SetTaskbarProgress);
     };
 };
 
@@ -338,4 +340,39 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
     // This second URL should not change the URL of the original ID!
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(oldAttributes.GetHyperlinkId()), L"test.url");
     VERIFY_ARE_NOT_EQUAL(oldAttributes.GetHyperlinkId(), tbi.GetCurrentAttributes().GetHyperlinkId());
+}
+
+void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
+{
+    Terminal term;
+    DummyRenderTarget emptyRT;
+    term.Create({ 100, 100 }, 0, emptyRT);
+
+    auto& stateMachine = *(term._stateMachine);
+
+    // Initial values for taskbar state and progress should be 0
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 0);
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 0);
+
+    // Set some values for taskbar state and progress through state machine
+    stateMachine.ProcessString(L"\x1b]9;4;1;50\x9c");
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 1);
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 50);
+
+    // Reset to 0
+    stateMachine.ProcessString(L"\x1b]9;4;0;0\x9c");
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 0);
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 0);
+
+    // Set an out of bounds value for state
+    stateMachine.ProcessString(L"\x1b]9;4;5;50\x9c");
+    // Nothing should have changed (dispatch should have returned false)
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 0);
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 0);
+
+    // Set an out of bounds value for progress
+    stateMachine.ProcessString(L"\x1b]9;4;1;999\x9c");
+    // Progress should have been clamped to 100
+    VERIFY_ARE_EQUAL(term.GetTaskbarState(), 1);
+    VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), 100);
 }
