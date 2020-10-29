@@ -120,7 +120,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Frame x:Name="contentFrame"
                        Margin="20"
                        Grid.Row="0"></Frame>
-                <Grid Height="100" Grid.Row="1">
+                <Grid Height="100" Grid.Row="1" BorderBrush="{ThemeResource SystemBaseLowColor}" BorderThickness="0,1,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>

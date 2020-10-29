@@ -52,8 +52,7 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_inRename = true;
-                tab->_UpdateTabHeader();
+                tab->ActivateTabRenamer();
             }
         });
 
@@ -360,6 +359,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Show a TextBox in the Header to allow the user to set a string
+    //     to use as an override for the tab's text
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalTab::ActivateTabRenamer()
+    {
+        _inRename = true;
+        _receivedKeyDown = false;
+        _UpdateTabHeader();
+    }
+
+    // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
     //   of Panes in this tab. We'll add events too:
@@ -538,8 +551,7 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
-                    tab->_inRename = true;
-                    tab->_UpdateTabHeader();
+                    tab->ActivateTabRenamer();
                 }
             });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
@@ -666,6 +678,14 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // We'll only process the KeyUp event if we received an initial KeyDown event first.
+        // Avoids issue immediately closing the tab rename when we see the enter KeyUp event that was
+        // sent to the command palette to trigger the openTabRenamer action in the first place.
+        tabTextBox.KeyDown([weakThis](const IInspectable&, Input::KeyRoutedEventArgs const&) {
+            auto tab{ weakThis.get() };
+            tab->_receivedKeyDown = true;
+        });
+
         // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
         // remove the TextBox from the UI tree, then the following KeyUp
         // will bubble to the NewTabButton, which we don't want to have
@@ -673,7 +693,7 @@ namespace winrt::TerminalApp::implementation
         tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
             auto tab{ weakThis.get() };
             auto textBox{ sender.try_as<Controls::TextBox>() };
-            if (tab && textBox)
+            if (tab && textBox && tab->_receivedKeyDown)
             {
                 switch (e.OriginalKey())
                 {

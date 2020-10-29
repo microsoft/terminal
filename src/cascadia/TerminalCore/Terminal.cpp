@@ -20,6 +20,8 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
+
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
@@ -78,6 +80,10 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
+    // Add regex pattern recognizers to the buffer
+    // For now, we only add the URI regex pattern
+    std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+    _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
 }
 
 // Method Description:
@@ -410,15 +416,31 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
-// - If the clicked text is a hyperlink, open it
+// - Given a coord, get the URI at that location
 // Arguments:
-// - The position of the clicked text
+// - The position
 std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 {
     auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
     if (attr.IsHyperlink())
     {
         auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return uri;
+    }
+    // also look through our known pattern locations in our pattern interval tree
+    const auto result = GetHyperlinkIntervalFromPosition(position);
+    if (result.has_value() && result->value == _hyperlinkPatternId)
+    {
+        const auto start = result->start;
+        const auto end = result->stop;
+        std::wstring uri;
+
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        for (auto iter = startIter; iter != endIter; ++iter)
+        {
+            uri += iter->Chars();
+        }
         return uri;
     }
     return {};
@@ -433,6 +455,28 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 {
     return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+}
+
+// Method description:
+// - Given a position in a URI pattern, gets the start and end coordinates of the URI
+// Arguments:
+// - The position
+// Return value:
+// - The interval representing the start and end coordinates
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+{
+    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    if (results.size() > 0)
+    {
+        for (const auto& result : results)
+        {
+            if (result.value == _hyperlinkPatternId)
+            {
+                return result;
+            }
+        }
+    }
+    return std::nullopt;
 }
 
 // Method Description:
@@ -596,6 +640,53 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     const auto handledDown = _terminalInput->HandleKey(&keyDown);
     const auto handledUp = _terminalInput->HandleKey(&keyUp);
     return handledDown || handledUp;
+}
+
+// Method Description:
+// - Invalidates the regions described in the given pattern tree for the rendering purposes
+// Arguments:
+// - The interval tree containing regions that need to be invalidated
+void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
+{
+    const auto vis = _VisibleStartIndex();
+    auto invalidate = [=](const PointTree::interval& interval) {
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
+        _InvalidateFromCoords(startCoord, endCoord);
+    };
+    tree.visit_all(invalidate);
+}
+
+// Method Description:
+// - Given start and end coords, invalidates all the regions between them
+// Arguments:
+// - The start and end coords
+void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
+{
+    if (start.Y == end.Y)
+    {
+        SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
+    else
+    {
+        const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
+
+        // invalidate the first line
+        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+
+        if ((end.Y - start.Y) > 1)
+        {
+            // invalidate the lines in between the first and last line
+            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        }
+
+        // invalidate the last line
+        region = til::rectangle(0, end.Y, end.X, end.Y);
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
 }
 
 // Method Description:
@@ -856,6 +947,9 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
         }
+
+        // manually erase our pattern intervals since the locations have changed now
+        _patternIntervalTree = {};
     }
 
     // Update Cursor Position
@@ -1039,6 +1133,30 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
     return cursor.IsBlinkingAllowed();
+}
+
+// Method Description:
+// - Update our internal knowledge about where regex patterns are on the screen
+// - This is called by TerminalControl (through a throttled function) when the visible
+//   region changes (for example by text entering the buffer or scrolling)
+void Terminal::UpdatePatterns() noexcept
+{
+    auto lock = LockForWriting();
+    auto oldTree = _patternIntervalTree;
+    _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _InvalidatePatternTree(oldTree);
+    _InvalidatePatternTree(_patternIntervalTree);
+}
+
+// Method Description:
+// - Clears and invalidates the interval pattern tree
+// - This is called to prevent the renderer from rendering patterns while the
+//   visible region is changing
+void Terminal::ClearPatternTree() noexcept
+{
+    auto oldTree = _patternIntervalTree;
+    _patternIntervalTree = {};
+    _InvalidatePatternTree(oldTree);
 }
 
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
