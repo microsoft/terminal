@@ -5,6 +5,7 @@
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
+#include "icon.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -147,6 +148,8 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     ShowWindow(_window.get(), nCmdShow);
 
     UpdateWindow(_window.get());
+
+    UpdateWindowIconForActiveMetrics(_window.get());
 }
 
 // Method Description:
@@ -369,6 +372,9 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             return 0;
         }
         CATCH_LOG();
+    case WM_THEMECHANGED:
+        UpdateWindowIconForActiveMetrics(_window.get());
+        return 0;
     }
 
     // TODO: handle messages here...
