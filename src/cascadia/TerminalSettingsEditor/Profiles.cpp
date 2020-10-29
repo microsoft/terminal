@@ -10,6 +10,7 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
@@ -22,7 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles::Profiles() :
         _ScrollStates{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
-        _CursorShapes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _CursorShapes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _BackgroundImageStretchModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
 
     {
         InitializeComponent();
@@ -52,6 +54,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (value == Profile().CursorShape())
             {
                 CursorShapeButtons().SelectedItem(entry);
+            }
+        }
+
+        auto backgroundImageStretchModesMap = EnumMappings::BackgroundImageStretchMode();
+        for (auto [key, value] : backgroundImageStretchModesMap)
+        {
+            auto enumName = LocalizedNameForEnumName(L"Profile_BackgroundImageStretchMode", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<Stretch>(value));
+            _ScrollStates.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == Profile().BackgroundImageStretchMode())
+            {
+                BackgroundImageStretchModeButtons().SelectedItem(entry);
             }
         }
     }
@@ -144,6 +160,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
             {
                 Profile().CursorShape(winrt::unbox_value<CursorStyle>(item->EnumValue()));
+            }
+        }
+    }
+
+    IObservableVector<Editor::EnumEntry> Profiles::BackgroundImageStretchModes()
+    {
+        return _BackgroundImageStretchModes;
+    }
+
+    void Profiles::BackgroundImageStretchModeSelected(IInspectable const& /*sender*/,
+                                                      SelectionChangedEventArgs const& args)
+    {
+        if (args.AddedItems().Size() > 0)
+        {
+            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
+            {
+                Profile().BackgroundImageStretchMode(winrt::unbox_value<Stretch>(item->EnumValue()));
             }
         }
     }

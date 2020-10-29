@@ -11,5 +11,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Settings.Model.Profile Profile { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStates { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapes { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModes { get; };
     }
 }
