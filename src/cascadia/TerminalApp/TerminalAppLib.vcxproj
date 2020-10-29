@@ -73,6 +73,9 @@
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TabBase.h">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalTab.h">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
@@ -132,6 +135,9 @@
     </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TabBase.cpp">
+      <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalTab.cpp">
       <DependentUpon>TerminalTab.idl</DependentUpon>
@@ -204,7 +210,7 @@
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="ITab.idl" />
+    <Midl Include="TabBase.idl" />
     <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
