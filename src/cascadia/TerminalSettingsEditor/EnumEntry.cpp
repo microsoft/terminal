@@ -11,10 +11,9 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    EnumEntry::EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue, const bool isActive)
+    EnumEntry::EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue)
     {
         EnumName(enumName);
         EnumValue(enumValue);
-        IsActive(isActive);
     }
 }

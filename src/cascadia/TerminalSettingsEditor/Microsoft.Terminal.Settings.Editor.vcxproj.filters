@@ -10,12 +10,10 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="EnumRadioButton.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
-    <ClInclude Include="EnumRadioButton.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ColorToBrushConverter.idl">

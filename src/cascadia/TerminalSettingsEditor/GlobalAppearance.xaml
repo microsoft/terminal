@@ -26,14 +26,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Margin="0,0,0,20" />
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                 <Controls:RadioButtons x:Uid="Globals_Theme"
+                                       x:Name="ThemeButtons"
                                        Margin="0,0,0,20"
                                        FontSize="15"
                                        ToolTipService.Placement="Mouse"
+                                       x:DefaultBindMode="OneWay"
                                        ItemsSource="{x:Bind ElementThemes}"
                                        SelectionChanged="ElementThemeSelected">
                     <Controls:RadioButtons.ItemTemplate>
                         <DataTemplate x:DataType="local:EnumEntry">
-                            <RadioButton Content="{x:Bind EnumName}" IsChecked="{x:Bind IsActive}"/>
+                            <RadioButton Content="{x:Bind EnumName}"/>
                         </DataTemplate>
                     </Controls:RadioButtons.ItemTemplate>
                 </Controls:RadioButtons>

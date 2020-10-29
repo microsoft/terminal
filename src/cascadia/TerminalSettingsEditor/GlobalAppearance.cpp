@@ -17,16 +17,27 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    GlobalAppearance::GlobalAppearance()
+    GlobalAppearance::GlobalAppearance() :
+        _ElementThemes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
     {
-        // TODO: Maybe find a better way of initializing the selected RadioButton for an Enum setting
-        _ElementThemes = winrt::single_threaded_observable_vector<Editor::EnumEntry>({
-            winrt::make<EnumEntry>(RS_(L"Globals_ThemeDefault/Content"), winrt::box_value<ElementTheme>(ElementTheme::Default), ElementTheme::Default == GlobalSettings().Theme()),
-            winrt::make<EnumEntry>(RS_(L"Globals_ThemeDark/Content"), winrt::box_value<ElementTheme>(ElementTheme::Dark), ElementTheme::Dark == GlobalSettings().Theme()),
-            winrt::make<EnumEntry>(RS_(L"Globals_ThemeLight/Content"), winrt::box_value<ElementTheme>(ElementTheme::Light), ElementTheme::Light == GlobalSettings().Theme())
-        });
-
         InitializeComponent();
+
+        auto elementThemeMap = EnumMappings::ElementTheme();
+        for (auto [key, value] : elementThemeMap)
+        {
+            // Uppercase the first letter to conform to our current Resource keys
+            std::wstring_view enumName = key;
+            auto fmtKey = fmt::format(L"Globals_Theme{}{}/Content", char(std::towupper(enumName[0])), enumName.substr(1));
+            auto entry = winrt::make<EnumEntry>(GetLibraryResourceString(fmtKey), winrt::box_value<ElementTheme>(value));
+            _ElementThemes.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == GlobalSettings().Theme())
+            {
+                ThemeButtons().SelectedItem(entry);
+            }
+        }
+
     }
 
     IObservableVector<Editor::EnumEntry> GlobalAppearance::ElementThemes()

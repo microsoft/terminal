@@ -18,7 +18,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ElementThemeSelected(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
 
     private:
-        winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Windows::UI::Xaml::ElementTheme> _ElementThemeMap;
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _ElementThemes;
     };
 }
