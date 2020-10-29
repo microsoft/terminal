@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
-        void Export() const;
+        void WriteSettingsToDisk() const;
         Json::Value ToJson() const;
 
         static hstring SettingsPath();
@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _LoadDynamicProfiles();
 
         static bool _IsPackaged();
-        static void _WriteSettings(const std::string_view content);
+        static void _WriteSettings(const std::string_view content, const hstring filepath);
         static std::optional<std::string> _ReadUserSettings();
         static std::optional<std::string> _ReadFile(HANDLE hFile);
 

@@ -190,7 +190,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 
             try
             {
-                _WriteSettings(resultPtr->_userSettingsString);
+                _WriteSettings(resultPtr->_userSettingsString, CascadiaSettings::SettingsPath());
             }
             catch (...)
             {
@@ -828,7 +828,7 @@ bool CascadiaSettings::_IsPackaged()
 }
 
 // Method Description:
-// - Writes the given content in UTF-8 to our settings file using the Win32 APIS's.
+// - Writes the given content in UTF-8 to a settings file using the Win32 APIS's.
 //   Will overwrite any existing content in the file.
 // Arguments:
 // - content: the given string of content to write to the file.
@@ -836,11 +836,9 @@ bool CascadiaSettings::_IsPackaged()
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_WriteSettings(const std::string_view content)
+void CascadiaSettings::_WriteSettings(const std::string_view content, const hstring filepath)
 {
-    auto pathToSettingsFile{ CascadiaSettings::SettingsPath() };
-
-    wil::unique_hfile hOut{ CreateFileW(pathToSettingsFile.c_str(),
+    wil::unique_hfile hOut{ CreateFileW(filepath.c_str(),
                                         GENERIC_WRITE,
                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
                                         nullptr,
@@ -1040,15 +1038,23 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 }
 
 // Method Description:
-// - Write the current state of CascadiaSettings to our settings.json file
+// - Write the current state of CascadiaSettings to our settings file
+// - Create a backup file with the current contents
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::Export() const
+void CascadiaSettings::WriteSettingsToDisk() const
 {
+    auto settingsPath{ CascadiaSettings::SettingsPath() };
+
+    // write backup settings file
+    auto backupSettingsPath{ settingsPath + L".backup" };
+    _WriteSettings(_userSettingsString, settingsPath);
+
+    // write to current settings file
     const auto json{ ToJson() };
-    _WriteSettings(json.toStyledString());
+    _WriteSettings(json.toStyledString(), settingsPath);
 }
 
 // Method Description:
@@ -1076,7 +1082,9 @@ Json::Value CascadiaSettings::ToJson() const
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;
 
+    // TODO GH#8100:
     // "schemes" will be an accumulation of _all_ the color schemes
+    // including all of the ones from defaults.json
     Json::Value schemes{ Json::ValueType::arrayValue };
     for (const auto& entry : _globals->ColorSchemes())
     {

@@ -57,211 +57,240 @@ namespace SettingsModelLocalTests
             builder["enableYAMLCompatibility"] = true;
             return Json::writeString(builder, json);
         }
+
+        // Method Description:
+        // - deserializes and reserializes a json string representing a settings object model of type T
+        // - verifies that the generated json string matches the provided one
+        // Template Types:
+        // - <T>: The type of Settings Model object to generate (must be impl type)
+        // Arguments:
+        // - jsonString - JSON string we're performing the test on
+        // Return Value:
+        // - the JsonObject representing this instance
+        template<typename T>
+        void RoundtripTest(const std::string& jsonString)
+        {
+            const auto json{ VerifyParseSucceeded(jsonString) };
+            const auto settings{ T::FromJson(json) };
+            const auto result{ settings->ToJson() };
+
+            // Compare toString(json) instead of jsonString here.
+            // The toString writes the json out alphabetically.
+            // This trick allows jsonString to _not_ have to be
+            // written alphabetically.
+            VERIFY_ARE_EQUAL(toString(json), toString(result));
+        }
     };
 
     void SerializationTests::GlobalSettings()
     {
-        // This needs to be in alphabetical order.
-        const std::string globalsString{
-            "{"
-            "\"alwaysOnTop\": false,"
-            "\"alwaysShowTabs\": true,"
-            "\"confirmCloseAllTabs\": true,"
-            "\"copyFormatting\": \"all\","
-            "\"copyOnSelect\": false,"
-            "\"defaultProfile\": \"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}\","
-            "\"experimental.input.forceVT\": false,"
-            "\"experimental.rendering.forceFullRepaint\": false,"
-            "\"experimental.rendering.software\": false,"
-            "\"initialCols\": 120,"
-            "\"initialPosition\": \",\","
-            "\"initialRows\": 30,"
-            "\"largePasteWarning\": true,"
-            "\"launchMode\": \"default\","
-            "\"multiLinePasteWarning\": true,"
-            "\"showTabsInTitlebar\": true,"
-            "\"showTerminalTitleInTitlebar\": true,"
-            "\"snapToGridOnResize\": true,"
-            "\"startOnUserLogin\": false,"
-            "\"tabWidthMode\": \"equal\","
-            "\"theme\": \"system\","
-            "\"useTabSwitcher\": true,"
-            "\"wordDelimiters\": \" /\\\\()\\\"'-.,:;<>~!@#$%^&*|+=[]{}~?\\u2502\""
-            "}"
-        };
+        const std::string globalsString{ R"(
+            {
+                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
-        const std::string smallGlobalsString{
-            "{"
-            "\"defaultProfile\": \"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}\""
-            "}"
-        };
+                "initialRows": 30,
+                "initialCols": 120,
+                "initialPosition": ",",
+                "launchMode": "default",
+                "alwaysOnTop": false,
 
-        auto roundtripTest = [this](auto jsonString) {
-            const auto json{ VerifyParseSucceeded(jsonString) };
-            const auto globals{ implementation::GlobalAppSettings::FromJson(json) };
+                "copyOnSelect": false,
+                "copyFormatting": "all",
+                "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
-            const auto result{ globals->ToJson() };
+                "alwaysShowTabs": true,
+                "showTabsInTitlebar": true,
+                "showTerminalTitleInTitlebar": true,
+                "tabWidthMode": "equal",
+                "useTabSwitcher": true,
 
-            VERIFY_ARE_EQUAL(jsonString, toString(result));
-        };
+                "startOnUserLogin": false,
+                "theme": "system",
+                "snapToGridOnResize": true,
+                "disableAnimations": false,
 
-        roundtripTest(globalsString);
-        roundtripTest(smallGlobalsString);
+                "confirmCloseAllTabs": true,
+                "largePasteWarning": true,
+                "multiLinePasteWarning": true,
+
+                "experimental.input.forceVT": false,
+                "experimental.rendering.forceFullRepaint": false,
+                "experimental.rendering.software": false
+            })" };
+
+        const std::string smallGlobalsString{ R"(
+            {
+                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+            })" };
+
+        RoundtripTest<implementation::GlobalAppSettings>(globalsString);
+        RoundtripTest<implementation::GlobalAppSettings>(smallGlobalsString);
     }
 
     void SerializationTests::Profile()
     {
-        // This needs to be in alphabetical order.
-        const std::string profileString{
-            "{"
-            "\"altGrAliasing\": true,"
-            "\"antialiasingMode\": \"grayscale\","
-            "\"background\": \"#BBCCAA\","
-            "\"backgroundImage\": \"made_you_look.jpeg\","
-            "\"backgroundImageAlignment\": \"center\","
-            "\"backgroundImageOpacity\": 1.0,"
-            "\"backgroundImageStretchMode\": \"uniformToFill\","
-            "\"closeOnExit\": \"graceful\","
-            "\"colorScheme\": \"Campbell\","
-            "\"commandline\": \"%SystemRoot%\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\","
-            "\"cursorColor\": \"#CCBBAA\","
-            "\"cursorHeight\": 10,"
-            "\"cursorShape\": \"bar\","
-            "\"experimental.retroTerminalEffect\": false,"
-            "\"fontFace\": \"Cascadia Mono\","
-            "\"fontSize\": 12,"
-            "\"fontWeight\": \"normal\","
-            "\"foreground\": \"#AABBCC\","
-            "\"guid\": \"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}\","
-            "\"hidden\": false,"
-            "\"historySize\": 9001,"
-            "\"icon\": \"ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png\","
-            "\"name\": \"Windows PowerShell\","
-            "\"padding\": \"8, 8, 8, 8\","
-            "\"scrollbarState\": \"visible\","
-            "\"selectionBackground\": \"#CCAABB\","
-            "\"snapOnInput\": true,"
-            "\"startingDirectory\": \"%USERPROFILE%\","
-            "\"suppressApplicationTitle\": false,"
-            "\"tabColor\": \"#0C0C0C\","
-            "\"tabTitle\": \"Cool Tab\","
-            "\"useAcrylic\": false"
-            "}"
-        };
+        const std::string profileString{ R"(
+            {
+                "name": "Windows PowerShell",
+                "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
-        const std::string smallProfileString{
-            "{"
-            "\"name\": \"Custom Profile\""
-            "}"
-        };
+                "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                "startingDirectory": "%USERPROFILE%",
 
-        auto roundtripTest = [this](auto jsonString) {
-            const auto json{ VerifyParseSucceeded(jsonString) };
-            const auto profile{ implementation::Profile::FromJson(json) };
+                "icon": "ms-appx:///ProfileIcons/{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.png",
+                "hidden": false,
 
-            const auto result{ profile->ToJson() };
+                "tabTitle": "Cool Tab",
+                "suppressApplicationTitle": false,
 
-            VERIFY_ARE_EQUAL(jsonString, toString(result));
-        };
+                "fontFace": "Cascadia Mono",
+                "fontSize": 12,
+                "fontWeight": "normal",
+                "padding": "8, 8, 8, 8",
+                "antialiasingMode": "grayscale",
 
-        roundtripTest(profileString);
-        roundtripTest(smallProfileString);
+                "cursorShape": "bar",
+                "cursorColor": "#CCBBAA",
+                "cursorHeight": 10,
+
+                "altGrAliasing": true,
+
+                "colorScheme": "Campbell",
+                "tabColor": "#0C0C0C",
+                "foreground": "#AABBCC",
+                "background": "#BBCCAA",
+                "selectionBackground": "#CCAABB",
+
+                "useAcrylic": false,
+                "acrylicOpacity": 0.5,
+
+                "backgroundImage": "made_you_look.jpeg",
+                "backgroundImageStretchMode": "uniformToFill",
+                "backgroundImageAlignment": "center",
+                "backgroundImageOpacity": 1.0,
+
+                "scrollbarState": "visible",
+                "snapOnInput": true,
+                "historySize": 9001,
+
+                "closeOnExit": "graceful",
+                "experimental.retroTerminalEffect": false
+            })" };
+
+        const std::string smallProfileString{ R"(
+            {
+                "name": "Custom Profile"
+            })" };
+
+        // Setting "tabColor" to null tests two things:
+        // - null should count as an explicit user-set value, not falling back to the parent's value
+        // - null should be acceptable even though we're working with colors
+        const std::string weirdProfileString{ R"(
+            {
+                "name": "Weird Profile",
+                "tabColor": null,
+                "foreground": null,
+                "source": "local"
+            })" };
+
+        RoundtripTest<implementation::Profile>(profileString);
+        RoundtripTest<implementation::Profile>(smallProfileString);
+        RoundtripTest<implementation::Profile>(weirdProfileString);
     }
 
     void SerializationTests::ColorScheme()
     {
-        // This needs to be in alphabetical order.
-        const std::string schemeString{ "{"
-                                        "\"background\": \"#0C0C0C\","
-                                        "\"black\": \"#0C0C0C\","
-                                        "\"blue\": \"#0037DA\","
-                                        "\"brightBlack\": \"#767676\","
-                                        "\"brightBlue\": \"#3B78FF\","
-                                        "\"brightCyan\": \"#61D6D6\","
-                                        "\"brightGreen\": \"#16C60C\","
-                                        "\"brightPurple\": \"#B4009E\","
-                                        "\"brightRed\": \"#E74856\","
-                                        "\"brightWhite\": \"#F2F2F2\","
-                                        "\"brightYellow\": \"#F9F1A5\","
-                                        "\"cursorColor\": \"#FFFFFF\","
-                                        "\"cyan\": \"#3A96DD\","
-                                        "\"foreground\": \"#F2F2F2\","
-                                        "\"green\": \"#13A10E\","
-                                        "\"name\": \"Campbell\","
-                                        "\"purple\": \"#881798\","
-                                        "\"red\": \"#C50F1F\","
-                                        "\"selectionBackground\": \"#131313\","
-                                        "\"white\": \"#CCCCCC\","
-                                        "\"yellow\": \"#C19C00\""
-                                        "}" };
+        const std::string schemeString{ R"({
+                                            "name": "Campbell",
 
-        const auto json{ VerifyParseSucceeded(schemeString) };
-        const auto scheme{ implementation::ColorScheme::FromJson(json) };
+                                            "cursorColor": "#FFFFFF",
+                                            "selectionBackground": "#131313",
 
-        const auto result{ scheme->ToJson() };
-        VERIFY_ARE_EQUAL(schemeString, toString(result));
+                                            "background": "#0C0C0C",
+                                            "foreground": "#F2F2F2",
+
+                                            "black": "#0C0C0C",
+                                            "blue": "#0037DA",
+                                            "cyan": "#3A96DD",
+                                            "green": "#13A10E",
+                                            "purple": "#881798",
+                                            "red": "#C50F1F",
+                                            "white": "#CCCCCC",
+                                            "yellow": "#C19C00",
+                                            "brightBlack": "#767676",
+                                            "brightBlue": "#3B78FF",
+                                            "brightCyan": "#61D6D6",
+                                            "brightGreen": "#16C60C",
+                                            "brightPurple": "#B4009E",
+                                            "brightRed": "#E74856",
+                                            "brightWhite": "#F2F2F2",
+                                            "brightYellow": "#F9F1A5"
+                                        })" };
+
+        RoundtripTest<implementation::ColorScheme>(schemeString);
     }
 
     void SerializationTests::CascadiaSettings()
     {
-        // clang-format off
-        // This needs to be in alphabetical order.
-        const std::string settingsString{   "{"
-                                                "\"$schema\": \"https://aka.ms/terminal-profiles-schema\","
-                                                "\"actions\": ["
-                                                    "{\"command\": {\"action\": \"renameTab\",\"input\": \"Liang Tab\"},\"keys\": \"ctrl+t\"}"
-                                                "],"
-                                                "\"defaultProfile\": \"{61c54bbd-1111-5271-96e7-009a87ff44bf}\","
-                                                "\"keybindings\": ["
-                                                    "{\"command\": {\"action\": \"sendInput\",\"input\": \"VT Griese Mode\"},\"keys\": \"ctrl+k\"}"
-                                                "],"
-                                                "\"profiles\": {"
-                                                    "\"defaults\": {"
-                                                        "\"fontFace\": \"Zamora Code\""
-                                                    "},"
-                                                    "\"list\": ["
-                                                        "{"
-                                                            "\"fontFace\": \"Cascadia Code\","
-                                                            "\"guid\": \"{61c54bbd-1111-5271-96e7-009a87ff44bf}\","
-                                                            "\"name\": \"HowettShell\""
-                                                        "},"
-                                                        "{"
-                                                            "\"hidden\": true,"
-                                                            "\"name\": \"BhojwaniShell\""
-                                                        "},"
-                                                        "{"
-                                                            "\"antialiasingMode\": \"aliased\","
-                                                            "\"name\": \"NiksaShell\""
-                                                        "}"
-                                                    "]"
-                                                "},"
-                                                "\"schemes\": ["
-                                                    "{"
-                                                        "\"background\": \"#3C0315\","
-                                                        "\"black\": \"#282A2E\","
-                                                        "\"blue\": \"#0170C5\","
-                                                        "\"brightBlack\": \"#676E7A\","
-                                                        "\"brightBlue\": \"#5C98C5\","
-                                                        "\"brightCyan\": \"#8ABEB7\","
-                                                        "\"brightGreen\": \"#B5D680\","
-                                                        "\"brightPurple\": \"#AC79BB\","
-                                                        "\"brightRed\": \"#BD6D85\","
-                                                        "\"brightWhite\": \"#FFFFFD\","
-                                                        "\"brightYellow\": \"#FFFD76\","
-                                                        "\"cursorColor\": \"#FFFFFD\","
-                                                        "\"cyan\": \"#3F8D83\","
-                                                        "\"foreground\": \"#FFFFFD\","
-                                                        "\"green\": \"#76AB23\","
-                                                        "\"name\": \"Cinnamon Roll\","
-                                                        "\"purple\": \"#7D498F\","
-                                                        "\"red\": \"#BD0940\","
-                                                        "\"selectionBackground\": \"#FFFFFF\","
-                                                        "\"white\": \"#FFFFFD\","
-                                                        "\"yellow\": \"#E0DE48\""
-                                                    "}"
-                                                "]"
-                                            "}" };
-        // clang-format on
+        const std::string settingsString{ R"({
+                                                "$schema": "https://aka.ms/terminal-profiles-schema",
+                                                "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+
+                                                "profiles": {
+                                                    "defaults": {
+                                                        "fontFace": "Zamora Code"
+                                                    },
+                                                    "list": [
+                                                        {
+                                                            "fontFace": "Cascadia Code",
+                                                            "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+                                                            "name": "HowettShell"
+                                                        },
+                                                        {
+                                                            "hidden": true,
+                                                            "name": "BhojwaniShell"
+                                                        },
+                                                        {
+                                                            "antialiasingMode": "aliased",
+                                                            "name": "NiksaShell"
+                                                        }
+                                                    ]
+                                                },
+                                                "schemes": [
+                                                    {
+                                                        "name": "Cinnamon Roll",
+
+                                                        "cursorColor": "#FFFFFD",
+                                                        "selectionBackground": "#FFFFFF",
+
+                                                        "background": "#3C0315",
+                                                        "foreground": "#FFFFFD",
+
+                                                        "black": "#282A2E",
+                                                        "blue": "#0170C5",
+                                                        "cyan": "#3F8D83",
+                                                        "green": "#76AB23",
+                                                        "purple": "#7D498F",
+                                                        "red": "#BD0940",
+                                                        "white": "#FFFFFD",
+                                                        "yellow": "#E0DE48",
+                                                        "brightBlack": "#676E7A",
+                                                        "brightBlue": "#5C98C5",
+                                                        "brightCyan": "#8ABEB7",
+                                                        "brightGreen": "#B5D680",
+                                                        "brightPurple": "#AC79BB",
+                                                        "brightRed": "#BD6D85",
+                                                        "brightWhite": "#FFFFFD",
+                                                        "brightYellow": "#FFFD76"
+                                                    }
+                                                ],
+                                                "actions": [
+                                                    {"command": { "action": "renameTab","input": "Liang Tab" },"keys": "ctrl+t" }
+                                                ],
+                                                "keybindings": [
+                                                    { "command": { "action": "sendInput","input": "VT Griese Mode" },"keys": "ctrl+k" }
+                                                ]
+                                            })" };
 
         auto settings{ winrt::make_self<implementation::CascadiaSettings>(false) };
         settings->_ParseJsonString(settingsString, false);
@@ -269,11 +298,7 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
 
-        // TODO CARLOS:
-        // - temp/DebugBreak is only for testing. Remove after we're done here.
-        // - BhojwaniShell is missing entirely
         const auto result{ settings->ToJson() };
-        const auto temp{ toString(result) };
-        VERIFY_ARE_EQUAL(settingsString, toString(result));
+        VERIFY_ARE_EQUAL(toString(settings->_userSettings), toString(result));
     }
 }

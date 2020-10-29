@@ -291,6 +291,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
     _Foreground.set = JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground.setting);
@@ -541,24 +542,13 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, NameKey, _Name);
     JsonUtils::SetValueForKey(json, GuidKey, _Guid);
     JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::SetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
-    if (_Foreground.set)
-    {
-        JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground.setting);
-    }
-    if (_Background.set)
-    {
-        JsonUtils::SetValueForKey(json, BackgroundKey, _Background.setting);
-    }
-    if (_SelectionBackground.set)
-    {
-        JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting);
-    }
-    if (_CursorColor.set)
-    {
-        JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor.setting);
-    }
+    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground.setting, _Foreground.set);
+    JsonUtils::SetValueForKey(json, BackgroundKey, _Background.setting, _Background.set);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting, _SelectionBackground.set);
+    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor.setting, _CursorColor.set);
     JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -597,10 +587,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    if (_TabColor.set)
-    {
-        JsonUtils::SetValueForKey(json, TabColorKey, _TabColor.setting);
-    }
+    JsonUtils::SetValueForKey(json, TabColorKey, _TabColor.setting, _TabColor.set);
 
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
 

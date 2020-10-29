@@ -11,7 +11,7 @@ namespace Microsoft.Terminal.Settings.Model
         CascadiaSettings(String json);
         CascadiaSettings Copy();
 
-        void Export();
+        void WriteSettingsToDisk();
 
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();

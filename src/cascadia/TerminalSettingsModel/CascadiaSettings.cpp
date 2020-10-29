@@ -710,7 +710,8 @@ void CascadiaSettings::_ValidateKeybindings()
 //   we find any invalid background images.
 void CascadiaSettings::_ValidateNoGlobalsKey()
 {
-    if (auto oldGlobalsProperty{ _userSettings["globals"] })
+    // use isMember here. If you use [], you're actually injecting "globals": null.
+    if (_userSettings.isMember("globals"))
     {
         _warnings.Append(SettingsLoadWarnings::LegacyGlobalsProperty);
     }

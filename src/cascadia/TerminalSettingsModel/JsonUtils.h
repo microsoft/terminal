@@ -705,7 +705,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
     // SetValueForKey, type-deduced, manual converter
     template<typename T, typename Converter>
-    void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
+    void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv, bool writeNullIfOptional = false)
     {
         std::optional<Json::Value> out;
         if constexpr (Detail::DeduceOptional<T>::IsOptional)
@@ -727,6 +727,11 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 {
                     out = conv.ToJson(*target);
                 }
+                else if (writeNullIfOptional)
+                {
+                    // only write out null if we explicitly allow that
+                    out = Json::nullValue;
+                }
             }
         }
         else
@@ -746,9 +751,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
     // SetValueForKey, type-deduced, with automatic converter
     template<typename T>
-    void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
+    void SetValueForKey(Json::Value& json, std::string_view key, const T& target, bool writeNullIfOptional = false)
     {
-        SetValueForKey(json, key, target, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
+        SetValueForKey(json, key, target, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{}, writeNullIfOptional);
     }
 };
 

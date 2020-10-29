@@ -46,18 +46,11 @@ static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.re
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
-#ifdef _DEBUG
-static constexpr bool debugFeaturesDefault{ true };
-#else
-static constexpr bool debugFeaturesDefault{ false };
-#endif
-
 GlobalAppSettings::GlobalAppSettings() :
     _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},
     _validDefaultProfile{ false },
-    _defaultProfile{},
-    _DebugFeaturesEnabled{ debugFeaturesDefault }
+    _defaultProfile{}
 {
     _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
@@ -381,7 +374,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
     // clang-format on
 
-    // TODO CARLOS: keymap needs to be serialized here
+    // TODO GH#8100: keymap needs to be serialized here
     //   For deserialization, we iterate over each action in the Json and interpret it as a keybinding, then as a command.
     //   Converting this back to JSON is a problem because we have no way to know if a Command and Keybinding come from
     //     the same entry.

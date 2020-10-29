@@ -80,13 +80,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, ForceFullRepaintRendering, false);
         GETSET_SETTING(bool, SoftwareRendering, false);
         GETSET_SETTING(bool, ForceVTInput, false);
-        GETSET_SETTING(bool, DebugFeaturesEnabled); // default value set in constructor
+        GETSET_SETTING(bool, DebugFeaturesEnabled, _debugFeaturesDefault);
         GETSET_SETTING(bool, StartOnUserLogin, false);
         GETSET_SETTING(bool, AlwaysOnTop, false);
         GETSET_SETTING(bool, UseTabSwitcher, true);
         GETSET_SETTING(bool, DisableAnimations, false);
 
     private:
+#ifdef _DEBUG
+        static constexpr bool _debugFeaturesDefault{ true };
+#else
+        static constexpr bool _debugFeaturesDefault{ false };
+#endif
         guid _defaultProfile;
         std::optional<hstring> _UnparsedDefaultProfile{ std::nullopt };
         bool _validDefaultProfile;
