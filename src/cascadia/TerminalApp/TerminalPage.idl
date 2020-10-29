@@ -34,6 +34,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
-        event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.TerminalControl.SetTaskbarProgressEventArgs> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
     }
 }

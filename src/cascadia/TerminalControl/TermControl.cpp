@@ -3027,8 +3027,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   to set the progress indicator on the taskbar
     void TermControl::TaskbarProgressChanged()
     {
-        auto setTaskbarProgressArgs = winrt::make_self<SetTaskbarProgressEventArgs>(_terminal->GetTaskbarState(), _terminal->GetTaskbarProgress());
-        _setTaskbarProgressHandlers(*this, *setTaskbarProgressArgs);
+        _setTaskbarProgressHandlers(*this, nullptr);
     }
 
     const size_t TermControl::GetTaskbarState() const noexcept
@@ -3051,6 +3050,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, TerminalControl::SetTaskbarProgressEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
     // clang-format on
 }

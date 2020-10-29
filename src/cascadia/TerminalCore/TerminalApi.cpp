@@ -612,6 +612,9 @@ bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noe
 {
     _taskbarState = state;
     _taskbarProgress = progress;
-    _pfnTaskbarProgressChanged();
+    if (_pfnTaskbarProgressChanged)
+    {
+        _pfnTaskbarProgressChanged();
+    }
     return true;
 }

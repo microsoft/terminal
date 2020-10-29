@@ -45,12 +45,6 @@ namespace Microsoft.Terminal.TerminalControl
         String Uri { get; };
     }
 
-    runtimeclass SetTaskbarProgressEventArgs
-    {
-        UInt64 State { get; };
-        UInt64 Progress { get; };
-    }
-
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
         TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -66,7 +60,7 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, OpenHyperlinkEventArgs> OpenHyperlink;
-        event Windows.Foundation.TypedEventHandler<TermControl, SetTaskbarProgressEventArgs> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;

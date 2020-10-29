@@ -4,6 +4,9 @@
 #include "../../terminal/adapter/termDispatch.hpp"
 #include "ITerminalApi.hpp"
 
+static constexpr size_t TaskbarMaxState{ 4 };
+static constexpr size_t TaskbarMaxProgress{ 100 };
+
 class TerminalDispatch : public Microsoft::Console::VirtualTerminal::TermDispatch
 {
 public:

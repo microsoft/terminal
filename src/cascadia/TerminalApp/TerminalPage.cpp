@@ -1877,7 +1877,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - eventArgs: the arguments specifying how to set the progress indicator
-    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::SetTaskbarProgressEventArgs eventArgs)
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs)
     {
         _setTaskbarProgressHandlers(sender, eventArgs);
     }
@@ -2652,5 +2652,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::TerminalControl::SetTaskbarProgressEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

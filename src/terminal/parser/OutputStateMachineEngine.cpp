@@ -951,15 +951,24 @@ bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view strin
                                                    size_t& progress) const
 {
     const auto parts = Utils::SplitString(string, L';');
-    if (parts.size() != 3 || std::stoi(til::u16u8(parts.at(0))) != 4)
+    if (parts.size() < 1 || std::stoi(til::u16u8(parts.at(0))) != 4)
     {
         return false;
     }
-    state = std::stoi(til::u16u8(parts.at(1)));
-    progress = std::stoi(til::u16u8(parts.at(2)));
-    if (state < 0 || state > 4 || progress < 0 || progress > 100)
+    if (parts.size() == 1)
     {
-        return false;
+        state = 0;
+        progress = 0;
+    }
+    else if (parts.size() == 2)
+    {
+        state = std::stoi(til::u16u8(parts.at(1)));
+        progress = 0;
+    }
+    else
+    {
+        state = std::stoi(til::u16u8(parts.at(1)));
+        progress = std::stoi(til::u16u8(parts.at(2)));
     }
     return true;
 }

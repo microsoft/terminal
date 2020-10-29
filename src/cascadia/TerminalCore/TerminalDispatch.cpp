@@ -408,7 +408,18 @@ bool TerminalDispatch::EndHyperlink() noexcept
 // - true
 bool TerminalDispatch::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
 {
-    return _terminalApi.SetTaskbarProgress(state, progress);
+    auto clampedProgress = progress;
+    if (state > TaskbarMaxState)
+    {
+        // state is out of bounds, return false
+        return false;
+    }
+    if (progress > TaskbarMaxProgress)
+    {
+        // progress is greater than the maximum allowed value, clamp it to the max
+        clampedProgress = TaskbarMaxProgress;
+    }
+    return _terminalApi.SetTaskbarProgress(state, clampedProgress);
 }
 
 // Routine Description:

@@ -7,7 +7,6 @@
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
-#include "SetTaskbarProgressEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -82,22 +81,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring _uri;
     };
 
-    struct SetTaskbarProgressEventArgs :
-        public SetTaskbarProgressEventArgsT<SetTaskbarProgressEventArgs>
-    {
-    public:
-        SetTaskbarProgressEventArgs(size_t state, size_t progress) :
-            _state(state),
-            _progress(progress) {}
-
-        size_t State() { return _state; };
-        size_t Progress() { return _progress; };
-
-    private:
-        size_t _state;
-        size_t _progress;
-    };
-
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -169,7 +152,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, TerminalControl::SetTaskbarProgressEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);

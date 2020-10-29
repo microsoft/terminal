@@ -515,6 +515,8 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 
 // Method Description:
 // - Sets the taskbar progress indicator
+// - We follow the ConEmu style for the state and progress values,
+//   more details at https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
 // Arguments:
 // - state: indicates the progress state
 // - progress: indicates the progress value
