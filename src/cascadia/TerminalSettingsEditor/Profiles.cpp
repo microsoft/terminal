@@ -25,7 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _ScrollStates{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
         _CursorShapes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
         _BackgroundImageStretchModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
-        _AntialiasingModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _AntialiasingModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _CloseOnExitModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
 
     {
         InitializeComponent();
@@ -49,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto enumName = LocalizedNameForEnumName(L"Profile_CursorShape", key, L"Content");
             auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<CursorStyle>(value));
-            _ScrollStates.Append(entry);
+            _CursorShapes.Append(entry);
 
             // Initialize the selected item to be our current setting
             if (value == Profile().CursorShape())
@@ -63,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto enumName = LocalizedNameForEnumName(L"Profile_BackgroundImageStretchMode", key, L"Content");
             auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<Stretch>(value));
-            _ScrollStates.Append(entry);
+            _BackgroundImageStretchModes.Append(entry);
 
             // Initialize the selected item to be our current setting
             if (value == Profile().BackgroundImageStretchMode())
@@ -77,12 +78,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto enumName = LocalizedNameForEnumName(L"Profile_AntialiasingMode", key, L"Content");
             auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<TextAntialiasingMode>(value));
-            _ScrollStates.Append(entry);
+            _AntialiasingModes.Append(entry);
 
             // Initialize the selected item to be our current setting
             if (value == Profile().AntialiasingMode())
             {
                 AntialiasingModeButtons().SelectedItem(entry);
+            }
+        }
+
+        auto closeOnExitModesMap = EnumMappings::CloseOnExit();
+        for (auto [key, value] : closeOnExitModesMap)
+        {
+            auto enumName = LocalizedNameForEnumName(L"Profile_CloseOnExit", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<CloseOnExitMode>(value));
+            _CloseOnExitModes.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == Profile().CloseOnExit())
+            {
+                CloseOnExitModeButtons().SelectedItem(entry);
             }
         }
     }
@@ -202,13 +217,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     void Profiles::AntialiasingModeSelected(IInspectable const& /*sender*/,
-                                                      SelectionChangedEventArgs const& args)
+                                            SelectionChangedEventArgs const& args)
     {
         if (args.AddedItems().Size() > 0)
         {
             if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
             {
                 Profile().AntialiasingMode(winrt::unbox_value<TextAntialiasingMode>(item->EnumValue()));
+            }
+        }
+    }
+
+    IObservableVector<Editor::EnumEntry> Profiles::CloseOnExitModes()
+    {
+        return _CloseOnExitModes;
+    }
+
+    void Profiles::CloseOnExitModeSelected(IInspectable const& /*sender*/,
+                                           SelectionChangedEventArgs const& args)
+    {
+        if (args.AddedItems().Size() > 0)
+        {
+            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
+            {
+                Profile().CloseOnExit(winrt::unbox_value<CloseOnExitMode>(item->EnumValue()));
             }
         }
     }

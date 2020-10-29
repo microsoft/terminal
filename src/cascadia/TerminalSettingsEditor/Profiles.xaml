@@ -287,10 +287,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <CheckBox x:Uid="Profile_AltGrAliasing" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                         <CheckBox x:Uid="Profile_SnapOnInput" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                         <Controls:NumberBox x:Uid="Profile_HistorySize" Margin="0,0,0,20" FontSize="15" Value="9001" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="100" ToolTipService.Placement="Mouse" />
-                        <Controls:RadioButtons x:Uid="Profile_CloseOnExit" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                            <RadioButton x:Uid="Profile_CloseOnExitGraceful" x:Name="closeOnExitGraceful"/>
-                            <RadioButton x:Uid="Profile_CloseOnExitAlways" x:Name="closeOnExitAlways"/>
-                            <RadioButton x:Uid="Profile_CloseOnExitNever" x:Name="closeOnExitNever"/>
+                        <Controls:RadioButtons x:Uid="Profile_CloseOnExit"
+                                               x:Name="CloseOnExitModeButtons"
+                                               Margin="0,0,0,20"
+                                               FontSize="15"
+                                               ToolTipService.Placement="Mouse"
+                                               x:DefaultBindMode="OneWay"
+                                               ItemsSource="{x:Bind CloseOnExitModes}"
+                                               SelectionChanged="CloseOnExitModeSelected">
+                            <Controls:RadioButtons.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <RadioButton Content="{x:Bind EnumName}"/>
+                                </DataTemplate>
+                            </Controls:RadioButtons.ItemTemplate>
                         </Controls:RadioButtons>
                     </StackPanel>
                 </Grid>
