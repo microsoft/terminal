@@ -301,6 +301,20 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </DataTemplate>
                             </Controls:RadioButtons.ItemTemplate>
                         </Controls:RadioButtons>
+                        <Controls:RadioButtons x:Uid="Profile_BellStyle"
+                                               x:Name="BellStyleButtons"
+                                               Margin="0,0,0,20"
+                                               FontSize="15"
+                                               ToolTipService.Placement="Mouse"
+                                               x:DefaultBindMode="OneWay"
+                                               ItemsSource="{x:Bind BellStyles}"
+                                               SelectionChanged="BellStyleSelected">
+                            <Controls:RadioButtons.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <RadioButton Content="{x:Bind EnumName}"/>
+                                </DataTemplate>
+                            </Controls:RadioButtons.ItemTemplate>
+                        </Controls:RadioButtons>
                     </StackPanel>
                 </Grid>
             </PivotItem>

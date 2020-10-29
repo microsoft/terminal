@@ -26,7 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CursorShapes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
         _BackgroundImageStretchModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
         _AntialiasingModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
-        _CloseOnExitModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _CloseOnExitModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _BellStyles{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
 
     {
         InitializeComponent();
@@ -34,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto scrollStatesMap = EnumMappings::ScrollState();
         for (auto [key, value] : scrollStatesMap)
         {
-            auto enumName = LocalizedNameForEnumName(L"Profile_ScrollVisibility", key, L"Content");
+            auto enumName = LocalizedNameForEnumName(L"Profile_ScrollbarVisibility", key, L"Content");
             auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ScrollbarState>(value));
             _ScrollStates.Append(entry);
 
@@ -98,6 +99,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (value == Profile().CloseOnExit())
             {
                 CloseOnExitModeButtons().SelectedItem(entry);
+            }
+        }
+
+        auto bellStyleMap = EnumMappings::BellStyle();
+        for (auto [key, value] : bellStyleMap)
+        {
+            auto enumName = LocalizedNameForEnumName(L"Profile_BellStyle", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<BellStyle>(value));
+            _BellStyles.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == Profile().BellStyle())
+            {
+                BellStyleButtons().SelectedItem(entry);
             }
         }
     }
@@ -241,6 +256,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
             {
                 Profile().CloseOnExit(winrt::unbox_value<CloseOnExitMode>(item->EnumValue()));
+            }
+        }
+    }
+
+    IObservableVector<Editor::EnumEntry> Profiles::BellStyles()
+    {
+        return _BellStyles;
+    }
+
+    void Profiles::BellStyleSelected(IInspectable const& /*sender*/,
+                                     SelectionChangedEventArgs const& args)
+    {
+        if (args.AddedItems().Size() > 0)
+        {
+            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
+            {
+                Profile().BellStyle(winrt::unbox_value<BellStyle>(item->EnumValue()));
             }
         }
     }

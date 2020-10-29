@@ -251,7 +251,8 @@
     <value>Launch size</value>
   </data>
   <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Defines whether the terminal will launch in a window, maximized, or full screen.</value>
+    <value>Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to "Focus" is equivalent to launching the terminal in the "Default" mode, but with the focus mode enabled. Similar, setting this to "MaximizedFocus" will result in launching the terminal in a maximized window with the focus mode enabled.</value>
+    <comment>"Focus", "Default", and "MaximizedFocus" must match their respective Globals_LaunchSize entries.</comment>
   </data>
   <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
     <value>Default</value>
@@ -666,5 +667,24 @@
   <data name="Settings_UnsavedSettingsWarning.Text" xml:space="preserve">
     <value>⚠ You have unsaved changes.</value>
     <comment>{Locked="⚠"}</comment>
+  </data>
+  <data name="Profile_BellStyle.Header" xml:space="preserve">
+    <value>Notification style for BEL character</value>
+  </data>
+  <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Controls what happens when the application emits a BEL character. When set to "Audible", the Terminal will play a sound. When set to "None", nothing will happen.</value>
+    <comment>"Audible" and "None" must match the values for Profile_BellStyleAudible.Content and Profile_BellStyleNone.Content respectively.</comment>
+  </data>
+  <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
+    <value>Audible</value>
+  </data>
+  <data name="Profile_BellStyleNone.Content" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
+    <value>Focus</value>
+  </data>
+  <data name="Globals_LaunchSizeMaximizedFocus.Content" xml:space="preserve">
+    <value>Maximized Focus</value>
   </data>
 </root>

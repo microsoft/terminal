@@ -34,15 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Profile Settings
     DEFINE_ENUM_MAP(Model::CloseOnExitMode, CloseOnExit);
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::ScrollbarState, ScrollState);
-    IMap<hstring, uint32_t> EnumMappings::FontWeight()
-    {
-        auto map = single_threaded_map<hstring, uint32_t>();
-        for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Windows::UI::Text::FontWeight>::mappings)
-        {
-            map.Insert(winrt::to_hstring(enumStr), enumVal);
-        }
-        return map;
-    }
     DEFINE_ENUM_MAP(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape);
