@@ -10,5 +10,6 @@ namespace Microsoft.Terminal.Settings.Editor
         GlobalAppearance();
         Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ElementThemes { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModes { get; };
     }
 }
