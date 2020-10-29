@@ -400,6 +400,12 @@ namespace winrt::TerminalApp::implementation
         ShowDialog(dialog);
     }
 
+    // Method Description:
+    // - Displays a dialog if the "Touch, Keyboard and Handwriting Panel
+    //   Service" is disabled. If it is, we want to warn the user, because they
+    //   won't be able to type in the Terminal.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See ShowDialog for details
     void AppLogic::_ShowKeyboardServiceDisabledDialog()
     {
         auto title = RS_(L"KeyboardServiceWarningTitle");
@@ -511,6 +517,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Helper for determining if the "Touch, Keyboard and Handwriting Panel
+    //   Service" is enabled. If it isn't, we want to be able to display a
+    //   warning to the user, because they won't be able to type in the
+    //   Terminal.
+    // Return Value:
+    // - true if the service is enabled, or if we fail to query the service. We
+    //   return true in that case, to be less noisy (though, that is unexpected)
     bool AppLogic::_IsKeyboardServiceEnabled()
     {
         if (IsUwp())
@@ -524,7 +538,7 @@ namespace winrt::TerminalApp::implementation
 
         // Open the service manager. This will return 0 if it failed.
         wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, SERVICE_QUERY_STATUS) };
-        
+
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
         {
             return true;
