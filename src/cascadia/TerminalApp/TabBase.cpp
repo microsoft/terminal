@@ -30,7 +30,6 @@ namespace winrt::TerminalApp::implementation
     // - Prepares this tab for being removed from the UI hierarchy
     void TabBase::Shutdown()
     {
-        // TODO: Does/Will the settings UI need some shutdown procedures?
         Content(nullptr);
         _ClosedHandlers(nullptr, nullptr);
     }
