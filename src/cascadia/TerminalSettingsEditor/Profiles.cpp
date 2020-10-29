@@ -24,7 +24,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Profiles::Profiles() :
         _ScrollStates{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
         _CursorShapes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
-        _BackgroundImageStretchModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _BackgroundImageStretchModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _AntialiasingModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
 
     {
         InitializeComponent();
@@ -68,6 +69,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (value == Profile().BackgroundImageStretchMode())
             {
                 BackgroundImageStretchModeButtons().SelectedItem(entry);
+            }
+        }
+
+        auto antialiasingModesMap = EnumMappings::AntialiasingMode();
+        for (auto [key, value] : antialiasingModesMap)
+        {
+            auto enumName = LocalizedNameForEnumName(L"Profile_AntialiasingMode", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<TextAntialiasingMode>(value));
+            _ScrollStates.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == Profile().AntialiasingMode())
+            {
+                AntialiasingModeButtons().SelectedItem(entry);
             }
         }
     }
@@ -177,6 +192,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
             {
                 Profile().BackgroundImageStretchMode(winrt::unbox_value<Stretch>(item->EnumValue()));
+            }
+        }
+    }
+
+    IObservableVector<Editor::EnumEntry> Profiles::AntialiasingModes()
+    {
+        return _AntialiasingModes;
+    }
+
+    void Profiles::AntialiasingModeSelected(IInspectable const& /*sender*/,
+                                                      SelectionChangedEventArgs const& args)
+    {
+        if (args.AddedItems().Size() > 0)
+        {
+            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
+            {
+                Profile().AntialiasingMode(winrt::unbox_value<TextAntialiasingMode>(item->EnumValue()));
             }
         }
     }

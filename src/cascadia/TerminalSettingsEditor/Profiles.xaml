@@ -270,10 +270,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                         <CheckBox x:Uid="Profile_Hidden" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                         <CheckBox x:Uid="Profile_SuppressApplicationTitle" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                        <Controls:RadioButtons x:Uid="Profile_AntialiasingMode" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                            <RadioButton x:Uid="Profile_AntialiasingModeGrayscale" x:Name="antialiasingTextGrayscale"/>
-                            <RadioButton x:Uid="Profile_AntialiasingModeClearType" x:Name="antialiasingTextClearType"/>
-                            <RadioButton x:Uid="Profile_AntialiasingModeAliased" x:Name="antialiasingTextAliased"/>
+                        <Controls:RadioButtons x:Uid="Profile_AntialiasingMode"
+                                               x:Name="AntialiasingModeButtons"
+                                               Margin="0,0,0,20"
+                                               FontSize="15"
+                                               ToolTipService.Placement="Mouse"
+                                               x:DefaultBindMode="OneWay"
+                                               ItemsSource="{x:Bind AntialiasingModes}"
+                                               SelectionChanged="AntialiasingModeSelected">
+                            <Controls:RadioButtons.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <RadioButton Content="{x:Bind EnumName}"/>
+                                </DataTemplate>
+                            </Controls:RadioButtons.ItemTemplate>
                         </Controls:RadioButtons>
                         <CheckBox x:Uid="Profile_AltGrAliasing" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                         <CheckBox x:Uid="Profile_SnapOnInput" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
