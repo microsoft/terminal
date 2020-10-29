@@ -269,7 +269,7 @@
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
   </data>
   <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
-    <value>Show a separate title bar above the tabs (requires restart)</value>
+    <value>Hide the title bar (requires restart)</value>
   </data>
   <data name="Globals_ShowTitlebar.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the tabs are moved into the title bar and the title bar disappears. When unchecked, the title bar sits above the tabs.</value>
