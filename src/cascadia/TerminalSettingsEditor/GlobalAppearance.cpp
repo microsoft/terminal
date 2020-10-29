@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (auto [key, value] : elementThemeMap)
         {
             auto enumName = LocalizedNameForEnumName(L"Globals_Theme", key, L"Content");
-            auto entry = winrt::make<EnumEntry>(GetLibraryResourceString(enumName), winrt::box_value<ElementTheme>(value));
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ElementTheme>(value));
             _ElementThemes.Append(entry);
 
             // Initialize the selected item to be our current setting
