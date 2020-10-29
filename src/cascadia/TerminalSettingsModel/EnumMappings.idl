@@ -1,9 +1,23 @@
 // Copyright (c) Microsoft Corporation
 // Licensed under the MIT license.
+import "GlobalAppSettings.idl";
+import "Profile.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass EnumMappings {
+        // Global Settings
         static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.UI.Xaml.Controls.TabViewWidthMode> TabWidthMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LaunchMode> LaunchMode { get; };
+
+        // Profile Settings
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExit { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.ScrollbarState> ScrollState { get; };
+        static Windows.Foundation.Collections.IMap<String, UInt32> FontWeight { get; };
+        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.Media.Stretch> BackgroundImageStretchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.TextAntialiasingMode> AntialiasingMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.CursorStyle> CursorShape { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.BellStyle> BellStyle { get; };
     }
 }
