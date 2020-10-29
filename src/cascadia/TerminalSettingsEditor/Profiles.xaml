@@ -46,9 +46,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Button x:Uid="Profile_IconBrowse" Margin="5,0,0,0" Grid.Row="2" Grid.Column="1" FontSize="15" />
                     <StackPanel Grid.Row="3" Grid.Column="0">
                         <TextBox x:Uid="Profile_TabTitle" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                        <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                            <RadioButton x:Uid="Profile_ScrollbarVisibilityVisible" x:Name="ScrollBarVisible"/>
-                            <RadioButton x:Uid="Profile_ScrollbarVisibilityHidden" x:Name="ScrollBarHidden"/>
+                        <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                               x:Name="ScrollbarVisibilityButtons"
+                                               Margin="0,0,0,20"
+                                               FontSize="15"
+                                               ToolTipService.Placement="Mouse"
+                                               x:DefaultBindMode="OneWay"
+                                               ItemsSource="{x:Bind ScrollStates}"
+                                               SelectionChanged="ScrollStateSelected">
+                            <Controls:RadioButtons.ItemTemplate>
+                                <DataTemplate x:DataType="local:EnumEntry">
+                                    <RadioButton Content="{x:Bind EnumName}"/>
+                                </DataTemplate>
+                            </Controls:RadioButtons.ItemTemplate>
                         </Controls:RadioButtons>
                     </StackPanel>
                 </Grid>

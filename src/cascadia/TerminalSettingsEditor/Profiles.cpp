@@ -1,20 +1,44 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
+#include "Utils.h"
 #include "Profiles.h"
 #include "Profiles.g.cpp"
+#include "EnumEntry.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Profiles::Profiles()
+    Profiles::Profiles() :
+        _ScrollStates{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+
     {
         InitializeComponent();
+
+        auto scrollStatesMap = EnumMappings::ScrollState();
+        for (auto [key, value] : scrollStatesMap)
+        {
+            auto enumName = LocalizedNameForEnumName(L"Profile_ScrollVisibility", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ScrollbarState>(value));
+            _ScrollStates.Append(entry);
+
+            // Initialize the selected item to be our current setting
+            if (value == Profile().ScrollState())
+            {
+                ScrollbarVisibilityButtons().SelectedItem(entry);
+            }
+        }
     }
 
     Profiles::Profiles(Settings::Model::Profile profile)
@@ -74,4 +98,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
     */
+
+    IObservableVector<Editor::EnumEntry> Profiles::ScrollStates()
+    {
+        return _ScrollStates;
+    }
+
+    void Profiles::ScrollStateSelected(IInspectable const& /*sender*/,
+                                       SelectionChangedEventArgs const& args)
+    {
+        if (args.AddedItems().Size() > 0)
+        {
+            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
+            {
+                Profile().ScrollState(winrt::unbox_value<ScrollbarState>(item->EnumValue()));
+            }
+        }
+    }
 }

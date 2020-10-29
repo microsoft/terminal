@@ -1,5 +1,4 @@
-﻿
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -20,6 +19,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // TODO GH#1564: Settings UI
         // This crashes on click, for some reason
         //fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> ScrollStates();
+        void ScrollStateSelected(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
+
+    private:
+        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _ScrollStates;
 
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Profile, Profile);
     };
