@@ -18,49 +18,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::UI::Text::FontWeight weight;
         hstring text = unbox_value<hstring>(value);
 
-        text.c_str();
-        std::transform(text.begin(), text.end(), text.begin(), [](auto c) { return static_cast<char>(std::tolower(c)); });
-        if (text == L"extrablack")
+        std::wstring temp{ text.c_str() };
+        std::transform(temp.begin(), temp.end(), temp.begin(), [](auto c) { return static_cast<char>(std::tolower(c)); });
+        if (temp == L"extrablack")
         {
             weight.Weight = 950;
         }
-        else if (text == L"black")
+        else if (temp == L"black")
         {
             weight.Weight = 900;
         }
-        else if (text == L"extrabold")
+        else if (temp == L"extrabold")
         {
             weight.Weight = 800;
         }
-        else if (text == L"bold")
+        else if (temp == L"bold")
         {
             weight.Weight = 700;
         }
-        else if (text == L"semibold")
+        else if (temp == L"semibold")
         {
             weight.Weight = 600;
         }
-        else if (text == L"medium")
+        else if (temp == L"medium")
         {
             weight.Weight = 500;
         }
-        else if (text == L"normal")
+        else if (temp == L"normal")
         {
             weight.Weight = 400;
         }
-        else if (text == L"semilight")
+        else if (temp == L"semilight")
         {
             weight.Weight = 350;
         }
-        else if (text == L"light")
+        else if (temp == L"light")
         {
             weight.Weight = 300;
         }
-        else if (text == L"extralight")
+        else if (temp == L"extralight")
         {
             weight.Weight = 200;
         }
-        else if (text == L"thin")
+        else if (temp == L"thin")
         {
             weight.Weight = 100;
         }
