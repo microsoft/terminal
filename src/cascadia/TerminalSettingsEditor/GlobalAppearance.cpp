@@ -24,15 +24,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto elementThemeMap = EnumMappings::ElementTheme();
         for (auto [key, value] : elementThemeMap)
         {
-            auto enumName = LocalizedNameForEnumName(L"Globals_Theme", key, L"Content");
-            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ElementTheme>(value));
+            auto enumName = LocalizedNameForEnumName(L"Globals_Theme", value, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ElementTheme>(key));
             _ElementThemes.Append(entry);
-
-            // Initialize the selected item to be our current setting
-            if (value == GlobalSettings().Theme())
-            {
-                ThemeButtons().SelectedItem(entry);
-            }
         }
     }
 
@@ -41,16 +35,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _ElementThemes;
     }
 
-    void GlobalAppearance::ElementThemeSelected(IInspectable const& /*sender*/,
-                                                SelectionChangedEventArgs const& args)
+    uint8_t GlobalAppearance::CurrentTheme()
     {
-        if (args.AddedItems().Size() > 0)
-        {
-            if (auto item = args.AddedItems().GetAt(0).try_as<EnumEntry>())
-            {
-                GlobalSettings().Theme(winrt::unbox_value<ElementTheme>(item->EnumValue()));
-            }
-        }
+        return static_cast<uint8_t>(GlobalSettings().Theme());
+    }
+
+    void GlobalAppearance::CurrentTheme(const uint8_t index)
+    {
+        GlobalSettings().Theme(static_cast<ElementTheme>(index));
     }
 
     GlobalAppSettings GlobalAppearance::GlobalSettings()

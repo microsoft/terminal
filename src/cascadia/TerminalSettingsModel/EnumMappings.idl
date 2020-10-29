@@ -4,6 +4,6 @@
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass EnumMappings {
-        static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
+        static Windows.Foundation.Collections.IMap<Windows.UI.Xaml.ElementTheme, String> ElementTheme { get; };
     }
 }
