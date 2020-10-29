@@ -11,7 +11,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct EnumEntry : EnumEntryT<EnumEntry>
     {
     public:
-        EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue);
+        EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue):
+            _EnumName{ enumName },
+            _EnumValue{ enumValue } {}
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, EnumName, _PropertyChangedHandlers);

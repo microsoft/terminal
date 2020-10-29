@@ -11,9 +11,9 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    EnumEntry::EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue)
+    EnumEntry::EnumEntry(const winrt::hstring enumName, const winrt::Windows::Foundation::IInspectable& enumValue):
+        _EnumName{ enumName },
+        _EnumValue{ enumValue }
     {
-        EnumName(enumName);
-        EnumValue(enumValue);
     }
 }

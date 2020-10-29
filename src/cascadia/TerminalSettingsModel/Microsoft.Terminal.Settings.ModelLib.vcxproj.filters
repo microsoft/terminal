@@ -32,7 +32,6 @@
       <Filter>json</Filter>
     </ClCompile>
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="SettingsEnumMapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -63,7 +62,6 @@
       <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
-    <ClInclude Include="SettingsEnumMapper.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />

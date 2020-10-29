@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "Utils.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
 #include "MainPage.h"
@@ -25,10 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto elementThemeMap = EnumMappings::ElementTheme();
         for (auto [key, value] : elementThemeMap)
         {
-            // Uppercase the first letter to conform to our current Resource keys
-            std::wstring_view enumName = key;
-            auto fmtKey = fmt::format(L"Globals_Theme{}{}/Content", char(std::towupper(enumName[0])), enumName.substr(1));
-            auto entry = winrt::make<EnumEntry>(GetLibraryResourceString(fmtKey), winrt::box_value<ElementTheme>(value));
+            auto enumName = LocalizedNameForEnumName(L"Globals_Theme", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(GetLibraryResourceString(enumName), winrt::box_value<ElementTheme>(value));
             _ElementThemes.Append(entry);
 
             // Initialize the selected item to be our current setting

@@ -140,9 +140,6 @@
     <ClCompile Include="ColorToHexConverter.cpp">
       <DependentUpon>ColorToHexConverter.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="EnumEntry.cpp">
-      <DependentUpon>EnumEntry.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
