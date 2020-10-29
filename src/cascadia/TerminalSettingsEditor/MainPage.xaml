@@ -27,81 +27,47 @@ the MIT License. See LICENSE in the project root for license information. -->
                         IsBackEnabled="True"
                         BackRequested="SettingsNav_BackRequested">
             <muxc:NavigationView.MenuItems>
-
-                <muxc:NavigationViewItem x:Uid="Nav_General"
-                                         Icon="Globe"
-                                         Tag="General_Nav">
-                    <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem x:Uid="Nav_Launch"
-                                                 Tag="Launch_Nav">
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7B5;"/>
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem x:Uid="Nav_Interaction"
-                                                 Tag="Interaction_Nav">
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7C9;"/>
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem x:Uid="Nav_Rendering"
-                                                 Tag="Rendering_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE7F8;"/>
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
-
-                    </muxc:NavigationViewItem.MenuItems>
-
-                </muxc:NavigationViewItem>
-
-                <muxc:NavigationViewItem x:Uid="Nav_Appearance" Tag="Appearance_Nav">
+                
+                <muxc:NavigationViewItem x:Uid="Nav_Launch"
+                                                Tag="Launch_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE771;"/>
+                        <FontIcon Glyph="&#xE7B5;"/>
                     </muxc:NavigationViewItem.Icon>
-
-                    <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
-                                                 Tag="GlobalAppearance_Nav">
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;"/>
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
-
-                        <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
-                                                 Tag="ColorSchemes_Nav">
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE790;"/>
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
-                    </muxc:NavigationViewItem.MenuItems>
-
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem x:Uid="Nav_Profiles"
-                                         Tag="Profiles_Nav">
+                <muxc:NavigationViewItem x:Uid="Nav_Interaction"
+                                                Tag="Interaction_Nav">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7C9;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+
+                <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
+                                            Tag="GlobalProfile_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE756;"/>
                     </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
 
-                    <muxc:NavigationViewItem.MenuItems>
-                        <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
-                                                 Tag="GlobalProfile_Nav">
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE909;"/>
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
+                                                Tag="GlobalAppearance_Nav">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE771;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
 
-                        <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"
-                                                 Tag="AddNew_Nav" >
-                            <muxc:NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE710;" />
-                            </muxc:NavigationViewItem.Icon>
-                        </muxc:NavigationViewItem>
+                <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
+                                                Tag="ColorSchemes_Nav">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE790;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
 
-                    </muxc:NavigationViewItem.MenuItems>
+                <muxc:NavigationViewItem x:Uid="Nav_Rendering"
+                                                 Tag="Rendering_Nav" >
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F8;"/>
+                    </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
             </muxc:NavigationView.MenuItems>

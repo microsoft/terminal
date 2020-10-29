@@ -35,9 +35,6 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="AddProfile.h">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-    </ClInclude>
     <ClInclude Include="ColorToBrushConverter.h">
       <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
     </ClInclude>
@@ -86,9 +83,6 @@
   </ItemGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
-    <Page Include="AddProfile.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -128,9 +122,6 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="AddProfile.cpp">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
-    </ClCompile>
     <ClCompile Include="ColorToBrushConverter.cpp">
       <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
     </ClCompile>
@@ -217,10 +208,6 @@
     </Midl>
     <Midl Include="Profiles.idl">
       <DependentUpon>Profiles.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="AddProfile.idl">
-      <DependentUpon>AddProfile.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SplitPaneOptionPanelControl.idl">
