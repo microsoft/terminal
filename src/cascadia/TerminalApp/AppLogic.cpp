@@ -400,6 +400,30 @@ namespace winrt::TerminalApp::implementation
         ShowDialog(dialog);
     }
 
+    void AppLogic::_ShowKeyboardServiceDisabledDialog()
+    {
+        auto title = RS_(L"KeyboardServiceWarningTitle");
+        auto text = RS_(L"KeyboardServiceWarningText");
+        auto buttonText = RS_(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+
+        warningsTextBlock.Inlines().Append(_BuildErrorRun(text, Application::Current().as<::winrt::TerminalApp::App>().Resources()));
+        warningsTextBlock.Inlines().Append(Documents::LineBreak{});
+
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(winrt::box_value(warningsTextBlock));
+        dialog.CloseButtonText(buttonText);
+        dialog.DefaultButton(Controls::ContentDialogButton::Close);
+
+        ShowDialog(dialog);
+    }
+
     // Method Description:
     // - Displays a dialog for warnings found while loading or validating the
     //   settings. Displays messages for whatever warnings were found while
@@ -470,6 +494,11 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
+        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+        if (keyboardServiceIsDisabled)
+        {
+            _ShowKeyboardServiceDisabledDialog();
+        }
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -479,6 +508,52 @@ namespace winrt::TerminalApp::implementation
         else if (_settingsLoadedResult == S_FALSE)
         {
             _ShowLoadWarningsDialog();
+        }
+    }
+
+    bool AppLogic::_IsKeyboardServiceEnabled()
+    {
+        if (IsUwp())
+        {
+            return true;
+        }
+
+        // If at any point we fail to open the service manager, the service,
+        // etc, then just quick return true to disable the dialog. We'd rather
+        // not be noisy with this dialog if we failed for some reason.
+
+        // Open the service manager. This will return 0 if it failed.
+        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, SERVICE_QUERY_STATUS) };
+        
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return true;
+        }
+
+        // Get a handle to the keyboard service
+        wil::unique_schandle hService{ OpenService(hManager.get(), L"TabletInputService", SERVICE_QUERY_STATUS) };
+        if (LOG_LAST_ERROR_IF(!hService.is_valid()))
+        {
+            return true;
+        }
+
+        // Get the current state of the service
+        SERVICE_STATUS status{ 0 };
+        if (!LOG_IF_WIN32_BOOL_FALSE(QueryServiceStatus(hService.get(), &status)))
+        {
+            return true;
+        }
+
+        const auto state = status.dwCurrentState;
+        if (state != SERVICE_RUNNING && state != SERVICE_START_PENDING)
+        {
+            // The service is off - return false
+            return false;
+        }
+        else
+        {
+            // The service is on - this is good.
+            return true;
         }
     }
 
