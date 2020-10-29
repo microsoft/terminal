@@ -26,10 +26,19 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                 <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                 <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                    <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
-                    <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>
-                    <RadioButton x:Uid="Globals_LaunchSizeFullscreen" x:Name="FullscreenLaunchSize"/>
+                <Controls:RadioButtons x:Uid="Globals_LaunchSize"
+                                       x:Name="LaunchSizeButtons"
+                                       Margin="0,0,0,20"
+                                       FontSize="15"
+                                       ToolTipService.Placement="Mouse"
+                                       x:DefaultBindMode="OneWay"
+                                       ItemsSource="{x:Bind LaunchSizes}"
+                                       SelectionChanged="LaunchSizeSelected">
+                    <Controls:RadioButtons.ItemTemplate>
+                        <DataTemplate x:DataType="local:EnumEntry">
+                            <RadioButton Content="{x:Bind EnumName}"/>
+                        </DataTemplate>
+                    </Controls:RadioButtons.ItemTemplate>
                 </Controls:RadioButtons>
                 <!--TODO: Converter here for launch position into the cols and rows number boxes-->
                 <!--<TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
