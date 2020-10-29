@@ -3023,7 +3023,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // the handlers decide to do something that take another lock
         // (like ShellExecute pumping our messaging thread...GH#7994)
         co_await Dispatcher();
-        
+
         auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
         _openHyperlinkHandlers(*strongThis, *hyperlinkArgs);
     }
