@@ -16,7 +16,8 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Launch::Launch()
+    Launch::Launch() :
+        _LaunchSizes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
     {
         InitializeComponent();
 

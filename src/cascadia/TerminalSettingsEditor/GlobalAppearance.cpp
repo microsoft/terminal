@@ -18,7 +18,8 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     GlobalAppearance::GlobalAppearance() :
-        _ElementThemes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _ElementThemes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _TabWidthModes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
     {
         InitializeComponent();
 
