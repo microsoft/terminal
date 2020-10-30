@@ -1158,6 +1158,23 @@ launch to use seems like an obvious next step. See also [#961].
   new window from a current tab once this all lands.
   - Or it could be `NewWindowFromTab(index:union(int,int[])?)` to specify the
     current tab, a specific tab, or many tabs.
+* During
+  [review](https://github.com/microsoft/terminal/pull/7240#issuecomment-716022646),
+  it was mentioned that when links are opened in the new Edge browser, they will
+  only glom onto an existing window if that window is open in the current
+  virtual desktop. This seems like a good idea of a feature for the Terminal to
+  follow as well. Since Edge is able to do it, there must be some way for an
+  application to determine which virtual desktop it is open on. We could use
+  that information to have the monarch track the last active window per-desktop,
+  and only glom when there's one on the current desktop.
+  - We could even imagine changing the `glomToLastWindow` property to accept a
+    combined `bool`/enum value:
+    - `true` or `"always"`: always glom to the most recent window, regardless of
+      desktop
+    - `"sameDesktop"`: Only glom if there's an existing window on this virtual
+      desktop, otherwise create a new window
+    - `false` or `"never"`: Never glom, always create a new window.
+
 
 ### Elevation and Extensions
 
