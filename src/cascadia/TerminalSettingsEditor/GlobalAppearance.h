@@ -13,14 +13,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         GlobalAppearance();
         winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> ElementThemes();
 
-        winrt::Windows::Foundation::IInspectable CurrentTheme();
-        void CurrentTheme(const winrt::Windows::Foundation::IInspectable& enumEntry);
-
-    private:
-        winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _ElementThemes;
-        winrt::Windows::Foundation::Collections::IMap<winrt::Windows::UI::Xaml::ElementTheme, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _ElementThemeMap;
+        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, GlobalSettings, Theme);
+        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, GlobalSettings, TabWidthMode);
     };
 }
 

@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "Utils.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
 #include "MainPage.h"
@@ -16,39 +15,12 @@ using namespace winrt::Windows::Foundation::Collections;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    GlobalAppearance::GlobalAppearance() :
-        _ElementThemes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
-        _ElementThemeMap{ winrt::single_threaded_map<ElementTheme, Editor::EnumEntry>() }
+    GlobalAppearance::GlobalAppearance()
     {
         InitializeComponent();
 
-        auto elementThemeMap = EnumMappings::ElementTheme();
-        for (auto [key, value] : elementThemeMap)
-        {
-            auto enumName = LocalizedNameForEnumName(L"Globals_Theme", key, L"Content");
-            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ElementTheme>(value));
-            _ElementThemes.Append(entry);
-            _ElementThemeMap.Insert(value, entry);
-        }
-    }
-
-    IObservableVector<Editor::EnumEntry> GlobalAppearance::ElementThemes()
-    {
-        return _ElementThemes;
-    }
-
-    IInspectable GlobalAppearance::CurrentTheme()
-    {
-        return winrt::box_value<Editor::EnumEntry>(_ElementThemeMap.Lookup(GlobalSettings().Theme()));
-    }
-
-    void GlobalAppearance::CurrentTheme(const IInspectable& enumEntry)
-    {
-        if (auto ee = enumEntry.try_as<Editor::EnumEntry>())
-        {
-            auto theme = winrt::unbox_value<ElementTheme>(ee.EnumValue());
-            GlobalSettings().Theme(theme);
-        }
+        INITIALIZE_BINDABLE_ENUM_SETTING(Theme, ElementTheme, winrt::Windows::UI::Xaml::ElementTheme, L"Globals_Theme", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
     }
 
     GlobalAppSettings GlobalAppearance::GlobalSettings()
