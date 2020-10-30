@@ -39,6 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <RadioButton x:Uid="Globals_TabWidthModeCompact" x:Name="CompactTabWidthMode"/>
                 </Controls:RadioButtons>
                 <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_DisableAnimations" IsChecked="{x:Bind GlobalSettings.DisableAnimations, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

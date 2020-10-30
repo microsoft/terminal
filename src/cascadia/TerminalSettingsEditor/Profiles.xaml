@@ -258,6 +258,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <RadioButton x:Uid="Profile_CloseOnExitAlways" x:Name="closeOnExitAlways"/>
                             <RadioButton x:Uid="Profile_CloseOnExitNever" x:Name="closeOnExitNever"/>
                         </Controls:RadioButtons>
+                        <Controls:RadioButtons x:Uid="Profile_BellStyle" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
+                            <RadioButton x:Uid="Profile_BellStyleNone" x:Name="bellStyleNone"/>
+                            <RadioButton x:Uid="Profile_BellStyleAudible" x:Name="bellStyleAudible"/>
+                        </Controls:RadioButtons>
                     </StackPanel>
                 </Grid>
             </PivotItem>
