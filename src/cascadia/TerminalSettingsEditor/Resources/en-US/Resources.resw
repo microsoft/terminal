@@ -667,7 +667,6 @@
   </data>
   <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character.</value>
-
     <comment>"Audible" and "None" must match the values for Profile_BellStyleAudible.Content and Profile_BellStyleNone.Content respectively.</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
