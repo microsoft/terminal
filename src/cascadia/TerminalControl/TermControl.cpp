@@ -3082,18 +3082,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ProgressBar().Value(gsl::narrow<double>(progress));
             break;
         case 1:
-            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            ProgressBar().ShowError(false);
+            ProgressBar().ShowPaused(false);
+            ProgressBar().IsIndeterminate(false);
             ProgressBar().Value(gsl::narrow<double>(progress));
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
             break;
         case 2:
-            // need a way to express error state
+            ProgressBar().ShowPaused(false);
+            ProgressBar().IsIndeterminate(false);
+            ProgressBar().ShowError(true);
+            ProgressBar().Value(gsl::narrow<double>(progress));
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
             break;
         case 3:
-            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            ProgressBar().ShowPaused(false);
+            ProgressBar().ShowError(false);
             ProgressBar().IsIndeterminate(true);
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
             break;
         case 4:
-            // need a way to express paused state
+            ProgressBar().ShowError(false);
+            ProgressBar().IsIndeterminate(false);
+            ProgressBar().ShowPaused(true);
+            ProgressBar().Value(gsl::narrow<double>(progress));
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
             break;
         default:
             break;
