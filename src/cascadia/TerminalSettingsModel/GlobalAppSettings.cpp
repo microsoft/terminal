@@ -46,6 +46,17 @@ static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.re
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 
+#ifdef _DEBUG
+static constexpr bool debugFeaturesDefault{ true };
+#else
+static constexpr bool debugFeaturesDefault{ false };
+#endif
+
+bool GlobalAppSettings::_getDefaultDebugFeaturesValue()
+{
+    return debugFeaturesDefault;
+}
+
 GlobalAppSettings::GlobalAppSettings() :
     _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},

@@ -44,20 +44,11 @@ namespace SettingsModelLocalTests
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
+            InitializeJsonWriter();
             return true;
         }
 
     private:
-        std::string toString(const Json::Value& json)
-        {
-            // set indentation to empty string to remove newlines
-            // enableYAMLCompatibility adds a space after ':'
-            Json::StreamWriterBuilder builder;
-            builder["indentation"] = "";
-            builder["enableYAMLCompatibility"] = true;
-            return Json::writeString(builder, json);
-        }
-
         // Method Description:
         // - deserializes and reserializes a json string representing a settings object model of type T
         // - verifies that the generated json string matches the provided one

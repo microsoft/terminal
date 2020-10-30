@@ -1050,7 +1050,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
 
     // write backup settings file
     auto backupSettingsPath{ settingsPath + L".backup" };
-    _WriteSettings(_userSettingsString, settingsPath);
+    _WriteSettings(_userSettingsString, backupSettingsPath);
 
     // write to current settings file
     const auto json{ ToJson() };
