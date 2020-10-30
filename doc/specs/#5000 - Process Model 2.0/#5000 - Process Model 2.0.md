@@ -955,7 +955,7 @@ existing monarch, it'll need to spawn a new headless monarch.
 
 If there are only a bunch of elevated monarchs, then they'll each attempt to
 spawn a headless monarch. Only one will succeed - the others will all connect to
-the first headless monarch, and immedaitely die.
+the first headless monarch, and immediately die.
 
 We need to be especially careful about the commands that can be run in an
 existing window. Opening a new tab, split, these are relatively safe. The new
@@ -964,7 +964,7 @@ default.
 
 What we _absolutely cannot do_, under any circumstance, is allow for the sending
 of input to another window across elevation boundary. I don't think it's
-entirely out of the realm of possiblity to add a `send-input` command to write
+entirely out of the realm of possibility to add a `send-input` command to write
 input to the terminal using the `SendInputAction`. However, we must absolutely
 make sure that the input isn't allowed to cross the elevation boundary. To make
 this easier, we should have the `send-input` command just fail if the targeted
@@ -1138,7 +1138,7 @@ that string into some WinRT method projected by whatever type corresponds to the
 provided `type`.
 
 <a name="footnote-3"><a>[3]: The state that's serialized here for the contents
-of a window might also be convinient to re-use for the restoration of terminal
+of a window might also be convenient to re-use for the restoration of terminal
 window state across reboots. If we already know how to serialize the entire
 state of a Terminal window, then storing that somewhere for a future terminal
 launch to use seems like an obvious next step. See also [#961].
@@ -1178,7 +1178,7 @@ However, this setting cannot live in the normal `settings.json` or even
 `state.json` (see [#7972], since those files are writable by any medium-IL
 process. Instead, this setting would ned to live in a separate file that's
 protected to only be writable by elevated processes. This would ensure that an
-attacker could not just add their extension to the list of whitelisted
+attacker could not just add their extension to the list of white-listed
 extensions. When the settings UI wants to modify that setting, it'll need to
 prompt the user for permission, but that's an acceptable user experience.
 
