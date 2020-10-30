@@ -657,7 +657,7 @@
     <value>Maximized Focus</value>
   </data>
   <data name="Profile_BellStyle.Header" xml:space="preserve">
-    <value>Notification style for BEL character</value>
+    <value>Bell notification style</value>
   </data>
   <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character. When set to "Audible", the Terminal will play a sound. When set to "None", nothing will happen.</value>
