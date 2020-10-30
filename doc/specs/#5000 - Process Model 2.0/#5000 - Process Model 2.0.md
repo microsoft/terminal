@@ -380,6 +380,13 @@ state that it can use to enable some of the following scenarios. An example of
 such global state might be "which window process was the most recently focused
 one?"
 
+> _Author's note_: The terms "monarch" and "peasant" were chosen to
+> intentionally be a bit silly. Any relationship to an existing software model
+> is purely coincidence. The metaphor is what is really important here, the
+> naming just so happens to bring a bit of levity to what is otherwise a fairly
+> dense spec. As this terminology is only intended to be used within the code
+> itself, we're not terribly concerned about the actual choice of words here.
+
 #### Scenario: Open new tabs in most recently used window
 
 A common feature of many browsers is that when a web URL is clicked somewhere,
