@@ -652,7 +652,7 @@
     <value>⚠ You have unsaved changes.</value>
     <comment>{Locked="⚠"}</comment>
   </data>
-  <data name="Nav_ProfileAddNew.Content" xml:space="preserve">
+  <data name="Nav_AddNewProfile.Content" xml:space="preserve">
     <value>Add new</value>
   </data>
   <data name="Nav_ProfileHeader.Content" xml:space="preserve">
