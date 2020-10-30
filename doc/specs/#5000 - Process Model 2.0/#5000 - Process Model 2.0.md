@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-10-21
+last updated: 2020-10-30
 issue id: #5000
 ---
 
@@ -661,13 +661,11 @@ windows to glom onto, so create the tab in this window process.
     - \*: note that this peasant could just be the monarch (in single instance
       mode, for example).
 
-<hr>
-
-This area is left intentionally vague, because we're not exactly sure what the
-API surface exposed for default terminal invocations will look like. Hopefully,
-it shows that however we do end up implementing support for default terminal
-apps, the proposed Window/Content/Monarch/Peasant architecture will still be a
-compatible solution.
+> 👉 NOTE: This area is left intentionally vague, because we're not exactly sure
+> what the API surface exposed for default terminal invocations will look like.
+> Hopefully, it shows that however we do end up implementing support for default
+> terminal apps, the proposed Window/Content/Monarch/Peasant architecture will
+> still be a compatible solution.
 
 ## UI/UX Design
 
@@ -852,7 +850,7 @@ so we should define that structure in a way that will allow future
 extensibility.
 
 
-Lets examine some sample JSON<sup>[[2]](#footnote-2)</sup>
+Lets examine some sample JSON<sup>[[2]](#footnote-2)</sup><sup>[[3]](#footnote-3)</sup>
 
 ```json
 {
@@ -923,21 +921,24 @@ spec.
 
 ### Mixed elevation & Monarch / Peasant issues
 
-[TODO]: # TODO =================================================================
-
-\<Brainstorming>
-
-Initially, I thought that maybe we shoudn't have elevated windows involved in
-the M/P game at all. However, what happens when the monarch's window needs to
-silently elevate? That window should be able to retain its original ID, because
-we want commands like `wt -s 1 new-tab` to still work in the original window.
-
-However, the elevate window absolutely cannot become the monarch process. If it
-is, then unelevated windows won't be able to connect to the monarch at all.
+Previously, we've mentioned that windows who wish to have a tab open elevated
+will re-open as an elevated process, connected to all the content processes the
+window was previously connected to. However, what happens when the window that
+needs to re-open as an elevated window is the monarch process? If the elevated
+window were to retain its monarch status, then all the other (unelevated) window
+processes would be unable to connect to it and call methods and trigger
+callbacks on it.
 
 So if the monarch is going to enter a mixed-elevation state, the new process for
 the elevated window shouldn't try to register as the monarch, and instead rely
 on another process being the monarch.
+
+This comes with a variety of other edge cases as well.
+
+When a process does re-open as an elevated window, it will need a mechanism to
+retain its original ID as assigned by the monarch. This is so that commands like
+`wt -s 2 split-pane` will continue to refer to the same logical window, even if
+there's a new process hosting it now.
 
 What if there's only one window, and it becomes elevated? In that case, there is
 no other monarch to rely on. We'll need a way for us to start `wt` as a
@@ -945,7 +946,7 @@ no other monarch to rely on. We'll need a way for us to start `wt` as a
 window, but will act as the monarch. The old monarch (who's now a different
 process altogether, and is elevated), should treat that medium-IL headless
 monarch the same as the other monarchs, and attempt to find a new monarch as
-soon as it goes away. The headless monarch will attempt to register to ne the
+soon as it goes away. The headless monarch will attempt to register to be the
 monarch - if it turns out that another process is the current monarch, then the
 headless monarch will immediately kill itself, causing the old monarch to
 immediately attempt to find a new monarch. If the headless monarch dies
@@ -955,7 +956,6 @@ existing monarch, it'll need to spawn a new headless monarch.
 If there are only a bunch of elevated monarchs, then they'll each attempt to
 spawn a headless monarch. Only one will succeed - the others will all connect to
 the first headless monarch, and immedaitely die.
-
 
 We need to be especially careful about the commands that can be run in an
 existing window. Opening a new tab, split, these are relatively safe. The new
@@ -972,9 +972,8 @@ window is both:
 - Is elevated.
 - Is not this window. Sending input within the same window seems like it would
   be safe enough - you're already inside the airtight hatch.
-\</Brainstorming>
 
-### Duplicating HANDLEs from content process to elevated window process
+### Duplicating `HANDLE`s from content process to elevated window process
 
 We can't just have the content process dupe the handle to the window process. If
 the content process is unelevated, and the window process is elevated (in a
@@ -985,25 +984,6 @@ Instead, the window will always need to be the one responsible for calling
 duplicate handle. Fortunately, the `DuplicateHandle` function does allow a
 caller to duplicate from another process into your own process.
 
-
-### Elevation and Extensions
-
-[TODO]: # TODO =================================================================
-
-Shower thought (to make sure I don't forget): extensions should be disabled by
-default in elevated windows. The user can chose to enable them in elevated
-windows if they want. That setting needs to be hidden in a file that only admins
-can write to.
-
-I suppose some extensions might be fine to run in unelevated content processes,
-but would probably be impossible to entirely prevent them from triggering code
-in the parent process.
-
-~~Like an extension running in the content process could try to trigger the
-"enable broadcast input" mode and then have its keystrokes sent to the elevated
-content procs~~ Actually, maybe not. The content process doesn't actually handle
-any keybindings, does it? That's all in the window process, so that's not
-terribly a concern.
 
 ### What happens to the content if the monarch dies unexpectedly?
 
@@ -1066,7 +1046,7 @@ of each other.
 6. Change `TermControl`/`DxEngine` to create its own swap chain using
    `DCompositionCreateSurfaceHandle` and
    `CreateSwapChainForCompositionSurfaceHandle`. This is something that's
-   already done in commit TODO:`ffffff`.
+   already done in commit [`30b8335`].
 
 7. (Dependent on 6) Refactor `TermControl` to allow it to have a WinUI layer and
    a Core layer. The WinUI layer will be only responsible for interacting with
@@ -1157,6 +1137,12 @@ almost certainly want to use a string as the payload type, so we can just pass
 that string into some WinRT method projected by whatever type corresponds to the
 provided `type`.
 
+<a name="footnote-3"><a>[3]: The state that's serialized here for the contents
+of a window might also be convinient to re-use for the restoration of terminal
+window state across reboots. If we already know how to serialize the entire
+state of a Terminal window, then storing that somewhere for a future terminal
+launch to use seems like an obvious next step. See also [#961].
+
 ## Future considerations
 
 * A previous discussion with someone on the input team brought up the following
@@ -1172,6 +1158,29 @@ provided `type`.
   new window from a current tab once this all lands.
   - Or it could be `NewWindowFromTab(index:union(int,int[])?)` to specify the
     current tab, a specific tab, or many tabs.
+
+### Elevation and Extensions
+
+In [#4000], we're tracking adding support for 3rd party extensions to the
+Terminal. These extensions will be code that runs either in-proc or out-of-proc,
+and can interact with the Terminal in some way. As examples, they might provide
+settings (profiles), or add UI elements, or parse the contents of the buffer.
+
+Because the Terminal will be executing 3rd party code, I believe extensions that
+run code should probably be disabled by default for elevated windows. This would
+help reduce the attack surface for and attacker to leverage the Terminal as an
+opportunity to have a user elevate the attacker's code.
+
+Of course, the user might want to be able to use a well-behaved extension in
+elevated windows, when they trust the extension. We could have an additional set
+of settings the user could use to enable certain extensions in elevated windows.
+However, this setting cannot live in the normal `settings.json` or even
+`state.json` (see [#7972], since those files are writable by any medium-IL
+process. Instead, this setting would ned to live in a separate file that's
+protected to only be writable by elevated processes. This would ensure that an
+attacker could not just add their extension to the list of whitelisted
+extensions. When the settings UI wants to modify that setting, it'll need to
+prompt the user for permission, but that's an acceptable user experience.
 
 
 ## TODOs
@@ -1210,6 +1219,10 @@ provided `type`.
 [#1032]: https://github.com/microsoft/terminal/issues/1032
 [#632]: https://github.com/microsoft/terminal/issues/632
 [#492]: https://github.com/microsoft/terminal/issues/492
+[#4000]: https://github.com/microsoft/terminal/issues/4000
+[#7972]: https://github.com/microsoft/terminal/pull/7972
+[#961]: https://github.com/microsoft/terminal/issues/961
+[`30b8335`]: https://github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
 
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
