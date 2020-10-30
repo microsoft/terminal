@@ -3078,8 +3078,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         switch (state)
         {
         case 0:
+            ProgressBar().ShowError(false);
+            ProgressBar().ShowPaused(false);
+            ProgressBar().IsIndeterminate(false);
             ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
-            ProgressBar().Value(gsl::narrow<double>(progress));
             break;
         case 1:
             ProgressBar().ShowError(false);
