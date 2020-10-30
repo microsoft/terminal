@@ -17,16 +17,18 @@ using namespace winrt::Windows::Foundation::Collections;
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     GlobalAppearance::GlobalAppearance() :
-        _ElementThemes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() }
+        _ElementThemes{ winrt::single_threaded_observable_vector<Editor::EnumEntry>() },
+        _ElementThemeMap{ winrt::single_threaded_map<ElementTheme, Editor::EnumEntry>() }
     {
         InitializeComponent();
 
         auto elementThemeMap = EnumMappings::ElementTheme();
         for (auto [key, value] : elementThemeMap)
         {
-            auto enumName = LocalizedNameForEnumName(L"Globals_Theme", value, L"Content");
-            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ElementTheme>(key));
+            auto enumName = LocalizedNameForEnumName(L"Globals_Theme", key, L"Content");
+            auto entry = winrt::make<EnumEntry>(enumName, winrt::box_value<ElementTheme>(value));
             _ElementThemes.Append(entry);
+            _ElementThemeMap.Insert(value, entry);
         }
     }
 
@@ -35,14 +37,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _ElementThemes;
     }
 
-    uint8_t GlobalAppearance::CurrentTheme()
+    IInspectable GlobalAppearance::CurrentTheme()
     {
-        return static_cast<uint8_t>(GlobalSettings().Theme());
+        return winrt::box_value<Editor::EnumEntry>(_ElementThemeMap.Lookup(GlobalSettings().Theme()));
     }
 
-    void GlobalAppearance::CurrentTheme(const uint8_t index)
+    void GlobalAppearance::CurrentTheme(const IInspectable& enumEntry)
     {
-        GlobalSettings().Theme(static_cast<ElementTheme>(index));
+        if (auto ee = enumEntry.try_as<Editor::EnumEntry>())
+        {
+            auto theme = winrt::unbox_value<ElementTheme>(ee.EnumValue());
+            GlobalSettings().Theme(theme);
+        }
     }
 
     GlobalAppSettings GlobalAppearance::GlobalSettings()

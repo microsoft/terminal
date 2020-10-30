@@ -15,18 +15,17 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    IMap<winrt::Windows::UI::Xaml::ElementTheme, hstring> EnumMappings::ElementTheme()
+    IMap<hstring, winrt::Windows::UI::Xaml::ElementTheme> EnumMappings::ElementTheme()
     {
         // use C++11 magic statics to make sure we only do this once.
-        static IMap<winrt::Windows::UI::Xaml::ElementTheme, hstring> enumMap = []() {
-            auto map = std::map<winrt::Windows::UI::Xaml::ElementTheme, hstring>();
+        static IMap<hstring, winrt::Windows::UI::Xaml::ElementTheme> enumMap = []() {
+            auto map = single_threaded_map<hstring, winrt::Windows::UI::Xaml::ElementTheme>();
             for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<winrt::Windows::UI::Xaml::ElementTheme>::mappings)
             {
-                map.emplace(enumVal, winrt::to_hstring(enumStr));
+                map.Insert(winrt::to_hstring(enumStr), enumVal);
             }
-            return winrt::single_threaded_map(std::move(map));
+            return map;
         }();
-
         return enumMap;
     }
 }

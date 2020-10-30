@@ -11,7 +11,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         EnumMappings() = default;
-        static winrt::Windows::Foundation::Collections::IMap<winrt::Windows::UI::Xaml::ElementTheme, winrt::hstring> ElementTheme();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Windows::UI::Xaml::ElementTheme> ElementTheme();
     };
 }
 

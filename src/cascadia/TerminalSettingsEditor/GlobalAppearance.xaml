@@ -31,7 +31,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        FontSize="15"
                                        ToolTipService.Placement="Mouse"
                                        x:DefaultBindMode="OneWay"
-                                       SelectedIndex="{x:Bind CurrentTheme, Mode=TwoWay}"
+                                       SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                        ItemsSource="{x:Bind ElementThemes}">
                     <Controls:RadioButtons.ItemTemplate>
                         <DataTemplate x:DataType="local:EnumEntry">

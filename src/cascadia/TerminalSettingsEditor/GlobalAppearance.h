@@ -15,12 +15,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> ElementThemes();
 
-        uint8_t CurrentTheme();
-        void CurrentTheme(const uint8_t index);
+        winrt::Windows::Foundation::IInspectable CurrentTheme();
+        void CurrentTheme(const winrt::Windows::Foundation::IInspectable& enumEntry);
 
     private:
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _ElementThemes;
-        winrt::Windows::UI::Xaml::ElementTheme _CurrentTheme;
+        winrt::Windows::Foundation::Collections::IMap<winrt::Windows::UI::Xaml::ElementTheme, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _ElementThemeMap;
     };
 }
 
