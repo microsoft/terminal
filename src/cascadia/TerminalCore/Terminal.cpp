@@ -1181,11 +1181,19 @@ BlinkingState& Terminal::GetBlinkingState() const noexcept
     return _blinkingState;
 }
 
+// Method Description:
+// - Gets the internal taskbar state value
+// Return Value:
+// - The taskbar state
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexcept
 {
     return _taskbarState;
 }
 
+// Method Description:
+// - Gets the internal taskbar progress value
+// Return Value:
+// - The taskbar progress
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;

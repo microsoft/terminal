@@ -60,11 +60,8 @@ sregex
 STDCPP
 strchr
 syscall
-<<<<<<< HEAD
 TBPF
-=======
 THEMECHANGED
->>>>>>> 2ea4742f07ce8eed721a1136d2eec780ac01b995
 tmp
 tx
 UPDATEINIFILE

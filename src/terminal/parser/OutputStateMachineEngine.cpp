@@ -951,10 +951,15 @@ bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view strin
                                                    size_t& progress) const
 {
     const auto parts = Utils::SplitString(string, L';');
-    if (parts.size() < 1 || std::stoi(til::u16u8(parts.at(0))) != 4)
+
+    unsigned int subParam = 0;
+    const auto subParamSuccess = Utils::StringToUint(til::at(parts, 0), subParam);
+
+    if (parts.size() < 1 || !subParamSuccess || subParam != 4)
     {
         return false;
     }
+
     if (parts.size() == 1)
     {
         state = 0;
@@ -962,13 +967,27 @@ bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view strin
     }
     else if (parts.size() == 2)
     {
-        state = std::stoi(til::u16u8(parts.at(1)));
+        unsigned int localState = 0;
+        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), localState);
+        if (!stateSuccess)
+        {
+            return false;
+        }
+        state = localState;
         progress = 0;
     }
     else
     {
-        state = std::stoi(til::u16u8(parts.at(1)));
-        progress = std::stoi(til::u16u8(parts.at(2)));
+        unsigned int localState = 0;
+        unsigned int localProgress = 0;
+        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), localState);
+        const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), localProgress);
+        if (!stateSuccess || !progressSuccess)
+        {
+            return false;
+        }
+        state = localState;
+        progress = localProgress;
     }
     return true;
 }

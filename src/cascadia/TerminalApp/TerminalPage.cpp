@@ -2235,6 +2235,10 @@ namespace winrt::TerminalApp::implementation
         _dialogPresenter = dialogPresenter;
     }
 
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarState()
     {
         const auto tab = _GetFocusedTab();
@@ -2245,6 +2249,10 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarProgress()
     {
         const auto tab = _GetFocusedTab();

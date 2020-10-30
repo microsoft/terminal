@@ -3075,11 +3075,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _setTaskbarProgressHandlers(*this, nullptr);
     }
 
+    // Method Description:
+    // - Gets the internal taskbar state value
+    // Return Value:
+    // - The taskbar state of this control
     const size_t TermControl::GetTaskbarState() const noexcept
     {
         return _terminal->GetTaskbarState();
     }
 
+    // Method Description:
+    // - Gets the internal taskbar progress value
+    // Return Value:
+    // - The taskbar progress of this control
     const size_t TermControl::GetTaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();

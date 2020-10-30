@@ -990,6 +990,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
     size_t AppLogic::GetLastActiveControlTaskbarState()
     {
         if (_root)
@@ -999,6 +1003,10 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
     size_t AppLogic::GetLastActiveControlTaskbarProgress()
     {
         if (_root)
