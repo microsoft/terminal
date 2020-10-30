@@ -355,7 +355,7 @@
     <value>Open JSON file</value>
   </data>
   <data name="Nav_ProfileGlobal.Content" xml:space="preserve">
-    <value>Globals</value>
+    <value>Global</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
