@@ -339,7 +339,7 @@
   <data name="Globals_WordDelimiters.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Determines the delimiters used in a double click selection.</value>
   </data>
-  <data name="Nav_AppearanceGlobal.Content" xml:space="preserve">
+  <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
   </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">

@@ -49,7 +49,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem x:Uid="Nav_AppearanceGlobal"
+                <muxc:NavigationViewItem x:Uid="Nav_Appearance"
                                                 Tag="GlobalAppearance_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE771;"/>
