@@ -63,7 +63,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItemHeader x:Uid="Nav_ProfileHeader"/>
+                <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
 
                 <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
                                             Tag="GlobalProfile_Nav">
@@ -72,7 +72,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem x:Uid="Nav_ProfileAddNew"
+                <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"
                                             Tag="AddNewProfile_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE710;"/>
