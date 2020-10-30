@@ -76,7 +76,7 @@ protected:
 
     LONG _getDesiredWindowStyle() const;
 
-    ITaskbarList3* _taskbar;
+    wil::com_ptr<ITaskbarList3> _taskbar;
     bool _taskbarInitialized{ false };
 
 private:
