@@ -285,6 +285,9 @@
     <value>Open the terminal with the provided title instead of the profile's set "title"</value>
     <comment>{Locked="\"title\""}</comment>
   </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Open the terminal with the tab color</value>
+  </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
   </data>

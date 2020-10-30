@@ -56,6 +56,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             ss << fmt::format(L"title: {}, ", _TabTitle);
         }
+
+        if (_TabColor)
+        {
+            ss << fmt::format(L"tabColor: {}, ", _TabColor.Value());
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
