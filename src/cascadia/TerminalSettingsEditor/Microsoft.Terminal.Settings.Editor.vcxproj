@@ -48,10 +48,6 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
-    <ClInclude Include="Globals.h">
-      <DependentUpon>Globals.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude>
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClInclude>
@@ -92,9 +88,6 @@
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Globals.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -133,10 +126,6 @@
     </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
-    <ClCompile Include="Globals.cpp">
-      <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Interaction.cpp">
@@ -181,10 +170,6 @@
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Globals.idl">
-      <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Launch.idl">
