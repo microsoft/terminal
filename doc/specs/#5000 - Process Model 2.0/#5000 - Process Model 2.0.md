@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-10-19
+last updated: 2020-10-21
 issue id: #5000
 ---
 
@@ -924,6 +924,55 @@ spec.
 ### Mixed elevation & Monarch / Peasant issues
 
 [TODO]: # TODO =================================================================
+
+\<Brainstorming>
+
+Initially, I thought that maybe we shoudn't have elevated windows involved in
+the M/P game at all. However, what happens when the monarch's window needs to
+silently elevate? That window should be able to retain its original ID, because
+we want commands like `wt -s 1 new-tab` to still work in the original window.
+
+However, the elevate window absolutely cannot become the monarch process. If it
+is, then unelevated windows won't be able to connect to the monarch at all.
+
+So if the monarch is going to enter a mixed-elevation state, the new process for
+the elevated window shouldn't try to register as the monarch, and instead rely
+on another process being the monarch.
+
+What if there's only one window, and it becomes elevated? In that case, there is
+no other monarch to rely on. We'll need a way for us to start `wt` as a
+"headless monarch". This headless monarch process will _not_ display its own
+window, but will act as the monarch. The old monarch (who's now a different
+process altogether, and is elevated), should treat that medium-IL headless
+monarch the same as the other monarchs, and attempt to find a new monarch as
+soon as it goes away. The headless monarch will attempt to register to ne the
+monarch - if it turns out that another process is the current monarch, then the
+headless monarch will immediately kill itself, causing the old monarch to
+immediately attempt to find a new monarch. If the headless monarch dies
+unexpectedly, and the elevated process is unable to create a connection to the
+existing monarch, it'll need to spawn a new headless monarch.
+
+If there are only a bunch of elevated monarchs, then they'll each attempt to
+spawn a headless monarch. Only one will succeed - the others will all connect to
+the first headless monarch, and immedaitely die.
+
+
+We need to be especially careful about the commands that can be run in an
+existing window. Opening a new tab, split, these are relatively safe. The new
+terminal that's created in the elevated window will still be unelevated by
+default.
+
+What we _absolutely cannot do_, under any circumstance, is allow for the sending
+of input to another window across elevation boundary. I don't think it's
+entirely out of the realm of possiblity to add a `send-input` command to write
+input to the terminal using the `SendInputAction`. However, we must absolutely
+make sure that the input isn't allowed to cross the elevation boundary. To make
+this easier, we should have the `send-input` command just fail if the targeted
+window is both:
+- Is elevated.
+- Is not this window. Sending input within the same window seems like it would
+  be safe enough - you're already inside the airtight hatch.
+\</Brainstorming>
 
 ### Duplicating HANDLEs from content process to elevated window process
 
