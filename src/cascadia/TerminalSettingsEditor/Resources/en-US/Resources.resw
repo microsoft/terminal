@@ -655,7 +655,7 @@
   <data name="Nav_AddNewProfile.Content" xml:space="preserve">
     <value>Add new</value>
   </data>
-  <data name="Nav_ProfileHeader.Content" xml:space="preserve">
+  <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
   </data>
 </root>
