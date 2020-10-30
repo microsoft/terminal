@@ -656,6 +656,7 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
+</data>
   <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
     <value>Focus</value>
   </data>
