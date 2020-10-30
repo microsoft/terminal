@@ -3073,6 +3073,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
         _setTaskbarProgressHandlers(*this, nullptr);
+        const auto state = GetTaskbarState();
+        const auto progress = GetTaskbarProgress();
+        switch (state)
+        {
+        case 0:
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
+            ProgressBar().Value(gsl::narrow<double>(progress));
+            break;
+        case 1:
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            ProgressBar().Value(gsl::narrow<double>(progress));
+            break;
+        case 2:
+            // need a way to express error state
+            break;
+        case 3:
+            ProgressBar().Visibility(Windows::UI::Xaml::Visibility::Visible);
+            ProgressBar().IsIndeterminate(true);
+            break;
+        case 4:
+            // need a way to express paused state
+            break;
+        default:
+            break;
+        }
     }
 
     // Method Description:

@@ -77,6 +77,10 @@
                                         VerticalAlignment="Top"
                                         Search="_Search"
                                         Closed="_CloseSearchBoxControl" />
+
+                <ProgressBar x:Name="ProgressBar"
+                             Visibility="Collapsed"
+                             VerticalAlignment="Bottom"/>
             </Grid>
 
             <ScrollBar Grid.Column="1"
