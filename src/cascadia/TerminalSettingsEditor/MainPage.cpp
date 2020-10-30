@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
-#include "Globals.h"
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
