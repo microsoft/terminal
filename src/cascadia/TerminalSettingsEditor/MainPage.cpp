@@ -12,7 +12,6 @@
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
-#include "AddProfile.h"
 
 namespace winrt
 {
@@ -98,16 +97,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::Navigate(Controls::Frame contentFrame, hstring clickedItemTag)
     {
-        const hstring generalPage = L"General_Nav";
         const hstring launchSubpage = L"Launch_Nav";
         const hstring interactionSubpage = L"Interaction_Nav";
         const hstring renderingSubpage = L"Rendering_Nav";
 
-        const hstring profilesPage = L"Profiles_Nav";
         const hstring globalProfileSubpage = L"GlobalProfile_Nav";
-        const hstring addNewSubpage = L"AddNew_Nav";
 
-        const hstring appearancePage = L"Appearance_Nav";
         const hstring colorSchemesPage = L"ColorSchemes_Nav";
         const hstring globalAppearancePage = L"GlobalAppearance_Nav";
 
@@ -126,10 +121,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (clickedItemTag == globalProfileSubpage)
         {
             contentFrame.Navigate(xaml_typename<Editor::Profiles>());
-        }
-        else if (clickedItemTag == addNewSubpage)
-        {
-            contentFrame.Navigate(xaml_typename<Editor::AddProfile>());
         }
         else if (clickedItemTag == colorSchemesPage)
         {

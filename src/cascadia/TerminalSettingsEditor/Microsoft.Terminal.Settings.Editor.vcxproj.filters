@@ -29,7 +29,6 @@
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="AddProfile.xaml" />
     <Page Include="CommonResources.xaml" />
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="ColorSchemes.xaml" />
