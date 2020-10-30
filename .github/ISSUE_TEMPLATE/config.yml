@@ -1,0 +1,10 @@
+# Do not allow blank issues
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🔐 Microsoft Security Response Center
+    url: https://msrc.microsoft.com/create-report
+    about: Please report security vulnerabilities here.
+  - name: 📄 Documentation issue
+    url: https://github.com/MicrosoftDocs/terminal/issues/new
+    about: Report issues with the documentation (in https://docs.microsoft.com/windows/terminal/)
