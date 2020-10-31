@@ -7,7 +7,7 @@ contact_links:
     about: Please report security vulnerabilities here.
   - name: 📄 Windows Terminal Documentation issue
     url: https://github.com/MicrosoftDocs/terminal/issues/new
-    about: Report issues with the documentation for the Windows Terminal (in https://docs.microsoft.com/windows/terminal/)
+    about: Report issues with the documentation for the Windows Terminal (in docs.microsoft.com/windows/terminal)
   - name: 📄 Console Documentation issue
     url: https://github.com/MicrosoftDocs/console-docs/issues/new
-    about: Report issues with the documentation for the Console(in https://docs.microsoft.com/windows/console/)
+    about: Report issues with the documentation for the Console(in docs.microsoft.com/windows/console)
