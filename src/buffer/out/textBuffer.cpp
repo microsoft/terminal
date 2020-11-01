@@ -2430,7 +2430,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
             size_t prefixSize = 0;
-            
+
             for (const auto chr : i->prefix().str())
             {
                 prefixSize += IsGlyphFullWidth(chr) ? 2 : 1;
