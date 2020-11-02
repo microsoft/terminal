@@ -604,6 +604,8 @@ namespace winrt::TerminalApp::implementation
         const auto newTab = _CreateNewTabFromSettings(profileGuid, settings);
         if (newTerminalArgs.TabColor())
         {
+            // We set the tab color we got from terminal arguments
+            // as runtime color so it won't be reset upon settings reload
             til::color tabColor{ newTerminalArgs.TabColor().Value() };
             _GetStrongTabImpl(newTab)->SetRuntimeTabColor(tabColor);
         }
