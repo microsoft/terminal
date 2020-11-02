@@ -2431,15 +2431,15 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             // along with the size of the match to determine the locations
             size_t prefixSize = 0;
 
-            for (const auto chr : i->prefix().str())
+            for (const auto ch : i->prefix().str())
             {
-                prefixSize += IsGlyphFullWidth(chr) ? 2 : 1;
+                prefixSize += IsGlyphFullWidth(ch) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
             size_t matchSize = 0;
-            for (const auto chr : i->str())
+            for (const auto ch : i->str())
             {
-                matchSize += IsGlyphFullWidth(chr) ? 2 : 1;
+                matchSize += IsGlyphFullWidth(ch) ? 2 : 1;
             }
             const auto end = start + matchSize;
             lenUpToThis = end;
