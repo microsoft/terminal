@@ -8,5 +8,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Launch();
 
         Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
+        Windows.Foundation.Collections.IObservableVector<String> ProfileNameList { get; };
     }
 }

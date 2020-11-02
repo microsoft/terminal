@@ -24,7 +24,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                        Style="{StaticResource SubheaderTextBlockStyle}"
                        Margin="0,0,0,20" />
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                <TextBox x:Uid="Globals_DefaultProfile" Text="{x:Bind GlobalSettings.DefaultProfile}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <ComboBox x:Uid="Globals_DefaultProfile"
+                          x:Name="DefaultProfile"
+                          Margin="0,0,0,20"
+                          ItemsSource="{x:Bind ProfileNameList, Mode=OneWay}"
+                          SelectionChanged="DefaultProfileSelectionChanged"
+                          FontSize="15"
+                          ToolTipService.Placement="Mouse" />
                 <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                 <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                     <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
