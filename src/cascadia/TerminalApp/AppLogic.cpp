@@ -400,6 +400,30 @@ namespace winrt::TerminalApp::implementation
         ShowDialog(dialog);
     }
 
+    std::wstring _getTabletServiceName()
+    {
+        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return L"TabletInputService";
+        }
+
+        DWORD cchBuffer = 0;
+        GetServiceDisplayName(hManager.get(), L"TabletInputService", nullptr, &cchBuffer);
+        std::wstring buffer;
+        buffer.resize(cchBuffer);
+
+        if (LOG_LAST_ERROR_IF(!GetServiceDisplayName(hManager.get(),
+                                                     L"TabletInputService",
+                                                     buffer.data(),
+                                                     &cchBuffer)))
+        {
+            return L"TabletInputService";
+        }
+        return buffer;
+    }
+
     // Method Description:
     // - Displays a dialog if the "Touch, Keyboard and Handwriting Panel
     //   Service" is disabled. If it is, we want to warn the user, because they
@@ -409,7 +433,9 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_ShowKeyboardServiceDisabledDialog()
     {
         auto title = RS_(L"KeyboardServiceWarningTitle");
-        auto text = RS_(L"KeyboardServiceWarningText");
+        // auto text = RS_(L"KeyboardServiceWarningText");
+        const winrt::hstring serviceName{ _getTabletServiceName() };
+        const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
         auto buttonText = RS_(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
@@ -559,16 +585,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         const auto state = status.dwCurrentState;
-        if (state != SERVICE_RUNNING && state != SERVICE_START_PENDING)
-        {
-            // The service is off - return false
-            return false;
-        }
-        else
-        {
-            // The service is on - this is good.
-            return true;
-        }
+        return (state == SERVICE_RUNNING || state == SERVICE_START_PENDING);
     }
 
     // Method Description:
