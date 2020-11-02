@@ -24,11 +24,11 @@
     }
 
 // This macro must be used alongside INITIALIZE_BINDABLE_ENUM_SETTING.
-// It declares the needed data structures, getters, and setters needed to
-// make the given enum type bindable to XAML. It provides an observable
-// list of EnumEntries so that we may display all possible values of the
-// given enum type and its localized names. It also provides a getter and
-// setter for the setting we wish to bind to.
+// It declares the needed data structures, getters, and setters to make
+// the given enum type bindable to XAML. It provides an observable list
+// of EnumEntries so that we may display all possible values of the given
+// enum type and its localized names. It also provides a getter and setter
+// for the setting we wish to bind to.
 #define GETSET_BINDABLE_ENUM_SETTING(name, enumType, settingsModelName, settingNameInModel)                                                                  \
 public:                                                                                                                                                      \
     winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>##name##List()                        \
