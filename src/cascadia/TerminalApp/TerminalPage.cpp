@@ -239,6 +239,8 @@ namespace winrt::TerminalApp::implementation
         //
         // _OnFirstLayout will remove this handler so it doesn't get called more than once.
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
+
+        _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
     }
 
     // Method Description:
