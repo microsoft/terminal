@@ -459,6 +459,16 @@ namespace winrt::TerminalApp::implementation
                 tab->_RecalculateAndApplyTabColor();
             }
         });
+
+        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
+            {
+                // The progress of the control changed, but not necessarily the progress of the tab.
+                // Set the tab's progress ring to the active pane's progress
+                tab->_UpdateTabHeader();
+            }
+        });
     }
 
     // Method Description:
@@ -677,28 +687,37 @@ namespace winrt::TerminalApp::implementation
 
         if (!_inRename)
         {
+            Controls::StackPanel sp;
+            sp.Orientation(Controls::Orientation::Horizontal);
+
+            Controls::TextBlock tb;
+            tb.Text(tabText);
+
             if (_zoomedPane)
             {
-                Controls::StackPanel sp;
-                sp.Orientation(Controls::Orientation::Horizontal);
                 Controls::FontIcon ico;
                 ico.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
                 ico.Glyph(L"\xE8A3"); // "ZoomIn", a magnifying glass with a '+' in it.
                 ico.FontSize(12);
                 ico.Margin(ThicknessHelper::FromLengths(0, 0, 8, 0));
                 sp.Children().Append(ico);
-                Controls::TextBlock tb;
-                tb.Text(tabText);
                 sp.Children().Append(tb);
-
-                _tabViewItem.Header(sp);
             }
             else
             {
                 // If we're not currently in the process of renaming the tab,
                 // then just set the tab's text to whatever our active title is.
-                _tabViewItem.Header(winrt::box_value(tabText));
+                sp.Children().Append(tb);
+                const auto ringState = GetActiveTerminalControl().GetTaskbarState();
+                if (ringState != 0)
+                {
+                    Windows::UI::Xaml::Controls::ProgressRing progressRing{};
+                    progressRing.IsActive(true);
+                    progressRing.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Right);
+                    sp.Children().Append(progressRing);
+                }
             }
+            _tabViewItem.Header(sp);
         }
         else
         {
