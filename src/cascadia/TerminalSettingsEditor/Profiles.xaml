@@ -110,19 +110,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     </Button.Flyout>
                                 </Button>
                             </StackPanel>
-                            <DropDownButton x:Uid="Profile_ColorScheme" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                                <DropDownButton.Flyout>
-                                    <MenuFlyout Placement="Bottom">
-                                        <MenuFlyoutItem Text="Campbell"/>
-                                        <MenuFlyoutItem Text="Campbell Powershell"/>
-                                        <MenuFlyoutItem Text="Vintage"/>
-                                        <MenuFlyoutItem Text="One Half Dark"/>
-                                        <MenuFlyoutItem Text="One Half Light"/>
-                                        <MenuFlyoutItem Text="Tango Dark"/>
-                                        <MenuFlyoutItem Text="Tango Light"/>
-                                    </MenuFlyout>
-                                </DropDownButton.Flyout>
-                            </DropDownButton>
+                            <ComboBox x:Name="ColorSchemeComboBox"
+                                      x:Uid="Profile_ColorScheme"
+                                      Margin="0,0,0,20"
+                                      SelectedIndex="0"
+                                      ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                                      SelectionChanged="ColorSchemeSelectionChanged">
+                            </ComboBox>
                             <StackPanel x:Uid="Profile_ForegroundColorToolTip"
                                     Orientation="Horizontal"
                                     Margin="0,0,0,20"

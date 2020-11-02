@@ -11,9 +11,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Profiles : ProfilesT<Profiles>
     {
-    public:
+   
         Profiles();
         Profiles(winrt::Microsoft::Terminal::Settings::Model::Profile profile);
+
+        void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
+        Windows::Foundation::Collections::IObservableVector<winrt::hstring> ColorSchemeList();
 
         fire_and_forget BackgroundImage_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -22,6 +25,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Profile, Profile);
+
+    private:
+        Windows::Foundation::Collections::IObservableVector<winrt::hstring> _ColorSchemeList{ nullptr };
+        void _UpdateColorSchemeList();
     };
 }
 

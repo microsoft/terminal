@@ -7,5 +7,6 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Profiles();
         Microsoft.Terminal.Settings.Model.Profile Profile { get; };
+        Windows.Foundation.Collections.IObservableVector<String> ColorSchemeList { get; };
     }
 }

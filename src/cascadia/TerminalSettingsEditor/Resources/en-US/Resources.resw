@@ -249,7 +249,6 @@
   </data>
   <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to "Focus" is equivalent to launching the terminal in the "Default" mode, but with the focus mode enabled. Similarly, setting this to "Maximized Focus" will result in launching the terminal in a maximized window with the focus mode enabled.</value>
-
     <comment>"Focus", "Default", and "Maximized Focus" must match Globals_LaunchSizeFocus.Content, Globals_LaunchSizeDefault.Content, and Globals_LaunchSizeMaximizedFocus.Content values respectively.</comment>
   </data>
   <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
@@ -479,7 +478,7 @@
   <data name="Profile_CloseOnExitNever.Content" xml:space="preserve">
     <value>Never</value>
   </data>
-  <data name="Profile_ColorScheme.Content" xml:space="preserve">
+  <data name="Profile_ColorScheme.Header" xml:space="preserve">
     <value>Color scheme</value>
   </data>
   <data name="Profile_ColorScheme.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
@@ -662,7 +661,6 @@
   </data>
   <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character.</value>
-
     <comment>"Audible" and "None" must match the values for Profile_BellStyleAudible.Content and Profile_BellStyleNone.Content respectively.</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
