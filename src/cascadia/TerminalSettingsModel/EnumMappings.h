@@ -1,6 +1,19 @@
-// Copyright (c) Microsoft Corporation
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
 
+Module Name:
+- EnumMappings.h
+
+Abstract:
+- Contains mappings from enum name to enum value for the enum types used in our settings.
+  These are mainly used in the settings UI for data binding so that we can display
+  all possible choices in the UI for each setting/enum.
+
+Author(s):
+- Leon Liang - October 2020
+
+--*/
 #pragma once
 
 #include "EnumMappings.g.h"

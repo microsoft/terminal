@@ -1,6 +1,19 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
 
+Module Name:
+- EnumEntry.h
+
+Abstract:
+- An EnumEntry is intended to be used as a ViewModel for settings
+  that are an enum value. It holds an enum name and enum value
+  so that any data binding can easily associate one with the other.
+
+Author(s):
+- Leon Liang - October 2020
+
+--*/
 #pragma once
 
 #include "EnumEntry.g.h"
