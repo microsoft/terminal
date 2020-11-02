@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-10-30
-last updated: 2020-10-30
+last updated: 2020-11-02
 issue id: #4472
 ---
 
@@ -147,36 +147,30 @@ wt.exe --session N new-tab ; split-pane
 
 (or for shorthand, `wt -s N new-tab ; split-pane`).
 
-> ❗ TODO: In the remainder of this spec, I'll continue to use the parameters
-> `--session,-s session-id` as the parameter to identify the window that a
-> command should be run in. These arguments could just as easily be `--window,-w
-> window-id`, and mean the same thing. I leave it as an exercise for the
-> reviewers to pick one naming that they like best.
+> ❗ TODO for discussion: In the remainder of this spec, I'll continue to use the
+> parameters `--session,-s session-id` as the parameter to identify the window
+> that a command should be run in. These arguments could just as easily be
+> `--window,-w window-id`, and mean the same thing. I leave it as an exercise
+> for the reviewers to pick one naming that they like best.
+
+More formally, we'll add the following parameter to the top-level `wt` command:
+
+#### `--session,-s session-id`
+Run these commands in the given Windows Terminal session. This enables opening
+new tabs, splits, etc. in already running Windows Terminal windows.
+* If `session-id` is `0`, run the given commands in _the  current window_
+* If `session-id` is not the ID of any exsiting window, then run the commands in
+  a _new_ Terminal window.
+* If `session-id` is ommitted, then obey the value of `glomToLastWindow` when
+  determining which window to run the command in.
 
 _Whenever_ `wt.exe` is started, it must _always_ pass the provided commandline
 first to the monarch process for handling. This is important for glomming
-scenarios (as noted above)
+scenarios (as noted above). The monarch will parse the commandline, determine
+which window the commandline is destined for, then call `ExecuteCommandline` on
+that peasant, who will then run the command.
 
-If the `--session` parameter is omitted, or is passed the special value `0`, the
-monarch will then call back to whatever the last active Terminal window
-
-#### `--session` in subcommands
-
-Will we allow `wt -s 2 new-tab ; -s 3 split-pane`?
-
-\<old text TODO>
-
-This would create a new peasant, who could then ask the monarch if there is a
-peasant with ID `N`. If there is, then the peasant can connect to that other
-peasant, dispatch the current commandline to that other peasant, and exit,
-before ever creating a window. If this commandline instead creates a new monarch
-process, then there was _no_ other monarch, and so there must logically not be
-any other existing WT windows, and the `--session N` argument could be safely
-ignored, and the command run in the current window.
-
-We should reserve the session id `0` to always refer to "The current window", if
-there is one. So `wt -s 0 new-tab` will run `new-tab` in the current window (if
-we're being run from WT).
+#### Running commands in the current window:`--session-id 0`
 
 If `wt -s 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
 onto _the most recent WT window_ instead. This seems more logical than something
@@ -202,6 +196,23 @@ In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
 the commandline to glom to the existing single terminal instance, if there is
 one.
 
+#### Running commands in a new window:`--session-id -1`
+
+If the user passes an invalid ID to the `--session` parameter, then we'll always
+create a new window for that commandline, regardless of the value of
+`glomToLastWindow`. This will allow users to do something like `wt -s -1
+new-tab` to _always_ create a new window. Since window IDs are only ever
+positive integers, then `-1` would be a convenient value for something that's
+_never_ an existing window ID.
+
+
+#### `--session` in subcommands
+
+Will we allow `wt -s 2 new-tab ; -s 3 split-pane`?
+
+
+
+\<old text TODO>
 
 #### Scenario: Single Instance Mode
 
@@ -211,21 +222,90 @@ commandline, it will always end up running in the existing window, if there is
 one.
 
 In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is
-run, and it determines that it is not the monarch, it'll ask the monarch if it's
-in single instance mode. If it is, then the peasant that's starting up will
-instead pass it's commandline arguments to the monarch process, and let the
-monarch handle them, then exit. In single instance mode the window will still be
-composed from a combination of a window process and multiple different content
-processes, just the same as it would be outside single instance mode.
-
-So, this will make it seem like new starting a new `wt.exe` will just create a
-new tab in the existing window.
+run, and it determines that it is not the monarch, it'll pass the commandline to
+the monarch. At this point, the monarch will determine that it is in Single
+Instance Mode, and consume the commands itself.
 
 One could imagine that single instance mode is the combination of two properties:
 * The user wants new invocation of `wt` to "glom" onto the most recently used
-  window (the hypothetical `"glomToLastWindow": true` setting)
+  window (the aforementioned `"glomToLastWindow": true` setting)
 * The user wants to prevent tab tear-out, or the ability for a `newWindow`
-  action to work. (hypothetically `"allowTabTearOut": false`)
+  action to work. This will be controlled by a proposed `"allowMultipleWindows"` setting, where:
+  - `"allowMultipleWindows": false`: new windows are always created in the current window, and tab tear-out is disabled. This overrides any behavior from `glomToLastWindow`.
+  - `"allowMultipleWindows": true`: `newWindow` actions will always create a new window, `-s ID`
+
+[TODO]:  # TODO ################################################################
+This is weird - why two settings? what value do we really get from that? Preventing people from tearing out tabs, but allowing `wt nt` to open in new windows?
+
+Let's look at the old proposal, which had two properties:
+
+* `"glomToLastWindow": true|false`
+* `"allowTabTearOut": true|false`
+
+Which gives us these cases:
+
+* `"glomToLastWindow": true`, `"allowTabTearOut": true`:
+  - New instances open in the current window by default.
+  - `newWindow` opens a new window.
+  - Tabs can be torn out to create new windows.
+  - `wt -s -1` opens a new window.
+* `"glomToLastWindow": true`, `"allowTabTearOut": false`:
+  - New instances open in the current window by default.
+  - `newWindow` opens in the existing window.
+  - Tabs cannot be torn out to create new windows.
+  - `wt -s -1` opens in the existing window.
+* `"glomToLastWindow": false`, `"allowTabTearOut": true`:
+  - New instances open in new windows by default
+  - `newWindow` opens a new window
+  - Tabs can be torn out to create new windows.
+  - `wt -s -1` opens a new window.
+* `"glomToLastWindow": false`, `"allowTabTearOut": false`:
+  - New instances open in the current window by default. (unexpected?)
+  - `newWindow` opens in the existing window.
+  - Tabs cannot be torn out to create new windows.
+  - `wt -s -1` opens in the existing window.
+
+The fourth case is actually exactly the same as the second case. So that would
+imply there's really only 3 values here, not a matrix of 2 options by 2 options.
+
+Perhaps the  `glomToLastWindow` setting doesn't make exact sense? Maybe we need a few other values.
+
+(for this mental experiment, `"glomToLastWindow"` and `"glomToLastWindowSameDesktop"` are being treated as one property)
+
+What actual user stories do we have?
+
+
+* Scenario 1: Browser-like glomming
+  - <!-- Formerly, `"glomToLastWindow": true`, `"allowTabTearOut":
+  true`:  -->
+  - New instances open in the current window by default.
+  - `newWindow` opens a new window.
+  - Tabs can be torn out to create new windows.
+  - `wt -s -1` opens a new window.
+* Scenario 2: Single Instance Mode
+  - <!-- Formerly, (`"glomToLastWindow": true`, `"allowTabTearOut":
+    false`) and  (`"glomToLastWindow": false`, `"allowTabTearOut": false`)-->
+  - New instances open in the current window by default.
+  - `newWindow` opens in the existing window.
+  - Tabs cannot be torn out to create new windows.
+  - `wt -s -1` opens in the existing window.
+* Scenario 3: No auto-glomming
+  - <!-- Formerly, (`"glomToLastWindow": false`, `"allowTabTearOut":
+  true`)-->
+  - New instances open in new windows by default
+  - `newWindow` opens a new window
+  - Tabs can be torn out to create new windows.
+  - `wt -s -1` opens a new window.
+
+So this kinda reads as
+
+`"glomTolastWindow": ("never"|false)|"sameDesktop"|("lastWindow"|true)|"always"`
+
+[/TODO]:  # /TODO ##############################################################
+
+
+
+While tear-out is a separate track of work from session management in general, this setting could be implemented along with this set of features, and later used to control tear out as well.
 
 #### Scenario: Quake Mode
 
