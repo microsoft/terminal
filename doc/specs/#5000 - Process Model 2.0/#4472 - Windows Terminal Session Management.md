@@ -8,15 +8,14 @@ issue id: #4472
 # Windows Terminal Session Management
 
 ## Abstract
-This document is intended to serve as an addition to the [Windows Terminal
-Process Model 2.0 Spec]. That document provides a big-picture overview of
-changes to the entirety of the Windows Terminal process architecture, including
-both the split of window/content processes, as well as the introduction of
-monarch/peasant processes. The focus of that document was to identify solutions
-to a set of scenarios that were closely intertwined, and establish these
-solutions would work together, without preventing any one scenario from working.
-What that docuement did not do was prescribe specific solutions to the given
-scenarios.
+This document is intended to serve as an addition to the [Process Model 2.0
+Spec]. That document provides a big-picture overview of changes to the entirety
+of the Windows Terminal process architecture, including both the split of
+window/content processes, as well as the introduction of monarch/peasant
+processes. The focus of that document was to identify solutions to a set of
+scenarios that were closely intertwined, and establish these solutions would
+work together, without preventing any one scenario from working. What that
+docuement did not do was prescribe specific solutions to the given scenarios.
 
 This document offers a deeper dive on a subset of the issues in [#5000], to
 describe specifics for managing multiple windows with the Windows Terminal. This
@@ -24,15 +23,6 @@ includes features such as:
 
 * Run `wt` in the current window ([#4472])
 * Single Instance Mode ([#2227])
-* Quake Mode ([#653])
-
-## Inspiration
-
-[TODO]:  # TODO
-
-## Background
-
-[TODO]:  # TODO?
 
 ## Solution Design
 
@@ -86,6 +76,17 @@ onto the MRU window or not. You could imagine that currently, we default to the
 hypothetical value `"glomToLastWindow": false`, meaning that each new wt gets
 it's own new window.
 
+[TODO]: # todo
+
+Make sure to discuss that when the monarch determines that a new `wt` instance
+actually _should_ host the new terminal, it can reply back to it appropriately.
+Does that mean the Peasant has to be created, and registered with the monarch,
+first? Or can the Monarch reply, "No, you can take care of this", which _then_
+causes the WT process to create and register the peasant?
+
+[/TODO]: # todo
+
+
 #### Glomming within the same virtual desktop
 
 When links are opened in the new Edge browser, they will only glom onto an
@@ -99,11 +100,17 @@ desktop.
 
 We could make the `glomToLastWindow` property even more powerful by accepting a
 combined `bool`/enum value:
-- `true` or `"always"`: always glom to the most recent window, regardless of
-  desktop
-- `"sameDesktop"`: Only glom if there's an existing window on this virtual
-  desktop, otherwise create a new window
-- `false` or `"never"`: Never glom, always create a new window.
+- `"always"`: always glom to the most recent window, regardless of desktop. This
+  also suppresses the creation of new windows, including tearing out tabs, or
+  windows created by `newWindow` actions. See [Single Instance
+  Mode](#scenario-single-instance-mode) for more details.
+- `"lastWindow"`: always glom to the most recent window, regardless of
+  desktop.
+- `true` or `"sameDesktop"`: Only glom if there's an existing window on this
+  virtual desktop, otherwise create a new window. This will be the new default
+  value.
+- `false` or `"never"`: Never glom, always create a new window. This is
+  technically the current behavior of the Terminal.
 
 ### Handling the current working directory
 
@@ -170,7 +177,7 @@ scenarios (as noted above). The monarch will parse the commandline, determine
 which window the commandline is destined for, then call `ExecuteCommandline` on
 that peasant, who will then run the command.
 
-#### Running commands in the current window:`--session-id 0`
+#### Running commands in the current window:`wt --session 0`
 
 If `wt -s 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
 onto _the most recent WT window_ instead. This seems more logical than something
@@ -187,8 +194,8 @@ WT window during the sleep, which would cause the MRU window to not be the same
 as the window executing the command.
 
 I'm not sure that there is a better solution for the `-s 0` scenario other than
-attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process is
-spawned and that's in it's environment variables, it could try and ask the
+attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process
+is spawned and that's in it's environment variables, it could try and ask the
 monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
 
@@ -196,7 +203,7 @@ In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
 the commandline to glom to the existing single terminal instance, if there is
 one.
 
-#### Running commands in a new window:`--session-id -1`
+#### Running commands in a new window:`wt --session -1`
 
 If the user passes an invalid ID to the `--session` parameter, then we'll always
 create a new window for that commandline, regardless of the value of
@@ -205,160 +212,93 @@ new-tab` to _always_ create a new window. Since window IDs are only ever
 positive integers, then `-1` would be a convenient value for something that's
 _never_ an existing window ID.
 
-
 #### `--session` in subcommands
 
-Will we allow `wt -s 2 new-tab ; -s 3 split-pane`?
+The `--session` parameter is a setting to `wt.exe` itself, not to one of its
+subcommands (like `new-tab` or `split-pane`). This means that all of the
+subcommands in a particular `wt` commandline will all be handled by the same
+session. For example, let us consider a user who wants to open a new tab in
+window 2, and split a new pane in window 3, all at once. The user _cannot_ do
+something like:
 
+```cmd
+wt -s 2 new-tab ; -s 3 split-pane
+```
 
+Instead, the user will need to separate the commands (by whatever their shell's
+own command delimiter is) and run two different `wt.exe` instances:
 
-\<old text TODO>
+```cmd
+wt -s 2 new-tab & wt -s 3 split-pane
+```
 
-#### Scenario: Single Instance Mode
+This is done to make the parsing of the subcommands easier, and for the internal
+passing of arguments simpler. If the `--session` parameter were a part of each
+subcommand, then each individual subcommand's parser would need to be
+enlightened about that parameter, and then it would need to be possible for any
+single part of the commandline to call out to another process. It would be
+especially tricky then to coordinate the work being done across process here.
+The source process would need some sort of way to wait for the other process to
+notify the source that a particular subcommand completed, before allowing the
+source to dispatch the next part of the commandline.
+
+Overall, this is seen as unnecessarily complex, and dispatching whole sets of
+commands as a simpler solution.
+
+### Scenario: Single Instance Mode
 
 "Single Instance Mode" is a scenario in which there is only ever one single WT
-window. When Single Instance Mode is active, and the user runs a new `wt.exe`
-commandline, it will always end up running in the existing window, if there is
-one.
+window. A user might want this functionality to only ever allow a single
+terminal window to be open on their desktop. This is especially frequently
+requested in combination with "quake mode", as discussed in
+[#653]. When Single Instance Mode is active, and the user
+runs a new `wt.exe` commandline, it will always end up running in the existing
+window, if there is one.
 
 In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is
 run, and it determines that it is not the monarch, it'll pass the commandline to
 the monarch. At this point, the monarch will determine that it is in Single
 Instance Mode, and consume the commands itself.
 
-One could imagine that single instance mode is the combination of two properties:
-* The user wants new invocation of `wt` to "glom" onto the most recently used
-  window (the aforementioned `"glomToLastWindow": true` setting)
-* The user wants to prevent tab tear-out, or the ability for a `newWindow`
-  action to work. This will be controlled by a proposed `"allowMultipleWindows"` setting, where:
-  - `"allowMultipleWindows": false`: new windows are always created in the current window, and tab tear-out is disabled. This overrides any behavior from `glomToLastWindow`.
-  - `"allowMultipleWindows": true`: `newWindow` actions will always create a new window, `-s ID`
-
-[TODO]:  # TODO ################################################################
-This is weird - why two settings? what value do we really get from that? Preventing people from tearing out tabs, but allowing `wt nt` to open in new windows?
-
-Let's look at the old proposal, which had two properties:
-
-* `"glomToLastWindow": true|false`
-* `"allowTabTearOut": true|false`
-
-Which gives us these cases:
-
-* `"glomToLastWindow": true`, `"allowTabTearOut": true`:
-  - New instances open in the current window by default.
-  - `newWindow` opens a new window.
-  - Tabs can be torn out to create new windows.
-  - `wt -s -1` opens a new window.
-* `"glomToLastWindow": true`, `"allowTabTearOut": false`:
-  - New instances open in the current window by default.
-  - `newWindow` opens in the existing window.
-  - Tabs cannot be torn out to create new windows.
-  - `wt -s -1` opens in the existing window.
-* `"glomToLastWindow": false`, `"allowTabTearOut": true`:
-  - New instances open in new windows by default
-  - `newWindow` opens a new window
-  - Tabs can be torn out to create new windows.
-  - `wt -s -1` opens a new window.
-* `"glomToLastWindow": false`, `"allowTabTearOut": false`:
-  - New instances open in the current window by default. (unexpected?)
-  - `newWindow` opens in the existing window.
-  - Tabs cannot be torn out to create new windows.
-  - `wt -s -1` opens in the existing window.
-
-The fourth case is actually exactly the same as the second case. So that would
-imply there's really only 3 values here, not a matrix of 2 options by 2 options.
-
-Perhaps the  `glomToLastWindow` setting doesn't make exact sense? Maybe we need a few other values.
-
-(for this mental experiment, `"glomToLastWindow"` and `"glomToLastWindowSameDesktop"` are being treated as one property)
-
-What actual user stories do we have?
-
-
-* Scenario 1: Browser-like glomming
-  - <!-- Formerly, `"glomToLastWindow": true`, `"allowTabTearOut":
-  true`:  -->
-  - New instances open in the current window by default.
-  - `newWindow` opens a new window.
-  - Tabs can be torn out to create new windows.
-  - `wt -s -1` opens a new window.
-* Scenario 2: Single Instance Mode
-  - <!-- Formerly, (`"glomToLastWindow": true`, `"allowTabTearOut":
-    false`) and  (`"glomToLastWindow": false`, `"allowTabTearOut": false`)-->
-  - New instances open in the current window by default.
-  - `newWindow` opens in the existing window.
-  - Tabs cannot be torn out to create new windows.
-  - `wt -s -1` opens in the existing window.
-* Scenario 3: No auto-glomming
-  - <!-- Formerly, (`"glomToLastWindow": false`, `"allowTabTearOut":
-  true`)-->
-  - New instances open in new windows by default
-  - `newWindow` opens a new window
-  - Tabs can be torn out to create new windows.
-  - `wt -s -1` opens a new window.
-
-So this kinda reads as
-
-`"glomTolastWindow": ("never"|false)|"sameDesktop"|("lastWindow"|true)|"always"`
-
-[/TODO]:  # /TODO ##############################################################
-
-
-
-While tear-out is a separate track of work from session management in general, this setting could be implemented along with this set of features, and later used to control tear out as well.
-
-#### Scenario: Quake Mode
-
-"Quake mode" has a variety of different scenarios<sup>[[1]](#footnote-1)</sup>
-that have all been requested, more than what fits cleanly into this spec.
-However, there's one key aspect of quake mode that is specifically relevant and
-worth mentioning here.
-
-One of the biggest challenges with registering a global shortcut handler is
-_what happens when multiple windows try to register for the same shortcut at the
-same time_? From my initial research, it seems that only the first process to
-register for the shortcut will succeed. This makes it hard for multiple windows
-to handle the global shortcut key gracefully. If a second window is created, and
-it fails to register the global hotkey, then the first window is closed, there's
-no way for the second process to track that and re-register as the handler for
-that key.
-
-With the addition of monarch/peasant processes, this problem becomes much easier
-to solve. Now, the monarch process will _always_ be the process to register the
-shortcut key, whenever it's elected. If it dies and another peasant is elected
-monarch, then the new monarch will register as the global hotkey handler.
-
-Then, the monarch can use it's pre-established channels of communication with
-the other window processes to actually drive the response we're looking for.
-
-**Alternatively**, we could use an entirely other process to be in charge of the
-registration of the global keybinding. This process would be some sort of
-long-running service that's started on boot. When it detects the global hotkey,
-it could attempt to instantiate a `Monarch` object.
-
-* If it can't make one, then it can simply run a new instance of `wt.exe`,
-  because there's not yet a running Terminal window.
-* Otherwise, it can communicate to the monarch that the global hotkey was
-  pressed, and the monarch will take care of delegating the activation to the
-  appropriate peasant window.
-
-This would mitigate the need to have at least one copy of WT running already,
-and the user could press that keybinding at any time to start the terminal.
-
-\</old text /TODO >
+Single instance mode is enabled with the `"glomToLastWindow": "always"` setting.
+This value disables tab tearout<sup>[[1]](#footnote-1)</sup> , as well as the
+ability for `newWindow` and `wt -s -1` to create new windows. In those cases,
+the commandline will _always_ be handled by the current window, the monarch
+window.
 
 ## UI/UX Design
 
-[TODO]:  # TODO
+### `glomToLastWindow` details
 
-## Capabilities
+The following list gives greater breakdown of the values of `glomToLastWindow`,
+and how they operate:
+
+* `"glomToLastWindow": "lastWindow", "sameDesktop"|true`: Browser-like glomming
+  - New instances open in the current window by default.
+  - `newWindow` opens a new window.
+  - Tabs can be torn out to create new windows.
+  - `wt -s -1` opens a new window.
+* `"glomToLastWindow": "always"`: Single Instance Mode.
+  - New instances open in the current window by default.
+  - `newWindow` opens in the existing window.
+  - Tabs cannot be torn out to create new windows.
+  - `wt -s -1` opens in the existing window.
+* `"glomToLastWindow": "never"`: No auto-glomming. This is the current behavior
+  of the Terminal.
+  - New instances open in new windows by default
+  - `newWindow` opens a new window
+  - Tabs can be torn out to create new windows.
+  - `wt -s -1` opens a new window.
+
+## Concerns
 
 <table>
 <tr>
 <td><strong>Accessibility</strong></td>
 <td>
 
-[TODO]:  # TODO
+There is no expected accessibility impact from this feature. Each window will
+handle UIA access as it normally does.
 
 </td>
 </tr>
@@ -366,14 +306,26 @@ and the user could press that keybinding at any time to start the terminal.
 <td><strong>Security</strong></td>
 <td>
 
-[TODO]:  # TODO
+Many security concerns have already be covered in greater detail in the parent
+spec, [Process Model 2.0 Spec]. I'd refer specifically to the section ["Mixed
+elevation & Monarch / Peasant issues"](#mixed-elevation--monarch--peasant-issues).
+
 </td>
 </tr>
 <tr>
 <td><strong>Reliability</strong></td>
 <td>
 
-[TODO]:  # TODO
+Whenever we're working with an object that's hosted by another process, we'll
+need to make sure that we work with it in a try/catch, because at _any_ time,
+the other process could be killed. At any point, a window process could be
+killed. Both the monarch and peasant code will need to be redundant to such a
+scenario, and if the other process is killed, make sure to display an
+appropriate error and either recover or exit gracefully.
+
+In any and all of these situations, we'll want to try and be as verbose as
+possible in the logging, to try and make tracking which process had the error
+occur easier.
 
 </td>
 </tr>
@@ -381,7 +333,13 @@ and the user could press that keybinding at any time to start the terminal.
 <td><strong>Compatibility</strong></td>
 <td>
 
-[TODO]:  # TODO
+There are not any serious comptibility concerns with this specific set of
+features.
+
+We will be changing the default behavior of the Terminal to auto-glom to the
+most-recently used window on the same desktop in the course of this work, which
+will be a breaking UX change. This is behavior that can be reverted with the
+`"glomToLastWindow": "never"` setting.
 
 </td>
 </tr>
@@ -389,7 +347,9 @@ and the user could press that keybinding at any time to start the terminal.
 <td><strong>Performance, Power, and Efficiency</strong></td>
 <td>
 
-[TODO]:  # TODO
+There's no dramatic change expected here. There may be a minor delay in the
+spawning of new terminal instances, due to requiring cross-process hops for the
+communication between monarch and peasant processes.
 
 </td>
 </tr>
@@ -397,44 +357,96 @@ and the user could press that keybinding at any time to start the terminal.
 
 ## Potential Issues
 
-[TODO]:  # TODO
+### Mixed elevation & Monarch / Peasant issues
+
+_This section was originally authored in the [Process Model 2.0 Spec]. Please
+refer to it there for its original context._
+
+Previously, we've mentioned that windows who wish to have a tab open elevated
+will re-open as an elevated process, connected to all the content processes the
+window was previously connected to. However, what happens when the window that
+needs to re-open as an elevated window is the monarch process? If the elevated
+window were to retain its monarch status, then all the other (unelevated) window
+processes would be unable to connect to it and call methods and trigger
+callbacks on it.
+
+So if the monarch is going to enter a mixed-elevation state, the new process for
+the elevated window shouldn't try to register as the monarch, and instead rely
+on another process being the monarch.
+
+This comes with a variety of other edge cases as well.
+
+When a process does re-open as an elevated window, it will need a mechanism to
+retain its original ID as assigned by the monarch. This is so that commands like
+`wt -s 2 split-pane` will continue to refer to the same logical window, even if
+there's a new process hosting it now.
+
+What if there's only one window, and it becomes elevated? In that case, there is
+no other monarch to rely on. We'll need a way for us to start `wt` as a
+"headless monarch". This headless monarch process will _not_ display its own
+window, but will act as the monarch. The old monarch (who's now a different
+process altogether, and is elevated), should treat that medium-IL headless
+monarch the same as the other monarchs, and attempt to find a new monarch as
+soon as it goes away. The headless monarch will attempt to register to be the
+monarch - if it turns out that another process is the current monarch, then the
+headless monarch will immediately kill itself, causing the old monarch to
+immediately attempt to find a new monarch. If the headless monarch dies
+unexpectedly, and the elevated process is unable to create a connection to the
+existing monarch, it'll need to spawn a new headless monarch.
+
+If there are only a bunch of elevated monarchs, then they'll each attempt to
+spawn a headless monarch. Only one will succeed - the others will all connect to
+the first headless monarch, and immediately die.
+
+We need to be especially careful about the commands that can be run in an
+existing window. Opening a new tab, split, these are relatively safe. The new
+terminal that's created in the elevated window will still be unelevated by
+default.
+
+What we _absolutely cannot do_, under any circumstance, is allow for the sending
+of input to another window across elevation boundary. I don't think it's
+entirely out of the realm of possibility to add a `send-input` command to write
+input to the terminal using the `SendInputAction`. However, we must absolutely
+make sure that the input isn't allowed to cross the elevation boundary. To make
+this easier, we should have the `send-input` command just fail if the targeted
+window is both:
+- Is elevated.
+- Is not this window. Sending input within the same window seems like it would
+  be safe enough - you're already inside the airtight hatch.
 
 ## Implementation Plan
 
-[TODO]:  # TODO? Or just leave this in the PM2.0 spec?
-
 This is a list of actionable tasks generated as described by this spec:
 
-* [ ] Add support for `wt.exe` processes to be Monarchs and Peasants, and communicate that state between themselves. This task does not otherwise add any user-facing features, merely an architectural update.
-* [ ] Add support for the `glomToLastWindow` setting as a boolean. Opening new WT windows will conditionally glom to existing windows.
-* [ ] Add support for per-desktop `glomToLastWindow`, by adding the support for the enum values `"always"`, `"sameDesktop"` and `"never"`.
+* [ ] Add support for `wt.exe` processes to be Monarchs and Peasants, and
+  communicate that state between themselves. This task does not otherwise add
+  any user-facing features, merely an architectural update.
+* [ ] Add support for the `glomToLastWindow` setting as a boolean. Opening new
+  WT windows will conditionally glom to existing windows.
+* [ ] Add support for per-desktop `glomToLastWindow`, by adding the support for
+  the enum values `"lastWindow"`, `"sameDesktop"` and `"never"`.
+* [ ] Add support for `wt.exe` to pass commandlines intended for another window
+  to the monarch, then to the intended window, with the `--session,-s
+  session-id` commandline parameter.
+* [ ] Add support for single instance mode, by adding the enum value `"always"`
+  to `"glomToLastWindow"`
 
 ## Footnotes
 
-<a name="footnote-1"><a>[1]: TODO
+<a name="footnote-1"><a>[1]: While tear-out is a separate track of work from
+session management in general, this setting could be implemented along with this
+set of features, and later used to control tear out as well.
 
 ## Future considerations
 
 
 [TODO]:  # TODO
 
-* During
-  [review](https://github.com/microsoft/terminal/pull/7240#issuecomment-716022646),
-  it was mentioned that when links are opened in the new Edge browser, they will
-  only glom onto an existing window if that window is open in the current
-  virtual desktop. This seems like a good idea of a feature for the Terminal to
-  follow as well. Since Edge is able to do it, there must be some way for an
-  application to determine which virtual desktop it is open on. We could use
-  that information to have the monarch track the last active window per-desktop,
-  and only glom when there's one on the current desktop.
-  - We could even imagine changing the `glomToLastWindow` property to accept a
-    combined `bool`/enum value:
-    - `true` or `"always"`: always glom to the most recent window, regardless of
-      desktop
-    - `"sameDesktop"`: Only glom if there's an existing window on this virtual
-      desktop, otherwise create a new window
-    - `false` or `"never"`: Never glom, always create a new window.
-
+* Pipe a command to a pane in an existing window?
+  ```sh
+  man ping > wt -s 0 split-pane cat
+  ```
+  Is there some way for WT to pass it's stdin/out handles to the child process it's creting? This is _not_ related to the current spec at hand, just something the author considered while writing the spec. This likely belongs over in [#492].
 
 ## Resources
 
@@ -461,4 +473,4 @@ This is a list of actionable tasks generated as described by this spec:
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
 
 
-[Windows Terminal Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
+[Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
