@@ -417,6 +417,19 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleOpenTabRenamer(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (auto focusedTab = _GetFocusedTab())
+        {
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            {
+                activeTab->ActivateTabRenamer();
+            }
+        }
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleExecuteCommandline(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& actionArgs)
     {

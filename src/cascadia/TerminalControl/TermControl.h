@@ -118,6 +118,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
+        void UpdatePatternLocations();
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -180,6 +182,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
 
+        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -212,6 +216,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         COORD _lastHoveredCell;
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
+
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
 
         using Timestamp = uint64_t;
 

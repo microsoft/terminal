@@ -43,7 +43,7 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::ITab>() },
+        _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabActions{ winrt::single_threaded_vector<Command>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
     {
@@ -900,6 +900,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->SetTabColor({ this, &TerminalPage::_HandleSetTabColor });
         _actionDispatch->OpenTabColorPicker({ this, &TerminalPage::_HandleOpenTabColorPicker });
         _actionDispatch->RenameTab({ this, &TerminalPage::_HandleRenameTab });
+        _actionDispatch->OpenTabRenamer({ this, &TerminalPage::_HandleOpenTabRenamer });
         _actionDispatch->ExecuteCommandline({ this, &TerminalPage::_HandleExecuteCommandline });
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
@@ -1324,7 +1325,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a com_ptr to the currently focused tab. This might return null,
     //   so make sure to check the result!
-    ITab TerminalPage::_GetFocusedTab()
+    winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab()
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
@@ -2570,8 +2571,9 @@ namespace winrt::TerminalApp::implementation
         const uint32_t size = _tabs.Size();
         for (uint32_t i = 0; i < size; ++i)
         {
-            auto command = _tabs.GetAt(i).SwitchToTabCommand();
-            command.Action().Args().as<SwitchToTabArgs>().TabIndex(i);
+            auto tab{ _tabs.GetAt(i) };
+            auto tabImpl{ winrt::get_self<TabBase>(tab) };
+            tabImpl->UpdateTabViewIndex(i, size);
         }
     }
 
@@ -2601,6 +2603,11 @@ namespace winrt::TerminalApp::implementation
             // Add the new tab to the list of our tabs.
             _tabs.Append(*newTabImpl);
             _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
+
+            newTabImpl->SetDispatch(*_actionDispatch);
+
+            // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
+            _UpdateTabIndices();
 
             // Don't capture a strong ref to the tab. If the tab is removed as this
             // is called, we don't really care anymore about handling the event.
@@ -2642,7 +2649,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const ITab& tab) const
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab) const
     {
         if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
         {
@@ -2684,7 +2691,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_MakeSwitchToTabCommand(const ITab& tab, const uint32_t index)
+    void TerminalPage::_MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index)
     {
         SwitchToTabArgs args{ index };
         ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };

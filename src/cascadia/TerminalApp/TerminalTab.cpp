@@ -52,8 +52,7 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_inRename = true;
-                tab->_UpdateTabHeader();
+                tab->ActivateTabRenamer();
             }
         });
 
@@ -87,20 +86,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::Initialize(const TermControl& control)
     {
         _BindEventHandlers(control);
-    }
-
-    // Method Description:
-    // - Returns the focus state of this Tab. Unfocused means this tab is not focused,
-    //   and any other FocusState means that this tab is focused. For any set of tabs,
-    //   there should only be one tab that is marked as focused, though each tab has
-    //   no control over the other tabs in the set.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - A FocusState enum value
-    WUX::FocusState TerminalTab::FocusState() const noexcept
-    {
-        return _focusState;
     }
 
     // Method Description:
@@ -374,6 +359,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Show a TextBox in the Header to allow the user to set a string
+    //     to use as an override for the tab's text
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalTab::ActivateTabRenamer()
+    {
+        _inRename = true;
+        _receivedKeyDown = false;
+        _UpdateTabHeader();
+    }
+
+    // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
     //   of Panes in this tab. We'll add events too:
@@ -552,8 +551,7 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
-                    tab->_inRename = true;
-                    tab->_UpdateTabHeader();
+                    tab->ActivateTabRenamer();
                 }
             });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
@@ -569,56 +567,6 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         TabViewItem().ContextFlyout(newTabFlyout);
-    }
-
-    // Method Description:
-    // - Creates a sub-menu containing menu items to close multiple tabs
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the created MenuFlyoutSubItem
-    Controls::MenuFlyoutSubItem TerminalTab::_CreateCloseSubMenu()
-    {
-        auto weakThis{ get_weak() };
-
-        // Close tabs after
-        _closeTabsAfterMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_CloseTabsAfter();
-            }
-        });
-        _closeTabsAfterMenuItem.Text(RS_(L"TabCloseAfter"));
-
-        // Close other tabs
-        _closeOtherTabsMenuItem.Click([weakThis](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_CloseOtherTabs();
-            }
-        });
-        _closeOtherTabsMenuItem.Text(RS_(L"TabCloseOther"));
-
-        Controls::MenuFlyoutSubItem closeSubMenu;
-        closeSubMenu.Text(RS_(L"TabCloseSubMenu"));
-        closeSubMenu.Items().Append(_closeTabsAfterMenuItem);
-        closeSubMenu.Items().Append(_closeOtherTabsMenuItem);
-
-        return closeSubMenu;
-    }
-
-    // Method Description:
-    // - Enable the Close menu items based on tab index and total number of tabs
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_EnableCloseMenuItems()
-    {
-        // close other tabs is enabled only if there are other tabs
-        _closeOtherTabsMenuItem.IsEnabled(TabViewNumTabs() > 1);
-        // close tabs after is enabled only if there are other tabs on the right
-        _closeTabsAfterMenuItem.IsEnabled(TabViewIndex() < TabViewNumTabs() - 1);
     }
 
     // Method Description:
@@ -730,6 +678,14 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // We'll only process the KeyUp event if we received an initial KeyDown event first.
+        // Avoids issue immediately closing the tab rename when we see the enter KeyUp event that was
+        // sent to the command palette to trigger the openTabRenamer action in the first place.
+        tabTextBox.KeyDown([weakThis](const IInspectable&, Input::KeyRoutedEventArgs const&) {
+            auto tab{ weakThis.get() };
+            tab->_receivedKeyDown = true;
+        });
+
         // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
         // remove the TextBox from the UI tree, then the following KeyUp
         // will bubble to the NewTabButton, which we don't want to have
@@ -737,7 +693,7 @@ namespace winrt::TerminalApp::implementation
         tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
             auto tab{ weakThis.get() };
             auto textBox{ sender.try_as<Controls::TextBox>() };
-            if (tab && textBox)
+            if (tab && textBox && tab->_receivedKeyDown)
             {
                 switch (e.OriginalKey())
                 {
@@ -1058,27 +1014,6 @@ namespace winrt::TerminalApp::implementation
     bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
-    }
-
-    void TerminalTab::_CloseTabsAfter()
-    {
-        CloseTabsAfterArgs args{ _TabViewIndex };
-        ActionAndArgs closeTabsAfter{ ShortcutAction::CloseTabsAfter, args };
-
-        _dispatch.DoAction(closeTabsAfter);
-    }
-
-    void TerminalTab::_CloseOtherTabs()
-    {
-        CloseOtherTabsArgs args{ _TabViewIndex };
-        ActionAndArgs closeOtherTabs{ ShortcutAction::CloseOtherTabs, args };
-
-        _dispatch.DoAction(closeOtherTabs);
-    }
-
-    void TerminalTab::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
-    {
-        _dispatch = dispatch;
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

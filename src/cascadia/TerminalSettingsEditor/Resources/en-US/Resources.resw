@@ -214,9 +214,6 @@
   <data name="Globals_DisableDynamicProfiles.Content" xml:space="preserve">
     <value>Automatically create new profiles when new shells are installed</value>
   </data>
-  <data name="Globals_DisableDynamicProfiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
-  </data>
   <data name="Globals_ForceFullRepaint.Content" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
   </data>
@@ -251,7 +248,9 @@
     <value>Launch size</value>
   </data>
   <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Defines whether the terminal will launch in a window, maximized, or full screen.</value>
+    <value>Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to "Focus" is equivalent to launching the terminal in the "Default" mode, but with the focus mode enabled. Similarly, setting this to "Maximized Focus" will result in launching the terminal in a maximized window with the focus mode enabled.</value>
+
+    <comment>"Focus", "Default", and "Maximized Focus" must match Globals_LaunchSizeFocus.Content, Globals_LaunchSizeDefault.Content, and Globals_LaunchSizeMaximizedFocus.Content values respectively.</comment>
   </data>
   <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
     <value>Default</value>
@@ -269,7 +268,7 @@
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
   </data>
   <data name="Globals_ShowTitlebar.Content" xml:space="preserve">
-    <value>Show the title bar</value>
+    <value>Hide the title bar (requires restart)</value>
   </data>
   <data name="Globals_ShowTitlebar.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the tabs are moved into the title bar and the title bar disappears. When unchecked, the title bar sits above the tabs.</value>
@@ -339,23 +338,11 @@
   <data name="Globals_WordDelimiters.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Determines the delimiters used in a double click selection.</value>
   </data>
-  <data name="Nav_AddNewProfile.Content" xml:space="preserve">
-    <value>Add new</value>
-  </data>
   <data name="Nav_Appearance.Content" xml:space="preserve">
     <value>Appearance</value>
   </data>
-  <data name="Nav_AppearanceGlobal.Content" xml:space="preserve">
-    <value>Global</value>
-  </data>
   <data name="Nav_ColorSchemes.Content" xml:space="preserve">
     <value>Color schemes</value>
-  </data>
-  <data name="Nav_General.Content" xml:space="preserve">
-    <value>General</value>
-  </data>
-  <data name="Nav_Home.Content" xml:space="preserve">
-    <value>Home</value>
   </data>
   <data name="Nav_Interaction.Content" xml:space="preserve">
     <value>Interaction</value>
@@ -368,9 +355,6 @@
   </data>
   <data name="Nav_ProfileGlobal.Content" xml:space="preserve">
     <value>Global</value>
-  </data>
-  <data name="Nav_Profiles.Content" xml:space="preserve">
-    <value>Profiles</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
@@ -666,5 +650,39 @@
   <data name="Settings_UnsavedSettingsWarning.Text" xml:space="preserve">
     <value>⚠ You have unsaved changes.</value>
     <comment>{Locked="⚠"}</comment>
+  </data>
+  <data name="Nav_AddNewProfile.Content" xml:space="preserve">
+    <value>Add new</value>
+  </data>
+  <data name="Nav_Profiles.Content" xml:space="preserve">
+    <value>Profiles</value>
+</data>
+  <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
+    <value>Focus</value>
+  </data>
+  <data name="Globals_LaunchSizeMaximizedFocus.Content" xml:space="preserve">
+    <value>Maximized Focus</value>
+  </data>
+  <data name="Profile_BellStyle.Header" xml:space="preserve">
+    <value>Bell notification style</value>
+  </data>
+  <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Controls what happens when the application emits a BEL character.</value>
+    <comment>"Audible" and "None" must match the values for Profile_BellStyleAudible.Content and Profile_BellStyleNone.Content respectively.</comment>
+  </data>
+  <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
+    <value>Audible</value>
+  </data>
+  <data name="Profile_BellStyleNone.Content" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Globals_DisableAnimations.Content" xml:space="preserve">
+    <value>Disable visual animations</value>
+  </data>
+  <data name="Globals_DisableAnimations.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>When checked, visual animations will be disabled across the application.</value>
+  </data>
+  <data name="Globals_DisableDynamicProfiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
   </data>
 </root>

@@ -46,6 +46,7 @@ oaidl
 ocidl
 otms
 OUTLINETEXTMETRICW
+overridable
 PAGESCROLL
 RETURNCMD
 rfind
@@ -57,6 +58,7 @@ SIZENS
 GETDESKWALLPAPER
 snprintf
 spsc
+sregex
 STDCPP
 strchr
 Subheader
@@ -71,6 +73,7 @@ UPDATEINIFILE
 userenv
 wcsstr
 wcstoui
+wsregex
 XDocument
 XElement
 XParse
