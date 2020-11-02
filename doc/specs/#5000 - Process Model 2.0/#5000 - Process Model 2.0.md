@@ -1233,7 +1233,7 @@ prompt the user for permission, but that's an acceptable user experience.
 This spec also has a follow-up spec which introduces further changes upon this
 original draft. Please also refer to:
 
-* Novermber 2020: Windows Terminal Session Management
+* November 2020: Windows Terminal Session Management
 
 ## Resources
 
