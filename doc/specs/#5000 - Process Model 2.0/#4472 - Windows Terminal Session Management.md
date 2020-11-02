@@ -15,7 +15,7 @@ window/content processes, as well as the introduction of monarch/peasant
 processes. The focus of that document was to identify solutions to a set of
 scenarios that were closely intertwined, and establish these solutions would
 work together, without preventing any one scenario from working. What that
-docuement did not do was prescribe specific solutions to the given scenarios.
+document did not do was prescribe specific solutions to the given scenarios.
 
 This document offers a deeper dive on a subset of the issues in [#5000], to
 describe specifics for managing multiple windows with the Windows Terminal. This
@@ -64,9 +64,6 @@ own window.
 
 ![auto-glom-wt-exe](auto-glom-wt-exe.png)
 
-If glomming is disabled, then the Monarch will call back to the peasant and tell
-it to run the provided commandline.
-
 If glomming is enabled, the monarch will dispatch the
 commandline to the appropriate window for them to handle instead. To the user,
 it'll seem as if the tab just opened in the most recent window.
@@ -76,16 +73,10 @@ onto the MRU window or not. You could imagine that currently, we default to the
 hypothetical value `"glomToLastWindow": false`, meaning that each new wt gets
 it's own new window.
 
-[TODO]: # todo
-
-Make sure to discuss that when the monarch determines that a new `wt` instance
-actually _should_ host the new terminal, it can reply back to it appropriately.
-Does that mean the Peasant has to be created, and registered with the monarch,
-first? Or can the Monarch reply, "No, you can take care of this", which _then_
-causes the WT process to create and register the peasant?
-
-[/TODO]: # todo
-
+If glomming is disabled, then the Monarch will call back to the peasant and tell
+it to run the provided commandline. The monarch will use the return value of
+`ExecuteCommandline` to indicate that the calling process should create a window
+and become a peasant process, and run the commandline itself.
 
 #### Glomming within the same virtual desktop
 
@@ -160,7 +151,8 @@ wt.exe --session N new-tab ; split-pane
 > `--window,-w window-id`, and mean the same thing. I leave it as an exercise
 > for the reviewers to pick one naming that they like best.
 
-More formally, we'll add the following parameter to the top-level `wt` command:
+More formally, we will add the following parameter to the top-level `wt`
+command:
 
 #### `--session,-s session-id`
 Run these commands in the given Windows Terminal session. This enables opening
@@ -205,8 +197,8 @@ one.
 
 #### Running commands in a new window:`wt --session -1`
 
-If the user passes an invalid ID to the `--session` parameter, then we'll always
-create a new window for that commandline, regardless of the value of
+If the user passes an invalid ID to the `--session` parameter, then we will
+always create a new window for that commandline, regardless of the value of
 `glomToLastWindow`. This will allow users to do something like `wt -s -1
 new-tab` to _always_ create a new window. Since window IDs are only ever
 positive integers, then `-1` would be a convenient value for something that's
@@ -261,7 +253,7 @@ the monarch. At this point, the monarch will determine that it is in Single
 Instance Mode, and consume the commands itself.
 
 Single instance mode is enabled with the `"glomToLastWindow": "always"` setting.
-This value disables tab tearout<sup>[[1]](#footnote-1)</sup> , as well as the
+This value disables tab tear out<sup>[[1]](#footnote-1)</sup> , as well as the
 ability for `newWindow` and `wt -s -1` to create new windows. In those cases,
 the commandline will _always_ be handled by the current window, the monarch
 window.
@@ -316,14 +308,14 @@ elevation & Monarch / Peasant issues"](#mixed-elevation--monarch--peasant-issues
 <td><strong>Reliability</strong></td>
 <td>
 
-Whenever we're working with an object that's hosted by another process, we'll
+Whenever we are working with an object that's hosted by another process, we will
 need to make sure that we work with it in a try/catch, because at _any_ time,
 the other process could be killed. At any point, a window process could be
 killed. Both the monarch and peasant code will need to be redundant to such a
 scenario, and if the other process is killed, make sure to display an
 appropriate error and either recover or exit gracefully.
 
-In any and all of these situations, we'll want to try and be as verbose as
+In any and all of these situations, we will want to try and be as verbose as
 possible in the logging, to try and make tracking which process had the error
 occur easier.
 
@@ -333,7 +325,7 @@ occur easier.
 <td><strong>Compatibility</strong></td>
 <td>
 
-There are not any serious comptibility concerns with this specific set of
+There are not any serious compatibility concerns with this specific set of
 features.
 
 We will be changing the default behavior of the Terminal to auto-glom to the
@@ -362,7 +354,7 @@ communication between monarch and peasant processes.
 _This section was originally authored in the [Process Model 2.0 Spec]. Please
 refer to it there for its original context._
 
-Previously, we've mentioned that windows who wish to have a tab open elevated
+Previously, we have mentioned that windows who wish to have a tab open elevated
 will re-open as an elevated process, connected to all the content processes the
 window was previously connected to. However, what happens when the window that
 needs to re-open as an elevated window is the monarch process? If the elevated
@@ -382,7 +374,7 @@ retain its original ID as assigned by the monarch. This is so that commands like
 there's a new process hosting it now.
 
 What if there's only one window, and it becomes elevated? In that case, there is
-no other monarch to rely on. We'll need a way for us to start `wt` as a
+no other monarch to rely on. We will need a way for us to start `wt` as a
 "headless monarch". This headless monarch process will _not_ display its own
 window, but will act as the monarch. The old monarch (who's now a different
 process altogether, and is elevated), should treat that medium-IL headless
@@ -394,7 +386,7 @@ immediately attempt to find a new monarch. If the headless monarch dies
 unexpectedly, and the elevated process is unable to create a connection to the
 existing monarch, it'll need to spawn a new headless monarch.
 
-If there are only a bunch of elevated monarchs, then they'll each attempt to
+If there are only a bunch of elevated monarchs, then they will each attempt to
 spawn a headless monarch. Only one will succeed - the others will all connect to
 the first headless monarch, and immediately die.
 
@@ -439,14 +431,14 @@ set of features, and later used to control tear out as well.
 
 ## Future considerations
 
-
-[TODO]:  # TODO
-
-* Pipe a command to a pane in an existing window?
+* What if the user wanted to pipe a command to a pane in an existing window?
   ```sh
   man ping > wt -s 0 split-pane cat
   ```
-  Is there some way for WT to pass it's stdin/out handles to the child process it's creting? This is _not_ related to the current spec at hand, just something the author considered while writing the spec. This likely belongs over in [#492].
+  Is there some way for WT to pass it's stdin/out handles to the child process
+  it's creating? This is _not_ related to the current spec at hand, just
+  something the author considered while writing the spec. This likely belongs
+  over in [#492], or in its own spec.
 
 ## Resources
 
@@ -467,10 +459,7 @@ set of features, and later used to control tear out as well.
 [#7972]: https://github.com/microsoft/terminal/pull/7972
 [#961]: https://github.com/microsoft/terminal/issues/961
 [`30b8335`]: https://github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
-
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-
-
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md

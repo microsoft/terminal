@@ -1228,6 +1228,13 @@ prompt the user for permission, but that's an acceptable user experience.
 * [ ] Make sure I can pass the UiaProvider for the control core out to the
   Window Process, so the window process can use it to query buffer info.
 
+## Addenda
+
+This spec also has a follow-up spec which introduces further changes upon this
+original draft. Please also refer to:
+
+* Novermber 2020: Windows Terminal Session Management
+
 ## Resources
 
 * [Tab Tear-out in the community toolkit] - this document proved invaluable to
