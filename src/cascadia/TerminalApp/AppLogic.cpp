@@ -412,6 +412,7 @@ namespace winrt::TerminalApp::implementation
         DWORD cchBuffer = 0;
         GetServiceDisplayName(hManager.get(), L"TabletInputService", nullptr, &cchBuffer);
         std::wstring buffer;
+        cchBuffer += 1; // Add space for a null
         buffer.resize(cchBuffer);
 
         if (LOG_LAST_ERROR_IF(!GetServiceDisplayName(hManager.get(),
@@ -526,7 +527,8 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
-        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+        const auto keyboardServiceIsDisabled = true;
+        // const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
         if (keyboardServiceIsDisabled)
         {
             _ShowKeyboardServiceDisabledDialog();

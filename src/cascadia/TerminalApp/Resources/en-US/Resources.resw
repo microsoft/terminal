@@ -153,7 +153,7 @@
     <value>Warning:</value>
   </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
-    <value>The "{0}" service isn't running on your machine. This can prevent the Terminal from receiving keyboard input.</value>
+    <value>The "{0}" isn't running on your machine. This can prevent the Terminal from receiving keyboard input.</value>
     <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
   </data>
   <data name="Ok" xml:space="preserve">
