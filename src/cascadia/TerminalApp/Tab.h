@@ -103,7 +103,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _focused{ false };
         bool _receivedKeyDown{ false };
-        winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };        
+        winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };

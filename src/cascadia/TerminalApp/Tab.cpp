@@ -8,6 +8,7 @@
 #include "Tab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -165,7 +166,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void Tab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void Tab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
     }
@@ -708,13 +709,17 @@ namespace winrt::TerminalApp::implementation
                 // If we're not currently in the process of renaming the tab,
                 // then just set the tab's text to whatever our active title is.
                 sp.Children().Append(tb);
-                const auto ringState = GetActiveTerminalControl().GetTaskbarState();
-                if (ringState != 0)
+
+                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+                if (!settings.GlobalSettings().DisableProgressRing())
                 {
-                    Windows::UI::Xaml::Controls::ProgressRing progressRing{};
-                    progressRing.IsActive(true);
-                    progressRing.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Right);
-                    sp.Children().Append(progressRing);
+                    const auto ringState = GetActiveTerminalControl().GetTaskbarState();
+                    if (ringState != 0)
+                    {
+                        Windows::UI::Xaml::Controls::ProgressRing progressRing{};
+                        progressRing.IsActive(true);
+                        sp.Children().Append(progressRing);
+                    }
                 }
             }
             _tabViewItem.Header(sp);
