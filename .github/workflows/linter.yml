@@ -11,12 +11,13 @@ name: Lint Code Base
 # https://help.github.com/en/articles/workflow-syntax-for-github-actions
 #
 
-#############################
-# Start the job on all push #
-#############################
-on:
-  pull_request:
-    branches: [main]
+###################################################
+# The linter is noisy; we used to run it on push. #
+###################################################
+#
+#on:
+#  pull_request:
+#    branches: [main]
 
 ###############
 # Set the Job #
