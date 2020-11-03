@@ -81,11 +81,11 @@ bool areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch, const boo
     {
         if (ourPID == kingPID)
         {
-            printf("We're the king - our PID is %d\n", ourPID);
+            printf(fmt::format("We're the king - our PID is {}\n", ourPID).c_str());
         }
         else
         {
-            printf("We're a lowly peasant - the king is %d\n", kingPID);
+            printf(fmt::format("We're a lowly peasant - the king is {}\n", kingPID).c_str());
         }
     }
     return (ourPID == kingPID);
@@ -102,18 +102,18 @@ MonarchPeasantSample::IPeasant getOurPeasant(const winrt::MonarchPeasantSample::
     {
         auto peasant = winrt::make_self<MonarchPeasantSample::implementation::Peasant>();
         auto ourID = monarch.AddPeasant(*peasant);
-        printf("The monarch assigned us the ID %d\n", ourID);
+        printf("The monarch assigned us the ID %llu\n", ourID);
         return *peasant;
     }
 }
 
-void printPeasants(const winrt::MonarchPeasantSample::Monarch& monarch)
+void printPeasants(const winrt::MonarchPeasantSample::Monarch& /*monarch*/)
 {
     printf("This is unimplemented\n");
 }
 
 bool monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
-                    const winrt::MonarchPeasantSample::IPeasant& peasant)
+                    const winrt::MonarchPeasantSample::IPeasant& /*peasant*/)
 {
     bool exitRequested = false;
     printf("Press `l` to list peasants, `q` to quit\n");
@@ -133,10 +133,10 @@ bool monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
     return true;
 }
 
-bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& monarch,
-                      const winrt::MonarchPeasantSample::IPeasant& peasant)
+bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& /*monarch*/,
+                      const winrt::MonarchPeasantSample::IPeasant& /*peasant*/)
 {
-    DWORD cNumRead, fdwMode, i;
+    DWORD cNumRead, i;
     INPUT_RECORD irInBuf[128];
 
     if (!ReadConsoleInput(g_hInput, // input buffer handle
@@ -186,7 +186,7 @@ bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& monarch,
 bool peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
                     const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
-    wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, monarch.GetPID()) };
+    wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(monarch.GetPID())) };
     // printf("handle for the monarch process is %d\n", hMonarch.get());
 
     g_hInput = GetStdHandle(STD_INPUT_HANDLE);
@@ -279,7 +279,7 @@ void app()
     }
 }
 
-int main(int argc, char** argv)
+int main(int /*argc*/, char** /*argv*/)
 {
     auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     DWORD dwMode = 0;
