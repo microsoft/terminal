@@ -8,6 +8,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
     mc:Ignorable="d">
     <ScrollViewer>
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
@@ -27,10 +28,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ComboBox x:Uid="Globals_DefaultProfile"
                           x:Name="DefaultProfile"
                           Margin="0,0,0,20"
-                          ItemsSource="{x:Bind ProfileNameList, Mode=OneWay}"
+                          ItemsSource="{x:Bind local:MainPage.Settings.AllProfiles, Mode=OneWay}"
                           SelectionChanged="DefaultProfileSelectionChanged"
                           FontSize="15"
-                          ToolTipService.Placement="Mouse" />
+                          ToolTipService.Placement="Mouse">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="SettingsModel:Profile">
+                            <TextBlock Text="{x:Bind Name}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                 <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                     <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
