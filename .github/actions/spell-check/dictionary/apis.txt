@@ -44,6 +44,7 @@ oaidl
 ocidl
 otms
 OUTLINETEXTMETRICW
+overridable
 PAGESCROLL
 RETURNCMD
 rfind

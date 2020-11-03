@@ -4,8 +4,6 @@
 #pragma once
 
 #include "AppLogic.g.h"
-
-#include "Tab.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
