@@ -1047,13 +1047,24 @@ namespace winrt::TerminalApp::implementation
         if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
         {
             _mruTabActions.RemoveAt(mruIndex);
-            // TODO:
-            // CommandPalette().SetMRUTabActions(_mruTabActions);
         }
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
+
+        // If the tab switcher is currently open, update it to reflect the
+        // current list of tabs.
+        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
+        if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
+        {
+            CommandPalette().SetTabActions(_mruTabActions, false);
+        }
+        else if (commandPaletteIsVisible)
+        {
+            _UpdatePaletteWithInOrderTabs();
+        }
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
@@ -1196,7 +1207,7 @@ namespace winrt::TerminalApp::implementation
             tabCommands.Append(tab.SwitchToTabCommand());
         }
         // CommandPalette().SetInOrderTabActions(tabCommands);
-        CommandPalette().SetTabActions(tabCommands);
+        CommandPalette().SetTabActions(tabCommands, true);
     }
 
     // Method Description:
@@ -1236,15 +1247,15 @@ namespace winrt::TerminalApp::implementation
 
         if (useTabSwitcher)
         {
-            // _UpdatePaletteWithInOrderTabs();
-            if (useInOrderTabIndex) {
+            if (useInOrderTabIndex)
+            {
                 // Set up the list of in-order tabs
                 _UpdatePaletteWithInOrderTabs();
             }
             else
             {
                 // Set up the list of MRU tabs
-                CommandPalette().SetTabActions(_mruTabActions);
+                CommandPalette().SetTabActions(_mruTabActions, true);
             }
 
             if (CommandPalette().Visibility() == Visibility::Visible)
@@ -2694,8 +2705,15 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabActions.RemoveAt(mruIndex);
                 _mruTabActions.InsertAt(0, command);
-                // TODO:
-                // CommandPalette().SetMRUTabActions(_mruTabActions);
+
+                // If the tab switcher is currently open, AND we're using it in
+                // MRU mode, then update it to reflect the current list of tabs.
+                const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+                const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
+                if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
+                {
+                    CommandPalette().SetTabActions(_mruTabActions, false);
+                }
             }
         }
     }

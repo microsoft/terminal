@@ -23,9 +23,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
-        // void SetInOrderTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
-        // void SetMRUTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
-        void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
+        void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs, const bool clearList);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
         void EnableCommandPaletteMode();
@@ -99,8 +97,6 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
-        // Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _inOrderTabActions{ nullptr };
-        // Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _mruTabActions{ nullptr };
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _tabActions{ nullptr };
         uint32_t _switcherStartIdx;
         winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitchOrder{ Microsoft::Terminal::Settings::Model::TabSwitcherMode::MostRecentlyUsed };
