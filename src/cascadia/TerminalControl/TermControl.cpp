@@ -3012,10 +3012,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Checks if the uri is valid and sends an event if so
     // Arguments:
     // - The uri
-    void TermControl::_HyperlinkHandler(const std::wstring_view uri)
+    winrt::fire_and_forget TermControl::_HyperlinkHandler(const std::wstring_view uri)
     {
-        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(winrt::hstring{ uri });
-        _openHyperlinkHandlers(*this, *hyperlinkArgs);
+        // Save things we need to resume later.
+        winrt::hstring heldUri{ uri };
+        auto strongThis{ get_strong() };
+
+        // Pop the rest of this function to the tail of the UI thread
+        // Just in case someone was holding a lock when they called us and
+        // the handlers decide to do something that take another lock
+        // (like ShellExecute pumping our messaging thread...GH#7994)
+        co_await Dispatcher();
+
+        auto hyperlinkArgs = winrt::make_self<OpenHyperlinkEventArgs>(heldUri);
+        _openHyperlinkHandlers(*strongThis, *hyperlinkArgs);
     }
 
     // Method Description:
