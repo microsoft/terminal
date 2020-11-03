@@ -75,6 +75,7 @@
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="EnumMappings.idl" />
     <Midl Include="IconPathConverter.idl" />
   </ItemGroup>
   <ItemGroup>
