@@ -52,7 +52,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
+<<<<<<< HEAD
         contentFrame().Navigate(xaml_typename<Editor::Launch>());
+=======
+        auto initialItem = SettingsNav().MenuItems().GetAt(0);
+        SettingsNav().SelectedItem(initialItem);
+
+        // Manually navigate because setting the selected item programmatically doesn't trigger ItemInvoked.
+        if (auto tag = initialItem.as<MUX::Controls::NavigationViewItem>().Tag())
+        {
+            Navigate(contentFrame(), unbox_value<hstring>(tag));
+        }
+>>>>>>> feature/settings-ui
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)

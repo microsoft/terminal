@@ -24,9 +24,13 @@
     <Midl Include="ColorToHexConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
+<<<<<<< HEAD
     <Midl Include="IconPathConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
+=======
+    <Midl Include="EnumEntry.idl" />
+>>>>>>> feature/settings-ui
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalSettingsEditor.def" />
