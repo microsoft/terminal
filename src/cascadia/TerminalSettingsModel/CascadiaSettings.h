@@ -142,7 +142,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateAllSchemesExist();
         void _ValidateMediaResources();
         void _ValidateKeybindings();
+        void _ValidateColorSchemesInCommands();
         void _ValidateNoGlobalsKey();
+
+        bool _HasInvalidColorScheme(const Model::Command& command);
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;
