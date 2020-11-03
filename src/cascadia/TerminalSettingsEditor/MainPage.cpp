@@ -11,10 +11,14 @@
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
+#include "IconPathConverter.h"
+
+#include <LibraryResources.h>
 
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
+    namespace WUX = Windows::UI::Xaml;
 }
 
 using namespace winrt::Windows::Foundation;
@@ -22,12 +26,14 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
+using namespace winrt::Windows::UI::Xaml::Controls;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings MainPage::_settingsSource{ nullptr };
 
-    MainPage::MainPage(CascadiaSettings settings)
+    MainPage::MainPage(CascadiaSettings settings) :
+        _profileToNavItemMap{ winrt::single_threaded_map<guid, MUX::Controls::NavigationViewItem>() }
     {
         InitializeComponent();
 
@@ -35,6 +41,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //       this section will clone the active AppSettings
         MainPage::_settingsSource = settings;
         _settingsClone = nullptr;
+
+        _InitializeProfilesList();
     }
 
     CascadiaSettings MainPage::Settings()
@@ -44,20 +52,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
-        //// set the initial selectedItem
-        for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
-        {
-            const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
-            const hstring homeNav = L"General_Nav";
-            const hstring itemTag = unbox_value<hstring>(item.Tag());
-
-            if (itemTag == homeNav)
-            {
-                SettingsNav().SelectedItem(item);
-                break;
-            }
-        }
-
         contentFrame().Navigate(xaml_typename<Editor::Launch>());
     }
 
@@ -67,7 +61,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (clickedItemContainer != NULL)
         {
-            Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
+            auto tagPropertyValue = clickedItemContainer.Tag().as<winrt::Windows::Foundation::IPropertyValue>();
+            if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::String)
+            {
+                Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
+            }
+            else if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::Guid)
+            {
+                auto profileGuid = unbox_value<guid>(clickedItemContainer.Tag());
+                auto prof = _settingsSource.FindProfile(profileGuid);
+                // Navigate to a page with the given profile guid
+                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), prof);
+            }
         }
     }
 
@@ -150,5 +155,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
             _OpenJsonHandlers(nullptr, target);
         }
+    }
+
+    void MainPage::_InitializeProfilesList()
+    {
+        // Manually create a NavigationViewItem for each profile
+        // and keep a reference to them in a map so that we
+        // can easily modify the correct one when the associated
+        // profile changes.
+        for (auto profile : _settingsSource.AllProfiles())
+        {
+            MUX::Controls::NavigationViewItem profileNavItem;
+            profileNavItem.Content(box_value(profile.Name()));
+            profileNavItem.Tag(box_value<guid>(profile.Guid()));
+
+            const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
+            WUX::Controls::IconSourceElement icon;
+            icon.IconSource(iconSource);
+            profileNavItem.Icon(icon);
+
+            SettingsNav().MenuItems().Append(profileNavItem);
+            _profileToNavItemMap.Insert(profile.Guid(), profileNavItem);
+        }
+
+        // Top off (the end of the nav view) with the Add Profile item
+        MUX::Controls::NavigationViewItem addProfileItem;
+        addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
+        addProfileItem.Tag(box_value(L"AddNewProfile_Nav"));
+
+        FontIcon icon;
+        icon.Glyph(L"\xE710");
+        addProfileItem.Icon(icon);
+
+        SettingsNav().MenuItems().Append(addProfileItem);
     }
 }

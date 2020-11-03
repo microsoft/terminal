@@ -13,7 +13,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         Profiles();
-        Profiles(winrt::Microsoft::Terminal::Settings::Model::Profile profile);
+
+        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
 
         fire_and_forget BackgroundImage_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);

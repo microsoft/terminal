@@ -10,16 +10,21 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="IconPathConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="IconPathConverter.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ColorToBrushConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
     <Midl Include="ColorToHexConverter.idl">
+      <Filter>Converters</Filter>
+    </Midl>
+    <Midl Include="IconPathConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
   </ItemGroup>

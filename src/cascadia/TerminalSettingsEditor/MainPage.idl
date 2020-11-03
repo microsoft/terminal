@@ -7,6 +7,8 @@ namespace Microsoft.Terminal.Settings.Editor
     runtimeclass MainPage : Windows.UI.Xaml.Controls.Page
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
+
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
     }
 }

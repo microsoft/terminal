@@ -17,10 +17,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    Profiles::Profiles(Settings::Model::Profile profile)
+    void Profiles::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
     {
-        InitializeComponent();
-        Profile(profile);
+        _Profile = e.Parameter().as<Model::Profile>();
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
