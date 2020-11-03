@@ -435,7 +435,7 @@ namespace winrt::TerminalApp::implementation
    // Return Value:
    // - <none>
     void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
-        Windows::UI::Xaml::RoutedEventArgs const&)
+                                                Windows::UI::Xaml::RoutedEventArgs const&)
     {
         _nestedActionStack.Clear();
         ParentCommandName(L"");
