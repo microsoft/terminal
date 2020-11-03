@@ -561,6 +561,11 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
     }
 }
 
+void IslandWindow::FlashTaskbar(const bool bInvert)
+{
+    FlashWindow(_window.get(), bInvert);
+}
+
 // From GdiEngine::s_SetWindowLongWHelper
 void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
 {

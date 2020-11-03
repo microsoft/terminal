@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, AlwaysOnTop, false);
         GETSET_SETTING(bool, UseTabSwitcher, true);
         GETSET_SETTING(bool, DisableAnimations, false);
+        GETSET_SETTING(bool, AutoFocusErrorPane, true);
 
     private:
         guid _defaultProfile;

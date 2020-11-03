@@ -86,10 +86,18 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 // Arguments:
 // - sender: not used
 // - args: not used
-void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-    if (_logic)
+    auto control{ sender.try_as<winrt::Microsoft::Terminal::TerminalControl::TermControl>() };
+    if (_logic && control)
     {
+        // if the sender sent an error state, check the settings to see if we need to
+        // focus the sender and flash the taskbar
+        if (_logic.GetAutoFocusErrorPane() && control.GetTaskbarState() == 2)
+        {
+            _window->FlashTaskbar(true);
+            // TODO: focus the control that sent this event
+        }
         _window->SetTaskbarProgress(_logic.GetLastActiveControlTaskbarState(), _logic.GetLastActiveControlTaskbarProgress());
     }
 }

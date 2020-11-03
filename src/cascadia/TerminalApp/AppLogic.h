@@ -42,6 +42,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        bool GetAutoFocusErrorPane();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 

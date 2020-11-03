@@ -1871,9 +1871,9 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender (not used)
     // - eventArgs: the arguments specifying how to set the progress indicator
-    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable sender, const IInspectable /*eventArgs*/)
     {
-        _setTaskbarProgressHandlers(*this, nullptr);
+        _setTaskbarProgressHandlers(sender, nullptr);
     }
 
     // Method Description:

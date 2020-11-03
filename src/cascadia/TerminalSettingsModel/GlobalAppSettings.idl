@@ -128,6 +128,10 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearDisableAnimations();
         Boolean DisableAnimations;
 
+        Boolean HasAutoFocusErrorPane();
+        void ClearAutoFocusErrorPane();
+        Boolean AutoFocusErrorPane;
+
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 

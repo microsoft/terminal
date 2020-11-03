@@ -622,6 +622,17 @@ namespace winrt::TerminalApp::implementation
         return _root->CalcSnappedDimension(widthOrHeight, dimension);
     }
 
+    bool AppLogic::GetAutoFocusErrorPane()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings.GlobalSettings().AutoFocusErrorPane();
+    }
+
     // Method Description:
     // - Attempt to load the settings. If we fail for any reason, returns an error.
     // Return Value:

@@ -50,6 +50,7 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+        Boolean GetAutoFocusErrorPane();
 
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();

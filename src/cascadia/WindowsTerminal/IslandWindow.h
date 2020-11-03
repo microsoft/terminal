@@ -36,6 +36,7 @@ public:
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
     void SetTaskbarProgress(const size_t state, const size_t progress);
+    void FlashTaskbar(const bool bInvert);
 
 #pragma endregion
 
