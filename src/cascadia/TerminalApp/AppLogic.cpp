@@ -400,63 +400,6 @@ namespace winrt::TerminalApp::implementation
         ShowDialog(dialog);
     }
 
-    std::wstring _getTabletServiceName()
-    {
-        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
-
-        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
-        {
-            return L"TabletInputService";
-        }
-
-        DWORD cchBuffer = 0;
-        GetServiceDisplayName(hManager.get(), L"TabletInputService", nullptr, &cchBuffer);
-        std::wstring buffer;
-        cchBuffer += 1; // Add space for a null
-        buffer.resize(cchBuffer);
-
-        if (LOG_LAST_ERROR_IF(!GetServiceDisplayName(hManager.get(),
-                                                     L"TabletInputService",
-                                                     buffer.data(),
-                                                     &cchBuffer)))
-        {
-            return L"TabletInputService";
-        }
-        return buffer;
-    }
-
-    // Method Description:
-    // - Displays a dialog if the "Touch, Keyboard and Handwriting Panel
-    //   Service" is disabled. If it is, we want to warn the user, because they
-    //   won't be able to type in the Terminal.
-    // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See ShowDialog for details
-    void AppLogic::_ShowKeyboardServiceDisabledDialog()
-    {
-        auto title = RS_(L"KeyboardServiceWarningTitle");
-        // auto text = RS_(L"KeyboardServiceWarningText");
-        const winrt::hstring serviceName{ _getTabletServiceName() };
-        const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
-        auto buttonText = RS_(L"Ok");
-
-        Controls::TextBlock warningsTextBlock;
-        // Make sure you can copy-paste
-        warningsTextBlock.IsTextSelectionEnabled(true);
-        // Make sure the lines of text wrap
-        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
-
-        warningsTextBlock.Inlines().Append(_BuildErrorRun(text, Application::Current().as<::winrt::TerminalApp::App>().Resources()));
-        warningsTextBlock.Inlines().Append(Documents::LineBreak{});
-
-        Controls::ContentDialog dialog;
-        dialog.Title(winrt::box_value(title));
-        dialog.Content(winrt::box_value(warningsTextBlock));
-        dialog.CloseButtonText(buttonText);
-        dialog.DefaultButton(Controls::ContentDialogButton::Close);
-
-        ShowDialog(dialog);
-    }
-
     // Method Description:
     // - Displays a dialog for warnings found while loading or validating the
     //   settings. Displays messages for whatever warnings were found while
@@ -527,11 +470,10 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
-        const auto keyboardServiceIsDisabled = true;
-        // const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
         if (keyboardServiceIsDisabled)
         {
-            _ShowKeyboardServiceDisabledDialog();
+            _root->ShowKeyboardServiceWarning();
         }
         if (FAILED(_settingsLoadedResult))
         {

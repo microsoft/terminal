@@ -82,6 +82,20 @@ the MIT License. See LICENSE in the project root for license information. -->
             </TextBlock>
         </ContentDialog>
 
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="KeyboardServiceDisabledDialog"
+            x:Uid="KeyboardServiceDisabledDialog"
+            DefaultButton="Primary">
+
+            <TextBlock
+                Foreground="{ThemeResource ErrorTextBrush}"
+                IsTextSelectionEnabled="True"
+                TextWrapping="WrapWholeWords"
+                Text="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}" />
+        </ContentDialog>
+
         <local:CommandPalette
             x:Name="CommandPalette"
             Grid.Row="1"

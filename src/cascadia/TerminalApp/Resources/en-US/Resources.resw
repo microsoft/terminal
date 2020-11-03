@@ -149,7 +149,10 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Encountered errors while loading user settings</value>
   </data>
-  <data name="KeyboardServiceWarningTitle" xml:space="preserve">
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Ok</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
     <value>Warning:</value>
   </data>
   <data name="KeyboardServiceWarningText" xml:space="preserve">
