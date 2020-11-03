@@ -28,8 +28,8 @@ namespace winrt::TerminalApp::implementation
         _nestedActionStack = winrt::single_threaded_vector<Command>();
         _currentNestedCommands = winrt::single_threaded_vector<Command>();
         _allCommands = winrt::single_threaded_vector<Command>();
-        _inOrderTabActions = winrt::single_threaded_vector<Command>();
-        _mruTabActions = winrt::single_threaded_vector<Command>();
+        _tabActions = winrt::single_threaded_vector<Command>();
+        // _mruTabActions = winrt::single_threaded_vector<Command>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -473,9 +473,11 @@ namespace winrt::TerminalApp::implementation
 
             return _allCommands;
         case CommandPaletteMode::TabSearchMode:
-            return _inOrderTabActions;
+            // return _inOrderTabActions;
+            return _tabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _tabSwitchOrder == TabSwitcherMode::InOrder ? _inOrderTabActions : _mruTabActions;
+            return _tabActions;
+            // return _tabSwitchOrder == TabSwitcherMode::InOrder ? _inOrderTabActions : _mruTabActions;
         case CommandPaletteMode::CommandlineMode:
             return winrt::single_threaded_vector<Command>();
         default:
@@ -686,15 +688,26 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetInOrderTabActions(Collections::IVector<Command> const& tabs)
-    {
-        _inOrderTabActions = tabs;
-        _updateFilteredActions();
-    }
+    // void CommandPalette::SetInOrderTabActions(Collections::IVector<Command> const& tabs)
+    // {
+    //     _inOrderTabActions = tabs;
+    //     _updateFilteredActions();
+    // }
 
-    void CommandPalette::SetMRUTabActions(Collections::IVector<Command> const& tabs)
+    // void CommandPalette::SetMRUTabActions(Collections::IVector<Command> const& tabs)
+    // {
+    //     _mruTabActions = tabs;
+    //     _updateFilteredActions();
+    // }
+
+    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
     {
-        _mruTabActions = tabs;
+        _tabActions = tabs;
+        // The smooth remove/add animations that happen during
+        // UpdateFilteredActions don't work very well with changing the tab
+        // order, because of the sheer amount of remove/adds. So, let's just
+        // clear & rebuild the list when we change the set of tabs.
+        _filteredActions.Clear();
         _updateFilteredActions();
     }
 

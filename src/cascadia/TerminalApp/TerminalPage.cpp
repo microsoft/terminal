@@ -1047,7 +1047,8 @@ namespace winrt::TerminalApp::implementation
         if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
         {
             _mruTabActions.RemoveAt(mruIndex);
-            CommandPalette().SetMRUTabActions(_mruTabActions);
+            // TODO:
+            // CommandPalette().SetMRUTabActions(_mruTabActions);
         }
 
         _tabs.RemoveAt(tabIndex);
@@ -1194,7 +1195,8 @@ namespace winrt::TerminalApp::implementation
         {
             tabCommands.Append(tab.SwitchToTabCommand());
         }
-        CommandPalette().SetInOrderTabActions(tabCommands);
+        // CommandPalette().SetInOrderTabActions(tabCommands);
+        CommandPalette().SetTabActions(tabCommands);
     }
 
     // Method Description:
@@ -1234,10 +1236,16 @@ namespace winrt::TerminalApp::implementation
 
         if (useTabSwitcher)
         {
-            // Set up the list of in-order tabs
-            _UpdatePaletteWithInOrderTabs();
-            // Also set up the list of MRU tabs
-            CommandPalette().SetMRUTabActions(_mruTabActions);
+            // _UpdatePaletteWithInOrderTabs();
+            if (useInOrderTabIndex) {
+                // Set up the list of in-order tabs
+                _UpdatePaletteWithInOrderTabs();
+            }
+            else
+            {
+                // Set up the list of MRU tabs
+                CommandPalette().SetTabActions(_mruTabActions);
+            }
 
             if (CommandPalette().Visibility() == Visibility::Visible)
             {
@@ -2686,7 +2694,8 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabActions.RemoveAt(mruIndex);
                 _mruTabActions.InsertAt(0, command);
-                CommandPalette().SetMRUTabActions(_mruTabActions);
+                // TODO:
+                // CommandPalette().SetMRUTabActions(_mruTabActions);
             }
         }
     }
