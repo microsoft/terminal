@@ -40,7 +40,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"TooManyKeysForChord"),
     USES_RESOURCE(L"MissingRequiredParameter"),
     USES_RESOURCE(L"LegacyGlobalsProperty"),
-    USES_RESOURCE(L"FailedToParseCommandJson")
+    USES_RESOURCE(L"FailedToParseCommandJson"),
+    USES_RESOURCE(L"FailedToWriteToSettings")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -612,6 +613,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         return _settings.GlobalSettings().ShowTabsInTitlebar();
+    }
+
+    bool AppLogic::GetInitialAlwaysOnTop()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings.GlobalSettings().AlwaysOnTop();
     }
 
     // Method Description:

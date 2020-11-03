@@ -11,6 +11,8 @@ namespace TerminalApp
         Microsoft.Terminal.Settings.Model.Command SwitchToTabCommand { get; };
         UInt32 TabViewIndex { get; };
 
+        Windows.UI.Xaml.UIElement Content { get; };
+
         void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

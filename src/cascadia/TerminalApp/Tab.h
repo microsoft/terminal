@@ -24,7 +24,6 @@ namespace winrt::TerminalApp::implementation
         void Initialize(const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-        winrt::Windows::UI::Xaml::UIElement GetRootElement();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
 
@@ -54,6 +53,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetTabText(winrt::hstring title);
         void ResetTabText();
+        void ActivateTabRenamer();
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
@@ -88,6 +88,8 @@ namespace winrt::TerminalApp::implementation
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
         OBSERVABLE_GETSET_PROPERTY(uint32_t, TabViewNumTabs, _PropertyChangedHandlers, 0);
 
+        OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::UIElement, Content, _PropertyChangedHandlers, nullptr);
+
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
@@ -100,6 +102,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
 
         bool _focused{ false };
+        bool _receivedKeyDown{ false };
         winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
         winrt::hstring _runtimeTabText{};

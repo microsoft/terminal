@@ -33,6 +33,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         _activePane = _rootPane;
+        Content(_rootPane->GetRootElement());
 
         _MakeTabViewItem();
         _MakeSwitchToTabCommand();
@@ -52,31 +53,12 @@ namespace winrt::TerminalApp::implementation
         _tabViewItem.DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_inRename = true;
-                tab->_UpdateTabHeader();
+                tab->ActivateTabRenamer();
             }
         });
 
         _UpdateTitle();
         _RecalculateAndApplyTabColor();
-    }
-
-    // Method Description:
-    // - Get the root UIElement of this Tab's root pane.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - The UIElement acting as root of the Tab's root pane.
-    UIElement Tab::GetRootElement()
-    {
-        if (_zoomedPane)
-        {
-            return _zoomedPane->GetRootElement();
-        }
-        else
-        {
-            return _rootPane->GetRootElement();
-        }
     }
 
     // Method Description:
@@ -416,6 +398,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Show a TextBox in the Header to allow the user to set a string
+    //     to use as an override for the tab's text
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void Tab::ActivateTabRenamer()
+    {
+        _inRename = true;
+        _receivedKeyDown = false;
+        _UpdateTabHeader();
+    }
+
+    // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree
     //   of Panes in this tab. We'll add events too:
@@ -509,6 +505,22 @@ namespace winrt::TerminalApp::implementation
                 tab->_RecalculateAndApplyTabColor();
             }
         });
+
+        // Add a Closed event handler to the Pane. If the pane closes out from
+        // underneath us, and it's zoomed, we want to be able to make sure to
+        // update our state accordingly to un-zoom that pane. See GH#7252.
+        pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+            if (auto tab{ weakThis.get() })
+            {
+                if (tab->_zoomedPane)
+                {
+                    co_await winrt::resume_foreground(tab->Content().Dispatcher());
+
+                    tab->Content(tab->_rootPane->GetRootElement());
+                    tab->ExitZoom();
+                }
+            }
+        });
     }
 
     // Method Description:
@@ -578,8 +590,7 @@ namespace winrt::TerminalApp::implementation
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
                 {
-                    tab->_inRename = true;
-                    tab->_UpdateTabHeader();
+                    tab->ActivateTabRenamer();
                 }
             });
             renameTabMenuItem.Text(RS_(L"RenameTabText"));
@@ -756,6 +767,14 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // We'll only process the KeyUp event if we received an initial KeyDown event first.
+        // Avoids issue immediately closing the tab rename when we see the enter KeyUp event that was
+        // sent to the command palette to trigger the openTabRenamer action in the first place.
+        tabTextBox.KeyDown([weakThis](const IInspectable&, Input::KeyRoutedEventArgs const&) {
+            auto tab{ weakThis.get() };
+            tab->_receivedKeyDown = true;
+        });
+
         // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
         // remove the TextBox from the UI tree, then the following KeyUp
         // will bubble to the NewTabButton, which we don't want to have
@@ -763,7 +782,7 @@ namespace winrt::TerminalApp::implementation
         tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
             auto tab{ weakThis.get() };
             auto textBox{ sender.try_as<Controls::TextBox>() };
-            if (tab && textBox)
+            if (tab && textBox && tab->_receivedKeyDown)
             {
                 switch (e.OriginalKey())
                 {
@@ -1070,6 +1089,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
         _UpdateTabHeader();
+        Content(_zoomedPane->GetRootElement());
     }
     void Tab::ExitZoom()
     {
@@ -1077,6 +1097,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
         _UpdateTabHeader();
+        Content(_rootPane->GetRootElement());
     }
 
     bool Tab::IsZoomed()

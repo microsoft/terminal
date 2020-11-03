@@ -12,6 +12,8 @@
 
 #include "AppCommandlineArgs.h"
 
+static constexpr uint32_t DefaultRowsToScroll{ 3 };
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -26,6 +28,12 @@ namespace winrt::TerminalApp::implementation
         NotInitialized = 0,
         InStartup = 1,
         Initialized = 2
+    };
+
+    enum ScrollDirection : int
+    {
+        ScrollUp = 0,
+        ScrollDown = 1
     };
 
     struct TerminalPage : TerminalPageT<TerminalPage>
@@ -89,6 +97,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
         winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
         void _UpdateTabIndices();
@@ -100,6 +109,8 @@ namespace winrt::TerminalApp::implementation
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
+
+        uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
         // use a weak reference to prevent circular dependency with AppLogic
         winrt::weak_ref<winrt::TerminalApp::IDialogPresenter> _dialogPresenter;
@@ -124,10 +135,12 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
+        bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
+        void _CloseWarningCloseButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
@@ -164,10 +177,10 @@ namespace winrt::TerminalApp::implementation
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
-        void _Scroll(int delta);
+        void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::Direction& direction);
-        void _ScrollPage(int delta);
+        void _ScrollPage(ScrollDirection scrollDirection);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& keyChord);
 
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
@@ -205,6 +218,12 @@ namespace winrt::TerminalApp::implementation
 
         void _UnZoomIfNeeded();
 
+        static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
+        static uint32_t _ReadSystemRowsToScroll();
+
+        void _UpdateTabSwitcherCommands(const bool mru);
+        void _UpdateMRUTab(const uint32_t index);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -239,6 +258,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleSetTabColor(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleOpenTabColorPicker(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleRenameTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleOpenTabRenamer(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleExecuteCommandline(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleCommandPalette(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleCloseOtherTabs(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);

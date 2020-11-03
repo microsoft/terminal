@@ -702,6 +702,16 @@ void Pane::_CloseChild(const bool closeFirst)
         if (_lastActive)
         {
             _control.Focus(FocusState::Programmatic);
+
+            // See GH#7252
+            // Manually fire off the GotFocus event. Typically, this is done
+            // automatically when the control gets focused. However, if we're
+            // `exit`ing a zoomed pane, then the other sibling isn't in the UI
+            // tree currently. So the above call to Focus won't actually focus
+            // the control. Because Tab is relying on GotFocus to know who the
+            // active pane in the tree is, without this call, _no one_ will be
+            // the active pane any longer.
+            _GotFocusHandlers(shared_from_this());
         }
 
         _UpdateBorders();
@@ -813,11 +823,13 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
         const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
+        // GH#7252: If either child is zoomed, just skip the animation. It won't work.
+        const bool eitherChildZoomed = pane->_firstChild->_zoomed || pane->_secondChild->_zoomed;
         // If animations are disabled, just skip this and go straight to
         // _CloseChild. Curiously, the pane opening animation doesn't need this,
         // and will skip straight to Completed when animations are disabled, but
         // this one doesn't seem to.
-        if (!animationsEnabledInOS || !animationsEnabledInApp)
+        if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
         {
             pane->_CloseChild(closeFirst);
             co_return;

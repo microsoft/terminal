@@ -182,6 +182,10 @@ public:
                           const std::optional<Microsoft::Console::Types::Viewport> lastCharacterViewport,
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
+    const size_t AddPatternRecognizer(const std::wstring_view regexString);
+    void CopyPatterns(const TextBuffer& OtherBuffer);
+    interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
+
 private:
     void _UpdateSize();
     Microsoft::Console::Types::Viewport _size;
@@ -228,6 +232,9 @@ private:
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
     void _PruneHyperlinks();
+
+    std::unordered_map<size_t, std::wstring> _idsAndPatterns;
+    size_t _currentPatternId;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
