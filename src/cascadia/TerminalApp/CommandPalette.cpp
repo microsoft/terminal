@@ -427,13 +427,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-   // This event is called when the user clicks on an ChevronLeft button right
-   // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
-   // It'll go up a level when the users click the button.
-   // Arguments:
-   // - sender: the button that got clicked
-   // Return Value:
-   // - <none>
+    // This event is called when the user clicks on an ChevronLeft button right
+    // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
+    // It'll go up a level when the users click the button.
+    // Arguments:
+    // - sender: the button that got clicked
+    // Return Value:
+    // - <none>
     void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::RoutedEventArgs const&)
     {
