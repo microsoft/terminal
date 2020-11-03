@@ -52,9 +52,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
-<<<<<<< HEAD
-        contentFrame().Navigate(xaml_typename<Editor::Launch>());
-=======
         auto initialItem = SettingsNav().MenuItems().GetAt(0);
         SettingsNav().SelectedItem(initialItem);
 
@@ -63,7 +60,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             Navigate(contentFrame(), unbox_value<hstring>(tag));
         }
->>>>>>> feature/settings-ui
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
@@ -135,7 +131,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileSubpage)
         {
-            contentFrame.Navigate(xaml_typename<Editor::Profiles>());
+            auto defGuid = _settingsSource.GlobalSettings().DefaultProfile();
+            auto defProfile = _settingsSource.FindProfile(defGuid);
+            contentFrame.Navigate(xaml_typename<Editor::Profiles>(), defProfile);
         }
         else if (clickedItemTag == colorSchemesPage)
         {
