@@ -81,7 +81,7 @@ bool areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch, const boo
     {
         if (ourPID == kingPID)
         {
-            printf(fmt::format("We're the king - our PID is {}\n", ourPID).c_str());
+            printf(fmt::format("We're the \x1b[33mking\x1b[m - our PID is {}\n", ourPID).c_str());
         }
         else
         {
@@ -91,20 +91,34 @@ bool areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch, const boo
     return (ourPID == kingPID);
 }
 
-MonarchPeasantSample::IPeasant getOurPeasant(const winrt::MonarchPeasantSample::Monarch& monarch)
+void remindKingWhoTheyAre(const winrt::MonarchPeasantSample::Monarch& monarch,
+                          const winrt::MonarchPeasantSample::IPeasant& peasant)
 {
-    if (areWeTheKing(monarch))
+    winrt::com_ptr<MonarchPeasantSample::implementation::Monarch> monarchImpl;
+    monarchImpl.copy_from(winrt::get_self<MonarchPeasantSample::implementation::Monarch>(monarch));
+    if (monarchImpl)
     {
-        auto iPeasant = monarch.try_as<winrt::MonarchPeasantSample::IPeasant>();
-        return iPeasant;
+        auto ourID = peasant.GetID();
+        monarchImpl->SetSelfID(ourID);
+        printf("The king is peasant #%lld\n", ourID);
     }
     else
     {
-        auto peasant = winrt::make_self<MonarchPeasantSample::implementation::Peasant>();
-        auto ourID = monarch.AddPeasant(*peasant);
-        printf("The monarch assigned us the ID %llu\n", ourID);
-        return *peasant;
+        // printf("Shoot, we wanted to be able to get the impl here but couldnt\n");
     }
+}
+
+MonarchPeasantSample::IPeasant createOurPeasant(const winrt::MonarchPeasantSample::Monarch& monarch)
+{
+    auto peasant = winrt::make_self<MonarchPeasantSample::implementation::Peasant>();
+    auto ourID = monarch.AddPeasant(*peasant);
+    printf("The monarch assigned us the ID %llu\n", ourID);
+
+    if (areWeTheKing(monarch))
+    {
+        remindKingWhoTheyAre(monarch, *peasant);
+    }
+    return *peasant;
 }
 
 void printPeasants(const winrt::MonarchPeasantSample::Monarch& /*monarch*/)
@@ -199,22 +213,22 @@ bool peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
 
     while (!exitRequested)
     {
-        printf("Beginning wait...\n");
+        // printf("Beginning wait...\n");
         auto waitResult = WaitForMultipleObjects(2, handlesToWaitOn, false, INFINITE);
 
         switch (waitResult)
         {
         // handlesToWaitOn[0] was signaled
         case WAIT_OBJECT_0 + 0:
-            printf("First event was signaled.\n");
-            printf("THE KING IS DEAD\n");
+            // printf("First event was signaled.\n");
+            printf("THE KING IS \x1b[31mDEAD\x1b[m\n");
             // Return false here - this will trigger us to find the new monarch
             return false;
             break;
 
         // handlesToWaitOn[1] was signaled
         case WAIT_OBJECT_0 + 1:
-            printf("Second event was signaled.\n");
+            // printf("Second event was signaled.\n");
             exitRequested = peasantReadInput(monarch, peasant);
             break;
 
@@ -244,7 +258,7 @@ void app()
 
     auto monarch = instantiateAMonarch();
     bool isMonarch = areWeTheKing(monarch, true);
-    auto peasant = getOurPeasant(monarch);
+    auto peasant = createOurPeasant(monarch);
 
     while (!exitRequested)
     {
@@ -259,9 +273,12 @@ void app()
             {
                 monarch = instantiateAMonarch();
                 isMonarch = areWeTheKing(monarch, true);
-                printf("LONG LIVE THE KING\n");
+
+                printf("LONG LIVE THE %sKING\x1b[m\n", isMonarch ? "\x1b[33m" : "");
+
                 if (isMonarch)
                 {
+                    remindKingWhoTheyAre(monarch, peasant);
                     // TODO: If we've been elected monarch, then we need to make
                     // sure that we're one of the listed peasants (right?) We
                     // probably don't _only_ need to do this during the
@@ -298,5 +315,8 @@ int main(int /*argc*/, char** /*argv*/)
         printf("Error: %ls\n", e.message().c_str());
     }
 
+    printf("We've left the app. Press any key to close.\n");
+    const auto ch = _getch();
+    ch;
     printf("Exiting client\n");
 }

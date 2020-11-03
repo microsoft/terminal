@@ -17,8 +17,9 @@ namespace winrt::MonarchPeasantSample::implementation
     Monarch::Monarch()
     {
         printf("Instantiated a Monarch\n");
-        _peasants = winrt::single_threaded_observable_map<uint64_t, winrt::MonarchPeasantSample::IPeasant>();
+        // _peasants = winrt::single_threaded_observable_map<uint64_t, winrt::MonarchPeasantSample::IPeasant>();
     }
+
     Monarch::~Monarch()
     {
         printf("~Monarch()\n");
@@ -26,6 +27,12 @@ namespace winrt::MonarchPeasantSample::implementation
         dtored = true;
         cv.notify_one();
     }
+
+    uint64_t Monarch::GetPID()
+    {
+        return GetCurrentProcessId();
+    }
+
     uint64_t Monarch::AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant)
     {
         // TODO: This whole algo is terrible. There's gotta be a better way of
@@ -42,8 +49,28 @@ namespace winrt::MonarchPeasantSample::implementation
             printf("Peasant already had an ID, %lld\n", peasant.GetID());
             _nextPeasantID = providedID >= _nextPeasantID ? providedID + 1 : _nextPeasantID;
         }
-        _peasants.Insert(peasant.GetID(), peasant);
+        _peasants[peasant.GetID()] = peasant;
         printf("(the next new peasant will get the ID %lld)\n", _nextPeasantID);
         return peasant.GetID();
+    }
+
+    bool Monarch::IsInSingleInstanceMode()
+    {
+        return false;
+    }
+
+    winrt::MonarchPeasantSample::IPeasant Monarch::GetPeasant(uint64_t peasantID)
+    {
+        return _peasants.at(peasantID);
+    }
+
+    winrt::MonarchPeasantSample::IPeasant Monarch::GetMostRecentPeasant()
+    {
+        return nullptr;
+    }
+
+    void Monarch::SetSelfID(const uint64_t selfID)
+    {
+        _thisPeasantID = selfID;
     }
 }

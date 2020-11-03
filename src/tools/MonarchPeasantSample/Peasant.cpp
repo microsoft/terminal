@@ -14,4 +14,25 @@ namespace winrt::MonarchPeasantSample::implementation
     {
     }
 
+    void Peasant::AssignID(uint64_t id)
+    {
+        _id = id;
+    }
+    uint64_t Peasant::GetID()
+    {
+        return _id;
+    }
+
+    uint64_t Peasant::GetPID()
+    {
+        return GetCurrentProcessId();
+    }
+
+    bool Peasant::ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory)
+    {
+        args;
+        currentDirectory;
+        return true;
+    }
+
 }

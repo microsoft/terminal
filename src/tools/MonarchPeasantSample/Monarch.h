@@ -14,23 +14,27 @@ constexpr GUID Monarch_clsid{
 
 namespace winrt::MonarchPeasantSample::implementation
 {
-    struct Monarch : public MonarchT<Monarch>, public PeasantBase
+    struct Monarch : public MonarchT<Monarch>
     {
         Monarch();
         ~Monarch();
 
+        uint64_t GetPID();
+
         uint64_t AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant);
-        bool IsInSingleInstanceMode() { return false; }
-        winrt::MonarchPeasantSample::IPeasant GetPeasant(uint64_t peasantID)
-        {
-            peasantID;
-            return nullptr;
-        }
-        winrt::MonarchPeasantSample::IPeasant GetMostRecentPeasant() { return nullptr; }
+
+        bool IsInSingleInstanceMode();
+
+        winrt::MonarchPeasantSample::IPeasant GetPeasant(uint64_t peasantID);
+
+        winrt::MonarchPeasantSample::IPeasant GetMostRecentPeasant();
+
+        void SetSelfID(const uint64_t selfID);
 
     private:
         uint64_t _nextPeasantID{ 1 };
-        Windows::Foundation::Collections::IObservableMap<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants{ nullptr };
+        uint64_t _thisPeasantID{ 0 };
+        std::unordered_map<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants;
     };
 }
 

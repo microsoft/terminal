@@ -2,10 +2,10 @@ import "Peasant.idl";
 
 namespace MonarchPeasantSample
 {
-    [default_interface] runtimeclass Monarch : IPeasant
-    {
+    [default_interface] runtimeclass Monarch {
         Monarch();
 
+        UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
         Boolean IsInSingleInstanceMode();
         IPeasant GetPeasant(UInt64 peasantID);

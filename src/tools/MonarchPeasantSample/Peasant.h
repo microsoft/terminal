@@ -13,28 +13,20 @@ constexpr GUID Peasant_clsid{
 
 namespace winrt::MonarchPeasantSample::implementation
 {
-    struct PeasantBase
+    struct Peasant : public PeasantT<Peasant>
     {
-        void AssignID(uint64_t id) { _id = id; }
-        uint64_t GetID() { return _id; }
-        uint64_t GetPID() { return GetCurrentProcessId(); }
-        bool ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory)
-        {
-            args;
-            currentDirectory;
-            return true;
-        }
+        Peasant();
+
+        void AssignID(uint64_t id);
+        uint64_t GetID();
+        uint64_t GetPID();
+
+        bool ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory);
+
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         uint64_t _id{ 0 };
-    };
-
-    struct Peasant : public PeasantT<Peasant>, public PeasantBase
-    {
-        Peasant();
-
-    private:
     };
 }
 
