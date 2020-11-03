@@ -19,16 +19,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <Style TargetType="Button">
             <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
-            <Setter Property="Height" Value="30" />
-            <Setter Property="Width" Value="100" />
             <Setter Property="FontSize" Value="15" />
             <Setter Property="Margin" Value="10,0,0,20" />
             <Setter Property="CornerRadius" Value="2"/>
-        </Style>
-
-        <Style TargetType="TextBox">
-            <Setter Property="Width" Value="100"/>
-            <Setter Property="FontSize" Value="15"/>
         </Style>
 
         <Style TargetType="ColorPicker">
@@ -48,6 +41,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -61,18 +56,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                        Grid.Row="0" />
 
             <StackPanel Grid.Row="1"
-                        Grid.Column="0">
+                        Grid.Column="0"
+                        Orientation="Horizontal">
                 <ComboBox x:Name="ColorSchemeComboBox"
                           Margin="10,0,0,0"
                           SelectedIndex="0"
                           ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                          SelectionChanged="ColorSchemeSelectionChanged" Width="160">
+                          SelectionChanged="ColorSchemeSelectionChanged">
                 </ComboBox>
+                <Button Margin="10,0,0,0" FontSize="15" x:Uid="ColorScheme_AddNewButton"/>
             </StackPanel>
+
+            <TextBox x:Uid="ColorScheme_Name" x:Name="Name" Margin="10,0,0,20" Grid.Row="2" Grid.Column="0" FontSize="15" Text="{x:Bind CurrentColorScheme.Name, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
 
             <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentColorTable, Mode=OneWay}"
-                          Grid.Row="2"
+                          Grid.Row="3"
                           Grid.Column="0">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -85,7 +84,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <StackPanel>
                             <TextBlock Text="{x:Bind Name, Mode=OneWay}"
                                        Margin="10,0,0,10"/>
-                            <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                            <Button Width="100" Height="30" Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                                 <Button.Flyout>
                                     <Flyout>
                                         <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
@@ -99,12 +98,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <ItemsControl Grid.Row="2"
+            <ItemsControl Grid.Row="3"
                           Grid.Column="1">
                 <StackPanel Orientation="Vertical" Height="59">
                     <TextBlock x:Uid="ColorScheme_Foreground"
                                Margin="10,0,0,10"/>
-                    <Button Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button Width="100" Height="30" Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="ForegroundPicker" Color="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}" />
@@ -115,7 +114,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <StackPanel Orientation="Vertical" Height="59">
                     <TextBlock x:Uid="ColorScheme_Background"
                                Margin="10,0,0,10"/>
-                    <Button Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button Width="100" Height="30" Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="BackgroundPicker" Color="{x:Bind CurrentColorScheme.Background, Mode=TwoWay}" />
@@ -126,7 +125,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <StackPanel Orientation="Vertical" Height="59">
                     <TextBlock x:Uid="ColorScheme_CursorColor"
                                Margin="10,0,0,10"/>
-                    <Button Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button Width="100" Height="30" Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="CursorColorPicker" Color="{x:Bind CurrentColorScheme.CursorColor, Mode=TwoWay}" />
@@ -137,7 +136,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <StackPanel Orientation="Vertical" Height="59">
                     <TextBlock x:Uid="ColorScheme_SelectionBackground"
                                Margin="10,0,0,10"/>
-                    <Button Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+                    <Button Width="100" Height="30" Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="SelectionBackgroundPicker" Color="{x:Bind CurrentColorScheme.SelectionBackground, Mode=TwoWay}" />
@@ -146,6 +145,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                 </StackPanel>
             </ItemsControl>
+            <Button Grid.Row="4" Grid.Column="0" x:Uid="ColorScheme_DeleteButton" FontSize="15" Margin="0,0,0,20"/>
         </Grid>
     </ScrollViewer>
 </Page>
