@@ -2,13 +2,12 @@
 #include <conio.h>
 #include "Monarch.h"
 #include "Peasant.h"
+#include "AppState.h"
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
-
-HANDLE g_hInput = nullptr;
 
 ////////////////////////////////////////////////////////////////////////////////
 std::mutex m;
@@ -59,238 +58,50 @@ void registerAsMonarch()
     check_hresult(CoRegisterClassObject(Monarch_clsid,
                                         make<MonarchFactory>().get(),
                                         CLSCTX_LOCAL_SERVER,
-                                        // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_AAA,
-                                        // CLSCTX_LOCAL_SERVER | CLSCTX_ACTIVATE_AAA_AS_IU,
-                                        // CLSCTX_LOCAL_SERVER | CLSCTX_FROM_DEFAULT_CONTEXT,
-                                        // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING,
                                         REGCLS_MULTIPLEUSE,
                                         &registrationHostClass));
 }
 
-winrt::MonarchPeasantSample::Monarch instantiateAMonarch()
+void electNewMonarch(AppState& state)
 {
-    auto monarch = create_instance<winrt::MonarchPeasantSample::Monarch>(Monarch_clsid, CLSCTX_LOCAL_SERVER);
-    return monarch;
-}
+    state._monarch = AppState::instantiateAMonarch();
+    bool isMonarch = state.areWeTheKing(true);
 
-bool areWeTheKing(const winrt::MonarchPeasantSample::Monarch& monarch, const bool logPIDs = false)
-{
-    auto kingPID = monarch.GetPID();
-    auto ourPID = GetCurrentProcessId();
-    if (logPIDs)
-    {
-        if (ourPID == kingPID)
-        {
-            printf(fmt::format("We're the \x1b[33mking\x1b[m - our PID is {}\n", ourPID).c_str());
-        }
-        else
-        {
-            printf(fmt::format("We're a lowly peasant - the king is {}\n", kingPID).c_str());
-        }
-    }
-    return (ourPID == kingPID);
-}
+    printf("LONG LIVE THE %sKING\x1b[m\n", isMonarch ? "\x1b[33m" : "");
 
-void remindKingWhoTheyAre(const winrt::MonarchPeasantSample::Monarch& monarch,
-                          const winrt::MonarchPeasantSample::IPeasant& peasant)
-{
-    winrt::com_ptr<MonarchPeasantSample::implementation::Monarch> monarchImpl;
-    monarchImpl.copy_from(winrt::get_self<MonarchPeasantSample::implementation::Monarch>(monarch));
-    if (monarchImpl)
+    if (isMonarch)
     {
-        auto ourID = peasant.GetID();
-        monarchImpl->SetSelfID(ourID);
-        printf("The king is peasant #%lld\n", ourID);
+        state.remindKingWhoTheyAre(state._peasant);
     }
     else
     {
-        // printf("Shoot, we wanted to be able to get the impl here but couldnt\n");
+        // Add us to the new monarch
+        state._monarch.AddPeasant(state._peasant);
     }
 }
 
-MonarchPeasantSample::IPeasant createOurPeasant(const winrt::MonarchPeasantSample::Monarch& monarch)
-{
-    auto peasant = winrt::make_self<MonarchPeasantSample::implementation::Peasant>();
-    auto ourID = monarch.AddPeasant(*peasant);
-    printf("The monarch assigned us the ID %llu\n", ourID);
-
-    if (areWeTheKing(monarch))
-    {
-        remindKingWhoTheyAre(monarch, *peasant);
-    }
-    return *peasant;
-}
-
-void printPeasants(const winrt::MonarchPeasantSample::Monarch& /*monarch*/)
-{
-    printf("This is unimplemented\n");
-}
-
-bool monarchAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
-                    const winrt::MonarchPeasantSample::IPeasant& /*peasant*/)
-{
-    bool exitRequested = false;
-    printf("Press `l` to list peasants, `q` to quit\n");
-
-    while (!exitRequested)
-    {
-        const auto ch = _getch();
-        if (ch == 'l')
-        {
-            printPeasants(monarch);
-        }
-        else if (ch == 'q')
-        {
-            exitRequested = true;
-        }
-    }
-    return true;
-}
-
-bool peasantReadInput(const winrt::MonarchPeasantSample::Monarch& /*monarch*/,
-                      const winrt::MonarchPeasantSample::IPeasant& /*peasant*/)
-{
-    DWORD cNumRead, i;
-    INPUT_RECORD irInBuf[128];
-
-    if (!ReadConsoleInput(g_hInput, // input buffer handle
-                          irInBuf, // buffer to read into
-                          128, // size of read buffer
-                          &cNumRead)) // number of records read
-    {
-        printf("\x1b[31mReadConsoleInput failed\x1b[m\n");
-        ExitProcess(0);
-    }
-    for (i = 0; i < cNumRead; i++)
-    {
-        switch (irInBuf[i].EventType)
-        {
-        case KEY_EVENT: // keyboard input
-            auto key = irInBuf[i].Event.KeyEvent;
-            // KeyEventProc(irInBuf[i].Event.KeyEvent);
-            if (key.bKeyDown == false && key.uChar.UnicodeChar == L'q')
-            {
-                return true;
-            }
-            break;
-
-        case MOUSE_EVENT: // mouse input
-            // MouseEventProc(irInBuf[i].Event.MouseEvent);
-            break;
-
-        case WINDOW_BUFFER_SIZE_EVENT: // scrn buf. resizing
-            // ResizeEventProc( irInBuf[i].Event.WindowBufferSizeEvent );
-            break;
-
-        case FOCUS_EVENT: // disregard focus events
-            break;
-
-        case MENU_EVENT: // disregard menu events
-            break;
-
-        default:
-            printf("\x1b[33mUnknown event from ReadConsoleInput - this is probably impossible\x1b[m\n");
-            ExitProcess(0);
-            break;
-        }
-    }
-
-    return false;
-}
-bool peasantAppLoop(const winrt::MonarchPeasantSample::Monarch& monarch,
-                    const winrt::MonarchPeasantSample::IPeasant& peasant)
-{
-    wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(monarch.GetPID())) };
-    // printf("handle for the monarch process is %d\n", hMonarch.get());
-
-    g_hInput = GetStdHandle(STD_INPUT_HANDLE);
-    // printf("handle for the console input is %d\n", g_hInput);
-
-    HANDLE handlesToWaitOn[2]{ hMonarch.get(), g_hInput };
-
-    bool exitRequested = false;
-    printf("Press `q` to quit\n");
-
-    while (!exitRequested)
-    {
-        // printf("Beginning wait...\n");
-        auto waitResult = WaitForMultipleObjects(2, handlesToWaitOn, false, INFINITE);
-
-        switch (waitResult)
-        {
-        // handlesToWaitOn[0] was signaled
-        case WAIT_OBJECT_0 + 0:
-            // printf("First event was signaled.\n");
-            printf("THE KING IS \x1b[31mDEAD\x1b[m\n");
-            // Return false here - this will trigger us to find the new monarch
-            return false;
-            break;
-
-        // handlesToWaitOn[1] was signaled
-        case WAIT_OBJECT_0 + 1:
-            // printf("Second event was signaled.\n");
-            exitRequested = peasantReadInput(monarch, peasant);
-            break;
-
-        case WAIT_TIMEOUT:
-            printf("Wait timed out. This should be impossible.\n");
-            break;
-
-        // Return value is invalid.
-        default:
-        {
-            auto gle = GetLastError();
-            printf("WaitForMultipleObjects returned: %d\n", waitResult);
-            printf("Wait error: %d\n", gle);
-            ExitProcess(0);
-        }
-        }
-    }
-
-    printf("Bottom of peasantAppLoop\n");
-    return true;
-}
-
-void app()
+void appLoop(AppState& state)
 {
     registerAsMonarch();
     bool exitRequested = false;
 
-    auto monarch = instantiateAMonarch();
-    bool isMonarch = areWeTheKing(monarch, true);
-    auto peasant = createOurPeasant(monarch);
+    state.createMonarchAndPeasant();
+
+    bool isMonarch = state.areWeTheKing(true);
 
     while (!exitRequested)
     {
         if (isMonarch)
         {
-            exitRequested = monarchAppLoop(monarch, peasant);
+            exitRequested = monarchAppLoop(state);
         }
         else
         {
-            exitRequested = peasantAppLoop(monarch, peasant);
+            exitRequested = peasantAppLoop(state);
             if (!exitRequested)
             {
-                monarch = instantiateAMonarch();
-                isMonarch = areWeTheKing(monarch, true);
-
-                printf("LONG LIVE THE %sKING\x1b[m\n", isMonarch ? "\x1b[33m" : "");
-
-                if (isMonarch)
-                {
-                    remindKingWhoTheyAre(monarch, peasant);
-                    // TODO: If we've been elected monarch, then we need to make
-                    // sure that we're one of the listed peasants (right?) We
-                    // probably don't _only_ need to do this during the
-                    // election, we probably _always need to do this.
-                    //
-                    // we'll loop back into the monarchAppLoop
-                }
-                else
-                {
-                    // Add us to the new monarch
-                    monarch.AddPeasant(peasant);
-                }
+                electNewMonarch(state);
+                isMonarch = state.areWeTheKing(false);
             }
         }
     }
@@ -298,17 +109,12 @@ void app()
 
 int main(int /*argc*/, char** /*argv*/)
 {
-    auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-    SetConsoleMode(hOut, dwMode);
-
-    init_apartment();
+    AppState state;
+    state.initializeState();
 
     try
     {
-        app();
+        appLoop(state);
     }
     catch (hresult_error const& e)
     {

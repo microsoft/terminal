@@ -24,6 +24,7 @@
   <!-- Source Files -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="AppState.h" />
     <ClInclude Include="Monarch.h">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
@@ -34,6 +35,9 @@
 
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="AppState.cpp" />
+    <ClCompile Include="MonarchMain.cpp" />
+    <ClCompile Include="PeasantMain.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
