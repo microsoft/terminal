@@ -73,4 +73,34 @@ namespace winrt::MonarchPeasantSample::implementation
     {
         _thisPeasantID = selfID;
     }
+
+    bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring /*cwd*/)
+    {
+        auto argsProcessed = 0;
+        std::wstring fullCmdline;
+        for (const auto& arg : args)
+        {
+            fullCmdline += argsProcessed++ == 0 ? L"EXENAME.exe" : arg;
+        }
+        wprintf(L"Proposed Commandline: ");
+        wprintf(fullCmdline.c_str());
+        wprintf(L"\n");
+
+        bool createNewWindow = true;
+
+        if (args.size() > 3)
+        {
+            // We'll need three args at least - [exename.exe, -s, id] to be able
+            // to have a session ID passed on the commandline.
+            printf("The new process provided tribute, we'll eat it. No need to create a new window.\n");
+            createNewWindow = false;
+        }
+        else
+        {
+            printf("They definitely weren't an existing process. They should make a new window.\n");
+        }
+
+        return createNewWindow;
+    }
+
 }

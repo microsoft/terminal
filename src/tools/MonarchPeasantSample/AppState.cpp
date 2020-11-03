@@ -82,8 +82,33 @@ MonarchPeasantSample::IPeasant AppState::_createOurPeasant()
     return *peasant;
 }
 
-void AppState::createMonarchAndPeasant()
+// void AppState::createMonarchAndPeasant()
+// {
+//     _monarch = AppState::instantiateAMonarch();
+//     _peasant = _createOurPeasant();
+// }
+
+void AppState::createMonarch()
 {
     _monarch = AppState::instantiateAMonarch();
-    _peasant = _createOurPeasant();
+}
+
+// return true to exit early, false if we should continue into the main loop
+bool AppState::processCommandline()
+{
+    const bool isKing = areWeTheKing(false);
+    // If we're the king, we _definitely_ want to process the arguments, we were
+    // launched with them!
+    //
+    // Otherwise, the King will tell us if we should make a new window
+    const bool createNewWindow = isKing || _monarch.ProposeCommandline({ args }, { L"placeholder CWD" });
+
+    if (createNewWindow)
+    {
+        _peasant = _createOurPeasant();
+        _peasant.ExecuteCommandline({ args }, { L"placeholder CWD" });
+        return false;
+    }
+
+    return true;
 }

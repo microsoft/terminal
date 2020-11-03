@@ -31,6 +31,8 @@ namespace winrt::MonarchPeasantSample::implementation
 
         void SetSelfID(const uint64_t selfID);
 
+        bool ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd);
+
     private:
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };

@@ -82,13 +82,20 @@ void electNewMonarch(AppState& state)
 
 void appLoop(AppState& state)
 {
+    // Tricky - first, we have to ask the monarch to handle the commandline.
+    // They will tell us if we need to create a peasant.
+
     registerAsMonarch();
-    bool exitRequested = false;
 
-    state.createMonarchAndPeasant();
+    // state.createMonarchAndPeasant();
+    state.createMonarch();
 
+    if (state.processCommandline())
+    {
+        return;
+    }
     bool isMonarch = state.areWeTheKing(true);
-
+    bool exitRequested = false;
     while (!exitRequested)
     {
         if (isMonarch)
@@ -107,10 +114,20 @@ void appLoop(AppState& state)
     }
 }
 
-int main(int /*argc*/, char** /*argv*/)
+int main(int argc, char** argv)
 {
     AppState state;
     state.initializeState();
+
+    printf("args:[");
+    for (auto& elem : wil::make_range(argv, argc))
+    {
+        printf("%s, ", elem);
+        // This is obviously a bad way of converting args to a vector of
+        // hstrings, but it'll do for now.
+        state.args.emplace_back(winrt::to_hstring(elem));
+    }
+    printf("]\n");
 
     try
     {
