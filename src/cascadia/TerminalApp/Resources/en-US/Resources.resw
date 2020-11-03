@@ -286,7 +286,7 @@
     <comment>{Locked="\"title\""}</comment>
   </data>
   <data name="CmdTabColorArgDesc" xml:space="preserve">
-    <value>Open the terminal with the tab color</value>
+    <value>Open the terminal with the tab color, in #rrggbb format</value>
   </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
