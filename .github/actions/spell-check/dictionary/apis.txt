@@ -41,6 +41,7 @@ rfind
 roundf
 RSHIFT
 rx
+schandle
 serializer
 SIZENS
 spsc
