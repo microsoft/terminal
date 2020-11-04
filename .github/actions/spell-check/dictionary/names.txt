@@ -8,6 +8,7 @@ dhowett
 Diviness
 dsafa
 duhowett
+ekg
 ethanschoonover
 Firefox
 Gatta
@@ -38,6 +39,8 @@ mikemaccana
 miloush
 miniksa
 niksa
+nvaccess
+nvda
 oising
 oldnewthing
 osgwiki

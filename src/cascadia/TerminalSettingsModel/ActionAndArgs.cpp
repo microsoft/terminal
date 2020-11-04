@@ -27,6 +27,7 @@ static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
+static constexpr std::string_view OpenTabRenamerKey{ "openTabRenamer" };
 static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view ScrolldownKey{ "scrollDown" };
@@ -84,6 +85,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { PasteTextKey, ShortcutAction::PasteText },
         { PrevTabKey, ShortcutAction::PrevTab },
         { RenameTabKey, ShortcutAction::RenameTab },
+        { OpenTabRenamerKey, ShortcutAction::OpenTabRenamer },
         { ResetFontSizeKey, ShortcutAction::ResetFontSize },
         { ResizePaneKey, ShortcutAction::ResizePane },
         { ScrolldownKey, ShortcutAction::ScrollDown },
@@ -129,6 +131,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
         { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
         { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
+        { ShortcutAction::ScrollUp, ScrollUpArgs::FromJson },
+        { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -275,6 +279,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
                 { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::OpenTabRenamer, RS_(L"OpenTabRenamerCommandKey") },
                 { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
                 { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
                 { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },

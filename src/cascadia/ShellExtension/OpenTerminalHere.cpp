@@ -185,12 +185,17 @@ HRESULT OpenTerminalHere::GetState(IShellItemArray* /*psiItemArray*/,
 
 HRESULT OpenTerminalHere::GetIcon(IShellItemArray* /*psiItemArray*/,
                                   LPWSTR* ppszIcon)
+try
 {
-    // the icon ref ("dll,-<resid>") is provided here, in this case none is provided
-    *ppszIcon = nullptr;
-    // TODO GH#6111: Return the Terminal icon here
-    return E_NOTIMPL;
+    std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+    modulePath.replace_filename(WindowsTerminalExe);
+    // WindowsTerminal.exe,-101 will be the first icon group in WT
+    // We're using WindowsTerminal here explicitly, and not wt (from _getExePath), because
+    // WindowsTerminal is the only one built with the right icons.
+    const auto resource{ modulePath.wstring() + L",-101" };
+    return SHStrDupW(resource.c_str(), ppszIcon);
 }
+CATCH_RETURN();
 
 HRESULT OpenTerminalHere::GetFlags(EXPCMDFLAGS* pFlags)
 {
