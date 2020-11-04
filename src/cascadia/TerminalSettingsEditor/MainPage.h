@@ -20,8 +20,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SettingsNav_BackRequested(Microsoft::UI::Xaml::Controls::NavigationView const&, Microsoft::UI::Xaml::Controls::NavigationViewBackRequestedEventArgs const& args);
         bool On_BackRequested();
 
-        void _InitializeProfilesList();
-
         static void Navigate(Windows::UI::Xaml::Controls::Frame contentFrame, hstring clickedItemTag);
 
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings Settings();
@@ -34,6 +32,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsSource;
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsClone{ nullptr };
         winrt::Windows::Foundation::Collections::IMap<winrt::guid, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
+
+        void _InitializeProfilesList();
+        void _CreateAndNavigateToNewProfile(const uint32_t index);
+        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
     };
 }
 

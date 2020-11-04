@@ -70,7 +70,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto tagPropertyValue = clickedItemContainer.Tag().as<winrt::Windows::Foundation::IPropertyValue>();
             if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::String)
             {
-                Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
+                auto tag = unbox_value<hstring>(clickedItemContainer.Tag());
+                if (tag == L"AddProfile")
+                {
+                    uint32_t insertIndex;
+                    SettingsNav().MenuItems().IndexOf(clickedItemContainer, insertIndex);
+                    _CreateAndNavigateToNewProfile(insertIndex);
+                }
+                else
+                {
+                    Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
+                }
             }
             else if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::Guid)
             {
@@ -169,31 +179,51 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // and keep a reference to them in a map so that we
         // can easily modify the correct one when the associated
         // profile changes.
-        for (auto profile : _settingsSource.AllProfiles())
+        for (const auto& profile : _settingsSource.AllProfiles())
         {
-            MUX::Controls::NavigationViewItem profileNavItem;
-            profileNavItem.Content(box_value(profile.Name()));
-            profileNavItem.Tag(box_value<guid>(profile.Guid()));
-
-            const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
-            WUX::Controls::IconSourceElement icon;
-            icon.IconSource(iconSource);
-            profileNavItem.Icon(icon);
-
-            SettingsNav().MenuItems().Append(profileNavItem);
-            _profileToNavItemMap.Insert(profile.Guid(), profileNavItem);
+            auto navItem = _CreateProfileNavViewItem(profile);
+            SettingsNav().MenuItems().Append(navItem);
         }
 
         // Top off (the end of the nav view) with the Add Profile item
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
-        addProfileItem.Tag(box_value(L"AddNewProfile_Nav"));
-
+        addProfileItem.Tag(box_value(L"AddProfile"));
+        addProfileItem.SelectsOnInvoked(false);
         FontIcon icon;
         // This is the "Add" symbol
         icon.Glyph(L"\xE710");
         addProfileItem.Icon(icon);
 
         SettingsNav().MenuItems().Append(addProfileItem);
+    }
+
+    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index)
+    {
+        Profile newProfile;
+        _settingsSource.AllProfiles().Append(newProfile);
+        auto navItem = _CreateProfileNavViewItem(newProfile);
+        SettingsNav().MenuItems().InsertAt(index, navItem);
+
+        // Now nav to the new profile
+        // TODO: Can't seem to get the Nav View to set the SelectedItem in this function
+        // perhaps it needs to be done after the whole "ItemInvoked" handler is finished?
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), newProfile);
+    }
+
+    MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Profile& profile)
+    {
+        MUX::Controls::NavigationViewItem profileNavItem;
+        profileNavItem.Content(box_value(profile.Name()));
+        profileNavItem.Tag(box_value<guid>(profile.Guid()));
+
+        const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
+        WUX::Controls::IconSourceElement icon;
+        icon.IconSource(iconSource);
+        profileNavItem.Icon(icon);
+
+        _profileToNavItemMap.Insert(profile.Guid(), profileNavItem);
+
+        return profileNavItem;
     }
 }
