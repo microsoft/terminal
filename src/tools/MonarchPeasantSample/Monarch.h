@@ -12,6 +12,13 @@ constexpr GUID Monarch_clsid{
     { 0x83, 0x63, 0x5e, 0x06, 0xf5, 0xd0, 0x08, 0x2c }
 };
 
+enum class GlomToLastWindow : uint64_t
+{
+    Never = 0,
+    LastActive = 1,
+    Always = 2
+};
+
 namespace winrt::MonarchPeasantSample::implementation
 {
     struct Monarch : public MonarchT<Monarch>
@@ -32,11 +39,13 @@ namespace winrt::MonarchPeasantSample::implementation
         void SetSelfID(const uint64_t selfID);
 
         bool ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd);
+        void ToggleWindowingBehavior();
 
     private:
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
         uint64_t _mostRecentPeasant{ 0 };
+        GlomToLastWindow _windowingBehavior{ GlomToLastWindow::LastActive };
         std::unordered_map<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants;
     };
 }

@@ -52,7 +52,7 @@ private:
 };
 ////////////////////////////////////////////////////////////////////////////////
 
-void registerAsMonarch()
+DWORD registerAsMonarch()
 {
     DWORD registrationHostClass{};
     check_hresult(CoRegisterClassObject(Monarch_clsid,
@@ -60,6 +60,7 @@ void registerAsMonarch()
                                         CLSCTX_LOCAL_SERVER,
                                         REGCLS_MULTIPLEUSE,
                                         &registrationHostClass));
+    return registrationHostClass;
 }
 
 void electNewMonarch(AppState& state)
@@ -85,7 +86,14 @@ void appLoop(AppState& state)
     // Tricky - first, we have to ask the monarch to handle the commandline.
     // They will tell us if we need to create a peasant.
 
-    registerAsMonarch();
+    auto dwRegistration = registerAsMonarch();
+    // IMPORTANT! Tear down the registration as soon as we exit. If we're not a
+    // real peasant window (the monarch passed our commandline to someone else),
+    // then the monarch dies, we don't want our registration becoming the active
+    // monarch!
+    auto cleanup = wil::scope_exit([&]() {
+        check_hresult(CoRevokeClassObject(dwRegistration));
+    });
 
     // state.createMonarchAndPeasant();
     state.createMonarch();

@@ -96,6 +96,18 @@ namespace winrt::MonarchPeasantSample::implementation
 
         bool createNewWindow = true;
 
+        if (_windowingBehavior == GlomToLastWindow::Always)
+        {
+            // This is "single instance mode". We should always eat the commandline.
+
+            if (auto thisPeasant = GetPeasant(_thisPeasantID))
+            {
+                thisPeasant.ExecuteCommandline(args, cwd);
+                createNewWindow = false;
+                return createNewWindow;
+            }
+        }
+
         if (args.size() >= 3)
         {
             // We'll need three args at least - [exename.exe, -s, id] to be able
@@ -128,12 +140,50 @@ namespace winrt::MonarchPeasantSample::implementation
                 }
             }
         }
+        else if (_windowingBehavior == GlomToLastWindow::LastActive)
+        {
+            if (auto mruPeasant = GetPeasant(_mostRecentPeasant))
+            {
+                mruPeasant.ExecuteCommandline(args, cwd);
+                createNewWindow = false;
+            }
+        }
         else
         {
-            printf("They definitely weren't an existing process. They should make a new window.\n");
+            // printf("They definitely weren't an existing process. They should make a new window.\n");
         }
 
         return createNewWindow;
+    }
+    void Monarch::ToggleWindowingBehavior()
+    {
+        switch (_windowingBehavior)
+        {
+        case GlomToLastWindow::Never:
+            _windowingBehavior = GlomToLastWindow::LastActive;
+            break;
+        case GlomToLastWindow::LastActive:
+            _windowingBehavior = GlomToLastWindow::Always;
+            break;
+        case GlomToLastWindow::Always:
+            _windowingBehavior = GlomToLastWindow::Never;
+            break;
+        }
+
+        printf("glomToLastWindow: ");
+        switch (_windowingBehavior)
+        {
+        case GlomToLastWindow::Never:
+            printf("never");
+            break;
+        case GlomToLastWindow::LastActive:
+            printf("lastActive");
+            break;
+        case GlomToLastWindow::Always:
+            printf("always");
+            break;
+        }
+        printf("\n");
     }
 
 }
