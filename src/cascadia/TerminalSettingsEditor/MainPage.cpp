@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto clickedItemContainer = args.InvokedItemContainer();
 
-        if (clickedItemContainer != NULL)
+        if (clickedItemContainer)
         {
             auto tagPropertyValue = clickedItemContainer.Tag().as<winrt::Windows::Foundation::IPropertyValue>();
             if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::String)
