@@ -61,14 +61,10 @@ namespace winrt::MonarchPeasantSample::implementation
         }
     }
 
-    winrt::MonarchPeasantSample::IPeasant Monarch::GetPeasant(uint64_t peasantID)
+    winrt::MonarchPeasantSample::IPeasant Monarch::_getPeasant(uint64_t peasantID)
     {
-        return _peasants.at(peasantID);
-    }
-
-    winrt::MonarchPeasantSample::IPeasant Monarch::GetMostRecentPeasant()
-    {
-        return nullptr;
+        auto peasantSearch = _peasants.find(peasantID);
+        return peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
     }
 
     void Monarch::_setMostRecentPeasant(const uint64_t peasantID)
@@ -106,7 +102,7 @@ namespace winrt::MonarchPeasantSample::implementation
         {
             // This is "single instance mode". We should always eat the commandline.
 
-            if (auto thisPeasant = GetPeasant(_thisPeasantID))
+            if (auto thisPeasant = _getPeasant(_thisPeasantID))
             {
                 thisPeasant.ExecuteCommandline(args, cwd);
                 createNewWindow = false;
@@ -132,7 +128,7 @@ namespace winrt::MonarchPeasantSample::implementation
                 else if (sessionId == 0)
                 {
                     printf("Session 0 is actually #%llu\n", _mostRecentPeasant);
-                    if (auto mruPeasant = GetPeasant(_mostRecentPeasant))
+                    if (auto mruPeasant = _getPeasant(_mostRecentPeasant))
                     {
                         mruPeasant.ExecuteCommandline(args, cwd);
                         createNewWindow = false;
@@ -140,7 +136,7 @@ namespace winrt::MonarchPeasantSample::implementation
                 }
                 else
                 {
-                    if (auto otherPeasant = GetPeasant(sessionId))
+                    if (auto otherPeasant = _getPeasant(sessionId))
                     {
                         otherPeasant.ExecuteCommandline(args, cwd);
                         createNewWindow = false;
@@ -154,7 +150,7 @@ namespace winrt::MonarchPeasantSample::implementation
         }
         else if (_windowingBehavior == GlomToLastWindow::LastActive)
         {
-            if (auto mruPeasant = GetPeasant(_mostRecentPeasant))
+            if (auto mruPeasant = _getPeasant(_mostRecentPeasant))
             {
                 mruPeasant.ExecuteCommandline(args, cwd);
                 createNewWindow = false;

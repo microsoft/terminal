@@ -30,10 +30,6 @@ namespace winrt::MonarchPeasantSample::implementation
 
         uint64_t AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant);
 
-        winrt::MonarchPeasantSample::IPeasant GetPeasant(uint64_t peasantID);
-
-        winrt::MonarchPeasantSample::IPeasant GetMostRecentPeasant();
-
         void SetSelfID(const uint64_t selfID);
 
         bool ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd);
@@ -46,6 +42,7 @@ namespace winrt::MonarchPeasantSample::implementation
         GlomToLastWindow _windowingBehavior{ GlomToLastWindow::Never };
         std::unordered_map<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants;
 
+        winrt::MonarchPeasantSample::IPeasant _getPeasant(uint64_t peasantID);
         void _setMostRecentPeasant(const uint64_t peasantID);
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,

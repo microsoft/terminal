@@ -60,7 +60,7 @@ BIG OLE TODO LIST:
     - Create a monarch(#1) & peasant(#2)
     - activate the peasant(#2)
     - exit the peasant(#2)
-    - try running mps.exe -s 0 (or -s 2)
+    - try running MonarchPeasantSample.exe -s 0 (or -s 2)
     - THIS WILL FAIL, but it _should_ just run the commandline in the monarch
       (in the case of `-s 0`) or in a new window (in the `-s 1` case)
 */

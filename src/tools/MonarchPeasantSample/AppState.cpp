@@ -54,6 +54,7 @@ void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant&
     {
         auto ourID = peasant.GetID();
         monarchImpl->SetSelfID(ourID);
+        monarchImpl->AddPeasant(peasant);
         printf("The king is peasant #%lld\n", ourID);
     }
     else
