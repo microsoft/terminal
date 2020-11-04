@@ -507,7 +507,7 @@ namespace winrt::TerminalApp::implementation
         // not be noisy with this dialog if we failed for some reason.
 
         // Open the service manager. This will return 0 if it failed.
-        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, SERVICE_QUERY_STATUS) };
+        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
         {
