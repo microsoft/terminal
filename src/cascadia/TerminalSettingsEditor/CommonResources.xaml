@@ -1,7 +1,8 @@
 ﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" 
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor">
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:MUXControls="using:Microsoft.UI.Xaml.Controls">
 
     <Style x:Key="GridViewItemStyle" TargetType="GridViewItem">
         <Setter Property="Margin" Value="0,0,12,12" />
@@ -17,4 +18,17 @@
         <Setter Property="Margin" Value="12,0,12,12" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     </Style>
+
+    <Style TargetType="MUXControls:RadioButtons">
+        <Setter Property="Margin" Value="0,0,0,20" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="ToolTipService.Placement" Value="Mouse" />
+    </Style>
+
+    <Style TargetType="CheckBox">
+        <Setter Property="Margin" Value="0,0,0,20"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+    </Style>
+
 </ResourceDictionary>

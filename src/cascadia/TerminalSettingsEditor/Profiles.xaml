@@ -5,6 +5,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:model="using:Microsoft.Terminal.Settings.Model"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
@@ -15,6 +16,16 @@ the MIT License. See LICENSE in the project root for license information. -->
         <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
             <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
         </DataTemplate>
+
+        <Style TargetType="ColorPicker">
+            <Setter Property="IsColorSliderVisible" Value="False"/>
+            <Setter Property="IsColorChannelTextInputVisible" Value="False"/>
+            <Setter Property="IsHexInputVisible" Value="True"/>
+            <Setter Property="IsAlphaSliderVisible" Value="True"/>
+            <Setter Property="IsAlphaTextInputVisible" Value="True"/>
+        </Style>
+
+        <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
     </Page.Resources>
 
     <ScrollViewer>
@@ -225,9 +236,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </DropDownButton.Flyout>
                             </DropDownButton>
                             <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.BackgroundImageOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" ToolTipService.Placement="Mouse" />
-                            <CheckBox x:Uid="Profile_UseAcrylic" Margin="0,0,0,20" FontSize="15" IsChecked="{x:Bind Profile.UseAcrylic, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
+                            <CheckBox x:Uid="Profile_UseAcrylic" IsChecked="{x:Bind Profile.UseAcrylic, Mode=TwoWay}"/>
                             <Controls:NumberBox x:Uid="Profile_AcrylicOpacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" ToolTipService.Placement="Mouse" />
-                            <CheckBox x:Uid="Profile_RetroTerminalEffect" Margin="0,0,0,20" FontSize="15" IsChecked="{x:Bind Profile.RetroTerminalEffect, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
+                            <CheckBox x:Uid="Profile_RetroTerminalEffect" IsChecked="{x:Bind Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                         </StackPanel>
                     </Grid>
                 </ScrollViewer>
@@ -244,29 +255,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                        <CheckBox x:Uid="Profile_Hidden" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                        <CheckBox x:Uid="Profile_SuppressApplicationTitle" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                        <CheckBox x:Uid="Profile_Hidden" IsChecked="{x:Bind Profile.Hidden, Mode=TwoWay}"/>
+                        <CheckBox x:Uid="Profile_SuppressApplicationTitle" IsChecked="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
                         <Controls:RadioButtons x:Uid="Profile_AntialiasingMode"
-                                               Margin="0,0,0,20"
-                                               FontSize="15"
-                                               ToolTipService.Placement="Mouse"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                        <CheckBox x:Uid="Profile_AltGrAliasing" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                        <CheckBox x:Uid="Profile_SnapOnInput" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                        <Controls:NumberBox x:Uid="Profile_HistorySize" Margin="0,0,0,20" FontSize="15" Value="9001" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="100" ToolTipService.Placement="Mouse" />
+                        <CheckBox x:Uid="Profile_AltGrAliasing" IsChecked="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}" />
+                        <CheckBox x:Uid="Profile_SnapOnInput" IsChecked="{x:Bind Profile.SnapOnInput, Mode=TwoWay}"/>
+                        <Controls:NumberBox x:Uid="Profile_HistorySize"
+                                            Margin="0,0,0,20"
+                                            FontSize="15"
+                                            Value="{x:Bind Profile.HistorySize, Mode=TwoWay}"
+                                            SpinButtonPlacementMode="Compact"
+                                            SmallChange="10"
+                                            LargeChange="100"
+                                            ToolTipService.Placement="Mouse" />
                         <Controls:RadioButtons x:Uid="Profile_CloseOnExit"
-                                               Margin="0,0,0,20"
-                                               FontSize="15"
-                                               ToolTipService.Placement="Mouse"
                                                ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                         <Controls:RadioButtons x:Uid="Profile_BellStyle"
-                                               Margin="0,0,0,20"
-                                               FontSize="15"
-                                               ToolTipService.Placement="Mouse"
                                                ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
