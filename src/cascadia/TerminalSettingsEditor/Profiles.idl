@@ -1,11 +1,31 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "EnumEntry.idl"; 
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
     {
         Profiles();
         Microsoft.Terminal.Settings.Model.Profile Profile { get; };
+
+        IInspectable CurrentCursorShape;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+
+        IInspectable CurrentBackgroundImageStretchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+
+        IInspectable CurrentAntiAliasingMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
+
+        IInspectable CurrentCloseOnExitMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
+
+        IInspectable CurrentBellStyle;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BellStyleList { get; };
+
+        IInspectable CurrentScrollState;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
     }
 }
