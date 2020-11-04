@@ -190,6 +190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(L"AddProfile"));
         addProfileItem.SelectsOnInvoked(false);
+
         FontIcon icon;
         // This is the "Add" symbol
         icon.Glyph(L"\xE710");
@@ -206,8 +207,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
         // Now nav to the new profile
-        // TODO: Can't seem to get the Nav View to set the SelectedItem in this function
-        // perhaps it needs to be done after the whole "ItemInvoked" handler is finished?
+        // TODO: Setting SelectedItem here doesn't seem to update
+        // the NavigationView selected visual indicator, not sure where
+        // it needs to be...
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), newProfile);
     }
 
