@@ -2282,12 +2282,7 @@ namespace winrt::TerminalApp::implementation
     // - The taskbar state of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarState()
     {
-        const auto tab = _GetFocusedTab();
-        if (tab)
-        {
-            return tab->GetActiveTerminalControl().GetTaskbarState();
-        }
-        return {};
+        return _GetActiveControl().GetTaskbarState();
     }
 
     // Method Description:
@@ -2296,12 +2291,7 @@ namespace winrt::TerminalApp::implementation
     // - The taskbar progress of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarProgress()
     {
-        const auto tab = _GetFocusedTab();
-        if (tab)
-        {
-            return tab->GetActiveTerminalControl().GetTaskbarProgress();
-        }
-        return {};
+        return _GetActiveControl().GetTaskbarProgress();
     }
 
     // Method Description:

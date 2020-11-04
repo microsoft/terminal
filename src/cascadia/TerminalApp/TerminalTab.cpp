@@ -149,24 +149,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Focus the last focused control in our tree of panes.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void Tab::_Focus()
-    {
-        _focused = true;
-
-        auto lastFocusedControl = GetActiveTerminalControl();
-        if (lastFocusedControl)
-        {
-            lastFocusedControl.Focus(FocusState::Programmatic);
-            lastFocusedControl.TaskbarProgressChanged();
-        }
-    }
-
-    // Method Description:
     // - Set the icon on the TabViewItem for this tab.
     // Arguments:
     // - iconPath: The new path string to use as the IconPath for our TabViewItem
