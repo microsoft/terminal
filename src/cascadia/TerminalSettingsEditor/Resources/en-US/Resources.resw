@@ -641,7 +641,7 @@
     <value>Discard changes</value>
   </data>
   <data name="Settings_ResetSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Discard your settings to your previous save.</value>
+    <value>Discard your unsaved settings.</value>
   </data>
   <data name="Settings_SaveSettingsButton.Content" xml:space="preserve">
     <value>Apply</value>
