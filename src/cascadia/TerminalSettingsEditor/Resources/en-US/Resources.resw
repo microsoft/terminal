@@ -326,7 +326,7 @@
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
   </data>
-  <data name="Globals_ThemeDefault.Content" xml:space="preserve">
+  <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Default</value>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
@@ -354,7 +354,7 @@
     <value>Open JSON file</value>
   </data>
   <data name="Nav_ProfileGlobal.Content" xml:space="preserve">
-    <value>Profiles</value>
+    <value>Global</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
@@ -651,6 +651,12 @@
     <value>⚠ You have unsaved changes.</value>
     <comment>{Locked="⚠"}</comment>
   </data>
+  <data name="Nav_AddNewProfile.Content" xml:space="preserve">
+    <value>Add new</value>
+  </data>
+  <data name="Nav_Profiles.Content" xml:space="preserve">
+    <value>Profiles</value>
+</data>
   <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
     <value>Focus</value>
   </data>
@@ -662,7 +668,6 @@
   </data>
   <data name="Profile_BellStyle.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Controls what happens when the application emits a BEL character.</value>
-
     <comment>"Audible" and "None" must match the values for Profile_BellStyleAudible.Content and Profile_BellStyleNone.Content respectively.</comment>
   </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">

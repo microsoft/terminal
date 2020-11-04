@@ -22,6 +22,7 @@
     <Midl Include="ColorToHexConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
+    <Midl Include="EnumEntry.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalSettingsEditor.def" />
@@ -32,7 +33,6 @@
     <Page Include="CommonResources.xaml" />
     <Page Include="GlobalAppearance.xaml" />
     <Page Include="ColorSchemes.xaml" />
-    <Page Include="Globals.xaml" />
     <Page Include="Interaction.xaml" />
     <Page Include="Keybindings.xaml" />
     <Page Include="Launch.xaml" />

@@ -41,15 +41,14 @@
     <ClInclude Include="ColorToHexConverter.h">
       <DependentUpon>ColorToHexConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="EnumEntry.h">
+      <DependentUpon>EnumEntry.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorSchemes.h">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClInclude>
-    <ClInclude Include="Globals.h">
-      <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Interaction.h">
@@ -92,9 +91,6 @@
     <Page Include="ColorSchemes.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Globals.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -135,10 +131,6 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
-    <ClCompile Include="Globals.cpp">
-      <DependentUpon>Globals.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </ClCompile>
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
     </ClCompile>
@@ -175,16 +167,13 @@
   <ItemGroup>
     <Midl Include="ColorToBrushConverter.idl" />
     <Midl Include="ColorToHexConverter.idl" />
+    <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="Globals.idl">
-      <DependentUpon>Globals.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Launch.idl">

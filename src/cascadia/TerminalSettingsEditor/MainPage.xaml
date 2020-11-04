@@ -42,13 +42,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
-                <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
-                                            Tag="GlobalProfile_Nav">
-                    <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE756;"/>
-                    </muxc:NavigationViewItem.Icon>
-                </muxc:NavigationViewItem>
-
                 <muxc:NavigationViewItem x:Uid="Nav_Appearance"
                                                 Tag="GlobalAppearance_Nav">
                     <muxc:NavigationViewItem.Icon>
@@ -69,6 +62,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <FontIcon Glyph="&#xE7F8;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
+
+                <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
+
+                <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
+                                            Tag="GlobalProfile_Nav">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE756;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+
+                <muxc:NavigationViewItem x:Uid="Nav_AddNewProfile"
+                                            Tag="AddNewProfile_Nav">
+                    <muxc:NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE710;"/>
+                    </muxc:NavigationViewItem.Icon>
+                </muxc:NavigationViewItem>
+
 
             </muxc:NavigationView.MenuItems>
             <muxc:NavigationView.PaneFooter>

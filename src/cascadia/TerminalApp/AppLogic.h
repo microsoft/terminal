@@ -39,6 +39,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
+        bool GetInitialAlwaysOnTop();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;

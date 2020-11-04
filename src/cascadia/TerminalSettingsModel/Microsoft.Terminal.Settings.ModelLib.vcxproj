@@ -50,6 +50,9 @@
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="EnumMappings.h">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
@@ -99,6 +102,9 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="EnumMappings.cpp">
+      <DependentUpon>EnumMappings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -116,6 +122,7 @@
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
+    <Midl Include="EnumMappings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
   </ItemGroup>

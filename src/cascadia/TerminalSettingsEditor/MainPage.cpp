@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
-#include "Globals.h"
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
@@ -45,21 +44,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
-        //// set the initial selectedItem
-        for (uint32_t i = 0; i < SettingsNav().MenuItems().Size(); i++)
+        auto initialItem = SettingsNav().MenuItems().GetAt(0);
+        SettingsNav().SelectedItem(initialItem);
+
+        // Manually navigate because setting the selected item programmatically doesn't trigger ItemInvoked.
+        if (auto tag = initialItem.as<MUX::Controls::NavigationViewItem>().Tag())
         {
-            const auto item = SettingsNav().MenuItems().GetAt(i).as<Controls::ContentControl>();
-            const hstring homeNav = L"General_Nav";
-            const hstring itemTag = unbox_value<hstring>(item.Tag());
-
-            if (itemTag == homeNav)
-            {
-                SettingsNav().SelectedItem(item);
-                break;
-            }
+            Navigate(contentFrame(), unbox_value<hstring>(tag));
         }
-
-        contentFrame().Navigate(xaml_typename<Editor::Launch>());
     }
 
     void MainPage::SettingsNav_ItemInvoked(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewItemInvokedEventArgs const& args)
