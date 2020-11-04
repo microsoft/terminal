@@ -4,7 +4,7 @@
 #pragma once
 
 #include "TerminalPage.g.h"
-#include "Tab.h"
+#include "TerminalTab.h"
 #include "AppKeyBindings.h"
 #include "TerminalSettings.h"
 
@@ -100,10 +100,10 @@ namespace winrt::TerminalApp::implementation
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
-        Windows::Foundation::Collections::IObservableVector<TerminalApp::Tab> _tabs;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
         Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::Command> _mruTabActions;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const uint32_t index) const;
-        winrt::com_ptr<Tab> _GetStrongTabImpl(const ::winrt::TerminalApp::Tab& tab) const;
+        winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab) const;
+
         void _UpdateTabIndices();
 
         bool _isInFocusMode{ false };
@@ -139,17 +139,19 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
+        bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
+        void _CloseWarningCloseButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
-        void _UpdateTitle(const Tab& tab);
-        void _UpdateTabIcon(Tab& tab);
+        void _UpdateTitle(const TerminalTab& tab);
+        void _UpdateTabIcon(TerminalTab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
         void _UpdateCommandsForPalette();
@@ -161,7 +163,7 @@ namespace winrt::TerminalApp::implementation
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, Tab& hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, TerminalTab& hostingTab);
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const uint32_t tabIndex);
@@ -169,7 +171,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        winrt::com_ptr<Tab> _GetFocusedTab();
+        TerminalApp::TabBase _GetFocusedTab();
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
@@ -221,6 +223,12 @@ namespace winrt::TerminalApp::implementation
         void _CommandPaletteClosed(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UnZoomIfNeeded();
+
+        void _OpenSettingsUI();
+
+        void _ReapplyCompactTabSize();
+
+        void _MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index);
 
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
         static uint32_t _ReadSystemRowsToScroll();
