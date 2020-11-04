@@ -8,24 +8,16 @@ using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 
-extern std::mutex m;
-extern std::condition_variable cv;
-extern bool dtored;
-
 namespace winrt::MonarchPeasantSample::implementation
 {
     Monarch::Monarch()
     {
         printf("Instantiated a Monarch\n");
-        // _peasants = winrt::single_threaded_observable_map<uint64_t, winrt::MonarchPeasantSample::IPeasant>();
     }
 
     Monarch::~Monarch()
     {
         printf("~Monarch()\n");
-        std::unique_lock<std::mutex> lk(m);
-        dtored = true;
-        cv.notify_one();
     }
 
     uint64_t Monarch::GetPID()
@@ -35,8 +27,8 @@ namespace winrt::MonarchPeasantSample::implementation
 
     uint64_t Monarch::AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant)
     {
-        // TODO: This whole algo is terrible. There's gotta be a better way of
-        // finding the first opening in a non-consecutive map of int->object
+        // TODO: This whole algorithm is terrible. There's gotta be a better way
+        // of finding the first opening in a non-consecutive map of int->object
         auto providedID = peasant.GetID();
 
         if (providedID == 0)
