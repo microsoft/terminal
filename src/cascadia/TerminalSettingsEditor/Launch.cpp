@@ -18,17 +18,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        // find default profile index and initialize dropdown to that Profile
-        const auto profiles{ MainPage::Settings().AllProfiles() };
-        const auto defaultProfileGuid{ GlobalSettings().DefaultProfile() };
-        for (uint32_t i = 0; i < profiles.Size(); ++i)
-        {
-            auto profileGuid{ profiles.GetAt(i).Guid() };
-            if (profileGuid == defaultProfileGuid)
-            {
-                DefaultProfile().SelectedIndex(i);
-            }
-        }
+        // Initialize DefaultProfile
+        const auto& settings{ MainPage::Settings() };
+        const auto& defaultProfileGuid{ settings.GlobalSettings().DefaultProfile() };
+        const auto defaultProfile{ settings.FindProfile(defaultProfileGuid) };
+        DefaultProfile().SelectedItem(defaultProfile);
     }
 
     GlobalAppSettings Launch::GlobalSettings()
