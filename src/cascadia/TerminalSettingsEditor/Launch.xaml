@@ -29,7 +29,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                           x:Name="DefaultProfile"
                           Margin="0,0,0,20"
                           ItemsSource="{x:Bind local:MainPage.Settings.AllProfiles, Mode=OneWay}"
-                          SelectionChanged="DefaultProfileSelectionChanged"
+                          SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
                           FontSize="15"
                           ToolTipService.Placement="Mouse">
                     <ComboBox.ItemTemplate>

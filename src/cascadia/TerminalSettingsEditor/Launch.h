@@ -13,9 +13,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Launch();
 
-        void DefaultProfileSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
-
         winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+
+        IInspectable CurrentDefaultProfile();
+        void CurrentDefaultProfile(const IInspectable& value);
     };
 }
 

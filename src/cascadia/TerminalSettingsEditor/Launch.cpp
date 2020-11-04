@@ -17,12 +17,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Launch::Launch()
     {
         InitializeComponent();
-
-        // Initialize DefaultProfile
-        const auto& settings{ MainPage::Settings() };
-        const auto& defaultProfileGuid{ settings.GlobalSettings().DefaultProfile() };
-        const auto defaultProfile{ settings.FindProfile(defaultProfileGuid) };
-        DefaultProfile().SelectedItem(defaultProfile);
     }
 
     GlobalAppSettings Launch::GlobalSettings()
@@ -30,15 +24,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return MainPage::Settings().GlobalSettings();
     }
 
-    void Launch::DefaultProfileSelectionChanged(IInspectable const& sender,
-                                                SelectionChangedEventArgs const& /*args*/)
+    IInspectable Launch::CurrentDefaultProfile()
     {
-        const auto control{ winrt::unbox_value<ComboBox>(sender) };
-        const auto selectedIndex{ control.SelectedIndex() };
-        const auto selectedProfile{ MainPage::Settings().AllProfiles().GetAt(selectedIndex) };
-        const auto profileGuid{ selectedProfile.Guid() };
+        return winrt::box_value(MainPage::Settings().FindProfile(GlobalSettings().DefaultProfile()));
+    }
 
-        // set the default profile
-        MainPage::Settings().GlobalSettings().DefaultProfile(profileGuid);
+    void Launch::CurrentDefaultProfile(const IInspectable& value)
+    {
+        const auto profile{ winrt::unbox_value<Model::Profile>(value) };
+        GlobalSettings().DefaultProfile(profile.Guid());
     }
 }
