@@ -102,4 +102,11 @@ namespace winrt::Microsoft::Terminal::Settings
 
         return L"";
     }
+
+    hstring LocalizedNameForEnumName(const std::wstring_view sectionAndEnumType, const std::wstring_view enumValue, const std::wstring_view propertyType)
+    {
+        // Uppercase the first letter to conform to our current Resource keys
+        auto fmtKey = fmt::format(L"{}{}{}/{}", sectionAndEnumType, char(std::towupper(enumValue[0])), enumValue.substr(1), propertyType);
+        return GetLibraryResourceString(fmtKey);
+    }
 }

@@ -325,7 +325,7 @@
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
   </data>
-  <data name="Globals_ThemeDefault.Content" xml:space="preserve">
+  <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Default</value>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
