@@ -188,12 +188,16 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _SetBold(const bool isBold) noexcept;
         [[nodiscard]] HRESULT _SetFaint(const bool isFaint) noexcept;
         [[nodiscard]] HRESULT _SetUnderlined(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetDoublyUnderlined(const bool isUnderlined) noexcept;
         [[nodiscard]] HRESULT _SetOverlined(const bool isOverlined) noexcept;
         [[nodiscard]] HRESULT _SetItalic(const bool isItalic) noexcept;
         [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;
         [[nodiscard]] HRESULT _SetInvisible(const bool isInvisible) noexcept;
         [[nodiscard]] HRESULT _SetCrossedOut(const bool isCrossedOut) noexcept;
         [[nodiscard]] HRESULT _SetReverseVideo(const bool isReversed) noexcept;
+
+        [[nodiscard]] HRESULT _SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId, const uint16_t& numberId) noexcept;
+        [[nodiscard]] HRESULT _EndHyperlink() noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 

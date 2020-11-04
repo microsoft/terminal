@@ -3,18 +3,18 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/ColorScheme.h"
-#include "../TerminalApp/Profile.h"
-#include "../TerminalApp/CascadiaSettings.h"
-#include "../LocalTests_TerminalApp/JsonTestClass.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/Profile.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../LocalTests_SettingsModel/JsonTestClass.h"
+#include "../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalAppUnitTests
 {
@@ -87,17 +87,17 @@ namespace TerminalAppUnitTests
                                           "\"purple\" : \"#881798\","
                                           "\"red\" : \"#C50F1F\","
                                           "\"selectionBackground\" : \"#131313\","
-                                          "\"white\" : \"#CCC\","
+                                          "\"white\" : \"#CCCCCC\","
                                           "\"yellow\" : \"#C19C00\""
                                           "}" };
 
         const auto schemeObject = VerifyParseSucceeded(campbellScheme);
-        auto scheme = ColorScheme::FromJson(schemeObject);
-        VERIFY_ARE_EQUAL(L"Campbell", scheme.GetName());
-        VERIFY_ARE_EQUAL(ARGB(0, 0xf2, 0xf2, 0xf2), scheme.GetForeground());
-        VERIFY_ARE_EQUAL(ARGB(0, 0x0c, 0x0c, 0x0c), scheme.GetBackground());
-        VERIFY_ARE_EQUAL(ARGB(0, 0x13, 0x13, 0x13), scheme.GetSelectionBackground());
-        VERIFY_ARE_EQUAL(ARGB(0, 0xFF, 0xFF, 0xFF), scheme.GetCursorColor());
+        auto scheme = implementation::ColorScheme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"Campbell", scheme->Name());
+        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), til::color{ scheme->Foreground() });
+        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), til::color{ scheme->Background() });
+        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), til::color{ scheme->SelectionBackground() });
+        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
 
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         auto campbellSpan = gsl::span<COLORREF>(&expectedCampbellTable[0], COLOR_TABLE_SIZE);
@@ -107,9 +107,13 @@ namespace TerminalAppUnitTests
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {
             const auto& expected = expectedCampbellTable.at(i);
-            const auto& actual = scheme.GetTable().at(i);
+            const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
             VERIFY_ARE_EQUAL(expected, actual);
         }
+
+        Log::Comment(L"Roundtrip Test for Color Scheme");
+        Json::Value outJson{ scheme->ToJson() };
+        VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 
     void JsonTests::ProfileGeneratesGuid()
@@ -150,21 +154,21 @@ namespace TerminalAppUnitTests
         const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
         const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
 
-        const auto profile0 = Profile::FromJson(profile0Json);
-        const auto profile1 = Profile::FromJson(profile1Json);
-        const auto profile2 = Profile::FromJson(profile2Json);
-        const auto profile3 = Profile::FromJson(profile3Json);
-        const auto profile4 = Profile::FromJson(profile4Json);
-        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
-        const GUID nullGuid{ 0 };
+        const auto profile0 = implementation::Profile::FromJson(profile0Json);
+        const auto profile1 = implementation::Profile::FromJson(profile1Json);
+        const auto profile2 = implementation::Profile::FromJson(profile2Json);
+        const auto profile3 = implementation::Profile::FromJson(profile3Json);
+        const auto profile4 = implementation::Profile::FromJson(profile4Json);
+        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const winrt::guid nullGuid{};
 
-        VERIFY_IS_FALSE(profile0._guid.has_value());
-        VERIFY_IS_FALSE(profile1._guid.has_value());
-        VERIFY_IS_FALSE(profile2._guid.has_value());
-        VERIFY_IS_TRUE(profile3._guid.has_value());
-        VERIFY_IS_TRUE(profile4._guid.has_value());
+        VERIFY_IS_FALSE(profile0->HasGuid());
+        VERIFY_IS_FALSE(profile1->HasGuid());
+        VERIFY_IS_FALSE(profile2->HasGuid());
+        VERIFY_IS_TRUE(profile3->HasGuid());
+        VERIFY_IS_TRUE(profile4->HasGuid());
 
-        VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
-        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
     }
 }

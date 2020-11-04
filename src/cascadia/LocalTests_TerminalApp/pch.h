@@ -15,6 +15,8 @@ Author(s):
 
 #pragma once
 
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#define BLOCK_TIL
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
@@ -32,12 +34,6 @@ Author(s):
 #include <WexTestClass.h>
 #include <json.h>
 #include "consoletaeftemplates.hpp"
-
-// Common includes for most tests:
-#include "../../inc/argb.h"
-#include "../../inc/conattrs.hpp"
-#include "../../types/inc/utils.hpp"
-#include "../../inc/DefaultSettings.h"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
 #include "winrt/Windows.UI.Xaml.Markup.h"
@@ -58,8 +54,18 @@ Author(s):
 #include <winrt/windows.applicationmodel.core.h>
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 
 #include <regex>
 #include <CLI11/CLI11.hpp>
+
+// Manually include til after we include Windows.Foundation to give it winrt superpowers
+#include "til.h"
+
+// Common includes for most tests:
+#include "../../inc/argb.h"
+#include "../../inc/conattrs.hpp"
+#include "../../types/inc/utils.hpp"
+#include "../../inc/DefaultSettings.h"

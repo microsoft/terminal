@@ -627,7 +627,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         RETURN_IF_FAILED(_d2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                                   &_d2dBrushForeground));
 
-        const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
+        _strokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
             D2D1_CAP_STYLE_SQUARE, // dashCap
@@ -636,7 +636,23 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
             D2D1_DASH_STYLE_SOLID, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_strokeStyleProperties, nullptr, 0, &_strokeStyle));
+
+        _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
+            D2D1_CAP_STYLE_SQUARE, // startCap
+            D2D1_CAP_STYLE_SQUARE, // endCap
+            D2D1_CAP_STYLE_FLAT, // dashCap
+            D2D1_LINE_JOIN_MITER, // lineJoin
+            0.f, // miterLimit
+            D2D1_DASH_STYLE_CUSTOM, // dashStyle
+            0.f, // dashOffset
+        };
+        // Custom dashes:
+        // #   #   #   #
+        // 1234123412341234
+        static constexpr std::array<float, 2> hyperlinkDashes{ 1.f, 3.f };
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), gsl::narrow_cast<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
+        _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix
         if (_chainMode == SwapChainMode::ForComposition)
@@ -1426,7 +1442,7 @@ try
         // Use a transform by the size of one cell to convert cells-to-pixels
         // as we clear.
         _d2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(_glyphCell));
-        for (const auto rect : _invalidMap.runs())
+        for (const auto& rect : _invalidMap.runs())
         {
             // Use aliased.
             // For graphics reasons, it'll look better because it will ensure that
@@ -1493,63 +1509,102 @@ try
 
     _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
-    const auto font = _glyphCell;
-    D2D_POINT_2F target = til::point{ coordTarget } * font;
+    const D2D1_SIZE_F font = _glyphCell;
+    const D2D_POINT_2F target = { coordTarget.X * font.width, coordTarget.Y * font.height };
+    const auto fullRunWidth = font.width * gsl::narrow_cast<unsigned>(cchLine);
 
-    D2D_POINT_2F start = { 0 };
-    D2D_POINT_2F end = { 0 };
+    const auto DrawLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _strokeStyle.Get());
+    };
 
-    for (size_t i = 0; i < cchLine; i++)
+    const auto DrawHyperlinkLine = [=](const auto x0, const auto y0, const auto x1, const auto y1, const auto strokeWidth) noexcept {
+        _d2dDeviceContext->DrawLine({ x0, y0 }, { x1, y1 }, _d2dBrushForeground.Get(), strokeWidth, _hyperlinkStrokeStyle.Get());
+    };
+
+    // NOTE: Line coordinates are centered within the line, so they need to be
+    // offset by half the stroke width. For the start coordinate we add half
+    // the stroke width, and for the end coordinate we subtract half the width.
+
+    if (lines & (GridLines::Left | GridLines::Right))
     {
-        // 0.5 pixel offset for crisp lines
-        start = { target.x + 0.5f, target.y + 0.5f };
-
-        if (lines & GridLines::Top)
-        {
-            end = start;
-            end.x += font.width();
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startY = target.y + halfGridlineWidth;
+        const auto endY = target.y + font.height - halfGridlineWidth;
 
         if (lines & GridLines::Left)
         {
-            end = start;
-            end.y += font.height();
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+            auto x = target.x + halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
         }
-
-        // NOTE: Watch out for inclusive/exclusive rectangles here.
-        // We have to remove 1 from the font size for the bottom and right lines to ensure that the
-        // starting point remains within the clipping rectangle.
-        // For example, if we're drawing a letter at 0,0 and the font size is 8x16....
-        // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
-        // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
-
-        // 0.5 pixel offset for crisp lines; -0.5 on the Y to fit _in_ the cell, not outside it.
-        start = { target.x + 0.5f, target.y + font.height() - 0.5f };
-
-        if (lines & GridLines::Bottom)
-        {
-            end = start;
-            end.x += font.width() - 1.f;
-
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
-        }
-
-        start = { target.x + font.width() - 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Right)
         {
-            end = start;
-            end.y += font.height() - 1.f;
+            auto x = target.x + font.width - halfGridlineWidth;
+            for (size_t i = 0; i < cchLine; i++, x += font.width)
+            {
+                DrawLine(x, startY, x, endY, _lineMetrics.gridlineWidth);
+            }
+        }
+    }
 
-            _d2dDeviceContext->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
+    if (lines & (GridLines::Top | GridLines::Bottom))
+    {
+        const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
+        const auto startX = target.x + halfGridlineWidth;
+        const auto endX = target.x + fullRunWidth - halfGridlineWidth;
+
+        if (lines & GridLines::Top)
+        {
+            const auto y = target.y + halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
         }
 
-        // Move to the next character in this run.
-        target.x += font.width();
+        if (lines & GridLines::Bottom)
+        {
+            const auto y = target.y + font.height - halfGridlineWidth;
+            DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
+        }
+    }
+
+    // In the case of the underline and strikethrough offsets, the stroke width
+    // is already accounted for, so they don't require further adjustments.
+
+    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
+    {
+        const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
+        const auto startX = target.x + halfUnderlineWidth;
+        const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
+        const auto y = target.y + _lineMetrics.underlineOffset;
+
+        if (lines & GridLines::Underline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::HyperlinkUnderline)
+        {
+            DrawHyperlinkLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+        }
+
+        if (lines & GridLines::DoubleUnderline)
+        {
+            DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
+            const auto y2 = target.y + _lineMetrics.underlineOffset2;
+            DrawLine(startX, y2, endX, y2, _lineMetrics.underlineWidth);
+        }
+    }
+
+    if (lines & GridLines::Strikethrough)
+    {
+        const auto halfStrikethroughWidth = _lineMetrics.strikethroughWidth / 2.0f;
+        const auto startX = target.x + halfStrikethroughWidth;
+        const auto endX = target.x + fullRunWidth - halfStrikethroughWidth;
+        const auto y = target.y + _lineMetrics.strikethroughOffset;
+
+        DrawLine(startX, y, endX, y, _lineMetrics.strikethroughWidth);
     }
 
     return S_OK;
@@ -1698,6 +1753,11 @@ CATCH_RETURN()
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
     }
 
+    if (textAttributes.IsHyperlink())
+    {
+        _hyperlinkStrokeStyle = (textAttributes.GetHyperlinkId() == _hyperlinkHoveredId) ? _strokeStyle : _dashStrokeStyle;
+    }
+
     return S_OK;
 }
 
@@ -1716,7 +1776,8 @@ try
                                       _dpi,
                                       _dwriteTextFormat,
                                       _dwriteTextAnalyzer,
-                                      _dwriteFontFace));
+                                      _dwriteFontFace,
+                                      _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
 
@@ -1732,10 +1793,18 @@ CATCH_RETURN();
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.width());
-    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.height());
+    const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _glyphCell.width());
+    const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _glyphCell.height());
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
+}
+
+[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
+{
+    const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _glyphCell.width());
+    const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _glyphCell.height());
+
+    return Viewport::FromDimensions(viewInCharacters.Origin(), { widthInPixels, heightInPixels });
 }
 
 // Routine Description:
@@ -1805,13 +1874,15 @@ float DxEngine::GetScaling() const noexcept
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
                             analyzer,
-                            face);
+                            face,
+                            lineMetrics);
 }
 
 // Routine Description:
@@ -2080,7 +2151,8 @@ CATCH_RETURN();
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 LineMetrics& lineMetrics) const noexcept
 {
     try
     {
@@ -2243,6 +2315,53 @@ CATCH_RETURN();
                              false,
                              scaled,
                              unscaled);
+
+        // There is no font metric for the grid line width, so we use a small
+        // multiple of the font size, which typically rounds to a pixel.
+        lineMetrics.gridlineWidth = std::round(fontSize * 0.025f);
+
+        // All other line metrics are in design units, so to get a pixel value,
+        // we scale by the font size divided by the design-units-per-em.
+        const auto scale = fontSize / fontMetrics.designUnitsPerEm;
+        lineMetrics.underlineOffset = std::round(fontMetrics.underlinePosition * scale);
+        lineMetrics.underlineWidth = std::round(fontMetrics.underlineThickness * scale);
+        lineMetrics.strikethroughOffset = std::round(fontMetrics.strikethroughPosition * scale);
+        lineMetrics.strikethroughWidth = std::round(fontMetrics.strikethroughThickness * scale);
+
+        // We always want the lines to be visible, so if a stroke width ends up
+        // at zero after rounding, we need to make it at least 1 pixel.
+        lineMetrics.gridlineWidth = std::max(lineMetrics.gridlineWidth, 1.0f);
+        lineMetrics.underlineWidth = std::max(lineMetrics.underlineWidth, 1.0f);
+        lineMetrics.strikethroughWidth = std::max(lineMetrics.strikethroughWidth, 1.0f);
+
+        // Offsets are relative to the base line of the font, so we subtract
+        // from the ascent to get an offset relative to the top of the cell.
+        lineMetrics.underlineOffset = fullPixelAscent - lineMetrics.underlineOffset;
+        lineMetrics.strikethroughOffset = fullPixelAscent - lineMetrics.strikethroughOffset;
+
+        // For double underlines we need a second offset, just below the first,
+        // but with a bit of a gap (about double the grid line width).
+        lineMetrics.underlineOffset2 = lineMetrics.underlineOffset +
+                                       lineMetrics.underlineWidth +
+                                       std::round(fontSize * 0.05f);
+
+        // However, we don't want the underline to extend past the bottom of the
+        // cell, so we clamp the offset to fit just inside.
+        const auto maxUnderlineOffset = lineSpacing.height - _lineMetrics.underlineWidth;
+        lineMetrics.underlineOffset2 = std::min(lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+        // But if the resulting gap isn't big enough even to register as a thicker
+        // line, it's better to place the second line slightly above the first.
+        if (lineMetrics.underlineOffset2 < lineMetrics.underlineOffset + lineMetrics.gridlineWidth)
+        {
+            lineMetrics.underlineOffset2 = lineMetrics.underlineOffset - lineMetrics.gridlineWidth;
+        }
+
+        // We also add half the stroke width to the offsets, since the line
+        // coordinates designate the center of the line.
+        lineMetrics.underlineOffset += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.underlineOffset2 += lineMetrics.underlineWidth / 2.0f;
+        lineMetrics.strikethroughOffset += lineMetrics.strikethroughWidth / 2.0f;
     }
     CATCH_RETURN();
 
@@ -2285,12 +2404,12 @@ CATCH_RETURN();
 // - color - GDI Color
 // Return Value:
 // - N/A
-void DxEngine::SetSelectionBackground(const COLORREF color) noexcept
+void DxEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
     _selectionBackground = D2D1::ColorF(GetRValue(color) / 255.0f,
                                         GetGValue(color) / 255.0f,
                                         GetBValue(color) / 255.0f,
-                                        0.5f);
+                                        alpha);
 }
 
 // Routine Description:
@@ -2334,6 +2453,16 @@ try
     LOG_IF_FAILED(InvalidateAll());
 }
 CATCH_LOG()
+
+// Method Description:
+// - Updates our internal tracker for which hyperlink ID we are hovering over
+//   This is needed for UpdateDrawingBrushes to know where we need to set a different style
+// Arguments:
+// - The new link ID we are hovering over
+void DxEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
+{
+    _hyperlinkHoveredId = hoveredId;
+}
 
 // Method Description:
 // - Informs this render engine about certain state for this frame at the

@@ -315,7 +315,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                 // Copy any regions that overlap from this map to the new one.
                 // Just iterate our runs...
-                for (const auto run : *this)
+                for (const auto& run : *this)
                 {
                     // intersect them with the new map
                     // so we don't attempt to set bits that fit outside
@@ -405,7 +405,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             const auto bitShift = delta_y * _sz.width();
 
 #pragma warning(push)
-            // we can't depend on GSL here (some libraries use BLOCK_GSL), so we use static_cast for explicit narrowing
+            // we can't depend on GSL here, so we use static_cast for explicit narrowing
 #pragma warning(disable : 26472)
             const auto newBits = static_cast<size_t>(std::abs(bitShift));
 #pragma warning(pop)

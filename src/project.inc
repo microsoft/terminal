@@ -3,6 +3,8 @@
 # - Common Project Configuration
 # -------------------------------------
 
+!include $(OSDEPENDSROOT)\OSS\gsl\3.1.0\consume.inc
+
 # -------------------------------------
 # Preprocessor Settings
 # -------------------------------------

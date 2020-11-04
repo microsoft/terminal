@@ -2,7 +2,8 @@ trigger:
   batch: true
   branches:
     include:
-      - master
+      - main
+      - feature/*
   paths:
     exclude:
       - doc/*
@@ -12,7 +13,8 @@ trigger:
 pr:
   branches:
     include:
-      - master
+      - main
+      - feature/*
   paths:
     exclude:
       - doc/*

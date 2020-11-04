@@ -43,10 +43,19 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInput
         // These methods are defined in mouseInput.cpp
+
+        struct MouseButtonState
+        {
+            bool isLeftButtonDown;
+            bool isMiddleButtonDown;
+            bool isRightButtonDown;
+        };
+
         bool HandleMouse(const COORD position,
                          const unsigned int button,
                          const short modifierKeyState,
-                         const short delta);
+                         const short delta,
+                         const MouseButtonState state);
 
         bool IsTrackingMouseInput() const noexcept;
 #pragma endregion
@@ -136,7 +145,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
         bool _SendAlternateScroll(const short delta) const noexcept;
 
-        static unsigned int s_GetPressedButton() noexcept;
+        static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion
     };
 }

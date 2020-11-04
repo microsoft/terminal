@@ -29,7 +29,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool WriteCtrlKey(const KeyEvent& event) override;
         bool WriteString(const std::wstring_view string) override;
         bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                const gsl::span<const size_t> parameters) override; // DTTERM_WindowManipulation
+                                const VTParameter parameter1,
+                                const VTParameter parameter2) override; // DTTERM_WindowManipulation
         bool MoveCursor(const size_t row, const size_t col) override;
 
         bool IsVtInputEnabled() const override;

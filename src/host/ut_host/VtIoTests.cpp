@@ -391,6 +391,21 @@ public:
     void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
     {
     }
+
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    {
+        return {};
+    }
 };
 
 void VtIoTests::RendererDtorAndThread()

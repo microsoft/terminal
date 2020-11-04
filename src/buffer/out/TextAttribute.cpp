@@ -88,16 +88,18 @@ bool TextAttribute::IsLegacy() const noexcept
 // - defaultFgColor: the default foreground color rgb value.
 // - defaultBgColor: the default background color rgb value.
 // - reverseScreenMode: true if the screen mode is reversed.
+// - blinkingIsFaint: true if blinking should be interpreted as faint.
 // Return Value:
 // - the foreground and background colors that should be displayed.
 std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
-                                                                const bool reverseScreenMode) const noexcept
+                                                                const bool reverseScreenMode,
+                                                                const bool blinkingIsFaint) const noexcept
 {
     auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
     auto bg = _background.GetColor(colorTable, defaultBgColor);
-    if (IsFaint())
+    if (IsFaint() || (IsBlinking() && blinkingIsFaint))
     {
         fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
     }
@@ -112,6 +114,17 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<
     return { fg, bg };
 }
 
+// Method description:
+// - Tells us whether the text is a hyperlink or not
+// Return value:
+// - True if it is a hyperlink, false otherwise
+bool TextAttribute::IsHyperlink() const noexcept
+{
+    // All non-hyperlink text have a default hyperlinkId of 0 while
+    // all hyperlink text have a non-zero hyperlinkId
+    return _hyperlinkId != 0;
+}
+
 TextColor TextAttribute::GetForeground() const noexcept
 {
     return _foreground;
@@ -120,6 +133,15 @@ TextColor TextAttribute::GetForeground() const noexcept
 TextColor TextAttribute::GetBackground() const noexcept
 {
     return _background;
+}
+
+// Method description:
+// - Retrieves the hyperlink ID of the text
+// Return value:
+// - The hyperlink ID
+uint16_t TextAttribute::GetHyperlinkId() const noexcept
+{
+    return _hyperlinkId;
 }
 
 void TextAttribute::SetForeground(const TextColor foreground) noexcept
@@ -172,6 +194,15 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
     {
         SetBackground(rgbColor);
     }
+}
+
+// Method description:
+// - Sets the hyperlink ID of the text
+// Arguments:
+// - id - the id we wish to set
+void TextAttribute::SetHyperlinkId(uint16_t id) noexcept
+{
+    _hyperlinkId = id;
 }
 
 bool TextAttribute::IsLeadingByte() const noexcept
@@ -246,8 +277,12 @@ bool TextAttribute::IsCrossedOut() const noexcept
 
 bool TextAttribute::IsUnderlined() const noexcept
 {
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_UNDERSCORE);
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Underlined);
+}
+
+bool TextAttribute::IsDoublyUnderlined() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::DoublyUnderlined);
 }
 
 bool TextAttribute::IsOverlined() const noexcept
@@ -292,8 +327,12 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
 
 void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
-    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
-    WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Underlined, isUnderlined);
+}
+
+void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetOverlined(bool isOverlined) noexcept
@@ -328,6 +367,14 @@ void TextAttribute::SetDefaultBackground() noexcept
     _background = TextColor();
 }
 
+// Method description:
+// - Resets only the meta and extended attributes
+void TextAttribute::SetDefaultMetaAttrs() noexcept
+{
+    _extendedAttrs = ExtendedAttributes::Normal;
+    _wAttrLegacy = 0;
+}
+
 // Method Description:
 // - Returns true if this attribute indicates its background is the "default"
 //      background. Its _rgbBackground will contain the actual value of the
@@ -348,6 +395,6 @@ bool TextAttribute::BackgroundIsDefault() const noexcept
 //      requires for most erasing and filling operations.
 void TextAttribute::SetStandardErase() noexcept
 {
-    _extendedAttrs = ExtendedAttributes::Normal;
-    _wAttrLegacy = 0;
+    SetDefaultMetaAttrs();
+    _hyperlinkId = 0;
 }
