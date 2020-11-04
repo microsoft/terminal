@@ -1046,13 +1046,23 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 // - <none>
 void CascadiaSettings::WriteSettingsToDisk() const
 {
-    auto settingsPath{ CascadiaSettings::SettingsPath() };
+    const auto settingsPath{ CascadiaSettings::SettingsPath() };
 
-    // write backup settings file
-    auto backupSettingsPath{ settingsPath + L".backup" };
-    _WriteSettings(_userSettingsString, backupSettingsPath);
+    // write backup settings file, if one doesn't exist
+    const auto backupSettingsPath{ settingsPath + L".backup" };
+    wil::unique_hfile backupFile{ CreateFileW(backupSettingsPath.c_str(),
+                                              GENERIC_READ,
+                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                              nullptr,
+                                              OPEN_EXISTING,
+                                              FILE_ATTRIBUTE_NORMAL,
+                                              nullptr) };
+    if (!backupFile)
+    {
+        _WriteSettings(_userSettingsString, backupSettingsPath);
+    }
 
-    // write to current settings file
+    // write current settings to current settings file
     const auto json{ ToJson() };
     _WriteSettings(json.toStyledString(), settingsPath);
 }
