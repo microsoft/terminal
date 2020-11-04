@@ -1039,7 +1039,7 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 
 // Method Description:
 // - Write the current state of CascadiaSettings to our settings file
-// - Create a backup file with the current contents
+// - Create a backup file with the current contents, if one does not exist
 // Arguments:
 // - <none>
 // Return Value:
@@ -1054,10 +1054,10 @@ void CascadiaSettings::WriteSettingsToDisk() const
                                               GENERIC_READ,
                                               FILE_SHARE_READ | FILE_SHARE_WRITE,
                                               nullptr,
-                                              OPEN_EXISTING,
+                                              CREATE_NEW,
                                               FILE_ATTRIBUTE_NORMAL,
                                               nullptr) };
-    if (!backupFile)
+    if (GetLastError() != ERROR_FILE_EXISTS)
     {
         _WriteSettings(_userSettingsString, backupSettingsPath);
     }
