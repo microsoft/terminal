@@ -2699,7 +2699,7 @@ namespace winrt::TerminalApp::implementation
     // - Return the fully-formed warning message for the
     //   "KeyboardServiceDisabled" dialog. This dialog is used to warn the user
     //   if the keyboard service is disabled, and uses the OS localization for
-    //   the service's actual name. It's boud to the dialog in XAML.
+    //   the service's actual name. It's bound to the dialog in XAML.
     // Return Value:
     // - The warning message, including the OS-localized service name.
     winrt::hstring TerminalPage::KeyboardServiceDisabledText()
