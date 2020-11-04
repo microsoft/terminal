@@ -150,7 +150,7 @@
     <value>Encountered errors while loading user settings</value>
   </data>
   <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Ok</value>
+    <value>OK</value>
   </data>
   <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
     <value>Warning:</value>

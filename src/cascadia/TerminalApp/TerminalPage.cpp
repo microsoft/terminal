@@ -2642,7 +2642,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Displays a dialog stating the "Touch, Keyboard and Handwriting Panel
+    // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
     //   Service" is disabled.
     void TerminalPage::ShowKeyboardServiceWarning()
     {
@@ -2653,12 +2653,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Helper function to get the OS-localized name for the "Touch, Keyboard
+    // - Helper function to get the OS-localized name for the "Touch Keyboard
     //   and Handwriting Panel Service". If we can't open up the service for any
     //   reason, then we'll just return the service's key, "TabletInputService".
     // Return Value:
     // - The OS-localized name for the TabletInputService
-    std::wstring _getTabletServiceName()
+    winrt::hstring _getTabletServiceName()
     {
         auto isUwp = false;
         try
@@ -2669,30 +2669,30 @@ namespace winrt::TerminalApp::implementation
 
         if (isUwp)
         {
-            return L"TabletInputService";
+            return winrt::hstring{ TabletInputServiceKey };
         }
 
         wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
 
         if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
         {
-            return L"TabletInputService";
+            return winrt::hstring{ TabletInputServiceKey };
         }
 
         DWORD cchBuffer = 0;
-        GetServiceDisplayName(hManager.get(), L"TabletInputService", nullptr, &cchBuffer);
+        GetServiceDisplayName(hManager.get(), TabletInputServiceKey.data(), nullptr, &cchBuffer);
         std::wstring buffer;
         cchBuffer += 1; // Add space for a null
         buffer.resize(cchBuffer);
 
         if (LOG_LAST_ERROR_IF(!GetServiceDisplayName(hManager.get(),
-                                                     L"TabletInputService",
+                                                     TabletInputServiceKey.data(),
                                                      buffer.data(),
                                                      &cchBuffer)))
         {
-            return L"TabletInputService";
+            return winrt::hstring{ TabletInputServiceKey };
         }
-        return buffer;
+        return winrt::hstring{ buffer };
     }
 
     // Method Description:

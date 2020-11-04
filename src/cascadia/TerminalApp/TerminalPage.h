@@ -13,7 +13,7 @@
 #include "AppCommandlineArgs.h"
 
 static constexpr uint32_t DefaultRowsToScroll{ 3 };
-
+static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {

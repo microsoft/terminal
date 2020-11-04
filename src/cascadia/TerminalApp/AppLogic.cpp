@@ -488,7 +488,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Helper for determining if the "Touch, Keyboard and Handwriting Panel
+    // - Helper for determining if the "Touch Keyboard and Handwriting Panel
     //   Service" is enabled. If it isn't, we want to be able to display a
     //   warning to the user, because they won't be able to type in the
     //   Terminal.
@@ -515,7 +515,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Get a handle to the keyboard service
-        wil::unique_schandle hService{ OpenService(hManager.get(), L"TabletInputService", SERVICE_QUERY_STATUS) };
+        wil::unique_schandle hService{ OpenService(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
         if (LOG_LAST_ERROR_IF(!hService.is_valid()))
         {
             return true;
