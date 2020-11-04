@@ -747,9 +747,9 @@ bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
     bool invalid{ false };
     if (command.HasNestedCommands())
     {
-        for (const auto& nestedkv : command.NestedCommands())
+        for (const auto& nested : command.NestedCommands())
         {
-            if (_HasInvalidColorScheme(nestedkv.Value()))
+            if (_HasInvalidColorScheme(nested.Value()))
             {
                 invalid = true;
                 break;
