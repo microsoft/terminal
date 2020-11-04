@@ -105,6 +105,7 @@ namespace winrt::TerminalApp::implementation
             if (lastFocusedControl)
             {
                 lastFocusedControl.Focus(_focusState);
+                lastFocusedControl.TaskbarProgressChanged();
             }
         }
     }
