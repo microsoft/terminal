@@ -30,7 +30,6 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::Settings::Editor;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
 

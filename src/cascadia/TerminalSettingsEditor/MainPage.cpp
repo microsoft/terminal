@@ -11,7 +11,6 @@
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
 #include "Keybindings.h"
-#include "IconPathConverter.h"
 
 #include <LibraryResources.h>
 
@@ -131,9 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileSubpage)
         {
-            auto defGuid = _settingsSource.GlobalSettings().DefaultProfile();
-            auto defProfile = _settingsSource.FindProfile(defGuid);
-            contentFrame.Navigate(xaml_typename<Editor::Profiles>(), defProfile);
+            contentFrame.Navigate(xaml_typename<Editor::Profiles>(), _settingsSource.DefaultProfileSettings());
         }
         else if (clickedItemTag == colorSchemesPage)
         {
@@ -193,6 +190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         addProfileItem.Tag(box_value(L"AddNewProfile_Nav"));
 
         FontIcon icon;
+        // This is the "Add" symbol
         icon.Glyph(L"\xE710");
         addProfileItem.Icon(icon);
 

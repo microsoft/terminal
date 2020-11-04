@@ -203,6 +203,17 @@ winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings CascadiaSettings:
 }
 
 // Method Description:
+// - Get a reference to our default profile settings
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to our default profile settings
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DefaultProfileSettings() const
+{
+    return *_userDefaultProfileSettings;
+}
+
+// Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
