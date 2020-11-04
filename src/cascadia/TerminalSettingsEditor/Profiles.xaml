@@ -13,19 +13,17 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d">
 
     <Page.Resources>
-        <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-            <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
-        </DataTemplate>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
-        <Style TargetType="ColorPicker">
-            <Setter Property="IsColorSliderVisible" Value="False"/>
-            <Setter Property="IsColorChannelTextInputVisible" Value="False"/>
-            <Setter Property="IsHexInputVisible" Value="True"/>
-            <Setter Property="IsAlphaSliderVisible" Value="True"/>
-            <Setter Property="IsAlphaTextInputVisible" Value="True"/>
-        </Style>
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
 
-        <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+            <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+        </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
@@ -52,9 +50,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StackPanel Grid.Row="3" Grid.Column="0">
                         <TextBox x:Uid="Profile_TabTitle" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                         <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                               Margin="0,0,0,20"
-                                               FontSize="15"
-                                               ToolTipService.Placement="Mouse"
                                                ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
@@ -86,9 +81,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBox x:Uid="Profile_FontWeight" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
                             <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                             <Controls:RadioButtons x:Uid="Profile_CursorShape"
-                                                   Margin="0,0,0,20"
-                                                   FontSize="15"
-                                                   ToolTipService.Placement="Mouse"
                                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
@@ -211,9 +203,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Button x:Uid="Profile_BackgroundImageBrowse" Click="BackgroundImage_Click" Margin="5,0,0,0" Grid.Column="2" Grid.Row="0"/>
                         <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,100,0">
                             <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
-                                                   Margin="0,0,0,20"
-                                                   FontSize="15"
-                                                   ToolTipService.Placement="Mouse"
                                                    ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
