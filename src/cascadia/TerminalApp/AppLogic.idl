@@ -47,6 +47,7 @@ namespace TerminalApp
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
         Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();

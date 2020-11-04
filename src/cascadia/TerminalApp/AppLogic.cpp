@@ -615,6 +615,17 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ShowTabsInTitlebar();
     }
 
+    bool AppLogic::GetInitialAlwaysOnTop()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings.GlobalSettings().AlwaysOnTop();
+    }
+
     // Method Description:
     // - See Pane::CalcSnappedDimension
     float AppLogic::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
