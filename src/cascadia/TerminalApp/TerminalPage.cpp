@@ -2282,7 +2282,11 @@ namespace winrt::TerminalApp::implementation
     // - The taskbar state of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarState()
     {
-        return _GetActiveControl().GetTaskbarState();
+        if (auto control{ _GetActiveControl() })
+        {
+            return control.GetTaskbarState();
+        }
+        return {};
     }
 
     // Method Description:
@@ -2291,7 +2295,11 @@ namespace winrt::TerminalApp::implementation
     // - The taskbar progress of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarProgress()
     {
-        return _GetActiveControl().GetTaskbarProgress();
+        if (auto control{ _GetActiveControl() })
+        {
+            return control.GetTaskbarProgress();
+        }
+        return {};
     }
 
     // Method Description:
