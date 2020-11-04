@@ -36,6 +36,7 @@ namespace winrt::MonarchPeasantSample::implementation
     private:
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
+        uint64_t _mostRecentPeasant{ 0 };
         std::unordered_map<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants;
     };
 }

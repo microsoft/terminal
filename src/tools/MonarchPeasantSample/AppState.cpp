@@ -109,6 +109,10 @@ bool AppState::processCommandline()
         _peasant.ExecuteCommandline({ args }, { L"placeholder CWD" });
         return false;
     }
+    else
+    {
+        printf("The Monarch instructed us to not create a new window. We'll be exiting now.\n");
+    }
 
     return true;
 }

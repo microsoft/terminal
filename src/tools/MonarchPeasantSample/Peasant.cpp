@@ -30,14 +30,16 @@ namespace winrt::MonarchPeasantSample::implementation
 
     bool Peasant::ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory)
     {
+        auto argsProcessed = 0;
         std::wstring fullCmdline;
         for (const auto& arg : args)
         {
-            fullCmdline += arg;
+            fullCmdline += argsProcessed++ == 0 ? L"EXENAME.exe" : arg;
+            fullCmdline += L" ";
         }
-        wprintf(L"Executed Commandline: ");
+        wprintf(L"\x1b[32mExecuted Commandline\x1b[m: \"");
         wprintf(fullCmdline.c_str());
-        wprintf(L"\n");
+        wprintf(L"\"\n");
         return true;
     }
 

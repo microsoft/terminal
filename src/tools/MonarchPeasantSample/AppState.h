@@ -38,10 +38,14 @@ bool peasantAppLoop(AppState& state);
 
 BIG OLE TODO LIST:
 
-* [ ] The Monarch needs to wait on peasants, to remove them from the map when they're dead
-* [ ] The peasants need to be able to process commandlines passed to them by other peasants
+* [ ] The Monarch needs to wait on peasants, to remove them from the map when
+  they're dead
+* [ ] The peasants need to be able to process commandlines passed to them by
+  other peasants
 * [ ] press a key in a peasant window to "activate" it
-* [ ] Add a key to toggle the monarch through ["never", "lastActive", "always"] glmming behaviors
+* [ ] Add a key to toggle the monarch through ["never", "lastActive", "always"]
+  glmming behaviors
 * [ ] Actually implement the "list peasants" thing
-
+* [ ] After an election, the entire MRU window state is lost, because it was
+  only stored in the current monarch.
 */

@@ -49,9 +49,11 @@ namespace winrt::MonarchPeasantSample::implementation
             printf("Peasant already had an ID, %lld\n", peasant.GetID());
             _nextPeasantID = providedID >= _nextPeasantID ? providedID + 1 : _nextPeasantID;
         }
-        _peasants[peasant.GetID()] = peasant;
+        auto newPeasantsId = peasant.GetID();
+        _peasants[newPeasantsId] = peasant;
+        _mostRecentPeasant = newPeasantsId;
         printf("(the next new peasant will get the ID %lld)\n", _nextPeasantID);
-        return peasant.GetID();
+        return newPeasantsId;
     }
 
     bool Monarch::IsInSingleInstanceMode()
@@ -72,28 +74,59 @@ namespace winrt::MonarchPeasantSample::implementation
     void Monarch::SetSelfID(const uint64_t selfID)
     {
         _thisPeasantID = selfID;
+        // TODO: Right now, the monarch assumes the role of the most recent
+        // window. If the monarch dies, and a new monarch takes over, then the
+        // entire stack of MRU windows will go with it. That's not what you
+        // want!
+        _mostRecentPeasant = _thisPeasantID;
     }
 
-    bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring /*cwd*/)
+    bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
     {
         auto argsProcessed = 0;
         std::wstring fullCmdline;
         for (const auto& arg : args)
         {
             fullCmdline += argsProcessed++ == 0 ? L"EXENAME.exe" : arg;
+            fullCmdline += L" ";
         }
-        wprintf(L"Proposed Commandline: ");
+        wprintf(L"\x1b[36mProposed Commandline\x1b[m: \"");
         wprintf(fullCmdline.c_str());
-        wprintf(L"\n");
+        wprintf(L"\"\n");
 
         bool createNewWindow = true;
 
-        if (args.size() > 3)
+        if (args.size() >= 3)
         {
             // We'll need three args at least - [exename.exe, -s, id] to be able
             // to have a session ID passed on the commandline.
-            printf("The new process provided tribute, we'll eat it. No need to create a new window.\n");
-            createNewWindow = false;
+            // printf("The new process provided tribute, we'll eat it. No need to create a new window.\n");
+
+            if (args[1] == L"-s" || args[1] == L"--session")
+            {
+                auto sessionId = std::stoi({ args[2].data(), args[2].size() });
+                printf("Found a commandline intended for session %d\n", sessionId);
+                if (sessionId < 0)
+                {
+                    createNewWindow = false;
+                }
+                else if (sessionId == 0)
+                {
+                    if (auto mruPeasant = GetPeasant(_mostRecentPeasant))
+                    {
+                        mruPeasant.ExecuteCommandline(args, cwd);
+                        createNewWindow = false;
+                    }
+                }
+                else
+                {
+                    if (auto otherPeasant = GetPeasant(sessionId))
+                    {
+                        otherPeasant.ExecuteCommandline(args, cwd);
+                        createNewWindow = false;
+                    }
+                }
+            }
         }
         else
         {
