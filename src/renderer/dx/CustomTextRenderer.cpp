@@ -296,6 +296,13 @@ try
     CursorPaintType paintType = CursorPaintType::Fill;
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush{ drawingContext.foregroundBrush };
 
+    if (options.fUseColor)
+    {
+        // Make sure to make the cursor opaque
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
+                                                           &brush));
+    }
+
     switch (options.cursorType)
     {
     case CursorType::Legacy:
@@ -342,13 +349,6 @@ try
     }
     default:
         return E_NOTIMPL;
-    }
-
-    if (options.fUseColor)
-    {
-        // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
-                                                           &brush));
     }
 
     switch (paintType)
