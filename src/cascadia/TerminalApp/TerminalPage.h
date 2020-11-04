@@ -13,7 +13,7 @@
 #include "AppCommandlineArgs.h"
 
 static constexpr uint32_t DefaultRowsToScroll{ 3 };
-
+static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -70,6 +70,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
+
+        void ShowKeyboardServiceWarning();
+        winrt::hstring KeyboardServiceDisabledText();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);

@@ -2703,6 +2703,74 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
+    //   Service" is disabled.
+    void TerminalPage::ShowKeyboardServiceWarning()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            presenter.ShowDialog(FindName(L"KeyboardServiceDisabledDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+    }
+
+    // Function Description:
+    // - Helper function to get the OS-localized name for the "Touch Keyboard
+    //   and Handwriting Panel Service". If we can't open up the service for any
+    //   reason, then we'll just return the service's key, "TabletInputService".
+    // Return Value:
+    // - The OS-localized name for the TabletInputService
+    winrt::hstring _getTabletServiceName()
+    {
+        auto isUwp = false;
+        try
+        {
+            isUwp = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsUwp();
+        }
+        CATCH_LOG();
+
+        if (isUwp)
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+
+        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+
+        DWORD cchBuffer = 0;
+        GetServiceDisplayName(hManager.get(), TabletInputServiceKey.data(), nullptr, &cchBuffer);
+        std::wstring buffer;
+        cchBuffer += 1; // Add space for a null
+        buffer.resize(cchBuffer);
+
+        if (LOG_LAST_ERROR_IF(!GetServiceDisplayName(hManager.get(),
+                                                     TabletInputServiceKey.data(),
+                                                     buffer.data(),
+                                                     &cchBuffer)))
+        {
+            return winrt::hstring{ TabletInputServiceKey };
+        }
+        return winrt::hstring{ buffer };
+    }
+
+    // Method Description:
+    // - Return the fully-formed warning message for the
+    //   "KeyboardServiceDisabled" dialog. This dialog is used to warn the user
+    //   if the keyboard service is disabled, and uses the OS localization for
+    //   the service's actual name. It's bound to the dialog in XAML.
+    // Return Value:
+    // - The warning message, including the OS-localized service name.
+    winrt::hstring TerminalPage::KeyboardServiceDisabledText()
+    {
+        const winrt::hstring serviceName{ _getTabletServiceName() };
+        const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
+        return text;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
