@@ -249,7 +249,6 @@
   </data>
   <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to "Focus" is equivalent to launching the terminal in the "Default" mode, but with the focus mode enabled. Similarly, setting this to "Maximized Focus" will result in launching the terminal in a maximized window with the focus mode enabled.</value>
-
     <comment>"Focus", "Default", and "Maximized Focus" must match Globals_LaunchSizeFocus.Content, Globals_LaunchSizeDefault.Content, and Globals_LaunchSizeMaximizedFocus.Content values respectively.</comment>
   </data>
   <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
@@ -639,10 +638,10 @@
     <value>When checked, the window will have an acrylic background. When unchecked, the window will have a plain, untextured background.</value>
   </data>
   <data name="Settings_ResetSettingsButton.Content" xml:space="preserve">
-    <value>Reset</value>
+    <value>Discard changes</value>
   </data>
   <data name="Settings_ResetSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Reset your settings to your previous save.</value>
+    <value>Discard your unsaved settings.</value>
   </data>
   <data name="Settings_SaveSettingsButton.Content" xml:space="preserve">
     <value>Apply</value>
@@ -656,7 +655,7 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
-</data>
+  </data>
   <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
     <value>Focus</value>
   </data>
