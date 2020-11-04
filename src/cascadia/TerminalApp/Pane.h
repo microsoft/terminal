@@ -77,6 +77,7 @@ public:
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+    DECLARE_EVENT(PaneWantsFocus, _PaneWantsFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct SnapSizeResult;
@@ -100,6 +101,7 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
     winrt::event_token _warningBellToken{ 0 };
+    winrt::event_token _controlWantsFocusToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
@@ -135,6 +137,8 @@ private:
                                     winrt::Windows::Foundation::IInspectable const& e);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+    void _ControlWantsFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                   winrt::Windows::Foundation::IInspectable const& e);
 
     std::pair<float, float> _CalcChildrenSizes(const float fullSize) const;
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;

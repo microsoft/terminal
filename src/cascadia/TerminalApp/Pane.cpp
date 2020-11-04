@@ -45,6 +45,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    _controlWantsFocusToken = _control.ControlWantsFocus({ this, &Pane::_ControlWantsFocusHandler });
 
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
@@ -388,6 +389,12 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     _GotFocusHandlers(shared_from_this());
 }
 
+void Pane::_ControlWantsFocusHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                     winrt::Windows::Foundation::IInspectable const& /*e*/)
+{
+    _PaneWantsFocusHandlers(shared_from_this());
+}
+
 // Method Description:
 // - Fire our Closed event to tell our parent that we should be removed.
 // Arguments:
@@ -655,6 +662,7 @@ void Pane::_CloseChild(const bool closeFirst)
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        _controlWantsFocusToken = _control.ControlWantsFocus({ this, &Pane::_ControlWantsFocusHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -666,6 +674,8 @@ void Pane::_CloseChild(const bool closeFirst)
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         closedChild->_control.WarningBell(closedChild->_warningBellToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+        closedChild->_control.ControlWantsFocus(closedChild->_controlWantsFocusToken);
+        remainingChild->_control.ControlWantsFocus(remainingChild->_controlWantsFocusToken);
 
         // If either of our children was focused, we want to take that focus from
         // them.
@@ -757,6 +767,7 @@ void Pane::_CloseChild(const bool closeFirst)
         oldSecond->Closed(oldSecondToken);
         closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
         closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        closedChild->_control.ControlWantsFocus(closedChild->_controlWantsFocusToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1459,6 +1470,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _connectionStateChangedToken.value = 0;
     _control.WarningBell(_warningBellToken);
     _warningBellToken.value = 0;
+    _control.ControlWantsFocus(_controlWantsFocusToken);
+    _controlWantsFocusToken.value = 0;
 
     // Remove our old GotFocus handler from the control. We don't what the
     // control telling us that it's now focused, we want it telling its new
@@ -2069,3 +2082,4 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, PaneWantsFocus, _PaneWantsFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

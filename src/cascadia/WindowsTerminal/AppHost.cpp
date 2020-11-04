@@ -96,7 +96,7 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
         if (_logic.GetAutoFocusErrorPane() && control.GetTaskbarState() == 2)
         {
             _window->FlashTaskbar(true);
-            // TODO: focus the control that sent this event
+            control.TryGettingFocus();
         }
         _window->SetTaskbarProgress(_logic.GetLastActiveControlTaskbarState(), _logic.GetLastActiveControlTaskbarProgress());
     }

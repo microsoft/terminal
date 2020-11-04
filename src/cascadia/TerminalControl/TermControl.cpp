@@ -3093,6 +3093,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->GetTaskbarProgress();
     }
 
+    void TermControl::TryGettingFocus() noexcept
+    {
+        _ControlWantsFocusHandlers(*this, nullptr);
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.

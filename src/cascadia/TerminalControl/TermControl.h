@@ -144,6 +144,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::fire_and_forget TaskbarProgressChanged();
         const size_t GetTaskbarState() const noexcept;
         const size_t GetTaskbarProgress() const noexcept;
+        void TryGettingFocus() noexcept;
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
@@ -160,6 +161,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(ControlWantsFocus, IInspectable, IInspectable);
         // clang-format on
 
     private:
