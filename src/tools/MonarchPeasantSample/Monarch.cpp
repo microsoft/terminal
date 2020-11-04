@@ -43,14 +43,22 @@ namespace winrt::MonarchPeasantSample::implementation
         }
         auto newPeasantsId = peasant.GetID();
         _peasants[newPeasantsId] = peasant;
-        _mostRecentPeasant = newPeasantsId;
+        _setMostRecentPeasant(newPeasantsId);
         printf("(the next new peasant will get the ID %lld)\n", _nextPeasantID);
+
+        peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
+
         return newPeasantsId;
     }
 
-    bool Monarch::IsInSingleInstanceMode()
+    void Monarch::_peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        return false;
+        if (auto peasant{ sender.try_as<winrt::MonarchPeasantSample::Peasant>() })
+        {
+            auto theirID = peasant.GetID();
+            _setMostRecentPeasant(theirID);
+        }
     }
 
     winrt::MonarchPeasantSample::IPeasant Monarch::GetPeasant(uint64_t peasantID)
@@ -63,14 +71,20 @@ namespace winrt::MonarchPeasantSample::implementation
         return nullptr;
     }
 
+    void Monarch::_setMostRecentPeasant(const uint64_t peasantID)
+    {
+        _mostRecentPeasant = peasantID;
+        printf("\x1b[90mThe most recent peasant is now \x1b[m#%llu\n", _mostRecentPeasant);
+    }
+
     void Monarch::SetSelfID(const uint64_t selfID)
     {
-        _thisPeasantID = selfID;
+        this->_thisPeasantID = selfID;
         // TODO: Right now, the monarch assumes the role of the most recent
         // window. If the monarch dies, and a new monarch takes over, then the
         // entire stack of MRU windows will go with it. That's not what you
         // want!
-        _mostRecentPeasant = _thisPeasantID;
+        _setMostRecentPeasant(_thisPeasantID);
     }
 
     bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
@@ -112,10 +126,12 @@ namespace winrt::MonarchPeasantSample::implementation
                 printf("Found a commandline intended for session %d\n", sessionId);
                 if (sessionId < 0)
                 {
-                    createNewWindow = false;
+                    printf("That certainly isn't a valid ID, they should make a new window.\n");
+                    createNewWindow = true;
                 }
                 else if (sessionId == 0)
                 {
+                    printf("Session 0 is actually #%llu\n", _mostRecentPeasant);
                     if (auto mruPeasant = GetPeasant(_mostRecentPeasant))
                     {
                         mruPeasant.ExecuteCommandline(args, cwd);
@@ -128,6 +144,10 @@ namespace winrt::MonarchPeasantSample::implementation
                     {
                         otherPeasant.ExecuteCommandline(args, cwd);
                         createNewWindow = false;
+                    }
+                    else
+                    {
+                        printf("I couldn't find a peasant for that ID, they should make a new window.\n");
                     }
                 }
             }

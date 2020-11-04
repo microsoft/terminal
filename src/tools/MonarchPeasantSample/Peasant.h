@@ -23,6 +23,8 @@ namespace winrt::MonarchPeasantSample::implementation
 
         bool ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory);
 
+        void raiseActivatedEvent();
+
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:

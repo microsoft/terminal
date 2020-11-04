@@ -82,12 +82,6 @@ MonarchPeasantSample::IPeasant AppState::_createOurPeasant()
     return *peasant;
 }
 
-// void AppState::createMonarchAndPeasant()
-// {
-//     _monarch = AppState::instantiateAMonarch();
-//     _peasant = _createOurPeasant();
-// }
-
 void AppState::createMonarch()
 {
     _monarch = AppState::instantiateAMonarch();

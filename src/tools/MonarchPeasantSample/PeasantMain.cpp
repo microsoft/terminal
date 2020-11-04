@@ -30,6 +30,16 @@ bool peasantReadInput(AppState& state)
             {
                 return true;
             }
+            else
+            {
+                printf("This window was activated\n");
+                winrt::com_ptr<winrt::MonarchPeasantSample::implementation::Peasant> peasantImpl;
+                peasantImpl.copy_from(winrt::get_self<winrt::MonarchPeasantSample::implementation::Peasant>(state._peasant));
+                if (peasantImpl)
+                {
+                    peasantImpl->raiseActivatedEvent();
+                }
+            }
             break;
         }
 

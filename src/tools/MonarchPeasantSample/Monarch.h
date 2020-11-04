@@ -30,8 +30,6 @@ namespace winrt::MonarchPeasantSample::implementation
 
         uint64_t AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant);
 
-        bool IsInSingleInstanceMode();
-
         winrt::MonarchPeasantSample::IPeasant GetPeasant(uint64_t peasantID);
 
         winrt::MonarchPeasantSample::IPeasant GetMostRecentPeasant();
@@ -45,8 +43,13 @@ namespace winrt::MonarchPeasantSample::implementation
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
         uint64_t _mostRecentPeasant{ 0 };
-        GlomToLastWindow _windowingBehavior{ GlomToLastWindow::LastActive };
+        GlomToLastWindow _windowingBehavior{ GlomToLastWindow::Never };
         std::unordered_map<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants;
+
+        void _setMostRecentPeasant(const uint64_t peasantID);
+
+        void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::Foundation::IInspectable& args);
     };
 }
 
