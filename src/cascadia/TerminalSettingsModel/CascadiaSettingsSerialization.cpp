@@ -1038,6 +1038,29 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 }
 
 // Method Description:
+// - Create a backup file with the current contents, iff one does not exist
+// Arguments:
+// - content - the content that we're writing to the backup file
+// - settingsPath - the path to the settings file that we're going to create a backup for
+// Return Value:
+// - <none>
+void CascadiaSettings::_WriteBackupFile(std::string_view content, const winrt::hstring settingsPath)
+{
+    const auto backupSettingsPath{ settingsPath + L".backup" };
+    wil::unique_hfile backupFile{ CreateFileW(backupSettingsPath.c_str(),
+                                              GENERIC_READ,
+                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                              nullptr,
+                                              CREATE_NEW,
+                                              FILE_ATTRIBUTE_NORMAL,
+                                              nullptr) };
+
+    // throw if backup file already exists
+    THROW_LAST_ERROR_IF(INVALID_HANDLE_VALUE == backupFile.get());
+    THROW_LAST_ERROR_IF(!WriteFile(backupFile.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
+}
+
+// Method Description:
 // - Write the current state of CascadiaSettings to our settings file
 // - Create a backup file with the current contents, if one does not exist
 // Arguments:
@@ -1048,19 +1071,11 @@ void CascadiaSettings::WriteSettingsToDisk() const
 {
     const auto settingsPath{ CascadiaSettings::SettingsPath() };
 
-    // write backup settings file, if one doesn't exist
-    const auto backupSettingsPath{ settingsPath + L".backup" };
-    wil::unique_hfile backupFile{ CreateFileW(backupSettingsPath.c_str(),
-                                              GENERIC_READ,
-                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                              nullptr,
-                                              CREATE_NEW,
-                                              FILE_ATTRIBUTE_NORMAL,
-                                              nullptr) };
-    if (GetLastError() != ERROR_FILE_EXISTS)
+    try
     {
-        _WriteSettings(_userSettingsString, backupSettingsPath);
+        _WriteBackupFile(_userSettingsString, settingsPath);
     }
+    CATCH_LOG();
 
     // write current settings to current settings file
     const auto json{ ToJson() };

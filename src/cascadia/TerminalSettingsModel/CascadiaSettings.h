@@ -128,7 +128,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _LoadDynamicProfiles();
 
         static bool _IsPackaged();
-        static void _WriteSettings(const std::string_view content, const hstring filepath);
+        static void _WriteSettings(std::string_view content, const hstring filepath);
+        static void _WriteBackupFile(std::string_view content, const winrt::hstring settingsPath);
         static std::optional<std::string> _ReadUserSettings();
         static std::optional<std::string> _ReadFile(HANDLE hFile);
 
