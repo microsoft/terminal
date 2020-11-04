@@ -323,6 +323,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     resultPtr->_ParseJsonString(DefaultJson, true);
     resultPtr->LayerJson(resultPtr->_defaultSettings);
     resultPtr->_ResolveDefaultProfile();
+    resultPtr->_UpdateActiveProfiles();
 
     return *resultPtr;
 }
