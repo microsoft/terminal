@@ -249,6 +249,7 @@
   </data>
   <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to "Focus" is equivalent to launching the terminal in the "Default" mode, but with the focus mode enabled. Similarly, setting this to "Maximized Focus" will result in launching the terminal in a maximized window with the focus mode enabled.</value>
+
     <comment>"Focus", "Default", and "Maximized Focus" must match Globals_LaunchSizeFocus.Content, Globals_LaunchSizeDefault.Content, and Globals_LaunchSizeMaximizedFocus.Content values respectively.</comment>
   </data>
   <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
@@ -325,7 +326,7 @@
   <data name="Globals_ThemeDark.Content" xml:space="preserve">
     <value>Dark</value>
   </data>
-  <data name="Globals_ThemeDefault.Content" xml:space="preserve">
+  <data name="Globals_ThemeSystem.Content" xml:space="preserve">
     <value>Default</value>
   </data>
   <data name="Globals_ThemeLight.Content" xml:space="preserve">
@@ -655,7 +656,7 @@
   </data>
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
-  </data>
+</data>
   <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
     <value>Focus</value>
   </data>

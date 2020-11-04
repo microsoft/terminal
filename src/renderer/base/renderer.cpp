@@ -913,17 +913,18 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
-    if (_pData->GetPatternId(coordTarget).size() > 0)
+    // Since we're only rendering pattern links on *hover*, there's no point in checking
+    // the pattern range if we aren't currently hovering.
+    if (_hoveredInterval.has_value())
     {
-        if (_hoveredInterval.has_value() &&
-            _hoveredInterval.value().start <= til::point{ coordTarget } &&
-            til::point{ coordTarget } <= _hoveredInterval.value().stop)
+        const til::point coordTargetTil{ coordTarget };
+        if (_hoveredInterval->start <= coordTargetTil &&
+            coordTargetTil <= _hoveredInterval->stop)
         {
-            lines |= IRenderEngine::GridLines::Underline;
-        }
-        else
-        {
-            lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+            if (_pData->GetPatternId(coordTarget).size() > 0)
+            {
+                lines |= IRenderEngine::GridLines::Underline;
+            }
         }
     }
 

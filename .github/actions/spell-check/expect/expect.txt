@@ -2191,6 +2191,7 @@ Statusline
 stdafx
 STDAPI
 stdcall
+stdcpp
 stderr
 stdexcept
 stdin

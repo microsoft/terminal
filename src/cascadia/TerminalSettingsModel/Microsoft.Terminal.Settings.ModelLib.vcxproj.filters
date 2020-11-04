@@ -28,7 +28,6 @@
     <ClCompile Include="DefaultProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <Filter>json</Filter>
     </ClCompile>
@@ -56,13 +55,13 @@
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="Utils.h" />
     <ClInclude Include="DefaultProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="JsonUtils.h">
       <Filter>json</Filter>
     </ClInclude>
+    <ClInclude Include="IInheritable.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
@@ -73,10 +72,11 @@
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />
+    <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="EnumMappings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="TerminalSettingsModel.def" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="profileGeneration">
