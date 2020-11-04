@@ -10,4 +10,4 @@ contact_links:
     about: Report issues with the documentation for the Windows Terminal (in docs.microsoft.com/windows/terminal)
   - name: Console Documentation issue 📄
     url: https://github.com/MicrosoftDocs/console-docs/issues/new
-    about: Report issues with the documentation for the Console(in docs.microsoft.com/windows/console)
+    about: Report issues with the documentation for the Console (in docs.microsoft.com/windows/console)
