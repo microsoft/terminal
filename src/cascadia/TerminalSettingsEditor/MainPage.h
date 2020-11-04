@@ -31,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // When "save" is pressed, _settingsSource = _settingsClone
         static winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsSource;
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsClone{ nullptr };
-        winrt::Windows::Foundation::Collections::IMap<winrt::guid, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
+        winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Settings::Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
 
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index);

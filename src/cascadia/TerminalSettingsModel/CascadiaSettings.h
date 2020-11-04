@@ -81,6 +81,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
 
+        Model::Profile CreateNewProfile();
         Model::Profile FindProfile(guid profileGuid) const noexcept;
         Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 

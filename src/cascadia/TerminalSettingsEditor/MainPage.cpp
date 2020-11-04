@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings MainPage::_settingsSource{ nullptr };
 
     MainPage::MainPage(CascadiaSettings settings) :
-        _profileToNavItemMap{ winrt::single_threaded_map<guid, MUX::Controls::NavigationViewItem>() }
+        _profileToNavItemMap{ winrt::single_threaded_map<Model::Profile, MUX::Controls::NavigationViewItem>() }
     {
         InitializeComponent();
 
@@ -67,11 +67,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (clickedItemContainer != NULL)
         {
-            auto tagPropertyValue = clickedItemContainer.Tag().as<winrt::Windows::Foundation::IPropertyValue>();
-            if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::String)
+            if (auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
-                auto tag = unbox_value<hstring>(clickedItemContainer.Tag());
-                if (tag == L"AddProfile")
+                if (navString == L"AddProfile")
                 {
                     uint32_t insertIndex;
                     SettingsNav().MenuItems().IndexOf(clickedItemContainer, insertIndex);
@@ -79,15 +77,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else
                 {
-                    Navigate(contentFrame(), unbox_value<hstring>(clickedItemContainer.Tag()));
+                    Navigate(contentFrame(), *navString);
                 }
             }
-            else if (tagPropertyValue.Type() == winrt::Windows::Foundation::PropertyType::Guid)
+            else if (auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
             {
-                auto profileGuid = unbox_value<guid>(clickedItemContainer.Tag());
-                auto prof = _settingsSource.FindProfile(profileGuid);
-                // Navigate to a page with the given profile guid
-                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), prof);
+                // Navigate to a page with the given profile
+                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), profile);
             }
         }
     }
@@ -201,8 +197,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index)
     {
-        Profile newProfile;
-        _settingsSource.AllProfiles().Append(newProfile);
+        auto newProfile = _settingsSource.CreateNewProfile();
         auto navItem = _CreateProfileNavViewItem(newProfile);
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
@@ -217,14 +212,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
-        profileNavItem.Tag(box_value<guid>(profile.Guid()));
+        profileNavItem.Tag(box_value<Model::Profile>(profile));
 
         const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
         WUX::Controls::IconSourceElement icon;
         icon.IconSource(iconSource);
         profileNavItem.Icon(icon);
 
-        _profileToNavItemMap.Insert(profile.Guid(), profileNavItem);
+        _profileToNavItemMap.Insert(profile, profileNavItem);
 
         return profileNavItem;
     }

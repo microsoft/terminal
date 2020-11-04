@@ -34,6 +34,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<SettingsLoadErrors> GetLoadingError { get; };
         String GetSerializationErrorMessage { get; };
 
+        Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
         ColorScheme GetColorSchemeForProfile(Guid profileGuid);
 

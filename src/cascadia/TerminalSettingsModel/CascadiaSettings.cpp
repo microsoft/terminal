@@ -214,6 +214,25 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DefaultPr
 }
 
 // Method Description:
+// - Create a new profile based off the default profile settings.
+// Arguments:
+// - <none>
+// Return Value:
+// - a reference to the new profile
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNewProfile()
+{
+    auto newProfile{ _userDefaultProfileSettings->CreateChild() };
+    _allProfiles.Append(*newProfile);
+
+    // Give the new profile a distinct name so a guid is properly generated
+    auto newName = fmt::format(L"Profile {}", _allProfiles.Size());
+    newProfile->Name(to_hstring(newName.c_str()));
+    newProfile->GenerateGuidIfNecessary();
+
+    return *newProfile;
+}
+
+// Method Description:
 // - Gets our list of warnings we found during loading. These are things that we
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
