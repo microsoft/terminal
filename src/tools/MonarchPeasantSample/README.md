@@ -81,6 +81,13 @@ things that are missing from the sample:
     - try running `MonarchPeasantSample.exe -s 0` (or `-s 2`)
     - THIS WILL FAIL, but it _should_ just run the commandline in the monarch
       (in the case of `-s 0`) or in a new window (in the `-s 1` case)
+        - The reason this fails is because the Monarch tries to call
+          `Peasant::ExecuteCommandline`, but the Peasant object doesn't actually
+          exist anymore (the process is dead!). Three fixes will help here:
+          - wrap all calls to peasants with try/catch's
+          - Do the "keep a MRU stack" thing (so we know `-s 0` is now the monarch)
+          - Do the "wait on Peasant processes" thing, to know to pop #2 from the
+            map and MRU stack.
 
 ## Utilities
 
