@@ -5,10 +5,20 @@
 
 #include "ColorTableEntry.g.h"
 #include "ColorSchemes.g.h"
+#include "ColorSchemesPageNavigationState.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
+    {
+    public:
+        ColorSchemesPageNavigationState(Model::GlobalAppSettings settings) :
+            _Globals{ settings } {}
+
+        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
+    };
+
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
@@ -18,7 +28,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
 
-        GETSET_PROPERTY(Model::GlobalAppSettings, GlobalSettings, nullptr);
+        GETSET_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::hstring>, ColorSchemeList, nullptr);
 

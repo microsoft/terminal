@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
-#include "MainPage.h"
+#include "GlobalAppearancePageNavigationState.g.cpp"
 #include "EnumEntry.h"
 
 using namespace winrt;
@@ -25,6 +25,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void GlobalAppearance::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
     {
-        _GlobalSettings = e.Parameter().as<Model::GlobalAppSettings>();
+        _State = e.Parameter().as<Editor::GlobalAppearancePageNavigationState>();
     }
 }

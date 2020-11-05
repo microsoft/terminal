@@ -28,7 +28,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ComboBox x:Uid="Globals_DefaultProfile"
                           x:Name="DefaultProfile"
                           Margin="0,0,0,20"
-                          ItemsSource="{x:Bind Settings.AllProfiles, Mode=OneWay}"
+                          ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
                           SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
                           FontSize="15"
                           ToolTipService.Placement="Mouse">
@@ -38,7 +38,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                 <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
                     <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
                     <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>

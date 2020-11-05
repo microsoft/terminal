@@ -41,15 +41,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                        ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTabsInTitlebar, Mode=TwoWay}"/>
-                <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}"/>
-                <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettings.AlwaysShowTabs, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
                 <Controls:RadioButtons x:Uid="Globals_TabWidthMode"
                                        SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
                                        ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}"/>
-                <CheckBox x:Uid="Globals_DisableAnimations" IsChecked="{x:Bind GlobalSettings.DisableAnimations, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind State.Globals.ConfirmCloseAllTabs, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_DisableAnimations" IsChecked="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
             </StackPanel>
         </Grid>
     </ScrollViewer>

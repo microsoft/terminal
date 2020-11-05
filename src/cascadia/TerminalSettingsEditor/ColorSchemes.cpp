@@ -2,21 +2,20 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "MainPage.h"
 #include "ColorSchemes.h"
 #include "ColorTableEntry.g.cpp"
 #include "ColorSchemes.g.cpp"
+#include "ColorSchemesPageNavigationState.g.cpp"
 
 #include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -46,9 +45,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    void ColorSchemes::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
+    void ColorSchemes::OnNavigatedTo(NavigationEventArgs e)
     {
-        _GlobalSettings = e.Parameter().as<Model::GlobalAppSettings>();
+        _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
         _UpdateColorSchemeList();
 
         // Initialize our color table view model with 16 dummy colors
@@ -75,7 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         //  Update the color scheme this page is modifying
         auto str = winrt::unbox_value<hstring>(args.AddedItems().GetAt(0));
-        auto colorScheme = GlobalSettings().ColorSchemes().Lookup(str);
+        auto colorScheme = _State.Globals().ColorSchemes().Lookup(str);
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
     }
@@ -88,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::_UpdateColorSchemeList()
     {
-        auto colorSchemeMap = GlobalSettings().ColorSchemes();
-        for (const auto& pair : GlobalSettings().ColorSchemes())
+        auto colorSchemeMap = _State.Globals().ColorSchemes();
+        for (const auto& pair : _State.Globals().ColorSchemes())
         {
             _ColorSchemeList.Append(pair.Key());
         }

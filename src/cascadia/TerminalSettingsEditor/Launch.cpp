@@ -4,13 +4,10 @@
 #include "pch.h"
 #include "Launch.h"
 #include "Launch.g.cpp"
-#include "MainPage.h"
+#include "LaunchPageNavigationState.g.cpp"
 
-using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -19,19 +16,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    void Launch::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
+    void Launch::OnNavigatedTo(NavigationEventArgs e)
     {
-        _Settings = e.Parameter().as<Model::CascadiaSettings>();
+        _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
     }
 
     IInspectable Launch::CurrentDefaultProfile()
     {
-        return winrt::box_value(_Settings.FindProfile(_Settings.GlobalSettings().DefaultProfile()));
+        const auto defaultProfileGuid{ _State.Settings().GlobalSettings().DefaultProfile() };
+        return winrt::box_value(_State.Settings().FindProfile(defaultProfileGuid));
     }
 
     void Launch::CurrentDefaultProfile(const IInspectable& value)
     {
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
-        _Settings.GlobalSettings().DefaultProfile(profile.Guid());
+        _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
     }
 }

@@ -4,10 +4,20 @@
 #pragma once
 
 #include "GlobalAppearance.g.h"
+#include "GlobalAppearancePageNavigationState.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct GlobalAppearancePageNavigationState : GlobalAppearancePageNavigationStateT<GlobalAppearancePageNavigationState>
+    {
+    public:
+        GlobalAppearancePageNavigationState(Model::GlobalAppSettings settings) :
+            _Globals{ settings } {}
+
+        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+    };
+
     struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance>
     {
     public:
@@ -15,10 +25,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
 
-        GETSET_PROPERTY(Model::GlobalAppSettings, GlobalSettings, nullptr);
+        GETSET_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, GlobalSettings, Theme);
-        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, GlobalSettings, TabWidthMode);
+        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals, Theme);
+        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, State().Globals, TabWidthMode);
     };
 }
 

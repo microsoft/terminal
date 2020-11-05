@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "Utils.h"
 #include "MainPage.g.h"
+#include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _CreateAndNavigateToNewProfile(const uint32_t index);
         winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
 
-        static void _Navigate(Windows::UI::Xaml::Controls::Frame contentFrame, hstring clickedItemTag, Model::CascadiaSettings settings);
+        void _Navigate(hstring clickedItemTag);
     };
 }
 

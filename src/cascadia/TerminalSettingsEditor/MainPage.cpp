@@ -27,6 +27,14 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
 
+static const winrt::hstring launchTag{ L"Launch_Nav" };
+static const winrt::hstring interactionTag{ L"Interaction_Nav" };
+static const winrt::hstring renderingTag{ L"Rendering_Nav" };
+static const winrt::hstring globalProfileTag{ L"GlobalProfile_Nav" };
+static const winrt::hstring addProfileTag{ L"AddProfile" };
+static const winrt::hstring colorSchemesTag{ L"ColorSchemes_Nav" };
+static const winrt::hstring globalAppearanceTag{ L"GlobalAppearance_Nav" };
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     MainPage::MainPage(CascadiaSettings settings) :
@@ -53,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Manually navigate because setting the selected item programmatically doesn't trigger ItemInvoked.
         if (const auto tag = initialItem.as<MUX::Controls::NavigationViewItem>().Tag())
         {
-            _Navigate(contentFrame(), unbox_value<hstring>(tag), _settingsClone);
+            _Navigate(unbox_value<hstring>(tag));
         }
     }
 
@@ -69,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
-                if (navString == L"AddProfile")
+                if (navString == addProfileTag)
                 {
                     // "AddProfile" needs to create a new profile before we can navigate to it
                     uint32_t insertIndex;
@@ -79,51 +87,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else
                 {
                     // Otherwise, navigate to the page
-                    _Navigate(contentFrame(), *navString, _settingsClone);
+                    _Navigate(*navString);
                 }
             }
-            else if (auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
+            else if (const auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
             {
                 // Navigate to a page with the given profile
-                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), profile);
+                const auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes()) };
+                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
             }
         }
     }
 
-    void MainPage::_Navigate(Controls::Frame contentFrame, hstring clickedItemTag, CascadiaSettings settings)
+    void MainPage::_Navigate(hstring clickedItemTag)
     {
-        const hstring launchSubpage = L"Launch_Nav";
-        const hstring interactionSubpage = L"Interaction_Nav";
-        const hstring renderingSubpage = L"Rendering_Nav";
-
-        const hstring globalProfileSubpage = L"GlobalProfile_Nav";
-
-        const hstring colorSchemesPage = L"ColorSchemes_Nav";
-        const hstring globalAppearancePage = L"GlobalAppearance_Nav";
-
-        if (clickedItemTag == launchSubpage)
+        if (clickedItemTag == launchTag)
         {
-            contentFrame.Navigate(xaml_typename<Editor::Launch>(), settings);
+            const auto state{ winrt::make<LaunchPageNavigationState>(_settingsClone) };
+            contentFrame().Navigate(xaml_typename<Editor::Launch>(), state);
         }
-        else if (clickedItemTag == interactionSubpage)
+        else if (clickedItemTag == interactionTag)
         {
-            contentFrame.Navigate(xaml_typename<Editor::Interaction>(), settings.GlobalSettings());
+            const auto state{ winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()) };
+            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), state);
         }
-        else if (clickedItemTag == renderingSubpage)
+        else if (clickedItemTag == renderingTag)
         {
-            contentFrame.Navigate(xaml_typename<Editor::Rendering>(), settings.GlobalSettings());
+            const auto state{ winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()) };
+            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), state);
         }
-        else if (clickedItemTag == globalProfileSubpage)
+        else if (clickedItemTag == globalProfileTag)
         {
-            contentFrame.Navigate(xaml_typename<Editor::Profiles>(), settings.ProfileDefaults());
+            const auto state{ winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes()) };
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
         }
-        else if (clickedItemTag == colorSchemesPage)
+        else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame.Navigate(xaml_typename<Editor::ColorSchemes>(), settings.GlobalSettings());
+            const auto state{ winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()) };
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), state);
         }
-        else if (clickedItemTag == globalAppearancePage)
+        else if (clickedItemTag == globalAppearanceTag)
         {
-            contentFrame.Navigate(xaml_typename<Editor::GlobalAppearance>(), settings.GlobalSettings());
+            const auto state{ winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()) };
+            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), state);
         }
     }
 
