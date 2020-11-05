@@ -562,7 +562,7 @@ namespace TerminalAppLocalTests
             ActionEventArgs eventArgs{ args };
             // eventArgs.Args(args);
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -573,7 +573,7 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             ActionEventArgs eventArgs{};
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -583,7 +583,7 @@ namespace TerminalAppLocalTests
         result = RunOnUIThread([&page]() {
             ActionEventArgs eventArgs{};
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -600,7 +600,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -614,7 +614,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -628,7 +628,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleMoveFocus(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
@@ -645,7 +645,7 @@ namespace TerminalAppLocalTests
             SplitPaneArgs args{ SplitType::Duplicate };
             ActionEventArgs eventArgs{ args };
             page->_HandleSplitPane(nullptr, eventArgs);
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
 
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
@@ -659,7 +659,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleTogglePaneZoom(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
             VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
@@ -672,7 +672,7 @@ namespace TerminalAppLocalTests
 
             page->_HandleClosePane(nullptr, eventArgs);
 
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
@@ -683,7 +683,7 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Check to ensure there's only one pane left.");
 
         result = RunOnUIThread([&page]() {
-            auto firstTab = page->_GetTerminalTabImpl(0);
+            auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(1, firstTab->GetLeafPaneCount());
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
