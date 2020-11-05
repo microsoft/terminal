@@ -58,7 +58,7 @@
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
-        <ClInclude Include="Jumplist.h" />
+      <ClInclude Include="Jumplist.h" />
     <ClInclude Include="Tab.h">
       <Filter>tab</Filter>
     </ClInclude>
