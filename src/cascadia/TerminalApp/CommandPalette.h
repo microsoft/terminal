@@ -109,7 +109,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _TabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _tabActions{ nullptr };
         uint32_t _switcherStartIdx;
         void _anchorKeyUpHandler();
 

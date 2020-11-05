@@ -707,7 +707,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
         _populateFilteredActions(_allCommands, actions);
-		_updateFilteredActions();
+        _updateFilteredActions();
     }
 
     void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs, const bool clearList)
@@ -743,7 +743,6 @@ namespace winrt::TerminalApp::implementation
             auto filteredCommand{ winrt::make<FilteredCommand>(action) };
             vectorToPopulate.Append(filteredCommand);
         }
-
     }
 
     void CommandPalette::EnableCommandPaletteMode()
