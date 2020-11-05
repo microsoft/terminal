@@ -85,6 +85,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestCopy);
         TEST_METHOD(TestCloneInheritanceTree);
 
+        TEST_METHOD(TestValidDefaults);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -2718,5 +2720,14 @@ namespace SettingsModelLocalTests
 
         verifyEmptyPD(emptyPDJson);
         verifyEmptyPD(missingPDJson);
+    }
+
+    void DeserializationTests::TestValidDefaults()
+    {
+        // GH#8146: A LoadDefaults call should populate the list of active profiles
+
+        const auto settings{ CascadiaSettings::LoadDefaults() };
+        VERIFY_ARE_EQUAL(settings.ActiveProfiles().Size(), settings.AllProfiles().Size());
+        VERIFY_ARE_EQUAL(settings.AllProfiles().Size(), 2u);
     }
 }

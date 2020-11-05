@@ -81,6 +81,8 @@ namespace winrt::TerminalApp::implementation
 
         void _listItemClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::ItemClickEventArgs const& e);
 
+        void _moveBackButtonClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&);
+
         void _updateFilteredActions();
 
         std::vector<Microsoft::Terminal::Settings::Model::Command> _collectFilteredActions();

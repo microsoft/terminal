@@ -429,6 +429,25 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // This event is called when the user clicks on an ChevronLeft button right
+    // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
+    // It'll go up a level when the users click the button.
+    // Arguments:
+    // - sender: the button that got clicked
+    // Return Value:
+    // - <none>
+    void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
+                                                Windows::UI::Xaml::RoutedEventArgs const&)
+    {
+        _nestedActionStack.Clear();
+        ParentCommandName(L"");
+        _currentNestedCommands.Clear();
+        _searchBox().Focus(FocusState::Programmatic);
+        _updateFilteredActions();
+        _filteredActionsView().SelectedIndex(0);
+    }
+
+    // Method Description:
     // - This is called when the user selects a command with subcommands. It
     //   will update our UI to now display the list of subcommands instead, and
     //   clear the search text so the user can search from the new list of

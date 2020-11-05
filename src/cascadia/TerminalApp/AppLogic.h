@@ -4,8 +4,6 @@
 #pragma once
 
 #include "AppLogic.g.h"
-
-#include "Tab.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -86,6 +84,8 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
+        bool _IsKeyboardServiceEnabled();
+        void _ShowKeyboardServiceDisabledDialog();
 
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();

@@ -70,6 +70,12 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TabBase.h">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalTab.h">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -94,9 +100,6 @@
     </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Tab.h">
-      <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
@@ -127,6 +130,12 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TabBase.cpp">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalTab.cpp">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -151,9 +160,6 @@
     </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="Tab.cpp">
-      <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
@@ -197,6 +203,8 @@
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="TabBase.idl" />
+    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -220,7 +228,6 @@
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="IconPathConverter.idl" />
-    <Midl Include="Tab.idl" />
     <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
