@@ -89,7 +89,7 @@ namespace winrt::MonarchPeasantSample::implementation
         std::wstring fullCmdline;
         for (const auto& arg : args)
         {
-            fullCmdline += argsProcessed++ == 0 ? L"EXENAME.exe" : arg;
+            fullCmdline += argsProcessed++ == 0 ? L"sample.exe" : arg;
             fullCmdline += L" ";
         }
         wprintf(L"\x1b[36mProposed Commandline\x1b[m: \"");
