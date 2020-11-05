@@ -561,6 +561,8 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
     }
 }
 
+// Method Description:
+// - Flashes the icon on the taskbar
 void IslandWindow::FlashTaskbar(const bool bInvert)
 {
     FlashWindow(_window.get(), bInvert);

@@ -81,10 +81,11 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 
 // Method Description:
 // - Event handler to update the taskbar progress indicator
-// - Upon receiving the event, we ask the underlying logic for the taskbar state/progress values
-//   of the last active control
+// - Upon receiving the event, we check the sender's taskbar state, if its an error state then we
+//   flash the taskbar and focus that control. Otherwise, we ask the underlying logic for the taskbar
+//   state/progress values of the last active control (not necessarily the sender). 
 // Arguments:
-// - sender: not used
+// - sender: the control that sent the event
 // - args: not used
 void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/)
 {

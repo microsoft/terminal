@@ -484,6 +484,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // Add a PaneWantsFocus event handler to the pane. If the pane wants focus,
+        // we mark it as the active one in this tab's pane tree and inform TerminalPage
+        // to focus this tab. 
         pane->PaneWantsFocus([weakThis](std::shared_ptr<Pane> sender) {
             // Do nothing if the Tab's lifetime is expired
             auto tab{ weakThis.get() };

@@ -389,6 +389,12 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     _GotFocusHandlers(shared_from_this());
 }
 
+// Event Description:
+// - Called when our control requests focus. We'll use this to trigger our PaneWantsFocus callback,
+//   the tab that's hosting us should have registered a callback which will mark this pane as
+//   active and tell TerminalPage to focus that tab
+// Arguments:
+// - <unused>
 void Pane::_ControlWantsFocusHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                      winrt::Windows::Foundation::IInspectable const& /*e*/)
 {

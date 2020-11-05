@@ -3093,6 +3093,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->GetTaskbarProgress();
     }
 
+    // Method Description:
+    // - Focuses this control if its not already focused
+    // - Bubbles an event up to the pane, which bubbles an event up to the tab
+    //   which bubbles an event up to the page
     void TermControl::TryGettingFocus() noexcept
     {
         _ControlWantsFocusHandlers(*this, nullptr);

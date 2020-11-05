@@ -701,6 +701,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // When the tab wants focus, we check if its not already focused and focus it
+        // if so
         newTabImpl->TabWantsFocus([weakTab, weakThis{ get_weak() }]() {
             auto page{ weakThis.get() };
             auto tab{ weakTab.get() };

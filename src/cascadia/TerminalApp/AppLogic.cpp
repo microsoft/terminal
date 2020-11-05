@@ -633,6 +633,11 @@ namespace winrt::TerminalApp::implementation
         return _root->CalcSnappedDimension(widthOrHeight, dimension);
     }
 
+    // Method Description:
+    // - Gets the user's setting for whether the control that sent an error state
+    //   should be automatically focused
+    // Return Value:
+    // - The value of the "autoFocusErrorPane" setting
     bool AppLogic::GetAutoFocusErrorPane()
     {
         if (!_loadedInitialSettings)
