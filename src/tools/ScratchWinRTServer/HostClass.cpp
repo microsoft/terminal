@@ -18,7 +18,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
-using namespace winrt::Microsoft::Terminal::Settings;
+// using namespace winrt::Microsoft::Terminal::Settings;
 // using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
 namespace winrt::ScratchWinRTServer::implementation
@@ -28,6 +28,8 @@ namespace winrt::ScratchWinRTServer::implementation
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
+        printf("HostClass()\n");
+
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
         // _settings = winrt::Microsoft::Terminal::Settings::TerminalSettings();
 
@@ -59,11 +61,11 @@ namespace winrt::ScratchWinRTServer::implementation
         return _id;
     }
 
-    HRESULT __stdcall HostClass::Call()
-    {
-        _DoCount += 4;
-        return S_OK;
-    }
+    // HRESULT __stdcall HostClass::Call()
+    // {
+    //     _DoCount += 4;
+    //     return S_OK;
+    // }
 
     void HostClass::Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel)
     {
@@ -212,26 +214,26 @@ namespace winrt::ScratchWinRTServer::implementation
 
     void HostClass::RenderEngineSwapChainChanged()
     {
-        // This event is only registered during terminal initialization,
-        // so we don't need to check _initializedTerminal.
-        // We also don't lock for things that come back from the renderer.
-        auto chainHandle = _renderEngine->GetSwapChainHandle();
-        auto weakThis{ get_weak() };
+        // // This event is only registered during terminal initialization,
+        // // so we don't need to check _initializedTerminal.
+        // // We also don't lock for things that come back from the renderer.
+        // auto chainHandle = _renderEngine->GetSwapChainHandle();
+        // auto weakThis{ get_weak() };
 
-        // co_await winrt::resume_foreground(Dispatcher());
+        // // co_await winrt::resume_foreground(Dispatcher());
 
-        if (auto control{ weakThis.get() })
-        {
-            _AttachDxgiSwapChainToXaml(chainHandle);
-        }
+        // // if (auto control{ weakThis.get() })
+        // // {
+        // //     _AttachDxgiSwapChainToXaml(chainHandle);
+        // // }
     }
 
-    void HostClass::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
-    {
-        // NOPE DONT DO THIS
-        // auto nativePanel = _panel.as<ISwapChainPanelNative2>();
-        // nativePanel->SetSwapChainHandle(swapChainHandle);
-    }
+    // void HostClass::_AttachDxgiSwapChainToXaml(HANDLE swapChainHandle)
+    // {
+    //     // NOPE DONT DO THIS
+    //     // auto nativePanel = _panel.as<ISwapChainPanelNative2>();
+    //     // nativePanel->SetSwapChainHandle(swapChainHandle);
+    // }
 
     void HostClass::ThisIsInsane(uint64_t swapchainHandle)
     {
@@ -276,7 +278,7 @@ namespace winrt::ScratchWinRTServer::implementation
 
             // Now create the renderer and initialize the render thread.
             _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
-            ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
+            // ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
             // _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
             //     if (auto strongThis{ weakThis.get() })
@@ -317,9 +319,9 @@ namespace winrt::ScratchWinRTServer::implementation
             // Override the default width and height to match the size of the swapChainPanel
             // _settings.InitialCols(width); // <-- TODO
             // _settings.InitialRows(height); // <-- TODO
-            _settings.DefaultBackground(til::color{ 255, 0, 255, 255 }); //rgba
-            _settings.DefaultForeground(til::color{ 0, 0, 0, 255 }); //rgba
-            _terminal->CreateFromSettings(_settings, renderTarget); // <-- TODO
+            // _settings.DefaultBackground(til::color{ 255, 0, 255, 255 }); //rgba
+            // _settings.DefaultForeground(til::color{ 0, 0, 0, 255 }); //rgba
+            // _terminal->CreateFromSettings(_settings, renderTarget); // <-- TODO
 
             dxEngine->SetRetroTerminalEffects(false);
             dxEngine->SetForceFullRepaintRendering(false);

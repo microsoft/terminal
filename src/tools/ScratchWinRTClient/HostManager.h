@@ -2,7 +2,7 @@
 
 #include "HostManager.g.h"
 
-// 50dba6cd-4ddb-4b12-8363-5e06f5d0082c
+// {50dba6cd-4ddb-4b12-8363-5e06f5d0082c}
 static constexpr GUID HostManager_clsid{
     0x50dba6cd,
     0x4ddb,

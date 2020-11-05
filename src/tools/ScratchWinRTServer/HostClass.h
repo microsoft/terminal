@@ -1,9 +1,8 @@
 #pragma once
 
 #include "HostClass.g.h"
-#include "IMyComInterface.h"
+// #include "IMyComInterface.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
@@ -11,7 +10,7 @@
 
 namespace winrt::ScratchWinRTServer::implementation
 {
-    struct HostClass : HostClassT<HostClass, IMyComInterface>
+    struct HostClass : HostClassT<HostClass /*, IMyComInterface*/>
     {
         HostClass(const winrt::guid& g);
         ~HostClass();
@@ -20,7 +19,7 @@ namespace winrt::ScratchWinRTServer::implementation
         int DoCount();
         winrt::guid Id();
 
-        HRESULT __stdcall Call() override;
+        // HRESULT __stdcall Call() override;
 
         void Attach(Windows::UI::Xaml::Controls::SwapChainPanel panel);
         void BeginRendering();
@@ -43,8 +42,8 @@ namespace winrt::ScratchWinRTServer::implementation
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
-        winrt::Microsoft::Terminal::Settings::IControlSettings _settings{ nullptr };
-        void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
+        // winrt::Microsoft::Terminal::Settings::IControlSettings _settings{ nullptr };
+        // void _AttachDxgiSwapChainToXaml(HANDLE swapChainHandle);
 
         bool _InitializeTerminal();
     };

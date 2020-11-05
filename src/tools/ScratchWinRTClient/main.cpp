@@ -54,11 +54,11 @@ void createExistingObjectApp(int /*argc*/, char** argv)
 
     winrt::ScratchWinRTServer::HostClass host{ nullptr };
     {
-        HANDLE hToken;
+        HANDLE hProcessToken;
 
         // Open a handle to the access token for the
         // calling process that is the currently login access token
-        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken))
+        if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hProcessToken))
         {
             printf("OpenProcessToken()-Getting the handle to access token failed, error %u\n", GetLastError());
         }
@@ -67,8 +67,21 @@ void createExistingObjectApp(int /*argc*/, char** argv)
             printf("OpenProcessToken()-Got the handle to access token!\n");
         }
 
+        TOKEN_ELEVATION tokenElevation{ 0 };
+        DWORD neededTokenInformationLength = 0;
+        if (GetTokenInformation(hProcessToken, TOKEN_INFORMATION_CLASS::TokenElevation, &tokenElevation, sizeof(tokenElevation), &neededTokenInformationLength))
+        {
+            printf("GetTokenInformation(TokenElevation) succeeded\n");
+            printf("Token is elevated? - %s\n", (tokenElevation.TokenIsElevated != 0 ? "true" : "false"));
+        }
+        else
+        {
+            auto gle = GetLastError();
+            printf("GetTokenInformation(TokenElevation) failed: %d\n", gle);
+        }
+
         // Lets the calling process impersonate the security context of a logged-on user.
-        if (ImpersonateLoggedOnUser(hToken))
+        if (ImpersonateLoggedOnUser(hProcessToken))
         {
             printf("ImpersonateLoggedOnUser() is OK.\n");
         }
@@ -78,7 +91,7 @@ void createExistingObjectApp(int /*argc*/, char** argv)
             exit(-1);
         }
 
-        if (SetThreadToken(nullptr, hToken))
+        if (SetThreadToken(nullptr, hProcessToken))
         {
             printf("SetThreadToken() succeeded\n");
         }
@@ -100,7 +113,7 @@ void createExistingObjectApp(int /*argc*/, char** argv)
         }
 
         // Close the handle
-        if (CloseHandle(hToken))
+        if (CloseHandle(hProcessToken))
         {
             printf("Handle to an access token was closed.\n");
         }

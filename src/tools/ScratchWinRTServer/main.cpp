@@ -3,9 +3,9 @@
 #include "ScratchClass.h"
 #include "HostClass.h"
 using namespace winrt;
-using namespace winrt::Windows::Foundation;
+// using namespace winrt::Windows::Foundation;
 
-struct ScratchStringable : implements<ScratchStringable, IStringable, IClosable, winrt::ScratchWinRTServer::IScratchInterface>
+struct ScratchStringable : implements<ScratchStringable, winrt::Windows::Foundation::IStringable, winrt::Windows::Foundation::IClosable, winrt::ScratchWinRTServer::IScratchInterface>
 {
     hstring ToString()
     {
@@ -17,7 +17,7 @@ struct ScratchStringable : implements<ScratchStringable, IStringable, IClosable,
     }
     void Close() { printf("Closed ScratchStringable\n"); }
 };
-struct MyStringable : implements<MyStringable, IStringable>
+struct MyStringable : implements<MyStringable, winrt::Windows::Foundation::IStringable>
 {
     hstring ToString()
     {
