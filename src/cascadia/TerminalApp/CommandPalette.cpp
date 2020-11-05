@@ -28,7 +28,7 @@ namespace winrt::TerminalApp::implementation
         _nestedActionStack = winrt::single_threaded_vector<Command>();
         _currentNestedCommands = winrt::single_threaded_vector<Command>();
         _allCommands = winrt::single_threaded_vector<Command>();
-        _allTabActions = winrt::single_threaded_vector<Command>();
+        _tabActions = winrt::single_threaded_vector<Command>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -51,9 +51,9 @@ namespace winrt::TerminalApp::implementation
                 if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
-                    _filteredActionsView().Focus(FocusState::Keyboard);
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+                    _filteredActionsView().Focus(FocusState::Keyboard);
 
                     // Do this right after becoming visible so we can quickly catch scenarios where
                     // modifiers aren't held down (e.g. command palette invocation).
@@ -61,9 +61,9 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
+                    _filteredActionsView().SelectedIndex(0);
                     _searchBox().Focus(FocusState::Programmatic);
                     _updateFilteredActions();
-                    _filteredActionsView().SelectedIndex(0);
                 }
 
                 TraceLoggingWrite(
@@ -491,8 +491,9 @@ namespace winrt::TerminalApp::implementation
 
             return _allCommands;
         case CommandPaletteMode::TabSearchMode:
+            return _tabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _allTabActions;
+            return _tabActions;
         case CommandPaletteMode::CommandlineMode:
             return winrt::single_threaded_vector<Command>();
         default:
@@ -703,9 +704,20 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
+    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs, const bool clearList)
     {
-        _allTabActions = tabs;
+        _tabActions = tabs;
+        // The smooth remove/add animations that happen during
+        // UpdateFilteredActions don't work very well with changing the tab
+        // order, because of the sheer amount of remove/adds. So, let's just
+        // clear & rebuild the list when we change the set of tabs.
+        //
+        // Some callers might actually want smooth updating, like when the list
+        // of tabs changes.
+        if (clearList && _currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            _filteredActions.Clear();
+        }
         _updateFilteredActions();
     }
 
@@ -1085,4 +1097,5 @@ namespace winrt::TerminalApp::implementation
 
         _updateFilteredActions();
     }
+
 }
