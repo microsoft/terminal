@@ -129,7 +129,7 @@
             </Grid.RowDefinitions>
             <ColorPicker x:Name="customColorPicker"
                      IsMoreButtonVisible="True"
-                     IsColorSliderVisible="False"
+                     IsColorSliderVisible="True"
                      IsColorChannelTextInputVisible="True"
                      IsHexInputVisible="True"
                      IsAlphaEnabled="False"

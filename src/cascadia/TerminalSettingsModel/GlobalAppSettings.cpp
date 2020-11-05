@@ -37,7 +37,8 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
-static constexpr std::string_view UseTabSwitcherKey{ "useTabSwitcher" };
+static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
@@ -55,12 +56,31 @@ static constexpr bool debugFeaturesDefault{ false };
 GlobalAppSettings::GlobalAppSettings() :
     _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},
-    _unparsedDefaultProfile{},
+    _validDefaultProfile{ false },
     _defaultProfile{},
     _DebugFeaturesEnabled{ debugFeaturesDefault }
 {
     _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
+}
+
+// Method Description:
+// - Copies any extraneous data from the parent before completing a CreateChild call
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void GlobalAppSettings::_FinalizeInheritance()
+{
+    // Globals only ever has 1 parent
+    FAIL_FAST_IF(_parents.size() > 1);
+    for (auto parent : _parents)
+    {
+        _keymap = std::move(parent->_keymap);
+        _keybindingsWarnings = std::move(parent->_keybindingsWarnings);
+        _colorSchemes = std::move(parent->_colorSchemes);
+        _commands = std::move(parent->_commands);
+    }
 }
 
 winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
@@ -88,24 +108,41 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
     globals->_AlwaysOnTop = _AlwaysOnTop;
-    globals->_UseTabSwitcher = _UseTabSwitcher;
+    globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
 
-    globals->_unparsedDefaultProfile = _unparsedDefaultProfile;
+    globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
+    globals->_validDefaultProfile = _validDefaultProfile;
     globals->_defaultProfile = _defaultProfile;
-    globals->_keymap = _keymap->Copy();
+    if (_keymap)
+    {
+        globals->_keymap = _keymap->Copy();
+    }
     std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
 
-    for (auto kv : _colorSchemes)
+    if (_colorSchemes)
     {
-        const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
-        globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+        for (auto kv : _colorSchemes)
+        {
+            const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
+            globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
+        }
     }
 
-    for (auto kv : _commands)
+    if (_commands)
     {
-        const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
-        globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
+        for (auto kv : _commands)
+        {
+            const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
+            globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
+        }
+    }
+
+    // Globals only ever has 1 parent
+    FAIL_FAST_IF(_parents.size() > 1);
+    for (auto parent : _parents)
+    {
+        globals->InsertParent(parent->Copy());
     }
     return globals;
 }
@@ -115,23 +152,70 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
     return _colorSchemes.GetView();
 }
 
+#pragma region DefaultProfile
 void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
 {
-    _unparsedDefaultProfile.clear();
+    _validDefaultProfile = true;
     _defaultProfile = defaultProfile;
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
 {
     // If we have an unresolved default profile, we should likely explode.
-    THROW_HR_IF(E_INVALIDARG, !_unparsedDefaultProfile.empty());
+    THROW_HR_IF(E_INVALIDARG, !_validDefaultProfile);
     return _defaultProfile;
+}
+
+bool GlobalAppSettings::HasUnparsedDefaultProfile() const
+{
+    return _UnparsedDefaultProfile.has_value();
 }
 
 winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
 {
-    return _unparsedDefaultProfile;
+    const auto val{ _getUnparsedDefaultProfileImpl() };
+    return val ? *val : hstring{ L"" };
 }
+
+void GlobalAppSettings::UnparsedDefaultProfile(const hstring& value)
+{
+    if (_UnparsedDefaultProfile != value)
+    {
+        _UnparsedDefaultProfile = value;
+        _validDefaultProfile = false;
+    }
+}
+
+void GlobalAppSettings::ClearUnparsedDefaultProfile()
+{
+    if (HasUnparsedDefaultProfile())
+    {
+        _UnparsedDefaultProfile = std::nullopt;
+    }
+}
+
+std::optional<winrt::hstring> GlobalAppSettings::_getUnparsedDefaultProfileImpl() const
+{
+    /*return user set value*/
+    if (_UnparsedDefaultProfile)
+    {
+        return _UnparsedDefaultProfile;
+    }
+
+    /*user set value was not set*/
+    /*iterate through parents to find a value*/
+    for (auto parent : _parents)
+    {
+        if (auto val{ parent->_getUnparsedDefaultProfileImpl() })
+        {
+            return val;
+        }
+    }
+
+    /*no value was found*/
+    return std::nullopt;
+}
+#pragma endregion
 
 winrt::Microsoft::Terminal::Settings::Model::KeyMapping GlobalAppSettings::KeyMap() const noexcept
 {
@@ -153,7 +237,11 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    JsonUtils::GetValueForKey(json, DefaultProfileKey, _unparsedDefaultProfile);
+    // _validDefaultProfile keeps track of whether we've verified that DefaultProfile points to something
+    // CascadiaSettings::_ResolveDefaultProfile performs a validation and updates DefaultProfile() with the
+    // resolved value, then making it valid.
+    _validDefaultProfile = false;
+    JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
 
     JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
 
@@ -199,7 +287,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
-    JsonUtils::GetValueForKey(json, UseTabSwitcherKey, _UseTabSwitcher);
+    // GH#8076 - when adding enum values to this key, we also changed it from
+    // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
+    // "useTabSwitcher", but prefer "tabSwitcherMode"
+    JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
+    JsonUtils::GetValueForKey(json, TabSwitcherModeKey, _TabSwitcherMode);
 
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
 

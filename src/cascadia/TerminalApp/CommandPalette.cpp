@@ -28,7 +28,7 @@ namespace winrt::TerminalApp::implementation
         _nestedActionStack = winrt::single_threaded_vector<Command>();
         _currentNestedCommands = winrt::single_threaded_vector<Command>();
         _allCommands = winrt::single_threaded_vector<Command>();
-        _allTabActions = winrt::single_threaded_vector<Command>();
+        _tabActions = winrt::single_threaded_vector<Command>();
 
         _userLocale = _loadUserLocale();
 
@@ -53,9 +53,9 @@ namespace winrt::TerminalApp::implementation
                 if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
-                    _filteredActionsView().Focus(FocusState::Keyboard);
                     _filteredActionsView().SelectedIndex(_switcherStartIdx);
                     _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+                    _filteredActionsView().Focus(FocusState::Keyboard);
 
                     // Do this right after becoming visible so we can quickly catch scenarios where
                     // modifiers aren't held down (e.g. command palette invocation).
@@ -63,9 +63,9 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
+                    _filteredActionsView().SelectedIndex(0);
                     _searchBox().Focus(FocusState::Programmatic);
                     _updateFilteredActions();
-                    _filteredActionsView().SelectedIndex(0);
                 }
 
                 TraceLoggingWrite(
@@ -149,8 +149,8 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Scrolls the focus up or down the list of commands.
     // Arguments:
-    // - pageDown: if true, we're attempting to move to last visible item in the
-    //   list. Otherwise, we're attempting to move to first visible item.
+    // - pageDown: if true, we're attempting to move to the last visible item in the
+    //   list. Otherwise, we're attempting to move to the first visible item.
     // Return Value:
     // - <none>
     void CommandPalette::ScrollDown(const bool pageDown)
@@ -170,10 +170,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Moves the focus either to top item or end item in the list of commands.
+    // - Moves the focus either to the top item or to the end item in the list of commands.
     // Arguments:
-    // - end: if true, we're attempting to move to last item in the
-    //   list. Otherwise, we're attempting to move to first item.
+    // - end: if true, we're attempting to move to the last item in the
+    //   list. Otherwise, we're attempting to move to the first item.
     //   Depends on the pageUpDown argument.
     // Return Value:
     // - <none>
@@ -269,23 +269,25 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::PageUp)
         {
-            // Action Mode: Move focus to the previous item in the list.
+            // Action Mode: Move focus to the first visible item in the list.
             ScrollDown(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
-            // Action Mode: Move focus to the previous item in the list.
+            // Action Mode: Move focus to the last visible item in the list.
             ScrollDown(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Home)
         {
+            // Action Mode: Move focus to the first item in the list.
             GoEnd(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::End)
         {
+            // Action Mode: Move focus to the last item in the list.
             GoEnd(true);
             e.Handled(true);
         }
@@ -456,6 +458,25 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // This event is called when the user clicks on an ChevronLeft button right
+    // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
+    // It'll go up a level when the users click the button.
+    // Arguments:
+    // - sender: the button that got clicked
+    // Return Value:
+    // - <none>
+    void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
+                                                Windows::UI::Xaml::RoutedEventArgs const&)
+    {
+        _nestedActionStack.Clear();
+        ParentCommandName(L"");
+        _currentNestedCommands.Clear();
+        _searchBox().Focus(FocusState::Programmatic);
+        _updateFilteredActions();
+        _filteredActionsView().SelectedIndex(0);
+    }
+
+    // Method Description:
     // - This is called when the user selects a command with subcommands. It
     //   will update our UI to now display the list of subcommands instead, and
     //   clear the search text so the user can search from the new list of
@@ -499,8 +520,9 @@ namespace winrt::TerminalApp::implementation
 
             return _allCommands;
         case CommandPaletteMode::TabSearchMode:
+            return _tabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _allTabActions;
+            return _tabActions;
         case CommandPaletteMode::CommandlineMode:
             return winrt::single_threaded_vector<Command>();
         default:
@@ -711,9 +733,20 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs)
+    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs, const bool clearList)
     {
-        _allTabActions = tabs;
+        _tabActions = tabs;
+        // The smooth remove/add animations that happen during
+        // UpdateFilteredActions don't work very well with changing the tab
+        // order, because of the sheer amount of remove/adds. So, let's just
+        // clear & rebuild the list when we change the set of tabs.
+        //
+        // Some callers might actually want smooth updating, like when the list
+        // of tabs changes.
+        if (clearList && _currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            _filteredActions.Clear();
+        }
         _updateFilteredActions();
     }
 
@@ -1100,4 +1133,5 @@ namespace winrt::TerminalApp::implementation
 
         _updateFilteredActions();
     }
+
 }
