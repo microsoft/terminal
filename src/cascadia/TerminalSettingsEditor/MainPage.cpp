@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto clickedItemContainer = args.InvokedItemContainer();
 
-        if (clickedItemContainer != NULL)
+        if (clickedItemContainer)
         {
             if (auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
