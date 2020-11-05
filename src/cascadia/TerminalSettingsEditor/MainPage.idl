@@ -3,12 +3,13 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    [default_interface]
-    runtimeclass MainPage : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass MainPage : Windows.UI.Xaml.Controls.Page
     {
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         static Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
+
+        static Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
     }
 }

@@ -8,6 +8,8 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
@@ -20,5 +22,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     GlobalAppSettings Launch::GlobalSettings()
     {
         return MainPage::Settings().GlobalSettings();
+    }
+
+    IInspectable Launch::CurrentDefaultProfile()
+    {
+        return winrt::box_value(MainPage::Settings().FindProfile(GlobalSettings().DefaultProfile()));
+    }
+
+    void Launch::CurrentDefaultProfile(const IInspectable& value)
+    {
+        const auto profile{ winrt::unbox_value<Model::Profile>(value) };
+        GlobalSettings().DefaultProfile(profile.Guid());
     }
 }

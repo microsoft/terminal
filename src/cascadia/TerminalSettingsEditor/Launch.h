@@ -10,8 +10,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     struct Launch : LaunchT<Launch>
     {
+    public:
         Launch();
+
         winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+
+        IInspectable CurrentDefaultProfile();
+        void CurrentDefaultProfile(const IInspectable& value);
     };
 }
 
