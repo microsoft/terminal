@@ -10,11 +10,11 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
-    <ClCompile Include="dlldata.c" />
-    <ClCompile Include="IConsoleHandoff_i.c" />
-    <ClCompile Include="IConsoleHandoff_p.c" />
-    <ClCompile Include="ITerminalHandoff_i.c" />
-    <ClCompile Include="ITerminalHandoff_p.c" />
+    <ClCompile Include="$(IntDir)\dlldata.c" />
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_i.c" />
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_p.c" />
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_i.c" />
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_p.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Host.DLL.rc" />
@@ -24,8 +24,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleComGuids.h" />
-    <ClInclude Include="IConsoleHandoff_h.h" />
-    <ClInclude Include="ITerminalHandoff_h.h" />
+    <ClInclude Include="$(IntDir)\IConsoleHandoff_h.h" />
+    <ClInclude Include="$(IntDir)\ITerminalHandoff_h.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl" />
@@ -38,7 +38,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PROXY_CLSID=CLSID_IConsoleProxy;REGISTER_PROXY_DLL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
