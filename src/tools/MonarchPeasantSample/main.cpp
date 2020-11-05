@@ -10,14 +10,14 @@ using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 
 ////////////////////////////////////////////////////////////////////////////////
-// This seems liks a hack, but it works.
+// This seems like a hack, but it works.
 //
 // This class factory works so that there's only ever one instance of a Monarch
 // per-process. Once the first monarch is created, we'll stash it in g_weak.
 // Future callers who try to instantiate a Monarch will get the one that's
 // already been made.
 //
-// I'm sure there's a better awy to do this with WRL, but I'm not familiar
+// I'm sure there's a better way to do this with WRL, but I'm not familiar
 // enough with WRL to know for sure.
 
 winrt::weak_ref<MonarchPeasantSample::implementation::Monarch> g_weak{ nullptr };
@@ -82,7 +82,7 @@ DWORD registerAsMonarch()
 //   that we exist.
 void electNewMonarch(AppState& state)
 {
-    state.monarch = AppState::instantiateAMonarch();
+    state.monarch = AppState::instantiateMonarch();
     bool isMonarch = state.areWeTheKing(true);
 
     printf("LONG LIVE THE %sKING\x1b[m\n", isMonarch ? "\x1b[33m" : "");

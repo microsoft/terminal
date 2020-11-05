@@ -36,7 +36,7 @@ bool AppState::areWeTheKing(const bool logPIDs)
     {
         if (ourPID == kingPID)
         {
-            printf(fmt::format("We're the \x1b[33mking\x1b[m - our PID is {}\n", ourPID).c_str());
+            printf(fmt::format("We're the\x1b[33m king\x1b[m - our PID is {}\n", ourPID).c_str());
         }
         else
         {
@@ -63,7 +63,7 @@ void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant&
     }
 }
 
-winrt::MonarchPeasantSample::Monarch AppState::instantiateAMonarch()
+winrt::MonarchPeasantSample::Monarch AppState::instantiateMonarch()
 {
     auto monarch = create_instance<winrt::MonarchPeasantSample::Monarch>(Monarch_clsid, CLSCTX_LOCAL_SERVER);
     return monarch;
@@ -85,7 +85,7 @@ MonarchPeasantSample::IPeasant AppState::_createOurPeasant()
 
 void AppState::createMonarch()
 {
-    monarch = AppState::instantiateAMonarch();
+    monarch = AppState::instantiateMonarch();
 }
 
 // return true to exit early, false if we should continue into the main loop

@@ -10,7 +10,7 @@ public:
     bool areWeTheKing(const bool logPIDs = false);
     void initializeState();
 
-    static winrt::MonarchPeasantSample::Monarch instantiateAMonarch();
+    static winrt::MonarchPeasantSample::Monarch instantiateMonarch();
 
     void createMonarch();
     bool processCommandline();

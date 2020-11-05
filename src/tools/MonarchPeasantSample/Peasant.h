@@ -3,7 +3,7 @@
 #include "Peasant.g.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 
-// 50dba6cd-1111-4b12-8363-5e06f5d0082c
+// {50dba6cd-1111-4b12-8363-5e06f5d0082c}
 constexpr GUID Peasant_clsid{
     0x50dba6cd,
     0x1111,

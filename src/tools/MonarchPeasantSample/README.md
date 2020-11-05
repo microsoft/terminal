@@ -1,11 +1,11 @@
 # Monarch/Peasant Sample
 
-This directory contains a sample monrach/peasant application. This is a type of
+This directory contains a sample monarch/peasant application. This is a type of
 application where a single "Monarch" can coordinate the actions of multiple
 other "Peasant" processes, as described by the specs in [#7240] and [#8135].
 
 This project is intended to be a standalone sample of how the architecture would
-work, withut involving the entirety of the Windows Terminal build. Eventually,
+work, without involving the entirety of the Windows Terminal build. Eventually,
 this architecture will be incorporated into `wt.exe` itself, to enable scenarios
 like:
 * Run `wt` in the current window ([#4472])
@@ -42,9 +42,9 @@ this argument works. The actual `args...` params are unused.
 
 ## Project layout
 
-The code is vaguely seperated into the following files, with the following
+The code is vaguely separated into the following files, with the following
 purposes. As this code isn't production-ready code, the layering isn't
-particularily well organized nor enforced.
+particularly well organized nor enforced.
 
 * `Monarch.idl/.h/.cpp`: Code for the WinRT Monarch object, responsible for
   coordinating the Peasants

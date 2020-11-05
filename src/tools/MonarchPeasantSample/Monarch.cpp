@@ -112,9 +112,8 @@ namespace winrt::MonarchPeasantSample::implementation
 
         if (args.size() >= 3)
         {
-            // We'll need three args at least - [exename.exe, -s, id] to be able
-            // to have a session ID passed on the commandline.
-            // printf("The new process provided tribute, we'll eat it. No need to create a new window.\n");
+            // We'll need three args at least - [MonarchPeasantSample.exe, -s,
+            // id] to be able to have a session ID passed on the commandline.
 
             if (args[1] == L"-s" || args[1] == L"--session")
             {
