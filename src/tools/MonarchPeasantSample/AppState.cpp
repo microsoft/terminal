@@ -30,7 +30,7 @@ void AppState::initializeState()
 
 bool AppState::areWeTheKing(const bool logPIDs)
 {
-    auto kingPID = _monarch.GetPID();
+    auto kingPID = monarch.GetPID();
     auto ourPID = GetCurrentProcessId();
     if (logPIDs)
     {
@@ -46,15 +46,15 @@ bool AppState::areWeTheKing(const bool logPIDs)
     return (ourPID == kingPID);
 }
 
-void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant& peasant)
+void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant& iPeasant)
 {
     winrt::com_ptr<MonarchPeasantSample::implementation::Monarch> monarchImpl;
-    monarchImpl.copy_from(winrt::get_self<MonarchPeasantSample::implementation::Monarch>(_monarch));
+    monarchImpl.copy_from(winrt::get_self<MonarchPeasantSample::implementation::Monarch>(monarch));
     if (monarchImpl)
     {
-        auto ourID = peasant.GetID();
+        auto ourID = iPeasant.GetID();
         monarchImpl->SetSelfID(ourID);
-        monarchImpl->AddPeasant(peasant);
+        monarchImpl->AddPeasant(iPeasant);
         printf("The king is peasant #%lld\n", ourID);
     }
     else
@@ -72,7 +72,7 @@ winrt::MonarchPeasantSample::Monarch AppState::instantiateAMonarch()
 MonarchPeasantSample::IPeasant AppState::_createOurPeasant()
 {
     auto peasant = winrt::make_self<MonarchPeasantSample::implementation::Peasant>();
-    auto ourID = _monarch.AddPeasant(*peasant);
+    auto ourID = monarch.AddPeasant(*peasant);
     printf("The monarch assigned us the ID %llu\n", ourID);
 
     if (areWeTheKing())
@@ -85,7 +85,7 @@ MonarchPeasantSample::IPeasant AppState::_createOurPeasant()
 
 void AppState::createMonarch()
 {
-    _monarch = AppState::instantiateAMonarch();
+    monarch = AppState::instantiateAMonarch();
 }
 
 // return true to exit early, false if we should continue into the main loop
@@ -96,12 +96,12 @@ bool AppState::processCommandline()
     // launched with them!
     //
     // Otherwise, the King will tell us if we should make a new window
-    const bool createNewWindow = isKing || _monarch.ProposeCommandline({ args }, { L"placeholder CWD" });
+    const bool createNewWindow = isKing || monarch.ProposeCommandline({ args }, { L"placeholder CWD" });
 
     if (createNewWindow)
     {
-        _peasant = _createOurPeasant();
-        _peasant.ExecuteCommandline({ args }, { L"placeholder CWD" });
+        peasant = _createOurPeasant();
+        peasant.ExecuteCommandline({ args }, { L"placeholder CWD" });
         return false;
     }
     else

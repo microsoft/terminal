@@ -17,6 +17,9 @@ using namespace ::Microsoft::Console;
 // Future callers who try to instantiate a Monarch will get the one that's
 // already been made.
 //
+// I'm sure there's a better awy to do this with WRL, but I'm not familiar
+// enough with WRL to know for sure.
+
 winrt::weak_ref<MonarchPeasantSample::implementation::Monarch> g_weak{ nullptr };
 
 struct MonarchFactory : implements<MonarchFactory, IClassFactory>
@@ -34,6 +37,7 @@ struct MonarchFactory : implements<MonarchFactory, IClassFactory>
 
         if (!g_weak)
         {
+            // Create a new Monarch instance
             auto strong = make_self<MonarchPeasantSample::implementation::Monarch>();
 
             g_weak = (*strong).get_weak();
@@ -41,6 +45,7 @@ struct MonarchFactory : implements<MonarchFactory, IClassFactory>
         }
         else
         {
+            // We already instantiated one Monarch, let's just return that one!
             auto strong = g_weak.get();
             return strong.as(iid, result);
         }
@@ -77,19 +82,19 @@ DWORD registerAsMonarch()
 //   that we exist.
 void electNewMonarch(AppState& state)
 {
-    state._monarch = AppState::instantiateAMonarch();
+    state.monarch = AppState::instantiateAMonarch();
     bool isMonarch = state.areWeTheKing(true);
 
     printf("LONG LIVE THE %sKING\x1b[m\n", isMonarch ? "\x1b[33m" : "");
 
     if (isMonarch)
     {
-        state.remindKingWhoTheyAre(state._peasant);
+        state.remindKingWhoTheyAre(state.peasant);
     }
     else
     {
         // Add us to the new monarch
-        state._monarch.AddPeasant(state._peasant);
+        state.monarch.AddPeasant(state.peasant);
     }
 }
 

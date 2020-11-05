@@ -13,7 +13,6 @@ like:
 
 For an example of this sample running, see the below GIF:
 
-[TODO]: # TODO -----------------------------------------------------------------
 ![Gif of the MonarchPeasantSample](monarch-peasant-sample-000.gif)
 
 This sample operates largely by printing to the console, to help the reader
@@ -47,11 +46,18 @@ The code is vaguely seperated into the following files, with the following
 purposes. As this code isn't production-ready code, the layering isn't
 particularily well organized nor enforced.
 
-* `Monarch.idl/.h/.cpp`:
-* `Peasant.idl/.h/.cpp`:
-* `MonarchMain.cpp`:
-* `PeasantMain.cpp`:
-* `AppState.h/.cpp`:
+* `Monarch.idl/.h/.cpp`: Code for the WinRT Monarch object, responsible for
+  coordinating the Peasants
+* `Peasant.idl/.h/.cpp`: Code for the WinRT Peasant object, which represents any
+  individual application instance.
+* `AppState.h/.cpp`: This file contains some common state that's used throughout
+  the application, in order to help encapsulate it all in one place.
+* `MonarchMain.cpp`: This file contains the main loop for the monarch process.
+  It needs to be able to process console input, and additionally wait on the
+  peasants, to know when they've died.
+* `PeasantMain.cpp`: This file contains the main loop for the peasant process.
+  It needs to be able to wait on both console input, and on the Monarch process,
+  to be able to determine who the next monarch should be.
 
 ## Remaining TODOs
 

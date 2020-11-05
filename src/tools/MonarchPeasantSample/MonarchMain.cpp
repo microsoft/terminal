@@ -16,14 +16,14 @@ bool monarchAppLoop(AppState& state)
     printf("Press `l` to list peasants, 'm' to change modes `q` to quit\n");
 
     winrt::com_ptr<winrt::MonarchPeasantSample::implementation::Monarch> monarchImpl;
-    monarchImpl.copy_from(winrt::get_self<winrt::MonarchPeasantSample::implementation::Monarch>(state._monarch));
+    monarchImpl.copy_from(winrt::get_self<winrt::MonarchPeasantSample::implementation::Monarch>(state.monarch));
 
     while (!exitRequested)
     {
         const auto ch = _getch();
         if (ch == 'l')
         {
-            printPeasants(state._monarch);
+            printPeasants(state.monarch);
         }
         else if (ch == 'q')
         {

@@ -34,7 +34,7 @@ bool peasantReadInput(AppState& state)
             {
                 printf("This window was activated\n");
                 winrt::com_ptr<winrt::MonarchPeasantSample::implementation::Peasant> peasantImpl;
-                peasantImpl.copy_from(winrt::get_self<winrt::MonarchPeasantSample::implementation::Peasant>(state._peasant));
+                peasantImpl.copy_from(winrt::get_self<winrt::MonarchPeasantSample::implementation::Peasant>(state.peasant));
                 if (peasantImpl)
                 {
                     peasantImpl->raiseActivatedEvent();
@@ -61,7 +61,7 @@ bool peasantReadInput(AppState& state)
 
 bool peasantAppLoop(AppState& state)
 {
-    wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(state._monarch.GetPID())) };
+    wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(state.monarch.GetPID())) };
     // printf("handle for the monarch process is %d\n", hMonarch.get());
 
     HANDLE handlesToWaitOn[2]{ hMonarch.get(), state.hInput };
