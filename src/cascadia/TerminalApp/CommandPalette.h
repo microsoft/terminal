@@ -23,7 +23,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<Microsoft::Terminal::Settings::Model::Command> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
-        void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs);
+        void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs, const bool clearList);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
         void EnableCommandPaletteMode();
@@ -40,6 +40,7 @@ namespace winrt::TerminalApp::implementation
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
+        void SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherMode order);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -57,7 +58,6 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _nestedActionStack{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
-
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _commandsToFilter();
 
         bool _lastFilterTextWasEmpty{ true };
@@ -81,6 +81,8 @@ namespace winrt::TerminalApp::implementation
 
         void _listItemClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::ItemClickEventArgs const& e);
 
+        void _moveBackButtonClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&);
+
         void _updateFilteredActions();
 
         std::vector<Microsoft::Terminal::Settings::Model::Command> _collectFilteredActions();
@@ -97,7 +99,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
 
         // Tab Switcher
-        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _allTabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _tabActions{ nullptr };
         uint32_t _switcherStartIdx;
         void _anchorKeyUpHandler();
 

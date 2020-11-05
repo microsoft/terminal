@@ -641,13 +641,17 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         _dashStrokeStyleProperties = D2D1_STROKE_STYLE_PROPERTIES{
             D2D1_CAP_STYLE_SQUARE, // startCap
             D2D1_CAP_STYLE_SQUARE, // endCap
-            D2D1_CAP_STYLE_SQUARE, // dashCap
+            D2D1_CAP_STYLE_FLAT, // dashCap
             D2D1_LINE_JOIN_MITER, // lineJoin
             0.f, // miterLimit
-            D2D1_DASH_STYLE_DASH, // dashStyle
+            D2D1_DASH_STYLE_CUSTOM, // dashStyle
             0.f, // dashOffset
         };
-        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, nullptr, 0, &_dashStrokeStyle));
+        // Custom dashes:
+        // #   #   #   #
+        // 1234123412341234
+        static constexpr std::array<float, 2> hyperlinkDashes{ 1.f, 3.f };
+        RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&_dashStrokeStyleProperties, hyperlinkDashes.data(), gsl::narrow_cast<UINT32>(hyperlinkDashes.size()), &_dashStrokeStyle));
         _hyperlinkStrokeStyle = _dashStrokeStyle;
 
         // If in composition mode, apply scaling factor matrix

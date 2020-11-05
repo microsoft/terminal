@@ -28,11 +28,13 @@ MD007:
   indent: 2                   # Unordered list indentation
 MD013:
   line_length: 400            # Line length 80 is far to short
+MD024: false                  # Allow multiple headings with same content
 MD026:
   punctuation: ".,;:!。，；:"  # List of not allowed
 MD029: false                  # Ordered list item prefix
 MD033: false                  # Allow inline HTML
 MD036: false                  # Emphasis used instead of a heading
+MD040: false                  # Allow ``` blocks in md files with no language specified
 
 #################
 # Rules by tags #
