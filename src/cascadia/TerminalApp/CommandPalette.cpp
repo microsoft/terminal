@@ -267,8 +267,8 @@ namespace winrt::TerminalApp::implementation
             // Action, TabSwitch or TabSearchMode Mode: Dispatch the action of the selected command.
             if (_currentMode != CommandPaletteMode::CommandlineMode)
             {
-                const auto& selectedCommand = _filteredActionsView().SelectedItem();
-                if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+                const auto selectedCommand = _filteredActionsView().SelectedItem();
+                if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
                 {
                     _dispatchCommand(filteredCommand);
                 }
@@ -724,7 +724,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_populateFilteredActions(Collections::IVector<winrt::TerminalApp::FilteredCommand> const& vectorToPopulate, Collections::IVector<Command> const& actions)
     {
         vectorToPopulate.Clear();
-        for (const auto action : actions)
+        for (const auto& action : actions)
         {
             auto filteredCommand{ winrt::make<FilteredCommand>(action) };
             vectorToPopulate.Append(filteredCommand);
