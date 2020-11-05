@@ -87,10 +87,10 @@ namespace winrt::TerminalApp::implementation
                 {
                     // There are still unmatched filter characters but we finished scanning the name.
                     // In this case we return the entire command name as unmatched
-                    auto entireNameSegment = winrt::make_self<HighlightedTextSegment>(commandName, false);
+                    auto entireNameSegment{ winrt::make<HighlightedTextSegment>(commandName, false) };
                     segments.Clear();
-                    segments.Append(*entireNameSegment);
-                    return *winrt::make_self<HighlightedText>(segments);
+                    segments.Append(entireNameSegment);
+                    return winrt::make<HighlightedText>(segments);
                 }
 
                 auto isCurrentCharMatched = std::towlower(commandName[currentOffset]) == lowerCaseSearchChar;
@@ -103,8 +103,8 @@ namespace winrt::TerminalApp::implementation
                     if (sizeToReport > 0)
                     {
                         winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
-                        auto highlightedSegment = winrt::make_self<HighlightedTextSegment>(segment, isProcessingMatchedSegment);
-                        segments.Append(*highlightedSegment);
+                        auto highlightedSegment{ winrt::make<HighlightedTextSegment>(segment, isProcessingMatchedSegment) };
+                        segments.Append(highlightedSegment);
                         nextOffsetToReport = currentOffset;
                     }
                     isProcessingMatchedSegment = isCurrentCharMatched;
@@ -128,8 +128,8 @@ namespace winrt::TerminalApp::implementation
             if (sizeToReport > 0)
             {
                 winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
-                auto highlightedSegment = winrt::make_self<HighlightedTextSegment>(segment, true);
-                segments.Append(*highlightedSegment);
+                auto highlightedSegment{ winrt::make<HighlightedTextSegment>(segment, true) };
+                segments.Append(highlightedSegment);
                 nextOffsetToReport = currentOffset;
             }
         }
@@ -140,11 +140,11 @@ namespace winrt::TerminalApp::implementation
         if (sizeToReport > 0)
         {
             winrt::hstring segment{ commandName.data() + nextOffsetToReport, sizeToReport };
-            auto highlightedSegment = winrt::make_self<HighlightedTextSegment>(segment, false);
-            segments.Append(*highlightedSegment);
+            auto highlightedSegment{ winrt::make<HighlightedTextSegment>(segment, false) };
+            segments.Append(highlightedSegment);
         }
 
-        return *winrt::make_self<HighlightedText>(segments);
+        return winrt::make<HighlightedText>(segments);
     }
 
     // Function Description:

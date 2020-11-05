@@ -528,8 +528,8 @@ namespace winrt::TerminalApp::implementation
                 for (const auto& nameAndCommand : filteredCommand.Command().NestedCommands())
                 {
                     const auto action = nameAndCommand.Value();
-                    auto nestedFilteredCommand = winrt::make_self<FilteredCommand>(action);
-                    _currentNestedCommands.Append(*nestedFilteredCommand);
+                    auto nestedFilteredCommand{ winrt::make<FilteredCommand>(action) };
+                    _currentNestedCommands.Append(nestedFilteredCommand);
                 }
 
                 _updateUIForStackChange();
@@ -726,8 +726,8 @@ namespace winrt::TerminalApp::implementation
         vectorToPopulate.Clear();
         for (const auto action : actions)
         {
-            auto filteredCommand = winrt::make_self<FilteredCommand>(action);
-            vectorToPopulate.Append(*filteredCommand);
+            auto filteredCommand{ winrt::make<FilteredCommand>(action) };
+            vectorToPopulate.Append(filteredCommand);
         }
         _updateFilteredActions();
     }
