@@ -55,6 +55,7 @@ void createExistingObjectApp(int /*argc*/, char** argv)
     winrt::ScratchWinRTServer::HostClass host{ nullptr };
     {
         HANDLE hProcessToken;
+        auto processTokenCleanup = wil::scope_exit([&] { CloseHandle(hProcessToken); });
 
         // Open a handle to the access token for the
         // calling process that is the currently login access token
@@ -67,60 +68,85 @@ void createExistingObjectApp(int /*argc*/, char** argv)
             printf("OpenProcessToken()-Got the handle to access token!\n");
         }
 
-        TOKEN_ELEVATION tokenElevation{ 0 };
-        DWORD neededTokenInformationLength = 0;
-        if (GetTokenInformation(hProcessToken, TOKEN_INFORMATION_CLASS::TokenElevation, &tokenElevation, sizeof(tokenElevation), &neededTokenInformationLength))
         {
-            printf("GetTokenInformation(TokenElevation) succeeded\n");
-            printf("Token is elevated? - %s\n", (tokenElevation.TokenIsElevated != 0 ? "true" : "false"));
+            TOKEN_ELEVATION tokenElevation{ 0 };
+            DWORD neededTokenInformationLength = 0;
+            if (GetTokenInformation(hProcessToken,
+                                    TOKEN_INFORMATION_CLASS::TokenElevation,
+                                    &tokenElevation,
+                                    sizeof(tokenElevation),
+                                    &neededTokenInformationLength))
+            {
+                printf("GetTokenInformation(TokenElevation) succeeded\n");
+                printf("Token is elevated? - %s\n", (tokenElevation.TokenIsElevated != 0 ? "true" : "false"));
+            }
+            else
+            {
+                auto gle = GetLastError();
+                printf("GetTokenInformation(TokenElevation) failed: %d\n", gle);
+            }
         }
-        else
+
+        TOKEN_LINKED_TOKEN tokenLinkedToken = {};
+        DWORD neededTokenInformationLength = 0;
+        if (!GetTokenInformation(hProcessToken,
+                                 TokenLinkedToken,
+                                 &tokenLinkedToken,
+                                 sizeof(tokenLinkedToken),
+                                 &neededTokenInformationLength))
         {
             auto gle = GetLastError();
-            printf("GetTokenInformation(TokenElevation) failed: %d\n", gle);
-        }
-
-        // Lets the calling process impersonate the security context of a logged-on user.
-        if (ImpersonateLoggedOnUser(hProcessToken))
-        {
-            printf("ImpersonateLoggedOnUser() is OK.\n");
+            printf("GetTokenInformation(TokenLinkedToken) failed: %d\n", gle);
+            return;
         }
         else
         {
-            printf("ImpersonateLoggedOnUser() failed, error %u.\n", GetLastError());
-            exit(-1);
+            printf("Got the linked token for this process\n");
         }
+        auto tokenLinkedTokenCleanup = wil::scope_exit([&] { CloseHandle(tokenLinkedToken.LinkedToken); });
 
-        if (SetThreadToken(nullptr, hProcessToken))
+        // // Lets the calling process impersonate the security context of a logged-on user.
+        // if (ImpersonateLoggedOnUser(tokenLinkedToken.LinkedToken))
+        // {
+        //     printf("ImpersonateLoggedOnUser() is OK.\n");
+        // }
+        // else
+        // {
+        //     printf("ImpersonateLoggedOnUser() failed, error %u.\n", GetLastError());
+        //     exit(-1);
+        // }
+
+        // THIS IS THE DAMNDEST THING
+        //
+        // IF YOU DO THIS, THE PROCESS WILL JUST STRAIGHT UP DIE ON THE create_instance CALL
+        if (SetThreadToken(nullptr, tokenLinkedToken.LinkedToken))
         {
             printf("SetThreadToken() succeeded\n");
         }
         else
         {
-            printf("STT failed %x\n", GetLastError());
+            printf("SetThreadToken failed %x\n", GetLastError());
         }
+
+        printf("Calling create_instance...\n");
 
         host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
-                                                                     // CLSCTX_LOCAL_SERVER
-                                                                     CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
+                                                                     CLSCTX_LOCAL_SERVER
+                                                                     // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
                                                                      //
         );
+        printf("Done\n");
         // Terminates the impersonation of a client.
 
-        if (RevertToSelf())
-        {
-            printf("Impersonation was terminated.\n");
-        }
-
-        // Close the handle
-        if (CloseHandle(hProcessToken))
-        {
-            printf("Handle to an access token was closed.\n");
-        }
-        else
-        {
-            printf("Failed to close the hToken handle! error %x\n", GetLastError());
-        }
+        // if (RevertToSelf())
+        // {
+        //     printf("Impersonation was terminated.\n");
+        // }
+        // else
+        // {
+        //     auto gle = GetLastError();
+        //     printf("RevertToSelf failed, %d\n", gle);
+        // }
     }
     // auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
     //                                                                   // CLSCTX_LOCAL_SERVER
@@ -132,6 +158,10 @@ void createExistingObjectApp(int /*argc*/, char** argv)
     {
         printf("Could not get the existing HostClass\n");
         return;
+    }
+    else
+    {
+        printf("Got the existing HostClass\n");
     }
 
     // The DoCount could be anything, depending on which of the hosts we're creating.
@@ -361,7 +391,11 @@ int main(int argc, char** argv)
     {
         printf("Error: %ls\n", e.message().c_str());
     }
-
+    catch (...)
+    {
+        printf("Some other exception happened\n");
+        LOG_CAUGHT_EXCEPTION();
+    }
     // try
     // {
     //     managerApp();
