@@ -185,7 +185,7 @@ bool Common::TestBufferSetup()
     // to the default output buffer at the same time.
 
     _hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
-                                          0 /*dwShareMode*/,
+                                          FILE_SHARE_READ | FILE_SHARE_WRITE /*dwShareMode*/, // needed to read on threads.
                                           nullptr /*lpSecurityAttributes*/,
                                           CONSOLE_TEXTMODE_BUFFER,
                                           nullptr /*lpReserved*/);

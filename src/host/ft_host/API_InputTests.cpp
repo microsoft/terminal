@@ -3,8 +3,6 @@
 
 #include "precomp.h"
 
-#include <thread>
-
 #include "..\..\interactivity\onecore\SystemConfigurationProvider.hpp"
 
 // some assumptions have been made on this value. only change it if you have a good reason to.
@@ -13,6 +11,7 @@
 
 using WEX::Logging::Log;
 using namespace WEX::Common;
+using namespace WEX::TestExecution;
 
 // This class is intended to test:
 // FlushConsoleInputBuffer
@@ -21,6 +20,7 @@ using namespace WEX::Common;
 // WriteConsoleInput
 // GetNumberOfConsoleInputEvents
 // GetNumberOfConsoleMouseButtons
+// ReadConsoleA
 class InputTests
 {
     BEGIN_TEST_CLASS(InputTests)
@@ -54,6 +54,43 @@ class InputTests
     BEGIN_TEST_METHOD(TestVtInputGeneration)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD();
+
+    BEGIN_TEST_METHOD(TestCookedAliasProcessing)
+        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestCookedTextEntry)
+        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestCookedAlphaPermutations)
+        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+        TEST_METHOD_PROPERTY(L"Data:inputcp", L"{437, 932}")
+        TEST_METHOD_PROPERTY(L"Data:outputcp", L"{437, 932}")
+        TEST_METHOD_PROPERTY(L"Data:inputmode", L"{487, 481}") // 487 is 0x1e7, 485 is 0x1e1 (ENABLE_LINE_INPUT on/off)
+        TEST_METHOD_PROPERTY(L"Data:outputmode", L"{7}")
+        TEST_METHOD_PROPERTY(L"Data:font", L"{Consolas, MS Gothic}")
+    END_TEST_METHOD()
+
+    /*BEGIN_TEST_METHOD(TestCookedReadCharByChar)
+        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestCookedReadLeadTrailIndividual)
+        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestCookedReadLeadTrailString)
+        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()*/
+
+    BEGIN_TEST_METHOD(TestCookedReadChangeCodepageInMiddle)
+        //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestCookedReadChangeCodepageBetweenBytes)
+        //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
 };
 
 void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -715,4 +752,462 @@ void InputTests::RawReadUnpacksCoalescedInputRecords()
     eventCount = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hIn, &eventCount));
     VERIFY_ARE_EQUAL(eventCount, static_cast<DWORD>(0));
+}
+
+
+static std::vector<INPUT_RECORD> _stringToInputs(std::wstring_view wstr)
+{
+    std::vector<INPUT_RECORD> result;
+    for (const auto& wch : wstr)
+    {
+        INPUT_RECORD ir = { 0 };
+        ir.EventType = KEY_EVENT;
+        ir.Event.KeyEvent.bKeyDown = TRUE;
+        ir.Event.KeyEvent.dwControlKeyState = 0;
+        ir.Event.KeyEvent.uChar.UnicodeChar = wch;
+        ir.Event.KeyEvent.wRepeatCount = 1;
+        ir.Event.KeyEvent.wVirtualKeyCode = VkKeyScanW(wch);
+        ir.Event.KeyEvent.wVirtualScanCode = gsl::narrow<WORD>(MapVirtualKeyW(ir.Event.KeyEvent.wVirtualKeyCode, MAPVK_VK_TO_VSC));
+
+        result.emplace_back(ir);
+
+        ir.Event.KeyEvent.bKeyDown = FALSE;
+
+        result.emplace_back(ir);
+    }
+    return result;
+}
+
+static HRESULT _sendStringToInput(HANDLE in, std::wstring_view wstr)
+{
+    auto records = _stringToInputs(wstr);
+    DWORD written;
+    RETURN_IF_WIN32_BOOL_FALSE(WriteConsoleInputW(in, records.data(), gsl::narrow<DWORD>(records.size()), &written));
+    return S_OK;
+}
+
+// Routine Description:
+// - Reads data from the standard input with a 5 second timeout
+// Arguments:
+// - in - The standard input handle
+// - buf - The buffer to use. On in, this is the max size we'll read. On out, it's resized to fit.
+// Return Value:
+// - S_OK or an error from ReadConsole/threading timeout.
+static HRESULT _readStringFromInput(HANDLE in, std::string& buf)
+{
+    DWORD read = 0;
+
+    auto tryRead = std::async(std::launch::async, [&] {
+        RETURN_IF_WIN32_BOOL_FALSE(ReadConsoleA(in, buf.data(), gsl::narrow<DWORD>(buf.size()), &read, nullptr));
+        return S_OK;
+    });
+
+    if (std::future_status::ready != tryRead.wait_for(std::chrono::seconds{ 5 }))
+    {
+        // Shove something into the input to unstick it then fail.
+        _sendStringToInput(in, L"a\r\n");
+        RETURN_NTSTATUS(STATUS_TIMEOUT);
+
+        // If somehow this still isn't enough to unstick the thread, be sure to set
+        // the whole test timeout is 1 min in the parameters/metadata at the top.
+    }
+    else
+    {
+        HRESULT hr = tryRead.get();
+
+        // If we successfully read, then resize to fit the buffer.
+        if (SUCCEEDED(hr))
+        {
+            buf.resize(read);
+        }
+
+        return hr;
+    }
+}
+
+void InputTests::TestCookedAliasProcessing()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    auto modulePath = wil::GetModuleFileNameW<std::wstring>(nullptr);
+    std::filesystem::path path{ modulePath };
+    auto fileName = path.filename();
+    auto exeName = fileName.wstring();
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(AddConsoleAliasW(L"foo", L"echo bar$Techo baz$Techo bam", exeName.data()));
+
+    std::wstring commandWritten = L"foo\r\n";
+    std::queue<std::string> commandExpected;
+    commandExpected.push("echo bar\r");
+    commandExpected.push("echo baz\r");
+    commandExpected.push("echo bam\r");
+
+    VERIFY_SUCCEEDED(_sendStringToInput(in, commandWritten));
+
+    std::string buf;
+
+    while (!commandExpected.empty())
+    {
+        buf.resize(500);
+
+        VERIFY_SUCCEEDED(_readStringFromInput(in, buf));
+
+        auto actual = buf;
+
+        auto expected = commandExpected.front();
+        commandExpected.pop();
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+}
+
+void InputTests::TestCookedTextEntry()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    std::wstring commandWritten = L"foo\r\n";
+    std::queue<std::string> commandExpected;
+    commandExpected.push("foo\r\n");
+
+    VERIFY_SUCCEEDED(_sendStringToInput(in, commandWritten));
+
+    std::string buf;
+
+    while (!commandExpected.empty())
+    {
+        buf.resize(500);
+
+        VERIFY_SUCCEEDED(_readStringFromInput(in, buf));
+
+        auto actual = buf;
+
+        auto expected = commandExpected.front();
+        commandExpected.pop();
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+}
+
+// tests todo:
+// - test alpha in/out in 437/932 permutations
+// - test leftover leadbyte/trailbyte when buffer too small
+void InputTests::TestCookedAlphaPermutations()
+{
+    DWORD inputcp, outputcp, inputmode, outputmode;
+    String font;
+
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"inputcp", inputcp), L"Get input cp");
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"outputcp", outputcp), L"Get output cp");
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"inputmode", inputmode), L"Get input mode");
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"outputmode", outputmode), L"Get output mode");
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"font", font), L"Get font");
+
+    std::wstring wstrFont{ font };
+    if (wstrFont == L"MS Gothic")
+    {
+        // MS Gothic... but in full width characters and the katakana representation...
+        // MS GOSHIKKU romanized...
+        wstrFont = L"\xff2d\xff33\x0020\x30b4\x30b7\x30c3\x30af";
+    }
+
+    const auto in = GetStdInputHandle();
+    const auto out = GetStdOutputHandle();
+
+    Log::Comment(L"Backup original modes and codepages and font.");
+
+    DWORD originalInMode, originalOutMode, originalInputCP, originalOutputCP;
+    CONSOLE_FONT_INFOEX originalFont = { 0 };
+    originalFont.cbSize = sizeof(originalFont);
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(out, &originalOutMode));
+    originalInputCP = GetConsoleCP();
+    originalOutputCP = GetConsoleOutputCP();
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetCurrentConsoleFontEx(out, FALSE, &originalFont));
+
+    auto restoreModesOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleMode(out, originalOutMode);
+        SetConsoleCP(originalInputCP);
+        SetConsoleOutputCP(originalOutputCP);
+        SetCurrentConsoleFontEx(out, FALSE, &originalFont);
+    });
+
+    Log::Comment(L"Apply our modes and codepages and font.");
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, inputmode));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(out, outputmode));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(inputcp));
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(outputcp));
+
+    auto ourFont = originalFont;
+    wmemcpy_s(ourFont.FaceName, ARRAYSIZE(ourFont.FaceName), wstrFont.data(), wstrFont.size());
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(out, FALSE, &ourFont));
+
+    const wchar_t alpha = L'\u03b1';
+    const std::string alpha437 = "\xe0";
+    const std::string alpha932 = "\x83\xbf";
+
+    std::string expected = inputcp == 932 ? alpha932 : alpha437;
+
+    std::wstring sendInput;
+    sendInput.append(&alpha, 1);
+
+    // If we're in line input, we have to send a newline and we'll get one back.
+    if (WI_IsFlagSet(inputmode, ENABLE_LINE_INPUT))
+    {
+        expected.append("\r\n");
+        sendInput.append(L"\r\n");
+    }
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"receive the string");
+    std::string recvInput;
+    recvInput.resize(500); // excessively big
+
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    // corruption magic
+    // In MS Gothic, alpha is full width (2 columns)
+    // In Consolas, alpha is half width (1 column)
+    // Alpha itself is an ambiguous character, meaning the console finds the width
+    // by asking the font.
+    // Unfortunately, there's some code mixed up in the cooked read for a long time where
+    // the width is used as a predictor of how many bytes it will consume.
+    // In this specific combination of using a font where the ambiguous alpha is half width,
+    // the output code page doesn't support double bytes, and the input code page does...
+    // The result is stomped with a null as the conversion fails thinking it doesn't have enough space.
+    if (wstrFont == L"Consolas" && inputcp == 932 && outputcp == 437)
+    {
+        VERIFY_IS_GREATER_THAN_OR_EQUAL(recvInput.size(), 1);
+
+        VERIFY_ARE_EQUAL('\x00', recvInput[0]);
+
+        if (WI_IsFlagSet(inputmode, ENABLE_LINE_INPUT))
+        {
+            VERIFY_IS_GREATER_THAN_OR_EQUAL(recvInput.size(), 3);
+            VERIFY_ARE_EQUAL('\r', recvInput[1]);
+            VERIFY_ARE_EQUAL('\n', recvInput[2]);
+        }
+    }
+    // end corruption magic
+    else
+    {
+        VERIFY_ARE_EQUAL(expected, recvInput);
+    }
+}
+
+// TODO tests:
+// - leaving behind a lead/trail byte
+// - leaving behind a lead/trail byte and having more data
+// -- doing it in a loop/continuously.
+// - read it char by char
+// - change the codepage in the middle of reading and/or between commands
+
+void InputTests::TestCookedReadChangeCodepageInMiddle()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    // Greek letters, lowercase...
+    const std::array<std::wstring, 4> wide = {
+        L"\u03b1", // alpha
+        L"\u03b2", // beta
+        // no gamma because it doesn't translate to 437
+        L"\u03b4", // delta
+        L"\u03b5" //epsilon
+    };
+
+    const std::array<std::string, 4> char437 = {
+        "\xe0",
+        "\xe1",
+        "\xeb",
+        "\xee"
+    };
+
+    const std::array<std::string, 4> char932 = {
+        "\x83\xbf",
+        "\x83\xc0",
+        "\x83\xc2",
+        "\x83\xc3"
+    };
+
+    const std::string crlf = "\r\n";
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
+    std::string expectedInput;
+    expectedInput = char932[0];
+
+    // The following two only happen if you switch part way through...
+    expectedInput.append(char932[1].data(), 1);
+    // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+    // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+    // do this either to signal there are more or as a mistake that was never
+    // matched up on API review.
+    expectedInput.append(1, '\0');
+
+    std::string recvInput;
+    recvInput.resize(3); // two bytes of first alpha and then a lead byte of the second one.
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    Log::Comment(L"Set the codepage to English");
+    Log::Comment(L"Changing codepage should discard all partial bytes!");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+
+    Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
+    expectedInput.clear();
+    // TODO: I believe v2 shouldn't lose this character by switching codepages.
+    //expectedInput.append(char437[2]);
+    expectedInput.append(char437[3]);
+    expectedInput.append(crlf);
+
+    recvInput.clear();
+    recvInput.resize(490);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+}
+
+void InputTests::TestCookedReadChangeCodepageBetweenBytes()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    // Greek letters, lowercase...
+    const std::array<std::wstring, 4> wide = {
+        L"\u03b1", // alpha
+        L"\u03b2", // beta
+        // no gamma because it doesn't translate to 437
+        L"\u03b4", // delta
+        L"\u03b5" //epsilon
+    };
+
+    const std::array<std::string, 4> char437 = {
+        "\xe0",
+        "\xe1",
+        "\xeb",
+        "\xee"
+    };
+
+    const std::array<std::string, 4> char932 = {
+        "\x83\xbf",
+        "\x83\xc0",
+        "\x83\xc2",
+        "\x83\xc3"
+    };
+
+    const std::string crlf = "\r\n";
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
+    std::string expectedInput;
+    expectedInput = char932[0];
+
+    std::string recvInput;
+    recvInput.resize(2); // two bytes of first alpha
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    Log::Comment(L"Set the codepage to English");
+    Log::Comment(L"Changing codepage should discard all partial bytes!");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+
+    Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
+    expectedInput.clear();
+    // TODO: I believe v2 shouldn't lose this character by switching codepages.
+    // expectedInput.append(char437[1]);
+    expectedInput.append(char437[2]);
+    expectedInput.append(char437[3]);
+    expectedInput.append(crlf);
+
+    recvInput.clear();
+    recvInput.resize(490);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
