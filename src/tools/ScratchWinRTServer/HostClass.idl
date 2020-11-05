@@ -2,21 +2,10 @@
 
 namespace ScratchWinRTServer
 {
-    [default_interface] runtimeclass HostClass // : IScratchInterface
-    {
+    [default_interface] runtimeclass HostClass {
         HostClass(Guid g);
         void DoTheThing();
         Int32 DoCount { get; };
         Guid Id { get; };
-
-        void Attach(Windows.UI.Xaml.Controls.SwapChainPanel panel);
-        void BeginRendering();
-
-        void ThisIsInsane(UInt64 swapchainHandle);
-
-        // Adding a Windows.UI.Xaml element will crash the server when the
-        // server tries to instantiate the element without a XAML host.
-        //
-        // Windows.UI.Xaml.Controls.Button MyButton { get; };
     };
 }

@@ -5,82 +5,6 @@
 using namespace winrt;
 // using namespace winrt::Windows::Foundation;
 
-struct ScratchStringable : implements<ScratchStringable, winrt::Windows::Foundation::IStringable, winrt::Windows::Foundation::IClosable, winrt::ScratchWinRTServer::IScratchInterface>
-{
-    hstring ToString()
-    {
-        return L"Hello from server, ScratchStringable";
-    }
-    hstring DoTheThing()
-    {
-        return L"Zhu Li! Do the thing!";
-    }
-    void Close() { printf("Closed ScratchStringable\n"); }
-};
-struct MyStringable : implements<MyStringable, winrt::Windows::Foundation::IStringable>
-{
-    hstring ToString()
-    {
-        return L"Hello from server, MyStringable";
-    }
-};
-
-struct MyStringableFactory : implements<MyStringableFactory, IClassFactory>
-{
-    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
-    {
-        *result = nullptr;
-        if (outer)
-        {
-            return CLASS_E_NOAGGREGATION;
-        }
-        printf("Created MyStringable\n");
-        return make<MyStringable>().as(iid, result);
-    }
-
-    HRESULT __stdcall LockServer(BOOL) noexcept final
-    {
-        return S_OK;
-    }
-};
-
-struct ScratchStringableFactory : implements<ScratchStringableFactory, IClassFactory>
-{
-    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
-    {
-        *result = nullptr;
-        if (outer)
-        {
-            return CLASS_E_NOAGGREGATION;
-        }
-        printf("Created ScratchStringable\n");
-        return make<ScratchStringable>().as(iid, result);
-    }
-
-    HRESULT __stdcall LockServer(BOOL) noexcept final
-    {
-        return S_OK;
-    }
-};
-struct ScratchClassFactory : implements<ScratchClassFactory, IClassFactory>
-{
-    HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
-    {
-        *result = nullptr;
-        if (outer)
-        {
-            return CLASS_E_NOAGGREGATION;
-        }
-        printf("\x1b[90mSERVER: Created ScratchClass\x1b[m\n");
-        return make<ScratchWinRTServer::implementation::ScratchClass>().as(iid, result);
-    }
-
-    HRESULT __stdcall LockServer(BOOL) noexcept final
-    {
-        return S_OK;
-    }
-};
-
 std::mutex m;
 std::condition_variable cv;
 bool dtored = false;
@@ -122,29 +46,6 @@ private:
     winrt::guid _guid;
 };
 
-// DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID MyStringable_clsid{
-    0xdaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
-
-// EAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID ScratchStringable_clsid{
-    0xeaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
-// FAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID ScratchClass_clsid{
-    0xfaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
-
 int main(int argc, char** argv)
 {
     auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -168,6 +69,7 @@ int main(int argc, char** argv)
     if (argc > 1)
     {
         std::string guidString{ argv[1] };
+        // Obviously this isn't right but it's good enough
         auto canConvert = guidString.length() == 38 && guidString.front() == '{' && guidString.back() == '}';
         if (canConvert)
         {
@@ -201,7 +103,5 @@ int main(int argc, char** argv)
     std::unique_lock<std::mutex> lk(m);
     cv.wait(lk, [] { return dtored; });
 
-    // printf("\x1b[90mSERVER: Press Enter me when you're done serving.\x1b[m");
-    // getchar();
     printf("\x1b[90mSERVER: exiting %s\n\x1b[m", argv[1]);
 }

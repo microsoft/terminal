@@ -53,26 +53,7 @@
 
   <!-- Dependencies -->
   <ItemGroup>
-<!--     <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
-      <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
-    </ProjectReference> -->
     <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj" />
-
-        <ProjectReference Include="$(SolutionDir)src\buffer\out\lib\bufferout.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\renderer\base\lib\base.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\renderer\dx\lib\dx.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\renderer\uia\lib\uia.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\terminal\parser\lib\parser.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\terminal\input\lib\terminalinput.vcxproj" />
-    <!-- <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj">
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </ProjectReference> -->
-    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj" />
-    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </ProjectReference>
   </ItemGroup>
 
   <!--
@@ -99,5 +80,5 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
+  <!-- <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" /> -->
 </Project>

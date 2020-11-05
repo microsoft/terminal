@@ -3,35 +3,10 @@
 #include "HostManager.h"
 #include <winrt/ScratchWinRTServer.h>
 #include "../../types/inc/utils.hpp"
-#include "../ScratchWinRTServer/IMyComInterface.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
-
-// DAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID MyStringable_clsid{
-    0xdaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
-
-// EAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID ScratchStringable_clsid{
-    0xeaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
-
-// FAA16D7F-EF66-4FC9-B6F2-3E5B6D924576
-static constexpr GUID ScratchClass_clsid{
-    0xfaa16d7f,
-    0xef66,
-    0x4fc9,
-    { 0xb6, 0xf2, 0x3e, 0x5b, 0x6d, 0x92, 0x45, 0x76 }
-};
 
 void createExistingObjectApp(int /*argc*/, char** argv)
 {
@@ -105,17 +80,6 @@ void createExistingObjectApp(int /*argc*/, char** argv)
         }
         auto tokenLinkedTokenCleanup = wil::scope_exit([&] { CloseHandle(tokenLinkedToken.LinkedToken); });
 
-        // // Lets the calling process impersonate the security context of a logged-on user.
-        // if (ImpersonateLoggedOnUser(tokenLinkedToken.LinkedToken))
-        // {
-        //     printf("ImpersonateLoggedOnUser() is OK.\n");
-        // }
-        // else
-        // {
-        //     printf("ImpersonateLoggedOnUser() failed, error %u.\n", GetLastError());
-        //     exit(-1);
-        // }
-
         // THIS IS THE DAMNDEST THING
         //
         // IF YOU DO THIS, THE PROCESS WILL JUST STRAIGHT UP DIE ON THE create_instance CALL
@@ -128,31 +92,44 @@ void createExistingObjectApp(int /*argc*/, char** argv)
             printf("SetThreadToken failed %x\n", GetLastError());
         }
 
-        printf("Calling create_instance...\n");
-
-        host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
-                                                                     CLSCTX_LOCAL_SERVER
-                                                                     // CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
-                                                                     //
-        );
-        printf("Done\n");
-        // Terminates the impersonation of a client.
-
-        // if (RevertToSelf())
+        // // Lets the calling process impersonate the security context of a
+        // // logged-on user. UNFORTUNATELY, this did not work for me.
+        // // * ImpersonateLoggedOnUser(tokenLinkedToken.LinkedToken) does the same
+        // //   thing as SetThreadToken(LinkedToken), it crashes when trying to
+        // //   create_instance.
+        // // * ImpersonateLoggedOnUser(hProcessToken) does seemingly nothing at
+        // //   all - we get an "Error: Class not registered"
+        //
+        // auto revert = wil::scope_exit([&]() {
+        //     // Terminates the impersonation of a client.
+        //     if (RevertToSelf())
+        //     {
+        //         printf("Impersonation was terminated.\n");
+        //     }
+        //     else
+        //     {
+        //         auto gle = GetLastError();
+        //         printf("RevertToSelf failed, %d\n", gle);
+        //     }
+        // });
+        // // if (ImpersonateLoggedOnUser(hProcessToken))
+        // if (ImpersonateLoggedOnUser(tokenLinkedToken.LinkedToken))
         // {
-        //     printf("Impersonation was terminated.\n");
+        //     printf("ImpersonateLoggedOnUser() is OK.\n");
         // }
         // else
         // {
-        //     auto gle = GetLastError();
-        //     printf("RevertToSelf failed, %d\n", gle);
+        //     printf("ImpersonateLoggedOnUser() failed, error %u.\n", GetLastError());
+        //     exit(-1);
         // }
+
+        printf("Calling create_instance...\n");
+
+        host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
+                                                                     // CLSCTX_LOCAL_SERVER);
+                                                                     CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING);
+        printf("Done\n");
     }
-    // auto host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
-    //                                                                   // CLSCTX_LOCAL_SERVER
-    //                                                                   CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING
-    //                                                                   //
-    // );
 
     if (!host)
     {
@@ -325,8 +302,6 @@ void managerApp()
     host0.DoTheThing();
     printHosts(manager);
 
-    // return;
-
     bool exitRequested = false;
     while (!exitRequested)
     {
@@ -396,16 +371,6 @@ int main(int argc, char** argv)
         printf("Some other exception happened\n");
         LOG_CAUGHT_EXCEPTION();
     }
-    // try
-    // {
-    //     managerApp();
-    // }
-    // catch (hresult_error const& e)
-    // {
-    //     printf("Error: %ls\n", e.message().c_str());
-    // }
 
-    // printf("Press Enter me when you're done.");
-    // getchar();
     printf("Exiting client");
 }
