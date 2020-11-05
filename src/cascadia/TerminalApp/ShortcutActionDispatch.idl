@@ -42,6 +42,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> SetTabColor;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> OpenTabColorPicker;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> RenameTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> OpenTabRenamer;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ExecuteCommandline;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> CloseOtherTabs;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> CloseTabsAfter;

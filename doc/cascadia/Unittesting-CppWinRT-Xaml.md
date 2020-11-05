@@ -86,7 +86,7 @@ project from our `TerminalAppLib` project:
     duplicate type definitions)-->
 
     <Reference Include="Microsoft.Terminal.Settings">
-      <HintPath>$(SolutionDir)$(Platform)\$(Configuration)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -122,7 +122,7 @@ dir to your `AdditionalLibraryDirectories`, and adding the lib to your
   <ItemDefinitionGroup>
     <Link>
       <!-- Manually link with the TerminalAppLib.lib we've built. -->
-      <AdditionalLibraryDirectories>$(SolutionDir)\$(Platform)\$(Configuration)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(OpenConsoleCommonOutDir)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 
       <AdditionalDependencies>TerminalAppLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -260,9 +260,9 @@ this:
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(SolutionDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
 
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -446,9 +446,9 @@ before. The complete `PostBuildEvent` now looks like this:
 
         (xcopy /Y &quot;$(SolutionDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
 
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y &quot;$(SolutionDir)$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleCommonOutDir)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

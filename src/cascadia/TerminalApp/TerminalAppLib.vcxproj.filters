@@ -27,6 +27,10 @@
     <ClCompile Include="TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
+    <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="Tab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
     <ClCompile Include="FilteredCommand.cpp">
       <Filter>commandPalette</Filter>
     </ClCompile>
@@ -54,6 +58,10 @@
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
+        <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="Tab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
     <ClInclude Include="FilteredCommand.h">
       <Filter>commandPalette</Filter>
     </ClInclude>
@@ -74,13 +82,12 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="Tab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="TerminalTab.idl">
+      <Filter>tab</Filter>
     </Midl>
     <Midl Include="FilteredCommand.idl">
       <Filter>commandPalette</Filter>

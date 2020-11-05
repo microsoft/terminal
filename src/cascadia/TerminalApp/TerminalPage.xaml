@@ -51,7 +51,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="CloseAllDialog"
             x:Uid="CloseAllDialog"
             DefaultButton="Primary"
-            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
+            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick"
+            CloseButtonClick="_CloseWarningCloseButtonOnClick">
         </ContentDialog>
 
         <ContentDialog
@@ -80,6 +81,20 @@ the MIT License. See LICENSE in the project root for license information. -->
                     FontFamily="Cascadia Mono">
                 </Run>
             </TextBlock>
+        </ContentDialog>
+
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="KeyboardServiceDisabledDialog"
+            x:Uid="KeyboardServiceDisabledDialog"
+            DefaultButton="Primary">
+
+            <TextBlock
+                Foreground="{ThemeResource ErrorTextBrush}"
+                IsTextSelectionEnabled="True"
+                TextWrapping="WrapWholeWords"
+                Text="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}" />
         </ContentDialog>
 
         <local:CommandPalette

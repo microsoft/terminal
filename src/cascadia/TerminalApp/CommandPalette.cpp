@@ -120,8 +120,8 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Scrolls the focus up or down the list of commands.
     // Arguments:
-    // - pageDown: if true, we're attempting to move to last visible item in the
-    //   list. Otherwise, we're attempting to move to first visible item.
+    // - pageDown: if true, we're attempting to move to the last visible item in the
+    //   list. Otherwise, we're attempting to move to the first visible item.
     // Return Value:
     // - <none>
     void CommandPalette::ScrollDown(const bool pageDown)
@@ -141,10 +141,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Moves the focus either to top item or end item in the list of commands.
+    // - Moves the focus either to the top item or to the end item in the list of commands.
     // Arguments:
-    // - end: if true, we're attempting to move to last item in the
-    //   list. Otherwise, we're attempting to move to first item.
+    // - end: if true, we're attempting to move to the last item in the
+    //   list. Otherwise, we're attempting to move to the first item.
     //   Depends on the pageUpDown argument.
     // Return Value:
     // - <none>
@@ -240,23 +240,25 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::PageUp)
         {
-            // Action Mode: Move focus to the previous item in the list.
+            // Action Mode: Move focus to the first visible item in the list.
             ScrollDown(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
-            // Action Mode: Move focus to the previous item in the list.
+            // Action Mode: Move focus to the last visible item in the list.
             ScrollDown(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Home)
         {
+            // Action Mode: Move focus to the first item in the list.
             GoEnd(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::End)
         {
+            // Action Mode: Move focus to the last item in the list.
             GoEnd(true);
             e.Handled(true);
         }
@@ -427,6 +429,25 @@ namespace winrt::TerminalApp::implementation
         {
             _dispatchCommand(filteredCommand);
         }
+    }
+
+    // Method Description:
+    // This event is called when the user clicks on an ChevronLeft button right
+    // next to the ParentCommandName (e.g. New Tab...) above the subcommands list.
+    // It'll go up a level when the users click the button.
+    // Arguments:
+    // - sender: the button that got clicked
+    // Return Value:
+    // - <none>
+    void CommandPalette::_moveBackButtonClicked(Windows::Foundation::IInspectable const& /*sender*/,
+                                                Windows::UI::Xaml::RoutedEventArgs const&)
+    {
+        _nestedActionStack.Clear();
+        ParentCommandName(L"");
+        _currentNestedCommands.Clear();
+        _searchBox().Focus(FocusState::Programmatic);
+        _updateFilteredActions();
+        _filteredActionsView().SelectedIndex(0);
     }
 
     // Method Description:

@@ -88,6 +88,8 @@ namespace winrt::TerminalApp::implementation
 
         void _listItemClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::ItemClickEventArgs const& e);
 
+        void _moveBackButtonClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const&);
+
         void _updateFilteredActions();
 
         void _populateFilteredActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& vectorToPopulate,
