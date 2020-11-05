@@ -701,6 +701,18 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->TabWantsFocus([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab && tab->FocusState() == Windows::UI::Xaml::FocusState::Unfocused)
+            {
+                page->_tabView.SelectedItem(tab->TabViewItem());
+                const auto idx = tab->TabViewIndex();
+                page->_UpdatedSelectedTab(idx);
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
         _ReapplyCompactTabSize();

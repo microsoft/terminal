@@ -483,6 +483,19 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        pane->PaneWantsFocus([weakThis](std::shared_ptr<Pane> sender) {
+            // Do nothing if the Tab's lifetime is expired
+            auto tab{ weakThis.get() };
+
+            if (tab)
+            {
+                tab->_UpdateActivePane(sender);
+                tab->_RecalculateAndApplyTabColor();
+                tab->_TabWantsFocusHandlers();
+            }
+
+        });
     }
 
     // Method Description:
@@ -1020,4 +1033,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, TabWantsFocus, _TabWantsFocusHandlers, winrt::delegate<>);
 }
