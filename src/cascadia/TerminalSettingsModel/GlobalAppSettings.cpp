@@ -37,7 +37,8 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
-static constexpr std::string_view UseTabSwitcherKey{ "useTabSwitcher" };
+static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
@@ -107,7 +108,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
     globals->_AlwaysOnTop = _AlwaysOnTop;
-    globals->_UseTabSwitcher = _UseTabSwitcher;
+    globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
@@ -286,7 +287,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
-    JsonUtils::GetValueForKey(json, UseTabSwitcherKey, _UseTabSwitcher);
+    // GH#8076 - when adding enum values to this key, we also changed it from
+    // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
+    // "useTabSwitcher", but prefer "tabSwitcherMode"
+    JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
+    JsonUtils::GetValueForKey(json, TabSwitcherModeKey, _TabSwitcherMode);
 
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
 

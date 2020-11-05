@@ -26,6 +26,13 @@ namespace Microsoft.Terminal.Settings.Model
         MaximizedFocusMode,
     };
 
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
         Boolean HasUnparsedDefaultProfile();
@@ -120,9 +127,9 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearAlwaysOnTop();
         Boolean AlwaysOnTop;
 
-        Boolean HasUseTabSwitcher();
-        void ClearUseTabSwitcher();
-        Boolean UseTabSwitcher;
+        Boolean HasTabSwitcherMode();
+        void ClearTabSwitcherMode();
+        TabSwitcherMode TabSwitcherMode;
 
         Boolean HasDisableAnimations();
         void ClearDisableAnimations();
