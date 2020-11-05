@@ -136,7 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileSubpage)
         {
-            contentFrame.Navigate(xaml_typename<Editor::Profiles>(), _settingsSource.DefaultProfileSettings());
+            contentFrame.Navigate(xaml_typename<Editor::Profiles>(), Settings().DefaultProfileSettings());
         }
         else if (clickedItemTag == colorSchemesPage)
         {
@@ -175,7 +175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // and keep a reference to them in a map so that we
         // can easily modify the correct one when the associated
         // profile changes.
-        for (const auto& profile : _settingsSource.AllProfiles())
+        for (const auto& profile : Settings().AllProfiles())
         {
             auto navItem = _CreateProfileNavViewItem(profile);
             SettingsNav().MenuItems().Append(navItem);
@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index)
     {
-        auto newProfile = _settingsSource.CreateNewProfile();
+        auto newProfile = Settings().CreateNewProfile();
         auto navItem = _CreateProfileNavViewItem(newProfile);
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
