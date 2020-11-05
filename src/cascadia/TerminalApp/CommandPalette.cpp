@@ -176,8 +176,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
-            const auto& selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+            const auto selectedCommand = _filteredActionsView().SelectedItem();
+            if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
             {
                 const auto& actionAndArgs = filteredCommand.Command().Action();
                 _dispatch.DoAction(actionAndArgs);
@@ -377,8 +377,8 @@ namespace winrt::TerminalApp::implementation
 
         if (!ctrlDown && !altDown && !shiftDown)
         {
-            const auto& selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+            const auto selectedCommand = _filteredActionsView().SelectedItem();
+            if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
             {
                 _dispatchCommand(filteredCommand);
             }
@@ -424,8 +424,8 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_listItemClicked(Windows::Foundation::IInspectable const& /*sender*/,
                                           Windows::UI::Xaml::Controls::ItemClickEventArgs const& e)
     {
-        const auto& selectedCommand = e.ClickedItem();
-        if (const auto& filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
+        const auto selectedCommand = e.ClickedItem();
+        if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
         {
             _dispatchCommand(filteredCommand);
         }
