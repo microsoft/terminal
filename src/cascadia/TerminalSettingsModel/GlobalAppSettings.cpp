@@ -37,7 +37,8 @@ static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
-static constexpr std::string_view TabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
+static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
@@ -286,6 +287,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
+    // GH#8076 - when adding enum values to this key, we also changed it from
+    // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
+    // "useTabSwitcher", but prefer "tabSwitcherMode"
+    JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
     JsonUtils::GetValueForKey(json, TabSwitcherModeKey, _TabSwitcherMode);
 
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);

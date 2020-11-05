@@ -1206,7 +1206,6 @@ namespace winrt::TerminalApp::implementation
         {
             tabCommands.Append(tab.SwitchToTabCommand());
         }
-        // CommandPalette().SetInOrderTabActions(tabCommands);
         CommandPalette().SetTabActions(tabCommands, true);
     }
 
