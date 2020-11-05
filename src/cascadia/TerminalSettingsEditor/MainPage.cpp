@@ -48,20 +48,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     }
 
     // Function Description:
-    // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView
+    // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView, if no item is selected
     // Arguments:
     // - <unused>
     // Return Value:
     // - <none>
     void MainPage::SettingsNav_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
-        const auto initialItem = SettingsNav().MenuItems().GetAt(0);
-        SettingsNav().SelectedItem(initialItem);
-
-        // Manually navigate because setting the selected item programmatically doesn't trigger ItemInvoked.
-        if (const auto tag = initialItem.as<MUX::Controls::NavigationViewItem>().Tag())
+        if (SettingsNav().SelectedItem() == nullptr)
         {
-            _Navigate(unbox_value<hstring>(tag));
+            const auto initialItem = SettingsNav().MenuItems().GetAt(0);
+            SettingsNav().SelectedItem(initialItem);
+
+            // Manually navigate because setting the selected item programmatically doesn't trigger ItemInvoked.
+            if (const auto tag = initialItem.as<MUX::Controls::NavigationViewItem>().Tag())
+            {
+                _Navigate(unbox_value<hstring>(tag));
+            }
         }
     }
 
