@@ -1079,10 +1079,4 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherMode order)
-    {
-        _tabSwitchOrder = order;
-        _updateFilteredActions();
-    }
-
 }

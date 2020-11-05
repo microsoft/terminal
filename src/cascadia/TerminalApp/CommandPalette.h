@@ -99,7 +99,6 @@ namespace winrt::TerminalApp::implementation
         // Tab Switcher
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> _tabActions{ nullptr };
         uint32_t _switcherStartIdx;
-        winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitchOrder{ Microsoft::Terminal::Settings::Model::TabSwitcherMode::MostRecentlyUsed };
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;

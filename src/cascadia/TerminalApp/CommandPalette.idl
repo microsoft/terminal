@@ -28,6 +28,5 @@ namespace TerminalApp
         void SetDispatch(ShortcutActionDispatch dispatch);
 
         void EnableTabSwitcherMode(Boolean searchMode, UInt32 startIdx);
-        void SetTabSwitchOrder(Microsoft.Terminal.Settings.Model.TabSwitcherMode order);
     }
 }

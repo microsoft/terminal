@@ -1267,7 +1267,6 @@ namespace winrt::TerminalApp::implementation
             {
                 // Otherwise, set up the tab switcher in the selected mode, with
                 // the given ordering, and make it visible.
-                CommandPalette().SetTabSwitchOrder(tabSwitchMode);
                 CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
                 CommandPalette().Visibility(Visibility::Visible);
             }
@@ -2200,14 +2199,6 @@ namespace winrt::TerminalApp::implementation
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
-
-        // If the tab switcher isn't currently open, then update the tab switch
-        // order on a reload. If the switcher is open, we don't want to change
-        // the ordering out from underneath the user.
-        if (CommandPalette().Visibility() != Visibility::Visible)
-        {
-            CommandPalette().SetTabSwitchOrder(_settings.GlobalSettings().TabSwitcherMode());
-        }
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

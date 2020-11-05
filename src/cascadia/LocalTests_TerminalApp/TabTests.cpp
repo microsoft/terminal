@@ -776,7 +776,6 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Change the tab switch order to MRU switching");
         TestOnUIThread([&page]() {
             page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
-            page->CommandPalette().SetTabSwitchOrder(page->_settings.GlobalSettings().TabSwitcherMode());
         });
 
         Log::Comment(L"Switch to the next MRU tab, which is the fourth tab");
