@@ -17,8 +17,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    GlobalAppSettings Rendering::GlobalSettings()
+    void Rendering::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
     {
-        return MainPage::Settings().GlobalSettings();
+        _GlobalSettings = e.Parameter().as<Model::GlobalAppSettings>();
     }
 }

@@ -13,10 +13,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Launch();
 
-        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
+
+        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
     };
 }
 

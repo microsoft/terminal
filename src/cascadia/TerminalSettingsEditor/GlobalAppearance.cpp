@@ -23,8 +23,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
     }
 
-    GlobalAppSettings GlobalAppearance::GlobalSettings()
+    void GlobalAppearance::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
     {
-        return MainPage::Settings().GlobalSettings();
+        _GlobalSettings = e.Parameter().as<Model::GlobalAppSettings>();
     }
 }

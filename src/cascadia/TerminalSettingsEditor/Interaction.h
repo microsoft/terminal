@@ -11,7 +11,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct Interaction : InteractionT<Interaction>
     {
         Interaction();
-        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+
+        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+        GETSET_PROPERTY(Model::GlobalAppSettings, GlobalSettings, nullptr);
     };
 }
 

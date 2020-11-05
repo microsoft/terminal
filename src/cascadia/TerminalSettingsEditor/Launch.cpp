@@ -19,19 +19,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    GlobalAppSettings Launch::GlobalSettings()
+    void Launch::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
     {
-        return MainPage::Settings().GlobalSettings();
+        _Settings = e.Parameter().as<Model::CascadiaSettings>();
     }
 
     IInspectable Launch::CurrentDefaultProfile()
     {
-        return winrt::box_value(MainPage::Settings().FindProfile(GlobalSettings().DefaultProfile()));
+        return winrt::box_value(_Settings.FindProfile(_Settings.GlobalSettings().DefaultProfile()));
     }
 
     void Launch::CurrentDefaultProfile(const IInspectable& value)
     {
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
-        GlobalSettings().DefaultProfile(profile.Guid());
+        _Settings.GlobalSettings().DefaultProfile(profile.Guid());
     }
 }

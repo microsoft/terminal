@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Launch();
 
-        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
+        Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
         IInspectable CurrentDefaultProfile;
     }
 }

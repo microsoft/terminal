@@ -203,12 +203,12 @@ winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings CascadiaSettings:
 }
 
 // Method Description:
-// - Get a reference to our default profile settings
+// - Get a reference to our profiles.defaults object
 // Arguments:
 // - <none>
 // Return Value:
-// - a reference to our default profile settings
-winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DefaultProfileSettings() const
+// - a reference to our profile.defaults object
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::ProfileDefaults() const
 {
     return *_userDefaultProfileSettings;
 }

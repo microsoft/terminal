@@ -8,7 +8,5 @@ namespace Microsoft.Terminal.Settings.Editor
         MainPage(Microsoft.Terminal.Settings.Model.CascadiaSettings settings);
 
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Settings.Model.SettingsTarget> OpenJson;
-
-        static Microsoft.Terminal.Settings.Model.CascadiaSettings Settings { get; };
     }
 }

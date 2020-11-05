@@ -44,6 +44,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
+    }
+
+    void ColorSchemes::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
+    {
+        _GlobalSettings = e.Parameter().as<Model::GlobalAppSettings>();
         _UpdateColorSchemeList();
 
         // Initialize our color table view model with 16 dummy colors
@@ -58,11 +63,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    IObservableVector<hstring> ColorSchemes::ColorSchemeList()
-    {
-        return _ColorSchemeList;
-    }
-
     // Function Description:
     // - Called when a different color scheme is selected. Updates our current
     //   color scheme and updates our currently modifiable color table.
@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         //  Update the color scheme this page is modifying
         auto str = winrt::unbox_value<hstring>(args.AddedItems().GetAt(0));
-        auto colorScheme = MainPage::Settings().GlobalSettings().ColorSchemes().Lookup(str);
+        auto colorScheme = GlobalSettings().ColorSchemes().Lookup(str);
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
     }
@@ -88,8 +88,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::_UpdateColorSchemeList()
     {
-        auto colorSchemeMap = MainPage::Settings().GlobalSettings().ColorSchemes();
-        for (const auto& pair : MainPage::Settings().GlobalSettings().ColorSchemes())
+        auto colorSchemeMap = GlobalSettings().ColorSchemes();
+        for (const auto& pair : GlobalSettings().ColorSchemes())
         {
             _ColorSchemeList.Append(pair.Key());
         }

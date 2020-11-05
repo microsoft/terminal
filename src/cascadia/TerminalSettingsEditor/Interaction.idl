@@ -6,6 +6,7 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass Interaction : Windows.UI.Xaml.Controls.Page
     {
         Interaction();
+
         Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
     }
 }

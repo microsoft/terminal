@@ -13,19 +13,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         ColorSchemes();
 
+        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
 
-        Windows::Foundation::Collections::IObservableVector<winrt::hstring> ColorSchemeList();
-
+        GETSET_PROPERTY(Model::GlobalAppSettings, GlobalSettings, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::hstring>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ColorScheme, CurrentColorScheme, _PropertyChangedHandlers, nullptr);
 
     private:
-        Windows::Foundation::Collections::IObservableVector<winrt::hstring> _ColorSchemeList{ nullptr };
-
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
     };

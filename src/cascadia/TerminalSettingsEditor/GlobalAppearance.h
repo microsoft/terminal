@@ -12,7 +12,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         GlobalAppearance();
-        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+
+        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+
+        GETSET_PROPERTY(Model::GlobalAppSettings, GlobalSettings, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, GlobalSettings, Theme);
         GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, GlobalSettings, TabWidthMode);
