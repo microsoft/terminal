@@ -38,6 +38,8 @@
 
 #include <winrt/Windows.System.h>
 
+#include <winrt/Microsoft.UI.Xaml.Controls.h>
+
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>

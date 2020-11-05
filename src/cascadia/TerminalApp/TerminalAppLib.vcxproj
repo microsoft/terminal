@@ -116,9 +116,6 @@
     <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="IconPathConverter.h">
-      <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
@@ -187,9 +184,6 @@
     </ClCompile>
     <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="IconPathConverter.cpp">
-      <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
@@ -271,7 +265,6 @@
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="IconPathConverter.idl" />
     <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->

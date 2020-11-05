@@ -16,6 +16,9 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="IconPathConverter.h">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ActionArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
@@ -59,6 +62,9 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="IconPathConverter.cpp">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -114,6 +120,7 @@
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
+    <Midl Include="IconPathConverter.idl" />
     <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />

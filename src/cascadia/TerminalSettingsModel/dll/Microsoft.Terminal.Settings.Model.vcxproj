@@ -30,6 +30,7 @@
     <ClInclude Include="../KeyMapping.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IconPathConverter.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->
