@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "Profiles.h"
 #include "Profiles.g.cpp"
+#include "EnumEntry.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -15,12 +16,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Profiles::Profiles()
     {
         InitializeComponent();
+
+        INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, L"Profile_CursorShape", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
     }
 
-    Profiles::Profiles(Settings::Model::Profile profile)
+    void Profiles::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
     {
-        InitializeComponent();
-        Profile(profile);
+        _Profile = e.Parameter().as<Model::Profile>();
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)

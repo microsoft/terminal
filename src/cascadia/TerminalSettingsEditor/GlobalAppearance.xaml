@@ -12,9 +12,15 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d">
 
     <Page.Resources>
-        <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-            <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
-        </DataTemplate>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
+        </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
@@ -33,24 +39,18 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Margin="0,0,0,20" />
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                 <Controls:RadioButtons x:Uid="Globals_Theme"
-                                       Margin="0,0,0,20"
-                                       FontSize="15"
-                                       ToolTipService.Placement="Mouse"
                                        SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                        ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTabsInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettings.AlwaysShowTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTabsInTitlebar, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind GlobalSettings.ShowTitleInTitlebar, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind GlobalSettings.AlwaysShowTabs, Mode=TwoWay}"/>
                 <Controls:RadioButtons x:Uid="Globals_TabWidthMode"
-                                       Margin="0,0,0,20"
-                                       FontSize="15"
-                                       ToolTipService.Placement="Mouse"
                                        SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
                                        ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <CheckBox x:Uid="Globals_DisableAnimations" IsChecked="{x:Bind GlobalSettings.DisableAnimations, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind GlobalSettings.ConfirmCloseAllTabs, Mode=TwoWay}"/>
+                <CheckBox x:Uid="Globals_DisableAnimations" IsChecked="{x:Bind GlobalSettings.DisableAnimations, Mode=TwoWay}"/>
             </StackPanel>
         </Grid>
     </ScrollViewer>
