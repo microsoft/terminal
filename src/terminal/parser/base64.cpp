@@ -6,8 +6,8 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-static const wchar_t base64Chars[] = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const wchar_t padChar = L'=';
+static const char base64Chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char padChar = '=';
 
 #pragma warning(disable : 26446 26447 26482 26485 26493 26494)
 
@@ -75,15 +75,16 @@ std::wstring Base64::s_Encode(const std::wstring_view src) noexcept
 // - true if decoding successfully, otherwise false.
 bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
 {
+    std::string mbStr;
     int state = 0;
-    wchar_t tmp;
+    char tmp;
 
     const auto len = src.size() / 4 * 3;
     if (len == 0)
     {
         return false;
     }
-    dst.reserve(len);
+    mbStr.reserve(len);
 
     auto iter = src.cbegin();
     while (iter < src.cend())
@@ -99,7 +100,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
             break;
         }
 
-        auto pos = wcschr(base64Chars, *iter);
+        auto pos = strchr(base64Chars, *iter);
         if (!pos) // A non-base64 character found.
         {
             return false;
@@ -108,25 +109,27 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
         switch (state)
         {
         case 0:
-            tmp = (wchar_t)(pos - base64Chars) << 2;
+            tmp = (char)(pos - base64Chars) << 2;
             state = 1;
             break;
         case 1:
-            tmp |= (pos - base64Chars) >> 4;
-            dst.push_back(tmp);
-            tmp = (wchar_t)((pos - base64Chars) & 0x0f) << 4;
+            tmp |= (char)(pos - base64Chars) >> 4;
+            mbStr += tmp;
+            tmp = (char)((pos - base64Chars) & 0x0f) << 4;
             state = 2;
             break;
         case 2:
-            tmp |= (pos - base64Chars) >> 2;
-            dst.push_back(tmp);
-            tmp = (wchar_t)((pos - base64Chars) & 0x03) << 6;
+            tmp |= (char)(pos - base64Chars) >> 2;
+            mbStr += tmp;
+            tmp = (char)((pos - base64Chars) & 0x03) << 6;
             state = 3;
             break;
         case 3:
             tmp |= pos - base64Chars;
-            dst.push_back(tmp);
+            mbStr += tmp;
             state = 0;
+            break;
+        default:
             break;
         }
 
@@ -154,6 +157,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
                 return false;
             }
             iter++; // Skip the padding character and fallthrough to "single trailing padding character" case.
+            [[fallthrough]];
         case 3:
             while (iter < src.cend())
             {
@@ -163,6 +167,9 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
                 }
                 iter++;
             }
+            break;
+        default:
+            break;
         }
     }
     else if (state != 0) // When no padding, we must be in state 0.
@@ -170,7 +177,7 @@ bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
         return false;
     }
 
-    return true;
+    return SUCCEEDED(til::u8u16(mbStr, dst));
 }
 
 // Routine Description:

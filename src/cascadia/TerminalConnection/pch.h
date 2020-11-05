@@ -10,8 +10,6 @@
 // Needs to be defined or we get redeclaration errors
 #define WIN32_LEAN_AND_MEAN
 
-#define BLOCK_GSL
-
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
 #include <LibraryIncludes.h>

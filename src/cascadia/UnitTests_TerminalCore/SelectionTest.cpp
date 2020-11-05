@@ -5,7 +5,7 @@
 * This File was generated using the VisualTAEF C++ Project Wizard.
 * Class Name: SelectionTest
 */
-#include "precomp.h"
+#include "pch.h"
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
@@ -17,7 +17,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
 using namespace Microsoft::Terminal::Core;
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalCoreUnitTests
 {

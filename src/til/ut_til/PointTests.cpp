@@ -175,6 +175,82 @@ class PointTests
         }
     }
 
+    TEST_METHOD(LessThanOrEqual)
+    {
+        Log::Comment(L"0.) Equal.");
+        {
+            const til::point s1{ 5, 10 };
+            const til::point s2{ 5, 10 };
+            VERIFY_IS_TRUE(s1 <= s2);
+        }
+
+        Log::Comment(L"1.) Left Width changed.");
+        {
+            const til::point s1{ 4, 10 };
+            const til::point s2{ 5, 10 };
+            VERIFY_IS_TRUE(s1 <= s2);
+        }
+
+        Log::Comment(L"2.) Right Width changed.");
+        {
+            const til::point s1{ 5, 10 };
+            const til::point s2{ 6, 10 };
+            VERIFY_IS_TRUE(s1 <= s2);
+        }
+
+        Log::Comment(L"3.) Left Height changed.");
+        {
+            const til::point s1{ 5, 9 };
+            const til::point s2{ 5, 10 };
+            VERIFY_IS_TRUE(s1 <= s2);
+        }
+
+        Log::Comment(L"4.) Right Height changed.");
+        {
+            const til::point s1{ 5, 10 };
+            const til::point s2{ 5, 11 };
+            VERIFY_IS_TRUE(s1 <= s2);
+        }
+    }
+
+    TEST_METHOD(GreaterThanOrEqual)
+    {
+        Log::Comment(L"0.) Equal.");
+        {
+            const til::point s1{ 5, 10 };
+            const til::point s2{ 5, 10 };
+            VERIFY_IS_TRUE(s1 >= s2);
+        }
+
+        Log::Comment(L"1.) Left Width changed.");
+        {
+            const til::point s1{ 4, 10 };
+            const til::point s2{ 5, 10 };
+            VERIFY_IS_FALSE(s1 >= s2);
+        }
+
+        Log::Comment(L"2.) Right Width changed.");
+        {
+            const til::point s1{ 5, 10 };
+            const til::point s2{ 6, 10 };
+            VERIFY_IS_FALSE(s1 >= s2);
+        }
+
+        Log::Comment(L"3.) Left Height changed.");
+        {
+            const til::point s1{ 5, 9 };
+            const til::point s2{ 5, 10 };
+            VERIFY_IS_FALSE(s1 >= s2);
+        }
+
+        Log::Comment(L"4.) Right Height changed.");
+        {
+            const til::point s1{ 5, 10 };
+            const til::point s2{ 5, 11 };
+            VERIFY_IS_FALSE(s1 >= s2);
+        }
+    }
+
     TEST_METHOD(Addition)
     {
         Log::Comment(L"0.) Addition of two things that should be in bounds.");

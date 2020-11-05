@@ -2,6 +2,8 @@ parameters:
   configuration: 'Release'
   platform: ''
   additionalBuildArguments: ''
+  minimumExpectedTestsExecutedCount: 10  # Sanity check for minimum expected tests to be reported
+  rerunPassesRequiredToAvoidFailure: 5
 
 jobs:
 - job: Build${{ parameters.platform }}${{ parameters.configuration }}
@@ -9,9 +11,27 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
-  pool: { vmImage: windows-2019 }
+  pool: "windevbuildagents"
+  # The public pool is also an option!
+  # pool: { vmImage: windows-2019 }
 
   steps:
   - template: build-console-steps.yml
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
+
+- template: helix-runtests-job.yml
+  parameters:
+    name: 'RunTestsInHelix'
+    dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
+    condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
+    testSuite: 'DevTestSuite'
+    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+    
+- template: helix-processtestresults-job.yml
+  parameters:
+    dependsOn:
+    - RunTestsInHelix
+    condition: and(succeededOrFailed(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
+    rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
+    minimumExpectedTestsExecutedCount: ${{ parameters.minimumExpectedTestsExecutedCount }}

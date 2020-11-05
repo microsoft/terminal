@@ -50,30 +50,25 @@ namespace Microsoft::Console::VirtualTerminal
     // CAPSLOCK_ON         0x0080
     // ENHANCED_KEY        0x0100
 
-    enum CsiIntermediateCodes : wchar_t
+    enum CsiActionCodes : uint64_t
     {
-        MOUSE_SGR = L'<',
-    };
-
-    enum class CsiActionCodes : wchar_t
-    {
-        ArrowUp = L'A',
-        ArrowDown = L'B',
-        ArrowRight = L'C',
-        ArrowLeft = L'D',
-        Home = L'H',
-        End = L'F',
-        MouseDown = L'M',
-        MouseUp = L'm',
-        Generic = L'~', // Used for a whole bunch of possible keys
-        CSI_F1 = L'P',
-        CSI_F2 = L'Q',
-        CSI_F3 = L'R', // Both F3 and DSR are on R.
-        // DSR_DeviceStatusReportResponse = L'R',
-        CSI_F4 = L'S',
-        DTTERM_WindowManipulation = L't',
-        CursorBackTab = L'Z',
-        Win32KeyboardInput = L'_'
+        ArrowUp = VTID("A"),
+        ArrowDown = VTID("B"),
+        ArrowRight = VTID("C"),
+        ArrowLeft = VTID("D"),
+        Home = VTID("H"),
+        End = VTID("F"),
+        MouseDown = VTID("<M"),
+        MouseUp = VTID("<m"),
+        Generic = VTID("~"), // Used for a whole bunch of possible keys
+        CSI_F1 = VTID("P"),
+        CSI_F2 = VTID("Q"),
+        CSI_F3 = VTID("R"), // Both F3 and DSR are on R.
+        // DSR_DeviceStatusReportResponse = VTID("R"),
+        CSI_F4 = VTID("S"),
+        DTTERM_WindowManipulation = VTID("t"),
+        CursorBackTab = VTID("Z"),
+        Win32KeyboardInput = VTID("_")
     };
 
     enum CsiMouseButtonCodes : unsigned short
@@ -97,7 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
     };
 
     // Sequences ending in '~' use these numbers as identifiers.
-    enum class GenericKeyIdentifiers : unsigned short
+    enum class GenericKeyIdentifiers : size_t
     {
         GenericHome = 1,
         Insert = 2,
@@ -145,16 +140,11 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPassThroughString(const std::wstring_view string) override;
 
-        bool ActionEscDispatch(const wchar_t wch,
-                               const gsl::span<const wchar_t> intermediates) override;
+        bool ActionEscDispatch(const VTID id) override;
 
-        bool ActionVt52EscDispatch(const wchar_t wch,
-                                   const gsl::span<const wchar_t> intermediates,
-                                   const gsl::span<const size_t> parameters) noexcept override;
+        bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
-        bool ActionCsiDispatch(const wchar_t wch,
-                               const gsl::span<const wchar_t> intermediates,
-                               const gsl::span<const size_t> parameters) override;
+        bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
         bool ActionClear() noexcept override;
 
@@ -164,8 +154,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const size_t parameter,
                                const std::wstring_view string) noexcept override;
 
-        bool ActionSs3Dispatch(const wchar_t wch,
-                               const gsl::span<const size_t> parameters) override;
+        bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
         bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
@@ -180,21 +169,19 @@ namespace Microsoft::Console::VirtualTerminal
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
 
-        DWORD _GetCursorKeysModifierState(const gsl::span<const size_t> parameters, const CsiActionCodes actionCode) noexcept;
-        DWORD _GetGenericKeysModifierState(const gsl::span<const size_t> parameters) noexcept;
-        DWORD _GetSGRMouseModifierState(const gsl::span<const size_t> parameters) noexcept;
+        DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
+        DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;
+        DWORD _GetSGRMouseModifierState(const size_t modifierParam) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
-        bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
 
-        bool _UpdateSGRMouseButtonState(const wchar_t wch,
-                                        const gsl::span<const size_t> parameters,
+        bool _UpdateSGRMouseButtonState(const VTID id,
+                                        const size_t sgrEncoding,
                                         DWORD& buttonState,
                                         DWORD& eventFlags) noexcept;
-        bool _GetGenericVkey(const gsl::span<const size_t> parameters,
-                             short& vkey) const;
-        bool _GetCursorKeysVkey(const wchar_t wch, short& vkey) const;
+        bool _GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const;
+        bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
 
         bool _WriteSingleKey(const short vkey, const DWORD modifierState);
@@ -215,16 +202,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        bool _GenerateWin32Key(const gsl::span<const size_t> parameters, KeyEvent& key);
-
-        static constexpr size_t DefaultLine = 1;
-        static constexpr size_t DefaultColumn = 1;
-        bool _GetXYPosition(const gsl::span<const size_t> parameters,
-                            size_t& line,
-                            size_t& column) const noexcept;
-        bool _GetSGRXYPosition(const gsl::span<const size_t> parameters,
-                               size_t& line,
-                               size_t& column) const noexcept;
+        KeyEvent _GenerateWin32Key(const VTParameters parameters);
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 

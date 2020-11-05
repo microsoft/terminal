@@ -82,7 +82,7 @@ public:                                                                         
     winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); } \
     void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }         \
                                                                                             \
-private:                                                                                    \
+protected:                                                                                  \
     winrt::event<args> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature and body of an event
@@ -107,6 +107,18 @@ public:                                                        \
 private:                                                       \
     type _##name{ __VA_ARGS__ };
 
+// Use this macro to quick implement both the getter and setter for a color property.
+// This should only be used for color types where there's no logic in the
+// getter/setter beyond just accessing/updating the value.
+// This takes advantage of til::color
+#define GETSET_COLORPROPERTY(name, ...)                                             \
+public:                                                                             \
+    winrt::Windows::UI::Color name() const noexcept { return _##name; }             \
+    void name(const winrt::Windows::UI::Color& value) noexcept { _##name = value; } \
+                                                                                    \
+private:                                                                            \
+    til::color _##name{ __VA_ARGS__ };
+
 // Use this macro to quickly implement both the getter and setter for an
 // observable property. This is similar to the GETSET_PROPERTY macro above,
 // except this will also raise a PropertyChanged event with the name of the
@@ -114,20 +126,20 @@ private:                                                       \
 // private _setName() method, that the class can internally use to change the
 // value when it _knows_ it doesn't need to raise the PropertyChanged event
 // (like when the class is being initialized).
-#define OBSERVABLE_GETSET_PROPERTY(type, name, event)                                  \
+#define OBSERVABLE_GETSET_PROPERTY(type, name, event, ...)                             \
 public:                                                                                \
-    type name() { return _##name; };                                                   \
+    type name() const noexcept { return _##name; };                                    \
     void name(const type& value)                                                       \
     {                                                                                  \
         if (_##name != value)                                                          \
         {                                                                              \
-            const_cast<type&>(_##name) = value;                                        \
+            _##name = value;                                                           \
             event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
         }                                                                              \
     };                                                                                 \
                                                                                        \
 private:                                                                               \
-    const type _##name;                                                                \
+    type _##name{ __VA_ARGS__ };                                                       \
     void _set##name(const type& value)                                                 \
     {                                                                                  \
         const_cast<type&>(_##name) = value;                                            \

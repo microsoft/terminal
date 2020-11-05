@@ -64,7 +64,7 @@ public:
     bool HorizontalTabSet() noexcept override { return false; } // HTS
     bool ForwardTab(const size_t /*numTabs*/) noexcept override { return false; } // CHT, HT
     bool BackwardsTab(const size_t /*numTabs*/) noexcept override { return false; } // CBT
-    bool TabClear(const size_t /*clearType*/) noexcept override { return false; } // TBC
+    bool TabClear(const DispatchTypes::TabClearType /*clearType*/) noexcept override { return false; } // TBC
     bool EnableDECCOLMSupport(const bool /*enabled*/) noexcept override { return false; } // ?40
     bool EnableVT200MouseMode(const bool /*enabled*/) noexcept override { return false; } // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool /*enabled*/) noexcept override { return false; } // ?1005
@@ -80,21 +80,22 @@ public:
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) noexcept override { return false; } // EL
     bool EraseCharacters(const size_t /*numChars*/) noexcept override { return false; } // ECH
 
-    bool SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> /*options*/) noexcept override { return false; } // SGR
+    bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECSET
+    bool SetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateModes(const gsl::span<const DispatchTypes::PrivateModeParams> /*params*/) noexcept override { return false; } // DECRST
+    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
     bool SecondaryDeviceAttributes() noexcept override { return false; } // DA2
     bool TertiaryDeviceAttributes() noexcept override { return false; } // DA3
     bool Vt52DeviceAttributes() noexcept override { return false; } // VT52 Identify
+    bool RequestTerminalParameters(const DispatchTypes::ReportingPermission /*permission*/) noexcept override { return false; } // DECREQTPARM
 
-    bool DesignateCodingSystem(const wchar_t /*codingSystem*/) noexcept override { return false; } // DOCS
-    bool Designate94Charset(const size_t /*gsetNumber*/, const std::pair<wchar_t, wchar_t> /*charset*/) noexcept override { return false; } // SCS
-    bool Designate96Charset(const size_t /*gsetNumber*/, const std::pair<wchar_t, wchar_t> /*charset*/) noexcept override { return false; } // SCS
+    bool DesignateCodingSystem(const VTID /*codingSystem*/) noexcept override { return false; } // DOCS
+    bool Designate94Charset(const size_t /*gsetNumber*/, const VTID /*charset*/) noexcept override { return false; } // SCS
+    bool Designate96Charset(const size_t /*gsetNumber*/, const VTID /*charset*/) noexcept override { return false; } // SCS
     bool LockingShift(const size_t /*gsetNumber*/) noexcept override { return false; } // LS0, LS1, LS2, LS3
     bool LockingShiftRight(const size_t /*gsetNumber*/) noexcept override { return false; } // LS1R, LS2R, LS3R
     bool SingleShift(const size_t /*gsetNumber*/) noexcept override { return false; } // SS2, SS3
@@ -110,5 +111,9 @@ public:
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*function*/,
-                            const gsl::span<const size_t> /*params*/) noexcept override { return false; }
+                            const VTParameter /*parameter1*/,
+                            const VTParameter /*parameter2*/) noexcept override { return false; }
+
+    bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
+    bool EndHyperlink() noexcept override { return false; }
 };
