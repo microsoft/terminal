@@ -482,4 +482,10 @@
   <data name="FailedToWriteToSettings" xml:space="preserve">
     <value>We could not write to your settings file. Check the permissions on that file to ensure that the read-only flag is not set and that write access is granted.</value>
   </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Back</value>
+  </data>
 </root>
