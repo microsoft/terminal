@@ -75,6 +75,10 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
+    uint16_t GetPaneId() noexcept;
+    void SetPaneId(uint16_t id) noexcept;
+    void FocusPaneWithId(const uint16_t id);
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -94,6 +98,8 @@ private:
     std::shared_ptr<Pane> _secondChild{ nullptr };
     winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
     float _desiredSplitPosition;
+
+    uint16_t _paneId;
 
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };

@@ -1566,6 +1566,32 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
     }
 }
 
+uint16_t Pane::GetPaneId() noexcept
+{
+    return _paneId;
+}
+
+void Pane::SetPaneId(uint16_t id) noexcept
+{
+    _paneId = id;
+}
+
+void Pane::FocusPaneWithId(const uint16_t id)
+{
+    if (_IsLeaf() && id == _paneId)
+    {
+        _control.Focus(FocusState::Programmatic);
+    }
+    else
+    {
+        if (_firstChild && _secondChild)
+        {
+            _firstChild->FocusPaneWithId(id);
+            _secondChild->FocusPaneWithId(id);
+        }
+    }
+}
+
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
 //   should fill. Since these children own their own separators (borders), this

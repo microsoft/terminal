@@ -24,9 +24,14 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control) :
+        _mruPanes{ winrt::single_threaded_vector<uint16_t>() }
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
+
+        _rootPane->SetPaneId(_nextPaneId);
+        _mruPanes.InsertAt(0, _nextPaneId);
+        ++_nextPaneId;
 
         _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
             _ClosedHandlers(nullptr, nullptr);
@@ -274,7 +279,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
+        const auto activePaneId = _activePane->GetPaneId();
         auto [first, second] = _activePane->Split(splitType, profile, control);
+        first->SetPaneId(activePaneId);
+        second->SetPaneId(_nextPaneId);
+        ++_nextPaneId;
         _activePane = first;
         _AttachEventHandlersToControl(control);
 
@@ -337,6 +346,7 @@ namespace winrt::TerminalApp::implementation
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
         _rootPane->NavigateFocus(direction);
+        //_rootPane->FocusPaneWithId(_mruPanes.GetAt(1));
     }
 
     // Method Description:
@@ -450,6 +460,16 @@ namespace winrt::TerminalApp::implementation
         // Update our own title text to match the newly-active pane.
         UpdateTitle();
 
+        // We need to move the pane to the top of our mru list
+        // If its already somewhere in the list, remove it first
+        uint32_t mruPaneIndex;
+        const auto paneId = pane->GetPaneId();
+        if (_mruPanes.IndexOf(paneId, mruPaneIndex))
+        {
+            _mruPanes.RemoveAt(mruPaneIndex);
+        }
+        _mruPanes.InsertAt(0, paneId);
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -484,6 +504,14 @@ namespace winrt::TerminalApp::implementation
         pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
+                //if (auto pane{ s.try_as<Pane>() })
+                //{
+                //    uint32_t mruIndex;
+                //    if (tab->_mruPanes.IndexOf(pane.GetPaneId(), mruIndex))
+                //    {
+                //        tab->_mruPanes.RemoveAt(mruIndex);
+                //    }
+                //}
                 if (tab->_zoomedPane)
                 {
                     co_await winrt::resume_foreground(tab->Content().Dispatcher());
