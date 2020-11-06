@@ -343,10 +343,17 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::NavigateFocus(const Direction& direction)
     {
-        // NOTE: This _must_ be called on the root pane, so that it can propagate
-        // throughout the entire tree.
-        _rootPane->NavigateFocus(direction);
-        //_rootPane->FocusPaneWithId(_mruPanes.GetAt(1));
+        if (direction == Direction::Previous)
+        {
+            // To get to the previous pane, get the id of the previous pane and focus to that
+            _rootPane->FocusPaneWithId(_mruPanes.GetAt(1));
+        }
+        else
+        {
+            // NOTE: This _must_ be called on the root pane, so that it can propagate
+            // throughout the entire tree.
+            _rootPane->NavigateFocus(direction);
+        }
     }
 
     // Method Description:
@@ -486,6 +493,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
     {
         auto weakThis{ get_weak() };
+        std::weak_ptr<Pane> weakPane{ pane };
 
         pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
             // Do nothing if the Tab's lifetime is expired or pane isn't new.
@@ -501,23 +509,23 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+        pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
-                //if (auto pane{ s.try_as<Pane>() })
-                //{
-                //    uint32_t mruIndex;
-                //    if (tab->_mruPanes.IndexOf(pane.GetPaneId(), mruIndex))
-                //    {
-                //        tab->_mruPanes.RemoveAt(mruIndex);
-                //    }
-                //}
                 if (tab->_zoomedPane)
                 {
                     co_await winrt::resume_foreground(tab->Content().Dispatcher());
 
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
+                }
+                if (auto pane = weakPane.lock())
+                {
+                    uint32_t mruIndex;
+                    if (tab->_mruPanes.IndexOf(pane->GetPaneId(), mruIndex))
+                    {
+                        tab->_mruPanes.RemoveAt(mruIndex);
+                    }
                 }
             }
         });

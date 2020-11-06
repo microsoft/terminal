@@ -22,7 +22,8 @@ namespace Microsoft.Terminal.Settings.Model
         Left,
         Right,
         Up,
-        Down
+        Down,
+        Previous
     };
 
     enum SplitState
