@@ -62,31 +62,29 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         }
 
         template<typename T>
-        struct DeduceOptional
+        struct OptionOracle
         {
-            using Type = typename std::decay<T>::type;
-            static constexpr bool IsOptional = false;
+            template<typename U> // universal parameter
+            static constexpr bool HasValue(U&&)
+            {
+                return true;
+            }
         };
 
         template<typename TOpt>
-        struct DeduceOptional<std::optional<TOpt>>
+        struct OptionOracle<std::optional<TOpt>>
         {
-            using Type = typename std::decay<TOpt>::type;
-            static constexpr bool IsOptional = true;
+            static constexpr std::optional<TOpt> EmptyV() { return std::nullopt; }
+            static constexpr bool HasValue(const std::optional<TOpt>& o) { return o.has_value(); }
+            static constexpr auto&& Value(const std::optional<TOpt>& o) { return *o; }
         };
 
         template<typename TOpt>
-        struct DeduceOptional<::winrt::Windows::Foundation::IReference<TOpt>>
+        struct OptionOracle<::winrt::Windows::Foundation::IReference<TOpt>>
         {
-            using Type = typename std::decay<TOpt>::type;
-            static constexpr bool IsOptional = true;
-        };
-
-        template<>
-        struct DeduceOptional<::winrt::hstring>
-        {
-            using Type = typename ::winrt::hstring;
-            static constexpr bool IsOptional = true;
+            static constexpr ::winrt::Windows::Foundation::IReference<TOpt> EmptyV() { return nullptr; }
+            static constexpr bool HasValue(const ::winrt::Windows::Foundation::IReference<TOpt>& o) { return static_cast<bool>(o); }
+            static constexpr auto&& Value(const ::winrt::Windows::Foundation::IReference<TOpt>& o) { return o.Value(); }
         };
     }
 
@@ -177,12 +175,26 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         // Leverage the wstring converter's validation
         winrt::hstring FromJson(const Json::Value& json)
         {
+            if (json.isNull())
+            {
+                return winrt::hstring{};
+            }
             return winrt::hstring{ til::u8u16(Detail::GetStringView(json)) };
         }
 
         Json::Value ToJson(const winrt::hstring& val)
         {
+            if (val == winrt::hstring{})
+            {
+                return Json::Value::nullSingleton();
+            }
             return til::u16u8(val);
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            // hstring has a specific behavior for null, so it can convert it
+            return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();
         }
     };
 #endif
@@ -419,6 +431,56 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 #endif
 
+    template<typename T, typename TDelegatedConverter = ConversionTrait<T>, typename TOptional = std::optional<T>>
+    struct OptionalConverter
+    {
+        using Oracle = Detail::OptionOracle<TOptional>;
+        TDelegatedConverter delegatedConverter{};
+
+        TOptional FromJson(const Json::Value& json)
+        {
+            if (!json && !delegatedConverter.CanConvert(json))
+            {
+                // If the nested converter can't deal with null, emit an empty optional
+                // If it can, it probably has specific null behavior that it wants to use.
+                return Oracle::EmptyV();
+            }
+            TOptional val{ delegatedConverter.FromJson(json) };
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isNull() || delegatedConverter.CanConvert(json);
+        }
+
+        Json::Value ToJson(const TOptional& val)
+        {
+            if (!Oracle::HasValue(val))
+            {
+                return Json::Value::nullSingleton();
+            }
+            return delegatedConverter.ToJson(Oracle::Value(val));
+        }
+
+        std::string TypeDescription() const
+        {
+            return delegatedConverter.TypeDescription();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<std::optional<T>> : public OptionalConverter<T, ConversionTrait<T>, std::optional<T>>
+    {
+    };
+
+#ifdef WINRT_Windows_Foundation_H
+    template<typename T>
+    struct ConversionTrait<::winrt::Windows::Foundation::IReference<T>> : public OptionalConverter<T, ConversionTrait<T>, ::winrt::Windows::Foundation::IReference<T>>
+    {
+    };
+#endif
+
     template<typename T, typename TBase>
     struct EnumMapper
     {
@@ -586,31 +648,15 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T, typename Converter>
     bool GetValue(const Json::Value& json, T& target, Converter&& conv)
     {
-        if constexpr (Detail::DeduceOptional<T>::IsOptional)
+        if (!conv.CanConvert(json))
         {
-            // FOR OPTION TYPES
-            // - If the json object is set to `null`, then
-            //   we'll instead set the target back to the empty optional.
-            if (json.isNull())
-            {
-                target = T{}; // zero-construct an empty optional
-                return true;
-            }
+            DeserializationError e{ json };
+            e.expectedType = conv.TypeDescription();
+            throw e;
         }
 
-        if (json)
-        {
-            if (!conv.CanConvert(json))
-            {
-                DeserializationError e{ json };
-                e.expectedType = conv.TypeDescription();
-                throw e;
-            }
-
-            target = conv.FromJson(json);
-            return true;
-        }
-        return false;
+        target = conv.FromJson(json);
+        return true;
     }
 
     // GetValue, forced return type, manual converter
@@ -654,7 +700,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     bool GetValue(const Json::Value& json, T& target)
     {
-        return GetValue(json, target, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
+        return GetValue(json, target, ConversionTrait<typename std::decay<T>::type>{});
     }
 
     // GetValue, forced return type, with automatic converter
@@ -662,7 +708,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     std::decay_t<T> GetValue(const Json::Value& json)
     {
         std::decay_t<T> local{};
-        GetValue(json, local, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
+        GetValue(json, local, ConversionTrait<typename std::decay<T>::type>{});
         return local; // returns zero-initialized or value
     }
 
@@ -670,14 +716,14 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T>
     bool GetValueForKey(const Json::Value& json, std::string_view key, T& target)
     {
-        return GetValueForKey(json, key, target, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
+        return GetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
     }
 
     // GetValueForKey, forced return type, with automatic converter
     template<typename T>
     std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key)
     {
-        return GetValueForKey<T>(json, key, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
+        return GetValueForKey<T>(json, key, ConversionTrait<typename std::decay<T>::type>{});
     }
 
     // Get multiple values for keys (json, k, &v, k, &v, k, &v, ...).
@@ -696,15 +742,19 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     template<typename T, typename Converter>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
     {
-        // demand guarantees that it will return a value or throw an exception
-        *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
+        // We don't want to write any empty optionals into JSON (right now).
+        if (Detail::OptionOracle<T>::HasValue(target))
+        {
+            // demand guarantees that it will return a value or throw an exception
+            *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
+        }
     }
 
     // SetValueForKey, type-deduced, with automatic converter
     template<typename T>
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
     {
-        SetValueForKey(json, key, target, ConversionTrait<typename Detail::DeduceOptional<T>::Type>{});
+        SetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
     }
 };
 
