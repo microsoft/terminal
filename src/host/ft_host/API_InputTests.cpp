@@ -72,17 +72,13 @@ class InputTests
         TEST_METHOD_PROPERTY(L"Data:font", L"{Consolas, MS Gothic}")
     END_TEST_METHOD()
 
-    /*BEGIN_TEST_METHOD(TestCookedReadCharByChar)
-        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
-    END_TEST_METHOD()
-
-    BEGIN_TEST_METHOD(TestCookedReadLeadTrailIndividual)
-        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    BEGIN_TEST_METHOD(TestCookedReadCharByChar)
+        //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 
     BEGIN_TEST_METHOD(TestCookedReadLeadTrailString)
-        TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
-    END_TEST_METHOD()*/
+        //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
+    END_TEST_METHOD()
 
     BEGIN_TEST_METHOD(TestCookedReadChangeCodepageInMiddle)
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
@@ -1031,7 +1027,194 @@ void InputTests::TestCookedAlphaPermutations()
 // - leaving behind a lead/trail byte and having more data
 // -- doing it in a loop/continuously.
 // - read it char by char
-// - change the codepage in the middle of reading and/or between commands
+
+void InputTests::TestCookedReadCharByChar()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    // Greek letters, lowercase...
+    const std::array<std::wstring, 4> wide = {
+        L"\u03b1", // alpha
+        L"\u03b2", // beta
+        // no gamma because it doesn't translate to 437
+        L"\u03b4", // delta
+        L"\u03b5" //epsilon
+    };
+
+    const std::array<std::string, 4> char932 = {
+        "\x83\xbf",
+        "\x83\xc0",
+        "\x83\xc2",
+        "\x83\xc3"
+    };
+
+    const std::string crlf = "\r\n";
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"Read byte by byte, should leave trailing each time.");
+    std::string expectedInput;
+    expectedInput = char932[0][0];
+       
+    // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+    // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+    // do this either to signal there are more or as a mistake that was never
+    // matched up on API review.
+    expectedInput.append(1, '\0');
+
+    std::string recvInput;
+    recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO: CHv1 completely loses the trailing byte.
+    
+    expectedInput = char932[1][0];
+    expectedInput.append(1, '\0');
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO: CHv1 completely loses the trailing byte.
+    
+    expectedInput = char932[2][0];
+    expectedInput.append(1, '\0');
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO: CHv1 completely loses the trailing byte.
+
+    expectedInput = char932[3][0];
+    expectedInput.append(1, '\0');
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO: CHv1 completely loses the trailing byte.
+
+    expectedInput = crlf[0];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    expectedInput = crlf[1];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+}
+
+void InputTests::TestCookedReadLeadTrailString()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    // Greek letters, lowercase...
+    const std::array<std::wstring, 4> wide = {
+        L"\u03b1", // alpha
+        L"\u03b2", // beta
+        // no gamma because it doesn't translate to 437
+        L"\u03b4", // delta
+        L"\u03b5" //epsilon
+    };
+
+    const std::array<std::string, 4> char932 = {
+        "\x83\xbf",
+        "\x83\xc0",
+        "\x83\xc2",
+        "\x83\xc3"
+    };
+
+    const std::string crlf = "\r\n";
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"Read first byte, should leave trailing.");
+    std::string expectedInput;
+    expectedInput = char932[0][0];
+
+    // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+    // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+    // do this either to signal there are more or as a mistake that was never
+    // matched up on API review.
+    expectedInput.append(1, '\0');
+
+    std::string recvInput;
+    recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO: CHv1 completely loses the trailing byte.
+
+    Log::Comment(L"Read everything else.");
+
+    expectedInput = char932[1];
+    expectedInput.append(char932[2]);
+    expectedInput.append(char932[3]);
+    expectedInput.append(crlf);
+    recvInput.clear();
+    recvInput.resize(100);
+    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+}
 
 void InputTests::TestCookedReadChangeCodepageInMiddle()
 {
