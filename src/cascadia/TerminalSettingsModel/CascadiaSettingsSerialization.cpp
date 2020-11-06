@@ -9,6 +9,7 @@
 #include "JsonUtils.h"
 #include <appmodel.h>
 #include <shlobj.h>
+#include <fmt/chrono.h>
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
@@ -1047,11 +1048,9 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 void CascadiaSettings::_WriteBackupFile(std::string_view content, const winrt::hstring settingsPath)
 {
     // create a timestamped backup file
-    time_t timeStamp;
-    tm localTimeStamp;
-    time(&timeStamp);
-    localtime_s(&localTimeStamp, &timeStamp);
-    const auto backupSettingsPath{ fmt::format(L"{}{}{}{}{}{}.backup", settingsPath, localTimeStamp.tm_year, localTimeStamp.tm_mon, localTimeStamp.tm_mday, localTimeStamp.tm_hour, localTimeStamp.tm_min, localTimeStamp.tm_sec) };
+    const auto clock{ std::chrono::system_clock() };
+    const auto timeStamp{ clock.to_time_t(clock.now()) };
+    const auto backupSettingsPath{ fmt::format(L"{}.{:%Y-%m-%dT%H:%M:%S}.backup", settingsPath, fmt::localtime(timeStamp)) };
 
     wil::unique_hfile backupFile{ CreateFileW(backupSettingsPath.c_str(),
                                               GENERIC_READ,
