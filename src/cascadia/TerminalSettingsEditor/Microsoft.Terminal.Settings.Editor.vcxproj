@@ -41,6 +41,9 @@
     <ClInclude Include="ColorToHexConverter.h">
       <DependentUpon>ColorToHexConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PercentageConverter.h">
+      <DependentUpon>PercentageConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
@@ -124,6 +127,9 @@
     <ClCompile Include="ColorToHexConverter.cpp">
       <DependentUpon>ColorToHexConverter.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="PercentageConverter.cpp">
+      <DependentUpon>PercentageConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
@@ -167,6 +173,7 @@
   <ItemGroup>
     <Midl Include="ColorToBrushConverter.idl" />
     <Midl Include="ColorToHexConverter.idl" />
+    <Midl Include="PercentageConverter.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>

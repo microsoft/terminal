@@ -23,6 +23,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </DataTemplate>
 
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+            <local:PercentageConverter x:Key="PercentageConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -224,9 +225,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
                             </DropDownButton>
-                            <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" ToolTipService.Placement="Mouse" />
+                            <Slider x:Uid="Profile_BackgroundImageOpacity" Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
                             <CheckBox x:Uid="Profile_UseAcrylic" IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
-                            <Controls:NumberBox x:Uid="Profile_AcrylicOpacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind State.Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" ToolTipService.Placement="Mouse" />
+                            <Slider x:Uid="Profile_AcrylicOpacity" Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
                             <CheckBox x:Uid="Profile_RetroTerminalEffect" IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                         </StackPanel>
                     </Grid>

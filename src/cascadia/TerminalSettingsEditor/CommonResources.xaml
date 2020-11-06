@@ -31,4 +31,10 @@
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
+    <Style TargetType="Slider">
+        <Setter Property="Margin" Value="0,0,0,20"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+    </Style>
+
 </ResourceDictionary>
