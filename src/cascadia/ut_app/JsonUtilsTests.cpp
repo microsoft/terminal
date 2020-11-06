@@ -154,6 +154,8 @@ namespace TerminalAppUnitTests
 
         TEST_METHOD(SetValueHStringLike);
         TEST_METHOD(GetValueHStringLike);
+
+        TEST_METHOD(DoubleOptional);
     };
 
     template<typename T>
@@ -592,5 +594,34 @@ namespace TerminalAppUnitTests
         // does not deserialize; optional remains nullopt
         VERIFY_IS_FALSE(GetValueForKey(object, "nonexistent", optionalV));
         VERIFY_ARE_EQUAL(std::nullopt, optionalV);
+    }
+
+    void JsonUtilsTests::DoubleOptional()
+    {
+        const std::optional<std::optional<int>> first{ std::nullopt }; // no value
+        const std::optional<std::optional<int>> second{ std::optional<int>{ std::nullopt } }; // outer has a value, inner is "no value"
+        const std::optional<std::optional<int>> third{ std::optional<int>{ 3 } }; // outer has a value, inner is "no value"
+
+        Json::Value object{ Json::objectValue };
+
+        SetValueForKey(object, "first", first);
+        SetValueForKey(object, "second", second);
+        SetValueForKey(object, "third", third);
+
+        VERIFY_IS_FALSE(object.isMember("first"));
+        VERIFY_IS_TRUE(object.isMember("second"));
+        VERIFY_ARE_EQUAL(Json::Value::nullSingleton(), object["second"]);
+        VERIFY_ARE_EQUAL(Json::Value{ 3 }, object["third"]);
+
+        std::optional<std::optional<int>> firstOut, secondOut, thirdOut;
+        VERIFY_IS_FALSE(GetValueForKey(object, "first", firstOut));
+        VERIFY_IS_TRUE(GetValueForKey(object, "second", secondOut));
+        VERIFY_IS_TRUE(static_cast<bool>(secondOut));
+        VERIFY_ARE_EQUAL(std::nullopt, *secondOut); // should have come back out as null
+
+        VERIFY_IS_TRUE(GetValueForKey(object, "third", thirdOut));
+        VERIFY_IS_TRUE(static_cast<bool>(thirdOut));
+        VERIFY_IS_TRUE(static_cast<bool>(*thirdOut));
+        VERIFY_ARE_EQUAL(3, **thirdOut);
     }
 }

@@ -293,10 +293,10 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
 
     // Core Settings
-    _Foreground.set = JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground.setting);
-    _Background.set = JsonUtils::GetValueForKey(json, BackgroundKey, _Background.setting);
-    _SelectionBackground.set = JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting);
-    _CursorColor.set = JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor.setting);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -334,7 +334,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    _TabColor.set = JsonUtils::GetValueForKey(json, TabColorKey, _TabColor.setting);
+    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 }
