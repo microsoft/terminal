@@ -420,7 +420,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
     const auto subParamSuccess = Utils::StringToUint(til::at(parts, 0), subParam);
 
     // For now, the only ConEmu action we support is setting the taskbar state/progress,
-    // which has a subparam value of 4
+    // which has a sub param value of 4
     if (parts.size() < 1 || !subParamSuccess || subParam != 4)
     {
         return false;
