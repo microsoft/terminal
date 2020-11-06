@@ -37,6 +37,7 @@ LCID
 llabs
 lround
 LSHIFT
+msappx
 NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
@@ -54,6 +55,7 @@ rfind
 roundf
 RSHIFT
 rx
+schandle
 serializer
 SIZENS
 spsc
