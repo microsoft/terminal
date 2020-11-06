@@ -12,7 +12,16 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d">
 
     <Page.Resources>
-        <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
+            <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
+        </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
@@ -58,19 +67,17 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind Name}"/>
-                                
+
                             </Grid>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <Controls:RadioButtons x:Uid="Globals_LaunchSize" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                    <RadioButton x:Uid="Globals_LaunchSizeDefault" x:Name="DefaultLaunchSize"/>
-                    <RadioButton x:Uid="Globals_LaunchSizeMaximized" x:Name="MaximizedLaunchSize"/>
-                    <RadioButton x:Uid="Globals_LaunchSizeFullscreen" x:Name="FullscreenLaunchSize"/>
-                    <RadioButton x:Uid="Globals_LaunchSizeFocus" x:Name="FocusLaunchSize"/>
-                    <RadioButton x:Uid="Globals_LaunchSizeMaximizedFocus" x:Name="MaximizedFocusLaunchSize"/>
-                </Controls:RadioButtons>
+                <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
+                <Controls:RadioButtons x:Uid="Globals_LaunchSize"
+                                       SelectedItem="{x:Bind CurrentLaunchSize}"
+                                       ItemsSource="{x:Bind LaunchSizeList}"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+
                 <!--TODO: Converter here for launch position into the cols and rows number boxes-->
                 <!--<TextBox x:Uid="Globals_LaunchPosition" Text="{x:Bind GlobalSettings.LaunchPosition, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
                 <Controls:NumberBox x:Uid="Globals_InitialCols"
