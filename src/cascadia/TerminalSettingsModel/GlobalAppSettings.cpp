@@ -386,7 +386,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, ForceVTInputKey,                _ForceVTInput);
     JsonUtils::SetValueForKey(json, EnableStartupTaskKey,           _StartOnUserLogin);
     JsonUtils::SetValueForKey(json, AlwaysOnTopKey,                 _AlwaysOnTop);
-    JsonUtils::SetValueForKey(json, UseTabSwitcherKey,              _UseTabSwitcher);
+    JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
     // clang-format on
 

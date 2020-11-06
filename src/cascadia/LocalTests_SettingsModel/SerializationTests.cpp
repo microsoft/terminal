@@ -93,7 +93,7 @@ namespace SettingsModelLocalTests
                 "showTabsInTitlebar": true,
                 "showTerminalTitleInTitlebar": true,
                 "tabWidthMode": "equal",
-                "useTabSwitcher": true,
+                "tabSwitcherMode": "mru",
 
                 "startOnUserLogin": false,
                 "theme": "system",
