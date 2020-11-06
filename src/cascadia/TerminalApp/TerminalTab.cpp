@@ -348,6 +348,10 @@ namespace winrt::TerminalApp::implementation
             // To get to the previous pane, get the id of the previous pane and focus to that
             _rootPane->FocusPaneWithId(_mruPanes.GetAt(1));
         }
+        else if (direction == Direction::Next)
+        {
+            _rootPane->FocusPaneWithId(_mruPanes.GetAt(_mruPanes.Size() - 1));
+        }
         else
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
