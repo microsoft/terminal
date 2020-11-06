@@ -1038,7 +1038,7 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 }
 
 // Method Description:
-// - Create a backup file with the current contents, iff one does not exist
+// - Create a timestamped backup file with the current contents
 // Arguments:
 // - content - the content that we're writing to the backup file
 // - settingsPath - the path to the settings file that we're going to create a backup for
@@ -1046,7 +1046,13 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 // - <none>
 void CascadiaSettings::_WriteBackupFile(std::string_view content, const winrt::hstring settingsPath)
 {
-    const auto backupSettingsPath{ settingsPath + L".backup" };
+    // create a timestamped backup file
+    time_t timeStamp;
+    tm localTimeStamp;
+    time(&timeStamp);
+    localtime_s(&localTimeStamp, &timeStamp);
+    const auto backupSettingsPath{ fmt::format(L"{}{}{}{}{}{}.backup", settingsPath, localTimeStamp.tm_year, localTimeStamp.tm_mon, localTimeStamp.tm_mday, localTimeStamp.tm_hour, localTimeStamp.tm_min, localTimeStamp.tm_sec) };
+
     wil::unique_hfile backupFile{ CreateFileW(backupSettingsPath.c_str(),
                                               GENERIC_READ,
                                               FILE_SHARE_READ | FILE_SHARE_WRITE,
