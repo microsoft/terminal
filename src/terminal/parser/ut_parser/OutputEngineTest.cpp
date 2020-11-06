@@ -1456,7 +1456,7 @@ public:
         return true;
     }
 
-    bool SetTaskbarProgress(const size_t /*state*/, const size_t /*progress*/) noexcept override
+    bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override
     {
         return true;
     }

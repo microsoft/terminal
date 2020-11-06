@@ -647,8 +647,6 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     bool queryClipboard = false;
     std::vector<size_t> tableIndexes;
     std::vector<DWORD> colors;
-    size_t state = 0;
-    size_t progress = 0;
 
     switch (parameter)
     {
@@ -674,8 +672,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::Hyperlink:
         success = _ParseHyperlink(string, params, uri);
         break;
-    case OscActionCodes::SetTaskbarProgress:
-        success = _GetTaskbarProgress(string, state, progress);
+    case OscActionCodes::ConEmuAction:
+        success = true;
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -744,8 +742,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                 success = _dispatch->AddHyperlink(uri, params);
             }
             break;
-        case OscActionCodes::SetTaskbarProgress:
-            success = _dispatch->SetTaskbarProgress(state, progress);
+        case OscActionCodes::ConEmuAction:
+            success = _dispatch->DoConEmuAction(string);
             break;
         default:
             // If no functions to call, overall dispatch was a failure.

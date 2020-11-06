@@ -2388,7 +2388,7 @@ bool AdaptDispatch::EndHyperlink()
 // - Not actually used in conhost
 // Return Value:
 // - false (so that the command gets flushed to terminal)
-bool AdaptDispatch::SetTaskbarProgress(const size_t /*state*/, const size_t /*progress*/) noexcept
+bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 {
     return false;
 }

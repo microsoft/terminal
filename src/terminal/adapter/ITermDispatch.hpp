@@ -123,7 +123,7 @@ public:
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;
 
-    virtual bool SetTaskbarProgress(const size_t state, const size_t progress) = 0;
+    virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

@@ -70,7 +70,7 @@ public:
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
 
-    bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
+    bool DoConEmuAction(const std::wstring_view string) noexcept override;
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;

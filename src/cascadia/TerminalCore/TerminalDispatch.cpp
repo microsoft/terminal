@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "TerminalDispatch.hpp"
+#include "../../types/inc/utils.hpp"
+
+using namespace Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::VirtualTerminal;
 
@@ -400,15 +403,49 @@ bool TerminalDispatch::EndHyperlink() noexcept
 }
 
 // Method Description:
-// - Updates the taskbar progress indicator
+// - Performs a ConEmu action
+// - Currently, the only action we support is setting the taskbar state/progress
 // Arguments:
-// - state: indicates the progress state
-// - progress: indicates the progress value
+// - string: contains the parameters that define which action we do
 // Return Value:
 // - true
-bool TerminalDispatch::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
 {
-    auto clampedProgress = progress;
+    unsigned int state = 0;
+    unsigned int progress = 0;
+
+    const auto parts = Utils::SplitString(string, L';');
+
+    unsigned int subParam = 0;
+    const auto subParamSuccess = Utils::StringToUint(til::at(parts, 0), subParam);
+
+    // For now, the only ConEmu action we support is setting the taskbar state/progress,
+    // which has a subparam value of 4
+    if (parts.size() < 1 || !subParamSuccess || subParam != 4)
+    {
+        return false;
+    }
+
+    if (parts.size() == 2)
+    {
+        // A state parameter is defined, parse it out
+        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+        if (!stateSuccess)
+        {
+            return false;
+        }
+    }
+    else if (parts.size() > 2)
+    {
+        // Both state and progress are defined, parse them out
+        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+        const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+        if (!stateSuccess || !progressSuccess)
+        {
+            return false;
+        }
+    }
+
     if (state > TaskbarMaxState)
     {
         // state is out of bounds, return false
@@ -417,9 +454,9 @@ bool TerminalDispatch::SetTaskbarProgress(const size_t state, const size_t progr
     if (progress > TaskbarMaxProgress)
     {
         // progress is greater than the maximum allowed value, clamp it to the max
-        clampedProgress = TaskbarMaxProgress;
+        progress = TaskbarMaxProgress;
     }
-    return _terminalApi.SetTaskbarProgress(state, clampedProgress);
+    return _terminalApi.SetTaskbarProgress(state, progress);
 }
 
 // Routine Description:
