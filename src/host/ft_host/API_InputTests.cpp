@@ -787,37 +787,39 @@ static HRESULT _sendStringToInput(HANDLE in, std::wstring_view wstr)
 // Arguments:
 // - in - The standard input handle
 // - buf - The buffer to use. On in, this is the max size we'll read. On out, it's resized to fit.
+// - async - Whether to read async, default to true. Reading async will put a 5 second timeout on the read.
 // Return Value:
 // - S_OK or an error from ReadConsole/threading timeout.
-static HRESULT _readStringFromInput(HANDLE in, std::string& buf)
+static HRESULT _readStringFromInput(HANDLE in, std::string& buf, bool async = true)
 {
     DWORD read = 0;
 
-    auto tryRead = std::async(std::launch::async, [&] {
-        RETURN_IF_WIN32_BOOL_FALSE(ReadConsoleA(in, buf.data(), gsl::narrow<DWORD>(buf.size()), &read, nullptr));
-        return S_OK;
-    });
-
-    if (std::future_status::ready != tryRead.wait_for(std::chrono::seconds{ 5 }))
+    if (async)
     {
-        // Shove something into the input to unstick it then fail.
-        _sendStringToInput(in, L"a\r\n");
-        RETURN_NTSTATUS(STATUS_TIMEOUT);
+        auto tryRead = std::async(std::launch::async, [&] {
+            return _readStringFromInput(in, buf, false); // just re-enter ourselves on the other thread as sync.
+        });
 
-        // If somehow this still isn't enough to unstick the thread, be sure to set
-        // the whole test timeout is 1 min in the parameters/metadata at the top.
+        if (std::future_status::ready != tryRead.wait_for(std::chrono::seconds{ 5 }))
+        {
+            // Shove something into the input to unstick it then fail.
+            _sendStringToInput(in, L"a\r\n");
+            RETURN_NTSTATUS(STATUS_TIMEOUT);
+
+            // If somehow this still isn't enough to unstick the thread, be sure to set
+            // the whole test timeout is 1 min in the parameters/metadata at the top.
+        }
+        else
+        {
+            return tryRead.get();
+        }
     }
     else
     {
-        HRESULT hr = tryRead.get();
-
+        RETURN_IF_WIN32_BOOL_FALSE(ReadConsoleA(in, buf.data(), gsl::narrow<DWORD>(buf.size()), &read, nullptr));
         // If we successfully read, then resize to fit the buffer.
-        if (SUCCEEDED(hr))
-        {
-            buf.resize(read);
-        }
-
-        return hr;
+        buf.resize(read);
+        return S_OK;
     }
 }
 
@@ -1027,6 +1029,7 @@ void InputTests::TestCookedAlphaPermutations()
 // - leaving behind a lead/trail byte and having more data
 // -- doing it in a loop/continuously.
 // - read it char by char
+// - ensure leftover bytes are lost when read off a different handle?!
 
 void InputTests::TestCookedReadCharByChar()
 {
