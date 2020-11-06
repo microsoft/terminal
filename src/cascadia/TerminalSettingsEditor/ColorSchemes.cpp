@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    void ColorSchemes::OnNavigatedTo(NavigationEventArgs e)
+    void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
         _UpdateColorSchemeList();

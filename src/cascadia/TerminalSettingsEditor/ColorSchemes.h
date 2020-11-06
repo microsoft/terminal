@@ -13,7 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
     {
     public:
-        ColorSchemesPageNavigationState(Model::GlobalAppSettings settings) :
+        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings) :
             _Globals{ settings } {}
 
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         ColorSchemes();
 
-        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);

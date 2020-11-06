@@ -11,7 +11,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct MainPage : MainPageT<MainPage>
     {
         MainPage() = delete;
-        MainPage(winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
+        MainPage(const Model::CascadiaSettings& settings);
 
         void OpenJsonKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args);
         void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);

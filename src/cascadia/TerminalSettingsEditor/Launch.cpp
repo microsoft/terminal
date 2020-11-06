@@ -16,7 +16,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    void Launch::OnNavigatedTo(NavigationEventArgs e)
+    void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
     }

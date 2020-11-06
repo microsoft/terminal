@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct GlobalAppearancePageNavigationState : GlobalAppearancePageNavigationStateT<GlobalAppearancePageNavigationState>
     {
     public:
-        GlobalAppearancePageNavigationState(Model::GlobalAppSettings settings) :
+        GlobalAppearancePageNavigationState(const Model::GlobalAppSettings& settings) :
             _Globals{ settings } {}
 
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         GlobalAppearance();
 
-        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         GETSET_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
 

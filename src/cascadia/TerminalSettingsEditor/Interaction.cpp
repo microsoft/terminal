@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    void Interaction::OnNavigatedTo(NavigationEventArgs e)
+    void Interaction::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::InteractionPageNavigationState>();
     }

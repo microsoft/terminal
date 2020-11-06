@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-        ProfilePageNavigationState(Model::Profile profile, Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> schemes) :
+        ProfilePageNavigationState(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes) :
             _Profile{ profile },
             _Schemes{ schemes } {}
 
@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Profiles();
 
-        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         fire_and_forget BackgroundImage_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Commandline_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);

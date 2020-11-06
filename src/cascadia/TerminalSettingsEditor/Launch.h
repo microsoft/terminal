@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct LaunchPageNavigationState : LaunchPageNavigationStateT<LaunchPageNavigationState>
     {
     public:
-        LaunchPageNavigationState(Model::CascadiaSettings settings) :
+        LaunchPageNavigationState(const Model::CascadiaSettings& settings) :
             _Settings{ settings } {}
 
         GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         Launch();
 
-        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);

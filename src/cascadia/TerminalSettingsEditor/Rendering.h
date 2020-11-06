@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct RenderingPageNavigationState : RenderingPageNavigationStateT<RenderingPageNavigationState>
     {
     public:
-        RenderingPageNavigationState(Model::GlobalAppSettings settings) :
+        RenderingPageNavigationState(const Model::GlobalAppSettings& settings) :
             _Globals{ settings } {}
 
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         Rendering();
 
-        void OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e);
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         GETSET_PROPERTY(Editor::RenderingPageNavigationState, State, nullptr);
     };

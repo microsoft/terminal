@@ -27,17 +27,17 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
 
-static const winrt::hstring launchTag{ L"Launch_Nav" };
-static const winrt::hstring interactionTag{ L"Interaction_Nav" };
-static const winrt::hstring renderingTag{ L"Rendering_Nav" };
-static const winrt::hstring globalProfileTag{ L"GlobalProfile_Nav" };
-static const winrt::hstring addProfileTag{ L"AddProfile" };
-static const winrt::hstring colorSchemesTag{ L"ColorSchemes_Nav" };
-static const winrt::hstring globalAppearanceTag{ L"GlobalAppearance_Nav" };
+static const std::wstring_view launchTag{ L"Launch_Nav" };
+static const std::wstring_view interactionTag{ L"Interaction_Nav" };
+static const std::wstring_view renderingTag{ L"Rendering_Nav" };
+static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
+static const std::wstring_view addProfileTag{ L"AddProfile" };
+static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
+static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    MainPage::MainPage(CascadiaSettings settings) :
+    MainPage::MainPage(const CascadiaSettings& settings) :
         _settingsSource{ settings },
         _settingsClone{ settings },
         _profileToNavItemMap{ winrt::single_threaded_map<Model::Profile, MUX::Controls::NavigationViewItem>() }
@@ -96,8 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
             {
                 // Navigate to a page with the given profile
-                const auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes()) };
-                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
+                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes()));
             }
         }
     }
@@ -106,33 +105,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (clickedItemTag == launchTag)
         {
-            const auto state{ winrt::make<LaunchPageNavigationState>(_settingsClone) };
-            contentFrame().Navigate(xaml_typename<Editor::Launch>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
         }
         else if (clickedItemTag == interactionTag)
         {
-            const auto state{ winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()) };
-            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == renderingTag)
         {
-            const auto state{ winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()) };
-            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            const auto state{ winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes()) };
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes()));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            const auto state{ winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()) };
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            const auto state{ winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()) };
-            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), state);
+            contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
         }
     }
 
@@ -216,7 +209,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // TODO: Setting SelectedItem here doesn't seem to update
         // the NavigationView selected visual indicator, not sure where
         // it needs to be...
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), newProfile);
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes()));
     }
 
     MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Profile& profile)
