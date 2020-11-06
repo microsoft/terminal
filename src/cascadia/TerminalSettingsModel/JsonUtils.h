@@ -60,33 +60,33 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             const std::string_view zeroCopyString{ begin, gsl::narrow_cast<size_t>(end - begin) };
             return zeroCopyString;
         }
-
-        template<typename T>
-        struct OptionOracle
-        {
-            template<typename U> // universal parameter
-            static constexpr bool HasValue(U&&)
-            {
-                return true;
-            }
-        };
-
-        template<typename TOpt>
-        struct OptionOracle<std::optional<TOpt>>
-        {
-            static constexpr std::optional<TOpt> EmptyV() { return std::nullopt; }
-            static constexpr bool HasValue(const std::optional<TOpt>& o) { return o.has_value(); }
-            static constexpr auto&& Value(const std::optional<TOpt>& o) { return *o; }
-        };
-
-        template<typename TOpt>
-        struct OptionOracle<::winrt::Windows::Foundation::IReference<TOpt>>
-        {
-            static constexpr ::winrt::Windows::Foundation::IReference<TOpt> EmptyV() { return nullptr; }
-            static constexpr bool HasValue(const ::winrt::Windows::Foundation::IReference<TOpt>& o) { return static_cast<bool>(o); }
-            static constexpr auto&& Value(const ::winrt::Windows::Foundation::IReference<TOpt>& o) { return o.Value(); }
-        };
     }
+
+    template<typename T>
+    struct OptionOracle
+    {
+        template<typename U> // universal parameter
+        static constexpr bool HasValue(U&&)
+        {
+            return true;
+        }
+    };
+
+    template<typename T>
+    struct OptionOracle<std::optional<T>>
+    {
+        static constexpr std::optional<T> EmptyV() { return std::nullopt; }
+        static constexpr bool HasValue(const std::optional<T>& o) { return o.has_value(); }
+        static constexpr auto&& Value(const std::optional<T>& o) { return *o; }
+    };
+
+    template<typename T>
+    struct OptionOracle<::winrt::Windows::Foundation::IReference<T>>
+    {
+        static constexpr ::winrt::Windows::Foundation::IReference<T> EmptyV() { return nullptr; }
+        static constexpr bool HasValue(const ::winrt::Windows::Foundation::IReference<T>& o) { return static_cast<bool>(o); }
+        static constexpr auto&& Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
+    };
 
     class DeserializationError : public std::runtime_error
     {
@@ -431,13 +431,13 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 #endif
 
-    template<typename T, typename TDelegatedConverter = ConversionTrait<T>, typename TOptional = std::optional<T>>
+    template<typename T, typename TDelegatedConverter = ConversionTrait<typename std::decay<T>::type>, typename TOpt = std::optional<typename std::decay<T>::type>>
     struct OptionalConverter
     {
-        using Oracle = Detail::OptionOracle<TOptional>;
+        using Oracle = OptionOracle<TOpt>;
         TDelegatedConverter delegatedConverter{};
 
-        TOptional FromJson(const Json::Value& json)
+        TOpt FromJson(const Json::Value& json)
         {
             if (!json && !delegatedConverter.CanConvert(json))
             {
@@ -445,7 +445,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 // If it can, it probably has specific null behavior that it wants to use.
                 return Oracle::EmptyV();
             }
-            TOptional val{ delegatedConverter.FromJson(json) };
+            TOpt val{ delegatedConverter.FromJson(json) };
             return val;
         }
 
@@ -454,7 +454,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isNull() || delegatedConverter.CanConvert(json);
         }
 
-        Json::Value ToJson(const TOptional& val)
+        Json::Value ToJson(const TOpt& val)
         {
             if (!Oracle::HasValue(val))
             {
@@ -743,7 +743,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
     {
         // We don't want to write any empty optionals into JSON (right now).
-        if (Detail::OptionOracle<T>::HasValue(target))
+        if (OptionOracle<T>::HasValue(target))
         {
             // demand guarantees that it will return a value or throw an exception
             *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
