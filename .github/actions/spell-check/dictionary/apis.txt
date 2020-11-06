@@ -33,6 +33,7 @@ IObject
 IStorage
 LCID
 llabs
+localtime
 lround
 LSHIFT
 NCHITTEST
