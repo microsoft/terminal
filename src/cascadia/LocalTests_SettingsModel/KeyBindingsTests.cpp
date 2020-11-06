@@ -334,7 +334,7 @@ namespace SettingsModelLocalTests
         VERIFY_IS_NOT_NULL(keymap);
         VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
         keymap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(5u, keymap->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(4u, keymap->_keyShortcuts.size());
 
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };

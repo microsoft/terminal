@@ -156,7 +156,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(5u, commands.Size());
+        VERIFY_ARE_EQUAL(4u, commands.Size());
 
         {
             auto command = commands.Lookup(L"command1");
