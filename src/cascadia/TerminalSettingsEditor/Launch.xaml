@@ -10,6 +10,11 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
+    </Page.Resources>
+
     <ScrollViewer>
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
               Margin="0,12,0,0">
@@ -34,7 +39,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                           ToolTipService.Placement="Mouse">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="SettingsModel:Profile">
-                            <TextBlock Text="{x:Bind Name}"/>
+                            <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="16"/>
+                                    <!-- icon -->
+                                    <ColumnDefinition Width="Auto"/>
+                                    <!-- profile name -->
+                                </Grid.ColumnDefinitions>
+
+                                <IconSourceElement
+                                    Grid.Column="0"
+                                    Width="16"
+                                    Height="16"
+                                    IconSource="{x:Bind Icon,
+                                                        Mode=OneWay,
+                                                        Converter={StaticResource IconSourceConverter}}"/>
+
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind Name}"/>
+                                
+                            </Grid>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
