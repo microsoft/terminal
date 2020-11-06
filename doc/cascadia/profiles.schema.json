@@ -66,6 +66,7 @@
         "paste",
         "prevTab",
         "renameTab",
+        "openTabRenamer",
         "resetFontSize",
         "resizePane",
         "scrollDown",
@@ -684,8 +685,38 @@
         },
         "useTabSwitcher": {
           "default": true,
-          "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
-          "type": "boolean"
+          "description": "Deprecated. Please use \"tabSwitcherMode\" instead.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "enum": [
+                "mru",
+                "inOrder",
+                "disabled",
+              ],
+              "type": "string"
+            }
+          ],
+          "deprecated": true
+        },
+        "tabSwitcherMode": {
+          "default": true,
+          "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", these actions will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "enum": [
+                "mru",
+                "inOrder",
+                "disabled",
+              ],
+              "type": "string"
+            }
+          ]
         }
       },
       "required": [

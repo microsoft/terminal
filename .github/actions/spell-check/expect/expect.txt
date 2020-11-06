@@ -2191,6 +2191,7 @@ Statusline
 stdafx
 STDAPI
 stdcall
+stdcpp
 stderr
 stdexcept
 stdin
@@ -2824,3 +2825,7 @@ zsh
 zu
 zxcvbnm
 zy
+AAAAABBBBBBCCC
+AAAAA
+BBBBBCCC
+abcd

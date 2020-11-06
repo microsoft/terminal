@@ -82,7 +82,7 @@ public:                                                                         
     winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); } \
     void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }         \
                                                                                             \
-private:                                                                                    \
+protected:                                                                                  \
     winrt::event<args> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature and body of an event
@@ -128,7 +128,7 @@ private:                                                                        
 // (like when the class is being initialized).
 #define OBSERVABLE_GETSET_PROPERTY(type, name, event, ...)                             \
 public:                                                                                \
-    type name() { return _##name; };                                                   \
+    type name() const noexcept { return _##name; };                                    \
     void name(const type& value)                                                       \
     {                                                                                  \
         if (_##name != value)                                                          \
