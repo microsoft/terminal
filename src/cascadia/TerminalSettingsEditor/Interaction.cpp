@@ -4,11 +4,9 @@
 #include "pch.h"
 #include "Interaction.h"
 #include "Interaction.g.cpp"
-#include "MainPage.h"
+#include "InteractionPageNavigationState.g.cpp"
 
-using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -17,8 +15,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    GlobalAppSettings Interaction::GlobalSettings()
+    void Interaction::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        return MainPage::Settings().GlobalSettings();
+        _State = e.Parameter().as<Editor::InteractionPageNavigationState>();
     }
 }

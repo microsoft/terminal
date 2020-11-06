@@ -1,10 +1,13 @@
-﻿#include "pch.h"
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "pch.h"
 #include "Profiles.h"
 #include "Profiles.g.cpp"
 #include "EnumEntry.h"
 
-using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
@@ -25,9 +28,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
     }
 
-    void Profiles::OnNavigatedTo(winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs e)
+    void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _Profile = e.Parameter().as<Model::Profile>();
+        _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)

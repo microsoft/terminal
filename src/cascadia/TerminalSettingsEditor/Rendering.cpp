@@ -4,11 +4,9 @@
 #include "pch.h"
 #include "Rendering.h"
 #include "Rendering.g.cpp"
-#include "MainPage.h"
+#include "RenderingPageNavigationState.g.cpp"
 
-using namespace winrt;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -17,8 +15,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
     }
 
-    GlobalAppSettings Rendering::GlobalSettings()
+    void Rendering::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        return MainPage::Settings().GlobalSettings();
+        _State = e.Parameter().as<Editor::RenderingPageNavigationState>();
     }
 }

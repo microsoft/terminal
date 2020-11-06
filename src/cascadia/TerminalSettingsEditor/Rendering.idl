@@ -3,9 +3,14 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass RenderingPageNavigationState
+    {
+        Microsoft.Terminal.Settings.Model.GlobalAppSettings Globals;
+    };
+
     [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
     {
         Rendering();
-        Microsoft.Terminal.Settings.Model.GlobalAppSettings GlobalSettings { get; };
+        RenderingPageNavigationState State { get; };
     }
 }

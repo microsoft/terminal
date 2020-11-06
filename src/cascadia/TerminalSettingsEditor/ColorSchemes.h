@@ -5,27 +5,37 @@
 
 #include "ColorTableEntry.g.h"
 #include "ColorSchemes.g.h"
+#include "ColorSchemesPageNavigationState.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
+    {
+    public:
+        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings) :
+            _Globals{ settings } {}
+
+        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
+    };
+
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
 
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+
         void ColorSchemeSelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& args);
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
 
-        Windows::Foundation::Collections::IObservableVector<winrt::hstring> ColorSchemeList();
-
+        GETSET_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::hstring>, ColorSchemeList, nullptr);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::ColorScheme, CurrentColorScheme, _PropertyChangedHandlers, nullptr);
 
     private:
-        Windows::Foundation::Collections::IObservableVector<winrt::hstring> _ColorSchemeList{ nullptr };
-
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
     };

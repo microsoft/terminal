@@ -24,11 +24,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource SubheaderTextBlockStyle}"
                    Margin="0,0,0,20" />
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                <CheckBox x:Uid="Globals_CopyOnSelect" IsChecked="{x:Bind GlobalSettings.CopyOnSelect, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_CopyOnSelect" IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
                 <!--TODO: Converter Here-->
                 <!--<CheckBox x:Uid="Globals_CopyFormatting" IsChecked="{x:Bind GlobalSettings.CopyFormatting, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />-->
-                <TextBox x:Uid="Globals_WordDelimiters" Text="{x:Bind GlobalSettings.WordDelimiters, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <CheckBox x:Uid="Globals_SnapToGridOnResize" IsChecked="{x:Bind GlobalSettings.SnapToGridOnResize, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <TextBox x:Uid="Globals_WordDelimiters" Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
+                <CheckBox x:Uid="Globals_SnapToGridOnResize" IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings { get; };
 
-        Profile DefaultProfileSettings { get; };
+        Profile ProfileDefaults { get; };
 
         Windows.Foundation.Collections.IObservableVector<Profile> AllProfiles { get; };
         Windows.Foundation.Collections.IObservableVector<Profile> ActiveProfiles { get; };

@@ -4,11 +4,12 @@
 #include "pch.h"
 #include "GlobalAppearance.h"
 #include "GlobalAppearance.g.cpp"
-#include "MainPage.h"
+#include "GlobalAppearancePageNavigationState.g.cpp"
 #include "EnumEntry.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::Foundation::Collections;
@@ -23,8 +24,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(TabWidthMode, TabViewWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, L"Globals_TabWidthMode", L"Content");
     }
 
-    GlobalAppSettings GlobalAppearance::GlobalSettings()
+    void GlobalAppearance::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        return MainPage::Settings().GlobalSettings();
+        _State = e.Parameter().as<Editor::GlobalAppearancePageNavigationState>();
     }
 }

@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static hstring SettingsPath();
         static hstring DefaultSettingsPath();
-        Model::Profile DefaultProfileSettings() const;
+        Model::Profile ProfileDefaults() const;
 
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();

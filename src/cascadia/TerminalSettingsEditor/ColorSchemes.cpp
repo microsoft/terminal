@@ -2,21 +2,20 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "MainPage.h"
 #include "ColorSchemes.h"
 #include "ColorTableEntry.g.cpp"
 #include "ColorSchemes.g.cpp"
+#include "ColorSchemesPageNavigationState.g.cpp"
 
 #include <LibraryResources.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
-using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -44,6 +43,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
+    }
+
+    void ColorSchemes::OnNavigatedTo(const NavigationEventArgs& e)
+    {
+        _State = e.Parameter().as<Editor::ColorSchemesPageNavigationState>();
         _UpdateColorSchemeList();
 
         // Initialize our color table view model with 16 dummy colors
@@ -58,11 +62,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    IObservableVector<hstring> ColorSchemes::ColorSchemeList()
-    {
-        return _ColorSchemeList;
-    }
-
     // Function Description:
     // - Called when a different color scheme is selected. Updates our current
     //   color scheme and updates our currently modifiable color table.
@@ -75,7 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         //  Update the color scheme this page is modifying
         auto str = winrt::unbox_value<hstring>(args.AddedItems().GetAt(0));
-        auto colorScheme = MainPage::Settings().GlobalSettings().ColorSchemes().Lookup(str);
+        auto colorScheme = _State.Globals().ColorSchemes().Lookup(str);
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
     }
@@ -88,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::_UpdateColorSchemeList()
     {
-        auto colorSchemeMap = MainPage::Settings().GlobalSettings().ColorSchemes();
-        for (const auto& pair : MainPage::Settings().GlobalSettings().ColorSchemes())
+        auto colorSchemeMap = _State.Globals().ColorSchemes();
+        for (const auto& pair : _State.Globals().ColorSchemes())
         {
             _ColorSchemeList.Append(pair.Key());
         }

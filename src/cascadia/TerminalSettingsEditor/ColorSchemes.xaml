@@ -11,7 +11,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:controls="clr-namespace:Windows.UI.Xaml.Controls;assembly=Windows.Foundation.UniversalApiContract" xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
-
     <Page.Resources>
         <Style TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,0,20"/>

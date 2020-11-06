@@ -4,19 +4,31 @@
 #pragma once
 
 #include "Launch.g.h"
+#include "LaunchPageNavigationState.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct LaunchPageNavigationState : LaunchPageNavigationStateT<LaunchPageNavigationState>
+    {
+    public:
+        LaunchPageNavigationState(const Model::CascadiaSettings& settings) :
+            _Settings{ settings } {}
+
+        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+    };
+
     struct Launch : LaunchT<Launch>
     {
     public:
         Launch();
 
-        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
+
+        GETSET_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
     };
 }
 

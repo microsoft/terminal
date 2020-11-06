@@ -27,7 +27,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         IsBackEnabled="True"
                         BackRequested="SettingsNav_BackRequested">
             <muxc:NavigationView.MenuItems>
-                
+
                 <muxc:NavigationViewItem x:Uid="Nav_Launch"
                                                 Tag="Launch_Nav">
                     <muxc:NavigationViewItem.Icon>

@@ -4,14 +4,27 @@
 #pragma once
 
 #include "Rendering.g.h"
+#include "RenderingPageNavigationState.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct RenderingPageNavigationState : RenderingPageNavigationStateT<RenderingPageNavigationState>
+    {
+    public:
+        RenderingPageNavigationState(const Model::GlobalAppSettings& settings) :
+            _Globals{ settings } {}
+
+        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+    };
+
     struct Rendering : RenderingT<Rendering>
     {
         Rendering();
-        winrt::Microsoft::Terminal::Settings::Model::GlobalAppSettings GlobalSettings();
+
+        void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+
+        GETSET_PROPERTY(Editor::RenderingPageNavigationState, State, nullptr);
     };
 }
 

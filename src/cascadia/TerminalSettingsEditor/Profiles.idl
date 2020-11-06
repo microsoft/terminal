@@ -1,14 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl"; 
+import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass ProfilePageNavigationState
+    {
+        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
+        Microsoft.Terminal.Settings.Model.Profile Profile;
+    };
+
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
     {
         Profiles();
-        Microsoft.Terminal.Settings.Model.Profile Profile { get; };
+        ProfilePageNavigationState State { get; };
 
         IInspectable CurrentCursorShape;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };

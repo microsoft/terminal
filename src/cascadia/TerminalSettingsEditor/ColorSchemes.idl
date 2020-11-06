@@ -3,9 +3,15 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+    runtimeclass ColorSchemesPageNavigationState
+    {
+        Microsoft.Terminal.Settings.Model.GlobalAppSettings Globals;
+    };
+
     [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         ColorSchemes();
+        ColorSchemesPageNavigationState State { get; };
 
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
         Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
