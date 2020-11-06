@@ -135,23 +135,23 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight> :
     public ::Microsoft::Terminal::Settings::Model::JsonUtils::EnumMapper<
-        unsigned int,
+        uint16_t,
         ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight>>
 {
     // The original parser used the font weight getters Bold(), Normal(), etc.
     // They were both cumbersome and *not constant expressions*
     JSON_MAPPINGS(11) = {
-        pair_type{ "thin", 100u },
-        pair_type{ "extra-light", 200u },
-        pair_type{ "light", 300u },
-        pair_type{ "semi-light", 350u },
-        pair_type{ "normal", 400u },
-        pair_type{ "medium", 500u },
-        pair_type{ "semi-bold", 600u },
-        pair_type{ "bold", 700u },
-        pair_type{ "extra-bold", 800u },
-        pair_type{ "black", 900u },
-        pair_type{ "extra-black", 950u },
+        pair_type{ "thin", static_cast<uint16_t>(100u) },
+        pair_type{ "extra-light", static_cast<uint16_t>(200u) },
+        pair_type{ "light", static_cast<uint16_t>(300u) },
+        pair_type{ "semi-light", static_cast<uint16_t>(350u) },
+        pair_type{ "normal", static_cast<uint16_t>(400u) },
+        pair_type{ "medium", static_cast<uint16_t>(500u) },
+        pair_type{ "semi-bold", static_cast<uint16_t>(600u) },
+        pair_type{ "bold", static_cast<uint16_t>(700u) },
+        pair_type{ "extra-bold", static_cast<uint16_t>(800u) },
+        pair_type{ "black", static_cast<uint16_t>(900u) },
+        pair_type{ "extra-black", static_cast<uint16_t>(950u) },
     };
 
     // Override mapping parser to add boolean parsing
