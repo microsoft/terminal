@@ -26,7 +26,7 @@ public:
     void InitializeJsonWriter()
     {
         _writer = std::unique_ptr<Json::StreamWriter>(Json::StreamWriterBuilder::StreamWriterBuilder().newStreamWriter());
-    };
+    }
 
     Json::Value VerifyParseSucceeded(std::string content)
     {
