@@ -125,7 +125,15 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_scrollToindex(uint32_t index)
     {
-        auto clampedIndex = std::clamp<int32_t>(index, 0, _filteredActionsView().Items().Size() - 1);
+        auto numItems = _filteredActionsView().Items().Size();
+
+        if (numItems == 0)
+        {
+            // if the list is empty no need to scroll
+            return;
+        }
+
+        auto clampedIndex = std::clamp<int32_t>(index, 0, numItems - 1);
         _filteredActionsView().SelectedIndex(clampedIndex);
         _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
