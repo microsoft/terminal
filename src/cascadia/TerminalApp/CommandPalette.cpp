@@ -818,7 +818,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& action : commandsToFilter)
         {
             // Update filter for all commands
-            // This will modify the highlighting but will also lead to recomputation of weight (and consequently sorting).
+            // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
             // Pay attention that it already updates the highlighting in the UI
             action.UpdateFilter(searchText);
 
@@ -831,7 +831,7 @@ namespace winrt::TerminalApp::implementation
 
         // We want to present the commands sorted,
         // unless we are in the TabSwitcherMode and TabSearchMode,
-        // in which we want to preserver the insertion order
+        // in which we want to preserve the original order (to be aligned with the tab view)
         if (_currentMode != CommandPaletteMode::TabSearchMode && _currentMode != CommandPaletteMode::TabSwitchMode)
         {
             std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
