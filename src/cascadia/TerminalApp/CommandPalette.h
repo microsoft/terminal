@@ -121,7 +121,7 @@ namespace winrt::TerminalApp::implementation
         void _dismissPalette();
 
         void _scrollToindex(uint32_t index);
-        uint32_t _getVisibleItems();
+        uint32_t _getNumVisibleItems();
     };
 }
 

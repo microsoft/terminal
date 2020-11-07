@@ -136,7 +136,7 @@ namespace winrt::TerminalApp::implementation
     // - index within a list
     // Return Value:
     // - <none>
-    uint32_t CommandPalette::_getVisibleItems()
+    uint32_t CommandPalette::_getNumVisibleItems()
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
         const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
@@ -154,7 +154,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::ScrollPageUp()
     {
         auto selected = _filteredActionsView().SelectedIndex();
-        auto numVisibleItems = _getVisibleItems();
+        auto numVisibleItems = _getNumVisibleItems();
         _scrollToindex(selected - numVisibleItems);
     }
 
@@ -167,7 +167,7 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::ScrollPageDown()
     {
         auto selected = _filteredActionsView().SelectedIndex();
-        auto numVisibleItems = _getVisibleItems();
+        auto numVisibleItems = _getNumVisibleItems();
         _scrollToindex(selected + numVisibleItems);
     }
 
