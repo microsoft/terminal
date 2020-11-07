@@ -829,8 +829,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Add all the commands, but make sure they're sorted.
-        std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
+        // We want to present the commands sorted,
+        // unless we are in the TabSwitcherMode and TabSearchMode,
+        // in which we want to preserver the insertion order
+        if (_currentMode != CommandPaletteMode::TabSearchMode && _currentMode != CommandPaletteMode::TabSwitchMode)
+        {
+            std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
+        }
         return actions;
     }
 
