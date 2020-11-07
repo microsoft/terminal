@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Scroll the command palette to the specified index
     // Arguments:
-    // - index within a list
+    // - index within a list view of commands
     // Return Value:
     // - <none>
     void CommandPalette::_scrollToindex(uint32_t index)
@@ -133,9 +133,9 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Computes the number of visible commands
     // Arguments:
-    // - index within a list
-    // Return Value:
     // - <none>
+    // Return Value:
+    // - the approximate number of items visible in the list (in other words the size of the page)
     uint32_t CommandPalette::_getNumVisibleItems()
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
