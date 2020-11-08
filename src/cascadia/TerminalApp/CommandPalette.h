@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
         void _dispatchCommandline();
         void _dismissPalette();
 
-        void _scrollToindex(uint32_t index);
+        void _scrollToIndex(uint32_t index);
         uint32_t _getNumVisibleItems();
     };
 }

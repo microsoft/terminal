@@ -123,7 +123,7 @@ namespace winrt::TerminalApp::implementation
     // - index within a list view of commands
     // Return Value:
     // - <none>
-    void CommandPalette::_scrollToindex(uint32_t index)
+    void CommandPalette::_scrollToIndex(uint32_t index)
     {
         auto numItems = _filteredActionsView().Items().Size();
 
@@ -163,7 +163,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto selected = _filteredActionsView().SelectedIndex();
         auto numVisibleItems = _getNumVisibleItems();
-        _scrollToindex(selected - numVisibleItems);
+        _scrollToIndex(selected - numVisibleItems);
     }
 
     // Method Description:
@@ -176,7 +176,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto selected = _filteredActionsView().SelectedIndex();
         auto numVisibleItems = _getNumVisibleItems();
-        _scrollToindex(selected + numVisibleItems);
+        _scrollToIndex(selected + numVisibleItems);
     }
 
     // Method Description:
@@ -187,7 +187,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::ScrollToTop()
     {
-        _scrollToindex(0);
+        _scrollToIndex(0);
     }
 
     // Method Description:
@@ -198,7 +198,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::ScrollToBottom()
     {
-        _scrollToindex(_filteredActionsView().Items().Size() - 1);
+        _scrollToIndex(_filteredActionsView().Items().Size() - 1);
     }
 
     // Method Description:
