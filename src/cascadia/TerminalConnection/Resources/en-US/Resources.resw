@@ -148,6 +148,10 @@
     <value>You have not set up your cloud shell account yet. Please go to https://shell.azure.com to set it up.</value>
     <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
   </data>
+  <data name="AzureInvalidUserSettings" xml:space="preserve">
+    <value>Your cloud shell account misses some mandatory settings. Please go to https://shell.azure.com to set it up.</value>
+    <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
+  </data>
   <data name="AzureStorePrompt" xml:space="preserve">
     <value>Do you want to save these connection settings for future logins? [{0}/{1}]</value>
     <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. They are single-character shorthands for "yes" and "no" in this language.</comment>

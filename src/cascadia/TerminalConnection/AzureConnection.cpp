@@ -688,6 +688,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
+    // - Helper function to parse the preferred shell type from user settings returned by cloud console API.
+    // We need this function because the field might be missing in the settings
+    // created with old versions of cloud console API.
+    std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
+    {
+        if (!settingsResponse.has_object_field(L"properties"))
+        {
+            return std::nullopt;
+        }
+
+        const auto userSettings = settingsResponse.at(L"properties");
+        if (!userSettings.has_string_field(L"preferredShellType"))
+        {
+            return std::nullopt;
+        }
+
+        const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
+        return std::optional(preferredShellTypeValue.as_string());
+    }
+
+    // Method description:
     // - helper function to connect the user to the Azure cloud shell
     void AzureConnection::_RunConnectState()
     {
@@ -700,15 +721,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
+        const auto shellType = _ParsePreferredShellType(settingsResponse);
+        if (!shellType.has_value())
+        {
+            _WriteStringWithNewline(RS_(L"AzureInvalidUserSettings"));
+            _transitionToState(ConnectionState::Failed);
+            return;
+        }
+
         // Request for a cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingCloud"));
         _cloudShellUri = _GetCloudShell();
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
-        const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(shellType);
+        const auto socketUri = _GetTerminal(*shellType);
         _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal
