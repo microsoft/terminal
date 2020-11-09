@@ -130,7 +130,7 @@ void Pane::Relayout()
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_Resize(const Direction& direction)
+bool Pane::_Resize(const ResizeDirection& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
@@ -138,7 +138,7 @@ bool Pane::_Resize(const Direction& direction)
     }
 
     float amount = .05f;
-    if (direction == Direction::Right || direction == Direction::Down)
+    if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
     }
@@ -171,7 +171,7 @@ bool Pane::_Resize(const Direction& direction)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - true if we or a child handled this resize request.
-bool Pane::ResizePane(const Direction& direction)
+bool Pane::ResizePane(const ResizeDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -223,14 +223,14 @@ bool Pane::ResizePane(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we handled this focus move request.
-bool Pane::_NavigateFocus(const Direction& direction)
+bool Pane::_NavigateFocus(const FocusDirection& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
         return false;
     }
 
-    const bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
+    const bool focusSecond = (direction == FocusDirection::Right) || (direction == FocusDirection::Down);
 
     const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
 
@@ -261,7 +261,7 @@ bool Pane::_NavigateFocus(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we or a child handled this focus move request.
-bool Pane::NavigateFocus(const Direction& direction)
+bool Pane::NavigateFocus(const FocusDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.

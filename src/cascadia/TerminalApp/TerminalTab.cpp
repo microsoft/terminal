@@ -327,7 +327,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void TerminalTab::ResizePane(const Direction& direction)
+    void TerminalTab::ResizePane(const ResizeDirection& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -341,14 +341,14 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void TerminalTab::NavigateFocus(const Direction& direction)
+    void TerminalTab::NavigateFocus(const FocusDirection& direction)
     {
-        if (direction == Direction::Previous)
+        if (direction == FocusDirection::Previous)
         {
             // To get to the previous pane, get the id of the previous pane and focus to that
             _rootPane->FocusPane(_mruPanes.GetAt(1));
         }
-        else if (direction == Direction::Next)
+        else if (direction == FocusDirection::Next)
         {
             _rootPane->FocusPane(_mruPanes.GetAt(_mruPanes.Size() - 1));
         }
