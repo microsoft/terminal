@@ -760,7 +760,9 @@
             {
               "enum": [
                 "desktopWallpaper"
-              ],
+              ]
+            },
+            {
               "type": "null"
             }
           ]
