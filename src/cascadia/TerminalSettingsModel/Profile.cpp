@@ -59,7 +59,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 
-static const winrt::hstring DesktopWallpaperEnum{ L"desktopWallpaper" };
+static constexpr std::string_view DesktopWallpaperEnum{ "desktopWallpaper" };
 
 Profile::Profile()
 {
