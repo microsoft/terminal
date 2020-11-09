@@ -693,19 +693,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // created with old versions of cloud console API.
     std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
     {
-        if (!settingsResponse.has_object_field(L"properties"))
+        if (settingsResponse.has_object_field(L"properties"))
         {
-            return std::nullopt;
+            const auto userSettings = settingsResponse.at(L"properties");
+            if (userSettings.has_string_field(L"preferredShellType"))
+            {
+                const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
+                return preferredShellTypeValue.as_string();
+            }
         }
 
-        const auto userSettings = settingsResponse.at(L"properties");
-        if (!userSettings.has_string_field(L"preferredShellType"))
-        {
-            return std::nullopt;
-        }
-
-        const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
-        return std::optional(preferredShellTypeValue.as_string());
+        return std::nullopt;
     }
 
     // Method description:
@@ -722,12 +720,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         const auto shellType = _ParsePreferredShellType(settingsResponse);
-        if (!shellType.has_value())
-        {
-            _WriteStringWithNewline(RS_(L"AzureInvalidUserSettings"));
-            _transitionToState(ConnectionState::Failed);
-            return;
-        }
 
         // Request for a cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingCloud"));
@@ -736,7 +728,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Request for a terminal for said cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(*shellType);
+        const auto socketUri = _GetTerminal(shellType.value_or(L"pwsh"));
         _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal
