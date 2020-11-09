@@ -1979,13 +1979,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
-    void TermControl::_UpdateFont(const bool initialUpdate)
+    winrt::fire_and_forget TermControl::_UpdateFont(const bool initialUpdate)
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * SwapChainPanel().CompositionScaleX());
+
+        const std::wstring originalActualFontName{_actualFont.GetFaceName()};
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+
+        // If the actual font isn't what we had last time...
+        // and the actual font isn't what was requested...
+        if (_actualFont.GetFaceName() != originalActualFontName &&
+            _actualFont.GetFaceName() != _desiredFont.GetFaceName())
+        {
+            // Then warn the user that we picked something because we couldn't find their font.
+
+            // Save things we need to resume later.
+            auto strongThis{ get_strong() };
+
+            // Format message with user's choice of font and the font that was chosen instead.
+            const winrt::hstring message { fmt::format(std::wstring_view(RS_(L"NoticeFontNotFound")), _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
+
+            // Pop the rest of this function to the tail of the UI thread
+            // Just in case someone was holding a lock when they called us and
+            // the handlers decide to do something that take another lock
+            // (like ShellExecute pumping our messaging thread...GH#7994)
+            co_await Dispatcher();
+
+            auto noticeArgs = winrt::make_self<NoticeEventArgs>(NoticeLevel::Warning, message);
+            _raiseNoticeHandlers(*strongThis, *noticeArgs);
+        }
 
         const auto actualNewSize = _actualFont.GetSize();
         _fontSizeChangedHandlers(actualNewSize.X, actualNewSize.Y, initialUpdate);
@@ -3074,5 +3099,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
     // clang-format on
 }

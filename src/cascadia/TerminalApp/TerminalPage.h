@@ -197,6 +197,9 @@ namespace winrt::TerminalApp::implementation
 
         void _PasteText();
 
+        void _ControlNoticeRaisedHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs);
+        void _ShowControlNoticeDialog(winrt::hstring title, winrt::hstring message);
+
         fire_and_forget _LaunchSettings(const Microsoft::Terminal::Settings::Model::SettingsTarget target);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
