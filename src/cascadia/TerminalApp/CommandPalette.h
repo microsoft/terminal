@@ -10,7 +10,7 @@
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
-    class FilteredCommandTests;
+    class TabTests;
 };
 
 namespace winrt::TerminalApp::implementation
@@ -122,6 +122,8 @@ namespace winrt::TerminalApp::implementation
 
         void _scrollToIndex(uint32_t index);
         uint32_t _getNumVisibleItems();
+
+        friend class TerminalAppLocalTests::TabTests;
     };
 }
 
