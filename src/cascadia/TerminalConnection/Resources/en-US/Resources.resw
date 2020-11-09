@@ -188,6 +188,18 @@
     <value>Tenant {0}: {1} ({2})</value>
     <comment>{0} is the tenant's number, which the user will enter to connect to the tenant. {1} is the tenant's display name, which will be meaningful for the user. {2} is the tenant's internal ID number.</comment>
   </data>
+  <data name="AzureIthShell" xml:space="preserve">
+    <value>{0}: {1}{2}</value>
+    <comment>{0} is the shell's number, which the user will enter to choose the shell. {1} is the shells's display name, {2} are extra parameters that can be attached, e.g., AzurePreferredShell .</comment>
+  </data>
+  <data name="AzureEnterShell" xml:space="preserve">
+    <value>Please enter the desired shell number or press Enter for default.</value>
+    <comment>Precedes AzureIthShell.</comment>
+  </data>
+  <data name="AzurePreferredShell" xml:space="preserve">
+    <value> (default)</value>
+    <comment>will be concatenated to the name of the shell when building AzureIthShell.</comment>
+  </data>
   <data name="AzureSuccessfullyAuthenticated" xml:space="preserve">
     <value>Authenticated.</value>
   </data>

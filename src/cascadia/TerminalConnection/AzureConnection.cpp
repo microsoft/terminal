@@ -56,6 +56,29 @@ static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
                        tenant.DefaultDomain.value_or(tenant.ID)); // use the domain name if possible, ID if not.
 }
 
+struct Shell
+{
+    std::wstring ID;
+    std::wstring DisplayName;
+    bool IsPrefered;
+
+    Shell(std::wstring const& id, std::wstring const& displayName, bool isPrefered) :
+        ID(id),
+        DisplayName(displayName),
+        IsPrefered(isPrefered)
+    {
+    }
+};
+
+static inline std::wstring _formatShell(int shellNumber, const Shell& shell)
+{
+    std::wstring preferedShellMessage{ RS_(L"AzurePreferredShell") };
+    return fmt::format(std::wstring_view{ RS_(L"AzureIthShell") },
+                       _colorize(USER_INPUT_COLOR, std::to_wstring(shellNumber)),
+                       _colorize(USER_INFO_COLOR, shell.DisplayName),
+                       shell.IsPrefered ? std::wstring_view{ RS_(L"AzurePreferredShell") } : L"");
+}
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     winrt::guid AzureConnection::ConnectionType() noexcept
@@ -721,13 +744,57 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        const auto shellType = _ParsePreferredShellType(settingsResponse);
-        if (!shellType.has_value())
+        const auto preferedShell = _ParsePreferredShellType(settingsResponse);
+        if (!preferedShell.has_value())
         {
             _WriteStringWithNewline(RS_(L"AzureInvalidUserSettings"));
             _transitionToState(ConnectionState::Failed);
             return;
         }
+
+        auto shellType = *preferedShell;
+        Shell shells[] = { { L"pwsh", L"Powershell", shellType == L"pwsh" }, { L"bash", L"Bash", shellType == L"bash" } };
+
+        for (int i = 0; i < ARRAYSIZE(shells); i++)
+        {
+            _WriteStringWithNewline(_formatShell(i, shells[i]));
+        }
+        _WriteStringWithNewline(RS_(L"AzureEnterShell"));
+
+        do
+        {
+            auto shellSelection = _ReadUserInput(InputMode::Line);
+            if (!shellSelection.has_value())
+            {
+                return;
+            }
+
+            const auto userInput = shellSelection.value();
+            if (userInput == L"")
+            {
+                break;
+            }
+
+            try
+            {
+                const auto selectedShellNumber = std::stoi(userInput);
+                if (selectedShellNumber < 0 || selectedShellNumber >= ARRAYSIZE(shells))
+                {
+                    _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
+                    continue; // go 'round again
+                }
+
+                shellType = shells[selectedShellNumber].ID;
+                break;
+            }
+            catch (...)
+            {
+                // suppress exceptions in conversion
+            }
+
+            // if we got here, we didn't break out of the loop early and need to go 'round again
+            _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
+        } while (true);
 
         // Request for a cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingCloud"));
@@ -736,7 +803,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Request for a terminal for said cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(*shellType);
+        const auto socketUri = _GetTerminal(shellType);
         _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal
