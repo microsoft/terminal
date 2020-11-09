@@ -719,14 +719,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        const auto shellType = _ParsePreferredShellType(settingsResponse);
-
         // Request for a cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingCloud"));
         _cloudShellUri = _GetCloudShell();
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
+        const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
         const auto socketUri = _GetTerminal(shellType.value_or(L"pwsh"));
         _TerminalOutputHandlers(L"\r\n");
