@@ -10,7 +10,7 @@
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
-    class FilteredCommandTests;
+    class TabTests;
 };
 
 namespace winrt::TerminalApp::implementation
@@ -118,6 +118,8 @@ namespace winrt::TerminalApp::implementation
         void _dispatchCommand(winrt::TerminalApp::FilteredCommand const& command);
         void _dispatchCommandline();
         void _dismissPalette();
+
+        friend class TerminalAppLocalTests::TabTests;
     };
 }
 
