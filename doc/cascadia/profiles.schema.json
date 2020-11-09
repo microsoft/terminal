@@ -264,7 +264,7 @@
         { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "newTab" }
+            "action": { "type":"string", "pattern": "newTab" }
           }
         }
       ]
@@ -479,7 +479,7 @@
           "properties": {
             "action": { "type": "string", "pattern": "scrollUp" },
             "rowsToScroll": {
-              "type": [ "integer", "null" ],
+              "type": ["integer", "null"],
               "default": null,
               "description": "Scroll up rowsToScroll lines. If no value is provided, use the system-level defaults."
             }
@@ -495,7 +495,7 @@
           "properties": {
             "action": { "type": "string", "pattern": "scrollDown" },
             "rowsToScroll": {
-              "type": [ "integer", "null" ],
+              "type": ["integer", "null"],
               "default": null,
               "description": "Scroll down rowsToScroll lines. If no value is provided, use the system-level defaults."
             }
@@ -508,26 +508,26 @@
       "properties": {
         "command": {
           "description": "The action executed when the associated key bindings are pressed.",
-           "oneOf": [
-             { "$ref": "#/definitions/AdjustFontSizeAction" },
-             { "$ref": "#/definitions/CopyAction" },
-             { "$ref": "#/definitions/ShortcutActionName" },
-             { "$ref": "#/definitions/NewTabAction" },
-             { "$ref": "#/definitions/SwitchToTabAction" },
-             { "$ref": "#/definitions/MoveFocusAction" },
-             { "$ref": "#/definitions/ResizePaneAction" },
-             { "$ref": "#/definitions/SendInputAction" },
-             { "$ref": "#/definitions/SplitPaneAction" },
-             { "$ref": "#/definitions/OpenSettingsAction" },
-             { "$ref": "#/definitions/SetTabColorAction" },
-             { "$ref": "#/definitions/SetColorSchemeAction" },
-             { "$ref": "#/definitions/WtAction" },
-             { "$ref": "#/definitions/CloseOtherTabsAction" },
-             { "$ref": "#/definitions/CloseTabsAfterAction" },
-             { "$ref": "#/definitions/ScrollUpAction" },
-             { "$ref": "#/definitions/ScrollDownAction" },
-             { "type": "null" }
-           ]
+            "oneOf": [
+              { "$ref": "#/definitions/AdjustFontSizeAction" },
+              { "$ref": "#/definitions/CopyAction" },
+              { "$ref": "#/definitions/ShortcutActionName" },
+              { "$ref": "#/definitions/NewTabAction" },
+              { "$ref": "#/definitions/SwitchToTabAction" },
+              { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/ResizePaneAction" },
+              { "$ref": "#/definitions/SendInputAction" },
+              { "$ref": "#/definitions/SplitPaneAction" },
+              { "$ref": "#/definitions/OpenSettingsAction" },
+              { "$ref": "#/definitions/SetTabColorAction" },
+              { "$ref": "#/definitions/SetColorSchemeAction" },
+              { "$ref": "#/definitions/WtAction" },
+              { "$ref": "#/definitions/CloseOtherTabsAction" },
+              { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/ScrollUpAction" },
+              { "$ref": "#/definitions/ScrollDownAction" },
+              { "type": "null" }
+            ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
@@ -862,7 +862,7 @@
         "cursorColor": {
           "oneOf": [
             { "$ref": "#/definitions/Color" },
-            { "type": "null" }
+            {"type": "null"}
           ],
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
@@ -870,7 +870,7 @@
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
           "maximum": 100,
           "minimum": 25,
-          "type": ["integer", "null"],
+          "type": ["integer","null"],
           "default": 25
         },
         "cursorShape": {
