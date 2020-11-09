@@ -68,7 +68,7 @@ struct Shell
     }
 };
 
-static inline std::wstring _formatShell(int shellNumber, const Shell& shell)
+static inline std::wstring _formatShell(const size_t shellNumber, const Shell& shell)
 {
     return fmt::format(std::wstring_view{ RS_(L"AzureIthShell") },
                        _colorize(USER_INPUT_COLOR, std::to_wstring(shellNumber)),
@@ -1047,11 +1047,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // and expects a numeric input corresponding to the shell of choice.
     std::optional<utility::string_t> AzureConnection::_ReadShellTypeFromUserInput()
     {
-        Shell shells[] = { { L"pwsh", L"Powershell" }, { L"bash", L"Bash" } };
+        const Shell shells[] = {
+            { L"pwsh", L"PowerShell" },
+            { L"bash", L"Bash" }
+        };
 
-        for (int i = 0; i < ARRAYSIZE(shells); i++)
+        for (size_t i = 0; i < ARRAYSIZE(shells); i++)
         {
-            _WriteStringWithNewline(_formatShell(i, shells[i]));
+            _WriteStringWithNewline(_formatShell(i, gsl::at(shells, i)));
         }
         _WriteStringWithNewline(RS_(L"AzureEnterShell"));
 
@@ -1072,7 +1075,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     continue; // go 'round again
                 }
 
-                return std::optional(shells[selectedShellNumber].ID);
+                return std::optional(gsl::at(shells, selectedShellNumber).ID);
             }
             catch (...)
             {
