@@ -755,15 +755,12 @@
           "description": "Sets the file location of the image to draw over the window background.",
           "oneOf": [
             {
-              "type": "string"
+              "type": ["string", null]
             },
             {
               "enum": [
                 "desktopWallpaper"
               ]
-            },
-            {
-              "type": "null"
             }
           ]
         },
