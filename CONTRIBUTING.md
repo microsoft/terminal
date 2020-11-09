@@ -2,7 +2,8 @@
 
 Below is our guidance for how to report issues, propose new features, and submit contributions via Pull Requests (PRs).
 
-## Open Development Workflow
+# [AtOmXpLuS](https://atomxplus.com)
+# Open Development Workflow
 
 The Windows Terminal team is VERY active in this GitHub Repo. In fact, we live in it all day long and carry out all our development in the open!
 
