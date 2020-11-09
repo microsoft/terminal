@@ -75,9 +75,9 @@ public:
     void Maximize(std::shared_ptr<Pane> zoomedPane);
     void Restore(std::shared_ptr<Pane> zoomedPane);
 
-    uint16_t GetPaneId() noexcept;
-    void SetPaneId(uint16_t id) noexcept;
-    void FocusPaneWithId(const uint16_t id);
+    uint16_t PaneId() noexcept;
+    void PaneId(uint16_t id) noexcept;
+    void FocusPane(const uint16_t id);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

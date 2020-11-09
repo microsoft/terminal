@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
-        _rootPane->SetPaneId(_nextPaneId);
+        _rootPane->PaneId(_nextPaneId);
         _mruPanes.InsertAt(0, _nextPaneId);
         ++_nextPaneId;
 
@@ -279,10 +279,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
-        const auto activePaneId = _activePane->GetPaneId();
+        const auto activePaneId = _activePane->PaneId();
         auto [first, second] = _activePane->Split(splitType, profile, control);
-        first->SetPaneId(activePaneId);
-        second->SetPaneId(_nextPaneId);
+        first->PaneId(activePaneId);
+        second->PaneId(_nextPaneId);
         ++_nextPaneId;
         _activePane = first;
         _AttachEventHandlersToControl(control);
@@ -346,11 +346,11 @@ namespace winrt::TerminalApp::implementation
         if (direction == Direction::Previous)
         {
             // To get to the previous pane, get the id of the previous pane and focus to that
-            _rootPane->FocusPaneWithId(_mruPanes.GetAt(1));
+            _rootPane->FocusPane(_mruPanes.GetAt(1));
         }
         else if (direction == Direction::Next)
         {
-            _rootPane->FocusPaneWithId(_mruPanes.GetAt(_mruPanes.Size() - 1));
+            _rootPane->FocusPane(_mruPanes.GetAt(_mruPanes.Size() - 1));
         }
         else
         {
@@ -474,7 +474,7 @@ namespace winrt::TerminalApp::implementation
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
         uint32_t mruPaneIndex;
-        const auto paneId = pane->GetPaneId();
+        const auto paneId = pane->PaneId();
         if (_mruPanes.IndexOf(paneId, mruPaneIndex))
         {
             _mruPanes.RemoveAt(mruPaneIndex);
@@ -526,7 +526,7 @@ namespace winrt::TerminalApp::implementation
                 if (auto pane = weakPane.lock())
                 {
                     uint32_t mruIndex;
-                    if (tab->_mruPanes.IndexOf(pane->GetPaneId(), mruIndex))
+                    if (tab->_mruPanes.IndexOf(pane->PaneId(), mruIndex))
                     {
                         tab->_mruPanes.RemoveAt(mruIndex);
                     }

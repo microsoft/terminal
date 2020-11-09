@@ -113,7 +113,9 @@
         "left",
         "right",
         "up",
-        "down"
+        "down",
+        "next",
+        "previous"
       ],
       "type": "string"
     },
@@ -285,7 +287,7 @@
             "direction": {
               "$ref": "#/definitions/Direction",
               "default": "left",
-              "description": "The direction to move focus in, between panes"
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane or 'next' to move to the least recently used pane."
             }
           }
         }
@@ -302,7 +304,7 @@
             "direction": {
               "$ref": "#/definitions/Direction",
               "default": "left",
-              "description": "The direction to move the pane separator in"
+              "description": "The direction to move the pane separator in. Direction cannot be 'next' or 'previous'."
             }
           }
         }
