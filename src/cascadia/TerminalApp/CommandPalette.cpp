@@ -120,48 +120,87 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Scrolls the focus up or down the list of commands.
+    // - Scroll the command palette to the specified index
     // Arguments:
-    // - pageDown: if true, we're attempting to move to last visible item in the
-    //   list. Otherwise, we're attempting to move to first visible item.
+    // - index within a list view of commands
     // Return Value:
     // - <none>
-    void CommandPalette::ScrollDown(const bool pageDown)
+    void CommandPalette::_scrollToIndex(uint32_t index)
+    {
+        auto numItems = _filteredActionsView().Items().Size();
+
+        if (numItems == 0)
+        {
+            // if the list is empty no need to scroll
+            return;
+        }
+
+        auto clampedIndex = std::clamp<int32_t>(index, 0, numItems - 1);
+        _filteredActionsView().SelectedIndex(clampedIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+    }
+
+    // Method Description:
+    // - Computes the number of visible commands
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the approximate number of items visible in the list (in other words the size of the page)
+    uint32_t CommandPalette::_getNumVisibleItems()
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
         const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
         const auto itemHeight = ::base::saturated_cast<int>(item.ActualHeight());
         const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
-        const int numVisibleItems = listHeight / itemHeight;
-
-        auto selected = _filteredActionsView().SelectedIndex();
-        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
-
-        const auto newIndex = ((numItems + selected + (pageDown ? numVisibleItems : -numVisibleItems)) % numItems);
-        _filteredActionsView().SelectedIndex(newIndex);
-        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+        return listHeight / itemHeight;
     }
 
     // Method Description:
-    // - Moves the focus either to top item or end item in the list of commands.
+    // - Scrolls the focus one page up the list of commands.
     // Arguments:
-    // - end: if true, we're attempting to move to last item in the
-    //   list. Otherwise, we're attempting to move to first item.
-    //   Depends on the pageUpDown argument.
+    // - <none>
     // Return Value:
     // - <none>
-    void CommandPalette::GoEnd(const bool end)
+    void CommandPalette::ScrollPageUp()
     {
-        const auto lastIndex = ::base::saturated_cast<int>(_filteredActionsView().Items().Size() - 1);
-        if (end)
-        {
-            _filteredActionsView().SelectedIndex(lastIndex);
-        }
-        else
-        {
-            _filteredActionsView().SelectedIndex(0);
-        }
-        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+        auto selected = _filteredActionsView().SelectedIndex();
+        auto numVisibleItems = _getNumVisibleItems();
+        _scrollToIndex(selected - numVisibleItems);
+    }
+
+    // Method Description:
+    // - Scrolls the focus one page down the list of commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::ScrollPageDown()
+    {
+        auto selected = _filteredActionsView().SelectedIndex();
+        auto numVisibleItems = _getNumVisibleItems();
+        _scrollToIndex(selected + numVisibleItems);
+    }
+
+    // Method Description:
+    // - Moves the focus to the top item in the list of commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::ScrollToTop()
+    {
+        _scrollToIndex(0);
+    }
+
+    // Method Description:
+    // - Moves the focus to the bottom item in the list of commands.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void CommandPalette::ScrollToBottom()
+    {
+        _scrollToIndex(_filteredActionsView().Items().Size() - 1);
     }
 
     // Method Description:
@@ -242,24 +281,26 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::PageUp)
         {
-            // Action Mode: Move focus to the previous item in the list.
-            ScrollDown(false);
+            // Action Mode: Move focus to the first visible item in the list.
+            ScrollPageUp();
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
-            // Action Mode: Move focus to the previous item in the list.
-            ScrollDown(true);
+            // Action Mode: Move focus to the last visible item in the list.
+            ScrollPageDown();
             e.Handled(true);
         }
         else if (key == VirtualKey::Home)
         {
-            GoEnd(false);
+            // Action Mode: Move focus to the first item in the list.
+            ScrollToTop();
             e.Handled(true);
         }
         else if (key == VirtualKey::End)
         {
-            GoEnd(true);
+            // Action Mode: Move focus to the last item in the list.
+            ScrollToBottom();
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
