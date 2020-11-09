@@ -6,8 +6,8 @@
 #include "WaitQueue.h"
 #include "WaitBlock.h"
 
-#include "..\host\globals.h"
-#include "..\host\utils.hpp"
+#include "../host/globals.h"
+#include "../host/utils.hpp"
 
 // Routine Description:
 // - Instantiates a new ConsoleWaitQueue

@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include "..\terminal\input\terminalInput.hpp"
+#include "../terminal/input/terminalInput.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;

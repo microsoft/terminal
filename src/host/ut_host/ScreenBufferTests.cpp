@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -13,9 +13,9 @@
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\..\inc\conattrs.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../../inc/conattrs.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #include <sstream>
 

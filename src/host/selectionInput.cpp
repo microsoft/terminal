@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"

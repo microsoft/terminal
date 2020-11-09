@@ -60,7 +60,7 @@
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
 #include <shellapi.h>
