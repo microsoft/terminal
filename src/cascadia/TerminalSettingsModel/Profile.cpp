@@ -59,7 +59,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 
-static constexpr std::string_view DesktopWallpaperEnum{ "desktopWallpaper" };
+static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
 Profile::Profile()
 {
@@ -362,7 +362,7 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     }
     // checks if the user would like to copy their desktop wallpaper
     // if so, replaces the path with the desktop wallpaper's path
-    else if (path == to_hstring(DesktopWallpaperEnum))
+    else if (path == DesktopWallpaperEnum)
     {
         WCHAR desktopWallpaper[MAX_PATH];
 
