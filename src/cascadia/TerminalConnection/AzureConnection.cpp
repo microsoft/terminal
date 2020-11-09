@@ -60,23 +60,19 @@ struct Shell
 {
     std::wstring ID;
     std::wstring DisplayName;
-    bool IsPrefered;
 
-    Shell(std::wstring const& id, std::wstring const& displayName, bool isPrefered) :
+    Shell(std::wstring const& id, std::wstring const& displayName) :
         ID(id),
-        DisplayName(displayName),
-        IsPrefered(isPrefered)
+        DisplayName(displayName)
     {
     }
 };
 
 static inline std::wstring _formatShell(int shellNumber, const Shell& shell)
 {
-    std::wstring preferedShellMessage{ RS_(L"AzurePreferredShell") };
     return fmt::format(std::wstring_view{ RS_(L"AzureIthShell") },
                        _colorize(USER_INPUT_COLOR, std::to_wstring(shellNumber)),
-                       _colorize(USER_INFO_COLOR, shell.DisplayName),
-                       shell.IsPrefered ? std::wstring_view{ RS_(L"AzurePreferredShell") } : L"");
+                       _colorize(USER_INFO_COLOR, shell.DisplayName));
 }
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
@@ -711,27 +707,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
-    // - Helper function to parse the preferred shell type from user settings returned by cloud console API.
-    // We need this function because the field might be missing in the settings
-    // created with old versions of cloud console API.
-    std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
-    {
-        if (!settingsResponse.has_object_field(L"properties"))
-        {
-            return std::nullopt;
-        }
-
-        const auto userSettings = settingsResponse.at(L"properties");
-        if (!userSettings.has_string_field(L"preferredShellType"))
-        {
-            return std::nullopt;
-        }
-
-        const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
-        return std::optional(preferredShellTypeValue.as_string());
-    }
-
-    // Method description:
     // - helper function to connect the user to the Azure cloud shell
     void AzureConnection::_RunConnectState()
     {
@@ -744,57 +719,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        const auto preferedShell = _ParsePreferredShellType(settingsResponse);
-        if (!preferedShell.has_value())
+        auto shellType = _ParsePreferredShellType(settingsResponse);
+        if (!shellType.has_value())
         {
-            _WriteStringWithNewline(RS_(L"AzureInvalidUserSettings"));
-            _transitionToState(ConnectionState::Failed);
+            shellType = _ReadShellTypeFromUserInput();
+        }
+
+        if (!shellType.has_value())
+        {
+            // This can happen only in the closing state
             return;
         }
-
-        auto shellType = *preferedShell;
-        Shell shells[] = { { L"pwsh", L"Powershell", shellType == L"pwsh" }, { L"bash", L"Bash", shellType == L"bash" } };
-
-        for (int i = 0; i < ARRAYSIZE(shells); i++)
-        {
-            _WriteStringWithNewline(_formatShell(i, shells[i]));
-        }
-        _WriteStringWithNewline(RS_(L"AzureEnterShell"));
-
-        do
-        {
-            auto shellSelection = _ReadUserInput(InputMode::Line);
-            if (!shellSelection.has_value())
-            {
-                return;
-            }
-
-            const auto userInput = shellSelection.value();
-            if (userInput == L"")
-            {
-                break;
-            }
-
-            try
-            {
-                const auto selectedShellNumber = std::stoi(userInput);
-                if (selectedShellNumber < 0 || selectedShellNumber >= ARRAYSIZE(shells))
-                {
-                    _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
-                    continue; // go 'round again
-                }
-
-                shellType = shells[selectedShellNumber].ID;
-                break;
-            }
-            catch (...)
-            {
-                // suppress exceptions in conversion
-            }
-
-            // if we got here, we didn't break out of the loop early and need to go 'round again
-            _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
-        } while (true);
 
         // Request for a cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingCloud"));
@@ -803,7 +738,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Request for a terminal for said cloud shell
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(shellType);
+        const auto socketUri = _GetTerminal(shellType.value());
         _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal
@@ -1083,5 +1018,69 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             CATCH_LOG();
         }
         _WriteStringWithNewline(RS_(L"AzureTokensRemoved"));
+    }
+
+    // Method description:
+    // - Helper function to parse the preferred shell type from user settings returned by cloud console API.
+    // We need this function because the field might be missing in the settings
+    // created with old versions of cloud console API.
+    std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
+    {
+        if (!settingsResponse.has_object_field(L"properties"))
+        {
+            return std::nullopt;
+        }
+
+        const auto userSettings = settingsResponse.at(L"properties");
+        if (!userSettings.has_string_field(L"preferredShellType"))
+        {
+            return std::nullopt;
+        }
+
+        const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
+        return std::optional(preferredShellTypeValue.as_string());
+    }
+
+    // Method description:
+    // - Helper function to read the shell type from user input.
+    // The function presents the user with an enumerated list of available shells (PowerShell / Bash)
+    // and expects a numeric input corresponding to the shell of choice.
+    std::optional<utility::string_t> AzureConnection::_ReadShellTypeFromUserInput()
+    {
+        Shell shells[] = { { L"pwsh", L"Powershell" }, { L"bash", L"Bash" } };
+
+        for (int i = 0; i < ARRAYSIZE(shells); i++)
+        {
+            _WriteStringWithNewline(_formatShell(i, shells[i]));
+        }
+        _WriteStringWithNewline(RS_(L"AzureEnterShell"));
+
+        do
+        {
+            auto shellSelection = _ReadUserInput(InputMode::Line);
+            if (!shellSelection.has_value())
+            {
+                return std::nullopt;
+            }
+
+            try
+            {
+                const auto selectedShellNumber = std::stoi(shellSelection.value());
+                if (selectedShellNumber < 0 || selectedShellNumber >= ARRAYSIZE(shells))
+                {
+                    _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
+                    continue; // go 'round again
+                }
+
+                return std::optional(shells[selectedShellNumber].ID);
+            }
+            catch (...)
+            {
+                // suppress exceptions in conversion
+            }
+
+            // if we got here, we didn't break out of the loop early and need to go 'round again
+            _WriteStringWithNewline(RS_(L"AzureNonNumberError"));
+        } while (true);
     }
 }

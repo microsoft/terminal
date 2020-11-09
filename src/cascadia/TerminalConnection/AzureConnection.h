@@ -97,6 +97,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         web::websockets::client::websocket_client _cloudShellSocket;
 
         static std::optional<utility::string_t> _ParsePreferredShellType(const web::json::value& settingsResponse);
+        std::optional<utility::string_t> _ReadShellTypeFromUserInput();
     };
 }
 

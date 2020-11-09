@@ -148,10 +148,6 @@
     <value>You have not set up your cloud shell account yet. Please go to https://shell.azure.com to set it up.</value>
     <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
   </data>
-  <data name="AzureInvalidUserSettings" xml:space="preserve">
-    <value>Your cloud shell account misses some mandatory settings. Please go to https://shell.azure.com to set it up.</value>
-    <comment>{Locked="https://shell.azure.com"} This URL should not be localized. Everything else should.</comment>
-  </data>
   <data name="AzureStorePrompt" xml:space="preserve">
     <value>Do you want to save these connection settings for future logins? [{0}/{1}]</value>
     <comment>{0} and {1} will be replaced with AzureUserEntry_Yes and AzureUserEntry_No. They are single-character shorthands for "yes" and "no" in this language.</comment>
@@ -189,16 +185,12 @@
     <comment>{0} is the tenant's number, which the user will enter to connect to the tenant. {1} is the tenant's display name, which will be meaningful for the user. {2} is the tenant's internal ID number.</comment>
   </data>
   <data name="AzureIthShell" xml:space="preserve">
-    <value>{0}: {1}{2}</value>
-    <comment>{0} is the shell's number, which the user will enter to choose the shell. {1} is the shells's display name, {2} are extra parameters that can be attached, e.g., AzurePreferredShell .</comment>
+    <value>{0}: {1}</value>
+    <comment>{0} is the shell's number, which the user will enter to choose the shell. {1} is the shells's display name, e.g., PowerShell.</comment>
   </data>
   <data name="AzureEnterShell" xml:space="preserve">
-    <value>Please enter the desired shell number or press Enter for default.</value>
-    <comment>Precedes AzureIthShell.</comment>
-  </data>
-  <data name="AzurePreferredShell" xml:space="preserve">
-    <value> (default)</value>
-    <comment>will be concatenated to the name of the shell when building AzureIthShell.</comment>
+    <value>Please enter the desired shell number. To avoid this prompt in the future, please go to https://shell.azure.com and set up a default shell.</value>
+    <comment>{Locked="https://shell.azure.com"}. This URL should not be localized. The entire message will be shown after listing all available shells (AzureIthShell) when no default shell is configured.</comment>
   </data>
   <data name="AzureSuccessfullyAuthenticated" xml:space="preserve">
     <value>Authenticated.</value>
