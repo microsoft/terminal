@@ -1983,16 +1983,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * SwapChainPanel().CompositionScaleX());
 
-        const std::wstring originalActualFontName{_actualFont.GetFaceName()};
-
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 
-        // If the actual font isn't what we had last time...
-        // and the actual font isn't what was requested...
-        if (_actualFont.GetFaceName() != originalActualFontName &&
-            _actualFont.GetFaceName() != _desiredFont.GetFaceName())
+        // If the actual font isn't what was requested...
+        if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
         {
             // Then warn the user that we picked something because we couldn't find their font.
 
