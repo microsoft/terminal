@@ -68,6 +68,11 @@ struct Shell
     }
 };
 
+static const std::array<Shell, 2> AvailableShells = {
+    Shell{ L"pwsh", L"PowerShell" },
+    Shell{ L"bash", L"Bash" }
+};
+
 static inline std::wstring _formatShell(const size_t shellNumber, const Shell& shell)
 {
     return fmt::format(std::wstring_view{ RS_(L"AzureIthShell") },
@@ -1026,19 +1031,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // created with old versions of cloud console API.
     std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
     {
-        if (!settingsResponse.has_object_field(L"properties"))
+        if (settingsResponse.has_object_field(L"properties"))
         {
-            return std::nullopt;
+            const auto userSettings = settingsResponse.at(L"properties");
+            if (userSettings.has_string_field(L"preferredShellType"))
+            {
+                const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
+                return preferredShellTypeValue.as_string();
+            }
         }
 
-        const auto userSettings = settingsResponse.at(L"properties");
-        if (!userSettings.has_string_field(L"preferredShellType"))
-        {
-            return std::nullopt;
-        }
-
-        const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
-        return std::optional(preferredShellTypeValue.as_string());
+        return std::nullopt;
     }
 
     // Method description:
@@ -1047,14 +1050,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // and expects a numeric input corresponding to the shell of choice.
     std::optional<utility::string_t> AzureConnection::_ReadShellTypeFromUserInput()
     {
-        const Shell shells[] = {
-            { L"pwsh", L"PowerShell" },
-            { L"bash", L"Bash" }
-        };
-
-        for (size_t i = 0; i < ARRAYSIZE(shells); i++)
+        for (size_t i = 0; i < AvailableShells.size(); i++)
         {
-            _WriteStringWithNewline(_formatShell(i, gsl::at(shells, i)));
+            _WriteStringWithNewline(_formatShell(i, AvailableShells.at(i)));
         }
         _WriteStringWithNewline(RS_(L"AzureEnterShell"));
 
@@ -1069,13 +1067,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             try
             {
                 const auto selectedShellNumber = std::stoi(shellSelection.value());
-                if (selectedShellNumber < 0 || selectedShellNumber >= ARRAYSIZE(shells))
+                if (selectedShellNumber < 0 || selectedShellNumber >= AvailableShells.size())
                 {
                     _WriteStringWithNewline(RS_(L"AzureNumOutOfBoundsError"));
                     continue; // go 'round again
                 }
 
-                return std::optional(gsl::at(shells, selectedShellNumber).ID);
+                return std::optional(AvailableShells.at(selectedShellNumber).ID);
             }
             catch (...)
             {
