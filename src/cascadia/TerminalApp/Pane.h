@@ -190,7 +190,7 @@ private:
 
     // Method Description
     // - Exactly the same as the above DirectionMatchesSplit, but for FocusDirection instead of Resize
-    // - Uused for moving focus between panes, which again happens _across_ a separator.
+    // - Used for moving focus between panes, which again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
     // - splitType: The winrt::TerminalApp::SplitState to compare
