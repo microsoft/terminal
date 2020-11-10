@@ -43,6 +43,7 @@ namespace Microsoft.Terminal.Settings.Model
         SetTabColor,
         OpenTabColorPicker,
         RenameTab,
+        OpenTabRenamer,
         ExecuteCommandline,
         ToggleCommandPalette,
         CloseOtherTabs,

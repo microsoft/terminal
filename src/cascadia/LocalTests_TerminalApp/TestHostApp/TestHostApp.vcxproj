@@ -127,7 +127,12 @@
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 
-  <Target Name="AfterBuild">
+  <ItemGroup>
+    <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" />
+    <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll" />
+  </ItemGroup>
+
+  <Target Name="AfterBuild" Inputs="@(TestDll)" Outputs="@(TestDll->'$(TargetDir)'\%(Filename)%(Extension)')">
 
     <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
       don't roll these up automatically, so we'll need to copy them manually
@@ -151,18 +156,18 @@
       directory when it tries to clean up after itself. -->
     <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\TestHostAppXManifest.xml" />
 
-    <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
-    <Copy SourceFiles="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll"
-          DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
-
-    <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
-    <Copy SourceFiles="$(OpenConsoleCommonOutDir)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll"
-          DestinationFiles="$(TargetDir)\SettingsModel.LocalTests.dll" />
+    <!-- Copy all test code -->
+    <Copy SourceFiles="@(TestDll)"
+          DestinationFolder="$(TargetDir)"
+          UseHardLinksIfPossible="true"
+          SkipUnchangedFiles="true" />
 
     <!-- Copy some dlls which TerminalConnection is dependent upon that didn't
       get rolled up into this  directory -->
     <Copy SourceFiles="@(TerminalConnectionDlls)"
-          DestinationFiles="@(TerminalConnectionDlls->'$(TargetDir)\%(Filename).dll')" />
+          DestinationFolder="$(TargetDir)"
+          UseHardLinksIfPossible="true"
+          SkipUnchangedFiles="true" />
 
   </Target>
 </Project>

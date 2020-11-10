@@ -2191,6 +2191,7 @@ Statusline
 stdafx
 STDAPI
 stdcall
+stdcpp
 stderr
 stdexcept
 stdin
@@ -2276,6 +2277,7 @@ tcome
 tcommandline
 tcommands
 tcon
+TDelegated
 TDP
 TEAMPROJECT
 tearoff
@@ -2824,5 +2826,9 @@ zsh
 zu
 zxcvbnm
 zy
+AAAAABBBBBBCCC
+AAAAA
+BBBBBCCC
+abcd
 LPMINMAXINFO
 MINMAXINFO

@@ -139,7 +139,7 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
         THROW_IF_FAILED(jumplistItems->Clear());
 
         // Update the list of profiles.
-        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), strongSettings.Profiles().GetView()));
+        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), strongSettings.ActiveProfiles().GetView()));
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.

@@ -3,6 +3,8 @@
 
 import "IDirectKeyListener.idl";
 import "ShortcutActionDispatch.idl";
+import "HighlightedTextControl.idl";
+import "FilteredCommand.idl";
 
 namespace TerminalApp
 {
@@ -16,10 +18,10 @@ namespace TerminalApp
         String ControlName { get; };
         String ParentCommandName { get; };
 
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.Command> FilteredActions { get; };
+        Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
-        void SetTabActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> tabs);
+        void SetTabActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> tabs, Boolean clearList);
         void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
         void EnableCommandPaletteMode();
 

@@ -323,6 +323,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     resultPtr->_ParseJsonString(DefaultJson, true);
     resultPtr->LayerJson(resultPtr->_defaultSettings);
     resultPtr->_ResolveDefaultProfile();
+    resultPtr->_UpdateActiveProfiles();
 
     return *resultPtr;
 }
@@ -369,7 +370,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
                     // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
                     profile.Source(generatorNamespace);
 
-                    _profiles.Append(profile);
+                    _allProfiles.Append(profile);
                 }
             }
             CATCH_LOG_MSG("Dynamic Profile Namespace: \"%ls\"", generatorNamespace.data());
@@ -517,7 +518,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
     bool changedFile = false;
 
-    for (const auto& profile : _profiles)
+    for (const auto& profile : _allProfiles)
     {
         // Skip profiles that are in the user settings or the default settings.
         if (isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
@@ -626,7 +627,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
     auto profileIndex{ _FindMatchingProfileIndex(profileJson) };
     if (profileIndex)
     {
-        auto parentProj{ _profiles.GetAt(*profileIndex) };
+        auto parentProj{ _allProfiles.GetAt(*profileIndex) };
         auto parent{ winrt::get_self<Profile>(parentProj) };
 
         if (_userDefaultProfileSettings)
@@ -643,7 +644,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             childImpl->LayerJson(profileJson);
 
             // replace parent in _profiles with child
-            _profiles.SetAt(*profileIndex, *childImpl);
+            _allProfiles.SetAt(*profileIndex, *childImpl);
         }
     }
     else
@@ -663,7 +664,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             }
 
             profile->LayerJson(profileJson);
-            _profiles.Append(*profile);
+            _allProfiles.Append(*profile);
         }
     }
 }
@@ -684,7 +685,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_FindMatchingProfile(const Json::Value
     auto index{ _FindMatchingProfileIndex(profileJson) };
     if (index)
     {
-        auto profile{ _profiles.GetAt(*index) };
+        auto profile{ _allProfiles.GetAt(*index) };
         auto profileImpl{ winrt::get_self<Profile>(profile) };
         return profileImpl->get_strong();
     }
@@ -703,9 +704,9 @@ winrt::com_ptr<Profile> CascadiaSettings::_FindMatchingProfile(const Json::Value
 // - The index for the matching Profile, iff it exists. Otherwise, nullopt.
 std::optional<uint32_t> CascadiaSettings::_FindMatchingProfileIndex(const Json::Value& profileJson)
 {
-    for (uint32_t i = 0; i < _profiles.Size(); ++i)
+    for (uint32_t i = 0; i < _allProfiles.Size(); ++i)
     {
-        const auto profile{ _profiles.GetAt(i) };
+        const auto profile{ _allProfiles.GetAt(i) };
         const auto profileImpl = winrt::get_self<Profile>(profile);
         if (profileImpl->ShouldBeLayered(profileJson))
         {
@@ -750,11 +751,11 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         _userDefaultProfileSettings = winrt::make_self<Profile>();
         _userDefaultProfileSettings->LayerJson(defaultSettings);
 
-        const auto numOfProfiles{ _profiles.Size() };
+        const auto numOfProfiles{ _allProfiles.Size() };
         for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
         {
             // create a child, so we inherit from the defaults.json layer
-            auto parentProj{ _profiles.GetAt(profileIndex) };
+            auto parentProj{ _allProfiles.GetAt(profileIndex) };
             auto parentImpl{ winrt::get_self<Profile>(parentProj) };
             auto childImpl{ parentImpl->CreateChild() };
 
@@ -762,7 +763,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
             childImpl->InsertParent(0, _userDefaultProfileSettings);
 
             // replace parent in _profiles with child
-            _profiles.SetAt(profileIndex, *childImpl);
+            _allProfiles.SetAt(profileIndex, *childImpl);
         }
     }
 }

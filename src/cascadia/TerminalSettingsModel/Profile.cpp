@@ -59,7 +59,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 
-static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
+static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
 Profile::Profile()
 {
@@ -293,10 +293,10 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
 
     // Core Settings
-    _Foreground.set = JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground.setting);
-    _Background.set = JsonUtils::GetValueForKey(json, BackgroundKey, _Background.setting);
-    _SelectionBackground.set = JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting);
-    _CursorColor.set = JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor.setting);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -320,18 +320,11 @@ void Profile::LayerJson(const Json::Value& json)
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
+    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
 
-    // StartingDirectory is "nullable". But we represent a null starting directory as the empty string
-    // When null is set in the JSON, we empty initialize startDir (empty string), and set StartingDirectory to that
-    // Without this, we're accidentally setting StartingDirectory to nullopt instead.
-    hstring startDir;
-    if (JsonUtils::GetValueForKey(json, StartingDirectoryKey, startDir))
-    {
-        _StartingDirectory = startDir;
-    }
+    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
@@ -341,7 +334,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    _TabColor.set = JsonUtils::GetValueForKey(json, TabColorKey, _TabColor.setting);
+    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 }
@@ -362,7 +355,7 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     }
     // checks if the user would like to copy their desktop wallpaper
     // if so, replaces the path with the desktop wallpaper's path
-    else if (path == to_hstring(DesktopWallpaperEnum))
+    else if (path == DesktopWallpaperEnum)
     {
         WCHAR desktopWallpaper[MAX_PATH];
 

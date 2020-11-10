@@ -21,8 +21,8 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
-
   <ItemDefinitionGroup>
+
     <ClCompile>
       <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
       on being compiled with RTTI (/GR). -->
@@ -54,6 +54,9 @@
     <Page Include="TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="HighlightedTextControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ColorPickupFlyout.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -70,6 +73,12 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TabBase.h">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalTab.h">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -80,12 +89,17 @@
     <ClInclude Include="TabRowControl.h">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="HighlightedTextControl.h">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+    </ClInclude>
+	<ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="CommandPalette.h">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
@@ -94,9 +108,6 @@
     </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Tab.h">
-      <DependentUpon>Tab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
@@ -127,6 +138,12 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TabBase.cpp">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalTab.cpp">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -137,12 +154,17 @@
     <ClCompile Include="TabRowControl.cpp">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="HighlightedTextControl.cpp">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+    </ClCompile>
+	<ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="CommandPalette.cpp">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
@@ -151,9 +173,6 @@
     </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="Tab.cpp">
-      <DependentUpon>Tab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
@@ -197,6 +216,8 @@
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="TabBase.idl" />
+    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -209,6 +230,11 @@
       <DependentUpon>TabRowControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="HighlightedTextControl.idl">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+	<Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -217,10 +243,10 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="IconPathConverter.idl" />
-    <Midl Include="Tab.idl" />
     <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->

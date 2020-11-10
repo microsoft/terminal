@@ -83,6 +83,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestCopy);
         TEST_METHOD(TestCloneInheritanceTree);
 
+        TEST_METHOD(TestValidDefaults);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -247,8 +249,8 @@ namespace SettingsModelLocalTests
             settings->_ResolveDefaultProfile();
             settings->_ValidateDefaultProfileExists();
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.Size());
-            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_profiles.GetAt(0).Guid());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_allProfiles.GetAt(0).Guid());
         }
         {
             // Case 2: Bad settings
@@ -261,8 +263,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.Size());
             VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.GetAt(0));
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_profiles.GetAt(0).Guid());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_allProfiles.GetAt(0).Guid());
         }
         {
             // Case 2: Bad settings
@@ -275,8 +277,8 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.Size());
             VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.GetAt(0));
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_profiles.GetAt(0).Guid());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_allProfiles.GetAt(0).Guid());
         }
         {
             // Case 4: Good settings, default profile is a string
@@ -287,8 +289,8 @@ namespace SettingsModelLocalTests
             settings->_ResolveDefaultProfile();
             settings->_ValidateDefaultProfileExists();
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.Size());
-            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_profiles.GetAt(1).Guid());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_allProfiles.GetAt(1).Guid());
         }
     }
 
@@ -376,13 +378,13 @@ namespace SettingsModelLocalTests
                 L"Testing a pair of profiles with unique guids"));
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_profiles.Append(profile0);
-            settings->_profiles.Append(profile1);
+            settings->_allProfiles.Append(profile0);
+            settings->_allProfiles.Append(profile1);
 
             settings->_ValidateNoDuplicateProfiles();
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.Size());
-            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.Size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_allProfiles.Size());
         }
         {
             // Case 2: Bad settings
@@ -390,16 +392,16 @@ namespace SettingsModelLocalTests
                 L"Testing a pair of profiles with the same guid"));
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_profiles.Append(profile2);
-            settings->_profiles.Append(profile3);
+            settings->_allProfiles.Append(profile2);
+            settings->_allProfiles.Append(profile3);
 
             settings->_ValidateNoDuplicateProfiles();
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.Size());
             VERIFY_ARE_EQUAL(SettingsLoadWarnings::DuplicateProfile, settings->_warnings.GetAt(0));
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
         }
         {
             // Case 3: Very bad settings
@@ -407,24 +409,24 @@ namespace SettingsModelLocalTests
                 L"Testing a set of profiles, many of which with duplicated guids"));
 
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
-            settings->_profiles.Append(profile0);
-            settings->_profiles.Append(profile1);
-            settings->_profiles.Append(profile2);
-            settings->_profiles.Append(profile3);
-            settings->_profiles.Append(profile4);
-            settings->_profiles.Append(profile5);
-            settings->_profiles.Append(profile6);
+            settings->_allProfiles.Append(profile0);
+            settings->_allProfiles.Append(profile1);
+            settings->_allProfiles.Append(profile2);
+            settings->_allProfiles.Append(profile3);
+            settings->_allProfiles.Append(profile4);
+            settings->_allProfiles.Append(profile5);
+            settings->_allProfiles.Append(profile6);
 
             settings->_ValidateNoDuplicateProfiles();
 
             VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.Size());
             VERIFY_ARE_EQUAL(SettingsLoadWarnings::DuplicateProfile, settings->_warnings.GetAt(0));
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(4), settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(2).Name());
-            VERIFY_ARE_EQUAL(L"profile6", settings->_profiles.GetAt(3).Name());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(4), settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(2).Name());
+            VERIFY_ARE_EQUAL(L"profile6", settings->_allProfiles.GetAt(3).Name());
         }
     }
 
@@ -459,8 +461,8 @@ namespace SettingsModelLocalTests
         const auto settingsObject = VerifyParseSucceeded(badProfiles);
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
-        settings->_profiles.Append(profile4);
-        settings->_profiles.Append(profile5);
+        settings->_allProfiles.Append(profile4);
+        settings->_allProfiles.Append(profile5);
 
         settings->_ValidateSettings();
 
@@ -469,11 +471,11 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.GetAt(1));
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::UnknownColorScheme, settings->_warnings.GetAt(2));
 
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
-        VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_profiles.GetAt(0).Guid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
+        VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), settings->_allProfiles.GetAt(0).Guid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
     }
 
     void DeserializationTests::LayerGlobalProperties()
@@ -564,20 +566,20 @@ namespace SettingsModelLocalTests
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
             settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(1).Name());
 
             settings->_ParseJsonString(userProfiles0String, false);
             settings->LayerJson(settings->_userSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(1).Name());
 
             settings->_ReorderProfilesToMatchUserSettingsOrder();
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(1).Name());
         }
 
         {
@@ -587,22 +589,22 @@ namespace SettingsModelLocalTests
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
             settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(1).Name());
 
             settings->_ParseJsonString(userProfiles1String, false);
             settings->LayerJson(settings->_userSettings);
-            VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(L"profile5", settings->_profiles.GetAt(2).Name());
+            VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(L"profile5", settings->_allProfiles.GetAt(2).Name());
 
             settings->_ReorderProfilesToMatchUserSettingsOrder();
-            VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile5", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(2).Name());
+            VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile5", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(2).Name());
         }
     }
 
@@ -665,56 +667,58 @@ namespace SettingsModelLocalTests
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
             settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(0).Hidden());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(1).Hidden());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(0).Hidden());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(1).Hidden());
 
             settings->_ParseJsonString(userProfiles0String, false);
             settings->LayerJson(settings->_userSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(0).Hidden());
-            VERIFY_ARE_EQUAL(true, settings->_profiles.GetAt(1).Hidden());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(0).Hidden());
+            VERIFY_ARE_EQUAL(true, settings->_allProfiles.GetAt(1).Hidden());
 
             settings->_ReorderProfilesToMatchUserSettingsOrder();
-            settings->_RemoveHiddenProfiles();
-            VERIFY_ARE_EQUAL(1u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(0).Hidden());
+            settings->_UpdateActiveProfiles();
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(1u, settings->_activeProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile1", settings->_activeProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(false, settings->_activeProfiles.GetAt(0).Hidden());
         }
 
         {
             auto settings = winrt::make_self<implementation::CascadiaSettings>();
             settings->_ParseJsonString(defaultProfilesString, true);
             settings->LayerJson(settings->_defaultSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile3", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(0).Hidden());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(1).Hidden());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(0).Hidden());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(1).Hidden());
 
             settings->_ParseJsonString(userProfiles1String, false);
             settings->LayerJson(settings->_userSettings);
-            VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(L"profile5", settings->_profiles.GetAt(2).Name());
-            VERIFY_ARE_EQUAL(L"profile6", settings->_profiles.GetAt(3).Name());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(0).Hidden());
-            VERIFY_ARE_EQUAL(true, settings->_profiles.GetAt(1).Hidden());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(2).Hidden());
-            VERIFY_ARE_EQUAL(true, settings->_profiles.GetAt(3).Hidden());
+            VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(L"profile5", settings->_allProfiles.GetAt(2).Name());
+            VERIFY_ARE_EQUAL(L"profile6", settings->_allProfiles.GetAt(3).Name());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(0).Hidden());
+            VERIFY_ARE_EQUAL(true, settings->_allProfiles.GetAt(1).Hidden());
+            VERIFY_ARE_EQUAL(false, settings->_allProfiles.GetAt(2).Hidden());
+            VERIFY_ARE_EQUAL(true, settings->_allProfiles.GetAt(3).Hidden());
 
             settings->_ReorderProfilesToMatchUserSettingsOrder();
-            settings->_RemoveHiddenProfiles();
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-            VERIFY_ARE_EQUAL(L"profile5", settings->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"profile2", settings->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(0).Hidden());
-            VERIFY_ARE_EQUAL(false, settings->_profiles.GetAt(1).Hidden());
+            settings->_UpdateActiveProfiles();
+            VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(2u, settings->_activeProfiles.Size());
+            VERIFY_ARE_EQUAL(L"profile5", settings->_activeProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"profile2", settings->_activeProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(false, settings->_activeProfiles.GetAt(0).Hidden());
+            VERIFY_ARE_EQUAL(false, settings->_activeProfiles.GetAt(1).Hidden());
         }
     }
 
@@ -776,41 +780,40 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_profiles.Append(*profile0);
-        settings->_profiles.Append(*profile1);
-        settings->_profiles.Append(*profile2);
-        settings->_profiles.Append(*profile3);
-        settings->_profiles.Append(*profile4);
-        settings->_profiles.Append(*profile5);
+        settings->_allProfiles.Append(*profile0);
+        settings->_allProfiles.Append(*profile1);
+        settings->_allProfiles.Append(*profile2);
+        settings->_allProfiles.Append(*profile3);
+        settings->_allProfiles.Append(*profile4);
+        settings->_allProfiles.Append(*profile5);
 
-        settings->_ValidateProfilesHaveGuid();
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(4).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(5).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(4).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(5).HasGuid());
 
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(0).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(1).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(2).Guid(), nullGuid);
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(3).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(4).Guid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(5).Guid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(0).Guid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(1).Guid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(2).Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(3).Guid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(4).Guid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(5).Guid(), nullGuid);
 
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(0).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(1).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(2).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(3).Guid(), cmdGuid);
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(4).Guid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(5).Guid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(0).Guid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(1).Guid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(2).Guid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(3).Guid(), cmdGuid);
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(4).Guid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(5).Guid(), cmdGuid);
 
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(0).Guid(), settings->_profiles.GetAt(2).Guid());
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(1).Guid(), settings->_profiles.GetAt(2).Guid());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(2).Guid(), settings->_profiles.GetAt(2).Guid());
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(3).Guid(), settings->_profiles.GetAt(2).Guid());
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(4).Guid(), settings->_profiles.GetAt(2).Guid());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(5).Guid(), settings->_profiles.GetAt(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(0).Guid(), settings->_allProfiles.GetAt(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(1).Guid(), settings->_allProfiles.GetAt(2).Guid());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(2).Guid(), settings->_allProfiles.GetAt(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(3).Guid(), settings->_allProfiles.GetAt(2).Guid());
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(4).Guid(), settings->_allProfiles.GetAt(2).Guid());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(5).Guid(), settings->_allProfiles.GetAt(2).Guid());
     }
 
     void DeserializationTests::GeneratedGuidRoundtrips()
@@ -835,18 +838,17 @@ namespace SettingsModelLocalTests
         VERIFY_IS_TRUE(profile1->HasGuid());
 
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
-        settings->_profiles.Append(*profile1);
-        settings->_ValidateProfilesHaveGuid();
+        settings->_allProfiles.Append(*profile1);
 
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
 
-        const auto profileImpl = winrt::get_self<implementation::Profile>(settings->_profiles.GetAt(0));
+        const auto profileImpl = winrt::get_self<implementation::Profile>(settings->_allProfiles.GetAt(0));
         const auto serialized1Profile = profileImpl->GenerateStub();
 
         const auto profile2 = implementation::Profile::FromJson(serialized1Profile);
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
         VERIFY_IS_TRUE(profile2->HasGuid());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Guid(), profile2->Guid());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(0).Guid(), profile2->Guid());
     }
 
     void DeserializationTests::TestAllValidationsWithNullGuids()
@@ -874,15 +876,15 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
-        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).HasGuid());
+        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
 
         settings->_ValidateSettings();
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
+        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
     }
 
     void DeserializationTests::TestReorderWithNullGuids()
@@ -910,36 +912,36 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
-        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
 
         settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
-        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(3).Name());
 
         settings->_ValidateSettings();
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(3).Name());
     }
 
     void DeserializationTests::TestReorderingWithoutGuid()
@@ -1011,36 +1013,36 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
-        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
 
         settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
-        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"Ubuntu", settings->_profiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"Ubuntu", settings->_allProfiles.GetAt(3).Name());
 
         settings->_ValidateSettings();
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"Ubuntu", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"Ubuntu", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(3).Name());
     }
 
     void DeserializationTests::TestLayeringNameOnlyProfiles()
@@ -1072,28 +1074,28 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
-        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
 
         Log::Comment(NoThrowString().Format(
             L"Parse the user settings"));
         settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
-        VERIFY_ARE_EQUAL(5u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(4).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotLayer", settings->_profiles.GetAt(3).Name());
-        VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_profiles.GetAt(4).Name());
+        VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(4).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotLayer", settings->_allProfiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_allProfiles.GetAt(4).Name());
     }
 
     void DeserializationTests::TestExplodingNameOnlyProfiles()
@@ -1125,28 +1127,28 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(DefaultJson, true);
         settings->LayerJson(settings->_defaultSettings);
-        VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
 
         Log::Comment(NoThrowString().Format(
             L"Parse the user settings"));
         settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
-        VERIFY_ARE_EQUAL(5u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(4).HasGuid());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings->_profiles.GetAt(3).Name());
-        VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_profiles.GetAt(4).Name());
+        VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(4).HasGuid());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings->_allProfiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_allProfiles.GetAt(4).Name());
 
         Log::Comment(NoThrowString().Format(
             L"Pretend like we're checking to append dynamic profiles to the "
@@ -1163,40 +1165,40 @@ namespace SettingsModelLocalTests
             auto settings2 = winrt::make_self<implementation::CascadiaSettings>();
             settings2->_ParseJsonString(DefaultJson, true);
             settings2->LayerJson(settings2->_defaultSettings);
-            VERIFY_ARE_EQUAL(2u, settings2->_profiles.Size());
+            VERIFY_ARE_EQUAL(2u, settings2->_allProfiles.Size());
             // Initialize the second settings object from the first settings
             // object's settings string, the one that we synthesized.
             const auto firstSettingsString = settings->_userSettingsString;
             settings2->_ParseJsonString(firstSettingsString, false);
             settings2->LayerJson(settings2->_userSettings);
-            VERIFY_ARE_EQUAL(5u, settings2->_profiles.Size());
-            VERIFY_IS_TRUE(settings2->_profiles.GetAt(0).HasGuid());
-            VERIFY_IS_TRUE(settings2->_profiles.GetAt(1).HasGuid());
-            VERIFY_IS_TRUE(settings2->_profiles.GetAt(2).HasGuid());
-            VERIFY_IS_FALSE(settings2->_profiles.GetAt(3).HasGuid());
-            VERIFY_IS_FALSE(settings2->_profiles.GetAt(4).HasGuid());
-            VERIFY_ARE_EQUAL(L"Windows PowerShell", settings2->_profiles.GetAt(0).Name());
-            VERIFY_ARE_EQUAL(L"Command Prompt", settings2->_profiles.GetAt(1).Name());
-            VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings2->_profiles.GetAt(2).Name());
-            VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings2->_profiles.GetAt(3).Name());
-            VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings2->_profiles.GetAt(4).Name());
+            VERIFY_ARE_EQUAL(5u, settings2->_allProfiles.Size());
+            VERIFY_IS_TRUE(settings2->_allProfiles.GetAt(0).HasGuid());
+            VERIFY_IS_TRUE(settings2->_allProfiles.GetAt(1).HasGuid());
+            VERIFY_IS_TRUE(settings2->_allProfiles.GetAt(2).HasGuid());
+            VERIFY_IS_FALSE(settings2->_allProfiles.GetAt(3).HasGuid());
+            VERIFY_IS_FALSE(settings2->_allProfiles.GetAt(4).HasGuid());
+            VERIFY_ARE_EQUAL(L"Windows PowerShell", settings2->_allProfiles.GetAt(0).Name());
+            VERIFY_ARE_EQUAL(L"Command Prompt", settings2->_allProfiles.GetAt(1).Name());
+            VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings2->_allProfiles.GetAt(2).Name());
+            VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings2->_allProfiles.GetAt(3).Name());
+            VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings2->_allProfiles.GetAt(4).Name());
         }
 
         Log::Comment(NoThrowString().Format(
             L"Validate the settings. All the profiles we have should be valid."));
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(5u, settings->_profiles.Size());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).HasGuid());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(4).HasGuid());
-        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_profiles.GetAt(3).Name());
-        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_profiles.GetAt(4).Name());
+        VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(4).HasGuid());
+        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings->_allProfiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(4).Name());
     }
 
     void DeserializationTests::TestHideAllProfiles()
@@ -1238,10 +1240,11 @@ namespace SettingsModelLocalTests
             settings->_ParseJsonString(settingsWithProfiles, false);
             settings->LayerJson(settings->_userSettings);
 
-            settings->_RemoveHiddenProfiles();
+            settings->_UpdateActiveProfiles();
             Log::Comment(NoThrowString().Format(
                 L"settingsWithProfiles successfully parsed and validated"));
-            VERIFY_ARE_EQUAL(1u, settings->_profiles.Size());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
+            VERIFY_ARE_EQUAL(1u, settings->_activeProfiles.Size());
         }
         {
             // Case 2: Bad settings
@@ -1252,7 +1255,7 @@ namespace SettingsModelLocalTests
             bool caughtExpectedException = false;
             try
             {
-                settings->_RemoveHiddenProfiles();
+                settings->_UpdateActiveProfiles();
             }
             catch (const implementation::SettingsException& ex)
             {
@@ -1302,24 +1305,24 @@ namespace SettingsModelLocalTests
         settings->_ParseJsonString(settings0String, false);
         settings->LayerJson(settings->_userSettings);
 
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-        VERIFY_ARE_EQUAL(L"schemeOne", settings->_profiles.GetAt(0).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings->_profiles.GetAt(1).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_profiles.GetAt(2).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings->_allProfiles.GetAt(1).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
 
         settings->_ValidateAllSchemesExist();
 
         VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(SettingsLoadWarnings::UnknownColorScheme, settings->_warnings.GetAt(0));
 
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
         VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
 
-        VERIFY_ARE_EQUAL(L"schemeOne", settings->_profiles.GetAt(0).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_profiles.GetAt(1).ColorSchemeName());
-        VERIFY_ARE_EQUAL(L"Campbell", settings->_profiles.GetAt(2).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).ColorSchemeName());
+        VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
     }
 
     void DeserializationTests::TestHelperFunctions()
@@ -1402,19 +1405,19 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_NOT_EQUAL(0u, settings->_profiles.Size());
-        VERIFY_ARE_EQUAL(expectedPath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
+        VERIFY_ARE_NOT_EQUAL(0u, settings->_allProfiles.Size());
+        VERIFY_ARE_EQUAL(expectedPath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
     {
-        const winrt::hstring expectedBackgroundImagePath{ winrt::to_hstring("DesktopWallpaper") };
+        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
 
         const std::string settingsJson{ R"(
         {
             "profiles": [
                 {
                     "name": "profile0",
-                    "backgroundImage": "DesktopWallpaper"
+                    "backgroundImage": "desktopWallpaper"
                 }
             ]
         })" };
@@ -1424,8 +1427,8 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_profiles.GetAt(0).BackgroundImagePath());
-        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_profiles.GetAt(0).ExpandedBackgroundImagePath());
+        VERIFY_ARE_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).BackgroundImagePath());
+        VERIFY_ARE_NOT_EQUAL(expectedBackgroundImagePath, settings->_allProfiles.GetAt(0).ExpandedBackgroundImagePath());
     }
     void DeserializationTests::TestCloseOnExitParsing()
     {
@@ -1456,12 +1459,12 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_profiles.GetAt(0).CloseOnExit());
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Always, settings->_profiles.GetAt(1).CloseOnExit());
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->_profiles.GetAt(2).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_allProfiles.GetAt(0).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Always, settings->_allProfiles.GetAt(1).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->_allProfiles.GetAt(2).CloseOnExit());
 
         // Unknown modes parse as "Graceful"
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_profiles.GetAt(3).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_allProfiles.GetAt(3).CloseOnExit());
     }
     void DeserializationTests::TestCloseOnExitCompatibilityShim()
     {
@@ -1484,8 +1487,8 @@ namespace SettingsModelLocalTests
         auto settings = winrt::make_self<implementation::CascadiaSettings>();
         settings->_ParseJsonString(settingsJson, false);
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_profiles.GetAt(0).CloseOnExit());
-        VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->_profiles.GetAt(1).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Graceful, settings->_allProfiles.GetAt(0).CloseOnExit());
+        VERIFY_ARE_EQUAL(CloseOnExitMode::Never, settings->_allProfiles.GetAt(1).CloseOnExit());
     }
 
     void DeserializationTests::TestLayerUserDefaultsBeforeProfiles()
@@ -1529,10 +1532,10 @@ namespace SettingsModelLocalTests
             settings->LayerJson(settings->_userSettings);
 
             VERIFY_ARE_EQUAL(guid1String, settings->_globals->UnparsedDefaultProfile());
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
 
-            VERIFY_ARE_EQUAL(2345, settings->_profiles.GetAt(0).HistorySize());
-            VERIFY_ARE_EQUAL(1234, settings->_profiles.GetAt(1).HistorySize());
+            VERIFY_ARE_EQUAL(2345, settings->_allProfiles.GetAt(0).HistorySize());
+            VERIFY_ARE_EQUAL(1234, settings->_allProfiles.GetAt(1).HistorySize());
         }
     }
 
@@ -1572,7 +1575,7 @@ namespace SettingsModelLocalTests
             auto settings = winrt::make_self<implementation::CascadiaSettings>(false);
             settings->_ParseJsonString(DefaultJson, true);
             settings->LayerJson(settings->_defaultSettings);
-            VERIFY_ARE_EQUAL(2u, settings->_profiles.Size());
+            VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
 
             settings->_ParseJsonString(settings0String, false);
             VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
@@ -1581,16 +1584,16 @@ namespace SettingsModelLocalTests
 
             Log::Comment(NoThrowString().Format(
                 L"Ensure that cmd and powershell don't get their GUIDs overwritten"));
-            VERIFY_ARE_NOT_EQUAL(guid2, settings->_profiles.GetAt(0).Guid());
-            VERIFY_ARE_NOT_EQUAL(guid2, settings->_profiles.GetAt(1).Guid());
+            VERIFY_ARE_NOT_EQUAL(guid2, settings->_allProfiles.GetAt(0).Guid());
+            VERIFY_ARE_NOT_EQUAL(guid2, settings->_allProfiles.GetAt(1).Guid());
 
             settings->LayerJson(settings->_userSettings);
 
             VERIFY_ARE_EQUAL(guid1String, settings->_globals->UnparsedDefaultProfile());
-            VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
+            VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
 
-            VERIFY_ARE_EQUAL(guid1, settings->_profiles.GetAt(2).Guid());
-            VERIFY_IS_FALSE(settings->_profiles.GetAt(3).HasGuid());
+            VERIFY_ARE_EQUAL(guid1, settings->_allProfiles.GetAt(2).Guid());
+            VERIFY_IS_FALSE(settings->_allProfiles.GetAt(3).HasGuid());
         }
     }
 
@@ -1616,18 +1619,18 @@ namespace SettingsModelLocalTests
                 },
                 "list": [
                     {
-                        "name" : "profile0FromUserSettings", // this is _profiles.GetAt(0)
+                        "name" : "profile0FromUserSettings", // this is _allProfiles.GetAt(0)
                         "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
                         "source": "Terminal.App.UnitTest.0"
                     },
                     {
-                        "name" : "profile1FromUserSettings", // this is _profiles.GetAt(2)
+                        "name" : "profile1FromUserSettings", // this is _allProfiles.GetAt(2)
                         "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
                         "source": "Terminal.App.UnitTest.1",
                         "historySize": 4444
                     },
                     {
-                        "name" : "profile2FromUserSettings", // this is _profiles.GetAt(3)
+                        "name" : "profile2FromUserSettings", // this is _allProfiles.GetAt(3)
                         "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
                         "historySize": 5555
                     }
@@ -1639,7 +1642,7 @@ namespace SettingsModelLocalTests
         gen0->pfnGenerate = [guid1, guid2]() {
             std::vector<Profile> profiles;
             Profile p0 = winrt::make<implementation::Profile>(guid1);
-            p0.Name(L"profile0"); // this is _profiles.GetAt(0)
+            p0.Name(L"profile0"); // this is _allProfiles.GetAt(0)
             p0.HistorySize(1111);
             profiles.push_back(p0);
             return profiles;
@@ -1649,8 +1652,8 @@ namespace SettingsModelLocalTests
             std::vector<Profile> profiles;
             Profile p0 = winrt::make<implementation::Profile>(guid1);
             Profile p1 = winrt::make<implementation::Profile>(guid2);
-            p0.Name(L"profile0"); // this is _profiles.GetAt(1)
-            p1.Name(L"profile1"); // this is _profiles.GetAt(2)
+            p0.Name(L"profile0"); // this is _allProfiles.GetAt(1)
+            p1.Name(L"profile1"); // this is _allProfiles.GetAt(2)
             p0.HistorySize(2222);
             profiles.push_back(p0);
             p1.HistorySize(3333);
@@ -1668,40 +1671,40 @@ namespace SettingsModelLocalTests
 
         // parse userProfiles as the user settings
         settings->_ParseJsonString(userProfiles, false);
-        VERIFY_ARE_EQUAL(0u, settings->_profiles.Size(), L"Just parsing the user settings doesn't actually layer them");
+        VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size(), L"Just parsing the user settings doesn't actually layer them");
         settings->_LoadDynamicProfiles();
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
-        VERIFY_ARE_EQUAL(1111, settings->_profiles.GetAt(0).HistorySize());
-        VERIFY_ARE_EQUAL(2222, settings->_profiles.GetAt(1).HistorySize());
-        VERIFY_ARE_EQUAL(3333, settings->_profiles.GetAt(2).HistorySize());
+        VERIFY_ARE_EQUAL(1111, settings->_allProfiles.GetAt(0).HistorySize());
+        VERIFY_ARE_EQUAL(2222, settings->_allProfiles.GetAt(1).HistorySize());
+        VERIFY_ARE_EQUAL(3333, settings->_allProfiles.GetAt(2).HistorySize());
 
         settings->_ApplyDefaultsFromUserSettings();
 
-        VERIFY_ARE_EQUAL(1234, settings->_profiles.GetAt(0).HistorySize());
-        VERIFY_ARE_EQUAL(1234, settings->_profiles.GetAt(1).HistorySize());
-        VERIFY_ARE_EQUAL(1234, settings->_profiles.GetAt(2).HistorySize());
+        VERIFY_ARE_EQUAL(1234, settings->_allProfiles.GetAt(0).HistorySize());
+        VERIFY_ARE_EQUAL(1234, settings->_allProfiles.GetAt(1).HistorySize());
+        VERIFY_ARE_EQUAL(1234, settings->_allProfiles.GetAt(2).HistorySize());
 
         settings->LayerJson(settings->_userSettings);
-        VERIFY_ARE_EQUAL(4u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
 
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(0).Source().empty());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(1).Source().empty());
-        VERIFY_IS_FALSE(settings->_profiles.GetAt(2).Source().empty());
-        VERIFY_IS_TRUE(settings->_profiles.GetAt(3).Source().empty());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(0).Source().empty());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).Source().empty());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(2).Source().empty());
+        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).Source().empty());
 
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings->_profiles.GetAt(0).Source());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(1).Source());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_profiles.GetAt(2).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings->_allProfiles.GetAt(0).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_allProfiles.GetAt(1).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->_allProfiles.GetAt(2).Source());
 
-        VERIFY_ARE_EQUAL(guid1, settings->_profiles.GetAt(0).Guid());
-        VERIFY_ARE_EQUAL(guid1, settings->_profiles.GetAt(1).Guid());
-        VERIFY_ARE_EQUAL(guid2, settings->_profiles.GetAt(2).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings->_allProfiles.GetAt(0).Guid());
+        VERIFY_ARE_EQUAL(guid1, settings->_allProfiles.GetAt(1).Guid());
+        VERIFY_ARE_EQUAL(guid2, settings->_allProfiles.GetAt(2).Guid());
 
-        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings->_profiles.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings->_profiles.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings->_allProfiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings->_allProfiles.GetAt(3).Name());
 
         Log::Comment(NoThrowString().Format(
             L"This is the real meat of the test: The two dynamic profiles that "
@@ -1709,10 +1712,10 @@ namespace SettingsModelLocalTests
             L"1234 as their historySize(from the defaultSettings).The other two"
             L" profiles should have their custom historySize value."));
 
-        VERIFY_ARE_EQUAL(1234, settings->_profiles.GetAt(0).HistorySize());
-        VERIFY_ARE_EQUAL(1234, settings->_profiles.GetAt(1).HistorySize());
-        VERIFY_ARE_EQUAL(4444, settings->_profiles.GetAt(2).HistorySize());
-        VERIFY_ARE_EQUAL(5555, settings->_profiles.GetAt(3).HistorySize());
+        VERIFY_ARE_EQUAL(1234, settings->_allProfiles.GetAt(0).HistorySize());
+        VERIFY_ARE_EQUAL(1234, settings->_allProfiles.GetAt(1).HistorySize());
+        VERIFY_ARE_EQUAL(4444, settings->_allProfiles.GetAt(2).HistorySize());
+        VERIFY_ARE_EQUAL(5555, settings->_allProfiles.GetAt(3).HistorySize());
     }
 
     void DeserializationTests::FindMissingProfile()
@@ -1955,9 +1958,9 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
-        const auto profile2Guid = settings->_profiles.GetAt(2).Guid();
+        const auto profile2Guid = settings->_allProfiles.GetAt(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
         auto keymap = winrt::get_self<implementation::KeyMapping>(settings->_globals->KeyMap());
@@ -2163,7 +2166,7 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
         auto commands = settings->_globals->Commands();
         settings->_ValidateSettings();
@@ -2240,7 +2243,7 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
         auto commands = settings->_globals->Commands();
         settings->_ValidateSettings();
@@ -2324,7 +2327,7 @@ namespace SettingsModelLocalTests
         settings->LayerJson(settings->_userSettings);
 
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
-        VERIFY_ARE_EQUAL(3u, settings->_profiles.Size());
+        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
 
         auto commands = settings->_globals->Commands();
         settings->_ValidateSettings();
@@ -2415,7 +2418,7 @@ namespace SettingsModelLocalTests
             [
                 { "command": "openSettings", "keys": "ctrl+," },
                 { "command": { "action": "openSettings", "target": "defaultsFile" }, "keys": "ctrl+alt+," },
-        
+
                 {
                     "name": { "key": "SetColorSchemeParentCommandName" },
                     "commands": [
@@ -2443,8 +2446,8 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), copyImpl->_globals->DefaultProfile());
 
         // test profiles
-        VERIFY_ARE_EQUAL(settings->_profiles.Size(), copyImpl->_profiles.Size());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Name(), copyImpl->_profiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.Size(), copyImpl->_allProfiles.Size());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(0).Name(), copyImpl->_allProfiles.GetAt(0).Name());
 
         // test schemes
         const auto schemeName{ L"Campbell, but for a test" };
@@ -2502,10 +2505,10 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(settings->_globals->DefaultProfile(), copyImpl->_globals->DefaultProfile());
 
         // test profiles
-        VERIFY_ARE_EQUAL(settings->_profiles.Size(), copyImpl->_profiles.Size());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Name(), copyImpl->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(1).Name(), copyImpl->_profiles.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(2).Name(), copyImpl->_profiles.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.Size(), copyImpl->_allProfiles.Size());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(0).Name(), copyImpl->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(1).Name(), copyImpl->_allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(2).Name(), copyImpl->_allProfiles.GetAt(2).Name());
         VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings->Name(), copyImpl->_userDefaultProfileSettings->Name());
 
         // Modifying profile.defaults should...
@@ -2513,12 +2516,12 @@ namespace SettingsModelLocalTests
         copyImpl->_userDefaultProfileSettings->Name(L"changed value");
 
         // ...keep the same name for the first two profiles
-        VERIFY_ARE_EQUAL(settings->_profiles.Size(), copyImpl->_profiles.Size());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(0).Name(), copyImpl->_profiles.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(settings->_profiles.GetAt(1).Name(), copyImpl->_profiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.Size(), copyImpl->_allProfiles.Size());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(0).Name(), copyImpl->_allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(settings->_allProfiles.GetAt(1).Name(), copyImpl->_allProfiles.GetAt(1).Name());
 
         // ...but change the name for the one that inherited it from profile.defaults
-        VERIFY_ARE_NOT_EQUAL(settings->_profiles.GetAt(2).Name(), copyImpl->_profiles.GetAt(2).Name());
+        VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(2).Name(), copyImpl->_allProfiles.GetAt(2).Name());
 
         // profile.defaults should be different between the two graphs
         VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings->HasName(), copyImpl->_userDefaultProfileSettings->HasName());
@@ -2569,17 +2572,26 @@ namespace SettingsModelLocalTests
             VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
             VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings, copyImpl->_userDefaultProfileSettings);
 
-            VERIFY_ARE_EQUAL(settings->Profiles().Size(), 1u);
-            VERIFY_ARE_EQUAL(settings->Profiles().Size(), copyImpl->Profiles().Size());
+            VERIFY_ARE_EQUAL(settings->ActiveProfiles().Size(), 1u);
+            VERIFY_ARE_EQUAL(settings->ActiveProfiles().Size(), copyImpl->ActiveProfiles().Size());
 
             // so we should only have one parent, instead of two
-            auto srcProfile{ winrt::get_self<implementation::Profile>(settings->Profiles().GetAt(0)) };
-            auto copyProfile{ winrt::get_self<implementation::Profile>(copyImpl->Profiles().GetAt(0)) };
+            auto srcProfile{ winrt::get_self<implementation::Profile>(settings->ActiveProfiles().GetAt(0)) };
+            auto copyProfile{ winrt::get_self<implementation::Profile>(copyImpl->ActiveProfiles().GetAt(0)) };
             VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 0u);
             VERIFY_ARE_EQUAL(srcProfile->Parents().size(), copyProfile->Parents().size());
         };
 
         verifyEmptyPD(emptyPDJson);
         verifyEmptyPD(missingPDJson);
+    }
+
+    void DeserializationTests::TestValidDefaults()
+    {
+        // GH#8146: A LoadDefaults call should populate the list of active profiles
+
+        const auto settings{ CascadiaSettings::LoadDefaults() };
+        VERIFY_ARE_EQUAL(settings.ActiveProfiles().Size(), settings.AllProfiles().Size());
+        VERIFY_ARE_EQUAL(settings.AllProfiles().Size(), 2u);
     }
 }

@@ -45,7 +45,8 @@ CascadiaSettings::CascadiaSettings() :
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
 CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _globals{ winrt::make_self<implementation::GlobalAppSettings>() },
-    _profiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
+    _allProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
+    _activeProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
     _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
     _deserializationErrorMessage{ L"" }
 {
@@ -99,7 +100,7 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
     //  we now have a root. So we'll do just that, then copy the inheritance graph
     //  from the dummyRoot.
     auto dummyRootSource{ winrt::make_self<Profile>() };
-    for (const auto& profile : _profiles)
+    for (const auto& profile : _allProfiles)
     {
         winrt::com_ptr<Profile> profileImpl;
         profileImpl.copy_from(winrt::get_self<Profile>(profile));
@@ -124,7 +125,11 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
     const auto cloneParents{ dummyRootClone->Parents() };
     for (const auto& profile : cloneParents)
     {
-        cloneSettings->_profiles.Append(*profile);
+        cloneSettings->_allProfiles.Append(*profile);
+        if (!profile->Hidden())
+        {
+            cloneSettings->_activeProfiles.Append(*profile);
+        }
     }
 }
 
@@ -139,7 +144,7 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
 winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfile(winrt::guid profileGuid) const noexcept
 {
     const winrt::guid guid{ profileGuid };
-    for (auto profile : _profiles)
+    for (const auto& profile : _allProfiles)
     {
         try
         {
@@ -159,9 +164,20 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfi
 // - <none>
 // Return Value:
 // - an iterable collection of all of our Profiles.
-IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> CascadiaSettings::Profiles() const noexcept
+IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> CascadiaSettings::AllProfiles() const noexcept
 {
-    return _profiles;
+    return _allProfiles;
+}
+
+// Method Description:
+// - Returns an iterable collection of all of our non-hidden Profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - an iterable collection of all of our Profiles.
+IObservableVector<winrt::Microsoft::Terminal::Settings::Model::Profile> CascadiaSettings::ActiveProfiles() const noexcept
+{
+    return _activeProfiles;
 }
 
 // Method Description:
@@ -242,7 +258,7 @@ void CascadiaSettings::_ValidateSettings()
 
     // Remove hidden profiles _after_ re-ordering. The re-ordering uses the raw
     // json, and will get confused if the profile isn't in the list.
-    _RemoveHiddenProfiles();
+    _UpdateActiveProfiles();
 
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
@@ -279,7 +295,7 @@ void CascadiaSettings::_ValidateSettings()
 //   profiles at all, we'll throw an error if there aren't any profiles.
 void CascadiaSettings::_ValidateProfilesExist()
 {
-    const bool hasProfiles = _profiles.Size() > 0;
+    const bool hasProfiles = _allProfiles.Size() > 0;
     if (!hasProfiles)
     {
         // Throw an exception. This is an invalid state, and we want the app to
@@ -298,7 +314,7 @@ void CascadiaSettings::_ValidateProfilesExist()
 //   temporary runtime GUID for it. This validation does not add any warnings.
 void CascadiaSettings::_ValidateProfilesHaveGuid()
 {
-    for (auto profile : _profiles)
+    for (auto profile : _allProfiles)
     {
         auto profileImpl = winrt::get_self<implementation::Profile>(profile);
         profileImpl->GenerateGuidIfNecessary();
@@ -331,7 +347,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
     const winrt::guid defaultProfileGuid{ GlobalSettings().DefaultProfile() };
     const bool nullDefaultProfile = defaultProfileGuid == winrt::guid{};
     bool defaultProfileNotInProfiles = true;
-    for (const auto& profile : _profiles)
+    for (const auto& profile : _allProfiles)
     {
         if (profile.Guid() == defaultProfileGuid)
         {
@@ -347,7 +363,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
         // _temporarily_ set the default profile to the first profile. Because
         // we're adding a warning, this settings change won't be re-serialized.
-        GlobalSettings().DefaultProfile(_profiles.GetAt(0).Guid());
+        GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
     }
 }
 
@@ -367,9 +383,9 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     // Try collecting all the unique guids. If we ever encounter a guid that's
     // already in the set, then we need to delete that profile.
-    for (uint32_t i = 0; i < _profiles.Size(); i++)
+    for (uint32_t i = 0; i < _allProfiles.Size(); i++)
     {
-        if (!uniqueGuids.insert(_profiles.GetAt(i).Guid()).second)
+        if (!uniqueGuids.insert(_allProfiles.GetAt(i).Guid()).second)
         {
             foundDupe = true;
             indicesToDelete.push_back(i);
@@ -380,7 +396,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
     // Walk backwards, so we don't accidentally shift any of the elements
     for (auto iter = indicesToDelete.rbegin(); iter != indicesToDelete.rend(); iter++)
     {
-        _profiles.RemoveAt(*iter);
+        _allProfiles.RemoveAt(*iter);
     }
 
     if (foundDupe)
@@ -423,7 +439,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
     // Push all the defaultSettings profiles' GUIDS into the set
     collectGuids(_defaultSettings);
     std::equal_to<winrt::guid> equals;
-    // Re-order the list of _profiles to match that ordering
+    // Re-order the list of profiles to match that ordering
     // for (gIndex=0 -> uniqueGuids.size)
     //   pIndex = the pIndex of the profile with guid==guids[gIndex]
     //   profiles.swap(pIndex <-> gIndex)
@@ -431,14 +447,14 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
     for (uint32_t gIndex = 0; gIndex < guidOrder.size(); gIndex++)
     {
         const auto guid = guidOrder.at(gIndex);
-        for (uint32_t pIndex = gIndex; pIndex < _profiles.Size(); pIndex++)
+        for (uint32_t pIndex = gIndex; pIndex < _allProfiles.Size(); pIndex++)
         {
-            auto profileGuid = _profiles.GetAt(pIndex).Guid();
+            auto profileGuid = _allProfiles.GetAt(pIndex).Guid();
             if (equals(profileGuid, guid))
             {
-                auto prof1 = _profiles.GetAt(pIndex);
-                _profiles.SetAt(pIndex, _profiles.GetAt(gIndex));
-                _profiles.SetAt(gIndex, prof1);
+                auto prof1 = _allProfiles.GetAt(pIndex);
+                _allProfiles.SetAt(pIndex, _allProfiles.GetAt(gIndex));
+                _allProfiles.SetAt(gIndex, prof1);
                 break;
             }
         }
@@ -446,30 +462,27 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 }
 
 // Method Description:
-// - Removes any profiles marked "hidden" from the list of profiles.
+// - Updates the list of active profiles from the list of all profiles
+// - If there are no active profiles (all profiles are hidden), throw a SettingsException
 // - Does not set any warnings.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_RemoveHiddenProfiles()
+void CascadiaSettings::_UpdateActiveProfiles()
 {
-    for (uint32_t i = 0; i < _profiles.Size();)
+    _activeProfiles.Clear();
+    for (auto const& profile : _allProfiles)
     {
-        if (_profiles.GetAt(i).Hidden())
+        if (!profile.Hidden())
         {
-            // remove hidden profile, don't increment 'i'
-            _profiles.RemoveAt(i);
-        }
-        else
-        {
-            ++i;
+            _activeProfiles.Append(profile);
         }
     }
 
     // Ensure that we still have some profiles here. If we don't, then throw an
     // exception, so the app can use the defaults.
-    const bool hasProfiles = _profiles.Size() > 0;
+    const bool hasProfiles = _activeProfiles.Size() > 0;
     if (!hasProfiles)
     {
         // Throw an exception. This is an invalid state, and we want the app to
@@ -491,7 +504,7 @@ void CascadiaSettings::_RemoveHiddenProfiles()
 void CascadiaSettings::_ValidateAllSchemesExist()
 {
     bool foundInvalidScheme = false;
-    for (auto profile : _profiles)
+    for (auto profile : _allProfiles)
     {
         const auto schemeName = profile.ColorSchemeName();
         if (!_globals->ColorSchemes().HasKey(schemeName))
@@ -523,7 +536,7 @@ void CascadiaSettings::_ValidateMediaResources()
     bool invalidBackground{ false };
     bool invalidIcon{ false };
 
-    for (auto profile : _profiles)
+    for (auto profile : _allProfiles)
     {
         if (!profile.BackgroundImagePath().empty())
         {
@@ -635,7 +648,7 @@ try
         // Here, we were unable to use the profile string as a GUID to
         // lookup a profile. Instead, try using the string to look the
         // Profile up by name.
-        for (auto profile : _profiles)
+        for (auto profile : _allProfiles)
         {
             if (profile.Name() == name)
             {
@@ -669,9 +682,9 @@ std::optional<winrt::guid> CascadiaSettings::_GetProfileGuidByIndex(std::optiona
         const auto realIndex{ index.value() };
         // If we don't have that many profiles, then do nothing.
         if (realIndex >= 0 &&
-            realIndex < gsl::narrow_cast<decltype(realIndex)>(_profiles.Size()))
+            realIndex < gsl::narrow_cast<decltype(realIndex)>(_activeProfiles.Size()))
         {
-            const auto& selectedProfile = _profiles.GetAt(realIndex);
+            const auto& selectedProfile = _activeProfiles.GetAt(realIndex);
             return selectedProfile.Guid();
         }
     }
