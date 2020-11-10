@@ -258,6 +258,13 @@ using namespace Microsoft::Console::Render;
 // - S_OK or suitable GDI HRESULT error.
 [[nodiscard]] HRESULT GdiEngine::PaintBackground() noexcept
 {
+    // We need to clear the cursorInvertRects at the start of a paint cycle so
+    // we don't inadvertently retain the invert region from the last paint after
+    // the cursor is hidden. If we don't, the ScrollFrame method may attempt to
+    // clean up a cursor that is no longer there, and instead leave a bunch of
+    // "ghost" cursor instances on the screen.
+    cursorInvertRects.clear();
+
     if (_psInvalidData.fErase)
     {
         RETURN_IF_FAILED(_PaintBackgroundColor(&_psInvalidData.rcPaint));

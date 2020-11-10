@@ -83,6 +83,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestCopy);
         TEST_METHOD(TestCloneInheritanceTree);
 
+        TEST_METHOD(TestValidDefaults);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1408,14 +1410,14 @@ namespace SettingsModelLocalTests
     }
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
     {
-        const winrt::hstring expectedBackgroundImagePath{ winrt::to_hstring("DesktopWallpaper") };
+        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
 
         const std::string settingsJson{ R"(
         {
             "profiles": [
                 {
                     "name": "profile0",
-                    "backgroundImage": "DesktopWallpaper"
+                    "backgroundImage": "desktopWallpaper"
                 }
             ]
         })" };
@@ -2582,5 +2584,14 @@ namespace SettingsModelLocalTests
 
         verifyEmptyPD(emptyPDJson);
         verifyEmptyPD(missingPDJson);
+    }
+
+    void DeserializationTests::TestValidDefaults()
+    {
+        // GH#8146: A LoadDefaults call should populate the list of active profiles
+
+        const auto settings{ CascadiaSettings::LoadDefaults() };
+        VERIFY_ARE_EQUAL(settings.ActiveProfiles().Size(), settings.AllProfiles().Size());
+        VERIFY_ARE_EQUAL(settings.AllProfiles().Size(), 2u);
     }
 }

@@ -130,21 +130,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        auto activeTab = _GetFocusedTab();
-
-        // Don't do anything if there's only one pane. It's already zoomed.
-        if (activeTab && activeTab->GetLeafPaneCount() > 1)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            // First thing's first, remove the current content from the UI
-            // tree. This is important, because we might be leaving zoom, and if
-            // a pane is zoomed, then it's currently in the UI tree, and should
-            // be removed before it's re-added in Pane::Restore
-            _tabContent.Children().Clear();
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            {
+                // Don't do anything if there's only one pane. It's already zoomed.
+                if (activeTab && activeTab->GetLeafPaneCount() > 1)
+                {
+                    // First thing's first, remove the current content from the UI
+                    // tree. This is important, because we might be leaving zoom, and if
+                    // a pane is zoomed, then it's currently in the UI tree, and should
+                    // be removed before it's re-added in Pane::Restore
+                    _tabContent.Children().Clear();
 
-            // Togging the zoom on the tab will cause the tab to inform us of
-            // the new root Content for this tab.
-            activeTab->ToggleZoom();
+                    // Togging the zoom on the tab will cause the tab to inform us of
+                    // the new root Content for this tab.
+                    activeTab->ToggleZoom();
+                }
+            }
         }
+
         args.Handled(true);
     }
 
@@ -323,16 +328,19 @@ namespace winrt::TerminalApp::implementation
         args.Handled(false);
         if (const auto& realArgs = args.ActionArgs().try_as<SetColorSchemeArgs>())
         {
-            if (auto activeTab = _GetFocusedTab())
+            if (auto focusedTab = _GetFocusedTab())
             {
-                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                if (auto activeTab = _GetTerminalTabImpl(focusedTab))
                 {
-                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
+                    if (auto activeControl = activeTab->GetActiveTerminalControl())
                     {
-                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings->ApplyColorScheme(scheme);
-                        activeControl.UpdateSettings(*controlSettings);
-                        args.Handled(true);
+                        if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
+                        {
+                            auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                            controlSettings->ApplyColorScheme(scheme);
+                            activeControl.UpdateSettings(*controlSettings);
+                            args.Handled(true);
+                        }
                     }
                 }
             }
@@ -352,16 +360,18 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            if (tabColor.has_value())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                activeTab->SetRuntimeTabColor(tabColor.value());
-            }
-            else
-            {
-                activeTab->ResetRuntimeTabColor();
+                if (tabColor.has_value())
+                {
+                    activeTab->SetRuntimeTabColor(tabColor.value());
+                }
+                else
+                {
+                    activeTab->ResetRuntimeTabColor();
+                }
             }
         }
         args.Handled(true);
@@ -370,10 +380,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& args)
     {
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            activeTab->ActivateColorPicker();
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            {
+                activeTab->ActivateColorPicker();
+            }
         }
         args.Handled(true);
     }
@@ -388,16 +400,18 @@ namespace winrt::TerminalApp::implementation
             title = realArgs.Title();
         }
 
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            if (title.has_value())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                activeTab->SetTabText(title.value());
-            }
-            else
-            {
-                activeTab->ResetTabText();
+                if (title.has_value())
+                {
+                    activeTab->SetTabText(title.value());
+                }
+                else
+                {
+                    activeTab->ResetTabText();
+                }
             }
         }
         args.Handled(true);
@@ -406,10 +420,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabRenamer(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            activeTab->ActivateTabRenamer();
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            {
+                activeTab->ActivateTabRenamer();
+            }
         }
         args.Handled(true);
     }
@@ -508,12 +524,7 @@ namespace winrt::TerminalApp::implementation
                                             const ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        auto tabCommands = winrt::single_threaded_vector<Command>();
-        for (const auto& tab : _tabs)
-        {
-            tabCommands.Append(tab.SwitchToTabCommand());
-        }
-        CommandPalette().SetTabActions(tabCommands);
+        _UpdatePaletteWithInOrderTabs();
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
