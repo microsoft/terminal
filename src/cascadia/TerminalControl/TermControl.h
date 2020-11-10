@@ -86,7 +86,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public NoticeEventArgsT<NoticeEventArgs>
     {
     public:
-        NoticeEventArgs(NoticeLevel level, hstring message) :
+        NoticeEventArgs(const NoticeLevel level, const hstring& message) :
             _level(level),
             _message(message) {}
 

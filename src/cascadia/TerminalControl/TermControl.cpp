@@ -1997,14 +1997,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Capture what we need to resume later.
             [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
+
+                // Take these out of the lambda and store them locally
+                // because the coroutine will lose them into space
+                // by the time it resumes.
+                const auto msg = message;
+                const auto strong = strongThis;
+
                 // Pop the rest of this function to the tail of the UI thread
                 // Just in case someone was holding a lock when they called us and
                 // the handlers decide to do something that take another lock
                 // (like ShellExecute pumping our messaging thread...GH#7994)
-                co_await strongThis->Dispatcher();
+                co_await strong->Dispatcher();
 
-                auto noticeArgs = winrt::make_self<NoticeEventArgs>(NoticeLevel::Warning, message);
-                strongThis->_raiseNoticeHandlers(*strongThis, *noticeArgs);
+                auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(msg));
+                strong->_raiseNoticeHandlers(*strong, std::move(noticeArgs));
             }();
         }
 
