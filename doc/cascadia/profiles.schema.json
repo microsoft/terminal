@@ -27,11 +27,30 @@
       "type": "string"
     },
     "BellStyle": {
-      "enum": [
-        "none",
-        "audible"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "audible",
+              "visual"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "audible",
+            "visual",
+            "all",
+            "none"
+          ]
+        }
+      ]
     },
     "ProfileGuid": {
       "default": "{}",
@@ -800,7 +819,7 @@
         },
         "bellStyle": {
           "default": "audible",
-          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound and flash the taskbar icon. An array of specific behaviors can also be used. Supported array values include `audible` and `visual`. When set to \"none\", nothing will happen.",
           "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {

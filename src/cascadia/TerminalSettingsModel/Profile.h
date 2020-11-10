@@ -117,7 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
         GETSET_SETTING(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
 
-        GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
+        GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::All);
 
     private:
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };

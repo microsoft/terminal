@@ -166,6 +166,7 @@ void AppHost::Initialize()
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
+    _logic.FlashTaskbar({ this, &AppHost::_FlashTaskbar });
 
     _logic.Create();
 
@@ -377,6 +378,17 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
                                   const winrt::Windows::Foundation::IInspectable&)
 {
     _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
+}
+
+// Method Description
+// - Called when the app wants to flash the taskbar, indicating to the user that
+//   something needs their attention
+// Arguments
+// - <unused>
+void AppHost::_FlashTaskbar(const winrt::Windows::Foundation::IInspectable&,
+                            const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->FlashTaskbar();
 }
 
 // Method Description:
