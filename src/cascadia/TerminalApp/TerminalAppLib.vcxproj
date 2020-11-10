@@ -21,8 +21,8 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
-
   <ItemDefinitionGroup>
+
     <ClCompile>
       <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
       on being compiled with RTTI (/GR). -->
@@ -52,6 +52,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TabRowControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="HighlightedTextControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ColorPickupFlyout.xaml">
@@ -86,12 +89,17 @@
     <ClInclude Include="TabRowControl.h">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="HighlightedTextControl.h">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+    </ClInclude>
+	<ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="CommandPalette.h">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
@@ -146,12 +154,17 @@
     <ClCompile Include="TabRowControl.cpp">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="HighlightedTextControl.cpp">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+    </ClCompile>
+	<ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="CommandPalette.cpp">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
@@ -217,6 +230,11 @@
       <DependentUpon>TabRowControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="HighlightedTextControl.idl">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+	<Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -225,6 +243,7 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="IconPathConverter.idl" />
