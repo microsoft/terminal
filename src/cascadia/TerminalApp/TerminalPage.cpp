@@ -608,8 +608,7 @@ namespace winrt::TerminalApp::implementation
         {
             // We set the tab color we got from terminal arguments
             // as runtime color so it won't be reset upon settings reload
-            til::color tabColor{ newTerminalArgs.TabColor().Value() };
-            _GetTerminalTabImpl(newTab)->SetRuntimeTabColor(tabColor);
+            _GetTerminalTabImpl(newTab)->SetRuntimeTabColor(newTerminalArgs.TabColor().Value());
         }
 
         const uint32_t tabCount = _tabs.Size();

@@ -54,7 +54,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Commandline;
         String StartingDirectory;
         String TabTitle;
-        Windows.Foundation.IReference<UInt32> TabColor;
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
@@ -131,7 +131,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
     {
-        Windows.Foundation.IReference<UInt32> TabColor { get; };
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
     [default_interface] runtimeclass RenameTabArgs : IActionArgs

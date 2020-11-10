@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(winrt::hstring, Commandline, L"");
         GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
         GETSET_PROPERTY(winrt::hstring, TabTitle, L"");
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         GETSET_PROPERTY(winrt::hstring, Profile, L"");
 
@@ -92,12 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, TabTitleKey, args->_TabTitle);
             JsonUtils::GetValueForKey(json, ProfileIndexKey, args->_ProfileIndex);
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
-
-            if (const auto tabColor{ JsonUtils::GetValueForKey<std::optional<til::color>>(json, TabColorKey) })
-            {
-                args->_TabColor = static_cast<uint32_t>(*tabColor);
-            }
-
+            JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             return *args;
         }
         Model::NewTerminalArgs Copy() const
@@ -503,7 +498,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
     {
         SetTabColorArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
 
         static constexpr std::string_view ColorKey{ "color" };
 
@@ -523,10 +518,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SetTabColorArgs>();
-            if (const auto temp{ JsonUtils::GetValueForKey<std::optional<til::color>>(json, ColorKey) })
-            {
-                args->_TabColor = static_cast<uint32_t>(*temp);
-            }
+            JsonUtils::GetValueForKey(json, ColorKey, args->_TabColor);
             return { *args, {} };
         }
         IActionArgs Copy() const

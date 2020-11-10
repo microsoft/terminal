@@ -59,7 +59,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (_TabColor)
         {
-            ss << fmt::format(L"tabColor: {}, ", _TabColor.Value());
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
         }
 
         auto s = ss.str();
@@ -306,10 +307,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // "Reset tab color"
         if (_TabColor)
         {
-            til::color c{ _TabColor.Value() };
+            til::color tabColor{ _TabColor.Value() };
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"SetTabColorCommandKey")),
-                            c.ToHexString(true))
+                            tabColor.ToHexString(true))
             };
         }
 

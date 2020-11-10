@@ -599,7 +599,7 @@ namespace TerminalAppLocalTests
         {
             AppCommandlineArgs appArgs{};
             std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--tabColor", L"#009999" };
-            const auto expectedColor = static_cast<uint32_t>(::Microsoft::Console::Utils::ColorFromHexString("#009999"));
+            const auto expectedColor = Microsoft::Console::Utils::ColorFromHexString("#009999");
 
             _buildCommandlinesHelper(appArgs, 1u, rawCommands);
 
@@ -615,7 +615,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs().TabColor());
-            VERIFY_ARE_EQUAL(myArgs.TerminalArgs().TabColor().Value(), expectedColor);
+            VERIFY_ARE_EQUAL(til::color(myArgs.TerminalArgs().TabColor().Value()), expectedColor);
             VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
         }
