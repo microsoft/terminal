@@ -259,7 +259,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _BackgroundColorChanged(const COLORREF color);
         bool _InitializeTerminal();
-        winrt::fire_and_forget _UpdateFont(const bool initialUpdate = false);
+        void _UpdateFont(const bool initialUpdate = false);
         void _SetFontSize(int fontSize);
         void _TappedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);

@@ -75,7 +75,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Uid="ControlNoticeDialog"
             DefaultButton="Primary">
             <TextBlock IsTextSelectionEnabled="True" TextWrapping="WrapWholeWords">
-                <Run x:Name="NoticeReason"/>
+                <Run x:Name="NoticeMessage"/>
             </TextBlock>
         </ContentDialog>
 

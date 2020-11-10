@@ -1955,7 +1955,7 @@ namespace winrt::TerminalApp::implementation
         _ShowControlNoticeDialog(title, message);
     }
 
-    void TerminalPage::_ShowControlNoticeDialog(winrt::hstring title, winrt::hstring message)
+    void TerminalPage::_ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message)
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
@@ -1964,8 +1964,8 @@ namespace winrt::TerminalApp::implementation
 
             ControlNoticeDialog().Title(winrt::box_value(title));
 
-            // Insert the reason and the URI
-            NoticeReason().Text(message);
+            // Insert the message
+            NoticeMessage().Text(message);
 
             // Show the dialog
             presenter.ShowDialog(controlNoticeDialog);

@@ -1979,7 +1979,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - initialUpdate: whether this font update should be considered as being
     //   concerned with initialization process. Value forwarded to event handler.
-    winrt::fire_and_forget TermControl::_UpdateFont(const bool initialUpdate)
+    void TermControl::_UpdateFont(const bool initialUpdate)
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) * SwapChainPanel().CompositionScaleX());
 
@@ -1992,20 +1992,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // Then warn the user that we picked something because we couldn't find their font.
 
-            // Save things we need to resume later.
-            auto strongThis{ get_strong() };
-
             // Format message with user's choice of font and the font that was chosen instead.
-            const winrt::hstring message { fmt::format(std::wstring_view(RS_(L"NoticeFontNotFound")), _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
+            const winrt::hstring message{ fmt::format(std::wstring_view{ RS_(L"NoticeFontNotFound") }, _desiredFont.GetFaceName(), _actualFont.GetFaceName()) };
 
-            // Pop the rest of this function to the tail of the UI thread
-            // Just in case someone was holding a lock when they called us and
-            // the handlers decide to do something that take another lock
-            // (like ShellExecute pumping our messaging thread...GH#7994)
-            co_await Dispatcher();
+            // Capture what we need to resume later.
+            [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
+                // Pop the rest of this function to the tail of the UI thread
+                // Just in case someone was holding a lock when they called us and
+                // the handlers decide to do something that take another lock
+                // (like ShellExecute pumping our messaging thread...GH#7994)
+                co_await strongThis->Dispatcher();
 
-            auto noticeArgs = winrt::make_self<NoticeEventArgs>(NoticeLevel::Warning, message);
-            _raiseNoticeHandlers(*strongThis, *noticeArgs);
+                auto noticeArgs = winrt::make_self<NoticeEventArgs>(NoticeLevel::Warning, message);
+                strongThis->_raiseNoticeHandlers(*strongThis, *noticeArgs);
+            }();
+
         }
 
         const auto actualNewSize = _actualFont.GetSize();
