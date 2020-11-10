@@ -513,9 +513,9 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 // - Flash the taskbar icon, indicating to the user that something needs their attention
 void IslandWindow::FlashTaskbar()
 {
-    // Using 'true' as the boolean argument ensures that the taskbar is
-    // flashed even if the app window is currently focused
-    FlashWindow(_window.get(), true);
+    // Using 'false' as the boolean argument ensures that the taskbar is
+    // only flashed if the app window is not focused
+    FlashWindow(_window.get(), false);
 }
 
 // From GdiEngine::s_SetWindowLongWHelper
