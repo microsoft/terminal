@@ -1190,22 +1190,27 @@ void Pane::_SetupEntranceAnimation()
             if (auto pane{ weakThis.lock() })
             {
                 auto child = isFirstChild ? pane->_firstChild : pane->_secondChild;
-                auto childGrid = child->_root;
-                if (auto control = child->_control)
+
+                // ensure the child was not release in meanwhile
+                if (child)
                 {
-                    if (splitWidth)
+                    auto childGrid = child->_root;
+                    if (auto control = child->_control)
                     {
-                        control.Width(NAN);
-                        childGrid.Width(NAN);
-                        childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                        control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                    }
-                    else
-                    {
-                        control.Height(NAN);
-                        childGrid.Height(NAN);
-                        childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                        control.VerticalAlignment(VerticalAlignment::Stretch);
+                        if (splitWidth)
+                        {
+                            control.Width(NAN);
+                            childGrid.Width(NAN);
+                            childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                            control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                        }
+                        else
+                        {
+                            control.Height(NAN);
+                            childGrid.Height(NAN);
+                            childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                            control.VerticalAlignment(VerticalAlignment::Stretch);
+                        }
                     }
                 }
             }
