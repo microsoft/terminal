@@ -3,8 +3,8 @@
 
 #include "pch.h"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
+#include <winrt/Microsoft.Terminal.Settings.Model.h>
 
 #include "NonClientIslandWindow.h"
 
@@ -17,7 +17,7 @@ public:
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
-    bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
+    bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
 private:
     bool _useNonClientArea;
@@ -28,7 +28,7 @@ private:
 
     void _HandleCommandlineArgs();
 
-    void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode);
+    void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::Windows::Foundation::IInspectable&,

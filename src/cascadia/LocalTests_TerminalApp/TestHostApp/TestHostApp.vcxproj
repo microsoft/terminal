@@ -2,6 +2,7 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A021EDFF-45C8-4DC2-BEF7-36E1B3B8CFE8}</ProjectGuid>
+    <ProjectName>TestHostApp</ProjectName>
     <RootNamespace>TestHostApp</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
@@ -14,7 +15,7 @@
     <OutputSubDir>Tests\Data</OutputSubDir>
     <UseWmXml>true</UseWmXml>
     <ConfigurationType>Application</ConfigurationType>
-    <NoOutputRedirection>true</NoOutputRedirection>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
 
     <!--
     These two properties are very important!
@@ -45,11 +46,11 @@
     "taef.png" is actually in the package. taef.png will get copied to the
     OutputPath when taef is run, but if this isn't set to false, then the CI
     will try and make sure taef.png is in the OutputPath at build time.-->
-  
+
   <PropertyGroup Label="UserMacros">
     <GenerateAppxPackageOnBuild>false</GenerateAppxPackageOnBuild>
   </PropertyGroup>
-  
+
   <ItemDefinitionGroup>
     <ClCompile>
       <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -94,27 +95,27 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Project>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj">
       <Project>{ca5cad1a-44bd-4ac7-ac72-f16e576fdd12}</Project>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
+      <Project>{CA5CAD1A-082C-4476-9F33-94B339494076}</Project>
     </ProjectReference>
 
   </ItemGroup>
 
   <PropertyGroup>
     <!-- Some helper paths to find our test code -->
-    <_TestBinRoot>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)</_TestBinRoot>
-    <_CppWinrtBinRoot>$(OpenConsoleDir)\$(Platform)\$(Configuration)</_CppWinrtBinRoot>
-    <_CppWinrtBinRoot Condition="'$(Platform)'=='Win32'">$(OpenConsoleDir)\$(Configuration)</_CppWinrtBinRoot>
     <_TAEFPlatformName>$(Platform)</_TAEFPlatformName>
     <_TAEFPlatformName Condition="'$(Platform)'=='Win32'">x86</_TAEFPlatformName>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
-      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.51.200127004\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <HintPath>$(OpenConsoleDir)\packages\Taef.Redist.Wlk.10.57.200731005-develop\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
 
       <!-- This path is _relative to the .winmd_ -->
@@ -126,7 +127,12 @@
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 
-  <Target Name="AfterBuild">
+  <ItemGroup>
+    <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" />
+    <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll" />
+  </ItemGroup>
+
+  <Target Name="AfterBuild" Inputs="@(TestDll)" Outputs="@(TestDll->'$(TargetDir)'\%(Filename)%(Extension)')">
 
     <!-- Use this to auto-find all the dll's that TerminalConnection produces. We
       don't roll these up automatically, so we'll need to copy them manually
@@ -142,7 +148,7 @@
       rules instead.
     -->
     <ItemGroup>
-        <TerminalConnectionDlls Include="$(_CppWinrtBinRoot)\TerminalConnection\*.dll"/>
+        <TerminalConnectionDlls Include="$(OpenConsoleCommonOutDir)\TerminalConnection\*.dll"/>
     </ItemGroup>
 
     <!-- Copy the AppxManifest.xml to another file, because when TAEF is
@@ -150,14 +156,18 @@
       directory when it tries to clean up after itself. -->
     <Copy SourceFiles="$(TargetDir)\AppxManifest.xml" DestinationFiles="$(TargetDir)\TestHostAppXManifest.xml" />
 
-    <!-- Copy our test code from LocalTests_TerminalApp into this directory -->
-    <Copy SourceFiles="$(_TestBinRoot)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll"
-          DestinationFiles="$(TargetDir)\TerminalApp.LocalTests.dll" />
+    <!-- Copy all test code -->
+    <Copy SourceFiles="@(TestDll)"
+          DestinationFolder="$(TargetDir)"
+          UseHardLinksIfPossible="true"
+          SkipUnchangedFiles="true" />
 
     <!-- Copy some dlls which TerminalConnection is dependent upon that didn't
       get rolled up into this  directory -->
     <Copy SourceFiles="@(TerminalConnectionDlls)"
-          DestinationFiles="@(TerminalConnectionDlls->'$(TargetDir)\%(Filename).dll')" />
+          DestinationFolder="$(TargetDir)"
+          UseHardLinksIfPossible="true"
+          SkipUnchangedFiles="true" />
 
   </Target>
 </Project>

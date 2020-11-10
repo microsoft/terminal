@@ -41,7 +41,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;

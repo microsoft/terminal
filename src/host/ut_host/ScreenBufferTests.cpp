@@ -9,7 +9,6 @@
 
 #include "globals.h"
 #include "screenInfo.hpp"
-
 #include "input.h"
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
@@ -210,6 +209,10 @@ class ScreenBufferTests
     TEST_METHOD(ScreenAlignmentPattern);
 
     TEST_METHOD(TestCursorIsOn);
+
+    TEST_METHOD(TestAddHyperlink);
+    TEST_METHOD(TestAddHyperlinkCustomId);
+    TEST_METHOD(TestAddHyperlinkCustomIdDifferentUri);
 
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
 
@@ -1403,7 +1406,7 @@ void ScreenBufferTests::VtNewlinePastViewport()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -1480,7 +1483,7 @@ void ScreenBufferTests::VtNewlinePastEndOfBuffer()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -1563,13 +1566,13 @@ void ScreenBufferTests::VtSetColorTable()
         L"Process some valid sequences for setting the table"));
 
     stateMachine.ProcessString(L"\x1b]4;0;rgb:1/1/1\x7");
-    VERIFY_ARE_EQUAL(RGB(1, 1, 1), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
 
     stateMachine.ProcessString(L"\x1b]4;1;rgb:1/23/1\x7");
-    VERIFY_ARE_EQUAL(RGB(1, 0x23, 1), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
 
     stateMachine.ProcessString(L"\x1b]4;2;rgb:1/23/12\x7");
-    VERIFY_ARE_EQUAL(RGB(1, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
 
     stateMachine.ProcessString(L"\x1b]4;3;rgb:12/23/12\x7");
     VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
@@ -1584,17 +1587,12 @@ void ScreenBufferTests::VtSetColorTable()
         L"Try a bunch of invalid sequences."));
     Log::Comment(NoThrowString().Format(
         L"First start by setting an entry to a known value to compare to."));
-    stateMachine.ProcessString(L"\x1b]4;5;rgb:9/9/9\x1b\\");
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:09/09/09\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
-
-    Log::Comment(NoThrowString().Format(
-        L"invalid: too many characters in a component"));
-    stateMachine.ProcessString(L"\x1b]4;5;rgb:111/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
@@ -2842,17 +2840,8 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
 
-    Log::Comment(L"Invalid Decimal Notation");
-    originalColor = newColor;
-    testColor = RGB(153, 102, 51);
-    stateMachine.ProcessString(L"\x1b]10;rgb:153/102/51\x1b\\");
-
-    newColor = gci.GetDefaultForegroundColor();
-    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
-    // it will, in fact leave the color the way it was
-    VERIFY_ARE_EQUAL(originalColor, newColor);
-
     Log::Comment(L"Invalid syntax");
+    originalColor = newColor;
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]10;99/66/33\x1b\\");
 
@@ -2896,17 +2885,8 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
 
-    Log::Comment(L"Invalid Decimal Notation");
-    originalColor = newColor;
-    testColor = RGB(153, 102, 51);
-    stateMachine.ProcessString(L"\x1b]11;rgb:153/102/51\x1b\\");
-
-    newColor = gci.GetDefaultBackgroundColor();
-    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
-    // it will, in fact leave the color the way it was
-    VERIFY_ARE_EQUAL(originalColor, newColor);
-
     Log::Comment(L"Invalid Syntax");
+    originalColor = newColor;
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]11;99/66/33\x1b\\");
 
@@ -3382,7 +3362,7 @@ void ScreenBufferTests::ScrollOperations()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3503,7 +3483,7 @@ void ScreenBufferTests::InsertChars()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3663,7 +3643,7 @@ void ScreenBufferTests::DeleteChars()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -3839,7 +3819,7 @@ void ScreenBufferTests::EraseTests()
     END_TEST_METHOD_PROPERTIES()
 
     DispatchTypes::EraseType eraseType;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", (int&)eraseType));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", (size_t&)eraseType));
     bool eraseScreen;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseScreen", eraseScreen));
 
@@ -3895,7 +3875,7 @@ void ScreenBufferTests::EraseTests()
     auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     fillAttr.SetCrossedOut(true);
     fillAttr.SetReverseVideo(true);
-    fillAttr.SetUnderline(true);
+    fillAttr.SetUnderlined(true);
     si.SetAttributes(fillAttr);
     // But note that the meta attributes are expected to be cleared.
     auto expectedFillAttr = fillAttr;
@@ -5016,15 +4996,19 @@ void ScreenBufferTests::TestExtendedTextAttributes()
         TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:underlined", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:doublyUnderlined", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
     END_TEST_METHOD_PROPERTIES()
 
-    bool bold, faint, italics, blink, invisible, crossedOut;
+    bool bold, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"underlined", underlined));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"doublyUnderlined", doublyUnderlined));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"crossedOut", crossedOut));
@@ -5054,6 +5038,16 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     {
         WI_SetFlag(expectedAttrs, ExtendedAttributes::Italics);
         vtSeq += L"\x1b[3m";
+    }
+    if (underlined)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Underlined);
+        vtSeq += L"\x1b[4m";
+    }
+    if (doublyUnderlined)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::DoublyUnderlined);
+        vtSeq += L"\x1b[21m";
     }
     if (blink)
     {
@@ -5120,6 +5114,13 @@ void ScreenBufferTests::TestExtendedTextAttributes()
         vtSeq = L"\x1b[23m";
         validate(expectedAttrs, vtSeq);
     }
+    if (underlined || doublyUnderlined)
+    {
+        // The two underlined attributes share the same reset sequence.
+        WI_ClearAllFlags(expectedAttrs, ExtendedAttributes::Underlined | ExtendedAttributes::DoublyUnderlined);
+        vtSeq = L"\x1b[24m";
+        validate(expectedAttrs, vtSeq);
+    }
     if (blink)
     {
         WI_ClearFlag(expectedAttrs, ExtendedAttributes::Blinking);
@@ -5157,6 +5158,8 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
         TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:faint", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:underlined", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:doublyUnderlined", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
         TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
@@ -5171,10 +5174,12 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     const int Use256Color = 2;
     const int UseRGBColor = 3;
 
-    bool bold, faint, italics, blink, invisible, crossedOut;
+    bool bold, faint, italics, underlined, doublyUnderlined, blink, invisible, crossedOut;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"faint", faint));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"underlined", underlined));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"doublyUnderlined", doublyUnderlined));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"crossedOut", crossedOut));
@@ -5206,8 +5211,18 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     }
     if (italics)
     {
-        expectedAttr.SetItalics(true);
+        expectedAttr.SetItalic(true);
         vtSeq += L"\x1b[3m";
+    }
+    if (underlined)
+    {
+        expectedAttr.SetUnderlined(true);
+        vtSeq += L"\x1b[4m";
+    }
+    if (doublyUnderlined)
+    {
+        expectedAttr.SetDoublyUnderlined(true);
+        vtSeq += L"\x1b[21m";
     }
     if (blink)
     {
@@ -5315,8 +5330,16 @@ void ScreenBufferTests::TestExtendedTextAttributesWithColors()
     }
     if (italics)
     {
-        expectedAttr.SetItalics(false);
+        expectedAttr.SetItalic(false);
         vtSeq = L"\x1b[23m";
+        validate(expectedAttr, vtSeq);
+    }
+    if (underlined || doublyUnderlined)
+    {
+        // The two underlined attributes share the same reset sequence.
+        expectedAttr.SetUnderlined(false);
+        expectedAttr.SetDoublyUnderlined(false);
+        vtSeq = L"\x1b[24m";
         validate(expectedAttr, vtSeq);
     }
     if (blink)
@@ -5789,7 +5812,7 @@ void ScreenBufferTests::ScreenAlignmentPattern()
     // Set the initial attributes.
     auto initialAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
     initialAttr.SetReverseVideo(true);
-    initialAttr.SetUnderline(true);
+    initialAttr.SetUnderlined(true);
     si.SetAttributes(initialAttr);
 
     // Set some margins.
@@ -5873,6 +5896,81 @@ void ScreenBufferTests::TestCursorIsOn()
     VERIFY_IS_TRUE(cursor.IsOn());
     VERIFY_IS_FALSE(cursor.IsBlinkingAllowed());
     VERIFY_IS_FALSE(cursor.IsVisible());
+}
+
+void ScreenBufferTests::TestAddHyperlink()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Process the opening osc 8 sequence with no custom id
+    stateMachine.ProcessString(L"\x1b]8;;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+
+    // Send any other text
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+
+    // Process the closing osc 8 sequences
+    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
+}
+
+void ScreenBufferTests::TestAddHyperlinkCustomId()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Process the opening osc 8 sequence with a custom id
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    // Send any other text
+    stateMachine.ProcessString(L"Hello World");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    // Process the closing osc 8 sequences
+    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
+}
+
+void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Process the opening osc 8 sequence with a custom id
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    const auto oldAttributes{ tbi.GetCurrentAttributes() };
+
+    // Send any other text
+    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"other.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"other.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    // This second URL should not change the URL of the original ID!
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(oldAttributes.GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_NOT_EQUAL(oldAttributes.GetHyperlinkId(), tbi.GetCurrentAttributes().GetHyperlinkId());
 }
 
 void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()

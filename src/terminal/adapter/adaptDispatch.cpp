@@ -584,6 +584,8 @@ bool AdaptDispatch::EraseCharacters(const size_t numChars)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
+    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::Scrollback);
+
     // First things first. If this is a "Scrollback" clear, then just do that.
     // Scrollback clears erase everything in the "scrollback" of a *nix terminal
     //      Everything that's scrolled off the screen so far.
@@ -681,6 +683,8 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 {
+    RETURN_BOOL_IF_FALSE(eraseType <= DispatchTypes::EraseType::All);
+
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     bool success = _pConApi->GetConsoleScreenBufferInfoEx(csbiex);
@@ -770,6 +774,40 @@ bool AdaptDispatch::Vt52DeviceAttributes()
 }
 
 // Routine Description:
+// - DECREQTPARM - This sequence was originally used on the VT100 terminal to
+//   report the serial communication parameters (baud rate, data bits, parity,
+//   etc.). On modern terminal emulators, the response is simply hardcoded.
+// Arguments:
+// - permission - This would originally have determined whether the terminal
+//   was allowed to send unsolicited reports or not.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPermission permission)
+{
+    // We don't care whether unsolicited reports are allowed or not, but the
+    // requested permission does determine the value of the first response
+    // parameter. The remaining parameters are just hardcoded to indicate a
+    // 38400 baud connection, which matches the XTerm response. The full
+    // parameter sequence is as follows:
+    // - response type:    2 or 3 (unsolicited or solicited)
+    // - parity:           1 (no parity)
+    // - data bits:        1 (8 bits per character)
+    // - transmit speed:   128 (38400 baud)
+    // - receive speed:    128 (38400 baud)
+    // - clock multiplier: 1
+    // - flags:            0
+    switch (permission)
+    {
+    case DispatchTypes::ReportingPermission::Unsolicited:
+        return _WriteResponse(L"\x1b[2;1;1;128;128;1;0x");
+    case DispatchTypes::ReportingPermission::Solicited:
+        return _WriteResponse(L"\x1b[3;1;1;128;128;1;0x");
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DSR-OS - Reports the operating status back to the input channel
 // Arguments:
 // - <none>
@@ -855,7 +893,11 @@ bool AdaptDispatch::_WriteResponse(const std::wstring_view reply) const
     }
 
     size_t eventsWritten;
-    success = _pConApi->PrivatePrependConsoleInput(inEvents, eventsWritten);
+    // TODO GH#4954 During the input refactor we may want to add a "priority" input list
+    // to make sure that "response" input is spooled directly into the application.
+    // We switched this to an append (vs. a prepend) to fix GH#1637, a bug where two CPR
+    // could collide with eachother.
+    success = _pConApi->PrivateWriteConsoleInputW(inEvents, eventsWritten);
 
     return success;
 }
@@ -998,7 +1040,7 @@ bool AdaptDispatch::_DoDECCOLMHelper(const size_t columns)
 // Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:
-// - params - array of params to set/reset
+// - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
@@ -1069,47 +1111,25 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
 }
 
 // Routine Description:
-// - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
-//     All params in the rgParams will attempt to be executed, even if one
-//     fails, to allow us to successfully re/set params that are chained with
-//     params we don't yet support.
-// Arguments:
-// - params - array of params to set/reset
-// - enable - True for set, false for unset.
-// Return Value:
-// - True if ALL params were handled successfully. False otherwise.
-bool AdaptDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable)
-{
-    // because the user might chain together params we don't support with params we DO support, execute all
-    // params in the sequence, and only return failure if we failed at least one of them
-    size_t failures = 0;
-    for (const auto& p : params)
-    {
-        failures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
-    }
-    return failures == 0;
-}
-
-// Routine Description:
 // - DECSET - Enables the given DEC private mode params.
 // Arguments:
-// - params - array of params to set
+// - param - mode parameter to set
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param)
 {
-    return _SetResetPrivateModes(params, true);
+    return _PrivateModeParamsHelper(param, true);
 }
 
 // Routine Description:
 // - DECRST - Disables the given DEC private mode params.
 // Arguments:
-// - params - array of params to reset
+// - param - mode parameter to reset
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params)
+bool AdaptDispatch::ResetPrivateMode(const DispatchTypes::PrivateModeParams param)
 {
-    return _SetResetPrivateModes(params, false);
+    return _PrivateModeParamsHelper(param, false);
 }
 
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
@@ -1567,7 +1587,7 @@ bool AdaptDispatch::BackwardsTab(const size_t numTabs)
 // - clearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::TabClear(const size_t clearType)
+bool AdaptDispatch::TabClear(const DispatchTypes::TabClearType clearType)
 {
     bool success = false;
     switch (clearType)
@@ -1577,6 +1597,9 @@ bool AdaptDispatch::TabClear(const size_t clearType)
         break;
     case DispatchTypes::TabClearType::ClearAllColumns:
         success = _ClearAllTabStops();
+        break;
+    default:
+        success = false;
         break;
     }
     return success;
@@ -1667,7 +1690,7 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 // - codingSystem - The coding system that will be selected.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
+bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
 {
     // If we haven't previously saved the initial code page, do so now.
     // This will be used to restore the code page in response to a reset.
@@ -1695,6 +1718,9 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
             _termOutput.EnableGrTranslation(false);
         }
         break;
+    default:
+        success = false;
+        break;
     }
     return success;
 }
@@ -1706,10 +1732,10 @@ bool AdaptDispatch::DesignateCodingSystem(const wchar_t codingSystem)
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate94Charset(gsetNumber, charset);
 }
@@ -1721,10 +1747,10 @@ bool AdaptDispatch::Designate94Charset(const size_t gsetNumber, const std::pair<
 //     If the specified charset is unsupported, we do nothing (remain on the current one)
 //Arguments:
 // - gsetNumber - The G-set into which the charset will be selected.
-// - charset - The characters indicating the charset that will be used.
+// - charset - The identifier indicating the charset that will be used.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool AdaptDispatch::Designate96Charset(const size_t gsetNumber, const VTID charset)
 {
     return _termOutput.Designate96Charset(gsetNumber, charset);
 }
@@ -1811,8 +1837,7 @@ bool AdaptDispatch::SoftReset()
         success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
 
-    const auto opt = DispatchTypes::GraphicsOptions::Off;
-    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+    success = SetGraphicsRendition({}) && success; // Normal rendition.
 
     // Reset the saved cursor state.
     // Note that XTerm only resets the main buffer state, but that
@@ -2154,8 +2179,11 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 
     switch (cursorStyle)
     {
+    case DispatchTypes::CursorStyle::UserDefault:
+        _pConApi->GetUserDefaultCursorStyle(actualType);
+        fEnableBlinking = true;
+        break;
     case DispatchTypes::CursorStyle::BlinkingBlock:
-    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
         fEnableBlinking = true;
         actualType = CursorType::FullBox;
         break;
@@ -2181,6 +2209,10 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         fEnableBlinking = false;
         actualType = CursorType::VerticalBar;
         break;
+
+    default:
+        // Invalid argument should be handled by the connected terminal.
+        return false;
     }
 
     bool success = _pConApi->SetCursorStyle(actualType);
@@ -2304,11 +2336,13 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(co
 //      codes that are supported in one direction but not the other.
 //Arguments:
 // - function - An identifier of the WindowManipulation function to perform
-// - parameters - Additional parameters to pass to the function
+// - parameter1 - The first optional parameter for the function
+// - parameter2 - The second optional parameter for the function
 // Return value:
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                       const std::basic_string_view<size_t> parameters)
+                                       const VTParameter parameter1,
+                                       const VTParameter parameter2)
 {
     bool success = false;
     // Other Window Manipulation functions:
@@ -2317,22 +2351,36 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     switch (function)
     {
     case DispatchTypes::WindowManipulationType::RefreshWindow:
-        if (parameters.empty())
-        {
-            success = DispatchCommon::s_RefreshWindow(*_pConApi);
-        }
+        success = DispatchCommon::s_RefreshWindow(*_pConApi);
         break;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-        if (parameters.size() == 2)
-        {
-            success = DispatchCommon::s_ResizeWindow(*_pConApi, til::at(parameters, 1), til::at(parameters, 0));
-        }
+        success = DispatchCommon::s_ResizeWindow(*_pConApi, parameter2.value_or(0), parameter1.value_or(0));
         break;
     default:
         success = false;
     }
 
     return success;
+}
+
+// Method Description:
+// - Starts a hyperlink
+// Arguments:
+// - The hyperlink URI, optional additional parameters
+// Return Value:
+// - true
+bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params)
+{
+    return _pConApi->PrivateAddHyperlink(uri, params);
+}
+
+// Method Description:
+// - Ends a hyperlink
+// Return Value:
+// - true
+bool AdaptDispatch::EndHyperlink()
+{
+    return _pConApi->PrivateEndHyperlink();
 }
 
 // Routine Description:

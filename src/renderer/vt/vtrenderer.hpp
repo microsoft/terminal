@@ -61,7 +61,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                       const COORD coord,
                                                       const bool trimLeft,
                                                       const bool lineWrapped) noexcept override;
@@ -187,13 +187,17 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _SetBold(const bool isBold) noexcept;
         [[nodiscard]] HRESULT _SetFaint(const bool isFaint) noexcept;
-        [[nodiscard]] HRESULT _SetUnderline(const bool isUnderlined) noexcept;
-        [[nodiscard]] HRESULT _SetOverline(const bool isUnderlined) noexcept;
-        [[nodiscard]] HRESULT _SetItalics(const bool isItalic) noexcept;
+        [[nodiscard]] HRESULT _SetUnderlined(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetDoublyUnderlined(const bool isUnderlined) noexcept;
+        [[nodiscard]] HRESULT _SetOverlined(const bool isOverlined) noexcept;
+        [[nodiscard]] HRESULT _SetItalic(const bool isItalic) noexcept;
         [[nodiscard]] HRESULT _SetBlinking(const bool isBlinking) noexcept;
         [[nodiscard]] HRESULT _SetInvisible(const bool isInvisible) noexcept;
         [[nodiscard]] HRESULT _SetCrossedOut(const bool isCrossedOut) noexcept;
         [[nodiscard]] HRESULT _SetReverseVideo(const bool isReversed) noexcept;
+
+        [[nodiscard]] HRESULT _SetHyperlink(const std::wstring_view& uri, const std::wstring_view& customId, const uint16_t& numberId) noexcept;
+        [[nodiscard]] HRESULT _EndHyperlink() noexcept;
 
         [[nodiscard]] HRESULT _RequestCursor() noexcept;
 
@@ -208,11 +212,11 @@ namespace Microsoft::Console::Render
         // buffer space for these two functions to build their lines
         // so they don't have to alloc/free in a tight loop
         std::wstring _bufferLine;
-        [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(gsl::span<const Cluster> const clusters,
                                                    const COORD coord,
                                                    const bool lineWrapped) noexcept;
 
-        [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(gsl::span<const Cluster> const clusters,
                                                     const COORD coord) noexcept;
 
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;

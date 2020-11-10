@@ -276,10 +276,10 @@ void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexce
     _forceDisableWin32InputMode = win32InputMode;
 }
 
-static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
-                                                               const bool ansiMode,
-                                                               const bool cursorApplicationMode,
-                                                               const bool keypadApplicationMode) noexcept
+static const gsl::span<const TermKeyMap> _getKeyMapping(const KeyEvent& keyEvent,
+                                                        const bool ansiMode,
+                                                        const bool cursorApplicationMode,
+                                                        const bool keypadApplicationMode) noexcept
 {
     if (ansiMode)
     {
@@ -327,7 +327,7 @@ static const std::basic_string_view<TermKeyMap> _getKeyMapping(const KeyEvent& k
 // Return Value:
 // - Has value if there was a match to a key translation.
 static std::optional<const TermKeyMap> _searchKeyMapping(const KeyEvent& keyEvent,
-                                                         std::basic_string_view<TermKeyMap> keyMapping) noexcept
+                                                         gsl::span<const TermKeyMap> keyMapping) noexcept
 {
     for (auto& map : keyMapping)
     {
@@ -378,7 +378,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
                                          { s_modifierKeyMapping.data(), s_modifierKeyMapping.size() });
     if (match)
     {
-        const auto v = match.value();
+        const auto& v = match.value();
         if (!v.sequence.empty())
         {
             std::wstring modified{ v.sequence }; // Make a copy so we can modify it.
@@ -490,7 +490,7 @@ static bool _searchWithModifier(const KeyEvent& keyEvent, InputSender sender)
 // Return Value:
 // - True if there was a match to a key translation, and we successfully sent it to the input
 static bool _translateDefaultMapping(const KeyEvent& keyEvent,
-                                     const std::basic_string_view<TermKeyMap> keyMapping,
+                                     const gsl::span<const TermKeyMap> keyMapping,
                                      InputSender sender)
 {
     const auto match = _searchKeyMapping(keyEvent, keyMapping);
@@ -588,8 +588,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
         }
     }
 
-    const auto senderFunc = [this](const std::wstring_view seq) noexcept
-    {
+    const auto senderFunc = [this](const std::wstring_view seq) noexcept {
         _SendInputSequence(seq);
     };
 

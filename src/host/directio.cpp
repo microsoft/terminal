@@ -472,7 +472,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
-                                                          const std::basic_string_view<INPUT_RECORD> buffer,
+                                                          const gsl::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -516,7 +516,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Return Value:
 // - HRESULT indicating success or failure
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
-                                                          const std::basic_string_view<INPUT_RECORD> buffer,
+                                                          const gsl::span<const INPUT_RECORD> buffer,
                                                           size_t& written,
                                                           const bool append) noexcept
 {
@@ -532,41 +532,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         return _WriteConsoleInputWImplHelper(context, events, written, append);
     }
     CATCH_RETURN();
-}
-
-// Function Description:
-// - Writes the input records to the beginning of the input buffer. This is used
-//      by VT sequences that need a response immediately written back to the
-//      input.
-// Arguments:
-// - pInputBuffer - the input buffer to write to
-// - events - the events to written
-// - eventsWritten - on output, the number of events written
-// Return Value:
-// - HRESULT indicating success or failure
-[[nodiscard]] HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
-                                                      _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                      _Out_ size_t& eventsWritten)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    eventsWritten = 0;
-
-    try
-    {
-        // add partial byte event if necessary
-        if (pInputBuffer->IsWritePartialByteSequenceAvailable())
-        {
-            events.push_front(pInputBuffer->FetchWritePartialByteSequence(false));
-        }
-    }
-    CATCH_RETURN();
-
-    // add to InputBuffer
-    eventsWritten = pInputBuffer->Prepend(events);
-
-    return S_OK;
 }
 
 // Function Description:
@@ -1042,7 +1007,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());
 
             // Convert to a CHAR_INFO view to fit into the iterator
-            const auto charInfos = std::basic_string_view<CHAR_INFO>(subspan.data(), subspan.size());
+            const auto charInfos = gsl::span<const CHAR_INFO>(subspan.data(), subspan.size());
 
             // Make the iterator and write to the target position.
             OutputCellIterator it(charInfos);

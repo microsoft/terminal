@@ -50,7 +50,7 @@ gsl::span<OutputCell> OutputCellRect::GetRow(const size_t row)
 // - Read-only iterator of OutputCells
 OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
 {
-    const std::basic_string_view<OutputCell> view(_FindRowOffset(row), _cols);
+    const gsl::span<const OutputCell> view(_FindRowOffset(row), _cols);
 
     return OutputCellIterator(view);
 }

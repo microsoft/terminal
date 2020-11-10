@@ -53,7 +53,7 @@ public:
 
     void StoreGlyph(const key_type key, const mapped_type& glyph);
 
-    void Erase(const key_type key);
+    void Erase(const key_type key) noexcept;
 
     void Remap(const std::unordered_map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width);
 

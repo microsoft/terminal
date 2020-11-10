@@ -1,17 +1,16 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../TerminalPage.idl";
-import "../ShortcutActionDispatch.idl";
-import "../IDirectKeyListener.idl";
+import "TerminalPage.idl";
+import "ShortcutActionDispatch.idl";
+import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
-    enum LaunchMode
+    struct InitialPosition
     {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
+        Int64 X;
+        Int64 Y;
     };
 
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
@@ -38,18 +37,17 @@ namespace TerminalApp
 
         String Title { get; };
 
-        String ApplicationDisplayName { get; };
-        String ApplicationVersion { get; };
-
         Boolean FocusMode { get; };
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
-        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
-        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+
+        InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
+        Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();

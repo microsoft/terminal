@@ -4,12 +4,14 @@
 #include "pch.h"
 #include <WexTestClass.h>
 
+#include "../TerminalApp/TerminalPage.h"
 #include "../TerminalApp/AppCommandlineArgs.h"
 
 using namespace WEX::Logging;
 using namespace WEX::Common;
 using namespace WEX::TestExecution;
 
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 using namespace ::TerminalApp;
 
@@ -51,6 +53,11 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateFirstCommandIsNewTab);
 
         TEST_METHOD(CheckTypos);
+
+        TEST_METHOD(TestSimpleExecuteCommandlineAction);
+        TEST_METHOD(TestMultipleCommandExecuteCommandlineAction);
+        TEST_METHOD(TestInvalidExecuteCommandlineAction);
+        TEST_METHOD(TestLaunchMode);
 
     private:
         void _buildCommandlinesHelper(AppCommandlineArgs& appArgs,
@@ -1065,6 +1072,156 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
             VERIFY_ARE_EQUAL(L"wsl -d Alpine -- sleep 10", myArgs.TerminalArgs().Commandline());
             VERIFY_ARE_EQUAL(L"C:\\", myArgs.TerminalArgs().StartingDirectory());
+        }
+    }
+
+    void CommandlineTest::TestSimpleExecuteCommandlineAction()
+    {
+        ExecuteCommandlineArgs args{ L"new-tab" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        VERIFY_ARE_EQUAL(1u, actions.size());
+        auto actionAndArgs = actions.at(0);
+        VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+        VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+        auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+        VERIFY_IS_NOT_NULL(myArgs);
+        VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+        VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+    }
+
+    void CommandlineTest::TestMultipleCommandExecuteCommandlineAction()
+    {
+        ExecuteCommandlineArgs args{ L"new-tab ; split-pane" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        VERIFY_ARE_EQUAL(2u, actions.size());
+        {
+            auto actionAndArgs = actions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+        }
+        {
+            auto actionAndArgs = actions.at(1);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+        }
+    }
+
+    void CommandlineTest::TestInvalidExecuteCommandlineAction()
+    {
+        // -H and -V cannot be combined.
+        ExecuteCommandlineArgs args{ L"split-pane -H -V" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        VERIFY_ARE_EQUAL(0u, actions.size());
+    }
+
+    void CommandlineTest::TestLaunchMode()
+    {
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_FALSE(appArgs.GetLaunchMode().has_value());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-F" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FullscreenMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--fullscreen" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FullscreenMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-M" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-f" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--focus" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-fM" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized", L"--focus" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized", L"--focus", L"--focus" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized", L"--focus", L"--maximized" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
         }
     }
 }

@@ -80,6 +80,8 @@ namespace Microsoft::Console::Render
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
 
+        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval);
+
     private:
         std::deque<IRenderEngine*> _rgpEngines;
 
@@ -87,6 +89,8 @@ namespace Microsoft::Console::Render
 
         std::unique_ptr<IRenderThread> _pThread;
         bool _destructing = false;
+
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
 
         void _NotifyPaintFrame();
 
@@ -120,7 +124,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
-        SMALL_RECT _srViewportPrevious;
+        Microsoft::Console::Types::Viewport _viewport;
 
         static constexpr float _shrinkThreshold = 0.8f;
         std::vector<Cluster> _clusterBuffer;

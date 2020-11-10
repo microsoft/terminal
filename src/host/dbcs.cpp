@@ -67,10 +67,10 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
     for (DWORD iSrc = 0; iSrc < buffer.size(); iSrc++)
     {
         // If it's not a trailing byte, copy it straight over, stripping out the Leading/Trailing flags from the attributes field.
-        auto& src{ gsl::at(buffer, iSrc) };
+        auto& src{ til::at(buffer, iSrc) };
         if (!WI_IsFlagSet(src.Attributes, COMMON_LVB_TRAILING_BYTE))
         {
-            auto& dst{ gsl::at(buffer, iDst) };
+            auto& dst{ til::at(buffer, iDst) };
             dst = src;
             WI_ClearAllFlags(dst.Attributes, COMMON_LVB_SBCSDBCS);
             iDst++;

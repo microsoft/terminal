@@ -36,6 +36,8 @@ namespace Microsoft::Console::Render
 
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const TextAttribute& textAttributes) noexcept;
+        [[nodiscard]] HRESULT _UpdateHyperlinkAttr(const TextAttribute& textAttributes,
+                                                   const gsl::not_null<IRenderData*> pData) noexcept;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

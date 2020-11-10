@@ -27,7 +27,7 @@ class TextAttributeTests
     COLORREF _colorTable[COLOR_TABLE_SIZE];
     COLORREF _defaultFg = RGB(1, 2, 3);
     COLORREF _defaultBg = RGB(4, 5, 6);
-    std::basic_string_view<COLORREF> _GetTableView();
+    gsl::span<const COLORREF> _GetTableView();
 };
 
 bool TextAttributeTests::ClassSetup()
@@ -51,9 +51,9 @@ bool TextAttributeTests::ClassSetup()
     return true;
 }
 
-std::basic_string_view<COLORREF> TextAttributeTests::_GetTableView()
+gsl::span<const COLORREF> TextAttributeTests::_GetTableView()
 {
-    return std::basic_string_view<COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
+    return gsl::span<const COLORREF>(&_colorTable[0], COLOR_TABLE_SIZE);
 }
 
 void TextAttributeTests::TestRoundtripLegacy()

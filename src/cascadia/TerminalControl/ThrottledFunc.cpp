@@ -29,7 +29,7 @@ ThrottledFunc<>::ThrottledFunc(ThrottledFunc::Func func, TimeSpan delay, CoreDis
 // - <none>
 void ThrottledFunc<>::Run()
 {
-    if (_isRunPending.test_and_set())
+    if (_isRunPending.test_and_set(std::memory_order_acquire))
     {
         // already pending
         return;
@@ -44,7 +44,7 @@ void ThrottledFunc<>::Run()
                 if (auto self{ weakThis.lock() })
                 {
                     timer.Stop();
-                    self->_isRunPending.clear();
+                    self->_isRunPending.clear(std::memory_order_release);
                     self->_func();
                 }
             });

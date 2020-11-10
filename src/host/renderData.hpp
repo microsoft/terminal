@@ -55,6 +55,11 @@ public:
     const bool IsGridLineDrawingAllowed() noexcept override;
 
     const std::wstring GetConsoleTitle() const noexcept override;
+
+    const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
+    const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
+
+    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

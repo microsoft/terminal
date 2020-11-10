@@ -17,104 +17,89 @@ TerminalOutput::TerminalOutput() noexcept
     _gsetTranslationTables.at(3) = Latin1;
 }
 
-bool TerminalOutput::Designate94Charset(size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
 {
-    switch (charset.first)
+    switch (charset)
     {
-    case L'B': // US ASCII
-    case L'1': // Alternate Character ROM
+    case VTID("B"): // US ASCII
+    case VTID("1"): // Alternate Character ROM
         return _SetTranslationTable(gsetNumber, Ascii);
-    case L'0': // DEC Special Graphics
-    case L'2': // Alternate Character ROM Special Graphics
+    case VTID("0"): // DEC Special Graphics
+    case VTID("2"): // Alternate Character ROM Special Graphics
         return _SetTranslationTable(gsetNumber, DecSpecialGraphics);
-    case L'<': // DEC Supplemental
+    case VTID("<"): // DEC Supplemental
         return _SetTranslationTable(gsetNumber, DecSupplemental);
-    case L'A': // British NRCS
+    case VTID("A"): // British NRCS
         return _SetTranslationTable(gsetNumber, BritishNrcs);
-    case L'4': // Dutch NRCS
+    case VTID("4"): // Dutch NRCS
         return _SetTranslationTable(gsetNumber, DutchNrcs);
-    case L'5': // Finnish NRCS
-    case L'C': // (fallback)
+    case VTID("5"): // Finnish NRCS
+    case VTID("C"): // (fallback)
         return _SetTranslationTable(gsetNumber, FinnishNrcs);
-    case L'R': // French NRCS
+    case VTID("R"): // French NRCS
         return _SetTranslationTable(gsetNumber, FrenchNrcs);
-    case L'f': // French NRCS (ISO update)
+    case VTID("f"): // French NRCS (ISO update)
         return _SetTranslationTable(gsetNumber, FrenchNrcsIso);
-    case L'9': // French Canadian NRCS
-    case L'Q': // (fallback)
+    case VTID("9"): // French Canadian NRCS
+    case VTID("Q"): // (fallback)
         return _SetTranslationTable(gsetNumber, FrenchCanadianNrcs);
-    case L'K': // German NRCS
+    case VTID("K"): // German NRCS
         return _SetTranslationTable(gsetNumber, GermanNrcs);
-    case L'Y': // Italian NRCS
+    case VTID("Y"): // Italian NRCS
         return _SetTranslationTable(gsetNumber, ItalianNrcs);
-    case L'6': // Norwegian/Danish NRCS
-    case L'E': // (fallback)
+    case VTID("6"): // Norwegian/Danish NRCS
+    case VTID("E"): // (fallback)
         return _SetTranslationTable(gsetNumber, NorwegianDanishNrcs);
-    case L'`': // Norwegian/Danish NRCS (ISO standard)
+    case VTID("`"): // Norwegian/Danish NRCS (ISO standard)
         return _SetTranslationTable(gsetNumber, NorwegianDanishNrcsIso);
-    case L'Z': // Spanish NRCS
+    case VTID("Z"): // Spanish NRCS
         return _SetTranslationTable(gsetNumber, SpanishNrcs);
-    case L'7': // Swedish NRCS
-    case L'H': // (fallback)
+    case VTID("7"): // Swedish NRCS
+    case VTID("H"): // (fallback)
         return _SetTranslationTable(gsetNumber, SwedishNrcs);
-    case L'=': // Swiss NRCS
+    case VTID("="): // Swiss NRCS
         return _SetTranslationTable(gsetNumber, SwissNrcs);
-    case L'&':
-        switch (charset.second)
-        {
-        case L'4': // DEC Cyrillic
-            return _SetTranslationTable(gsetNumber, DecCyrillic);
-        case L'5': // Russian NRCS
-            return _SetTranslationTable(gsetNumber, RussianNrcs);
-        }
-        return false;
-    case L'"':
-        switch (charset.second)
-        {
-        case L'?': // DEC Greek
-            return _SetTranslationTable(gsetNumber, DecGreek);
-        case L'>': // Greek NRCS
-            return _SetTranslationTable(gsetNumber, GreekNrcs);
-        case L'4': // DEC Hebrew
-            return _SetTranslationTable(gsetNumber, DecHebrew);
-        }
-        return false;
-    case L'%':
-        switch (charset.second)
-        {
-        case L'=': // Hebrew NRCS
-            return _SetTranslationTable(gsetNumber, HebrewNrcs);
-        case L'0': // DEC Turkish
-            return _SetTranslationTable(gsetNumber, DecTurkish);
-        case L'2': // Turkish NRCS
-            return _SetTranslationTable(gsetNumber, TurkishNrcs);
-        case L'5': // DEC Supplemental
-            return _SetTranslationTable(gsetNumber, DecSupplemental);
-        case L'6': // Portuguese NRCS
-            return _SetTranslationTable(gsetNumber, PortugueseNrcs);
-        }
-        return false;
+    case VTID("&4"): // DEC Cyrillic
+        return _SetTranslationTable(gsetNumber, DecCyrillic);
+    case VTID("&5"): // Russian NRCS
+        return _SetTranslationTable(gsetNumber, RussianNrcs);
+    case VTID("\"?"): // DEC Greek
+        return _SetTranslationTable(gsetNumber, DecGreek);
+    case VTID("\">"): // Greek NRCS
+        return _SetTranslationTable(gsetNumber, GreekNrcs);
+    case VTID("\"4"): // DEC Hebrew
+        return _SetTranslationTable(gsetNumber, DecHebrew);
+    case VTID("%="): // Hebrew NRCS
+        return _SetTranslationTable(gsetNumber, HebrewNrcs);
+    case VTID("%0"): // DEC Turkish
+        return _SetTranslationTable(gsetNumber, DecTurkish);
+    case VTID("%2"): // Turkish NRCS
+        return _SetTranslationTable(gsetNumber, TurkishNrcs);
+    case VTID("%5"): // DEC Supplemental
+        return _SetTranslationTable(gsetNumber, DecSupplemental);
+    case VTID("%6"): // Portuguese NRCS
+        return _SetTranslationTable(gsetNumber, PortugueseNrcs);
     default:
         return false;
     }
 }
 
-bool TerminalOutput::Designate96Charset(size_t gsetNumber, const std::pair<wchar_t, wchar_t> charset)
+bool TerminalOutput::Designate96Charset(size_t gsetNumber, const VTID charset)
 {
-    switch (charset.first)
+    switch (charset)
     {
-    case L'A': // ISO Latin-1 Supplemental
-    case L'<': // (UPSS when assigned to Latin-1)
+    case VTID("A"): // ISO Latin-1 Supplemental
+    case VTID("<"): // (UPSS when assigned to Latin-1)
         return _SetTranslationTable(gsetNumber, Latin1);
-    case L'B': // ISO Latin-2 Supplemental
+    case VTID("B"): // ISO Latin-2 Supplemental
         return _SetTranslationTable(gsetNumber, Latin2);
-    case L'L': // ISO Latin-Cyrillic Supplemental
+    case VTID("L"): // ISO Latin-Cyrillic Supplemental
         return _SetTranslationTable(gsetNumber, LatinCyrillic);
-    case L'F': // ISO Latin-Greek Supplemental
+    case VTID("F"): // ISO Latin-Greek Supplemental
         return _SetTranslationTable(gsetNumber, LatinGreek);
-    case L'H': // ISO Latin-Hebrew Supplemental
+    case VTID("H"): // ISO Latin-Hebrew Supplemental
         return _SetTranslationTable(gsetNumber, LatinHebrew);
-    case L'M': // ISO Latin-5 Supplemental
+    case VTID("M"): // ISO Latin-5 Supplemental
         return _SetTranslationTable(gsetNumber, Latin5);
     default:
         return false;

@@ -41,43 +41,39 @@ const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // - isForeground - Whether or not the parsed color is for the foreground.
 // Return Value:
 // - The number of options consumed, not including the initial 38/48.
-size_t TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<DispatchTypes::GraphicsOptions> options,
+size_t TerminalDispatch::_SetRgbColorsHelper(const VTParameters options,
                                              TextAttribute& attr,
                                              const bool isForeground) noexcept
 {
-    size_t optionsConsumed = 0;
-    if (options.size() >= 1)
+    size_t optionsConsumed = 1;
+    const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
+    if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint)
     {
-        optionsConsumed = 1;
-        const auto typeOpt = til::at(options, 0);
-        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint && options.size() >= 4)
+        optionsConsumed = 4;
+        const size_t red = options.at(1).value_or(0);
+        const size_t green = options.at(2).value_or(0);
+        const size_t blue = options.at(3).value_or(0);
+        // ensure that each value fits in a byte
+        if (red <= 255 && green <= 255 && blue <= 255)
         {
-            optionsConsumed = 4;
-            const size_t red = til::at(options, 1);
-            const size_t green = til::at(options, 2);
-            const size_t blue = til::at(options, 3);
-            // ensure that each value fits in a byte
-            if (red <= 255 && green <= 255 && blue <= 255)
-            {
-                const COLORREF rgbColor = RGB(red, green, blue);
-                attr.SetColor(rgbColor, isForeground);
-            }
+            const COLORREF rgbColor = RGB(red, green, blue);
+            attr.SetColor(rgbColor, isForeground);
         }
-        else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && options.size() >= 2)
+    }
+    else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
+    {
+        optionsConsumed = 2;
+        const size_t tableIndex = options.at(1).value_or(0);
+        if (tableIndex <= 255)
         {
-            optionsConsumed = 2;
-            const size_t tableIndex = til::at(options, 1);
-            if (tableIndex <= 255)
+            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
+            if (isForeground)
             {
-                const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
-                if (isForeground)
-                {
-                    attr.SetIndexedForeground256(adjustedIndex);
-                }
-                else
-                {
-                    attr.SetIndexedBackground256(adjustedIndex);
-                }
+                attr.SetIndexedForeground256(adjustedIndex);
+            }
+            else
+            {
+                attr.SetIndexedBackground256(adjustedIndex);
             }
         }
     }
@@ -94,20 +90,20 @@ size_t TerminalDispatch::_SetRgbColorsHelper(const std::basic_string_view<Dispat
 //   one at a time by setting or removing flags in the font style properties.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<DispatchTypes::GraphicsOptions> options) noexcept
+bool TerminalDispatch::SetGraphicsRendition(const VTParameters options) noexcept
 {
     TextAttribute attr = _terminalApi.GetTextAttributes();
 
     // Run through the graphics options and apply them
     for (size_t i = 0; i < options.size(); i++)
     {
-        const auto opt = til::at(options, i);
+        const GraphicsOptions opt = options.at(i);
         switch (opt)
         {
         case Off:
             attr.SetDefaultForeground();
             attr.SetDefaultBackground();
-            attr.SetStandardErase();
+            attr.SetDefaultMetaAttrs();
             break;
         case ForegroundDefault:
             attr.SetDefaultForeground();
@@ -126,12 +122,13 @@ bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<Dispatc
             attr.SetFaint(false);
             break;
         case Italics:
-            attr.SetItalics(true);
+            attr.SetItalic(true);
             break;
         case NotItalics:
-            attr.SetItalics(false);
+            attr.SetItalic(false);
             break;
         case BlinkOrXterm256Index:
+        case RapidBlink: // We just interpret rapid blink as an alias of blink.
             attr.SetBlinking(true);
             break;
         case Steady:
@@ -156,16 +153,20 @@ bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<Dispatc
             attr.SetReverseVideo(false);
             break;
         case Underline:
-            attr.SetUnderline(true);
+            attr.SetUnderlined(true);
+            break;
+        case DoublyUnderlined:
+            attr.SetDoublyUnderlined(true);
             break;
         case NoUnderline:
-            attr.SetUnderline(false);
+            attr.SetUnderlined(false);
+            attr.SetDoublyUnderlined(false);
             break;
         case Overline:
-            attr.SetOverline(true);
+            attr.SetOverlined(true);
             break;
         case NoOverline:
-            attr.SetOverline(false);
+            attr.SetOverlined(false);
             break;
         case ForegroundBlack:
             attr.SetIndexedForeground(DARK_BLACK);
@@ -264,10 +265,10 @@ bool TerminalDispatch::SetGraphicsRendition(const std::basic_string_view<Dispatc
             attr.SetIndexedBackground(BRIGHT_WHITE);
             break;
         case ForegroundExtended:
-            i += _SetRgbColorsHelper(options.substr(i + 1), attr, true);
+            i += _SetRgbColorsHelper(options.subspan(i + 1), attr, true);
             break;
         case BackgroundExtended:
-            i += _SetRgbColorsHelper(options.substr(i + 1), attr, false);
+            i += _SetRgbColorsHelper(options.subspan(i + 1), attr, false);
             break;
         }
     }

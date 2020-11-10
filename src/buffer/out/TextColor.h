@@ -88,7 +88,7 @@ public:
     void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
-    COLORREF GetColor(std::basic_string_view<COLORREF> colorTable,
+    COLORREF GetColor(gsl::span<const COLORREF> colorTable,
                       const COLORREF defaultColor,
                       const bool brighten = false) const noexcept;
 

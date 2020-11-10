@@ -27,7 +27,7 @@ namespace Microsoft::Console::Render
                          size_t const width,
                          IBoxDrawingEffect* const boxEffect);
 
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE AppendClusters(const gsl::span<const ::Microsoft::Console::Render::Cluster> clusters);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE Reset() noexcept;
 
@@ -147,6 +147,10 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
+        [[nodiscard]] HRESULT _DrawGlyphRun(_In_opt_ void* clientDrawingContext,
+                                            gsl::not_null<IDWriteTextRenderer*> renderer,
+                                            D2D_POINT_2F& mutableOrigin,
+                                            const Run& run) noexcept;
 
         [[nodiscard]] static constexpr UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
