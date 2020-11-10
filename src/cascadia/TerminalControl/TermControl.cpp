@@ -2006,7 +2006,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 auto noticeArgs = winrt::make_self<NoticeEventArgs>(NoticeLevel::Warning, message);
                 strongThis->_raiseNoticeHandlers(*strongThis, *noticeArgs);
             }();
-
         }
 
         const auto actualNewSize = _actualFont.GetSize();

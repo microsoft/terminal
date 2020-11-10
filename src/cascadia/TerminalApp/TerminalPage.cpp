@@ -1121,7 +1121,7 @@ namespace winrt::TerminalApp::implementation
     // - hostingTab: The Tab that's hosting this TermControl instance
     void TerminalPage::_RegisterTerminalEvents(TermControl term, TerminalTab& hostingTab)
     {
-        term.RaiseNotice({this, &TerminalPage::_ControlNoticeRaisedHandler});
+        term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
