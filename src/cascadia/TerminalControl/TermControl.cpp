@@ -1997,7 +1997,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Capture what we need to resume later.
             [strongThis = get_strong(), message]() -> winrt::fire_and_forget {
-
                 // Take these out of the lambda and store them locally
                 // because the coroutine will lose them into space
                 // by the time it resumes.
