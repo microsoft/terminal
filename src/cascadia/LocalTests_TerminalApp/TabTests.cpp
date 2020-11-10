@@ -8,6 +8,7 @@
 #include "../TerminalApp/TabRowControl.h"
 #include "../TerminalApp/ShortcutActionDispatch.h"
 #include "../TerminalApp/TerminalTab.h"
+#include "../TerminalApp/CommandPalette.h"
 #include "../CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
@@ -82,6 +83,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(CloseZoomedPane);
 
         TEST_METHOD(NextMRUTab);
+        TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -847,5 +849,66 @@ namespace TerminalAppLocalTests
             uint32_t focusedIndex = page->_GetFocusedTabIndex().value_or(-1);
             VERIFY_ARE_EQUAL(3u, focusedIndex, L"Verify the fourth tab is the focused one");
         });
+    }
+
+    void TabTests::VerifyCommandPaletteTabSwitcherOrder()
+    {
+        // This is a test for GH#8188 - we want to make sure that the order of tabs
+        // is preserved in the CommandPalette's TabSwitcher
+
+        auto page = _commonSetup();
+
+        Log::Comment(L"Create 3 additional tabs");
+        RunOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+            page->_OpenNewTab(newTerminalArgs);
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(4u, page->_mruTabActions.Size());
+
+        Log::Comment(L"give alphabetical names to all switch tab actions");
+        RunOnUIThread([&page]() {
+            page->_tabs.GetAt(0).SwitchToTabCommand().Name(L"a");
+            page->_tabs.GetAt(1).SwitchToTabCommand().Name(L"b");
+            page->_tabs.GetAt(2).SwitchToTabCommand().Name(L"c");
+            page->_tabs.GetAt(3).SwitchToTabCommand().Name(L"d");
+        });
+
+        Log::Comment(L"Change the tab switch order to MRU switching");
+        TestOnUIThread([&page]() {
+            page->_settings.GlobalSettings().TabSwitcherMode(TabSwitcherMode::MostRecentlyUsed);
+        });
+
+        Log::Comment(L"Select the tabs from 0 to 3");
+        RunOnUIThread([&page]() {
+            page->_UpdatedSelectedTab(0);
+            page->_UpdatedSelectedTab(1);
+            page->_UpdatedSelectedTab(2);
+            page->_UpdatedSelectedTab(3);
+        });
+
+        VERIFY_ARE_EQUAL(4u, page->_mruTabActions.Size());
+        VERIFY_ARE_EQUAL(L"d", page->_mruTabActions.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"c", page->_mruTabActions.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"b", page->_mruTabActions.GetAt(2).Name());
+        VERIFY_ARE_EQUAL(L"a", page->_mruTabActions.GetAt(3).Name());
+
+        Log::Comment(L"Switch to the next MRU tab, which is the third tab");
+        RunOnUIThread([&page]() {
+            page->_SelectNextTab(true);
+        });
+
+        const auto palette = winrt::get_self<implementation::CommandPalette>(page->CommandPalette());
+
+        VERIFY_ARE_EQUAL(1u, palette->_switcherStartIdx, L"Verify the index is 1 as we went right");
+        VERIFY_ARE_EQUAL(implementation::CommandPaletteMode::TabSwitchMode, palette->_currentMode, L"Verify we are in the tab switcher mode");
+
+        Log::Comment(L"Verify command palette preserves MRU order of tabs");
+        VERIFY_ARE_EQUAL(4u, palette->_filteredActions.Size());
+        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Command().Name());
+        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Command().Name());
+        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Command().Name());
+        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Command().Name());
     }
 }

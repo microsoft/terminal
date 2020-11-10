@@ -72,11 +72,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // This is like std::optional, but we can use it in inheritance to determine whether the user explicitly cleared it
     template<typename T>
-    struct NullableSetting
-    {
-        std::optional<T> setting{ std::nullopt };
-        bool set{ false };
-    };
+    using NullableSetting = std::optional<std::optional<T>>;
 }
 
 // Use this macro to quickly implement both getters and the setter for an
@@ -93,7 +89,7 @@ public:                                                                     \
     bool Has##name() const                                                  \
     {                                                                       \
         return _##name.has_value();                                         \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Returns the resolved value for this setting */                       \
     /* fallback: user set value --> inherited value --> system set value */ \
@@ -101,19 +97,19 @@ public:                                                                     \
     {                                                                       \
         const auto val{ _get##name##Impl() };                               \
         return val ? *val : type{ __VA_ARGS__ };                            \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Overwrite the user set value */                                      \
     void name(const type& value)                                            \
     {                                                                       \
         _##name = value;                                                    \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Clear the user set value */                                          \
     void Clear##name()                                                      \
     {                                                                       \
         _##name = std::nullopt;                                             \
-    };                                                                      \
+    }                                                                       \
                                                                             \
 private:                                                                    \
     std::optional<type> _##name{ std::nullopt };                            \
@@ -137,7 +133,7 @@ private:                                                                    \
                                                                             \
         /*no value was found*/                                              \
         return std::nullopt;                                                \
-    };
+    }
 
 // This macro is similar to the one above, but is reserved for optional settings
 // like Profile.Foreground (where null is interpreted
@@ -148,51 +144,51 @@ public:                                                                     \
     /* Returns true if the user explicitly set the value, false otherwise*/ \
     bool Has##name() const                                                  \
     {                                                                       \
-        return _##name.set;                                                 \
-    };                                                                      \
+        return _##name.has_value();                                         \
+    }                                                                       \
                                                                             \
     /* Returns the resolved value for this setting */                       \
     /* fallback: user set value --> inherited value --> system set value */ \
     winrt::Windows::Foundation::IReference<type> name() const               \
     {                                                                       \
         const auto val{ _get##name##Impl() };                               \
-        if (val.set)                                                        \
+        if (val)                                                            \
         {                                                                   \
-            if (val.setting)                                                \
+            if (*val)                                                       \
             {                                                               \
-                return *val.setting;                                        \
+                return **val;                                               \
             }                                                               \
             return nullptr;                                                 \
         }                                                                   \
         return winrt::Windows::Foundation::IReference<type>{ __VA_ARGS__ }; \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Overwrite the user set value */                                      \
     void name(const winrt::Windows::Foundation::IReference<type>& value)    \
     {                                                                       \
         if (value) /*set value is different*/                               \
         {                                                                   \
-            _##name.setting = value.Value();                                \
+            _##name = std::optional<type>{ value.Value() };                 \
         }                                                                   \
         else                                                                \
         {                                                                   \
-            _##name.setting = std::nullopt;                                 \
+            /* note we're setting the _inner_ value */                      \
+            _##name = std::optional<type>{ std::nullopt };                  \
         }                                                                   \
-        _##name.set = true;                                                 \
-    };                                                                      \
+    }                                                                       \
                                                                             \
     /* Clear the user set value */                                          \
     void Clear##name()                                                      \
     {                                                                       \
-        _##name.set = false;                                                \
-    };                                                                      \
+        _##name = std::nullopt;                                             \
+    }                                                                       \
                                                                             \
 private:                                                                    \
     NullableSetting<type> _##name{};                                        \
     NullableSetting<type> _get##name##Impl() const                          \
     {                                                                       \
         /*return user set value*/                                           \
-        if (Has##name())                                                    \
+        if (_##name)                                                        \
         {                                                                   \
             return _##name;                                                 \
         }                                                                   \
@@ -201,12 +197,12 @@ private:                                                                    \
         /*iterate through parents to find a value*/                         \
         for (auto parent : _parents)                                        \
         {                                                                   \
-            auto val{ parent->_get##name##Impl() };                         \
-            if (val.set)                                                    \
+            if (auto val{ parent->_get##name##Impl() })                     \
             {                                                               \
                 return val;                                                 \
             }                                                               \
         }                                                                   \
+                                                                            \
         /*no value was found*/                                              \
-        return { std::nullopt, false };                                     \
-    };
+        return std::nullopt;                                                \
+    }

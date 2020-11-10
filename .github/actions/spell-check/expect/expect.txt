@@ -2277,6 +2277,7 @@ tcome
 tcommandline
 tcommands
 tcon
+TDelegated
 TDP
 TEAMPROJECT
 tearoff
