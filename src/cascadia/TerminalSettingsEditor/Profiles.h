@@ -43,7 +43,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentFontWeight(const winrt::Windows::Foundation::IInspectable& enumEntry);
         GETSET_PROPERTY(winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
 
-
         GETSET_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, State().Profile, CursorShape);
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, State().Profile, BackgroundImageStretchMode);
