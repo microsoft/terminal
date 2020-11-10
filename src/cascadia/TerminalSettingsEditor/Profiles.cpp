@@ -6,9 +6,13 @@
 #include "Profiles.g.cpp"
 #include "EnumEntry.h"
 
+#include <LibraryResources.h>
+
+using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
@@ -16,6 +20,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static const auto CustomFontWeight{ winrt::make<EnumEntry>(RS_(L"Profile_FontWeightCustom/Content"), winrt::box_value<uint16_t>(0u)) };
+
     Profiles::Profiles()
     {
         InitializeComponent();
@@ -26,6 +32,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
+
+        // manually add Custom FontWeight option. Don't add it to the Map
+        INITIALIZE_BINDABLE_ENUM_SETTING(FontWeight, FontWeight, uint16_t, L"Profile_FontWeight", L"Content");
+        _FontWeightList.Append(CustomFontWeight);
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -84,4 +94,56 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
     */
+
+    bool Profiles::_IsCustomFontWeight(const Windows::UI::Text::FontWeight& weight)
+    {
+        if (weight == FontWeights::Thin() ||
+            weight == FontWeights::ExtraLight() ||
+            weight == FontWeights::Light() ||
+            weight == FontWeights::SemiLight() ||
+            weight == FontWeights::Normal() ||
+            weight == FontWeights::Medium() ||
+            weight == FontWeights::SemiBold() ||
+            weight == FontWeights::Bold() ||
+            weight == FontWeights::ExtraBold() ||
+            weight == FontWeights::Black() ||
+            weight == FontWeights::ExtraBlack())
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    IInspectable Profiles::CurrentFontWeight()
+    {
+        // if no value was found, we have a custom value, and we show the slider.
+        const auto maybeEnumEntry{ _FontWeightMap.TryLookup(_State.Profile().FontWeight().Weight) };
+        FontWeightSlider().Visibility(maybeEnumEntry ? Visibility::Collapsed : Visibility::Visible);
+        return winrt::box_value<Editor::EnumEntry>(maybeEnumEntry ? maybeEnumEntry : CustomFontWeight);
+    }
+
+    void Profiles::CurrentFontWeight(const IInspectable& enumEntry)
+    {
+        if (auto ee = enumEntry.try_as<Editor::EnumEntry>())
+        {
+            const auto weight{ winrt::unbox_value<uint16_t>(ee.EnumValue()) };
+            const Windows::UI::Text::FontWeight setting{ weight };
+            if (_IsCustomFontWeight(setting))
+            {
+                // Custom FontWeight is selected using the slider
+                // Initialize the value to what is currently set
+                FontWeightSlider().Visibility(Visibility::Visible);
+                FontWeightSlider().Value(_State.Profile().FontWeight().Weight);
+            }
+            else
+            {
+                // Otherwise, the selected ComboBox item has an associated fontWeight
+                FontWeightSlider().Visibility(Visibility::Collapsed);
+                _State.Profile().FontWeight(setting);
+            }
+        }
+    }
 }

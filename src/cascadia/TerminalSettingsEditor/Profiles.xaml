@@ -22,6 +22,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
 
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumComboBoxItemTemplate">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:PercentageConverter x:Key="PercentageConverter"/>
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
@@ -80,7 +84,21 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
                         <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,100,0">
                             <Controls:NumberBox x:Uid="Profile_FontSize" Margin="0,0,0,20" FontSize="15" Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
-                            <Slider x:Uid="Profile_FontWeight" Minimum="1" Maximum="999" Value="{x:Bind State.Profile.FontWeight, Converter={StaticResource FontWeightConverter}, Mode=TwoWay}"/>
+                            <StackPanel>
+                                <ComboBox x:Uid="Profile_FontWeight"
+                                          x:Name="FontWeightComboBox"
+                                          Margin="0,0,0,20"
+                                          ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
+                                          SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
+                                          ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                                          FontSize="15"
+                                          ToolTipService.Placement="Mouse"/>
+                                <Slider x:Name="FontWeightSlider"
+                                        Minimum="1" Maximum="999"
+                                        Value="{x:Bind State.Profile.FontWeight,
+                                                Converter={StaticResource FontWeightConverter},
+                                                Mode=TwoWay}"/>
+                            </StackPanel>
                             <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind State.Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                             <Controls:RadioButtons x:Uid="Profile_CursorShape"
                                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
