@@ -80,10 +80,28 @@ void createExistingObjectApp(int /*argc*/, char** argv)
         }
         auto tokenLinkedTokenCleanup = wil::scope_exit([&] { CloseHandle(tokenLinkedToken.LinkedToken); });
 
+        // Apparently, a TokenLinkedToken is an Identification token, which we can't get an impersionation token from
+        //
+        // HANDLE impersonationToken{ 0 };
+        // if (!DuplicateToken(tokenLinkedToken.LinkedToken,
+        //                     SECURITY_IMPERSONATION_LEVEL::SecurityImpersonation,
+        //                     &impersonationToken))
+        // {
+        //     auto gle = GetLastError();
+        //     printf("DuplicateToken failed: %d\n", gle);
+        //     return;
+        // }
+        // else
+        // {
+        //     printf("Duplicated the token\n");
+        // }
+
         // THIS IS THE DAMNDEST THING
         //
         // IF YOU DO THIS, THE PROCESS WILL JUST STRAIGHT UP DIE ON THE create_instance CALL
         if (SetThreadToken(nullptr, tokenLinkedToken.LinkedToken))
+        // // Try with the impersionation token instead? - NOPE this fails with ERROR_BAD_IMPERSONATION_LEVEL
+        // if (SetThreadToken(nullptr, impersonationToken))
         {
             printf("SetThreadToken() succeeded\n");
         }
