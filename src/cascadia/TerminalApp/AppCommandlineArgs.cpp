@@ -435,7 +435,7 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
 
     if (*subcommand.tabColorOption)
     {
-        const til::color tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
+        const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
         args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
     }
 
