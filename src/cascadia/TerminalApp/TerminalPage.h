@@ -135,7 +135,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
-        TerminalApp::Tab _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
+        TerminalApp::TerminalTab _CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings);
 
         bool _displayingCloseDialog{ false };
