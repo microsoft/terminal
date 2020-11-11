@@ -31,8 +31,8 @@
 
 #include "hello_h.h"
 
-#define TYPE_FORMAT_STRING_SIZE   7                                 
-#define PROC_FORMAT_STRING_SIZE   91                                
+#define TYPE_FORMAT_STRING_SIZE   25                                
+#define PROC_FORMAT_STRING_SIZE   155                               
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   0            
@@ -137,6 +137,34 @@ void Shutdown( void)
 }
 
 
+void InternallyMarshalAThing( void)
+{
+
+    NdrClientCall3(
+                  ( PMIDL_STUBLESS_PROXY_INFO  )&hello_ProxyInfo,
+                  3,
+                  0,
+                  0);
+    
+}
+
+
+HRESULT MarshallTheThing( 
+    /* [in] */ IStream *pStream)
+{
+
+    CLIENT_CALL_RETURN _RetVal;
+
+    _RetVal = NdrClientCall3(
+                  ( PMIDL_STUBLESS_PROXY_INFO  )&hello_ProxyInfo,
+                  4,
+                  0,
+                  pStream);
+    return ( HRESULT  )_RetVal.Simple;
+    
+}
+
+
 #if !defined(__RPC_WIN64__)
 #error  Invalid build platform for this stub.
 #endif
@@ -213,6 +241,55 @@ static const hello_MIDL_PROC_FORMAT_STRING hello__MIDL_ProcFormatString =
 /* 86 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 88 */	NdrFcShort( 0x0 ),	/* 0 */
 
+	/* Procedure InternallyMarshalAThing */
+
+/* 90 */	0x32,		/* FC_BIND_PRIMITIVE */
+			0x48,		/* Old Flags:  */
+/* 92 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 96 */	NdrFcShort( 0x3 ),	/* 3 */
+/* 98 */	NdrFcShort( 0x0 ),	/* X64 Stack size/offset = 0 */
+/* 100 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 102 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 104 */	0x40,		/* Oi2 Flags:  has ext, */
+			0x0,		/* 0 */
+/* 106 */	0xa,		/* 10 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 108 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 110 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 112 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 114 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Procedure MarshallTheThing */
+
+/* 116 */	0x32,		/* FC_BIND_PRIMITIVE */
+			0x48,		/* Old Flags:  */
+/* 118 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 122 */	NdrFcShort( 0x4 ),	/* 4 */
+/* 124 */	NdrFcShort( 0x10 ),	/* X64 Stack size/offset = 16 */
+/* 126 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 128 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 130 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
+			0x2,		/* 2 */
+/* 132 */	0xa,		/* 10 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 134 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 136 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 138 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 140 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter pStream */
+
+/* 142 */	NdrFcShort( 0xb ),	/* Flags:  must size, must free, in, */
+/* 144 */	NdrFcShort( 0x0 ),	/* X64 Stack size/offset = 0 */
+/* 146 */	NdrFcShort( 0x6 ),	/* Type Offset=6 */
+
+	/* Return value */
+
+/* 148 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 150 */	NdrFcShort( 0x8 ),	/* X64 Stack size/offset = 8 */
+/* 152 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
 			0x0
         }
     };
@@ -227,6 +304,20 @@ static const hello_MIDL_TYPE_FORMAT_STRING hello__MIDL_TypeFormatString =
 /*  4 */	
 			0x25,		/* FC_C_WSTRING */
 			0x5c,		/* FC_PAD */
+/*  6 */	
+			0x2f,		/* FC_IP */
+			0x5a,		/* FC_CONSTANT_IID */
+/*  8 */	NdrFcLong( 0xc ),	/* 12 */
+/* 12 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 14 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 16 */	0xc0,		/* 192 */
+			0x0,		/* 0 */
+/* 18 */	0x0,		/* 0 */
+			0x0,		/* 0 */
+/* 20 */	0x0,		/* 0 */
+			0x0,		/* 0 */
+/* 22 */	0x0,		/* 0 */
+			0x46,		/* 70 */
 
 			0x0
         }
@@ -236,7 +327,9 @@ static const unsigned short hello_FormatStringOffsetTable[] =
     {
     0,
     32,
-    64
+    64,
+    90,
+    116
     };
 
 
@@ -276,12 +369,37 @@ static const unsigned short hello_FormatStringOffsetTable[] =
 
 
 typedef 
+NDR64_FORMAT_CHAR
+__midl_frag12_t;
+extern const __midl_frag12_t __midl_frag12;
+
+typedef 
+struct _NDR64_CONSTANT_IID_FORMAT
+__midl_frag11_t;
+extern const __midl_frag11_t __midl_frag11;
+
+typedef 
+struct _NDR64_POINTER_FORMAT
+__midl_frag10_t;
+extern const __midl_frag10_t __midl_frag10;
+
+typedef 
+struct 
+{
+    struct _NDR64_PROC_FORMAT frag1;
+    struct _NDR64_PARAM_FORMAT frag2;
+    struct _NDR64_PARAM_FORMAT frag3;
+}
+__midl_frag9_t;
+extern const __midl_frag9_t __midl_frag9;
+
+typedef 
 struct 
 {
     struct _NDR64_PROC_FORMAT frag1;
 }
-__midl_frag7_t;
-extern const __midl_frag7_t __midl_frag7;
+__midl_frag8_t;
+extern const __midl_frag8_t __midl_frag8;
 
 typedef 
 struct _NDR64_CONFORMANT_STRING_FORMAT
@@ -303,11 +421,6 @@ __midl_frag4_t;
 extern const __midl_frag4_t __midl_frag4;
 
 typedef 
-NDR64_FORMAT_CHAR
-__midl_frag3_t;
-extern const __midl_frag3_t __midl_frag3;
-
-typedef 
 struct 
 {
     struct _NDR64_PROC_FORMAT frag1;
@@ -321,11 +434,101 @@ NDR64_FORMAT_UINT32
 __midl_frag1_t;
 extern const __midl_frag1_t __midl_frag1;
 
-static const __midl_frag7_t __midl_frag7 =
+static const __midl_frag12_t __midl_frag12 =
+0x5    /* FC64_INT32 */;
+
+static const __midl_frag11_t __midl_frag11 =
 { 
-/* Shutdown */
+/* struct _NDR64_CONSTANT_IID_FORMAT */
+    0x24,    /* FC64_IP */
+    (NDR64_UINT8) 1 /* 0x1 */,
+    (NDR64_UINT16) 0 /* 0x0 */,
+    {
+        0x0000000c,
+        0x0000,
+        0x0000,
+        {0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}
+    }
+};
+
+static const __midl_frag10_t __midl_frag10 =
+{ 
+/* *struct _NDR64_POINTER_FORMAT */
+    0x24,    /* FC64_IP */
+    (NDR64_UINT8) 0 /* 0x0 */,
+    (NDR64_UINT16) 0 /* 0x0 */,
+    &__midl_frag11
+};
+
+static const __midl_frag9_t __midl_frag9 =
+{ 
+/* MarshallTheThing */
     { 
-    /* Shutdown */      /* procedure Shutdown */
+    /* MarshallTheThing */      /* procedure MarshallTheThing */
+        (NDR64_UINT32) 786498 /* 0xc0042 */,    /* primitive handle */ /* IsIntrepreted, ClientMustSize, HasReturn */
+        (NDR64_UINT32) 16 /* 0x10 */ ,  /* Stack size */
+        (NDR64_UINT32) 0 /* 0x0 */,
+        (NDR64_UINT32) 8 /* 0x8 */,
+        (NDR64_UINT16) 0 /* 0x0 */,
+        (NDR64_UINT16) 0 /* 0x0 */,
+        (NDR64_UINT16) 2 /* 0x2 */,
+        (NDR64_UINT16) 0 /* 0x0 */
+    },
+    { 
+    /* pStream */      /* parameter pStream */
+        &__midl_frag10,
+        { 
+        /* pStream */
+            1,
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            (NDR64_UINT16) 0 /* 0x0 */,
+            0
+        },    /* MustSize, MustFree, [in] */
+        (NDR64_UINT16) 0 /* 0x0 */,
+        0 /* 0x0 */,   /* Stack offset */
+    },
+    { 
+    /* HRESULT */      /* parameter HRESULT */
+        &__midl_frag12,
+        { 
+        /* HRESULT */
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            (NDR64_UINT16) 0 /* 0x0 */,
+            0
+        },    /* [out], IsReturn, Basetype, ByValue */
+        (NDR64_UINT16) 0 /* 0x0 */,
+        8 /* 0x8 */,   /* Stack offset */
+    }
+};
+
+static const __midl_frag8_t __midl_frag8 =
+{ 
+/* InternallyMarshalAThing */
+    { 
+    /* InternallyMarshalAThing */      /* procedure InternallyMarshalAThing */
         (NDR64_UINT32) 66 /* 0x42 */,    /* primitive handle */ /* IsIntrepreted */
         (NDR64_UINT32) 0 /* 0x0 */ ,  /* Stack size */
         (NDR64_UINT32) 0 /* 0x0 */,
@@ -407,9 +610,6 @@ static const __midl_frag4_t __midl_frag4 =
     }
 };
 
-static const __midl_frag3_t __midl_frag3 =
-0x5    /* FC64_INT32 */;
-
 static const __midl_frag2_t __midl_frag2 =
 { 
 /* GetDoCount */
@@ -426,7 +626,7 @@ static const __midl_frag2_t __midl_frag2 =
     },
     { 
     /* int */      /* parameter int */
-        &__midl_frag3,
+        &__midl_frag12,
         { 
         /* int */
             0,
@@ -461,7 +661,9 @@ static const FormatInfoRef hello_Ndr64ProcTable[] =
     {
     &__midl_frag2,
     &__midl_frag4,
-    &__midl_frag7
+    &__midl_frag8,
+    &__midl_frag8,
+    &__midl_frag9
     };
 
 

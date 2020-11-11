@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "hello_h.h"
+#include "IScratch_h.h"
 #include <windows.h>
+
+#include <wrl.h>
 
 void mainLoop()
 {
@@ -20,6 +23,33 @@ void mainLoop()
 
     // This Shutdown RPC call will stop the server process
     // Shutdown();
+    InternallyMarshalAThing();
+    
+    Microsoft::WRL::ComPtr<IStream> stream2;
+    auto hr = CreateStreamOnHGlobal(
+        NULL,
+        TRUE,
+        &stream2);
+    printf("CreateStreamOnHGlobal: %d\n", hr);
+
+    hr = stream2->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
+    printf("Seek: %d\n", hr);
+
+    hr = MarshallTheThing(stream2.Get());
+
+    printf("MarshallTheThing: %d\n", hr);
+    Microsoft::WRL::ComPtr<IScratch> otherScratch;
+    
+    hr = CoUnmarshalInterface(stream2.Get(), __uuidof(IScratch), (void**)otherScratch.GetAddressOf());
+    printf("CoUnmarshalInterface: %d\n", hr);
+    if (otherScratch)
+    {
+        printf("Successfully got a IScratch\n");
+    }
+    else
+    {
+        printf("Failed to get a IScratch\n");
+    }
 }
 
 void main()

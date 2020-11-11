@@ -142,7 +142,7 @@
   <ItemDefinitionGroup>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;RuntimeObject.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Midl>
       <ApplicationConfigurationMode>true</ApplicationConfigurationMode>
@@ -157,6 +157,8 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="..\hello.idl" />
+    <Midl Include="..\IScratch.idl" />
+
   </ItemGroup>
   <ItemGroup>
     <None Include="..\hello.acf" />

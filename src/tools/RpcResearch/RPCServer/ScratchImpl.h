@@ -3,8 +3,10 @@
 #include "IScratch_h.h"
 #include <wrl.h>
 
-class ScratchImpl : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IScratch>
+class __declspec(uuid("E68F5EDD-6257-4E72-A10B-4067ED8E85F2"))
+    ScratchImpl : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IScratch>
 {
+public:
     HRESULT __stdcall MyMethod()
     {
         _count++;
@@ -20,4 +22,4 @@ private:
     int _count{ 0 };
 };
 
-// CoCreatableClass(ScratchImpl);
+CoCreatableClass(ScratchImpl);
