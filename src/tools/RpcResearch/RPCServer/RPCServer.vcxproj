@@ -157,9 +157,14 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="..\hello.idl" />
+    <Midl Include="..\IScratch.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\hello.acf" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="IScratch.h" />
+    <ClInclude Include="ScratchImpl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

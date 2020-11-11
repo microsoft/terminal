@@ -4,15 +4,42 @@
 #include <ctype.h>
 #include <string>
 #include "hello_h.h"
+#include "ScratchImpl.h"
 #include <windows.h>
 
 int g_doCount = 22;
+// IScratch* g_iScratch = nullptr;
+Microsoft::WRL::ComPtr<IScratch> g_scratch{ nullptr };
+
+void CreateScratch()
+{
+    auto impl = Microsoft::WRL::Make<ScratchImpl>();
+    // ScratchImpl* foo = Microsoft::WRL::make<ScratchImpl>();
+
+    // g_iScratch = impl.Get();
+    g_scratch = impl;
+}
 
 void HelloProc(const wchar_t* psz)
 {
     printf("Hello: %ws\n", psz);
     g_doCount++;
     printf("The do count is: %d\n", g_doCount);
+
+    if (g_scratch)
+    {
+        int count;
+        g_scratch->MyCount(&count);
+        printf("The scratch's do count is: %d\n", count);
+        g_scratch->MyMethod();
+        g_scratch->MyCount(&count);
+        printf("Now the scratch's do count is: %d\n", count);
+    }
+    else
+    {
+        printf("Creating a new scratch object\n");
+        CreateScratch();
+    }
 }
 
 int GetDoCount()
