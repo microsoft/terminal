@@ -29,6 +29,7 @@
     <ClInclude Include="../AppKeyBindings.h" />
     <ClInclude Include="../TitlebarControl.h" />
     <ClInclude Include="../TabRowControl.h" />
+    <ClInclude Include="../TabHeaderControl.h" />
     <ClInclude Include="../App.h" />
     <ClInclude Include="../TerminalTab.h" />
     <ClInclude Include="../SettingsTab.h" />

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include <LibraryResources.h>
 #include "ColorPickupFlyout.h"
+#include "TabHeaderControl.h"
 #include "TerminalTab.h"
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
@@ -37,6 +38,7 @@ namespace winrt::TerminalApp::implementation
 
         _MakeTabViewItem();
         _CreateContextMenu();
+        TabViewItem().Header(_headerControl);
     }
 
     // Method Description:
@@ -589,26 +591,15 @@ namespace winrt::TerminalApp::implementation
         {
             if (_zoomedPane)
             {
-                Controls::StackPanel sp;
-                sp.Orientation(Controls::Orientation::Horizontal);
-                Controls::FontIcon ico;
-                ico.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-                ico.Glyph(L"\xE8A3"); // "ZoomIn", a magnifying glass with a '+' in it.
-                ico.FontSize(12);
-                ico.Margin(ThicknessHelper::FromLengths(0, 0, 8, 0));
-                sp.Children().Append(ico);
-                Controls::TextBlock tb;
-                tb.Text(tabText);
-                sp.Children().Append(tb);
-
-                TabViewItem().Header(sp);
+                _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Visible);   
             }
             else
             {
                 // If we're not currently in the process of renaming the tab,
                 // then just set the tab's text to whatever our active title is.
-                TabViewItem().Header(winrt::box_value(tabText));
+                _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Collapsed);
             }
+            _headerControl.UpdateHeaderText(tabText);
         }
         else
         {

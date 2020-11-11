@@ -144,6 +144,7 @@ namespace SettingsModelLocalTests
         // of from keybindings.
 
         const std::string commands0String{ R"([
+            { "name": "command0", "command": { "action": "splitPane", "split": null } },
             { "name": "command1", "command": { "action": "splitPane", "split": "vertical" } },
             { "name": "command2", "command": { "action": "splitPane", "split": "horizontal" } },
             { "name": "command4", "command": { "action": "splitPane" } },
@@ -156,8 +157,18 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(4u, commands.Size());
+        VERIFY_ARE_EQUAL(5u, commands.Size());
 
+        {
+            auto command = commands.Lookup(L"command0");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.Action().Action());
+            const auto& realArgs = command.Action().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+        }
         {
             auto command = commands.Lookup(L"command1");
             VERIFY_IS_NOT_NULL(command);

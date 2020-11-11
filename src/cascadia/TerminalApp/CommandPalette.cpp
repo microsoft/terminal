@@ -118,87 +118,48 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Scroll the command palette to the specified index
+    // - Scrolls the focus up or down the list of commands.
     // Arguments:
-    // - index within a list view of commands
+    // - pageDown: if true, we're attempting to move to the last visible item in the
+    //   list. Otherwise, we're attempting to move to the first visible item.
     // Return Value:
     // - <none>
-    void CommandPalette::_scrollToIndex(uint32_t index)
-    {
-        auto numItems = _filteredActionsView().Items().Size();
-
-        if (numItems == 0)
-        {
-            // if the list is empty no need to scroll
-            return;
-        }
-
-        auto clampedIndex = std::clamp<int32_t>(index, 0, numItems - 1);
-        _filteredActionsView().SelectedIndex(clampedIndex);
-        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
-    }
-
-    // Method Description:
-    // - Computes the number of visible commands
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the approximate number of items visible in the list (in other words the size of the page)
-    uint32_t CommandPalette::_getNumVisibleItems()
+    void CommandPalette::ScrollDown(const bool pageDown)
     {
         const auto container = _filteredActionsView().ContainerFromIndex(0);
         const auto item = container.try_as<winrt::Windows::UI::Xaml::Controls::ListViewItem>();
         const auto itemHeight = ::base::saturated_cast<int>(item.ActualHeight());
         const auto listHeight = ::base::saturated_cast<int>(_filteredActionsView().ActualHeight());
-        return listHeight / itemHeight;
-    }
+        const int numVisibleItems = listHeight / itemHeight;
 
-    // Method Description:
-    // - Scrolls the focus one page up the list of commands.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void CommandPalette::ScrollPageUp()
-    {
         auto selected = _filteredActionsView().SelectedIndex();
-        auto numVisibleItems = _getNumVisibleItems();
-        _scrollToIndex(selected - numVisibleItems);
+        const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
+
+        const auto newIndex = ((numItems + selected + (pageDown ? numVisibleItems : -numVisibleItems)) % numItems);
+        _filteredActionsView().SelectedIndex(newIndex);
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
     // Method Description:
-    // - Scrolls the focus one page down the list of commands.
+    // - Moves the focus either to the top item or to the end item in the list of commands.
     // Arguments:
-    // - <none>
+    // - end: if true, we're attempting to move to the last item in the
+    //   list. Otherwise, we're attempting to move to the first item.
+    //   Depends on the pageUpDown argument.
     // Return Value:
     // - <none>
-    void CommandPalette::ScrollPageDown()
+    void CommandPalette::GoEnd(const bool end)
     {
-        auto selected = _filteredActionsView().SelectedIndex();
-        auto numVisibleItems = _getNumVisibleItems();
-        _scrollToIndex(selected + numVisibleItems);
-    }
-
-    // Method Description:
-    // - Moves the focus to the top item in the list of commands.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void CommandPalette::ScrollToTop()
-    {
-        _scrollToIndex(0);
-    }
-
-    // Method Description:
-    // - Moves the focus to the bottom item in the list of commands.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void CommandPalette::ScrollToBottom()
-    {
-        _scrollToIndex(_filteredActionsView().Items().Size() - 1);
+        const auto lastIndex = ::base::saturated_cast<int>(_filteredActionsView().Items().Size() - 1);
+        if (end)
+        {
+            _filteredActionsView().SelectedIndex(lastIndex);
+        }
+        else
+        {
+            _filteredActionsView().SelectedIndex(0);
+        }
+        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
     }
 
     // Method Description:
@@ -280,25 +241,25 @@ namespace winrt::TerminalApp::implementation
         else if (key == VirtualKey::PageUp)
         {
             // Action Mode: Move focus to the first visible item in the list.
-            ScrollPageUp();
+            ScrollDown(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::PageDown)
         {
             // Action Mode: Move focus to the last visible item in the list.
-            ScrollPageDown();
+            ScrollDown(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Home)
         {
             // Action Mode: Move focus to the first item in the list.
-            ScrollToTop();
+            GoEnd(false);
             e.Handled(true);
         }
         else if (key == VirtualKey::End)
         {
             // Action Mode: Move focus to the last item in the list.
-            ScrollToBottom();
+            GoEnd(true);
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
@@ -857,7 +818,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& action : commandsToFilter)
         {
             // Update filter for all commands
-            // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
+            // This will modify the highlighting but will also lead to recomputation of weight (and consequently sorting).
             // Pay attention that it already updates the highlighting in the UI
             action.UpdateFilter(searchText);
 
@@ -868,13 +829,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // We want to present the commands sorted,
-        // unless we are in the TabSwitcherMode and TabSearchMode,
-        // in which we want to preserve the original order (to be aligned with the tab view)
-        if (_currentMode != CommandPaletteMode::TabSearchMode && _currentMode != CommandPaletteMode::TabSwitchMode)
-        {
-            std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
-        }
+        // Add all the commands, but make sure they're sorted.
+        std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
         return actions;
     }
 

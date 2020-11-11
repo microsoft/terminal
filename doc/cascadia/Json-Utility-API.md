@@ -8,20 +8,19 @@ return a JSON value coerced into the specified type.
 When reading into existing storage, it returns a boolean indicating whether that storage was modified.
 
 If the JSON value cannot be converted to the specified type, an exception will be generated.
-For non-nullable type conversions (most POD types), `null` is considered to be an invalid type.
 
 ```c++
 std::string one;
 std::optional<std::string> two;
 
 JsonUtils::GetValue(json, one);
-// one is populated or an exception is thrown.
+// one is populated or unchanged.
 
 JsonUtils::GetValue(json, two);
-// two is populated, nullopt or an exception is thrown
+// two is populated, nullopt or unchanged
 
 auto three = JsonUtils::GetValue<std::string>(json);
-// three is populated or an exception is thrown
+// three is populated or zero-initialized
 
 auto four = JsonUtils::GetValue<std::optional<std::string>>(json);
 // four is populated or nullopt
@@ -226,14 +225,14 @@ auto v = JsonUtils::GetValue<int>(json, conv);
 
 -|json type invalid|json null|valid
 -|-|-|-
-`T`|❌ exception|❌ exception|✔ converted
+`T`|❌ exception|🔵 unchanged|✔ converted
 `std::optional<T>`|❌ exception|🟨 `nullopt`|✔ converted
 
 ### GetValue&lt;T&gt;() (returning)
 
 -|json type invalid|json null|valid
 -|-|-|-
-`T`|❌ exception|❌ exception|✔ converted
+`T`|❌ exception|🟨 `T{}` (zero value)|✔ converted
 `std::optional<T>`|❌ exception|🟨 `nullopt`|✔ converted
 
 ### GetValueForKey(T&) (type-deducing)
@@ -243,14 +242,14 @@ a "key not found" state. The remaining three cases are the same.
 
 val type|key not found|_json type invalid_|_json null_|_valid_
 -|-|-|-|-
-`T`|🔵 unchanged|_❌ exception_|_❌ exception_|_✔ converted_
-`std::optional<T>`|🔵 unchanged|_❌ exception_|_🟨 `nullopt`_|_✔ converted_
+`T`|🔵 unchanged|_❌ exception_|_🔵 unchanged_|_✔ converted_
+`std::optional<T>`|_🔵 unchanged_|_❌ exception_|_🟨 `nullopt`_|_✔ converted_
 
 ### GetValueForKey&lt;T&gt;() (return value)
 
 val type|key not found|_json type invalid_|_json null_|_valid_
 -|-|-|-|-
-`T`|🟨 `T{}` (zero value)|_❌ exception_|_❌ exception_|_✔ converted_
+`T`|🟨 `T{}` (zero value)|_❌ exception_|_🟨 `T{}` (zero value)_|_✔ converted_
 `std::optional<T>`|🟨 `nullopt`|_❌ exception_|_🟨 `nullopt`_|_✔ converted_
 
 ### Future Direction

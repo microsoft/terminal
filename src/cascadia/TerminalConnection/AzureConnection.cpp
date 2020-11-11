@@ -688,25 +688,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
-    // - Helper function to parse the preferred shell type from user settings returned by cloud console API.
-    // We need this function because the field might be missing in the settings
-    // created with old versions of cloud console API.
-    std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
-    {
-        if (settingsResponse.has_object_field(L"properties"))
-        {
-            const auto userSettings = settingsResponse.at(L"properties");
-            if (userSettings.has_string_field(L"preferredShellType"))
-            {
-                const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
-                return preferredShellTypeValue.as_string();
-            }
-        }
-
-        return std::nullopt;
-    }
-
-    // Method description:
     // - helper function to connect the user to the Azure cloud shell
     void AzureConnection::_RunConnectState()
     {
@@ -725,9 +706,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
-        const auto shellType = _ParsePreferredShellType(settingsResponse);
+        const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(shellType.value_or(L"pwsh"));
+        const auto socketUri = _GetTerminal(shellType);
         _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal

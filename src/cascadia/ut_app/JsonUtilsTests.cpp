@@ -101,38 +101,6 @@ JSON_FLAG_MAPPER(JsonTestFlags)
     };
 };
 
-struct hstring_like
-{
-    std::string value;
-};
-template<>
-struct ConversionTrait<hstring_like>
-{
-    hstring_like FromJson(const Json::Value& json)
-    {
-        return { ConversionTrait<std::string>{}.FromJson(json) };
-    }
-
-    bool CanConvert(const Json::Value& json)
-    {
-        return json.isNull() || ConversionTrait<std::string>{}.CanConvert(json);
-    }
-
-    Json::Value ToJson(const hstring_like& val)
-    {
-        if (val.value == "")
-        {
-            return Json::Value::nullSingleton();
-        }
-        return val.value;
-    }
-
-    std::string TypeDescription() const
-    {
-        return "string";
-    }
-};
-
 namespace TerminalAppUnitTests
 {
     class JsonUtilsTests
@@ -151,11 +119,6 @@ namespace TerminalAppUnitTests
         TEST_METHOD(FlagMapper);
 
         TEST_METHOD(NestedExceptionDuringKeyParse);
-
-        TEST_METHOD(SetValueHStringLike);
-        TEST_METHOD(GetValueHStringLike);
-
-        TEST_METHOD(DoubleOptional);
     };
 
     template<typename T>
@@ -173,8 +136,9 @@ namespace TerminalAppUnitTests
         //// 1.a. Type Invalid - Exception ////
         VERIFY_THROWS_SPECIFIC(GetValue<int>(object), DeserializationError, _ReturnTrueForException);
 
-        //// 1.b. JSON NULL - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValue<std::string>(Json::Value::nullSingleton()), DeserializationError, _ReturnTrueForException);
+        //// 1.b. JSON NULL - Zero Value ////
+        std::string zeroValueString{};
+        VERIFY_ARE_EQUAL(zeroValueString, GetValue<std::string>(Json::Value::nullSingleton()));
 
         //// 1.c. Valid - Valid ////
         VERIFY_ARE_EQUAL(expected, GetValue<std::string>(object));
@@ -203,8 +167,9 @@ namespace TerminalAppUnitTests
         VERIFY_THROWS_SPECIFIC(GetValue(object, outputRedHerring), DeserializationError, _ReturnTrueForException);
         VERIFY_ARE_EQUAL(5, outputRedHerring); // unchanged
 
-        //// 1.b. JSON NULL - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValue(Json::Value::nullSingleton(), output), DeserializationError, _ReturnTrueForException);
+        //// 1.b. JSON NULL - Unchanged ////
+        VERIFY_IS_FALSE(GetValue(Json::Value::nullSingleton(), output)); // FALSE = storage not modified!
+        VERIFY_ARE_EQUAL("sentinel", output); // unchanged
 
         //// 1.c. Valid ////
         VERIFY_IS_TRUE(GetValue(object, output));
@@ -243,14 +208,14 @@ namespace TerminalAppUnitTests
         //// 1.a. Type Invalid - Exception ////
         VERIFY_THROWS_SPECIFIC(GetValueForKey<int>(object, key), DeserializationError, _ReturnTrueForException);
 
-        //// 1.b. JSON NULL - Exception ////
-        VERIFY_THROWS_SPECIFIC(GetValueForKey<std::string>(object, nullKey), DeserializationError, _ReturnTrueForException);
+        //// 1.b. JSON NULL - Zero Value ////
+        std::string zeroValueString{};
+        VERIFY_ARE_EQUAL(zeroValueString, GetValueForKey<std::string>(object, nullKey));
 
         //// 1.c. Valid - Valid ////
         VERIFY_ARE_EQUAL(expected, GetValueForKey<std::string>(object, key));
 
         //// 1.d. Not Found - Zero Value ////
-        std::string zeroValueString{};
         VERIFY_ARE_EQUAL(zeroValueString, GetValueForKey<std::string>(object, invalidKey));
 
         //// 2. Optional ////
@@ -288,7 +253,8 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(5, outputRedHerring); // unchanged
 
         //// 1.b. JSON NULL - Unchanged ////
-        VERIFY_THROWS_SPECIFIC(GetValueForKey(object, nullKey, output), DeserializationError, _ReturnTrueForException);
+        VERIFY_IS_FALSE(GetValueForKey(object, nullKey, output)); // FALSE = storage not modified!
+        VERIFY_ARE_EQUAL("sentinel", output); // unchanged
 
         //// 1.c. Valid ////
         VERIFY_IS_TRUE(GetValueForKey(object, key, output));
@@ -539,89 +505,4 @@ namespace TerminalAppUnitTests
         VERIFY_THROWS_SPECIFIC(GetValueForKey<int>(object, key), DeserializationError, CheckKeyInException);
     }
 
-    void JsonUtilsTests::SetValueHStringLike()
-    {
-        // Terminal has a string type (hstring) where null/"" are the same, and
-        // we want to make sure that optionals of that type serialize "properly".
-        hstring_like first{ "" };
-        hstring_like second{ "second" };
-        std::optional<hstring_like> third{ { "" } };
-        std::optional<hstring_like> fourth{ { "fourth" } };
-        std::optional<hstring_like> fifth{};
-
-        Json::Value object{ Json::objectValue };
-
-        SetValueForKey(object, "first", first);
-        SetValueForKey(object, "second", second);
-        SetValueForKey(object, "third", third);
-        SetValueForKey(object, "fourth", fourth);
-        SetValueForKey(object, "fifth", fifth);
-
-        VERIFY_ARE_EQUAL(Json::Value::nullSingleton(), object["first"]); // real empty value serializes as null
-        VERIFY_ARE_EQUAL("second", object["second"].asString()); // serializes as a string
-        VERIFY_ARE_EQUAL(Json::Value::nullSingleton(), object["third"]); // optional populated with real empty value serializes as null
-        VERIFY_ARE_EQUAL("fourth", object["fourth"].asString()); // serializes as a string
-        VERIFY_IS_FALSE(object.isMember("fifth")); // does not serialize
-    }
-
-    void JsonUtilsTests::GetValueHStringLike()
-    {
-        Json::Value object{ Json::objectValue };
-        object["string"] = "string";
-        object["null"] = Json::Value::nullSingleton();
-        // object["nonexistent"] can't be set, clearly, to continue not existing
-
-        hstring_like v;
-        VERIFY_IS_TRUE(GetValueForKey(object, "string", v));
-        VERIFY_ARE_EQUAL("string", v.value); // deserializes as string
-        VERIFY_IS_TRUE(GetValueForKey(object, "null", v));
-        VERIFY_ARE_EQUAL("", v.value); // deserializes as real value, but empty
-        VERIFY_IS_FALSE(GetValueForKey(object, "nonexistent", v)); // does not deserialize
-
-        std::optional<hstring_like> optionalV;
-        // deserializes as populated optional containing string
-        VERIFY_IS_TRUE(GetValueForKey(object, "string", optionalV));
-        VERIFY_IS_TRUE(optionalV.has_value());
-        VERIFY_ARE_EQUAL("string", optionalV->value);
-
-        optionalV = std::nullopt;
-        // deserializes as populated optional containing real empty value
-        VERIFY_IS_TRUE(GetValueForKey(object, "null", optionalV));
-        VERIFY_IS_TRUE(optionalV.has_value());
-        VERIFY_ARE_EQUAL("", optionalV->value);
-
-        optionalV = std::nullopt;
-        // does not deserialize; optional remains nullopt
-        VERIFY_IS_FALSE(GetValueForKey(object, "nonexistent", optionalV));
-        VERIFY_ARE_EQUAL(std::nullopt, optionalV);
-    }
-
-    void JsonUtilsTests::DoubleOptional()
-    {
-        const std::optional<std::optional<int>> first{ std::nullopt }; // no value
-        const std::optional<std::optional<int>> second{ std::optional<int>{ std::nullopt } }; // outer has a value, inner is "no value"
-        const std::optional<std::optional<int>> third{ std::optional<int>{ 3 } }; // outer has a value, inner is "no value"
-
-        Json::Value object{ Json::objectValue };
-
-        SetValueForKey(object, "first", first);
-        SetValueForKey(object, "second", second);
-        SetValueForKey(object, "third", third);
-
-        VERIFY_IS_FALSE(object.isMember("first"));
-        VERIFY_IS_TRUE(object.isMember("second"));
-        VERIFY_ARE_EQUAL(Json::Value::nullSingleton(), object["second"]);
-        VERIFY_ARE_EQUAL(Json::Value{ 3 }, object["third"]);
-
-        std::optional<std::optional<int>> firstOut, secondOut, thirdOut;
-        VERIFY_IS_FALSE(GetValueForKey(object, "first", firstOut));
-        VERIFY_IS_TRUE(GetValueForKey(object, "second", secondOut));
-        VERIFY_IS_TRUE(static_cast<bool>(secondOut));
-        VERIFY_ARE_EQUAL(std::nullopt, *secondOut); // should have come back out as null
-
-        VERIFY_IS_TRUE(GetValueForKey(object, "third", thirdOut));
-        VERIFY_IS_TRUE(static_cast<bool>(thirdOut));
-        VERIFY_IS_TRUE(static_cast<bool>(*thirdOut));
-        VERIFY_ARE_EQUAL(3, **thirdOut);
-    }
 }

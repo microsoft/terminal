@@ -322,6 +322,7 @@ namespace SettingsModelLocalTests
     void KeyBindingsTests::TestSplitPaneArgs()
     {
         const std::string bindings0String{ R"([
+            { "keys": ["ctrl+c"], "command": { "action": "splitPane", "split": null } },
             { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical" } },
             { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal" } },
             { "keys": ["ctrl+g"], "command": { "action": "splitPane" } },
@@ -334,8 +335,17 @@ namespace SettingsModelLocalTests
         VERIFY_IS_NOT_NULL(keymap);
         VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
         keymap->LayerJson(bindings0Json);
-        VERIFY_ARE_EQUAL(4u, keymap->_keyShortcuts.size());
+        VERIFY_ARE_EQUAL(5u, keymap->_keyShortcuts.size());
 
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+        }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);

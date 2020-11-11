@@ -1410,14 +1410,14 @@ namespace SettingsModelLocalTests
     }
     void DeserializationTests::TestProfileBackgroundImageWithDesktopWallpaper()
     {
-        const winrt::hstring expectedBackgroundImagePath{ L"desktopWallpaper" };
+        const winrt::hstring expectedBackgroundImagePath{ winrt::to_hstring("DesktopWallpaper") };
 
         const std::string settingsJson{ R"(
         {
             "profiles": [
                 {
                     "name": "profile0",
-                    "backgroundImage": "desktopWallpaper"
+                    "backgroundImage": "DesktopWallpaper"
                 }
             ]
         })" };

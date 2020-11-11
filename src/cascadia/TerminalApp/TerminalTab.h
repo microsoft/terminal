@@ -4,6 +4,7 @@
 #pragma once
 #include "Pane.h"
 #include "ColorPickupFlyout.h"
+#include "TabHeaderControl.h"
 #include "TabBase.h"
 #include "TerminalTab.g.h"
 
@@ -80,6 +81,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::TerminalApp::TabHeaderControl _headerControl{};
 
         bool _receivedKeyDown{ false };
 
