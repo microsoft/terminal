@@ -567,11 +567,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
     JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
-
-    // StartingDirectory is "nullable". But we represent a null starting directory as the empty string.
-    // So during serialization, we'll write this out as an empty string, instead of "null"
     JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
-
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
     JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
@@ -579,9 +575,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
-
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
-
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
 
     return json;
