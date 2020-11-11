@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TabHeaderControl : Windows.UI.Xaml.Controls.UserControl
+    {
+        TabHeaderControl();
+        void UpdateHeaderText(String title);
+        void SetZoomIcon(Windows.UI.Xaml.Visibility state);
+    }
+}
