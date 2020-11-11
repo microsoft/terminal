@@ -218,7 +218,7 @@ namespace winrt::TerminalApp::implementation
             SwitchToTabCommand().Name(Title());
 
             // Update the UI to reflect the changed
-            _UpdateTabHeader();
+            _headerControl.UpdateHeaderText(Title());
         }
     }
 
@@ -368,9 +368,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::ActivateTabRenamer()
     {
-        _inRename = true;
-        _receivedKeyDown = false;
-        _UpdateTabHeader();
+        _headerControl.ConstructTabRenameBox();
     }
 
     // Method Description:
@@ -568,153 +566,6 @@ namespace winrt::TerminalApp::implementation
         newTabFlyout.Items().Append(_CreateCloseSubMenu());
         newTabFlyout.Items().Append(closeTabMenuItem);
         TabViewItem().ContextFlyout(newTabFlyout);
-    }
-
-    // Method Description:
-    // - This will update the contents of our TabViewItem for our current state.
-    //   - If we're not in a rename, we'll set the Header of the TabViewItem to
-    //     simply our current tab text (either the runtime tab text or the
-    //     active terminal's text).
-    //   - If we're in a rename, then we'll set the Header to a TextBox with the
-    //     current tab text. The user can then use that TextBox to set a string
-    //     to use as an override for the tab's text.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalTab::_UpdateTabHeader()
-    {
-        winrt::hstring tabText{ Title() };
-
-        if (!_inRename)
-        {
-            if (_zoomedPane)
-            {
-                _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Visible);
-            }
-            else
-            {
-                // If we're not currently in the process of renaming the tab,
-                // then just set the tab's text to whatever our active title is.
-                _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Collapsed);
-            }
-            _headerControl.UpdateHeaderText(tabText);
-        }
-        else
-        {
-            _ConstructTabRenameBox(tabText);
-        }
-    }
-
-    // Method Description:
-    // - Create a new TextBox to use as the control for renaming the tab text.
-    //   If the text box is already created, then this will do nothing, and
-    //   leave the current box unmodified.
-    // Arguments:
-    // - tabText: This should be the text to initialize the rename text box with.
-    // Return Value:
-    // - <none>
-    void TerminalTab::_ConstructTabRenameBox(const winrt::hstring& tabText)
-    {
-        if (TabViewItem().Header().try_as<Controls::TextBox>())
-        {
-            return;
-        }
-
-        Controls::TextBox tabTextBox;
-        tabTextBox.Text(tabText);
-
-        // The TextBox has a MinHeight already set by default, which is
-        // larger than we want. Get rid of it.
-        tabTextBox.MinHeight(0);
-        // Also get rid of the internal padding on the text box, between the
-        // border and the text content, on the top and bottom. This will
-        // help the box fit within the bounds of the tab.
-        Thickness internalPadding = ThicknessHelper::FromLengths(4, 0, 4, 0);
-        tabTextBox.Padding(internalPadding);
-
-        // Make the margin (0, -8, 0, -8), to counteract the padding that
-        // the TabViewItem has.
-        //
-        // This is maybe a bit fragile, as the actual value might not be exactly
-        // (0, 8, 0, 8), but using TabViewItemHeaderPadding to look up the real
-        // value at runtime didn't work. So this is good enough for now.
-        Thickness negativeMargins = ThicknessHelper::FromLengths(0, -8, 0, -8);
-        tabTextBox.Margin(negativeMargins);
-
-        // Set up some event handlers on the text box. We need three of them:
-        // * A LostFocus event, so when the TextBox loses focus, we'll
-        //   remove it and return to just the text on the tab.
-        // * A KeyUp event, to be able to submit the tab text on Enter or
-        //   dismiss the text box on Escape
-        // * A LayoutUpdated event, so that we can auto-focus the text box
-        //   when it's added to the tree.
-        auto weakThis{ get_weak() };
-
-        // When the text box loses focus, update the tab title of our tab.
-        // - If there are any contents in the box, we'll use that value as
-        //   the new "runtime text", which will override any text set by the
-        //   application.
-        // - If the text box is empty, we'll reset the "runtime text", and
-        //   return to using the active terminal's title.
-        tabTextBox.LostFocus([weakThis](const IInspectable& sender, auto&&) {
-            auto tab{ weakThis.get() };
-            auto textBox{ sender.try_as<Controls::TextBox>() };
-            if (tab && textBox)
-            {
-                tab->_runtimeTabText = textBox.Text();
-                tab->_inRename = false;
-                tab->UpdateTitle();
-            }
-        });
-
-        // We'll only process the KeyUp event if we received an initial KeyDown event first.
-        // Avoids issue immediately closing the tab rename when we see the enter KeyUp event that was
-        // sent to the command palette to trigger the openTabRenamer action in the first place.
-        tabTextBox.KeyDown([weakThis](const IInspectable&, Input::KeyRoutedEventArgs const&) {
-            auto tab{ weakThis.get() };
-            tab->_receivedKeyDown = true;
-        });
-
-        // NOTE: (Preview)KeyDown does not work here. If you use that, we'll
-        // remove the TextBox from the UI tree, then the following KeyUp
-        // will bubble to the NewTabButton, which we don't want to have
-        // happen.
-        tabTextBox.KeyUp([weakThis](const IInspectable& sender, Input::KeyRoutedEventArgs const& e) {
-            auto tab{ weakThis.get() };
-            auto textBox{ sender.try_as<Controls::TextBox>() };
-            if (tab && textBox && tab->_receivedKeyDown)
-            {
-                switch (e.OriginalKey())
-                {
-                case VirtualKey::Enter:
-                    tab->_runtimeTabText = textBox.Text();
-                    [[fallthrough]];
-                case VirtualKey::Escape:
-                    e.Handled(true);
-                    textBox.Text(tab->_runtimeTabText);
-                    tab->_inRename = false;
-                    tab->UpdateTitle();
-                    break;
-                }
-            }
-        });
-
-        // As soon as the text box is added to the UI tree, focus it. We can't focus it till it's in the tree.
-        _tabRenameBoxLayoutUpdatedRevoker = tabTextBox.LayoutUpdated(winrt::auto_revoke, [this](auto&&, auto&&) {
-            // Curiously, the sender for this event is null, so we have to
-            // get the TextBox from the Tab's Header().
-            auto textBox{ TabViewItem().Header().try_as<Controls::TextBox>() };
-            if (textBox)
-            {
-                textBox.SelectAll();
-                textBox.Focus(FocusState::Programmatic);
-            }
-            // Only let this succeed once.
-            _tabRenameBoxLayoutUpdatedRevoker.revoke();
-        });
-
-        TabViewItem().Header(tabTextBox);
     }
 
     // Method Description:
@@ -989,7 +840,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
-        _UpdateTabHeader();
+        _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Visible);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -997,7 +848,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
-        _UpdateTabHeader();
+        _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Collapsed);
         Content(_rootPane->GetRootElement());
     }
 

@@ -104,8 +104,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         winrt::hstring _GetActiveTitle() const;
-        void _UpdateTabHeader();
-        void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);

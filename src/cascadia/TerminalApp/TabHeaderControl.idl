@@ -8,5 +8,6 @@ namespace TerminalApp
         TabHeaderControl();
         void UpdateHeaderText(String title);
         void SetZoomIcon(Windows.UI.Xaml.Visibility state);
+        void ConstructTabRenameBox();
     }
 }

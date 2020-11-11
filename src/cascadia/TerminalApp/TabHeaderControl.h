@@ -14,6 +14,14 @@ namespace winrt::TerminalApp::implementation
         TabHeaderControl();
         void UpdateHeaderText(winrt::hstring title);
         void SetZoomIcon(Windows::UI::Xaml::Visibility state);
+        void ConstructTabRenameBox();
+
+        void RenameBoxLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                       winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+    private:
+        void _CloseRenameBox();
+        bool _receivedKeyDown{ false };
     };
 }
 
