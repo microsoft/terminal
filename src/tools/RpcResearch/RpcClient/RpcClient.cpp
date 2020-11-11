@@ -42,7 +42,9 @@ void main()
     RpcTryExcept
     {
         HelloProc(pszString);
-        Shutdown();
+
+        // This Shutdown RPC call will stop the server process
+        // Shutdown();
     }
     RpcExcept(1)
     {

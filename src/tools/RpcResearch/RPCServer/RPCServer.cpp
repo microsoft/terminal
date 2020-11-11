@@ -6,9 +6,13 @@
 #include "hello_h.h"
 #include <windows.h>
 
+int g_doCount = 22;
+
 void HelloProc(const wchar_t* psz)
 {
     printf("Hello: %ws\n", psz);
+    g_doCount++;
+    printf("The do count is: %d\n", g_doCount);
 }
 
 void Shutdown()
@@ -46,7 +50,10 @@ void main()
                                    pszSecurity);
 
     if (status)
+    {
+        printf("RpcServerUseProtseqEp returned an error:%d\n", status);
         exit(status);
+    }
 
     // status = RpcServerRegisterIf(hello_IfHandle,
     status = RpcServerRegisterIf(hello_v1_0_s_ifspec,
@@ -54,14 +61,24 @@ void main()
                                  NULL);
 
     if (status)
+    {
+        printf("RpcServerRegisterIf returned an error:%d\n", status);
         exit(status);
+    }
 
     status = RpcServerListen(cMinCalls,
                              RPC_C_LISTEN_MAX_CALLS_DEFAULT,
                              fDontWait);
 
     if (status)
+    {
+        printf("RpcServerListen returned an error:%d\n", status);
         exit(status);
+    }
+    else
+    {
+        printf("RpcServerListen returned 0\n");
+    }
 }
 
 /******************************************************/
