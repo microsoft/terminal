@@ -7,6 +7,7 @@
 ]
 interface hello
 {
+    int GetDoCount();
     void HelloProc([in, string] const wchar_t* pszString);
     void Shutdown(void);
 }

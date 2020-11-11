@@ -5,6 +5,23 @@
 #include "hello_h.h"
 #include <windows.h>
 
+void mainLoop()
+{
+    const wchar_t* pszString = L"hello, world";
+
+    // Do the logic for the app in here, once RPC has already been set up.
+
+    printf("The server said the DoCount is %d\n", GetDoCount());
+
+    HelloProc(pszString);
+    HelloProc(L"A different string");
+
+    printf("Now, the DoCount is %d\n", GetDoCount());
+
+    // This Shutdown RPC call will stop the server process
+    // Shutdown();
+}
+
 void main()
 {
     RPC_STATUS status;
@@ -14,7 +31,6 @@ void main()
     const wchar_t* pszEndpoint = L"\\pipe\\hello";
     wchar_t* pszOptions = NULL;
     wchar_t* pszStringBinding = NULL;
-    const wchar_t* pszString = L"hello, world";
     unsigned long ulCode;
 
     status = RpcStringBindingCompose(reinterpret_cast<RPC_WSTR>(pszUuid),
@@ -41,10 +57,7 @@ void main()
 
     RpcTryExcept
     {
-        HelloProc(pszString);
-
-        // This Shutdown RPC call will stop the server process
-        // Shutdown();
+        mainLoop();
     }
     RpcExcept(1)
     {

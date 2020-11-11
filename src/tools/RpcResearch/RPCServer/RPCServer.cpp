@@ -15,6 +15,11 @@ void HelloProc(const wchar_t* psz)
     printf("The do count is: %d\n", g_doCount);
 }
 
+int GetDoCount()
+{
+    return g_doCount;
+}
+
 void Shutdown()
 {
     printf("Goodbye\n");
