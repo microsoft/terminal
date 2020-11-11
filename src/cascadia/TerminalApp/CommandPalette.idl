@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "Command.idl";
 import "IDirectKeyListener.idl";
+import "ShortcutActionDispatch.idl";
+import "HighlightedTextControl.idl";
+import "FilteredCommand.idl";
 
 namespace TerminalApp
 {
@@ -11,13 +13,15 @@ namespace TerminalApp
         CommandPalette();
 
         String NoMatchesText { get; };
-        String SearchBoxText { get; };
+        String SearchBoxPlaceholderText { get; };
+        String PrefixCharacter { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
 
-        Windows.Foundation.Collections.IObservableVector<Command> FilteredActions { get; };
+        Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
-        void SetCommands(Windows.Foundation.Collections.IVector<Command> actions);
+        void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);
+        void SetTabActions(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> tabs, Boolean clearList);
         void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
         void EnableCommandPaletteMode();
 
@@ -26,6 +30,5 @@ namespace TerminalApp
         void SetDispatch(ShortcutActionDispatch dispatch);
 
         void EnableTabSwitcherMode(Boolean searchMode, UInt32 startIdx);
-        void OnTabsChanged(IInspectable s, Windows.Foundation.Collections.IVectorChangedEventArgs e);
     }
 }

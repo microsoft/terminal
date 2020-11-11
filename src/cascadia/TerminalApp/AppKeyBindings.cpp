@@ -27,7 +27,7 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void AppKeyBindings::SetKeyMapping(const winrt::TerminalApp::KeyMapping& keymap)
+    void AppKeyBindings::SetKeyMapping(const winrt::Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
     {
         _keymap = keymap;
     }

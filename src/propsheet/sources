@@ -1,3 +1,5 @@
+ARM64X_EC_ENABLED=1
+
 !include ..\project.inc
 
 # -------------------------------------

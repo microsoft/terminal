@@ -11,12 +11,6 @@
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
     <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-    <!--
       This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
       We have to do this to overcome a layout issue in the WAP packaging project.
       When we do this, the XBF ends up in resources.pri.
@@ -27,8 +21,8 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
-
   <ItemDefinitionGroup>
+
     <ClCompile>
       <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
       on being compiled with RTTI (/GR). -->
@@ -60,6 +54,9 @@
     <Page Include="TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="HighlightedTextControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="ColorPickupFlyout.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -76,6 +73,12 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TabBase.h">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalTab.h">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -86,50 +89,27 @@
     <ClInclude Include="TabRowControl.h">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="HighlightedTextControl.h">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+    </ClInclude>
+	<ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="CommandPalette.h">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Command.h">
-      <DependentUpon>Command.idl</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="FilteredCommand.h" />
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Tab.h">
-      <DependentUpon>Tab.idl</DependentUpon>
+    <ClInclude Include="IconPathConverter.h">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="ColorScheme.h">
-      <DependentUpon>ColorScheme.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="GlobalAppSettings.h">
-      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Profile.h">
-      <DependentUpon>Profile.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="CascadiaSettings.h">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyChordSerialization.h" />
-    <ClInclude Include="JsonUtils.h" />
-    <ClInclude Include="Utils.h" />
-    <ClInclude Include="DefaultProfileUtils.h" />
-    <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
-    <ClInclude Include="TerminalWarnings.h">
-      <DependentUpon>TerminalWarnings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="IDynamicProfileGenerator.h" />
-    <ClInclude Include="PowershellCoreProfileGenerator.h" />
-    <ClInclude Include="WslDistroGenerator.h" />
-    <ClInclude Include="AzureCloudShellGenerator.h" />
-    <ClInclude Include="TelnetGenerator.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
@@ -138,18 +118,9 @@
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ActionArgs.h">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ActionAndArgs.h">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyMapping.h">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
@@ -167,6 +138,12 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TabBase.cpp">
+      <DependentUpon>TabBase.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalTab.cpp">
+      <DependentUpon>TerminalTab.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -177,52 +154,30 @@
     <ClCompile Include="TabRowControl.cpp">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="HighlightedTextControl.cpp">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+    </ClCompile>
+	<ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="CommandPalette.cpp">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Command.cpp">
-      <DependentUpon>Command.idl</DependentUpon>
-    </ClCompile>
+    <ClCompile Include="FilteredCommand.cpp" />
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Tab.cpp">
-      <DependentUpon>Tab.idl</DependentUpon>
+    <ClCompile Include="IconPathConverter.cpp">
+      <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
-    <ClCompile Include="ColorScheme.cpp">
-      <DependentUpon>ColorScheme.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="GlobalAppSettings.cpp">
-      <DependentUpon>GlobalAppSettings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="Profile.cpp">
-      <DependentUpon>Profile.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="CascadiaSettings.cpp">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="CascadiaSettingsSerialization.cpp">
-      <DependentUpon>CascadiaSettings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyChordSerialization.cpp" />
-    <ClCompile Include="DefaultProfileUtils.cpp" />
-    <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
-    <ClCompile Include="WslDistroGenerator.cpp" />
-    <ClCompile Include="AzureCloudShellGenerator.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
@@ -232,17 +187,8 @@
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="KeyMapping.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ActionAndArgs.cpp">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ActionArgs.cpp">
-      <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="App.cpp">
       <DependentUpon>App.xaml</DependentUpon>
@@ -252,11 +198,6 @@
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
-    </ClCompile>
-    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
-    you want to use jsoncpp -->
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
@@ -270,13 +211,13 @@
     </Midl>
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="AppLogic.idl" />
-    <Midl Include="ActionArgs.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="TabBase.idl" />
+    <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -289,6 +230,11 @@
       <DependentUpon>TabRowControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="HighlightedTextControl.idl">
+      <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+	<Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -297,16 +243,11 @@
       <DependentUpon>CommandPalette.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="Command.idl" />
+    <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="Tab.idl" />
+    <Midl Include="IconPathConverter.idl" />
     <Midl Include="TerminalSettings.idl" />
-    <Midl Include="ColorScheme.idl" />
-    <Midl Include="Profile.idl" />
-    <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="CascadiaSettings.idl" />
-    <Midl Include="TerminalWarnings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -331,11 +272,6 @@
     manually include the winmds as References below -->
   </ItemGroup>
   <PropertyGroup>
-    <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
-    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
-  </PropertyGroup>
-  <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See
     https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
     just has a bug in it.-->
@@ -347,13 +283,19 @@
     propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
     <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Settings.Model">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -363,7 +305,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -402,20 +344,6 @@
         <TargetPath>%(Filename)%(Extension)</TargetPath>
       </PackagingOutputs>
     </ItemGroup>
-  </Target>
-  <!-- This target will take our defaults.json and stamp it into a .h file that
-  we can include in the code directly. This way, we don't need to worry about
-  failing to load the default settings at runtime. -->
-  <Target Name="_TerminalAppGenerateDefaultsH" Inputs="defaults.json" Outputs="Generated Files\defaults.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
-  </Target>
-  <!-- A different set of defaults for Universal variant -->
-  <Target Name="_TerminalAppGenerateDefaultsUniversalH" Inputs="defaults-universal.json" Outputs="Generated Files\defaults-universal.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile defaults-universal.json -OutPath '&quot;Generated Files\defaults-universal.h&quot;' -VariableName DefaultUniversalJson" />
-  </Target>
-  <!-- Same as above, but for the default settings.json template -->
-  <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
 
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />

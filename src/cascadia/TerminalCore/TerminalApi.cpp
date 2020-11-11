@@ -249,7 +249,7 @@ try
         startPos.X = viewport.Left();
         nlength = viewport.RightExclusive() - startPos.X;
         break;
-    case DispatchTypes::EraseType::Scrollback:
+    default:
         return false;
     }
 
@@ -341,6 +341,14 @@ try
     Terminal::_NotifyScrollEvent();
     SetCursorPosition(relativeCursor.X, relativeCursor.Y);
 
+    return true;
+}
+CATCH_LOG_RETURN_FALSE()
+
+bool Terminal::WarningBell() noexcept
+try
+{
+    _pfnWarningBell();
     return true;
 }
 CATCH_LOG_RETURN_FALSE()
@@ -574,7 +582,7 @@ CATCH_LOG_RETURN_FALSE()
 bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
 {
     auto attr = _buffer->GetCurrentAttributes();
-    const auto id = _buffer->GetHyperlinkId(params);
+    const auto id = _buffer->GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     _buffer->SetCurrentAttributes(attr);
     _buffer->AddHyperlinkToMap(uri, id);

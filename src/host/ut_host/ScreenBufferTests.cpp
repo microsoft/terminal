@@ -9,7 +9,6 @@
 
 #include "globals.h"
 #include "screenInfo.hpp"
-
 #include "input.h"
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
@@ -213,6 +212,7 @@ class ScreenBufferTests
 
     TEST_METHOD(TestAddHyperlink);
     TEST_METHOD(TestAddHyperlinkCustomId);
+    TEST_METHOD(TestAddHyperlinkCustomIdDifferentUri);
 
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
 
@@ -1566,13 +1566,13 @@ void ScreenBufferTests::VtSetColorTable()
         L"Process some valid sequences for setting the table"));
 
     stateMachine.ProcessString(L"\x1b]4;0;rgb:1/1/1\x7");
-    VERIFY_ARE_EQUAL(RGB(1, 1, 1), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
 
     stateMachine.ProcessString(L"\x1b]4;1;rgb:1/23/1\x7");
-    VERIFY_ARE_EQUAL(RGB(1, 0x23, 1), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
 
     stateMachine.ProcessString(L"\x1b]4;2;rgb:1/23/12\x7");
-    VERIFY_ARE_EQUAL(RGB(1, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
 
     stateMachine.ProcessString(L"\x1b]4;3;rgb:12/23/12\x7");
     VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
@@ -1587,17 +1587,12 @@ void ScreenBufferTests::VtSetColorTable()
         L"Try a bunch of invalid sequences."));
     Log::Comment(NoThrowString().Format(
         L"First start by setting an entry to a known value to compare to."));
-    stateMachine.ProcessString(L"\x1b]4;5;rgb:9/9/9\x1b\\");
+    stateMachine.ProcessString(L"\x1b]4;5;rgb:09/09/09\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
-
-    Log::Comment(NoThrowString().Format(
-        L"invalid: too many characters in a component"));
-    stateMachine.ProcessString(L"\x1b]4;5;rgb:111/1/1\x1b\\");
     VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
 
     Log::Comment(NoThrowString().Format(
@@ -2845,17 +2840,8 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
 
-    Log::Comment(L"Invalid Decimal Notation");
-    originalColor = newColor;
-    testColor = RGB(153, 102, 51);
-    stateMachine.ProcessString(L"\x1b]10;rgb:153/102/51\x1b\\");
-
-    newColor = gci.GetDefaultForegroundColor();
-    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
-    // it will, in fact leave the color the way it was
-    VERIFY_ARE_EQUAL(originalColor, newColor);
-
     Log::Comment(L"Invalid syntax");
+    originalColor = newColor;
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]10;99/66/33\x1b\\");
 
@@ -2899,17 +2885,8 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
 
-    Log::Comment(L"Invalid Decimal Notation");
-    originalColor = newColor;
-    testColor = RGB(153, 102, 51);
-    stateMachine.ProcessString(L"\x1b]11;rgb:153/102/51\x1b\\");
-
-    newColor = gci.GetDefaultBackgroundColor();
-    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
-    // it will, in fact leave the color the way it was
-    VERIFY_ARE_EQUAL(originalColor, newColor);
-
     Log::Comment(L"Invalid Syntax");
+    originalColor = newColor;
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]11;99/66/33\x1b\\");
 
@@ -3842,7 +3819,7 @@ void ScreenBufferTests::EraseTests()
     END_TEST_METHOD_PROPERTIES()
 
     DispatchTypes::EraseType eraseType;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", (int&)eraseType));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", (size_t&)eraseType));
     bool eraseScreen;
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseScreen", eraseScreen));
 
@@ -5956,17 +5933,44 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
-    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
 
     // Send any other text
     stateMachine.ProcessString(L"Hello World");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
-    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
 
     // Process the closing osc 8 sequences
     stateMachine.ProcessString(L"\x1b]8;;\x9c");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
+}
+
+void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+
+    // Process the opening osc 8 sequence with a custom id
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    const auto oldAttributes{ tbi.GetCurrentAttributes() };
+
+    // Send any other text
+    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x9c");
+    VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"other.url");
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"other.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
+
+    // This second URL should not change the URL of the original ID!
+    VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(oldAttributes.GetHyperlinkId()), L"test.url");
+    VERIFY_ARE_NOT_EQUAL(oldAttributes.GetHyperlinkId(), tbi.GetCurrentAttributes().GetHyperlinkId());
 }
 
 void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
