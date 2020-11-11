@@ -37,6 +37,16 @@ namespace winrt::TerminalApp::implementation
 
         _MakeTabViewItem();
         _CreateContextMenu();
+
+        // Add an event handler for the header control to tell us when the title changes
+        _headerControl.HeaderTitleChanged([weakThis = get_weak()]() {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->SetTabText(tab->_headerControl.CurrentHeaderText());
+            }
+        });
+
+        // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
 
@@ -217,7 +227,7 @@ namespace winrt::TerminalApp::implementation
             // Update SwitchToTab command's name
             SwitchToTabCommand().Name(Title());
 
-            // Update the UI to reflect the changed
+            // Update the control to reflect the changed title
             _headerControl.UpdateHeaderText(Title());
         }
     }
