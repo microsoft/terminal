@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <WinUser.h>
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
@@ -283,8 +282,8 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 //   We focus on minimal dimensions here
 //   (the maximal dimension will be calculate upon maximizing)
 //   Our goal is to protect against to downsizing to less than minimal allowed dimensions,
-//   that might occur in the scenarios, where _OnSizing is bypassed.
-//   An example of such scenario, is anchoring the window to the top/bottom screen border
+//   that might occur in the scenarios where _OnSizing is bypassed.
+//   An example of such scenario is anchoring the window to the top/bottom screen border
 //   in order to maximize window height (GH# 8026).
 //   The computation is similar to what we do in _OnSizing:
 //   we need to consider both the client area and non-client exclusive area sizes,
@@ -320,7 +319,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
     const auto scale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
 
-    LPMINMAXINFO lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
+    auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
     lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * scale, nonClientSizeScaled.cx);
     lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * scale, nonClientSizeScaled.cy);
 }
