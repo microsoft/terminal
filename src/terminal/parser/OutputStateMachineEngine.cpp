@@ -917,7 +917,7 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
         uri = string.substr(midPos + 1);
         const auto paramStr = string.substr(0, midPos);
         const auto paramParts = Utils::SplitString(paramStr, ':');
-        for (const auto part : paramParts)
+        for (const auto& part : paramParts)
         {
             const auto idPos = part.find(hyperlinkIDParameter);
             if (idPos != std::wstring::npos)
