@@ -19,7 +19,7 @@ AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
-BinPackArguments: false
+BinPackArguments: falseasdfasdf
 BinPackParameters: false
 BraceWrapping:
   AfterCaseLabel: true
