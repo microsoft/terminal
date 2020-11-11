@@ -651,6 +651,8 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
+    // Return value:
+    // - the created tab
     TerminalApp::TerminalTab TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
     {
         // Initialize the new tab
