@@ -1,0 +1,12 @@
+//file hello.idl
+[
+    uuid(7a98c250-6808-11cf-b73b-00aa00b677a7),
+    implicit_handle (handle_t hello_IfHandle),
+    version(1.0)
+
+]
+interface hello
+{
+    void HelloProc([in, string] const wchar_t* pszString);
+    void Shutdown(void);
+}

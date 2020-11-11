@@ -109,7 +109,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
-    auto mainLoop = []() {
         // !!! LOAD BEARING !!!
         // We must initialize the main thread as a single-threaded apartment before
         // constructing any Xaml objects. Failing to do so will cause some issues
@@ -136,11 +135,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         {
             if (host.OnDirectKeyEvent(VK_F7, LOBYTE(HIWORD(message.lParam)), true))
             {
-                if (host.OnDirectKeyEvent(VK_F7, true))
-                {
-                    // The application consumed the F7. Don't let Xaml get it.
-                    continue;
-                }
+                // The application consumed the F7. Don't let Xaml get it.
+                continue;
             }
 
             // GH#6421 - System XAML will never send an Alt KeyUp event. So, similar
@@ -151,12 +147,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
                 // Let's pass <Alt> to the application
                 if (host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
                 {
-                    // Let's pass <Alt> to the application
-                    if (host.OnDirectKeyEvent(VK_MENU, false))
-                    {
-                        // The application consumed the Alt. Don't let Xaml get it.
-                        continue;
-                    }
+                    // The application consumed the Alt. Don't let Xaml get it.
+                    continue;
                 }
 
                 TranslateMessage(&message);
@@ -164,8 +156,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             }
         };
 
-        std::thread t{ mainLoop };
-        mainLoop();
 
         return 0;
     }

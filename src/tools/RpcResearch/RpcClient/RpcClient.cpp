@@ -1,0 +1,84 @@
+/* file: helloc.c */
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include "hello_h.h"
+#include <windows.h>
+
+void main()
+{
+    RPC_STATUS status;
+    wchar_t* pszUuid = NULL;
+    const wchar_t* pszProtocolSequence = L"ncacn_np";
+    wchar_t* pszNetworkAddress = NULL;
+    const wchar_t* pszEndpoint = L"\\pipe\\hello";
+    wchar_t* pszOptions = NULL;
+    wchar_t* pszStringBinding = NULL;
+    const wchar_t* pszString = L"hello, world";
+    unsigned long ulCode;
+
+    status = RpcStringBindingCompose(reinterpret_cast<RPC_WSTR>(pszUuid),
+                                     reinterpret_cast<RPC_WSTR>(const_cast<wchar_t*>(pszProtocolSequence)),
+                                     reinterpret_cast<RPC_WSTR>(pszNetworkAddress),
+                                     reinterpret_cast<RPC_WSTR>(const_cast<wchar_t*>(pszEndpoint)),
+                                     reinterpret_cast<RPC_WSTR>(pszOptions),
+                                     reinterpret_cast<RPC_WSTR*>(&pszStringBinding));
+    if (status)
+    {
+        printf("RpcStringBindingCompose failed with %d\n", status);
+        exit(status);
+    }
+
+    // status = RpcBindingFromStringBinding(reinterpret_cast<RPC_WSTR>(pszStringBinding), &hello_ClientIfHandle);
+    // status = RpcBindingFromStringBinding(reinterpret_cast<RPC_WSTR>(pszStringBinding), &hello_v1_0_c_ifspec);
+    status = RpcBindingFromStringBinding(reinterpret_cast<RPC_WSTR>(pszStringBinding), &hello_IfHandle);
+
+    if (status)
+    {
+        printf("RpcBindingFromStringBinding failed with %d\n", status);
+        exit(status);
+    }
+
+    RpcTryExcept
+    {
+        HelloProc(pszString);
+        Shutdown();
+    }
+    RpcExcept(1)
+    {
+        ulCode = RpcExceptionCode();
+        printf("Runtime reported exception 0x%lx = %ld\n", ulCode, ulCode);
+    }
+    RpcEndExcept;
+
+    status = RpcStringFree(reinterpret_cast<RPC_WSTR*>(&pszStringBinding));
+    if (status)
+    {
+        printf("RpcStringFree failed with %d\n", status);
+        exit(status);
+    }
+
+    status = RpcBindingFree(&hello_IfHandle);
+
+    if (status)
+    {
+        printf("RpcBindingFree failed with %d\n", status);
+        exit(status);
+    }
+
+    exit(0);
+}
+
+/******************************************************/
+/*         MIDL allocate and free                     */
+/******************************************************/
+
+void __RPC_FAR* __RPC_USER midl_user_allocate(size_t len)
+{
+    return (malloc(len));
+}
+
+void __RPC_USER midl_user_free(void __RPC_FAR* ptr)
+{
+    free(ptr);
+}
