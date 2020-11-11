@@ -10,6 +10,13 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <TextBlock x:Name="SettingsNavHeader"
+                   x:Key="SettingsNavHeader"
+                   Style="{StaticResource SubheaderTextBlockStyle}"
+                   Margin="0,0,0,20"/>
+    </Page.Resources>
+    
     <Grid>
         <Grid.Resources>
             <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
@@ -19,13 +26,15 @@ the MIT License. See LICENSE in the project root for license information. -->
             <AcrylicBrush x:Key="NavigationViewExpandedPaneBackground"
                   BackgroundSource="HostBackdrop" TintColor="{ThemeResource SystemChromeMediumColor}" TintOpacity=".7"/>
         </Grid.Resources>
+
         <muxc:NavigationView x:Name="SettingsNav"
-                        IsSettingsVisible="False"
-                        Loaded="SettingsNav_Loaded"
-                        ItemInvoked="SettingsNav_ItemInvoked"
-                        IsBackButtonVisible="Auto"
-                        IsBackEnabled="True"
-                        BackRequested="SettingsNav_BackRequested">
+                             IsSettingsVisible="False"
+                             Header="{StaticResource SettingsNavHeader}"
+                             Loaded="SettingsNav_Loaded"
+                             ItemInvoked="SettingsNav_ItemInvoked"
+                             IsBackButtonVisible="Auto"
+                             IsBackEnabled="True"
+                             BackRequested="SettingsNav_BackRequested">
             <muxc:NavigationView.MenuItems>
 
                 <muxc:NavigationViewItem x:Uid="Nav_Launch"

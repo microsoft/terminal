@@ -19,9 +19,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            <TextBlock x:Uid="Globals_Rendering"
-                       Style="{StaticResource SubheaderTextBlockStyle}"
-                       Margin="0,0,0,20" />
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                 <TextBlock x:Uid="Globals_RenderingDisclaimer"
                        Style="{StaticResource BodyTextBlockStyle}"

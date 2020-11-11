@@ -26,9 +26,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
-            <TextBlock x:Uid="Globals_Startup"
-                       Style="{StaticResource SubheaderTextBlockStyle}"
-                       Margin="0,0,0,20" />
+            
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                 <ComboBox x:Uid="Globals_DefaultProfile"
                           x:Name="DefaultProfile"
