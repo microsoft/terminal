@@ -46,7 +46,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description
-    // - Retrives the current title
+    // - Retrieves the current title
     // Return Value:
     // - The current title as a winrt hstring
     winrt::hstring TabHeaderControl::CurrentHeaderText()
