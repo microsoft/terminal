@@ -87,6 +87,12 @@ class InputTests
     BEGIN_TEST_METHOD(TestCookedReadChangeCodepageBetweenBytes)
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDirectReadCharByChar)
+    END_TEST_METHOD()
+
+    BEGIN_TEST_METHOD(TestDirectReadLeadTrailString)
+    END_TEST_METHOD()
 };
 
 void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
@@ -823,6 +829,60 @@ static HRESULT _readStringFromInput(HANDLE in, std::string& buf, bool async = tr
     }
 }
 
+static HRESULT _readStringFromInputDirect(HANDLE in, std::string& buf, bool async = true)
+{
+    if (async)
+    {
+        auto tryRead = std::async(std::launch::async, [&] {
+            return _readStringFromInputDirect(in, buf, false); // just re-enter ourselves on the other thread as sync.
+        });
+
+        if (std::future_status::ready != tryRead.wait_for(std::chrono::seconds{ 5 }))
+        {
+            // Shove something into the input to unstick it then fail.
+            _sendStringToInput(in, L"a\r\n");
+            RETURN_NTSTATUS(STATUS_TIMEOUT);
+
+            // If somehow this still isn't enough to unstick the thread, be sure to set
+            // the whole test timeout is 1 min in the parameters/metadata at the top.
+        }
+        else
+        {
+            return tryRead.get();
+        }
+    }
+    else
+    {
+        const auto originalSize = buf.size();
+        buf.clear();
+
+        std::vector<INPUT_RECORD> ir;
+
+        DWORD read = 0;
+        do
+        {
+            ir.clear();
+            ir.resize(originalSize - buf.size());
+
+            RETURN_IF_WIN32_BOOL_FALSE(ReadConsoleInputA(in, ir.data(), gsl::narrow_cast<DWORD>(ir.size()), &read));
+
+            for (const auto& r : ir)
+            {
+                if (r.EventType == KEY_EVENT)
+                {
+                    if (!r.Event.KeyEvent.bKeyDown)
+                    {
+                        buf.push_back(r.Event.KeyEvent.uChar.AsciiChar);
+                    }
+                }
+            }
+            ir.clear();
+        } while (originalSize > buf.size());
+
+        return S_OK;
+    }
+}
+
 void InputTests::TestCookedAliasProcessing()
 {
     const auto in = GetStdInputHandle();
@@ -1094,7 +1154,6 @@ void InputTests::TestCookedReadCharByChar()
     std::string recvInput;
     recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
     VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-
     VERIFY_ARE_EQUAL(expectedInput, recvInput);
 
     // TODO: CHv1 completely loses the trailing byte.
@@ -1136,6 +1195,104 @@ void InputTests::TestCookedReadCharByChar()
     recvInput.clear();
     recvInput.resize(1);
     VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+}
+
+void InputTests::TestDirectReadCharByChar()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    // Greek letters, lowercase...
+    const std::array<std::wstring, 4> wide = {
+        L"\u03b1", // alpha
+        L"\u03b2", // beta
+        // no gamma because it doesn't translate to 437
+        L"\u03b4", // delta
+        L"\u03b5" //epsilon
+    };
+
+    const std::array<std::string, 4> char932 = {
+        "\x83\xbf",
+        "\x83\xc0",
+        "\x83\xc2",
+        "\x83\xc3"
+    };
+
+    const std::string crlf = "\r\n";
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"Read byte by byte, should leave trailing each time.");
+    std::string expectedInput;
+    expectedInput = char932[0][0];
+
+    std::string recvInput;
+    recvInput.resize(1); // only gets the leading byte
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO v1, loses the trailing byte
+
+    expectedInput = char932[1][0];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO v1, loses the trailing byte
+
+    expectedInput = char932[2][0];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO v1, loses the trailing byte
+
+    expectedInput = char932[3][0];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    // TODO v1, loses the trailing byte
+
+    expectedInput = crlf[0];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    expectedInput = crlf[1];
+    recvInput.clear();
+    recvInput.resize(1);
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
     VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
 
@@ -1216,6 +1373,78 @@ void InputTests::TestCookedReadLeadTrailString()
     recvInput.clear();
     recvInput.resize(100);
     VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+}
+
+void InputTests::TestDirectReadLeadTrailString()
+{
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    // Greek letters, lowercase...
+    const std::array<std::wstring, 4> wide = {
+        L"\u03b1", // alpha
+        L"\u03b2", // beta
+        // no gamma because it doesn't translate to 437
+        L"\u03b4", // delta
+        L"\u03b5" //epsilon
+    };
+
+    const std::array<std::string, 4> char932 = {
+        "\x83\xbf",
+        "\x83\xc0",
+        "\x83\xc2",
+        "\x83\xc3"
+    };
+
+    const std::string crlf = "\r\n";
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    Log::Comment(L"Read first byte, should leave trailing.");
+    std::string expectedInput;
+    expectedInput = char932[0][0];
+
+    std::string recvInput;
+    recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
+    VERIFY_ARE_EQUAL(expectedInput, recvInput);
+
+    Log::Comment(L"Read everything else.");
+
+    expectedInput = char932[0][1];
+    expectedInput.append(char932[1]);
+    expectedInput.append(char932[2]);
+    expectedInput.append(char932[3]);
+    expectedInput.append(crlf);
+    recvInput.clear();
+    recvInput.resize(9);
+    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
     VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
 
