@@ -2,13 +2,13 @@
 
 <#
 .SYNOPSIS
-Scan source code and build a list of supported VT sequences. 
+Scan source code and build a list of supported VT sequences.
 .DESCRIPTION
-Scan source code and build a list of supported VT sequences. 
+Scan source code and build a list of supported VT sequences.
 TODO: add more details
 #>
 [cmdletbinding(DefaultParameterSetName="stdout")]
-param(    
+param(
     [parameter(ParameterSetName="file", mandatory)]
     [string]$OutFile,
     [parameter(ParameterSetName="file")]
@@ -34,7 +34,7 @@ param(
     [string]$ConsoleAdapterPath = $(join-path $solutionRoot "src\terminal\adapter\adaptDispatch.hpp"),
     [parameter(ParameterSetName="file")]
     [parameter(ParameterSetName="stdout")]
-    [string]$TerminalAdapterPath = $(join-path $solutionRoot "src\cascadia\terminalcore\terminaldispatch.hpp")
+    [string]$TerminalAdapterPath = $(join-path $solutionRoot "src\cascadia\terminalcore\terminalDispatch.hpp")
 )
 
 if ($PSCmdlet.ParameterSetName -eq "stdout") {
@@ -53,10 +53,10 @@ $terminal = @{}
 $prefix = "https://vt100.net/docs/vt510-rm/"
 $repo = "https://github.com/oising/terminal/tree/master"
 $conhostUrl = $ConsoleAdapterPath.TrimStart($SolutionRoot).replace("\", "/")
-$terminalurl = $TerminalAdapterPath.TrimStart($SolutionRoot).replace("\", "/")
+$terminalUrl = $TerminalAdapterPath.TrimStart($SolutionRoot).replace("\", "/")
 
 function Read-SourceFiles {
-    # extract base interface 
+    # extract base interface
     $baseScanner = [regex]'(?x)virtual\s\w+\s(?<method>\w+)(?s)[^;]+;(?-s).*?(?<seq>(?<=\/\/\s).+)'
 
     $baseScanner.Matches(($src = get-content -raw $interfacePath)) | foreach-object {
@@ -74,7 +74,7 @@ function Read-SourceFiles {
     $scanner.Matches(($src = Get-Content -raw $consoleAdapterPath)) | ForEach-Object {
         $line = (($src[0..$_.Index] -join "") -split "`n").Length
         $SCRIPT:conhost[$_.groups["method"].value] = $line
-    } 
+    }
 
     $scanner.Matches(($src = Get-Content -raw $terminalAdapterPath)) | ForEach-Object {
         $line = (($src[0..$_.Index] -join "") -split "`n").Length
@@ -85,14 +85,14 @@ function Read-SourceFiles {
 
 function Get-SequenceIndexMarkdown {
     # "Sequence","Parent","Description","Origin","Heading","Subheading", "ImplementedBy", "ConsoleHost","Terminal"
-    
+
     $heading = $null
     $subheading = $null
 <#
     Emit markdown
 
     TODO:
-    - autogenerate TOC
+    - auto-generate TOC
 #>
 @"
 # VT Function Support
@@ -125,7 +125,7 @@ function Get-SequenceIndexMarkdown {
     * [ANSI](#ansi)
     * [DEC Private](#dec-private)
 * [Editing Functions](#editing-functions)
-* [OLTP Features](#oltp-features)
+* [OLTP Features](#OLTP-features)
     * [Rectangular Area Operations](#rectangular-area-operations)
     * [Data Integrity](#data-integrity)
     * [Macros](#macros)
@@ -133,7 +133,7 @@ function Get-SequenceIndexMarkdown {
     * [Cursor Save Buffer](#cursor-save-buffer)
     * [Terminal State Interrogation](#terminal-state-interrogation)
 * [Keyboard Processing Functions](#keyboard-processing-functions)
-* [Soft Key Mapping (UDK)](#soft-key-mapping-udk)
+* [Soft Key Mapping (UDK)](#soft-key-mapping-UDK)
 * [Soft Fonts (DRCS)](#soft-fonts-drcs)
 * [Printing](#printing)
 * [Terminal Communication and Synchronization](#terminal-communication-and-synchronization)
@@ -145,7 +145,7 @@ $($sequences | ForEach-Object {
     if ($method = $base[$_.sequence]) {
         $_.ImplementedBy = $method
         $_.ConsoleHost = $conhost[$method]
-        $_.Terminal = $terminal[$method] 
+        $_.Terminal = $terminal[$method]
     }
     # "Sequence","Associated","Description","Origin","Heading","Subheading", "ImplementedBy", "ConsoleHost","Terminal"
     $c0 = "[$($_.Sequence)]($prefix$($_.sequence).html ""View page on vt100.net"")"
@@ -202,7 +202,7 @@ function Show-Summary {
     $summary = @"
        `e[1mSequence Support:`e[0m
 
-       `e[7m {0:000} `e[0m known in master-sequence-list.csv.        
+       `e[7m {0:000} `e[0m known in master-sequence-list.csv.
        `e[7m {1:000} `e[0m common members in ITermDispatch base, of which:
        `e[7m {2:000} `e[0m are implemented by ConsoleHost.
        `e[7m {3:000} `e[0m are implemented by Windows Terminal.
@@ -219,12 +219,12 @@ function Show-Summary {
 Read-SourceFiles
 
 if (-not $SummaryOnly.IsPresent) {
-    
+
     $markdown = Get-SequenceIndexMarkdown
 
     if ($PSCmdlet.ParameterSetName -eq "file") {
         # send to file and overwrite
-        $markdown | Out-File -FilePath $OutFile -Force:$Force.IsPresent -Encoding utf8NoBOM   
+        $markdown | Out-File -FilePath $OutFile -Force:$Force.IsPresent -Encoding utf8NoBOM
     } else {
         # send to STDOUT
         $markdown

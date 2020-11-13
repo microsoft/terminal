@@ -355,6 +355,7 @@ consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
 consolegit
+consolehost
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -636,6 +637,7 @@ dpiy
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
+drcs
 dropdown
 DROPDOWNLIST
 DROPFILES
