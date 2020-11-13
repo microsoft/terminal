@@ -2,7 +2,7 @@ import "unknwn.idl";
 import "ocidl.idl";
 
 [
-    uuid("BB64926F-1A4D-470D-BB8A-3D2CC4B035E4"),
+    uuid("BB64926F-1111-470D-BB8A-3D2CC4B035E4"),
     object,
     local
 ] interface IScratch : IUnknown

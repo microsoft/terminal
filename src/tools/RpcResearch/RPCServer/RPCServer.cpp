@@ -55,35 +55,38 @@ HRESULT MarshallTheThing(IStream* pStream)
 
 void InternallyMarshalAThing()
 {
-    CoInitialize(nullptr);
-    auto f = Microsoft::WRL::Make<Microsoft::WRL::SimpleClassFactory<ScratchImpl>>();
-    DWORD registrationHostClass;
-    CoRegisterClassObject(__uuidof(ScratchImpl), f.Get(),
-                                        CLSCTX_LOCAL_SERVER,
-                                        REGCLS_MULTIPLEUSE,
-                                        &registrationHostClass);
-
     printf("InternallyMarshalAThing\n");
 
-    Microsoft::WRL::ComPtr<IStream> stream2;
-    auto hr = CreateStreamOnHGlobal(
-        NULL,
-        TRUE,
-        &stream2);
+    auto hr = S_OK;
+    CoInitialize(nullptr);
+    // auto f = Microsoft::WRL::Make<Microsoft::WRL::SimpleClassFactory<ScratchImpl>>();
+    // DWORD registrationHostClass;
+    // hr = CoRegisterClassObject(__uuidof(IScratch), f.Get(), CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &registrationHostClass);
+    // printf("CoRegisterClassObject: %d\n", hr);
+
+    Microsoft::WRL::ComPtr<IStream> pStream;
+    hr = CreateStreamOnHGlobal(NULL,
+                               TRUE,
+                               &pStream);
     printf("CreateStreamOnHGlobal: %d\n", hr);
 
-    hr = stream2->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
+    hr = pStream->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
     printf("Seek: %d\n", hr);
 
-    hr = CoMarshalInterface(stream2.Get(), __uuidof(ScratchImpl), g_scratch.Get(), MSHCTX_LOCAL, nullptr, MSHLFLAGS_NORMAL);
+    hr = CoMarshalInterface(pStream.Get(), __uuidof(IScratch), g_scratch.Get(), MSHCTX_LOCAL, nullptr, MSHLFLAGS_NORMAL);
     printf("CoMarshalInterface: %d\n", hr);
+    if (FAILED(hr))
+    {
+        printf("Exiting because CoMarshalInterface failed\n");
+        exit(hr);
+    }
 
-    hr = stream2->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
+    hr = pStream->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
     printf("Seek (2): %d\n", hr);
 
     STATSTG stat;
     ULARGE_INTEGER ulSize{};
-    hr = stream2->Stat(&stat, STATFLAG_NONAME);
+    hr = pStream->Stat(&stat, STATFLAG_NONAME);
     printf("Stat: %d\n", hr);
     ulSize = stat.cbSize;
     size_t size = ulSize.QuadPart;
@@ -92,7 +95,7 @@ void InternallyMarshalAThing()
 
     ULONG numRead{};
     // DebugBreak();
-    hr = stream2->Read(buffer.get(), size + 1, &numRead);
+    hr = pStream->Read(buffer.get(), size + 1, &numRead);
     if (FAILED(hr) || size != numRead)
     {
         printf("Read failed %d", hr);
@@ -130,7 +133,6 @@ void Shutdown()
 
 void main()
 {
-
     RPC_STATUS status;
     std::wstring pszProtocolSequence{ L"ncacn_np" };
     char* pszSecurity = NULL;

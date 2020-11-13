@@ -1,0 +1,6 @@
+LIBRARY             ProxyStub.dll
+
+EXPORTS
+    DllGetClassObject  PRIVATE
+    DllCanUnloadNow   PRIVATE
+    GetProxyDllInfo    PRIVATE
