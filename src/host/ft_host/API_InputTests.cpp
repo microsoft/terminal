@@ -1064,6 +1064,14 @@ void InputTests::TestCookedAlphaPermutations()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, inputmode));
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(out, outputmode));
+
+    if (GetACP() != 932 && !Common::_isV2 && inputcp == 932)
+    {
+        Log::Comment(L"The v1 console cannot switch to Japanese unless the system ACP is 932");
+        Log::Comment(L"Set it in the regional control panel legacy settings and reboot first.");
+        VERIFY_FAIL(L"System state invalid for v1 test. Must be in Japanese (Japan) legacy locale.");
+    }
+
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(inputcp));
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleOutputCP(outputcp));
 
