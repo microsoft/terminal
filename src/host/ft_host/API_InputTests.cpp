@@ -89,6 +89,7 @@ class InputTests
 
     BEGIN_TEST_METHOD(TestReadChangeCodepageBetweenBytes)
         TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 };
@@ -1222,238 +1223,358 @@ void _readVersusExpected(const HANDLE in, const ReadMode mode, const std::string
 
 void InputTests::TestReadCharByChar()
 {
-    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
+    _unifiedReadTest([isv2 = Common::_isV2](HANDLE in, ReadMode mode) -> void {
         Log::Comment(L"Read byte by byte, should leave trailing each time.");
-        std::string expectedInput;
-        expectedInput = char932[0][0];
 
-        if (mode != ReadMode::Direct)
+        if (!isv2)
         {
-            // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
-            // which can be longer than the buffer we gave. `ReadConsoleA` appears to
-            // do this either to signal there are more or as a mistake that was never
-            // matched up on API review.
-            expectedInput.append(1, '\0');
-        }
+            std::string expectedInput;
+            expectedInput = char932[0][0];
 
-        _readVersusExpected(in, mode, expectedInput, 1);
+            if (mode != ReadMode::Direct)
+            {
+                // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+                // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+                // do this either to signal there are more or as a mistake that was never
+                // matched up on API review.
+                expectedInput.append(1, '\0');
+            }
 
-        // TODO: CHv1 completely loses the trailing byte.
-
-        expectedInput[0] = char932[1][0];
-        _readVersusExpected(in, mode, expectedInput, 1);
-
-        // TODO: CHv1 completely loses the trailing byte.
-
-        expectedInput[0] = char932[2][0];
-        _readVersusExpected(in, mode, expectedInput, 1);
-
-        // TODO: CHv1 completely loses the trailing byte.
-
-        expectedInput[0] = char932[3][0];
-        _readVersusExpected(in, mode, expectedInput, 1);
-
-        // TODO: CHv1 completely loses the trailing byte.
-
-        expectedInput = crlf[0];
-        _readVersusExpected(in, mode, expectedInput, 1);
-
-        if (mode != ReadMode::Raw) // Raw mode will not return the \n.
-        {
-            expectedInput = crlf[1];
             _readVersusExpected(in, mode, expectedInput, 1);
+
+            // TODO: CHv1 completely loses the trailing byte.
+
+            expectedInput[0] = char932[1][0];
+            _readVersusExpected(in, mode, expectedInput, 1);
+
+            // TODO: CHv1 completely loses the trailing byte.
+
+            expectedInput[0] = char932[2][0];
+            _readVersusExpected(in, mode, expectedInput, 1);
+
+            // TODO: CHv1 completely loses the trailing byte.
+
+            expectedInput[0] = char932[3][0];
+            _readVersusExpected(in, mode, expectedInput, 1);
+
+            // TODO: CHv1 completely loses the trailing byte.
+
+            expectedInput = crlf[0];
+            _readVersusExpected(in, mode, expectedInput, 1);
+
+            if (mode != ReadMode::Raw) // Raw mode will not return the \n.
+            {
+                expectedInput = crlf[1];
+                _readVersusExpected(in, mode, expectedInput, 1);
+            }
+        }
+        else
+        {
+            Log::Comment(L"Should see lead/trail alternating and then the crlf");
+            std::string expectedInput;
+            expectedInput = char932[0][0];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[0][1];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[1][0];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[1][1];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[2][0];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[2][1];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[3][0];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = char932[3][1];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            expectedInput = crlf[0];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            if (mode != ReadMode::Raw) // Raw mode doesn't return \n.
+            {
+                expectedInput = crlf[1];
+                _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+            }
         }
     });
 }
 
 void InputTests::TestReadLeadTrailString()
 {
-    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
-        Log::Comment(L"Read byte by byte, should leave trailing each time.");
-        std::string expectedInput;
-        expectedInput = char932[0][0];
+    _unifiedReadTest([isv2 = Common::_isV2](HANDLE in, ReadMode mode) -> void {
+        Log::Comment(L"Read byte by byte, should attach trailing to the remaining string.");
 
-        if (mode != ReadMode::Direct)
+        if (!isv2)
         {
-            // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
-            // which can be longer than the buffer we gave. `ReadConsoleA` appears to
-            // do this either to signal there are more or as a mistake that was never
-            // matched up on API review.
-            expectedInput.append(1, '\0');
-        }
+            std::string expectedInput;
+            expectedInput = char932[0][0];
 
-        _readVersusExpected(in, mode, expectedInput, 1);
-
-        Log::Comment(L"Read everything else");
-        // TODO: CHv1 completely loses the trailing byte.
-
-        expectedInput.clear();
-
-        if (mode != ReadMode::Raw)
-        {
-            // Direct mode can successfully return the trailing byte...
-            // but in v1... only when the read length is > 1 record total.
-            // Since this is the "string remaining" test... that's >1 record.
-            // (as opposed to the char-by-char test where Direct loses it just like
-            //  Cooked and Raw do.)
-            if (mode == ReadMode::Direct)
+            if (mode != ReadMode::Direct)
             {
-                expectedInput.append(1, char932[0][1]);
+                // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+                // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+                // do this either to signal there are more or as a mistake that was never
+                // matched up on API review.
+                expectedInput.append(1, '\0');
             }
 
+            _readVersusExpected(in, mode, expectedInput, 1);
+
+            Log::Comment(L"Read everything else");
+            // TODO: CHv1 completely loses the trailing byte.
+
+            expectedInput.clear();
+
+            if (mode != ReadMode::Raw)
+            {
+                // Direct mode can successfully return the trailing byte...
+                // but in v1... only when the read length is > 1 record total.
+                // Since this is the "string remaining" test... that's >1 record.
+                // (as opposed to the char-by-char test where Direct loses it just like
+                //  Cooked and Raw do.)
+                if (mode == ReadMode::Direct)
+                {
+                    expectedInput.append(1, char932[0][1]);
+                }
+
+                expectedInput.append(char932[1]);
+                expectedInput.append(char932[2]);
+                expectedInput.append(char932[3]);
+                expectedInput.append(1, crlf[0]);
+                expectedInput.append(1, crlf[1]);
+            }
+            else
+            {
+                // Raw mode messes up completely here and just returns the UTF-16 characters.
+                // oh and a null at the end for fun. and it loses the \n.
+                expectedInput.append(1, LOBYTE(wide[1][0]));
+                expectedInput.append(1, HIBYTE(wide[1][0]));
+                expectedInput.append(1, LOBYTE(wide[2][0]));
+                expectedInput.append(1, HIBYTE(wide[2][0]));
+                expectedInput.append(1, LOBYTE(wide[3][0]));
+                expectedInput.append(1, HIBYTE(wide[3][0]));
+                expectedInput.append(1, crlf[0]);
+                expectedInput.append(1, '\0');
+            }
+
+            // The test helper is authored such that direct mode will keep retrying
+            // to read until it gets every record requested because there's a high
+            // potential for other events (focus, mouse) to drop into the queue
+            // for random reasons.
+            // As such, we can read to excess on cooked/raw, but we have to read
+            // to the exact expected length for direct.
+            if (mode != ReadMode::Direct)
+            {
+                _readVersusExpected(in, mode, expectedInput, 100);
+            }
+            else
+            {
+                // We can't read too far for direct because we have to loop
+                // to get all the right key records and we'll end up in an infinite wait.
+                _readVersusExpected(in, mode, expectedInput, 9);
+            }
+        }
+        else
+        {
+            Log::Comment(L"Should see just lead byte.");
+            std::string expectedInput;
+            expectedInput = char932[0][0];
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            Log::Comment(L"Read everything else. Trailing byte stitched to front of results.");
+            expectedInput = char932[0][1];
             expectedInput.append(char932[1]);
             expectedInput.append(char932[2]);
             expectedInput.append(char932[3]);
             expectedInput.append(1, crlf[0]);
-            expectedInput.append(1, crlf[1]);
-        }
-        else
-        {
-            // Raw mode messes up completely here and just returns the UTF-16 characters.
-            // oh and a null at the end for fun. and it loses the \n.
-            expectedInput.append(1, LOBYTE(wide[1][0]));
-            expectedInput.append(1, HIBYTE(wide[1][0]));
-            expectedInput.append(1, LOBYTE(wide[2][0]));
-            expectedInput.append(1, HIBYTE(wide[2][0]));
-            expectedInput.append(1, LOBYTE(wide[3][0]));
-            expectedInput.append(1, HIBYTE(wide[3][0]));
-            expectedInput.append(1, crlf[0]);
-            expectedInput.append(1, '\0');
-        }
 
-        // The test helper is authored such that direct mode will keep retrying
-        // to read until it gets every record requested because there's a high
-        // potential for other events (focus, mouse) to drop into the queue
-        // for random reasons.
-        // As such, we can read to excess on cooked/raw, but we have to read
-        // to the exact expected length for direct.
-        if (mode != ReadMode::Direct) 
-        {
-            _readVersusExpected(in, mode, expectedInput, 100);
-        }
-        else
-        {
-            // We can't read too far for direct because we have to loop
-            // to get all the right key records and we'll end up in an infinite wait.
-            _readVersusExpected(in, mode, expectedInput, 9);
+            if (mode != ReadMode::Raw) // Raw mode doesn't return \n.
+            {
+                expectedInput.append(1, crlf[1]);
+            }
+
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
         }
     });
 }
 
 void InputTests::TestReadChangeCodepageInMiddle()
 {
-    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
-        Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
-        std::string expectedInput;
-        expectedInput = char932[0];
-
-        // The following two only happen if you switch part way through...
-        expectedInput.append(char932[1].data(), 1);
-        // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
-        // which can be longer than the buffer we gave. `ReadConsoleA` appears to
-        // do this either to signal there are more or as a mistake that was never
-        // matched up on API review.
-        if (mode != ReadMode::Direct)
+    _unifiedReadTest([isv2 = Common::_isV2](HANDLE in, ReadMode mode) -> void {
+        if (!isv2)
         {
-            expectedInput.append(1, '\0');
+            Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
+            std::string expectedInput;
+            expectedInput = char932[0];
+
+            // The following two only happen if you switch part way through...
+            expectedInput.append(char932[1].data(), 1);
+            // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+            // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+            // do this either to signal there are more or as a mistake that was never
+            // matched up on API review.
+            if (mode != ReadMode::Direct)
+            {
+                expectedInput.append(1, '\0');
+            }
+
+            if (mode == ReadMode::Raw)
+            {
+                // throw on two null bytes for funsies.
+                expectedInput.append(1, '\0');
+                expectedInput.append(1, '\0');
+            }
+
+            _readVersusExpected(in, mode, expectedInput, 3); // two bytes of first alpha and then a lead byte of the second one.
+
+            Log::Comment(L"Set the codepage to English");
+            Log::Comment(L"Changing codepage should discard all partial bytes!");
+            VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+
+            Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
+            expectedInput.clear();
+            if (mode == ReadMode::Direct)
+            {
+                expectedInput.append(char437[2]);
+            }
+            expectedInput.append(char437[3]);
+            if (mode != ReadMode::Raw)
+            {
+                expectedInput.append(crlf);
+            }
+            else
+            {
+                // why do we get a ?... I mean why are we getting any of this weirdness.
+                expectedInput.append(1, '?');
+            }
+
+            if (mode != ReadMode::Direct)
+            {
+                _readVersusExpected(in, mode, expectedInput, 490);
+            }
+            else
+            {
+                // We can't read too far for direct because we have to loop
+                // to get all the right key records and we'll end up in an infinite wait.
+                _readVersusExpected(in, mode, expectedInput, 4);
+            }
         }
-
-        if (mode == ReadMode::Raw)
+        else
         {
-            // throw on two null bytes for funsies.
-            expectedInput.append(1, '\0');
-            expectedInput.append(1, '\0');
-        }
+            Log::Comment(L"Read the first whole character and a lead byte of the second (3 bytes)");
+            std::string expectedInput;
+            expectedInput = char932[0];
+            expectedInput.append(1, char932[1][0]);
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
 
-        _readVersusExpected(in, mode, expectedInput, 3); // two bytes of first alpha and then a lead byte of the second one.
+            Log::Comment(L"Set the codepage to English");
+            Log::Comment(L"Changing codepage should discard all partial bytes!");
+            VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
 
-        Log::Comment(L"Set the codepage to English");
-        Log::Comment(L"Changing codepage should discard all partial bytes!");
-        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
-
-        Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
-        expectedInput.clear();
-        // TODO: I believe v2 shouldn't lose this character by switching codepages.
-        if (mode == ReadMode::Direct)
-        {
+            Log::Comment(L"Read everything else. Trailing byte should be gone and not stitched to front of results.");
+            expectedInput.clear();
             expectedInput.append(char437[2]);
-        }
-        expectedInput.append(char437[3]);
-        if (mode != ReadMode::Raw)
-        {
-            expectedInput.append(crlf);
-        }
-        else
-        {
-            // why do we get a ?... I mean why are we getting any of this weirdness.
-            expectedInput.append(1, '?');
-        }
+            expectedInput.append(char437[3]);
+            expectedInput.append(1, crlf[0]);
 
-        
-        if (mode != ReadMode::Direct)
-        {
-            _readVersusExpected(in, mode, expectedInput, 490);
-        }
-        else
-        {
-            // We can't read too far for direct because we have to loop
-            // to get all the right key records and we'll end up in an infinite wait.
-            _readVersusExpected(in, mode, expectedInput, 4);
+            if (mode != ReadMode::Raw) // Raw mode doesn't return \n.
+            {
+                expectedInput.append(1, crlf[1]);
+            }
+
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
         }
     });
 }
 
 void InputTests::TestReadChangeCodepageBetweenBytes()
 {
-    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
-        Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
-        std::string expectedInput;
-        expectedInput = char932[0];
-
-        if (mode == ReadMode::Raw)
+    _unifiedReadTest([isv2 = Common::_isV2](HANDLE in, ReadMode mode) -> void {
+        if (!isv2)
         {
-            // throw on two null bytes for funsies.
-            expectedInput.append(1, '\0');
-            expectedInput.append(1, '\0');
-        }
+            Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
+            std::string expectedInput;
+            expectedInput = char932[0];
 
-        _readVersusExpected(in, mode, expectedInput, 2); // two bytes of first alpha
+            if (mode == ReadMode::Raw)
+            {
+                // throw on two null bytes for funsies.
+                expectedInput.append(1, '\0');
+                expectedInput.append(1, '\0');
+            }
 
-        Log::Comment(L"Set the codepage to English");
-        Log::Comment(L"Changing codepage should discard all partial bytes!");
-        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+            _readVersusExpected(in, mode, expectedInput, 2); // two bytes of first alpha
 
-        Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
-        expectedInput.clear();
-        // TODO: I believe v2 shouldn't lose this character by switching codepages.
-        if (mode == ReadMode::Direct)
-        {
-            expectedInput.append(char437[1]);
-        }
-        expectedInput.append(char437[2]);
+            Log::Comment(L"Set the codepage to English");
+            Log::Comment(L"Changing codepage should discard all partial bytes!");
+            VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
 
-        if (mode == ReadMode::Raw)
-        {
-            // an infix question mark? in the raw read? for no sensible reason?
-            // YEP.
-            expectedInput.append(1, '?');
-        }
+            Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
+            expectedInput.clear();
+            // TODO: I believe v2 shouldn't lose this character by switching codepages.
+            if (mode == ReadMode::Direct)
+            {
+                expectedInput.append(char437[1]);
+            }
+            expectedInput.append(char437[2]);
 
-        expectedInput.append(char437[3]);
-        if (mode != ReadMode::Raw)
-        {
-            expectedInput.append(crlf);
-        }
+            if (mode == ReadMode::Raw)
+            {
+                // an infix question mark? in the raw read? for no sensible reason?
+                // YEP.
+                expectedInput.append(1, '?');
+            }
 
-        if (mode != ReadMode::Direct)
-        {
-            _readVersusExpected(in, mode, expectedInput, 490);
+            expectedInput.append(char437[3]);
+            if (mode != ReadMode::Raw)
+            {
+                expectedInput.append(crlf);
+            }
+
+            if (mode != ReadMode::Direct)
+            {
+                _readVersusExpected(in, mode, expectedInput, 490);
+            }
+            else
+            {
+                // We can't read too far for direct because we have to loop
+                // to get all the right key records and we'll end up in an infinite wait.
+                _readVersusExpected(in, mode, expectedInput, 5);
+            }
         }
         else
         {
-            // We can't read too far for direct because we have to loop
-            // to get all the right key records and we'll end up in an infinite wait.
-            _readVersusExpected(in, mode, expectedInput, 5);
+            Log::Comment(L"Read the first two whole characters (4 bytes)");
+            std::string expectedInput;
+            expectedInput = char932[0];
+            expectedInput.append(char932[1]);
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
+
+            Log::Comment(L"Set the codepage to English");
+            Log::Comment(L"Changing codepage should discard all partial bytes! But there shouldn't be any partials!");
+            VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+
+            Log::Comment(L"Read everything else.");
+            expectedInput.clear();
+            expectedInput.append(char437[2]);
+            expectedInput.append(char437[3]);
+            expectedInput.append(1, crlf[0]);
+
+            if (mode != ReadMode::Raw) // Raw mode doesn't return \n.
+            {
+                expectedInput.append(1, crlf[1]);
+            }
+
+            _readVersusExpected(in, mode, expectedInput, expectedInput.size());
         }
     });
 }
