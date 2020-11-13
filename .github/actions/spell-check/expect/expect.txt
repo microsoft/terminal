@@ -2423,6 +2423,7 @@ ucdxml
 uch
 UCHAR
 ucs
+UDK
 UDKs
 UDM
 uer
