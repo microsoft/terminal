@@ -46,11 +46,10 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <muxc:NavigationView x:Name="SettingsNav"
                              IsSettingsVisible="False"
+                             Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
                              Loaded="SettingsNav_Loaded"
                              ItemInvoked="SettingsNav_ItemInvoked"
-                             IsBackButtonVisible="Auto"
-                             IsBackEnabled="True"
-                             BackRequested="SettingsNav_BackRequested">
+                             IsBackButtonVisible="Collapsed">
 
             <muxc:NavigationView.HeaderTemplate>
                 <DataTemplate x:DataType="x:String">
