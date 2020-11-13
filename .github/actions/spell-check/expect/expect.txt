@@ -355,6 +355,7 @@ consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
 consolegit
+consolehost
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -636,6 +637,7 @@ dpiy
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
+drcs
 dropdown
 DROPDOWNLIST
 DROPFILES
@@ -2421,6 +2423,7 @@ ucdxml
 uch
 UCHAR
 ucs
+UDK
 UDKs
 UDM
 uer
