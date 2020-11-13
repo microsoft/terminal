@@ -150,9 +150,6 @@
   <data name="ColorScheme_BrightYellow.Header" xml:space="preserve">
     <value>Bright yellow</value>
   </data>
-  <data name="Header_ColorSchemesPage" xml:space="preserve">
-    <value>Color schemes</value>
-  </data>
   <data name="ColorScheme_CursorColor.Text" xml:space="preserve">
     <value>Cursor color</value>
   </data>
@@ -220,9 +217,6 @@
   <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames.</value>
   </data>
-  <data name="Header_GlobalAppearancePage" xml:space="preserve">
-    <value>Global Appearance</value>
-  </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>Columns on first launch (in characters)</value>
   </data>
@@ -234,9 +228,6 @@
   </data>
   <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load.</value>
-  </data>
-  <data name="Header_InteractionPage" xml:space="preserve">
-    <value>Interaction</value>
   </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>Launch position</value>
@@ -259,9 +250,6 @@
   </data>
   <data name="Globals_LaunchSizeMaximized.Content" xml:space="preserve">
     <value>Maximized</value>
-  </data>
-  <data name="Header_RenderingPage" xml:space="preserve">
-    <value>Rendering</value>
   </data>
   <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
@@ -295,9 +283,6 @@
   </data>
   <data name="Globals_StartOnUserLogin.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
-  </data>
-  <data name="Header_StartupPage" xml:space="preserve">
-    <value>Startup</value>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
@@ -683,8 +668,5 @@
   </data>
   <data name="Globals_DisableDynamicProfiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
-  </data>
-  <data name="Header_ProfileDefaultsPage" xml:space="preserve">
-    <value>Global Profile Settings</value>
   </data>
 </root>
