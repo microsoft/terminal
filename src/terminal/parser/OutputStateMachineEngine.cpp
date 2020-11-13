@@ -895,7 +895,7 @@ CATCH_LOG_RETURN_FALSE()
 //   If there is a URI, the well formatted string looks like:
 //          "<params>;<URI>"
 //   To be specific, params is an optional list of key=value assignments, separated by the ':'. Example:
-//          "id=xyz123:foo=bar:baz=quux"
+//          "id=xyz123:foo=bar:baz=value"
 //   If there is no URI, we need to close the hyperlink and the string looks like:
 //          ";"
 // Arguments:
