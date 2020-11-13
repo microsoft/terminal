@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
             {
                 // Navigate to a page with the given profile
-                SettingsNavHeader().Text(profile.Name());
+                SettingsNav().Header(winrt::box_value(profile.Name()));
                 contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes()));
             }
         }
@@ -106,32 +106,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (clickedItemTag == launchTag)
         {
-            SettingsNavHeader().Text(RS_(L"Header_StartupPage"));
+            SettingsNav().Header(winrt::box_value(RS_(L"Header_StartupPage")));
             contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
         }
         else if (clickedItemTag == interactionTag)
         {
-            SettingsNavHeader().Text(RS_(L"Header_InteractionPage"));
+            SettingsNav().Header(winrt::box_value(RS_(L"Header_InteractionPage")));
             contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == renderingTag)
         {
-            SettingsNavHeader().Text(RS_(L"Header_RenderingPage"));
+            SettingsNav().Header(winrt::box_value(RS_(L"Header_RenderingPage")));
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            SettingsNavHeader().Text(RS_(L"Header_ProfileDefaultsPage"));
+            SettingsNav().Header(winrt::box_value(RS_(L"Header_ProfileDefaultsPage")));
             contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes()));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            SettingsNavHeader().Text(RS_(L"Header_ColorSchemesPage"));
+            SettingsNav().Header(winrt::box_value(RS_(L"Header_ColorSchemesPage")));
             contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            SettingsNavHeader().Text(RS_(L"Header_GlobalAppearancePage"));
+            SettingsNav().Header(winrt::box_value(RS_(L"Header_GlobalAppearancePage")));
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
         }
     }
@@ -149,8 +149,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         if (SettingsNav().IsPaneOpen() &&
-            (SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(1) ||
-             SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(0)))
+            (SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode::Compact ||
+             SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode::Minimal))
         {
             return false;
         }
@@ -216,7 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // TODO: Setting SelectedItem here doesn't seem to update
         // the NavigationView selected visual indicator, not sure where
         // it needs to be...
-        SettingsNavHeader().Text(newProfile.Name());
+        SettingsNav().Header(winrt::box_value(newProfile.Name()));
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes()));
     }
 

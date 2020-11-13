@@ -9,27 +9,25 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+    
     <ScrollViewer>
-        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          Margin="0,12,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
-            </Grid.ColumnDefinitions>
-            <TextBlock x:Uid="Globals_Interaction"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Margin="0,0,0,20" />
-            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                <CheckBox x:Uid="Globals_CopyOnSelect" IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <!--TODO: Converter Here-->
-                <!--<CheckBox x:Uid="Globals_CopyFormatting" IsChecked="{x:Bind GlobalSettings.CopyFormatting, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />-->
-                <TextBox x:Uid="Globals_WordDelimiters" Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-                <CheckBox x:Uid="Globals_SnapToGridOnResize" IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />
-            </StackPanel>
-        </Grid>
+        <StackPanel HorizontalAlignment="Left">
+            <CheckBox x:Uid="Globals_CopyOnSelect"
+                      IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
+            <!--TODO: Converter Here-->
+            <!--<CheckBox x:Uid="Globals_CopyFormatting" IsChecked="{x:Bind GlobalSettings.CopyFormatting, Mode=TwoWay}" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse" />-->
+            <TextBox x:Uid="Globals_WordDelimiters"
+                     Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}"/>
+            <CheckBox x:Uid="Globals_SnapToGridOnResize"
+                      IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
+        </StackPanel>
     </ScrollViewer>
 </Page>
