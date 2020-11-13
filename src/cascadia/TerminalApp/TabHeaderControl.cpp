@@ -38,7 +38,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     // User wants to discard the changes they made,
                     // reset the rename box text to the old text and close the rename box
-                    HeaderRenamerTextBox().Text(HeaderTextBlock().Text());
+                    HeaderRenamerTextBox().Text(_currentTitle);
                     _CloseRenameBox();
                 }
             }
@@ -51,7 +51,7 @@ namespace winrt::TerminalApp::implementation
     // - The current title as a winrt hstring
     winrt::hstring TabHeaderControl::CurrentHeaderText()
     {
-        return HeaderTextBlock().Text();
+        return _currentTitle;
     }
 
     // Method Description
@@ -60,7 +60,8 @@ namespace winrt::TerminalApp::implementation
     // - The desired title
     void TabHeaderControl::UpdateHeaderText(winrt::hstring title)
     {
-        HeaderTextBlock().Text(title);
+        _currentTitle = title;
+        HeaderTextBlock().Text(_currentTitle);
     }
 
     // Method Description:
@@ -82,7 +83,7 @@ namespace winrt::TerminalApp::implementation
         HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
         HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Visible);
 
-        HeaderRenamerTextBox().Text(HeaderTextBlock().Text());
+        HeaderRenamerTextBox().Text(_currentTitle);
         HeaderRenamerTextBox().SelectAll();
         HeaderRenamerTextBox().Focus(Windows::UI::Xaml::FocusState::Programmatic);
     }
@@ -100,7 +101,7 @@ namespace winrt::TerminalApp::implementation
     // - Updates the title text block with the rename box's text
     void TabHeaderControl::_CloseRenameBox()
     {
-        HeaderTextBlock().Text(HeaderRenamerTextBox().Text());
+        UpdateHeaderText(HeaderRenamerTextBox().Text());
 
         HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
         HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);

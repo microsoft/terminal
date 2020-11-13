@@ -24,8 +24,10 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(HeaderTitleChanged, TerminalApp::HeaderTitleChangedArgs);
 
     private:
-        void _CloseRenameBox();
+        winrt::hstring _currentTitle;
         bool _receivedKeyDown{ false };
+
+        void _CloseRenameBox();
     };
 }
 
