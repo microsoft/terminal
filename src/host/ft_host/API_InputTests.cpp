@@ -1107,7 +1107,8 @@ void InputTests::TestCookedAlphaPermutations()
     // In this specific combination of using a font where the ambiguous alpha is half width,
     // the output code page doesn't support double bytes, and the input code page does...
     // The result is stomped with a null as the conversion fails thinking it doesn't have enough space.
-    if (wstrFont == L"Consolas" && inputcp == 932 && outputcp == 437)
+    // Also, we're not maintaining this font corruption going forward. So test it for v1 only.
+    if (!Common::_isV2 && wstrFont == L"Consolas" && inputcp == 932 && outputcp == 437)
     {
         VERIFY_IS_GREATER_THAN_OR_EQUAL(recvInput.size(), 1);
 
