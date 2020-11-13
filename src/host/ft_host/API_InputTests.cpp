@@ -82,12 +82,12 @@ class InputTests
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 
-    BEGIN_TEST_METHOD(TestCookedReadChangeCodepageInMiddle)
+    BEGIN_TEST_METHOD(TestReadChangeCodepageInMiddle)
         TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 
-    BEGIN_TEST_METHOD(TestCookedReadChangeCodepageBetweenBytes)
+    BEGIN_TEST_METHOD(TestReadChangeCodepageBetweenBytes)
         TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
@@ -1205,11 +1205,13 @@ std::wstring _stringToHexString(const std::string& str)
 
 void _readVersusExpected(const HANDLE in, const ReadMode mode, const std::string& expected, size_t readSize)
 {
+    // Print expected up here so if it horks, we can at least know what we asked for to debug/fix the test.
+    Log::Comment(fmt::format(L"Expected: {}", _stringToHexString(expected)).c_str());
+
     std::string recvInput;
     recvInput.resize(readSize);
     VERIFY_SUCCEEDED(_readString(in, mode, recvInput));
 
-    Log::Comment(fmt::format(L"Expected: {}", _stringToHexString(expected)).c_str());
     Log::Comment(fmt::format(L"Actual  : {}", _stringToHexString(recvInput)).c_str());
 
     VERIFY_ARE_EQUAL(expected, recvInput);
@@ -1331,136 +1333,127 @@ void InputTests::TestReadLeadTrailString()
         }
         else
         {
+            // We can't read too far for direct because we have to loop
+            // to get all the right key records and we'll end up in an infinite wait.
             _readVersusExpected(in, mode, expectedInput, 9);
         }
     });
 }
 
-void InputTests::TestCookedReadChangeCodepageInMiddle()
+void InputTests::TestReadChangeCodepageInMiddle()
 {
-    const auto in = GetStdInputHandle();
+    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
+        Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
+        std::string expectedInput;
+        expectedInput = char932[0];
 
-    DWORD originalInMode = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+        // The following two only happen if you switch part way through...
+        expectedInput.append(char932[1].data(), 1);
+        // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+        // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+        // do this either to signal there are more or as a mistake that was never
+        // matched up on API review.
+        if (mode != ReadMode::Direct)
+        {
+            expectedInput.append(1, '\0');
+        }
 
-    DWORD originalCodepage = GetConsoleCP();
+        if (mode == ReadMode::Raw)
+        {
+            // throw on two null bytes for funsies.
+            expectedInput.append(1, '\0');
+            expectedInput.append(1, '\0');
+        }
 
-    auto restoreInModeOnExit = wil::scope_exit([&] {
-        SetConsoleMode(in, originalInMode);
-        SetConsoleCP(originalCodepage);
+        _readVersusExpected(in, mode, expectedInput, 3); // two bytes of first alpha and then a lead byte of the second one.
+
+        Log::Comment(L"Set the codepage to English");
+        Log::Comment(L"Changing codepage should discard all partial bytes!");
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+
+        Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
+        expectedInput.clear();
+        // TODO: I believe v2 shouldn't lose this character by switching codepages.
+        if (mode == ReadMode::Direct)
+        {
+            expectedInput.append(char437[2]);
+        }
+        expectedInput.append(char437[3]);
+        if (mode != ReadMode::Raw)
+        {
+            expectedInput.append(crlf);
+        }
+        else
+        {
+            // why do we get a ?... I mean why are we getting any of this weirdness.
+            expectedInput.append(1, '?');
+        }
+
+        
+        if (mode != ReadMode::Direct)
+        {
+            _readVersusExpected(in, mode, expectedInput, 490);
+        }
+        else
+        {
+            // We can't read too far for direct because we have to loop
+            // to get all the right key records and we'll end up in an infinite wait.
+            _readVersusExpected(in, mode, expectedInput, 4);
+        }
     });
-
-    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
-
-    Log::Comment(L"Set the codepage to Japanese");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
-
-    Log::Comment(L"Write something into the read queue.");
-
-    std::wstring sendInput;
-    sendInput.append(wide[0]);
-    sendInput.append(wide[1]);
-    sendInput.append(wide[2]);
-    sendInput.append(wide[3]);
-    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
-
-    Log::Comment(L"send the string");
-    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
-
-    Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
-    std::string expectedInput;
-    expectedInput = char932[0];
-
-    // The following two only happen if you switch part way through...
-    expectedInput.append(char932[1].data(), 1);
-    // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
-    // which can be longer than the buffer we gave. `ReadConsoleA` appears to
-    // do this either to signal there are more or as a mistake that was never
-    // matched up on API review.
-    expectedInput.append(1, '\0');
-
-    std::string recvInput;
-    recvInput.resize(3); // two bytes of first alpha and then a lead byte of the second one.
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    Log::Comment(L"Set the codepage to English");
-    Log::Comment(L"Changing codepage should discard all partial bytes!");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
-
-    Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
-    expectedInput.clear();
-    // TODO: I believe v2 shouldn't lose this character by switching codepages.
-    //expectedInput.append(char437[2]);
-    expectedInput.append(char437[3]);
-    expectedInput.append(crlf);
-
-    recvInput.clear();
-    recvInput.resize(490);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
 
-void InputTests::TestCookedReadChangeCodepageBetweenBytes()
+void InputTests::TestReadChangeCodepageBetweenBytes()
 {
-    const auto in = GetStdInputHandle();
+    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
+        Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
+        std::string expectedInput;
+        expectedInput = char932[0];
 
-    DWORD originalInMode = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+        if (mode == ReadMode::Raw)
+        {
+            // throw on two null bytes for funsies.
+            expectedInput.append(1, '\0');
+            expectedInput.append(1, '\0');
+        }
 
-    DWORD originalCodepage = GetConsoleCP();
+        _readVersusExpected(in, mode, expectedInput, 2); // two bytes of first alpha
 
-    auto restoreInModeOnExit = wil::scope_exit([&] {
-        SetConsoleMode(in, originalInMode);
-        SetConsoleCP(originalCodepage);
+        Log::Comment(L"Set the codepage to English");
+        Log::Comment(L"Changing codepage should discard all partial bytes!");
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
+
+        Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
+        expectedInput.clear();
+        // TODO: I believe v2 shouldn't lose this character by switching codepages.
+        if (mode == ReadMode::Direct)
+        {
+            expectedInput.append(char437[1]);
+        }
+        expectedInput.append(char437[2]);
+
+        if (mode == ReadMode::Raw)
+        {
+            // an infix question mark? in the raw read? for no sensible reason?
+            // YEP.
+            expectedInput.append(1, '?');
+        }
+
+        expectedInput.append(char437[3]);
+        if (mode != ReadMode::Raw)
+        {
+            expectedInput.append(crlf);
+        }
+
+        if (mode != ReadMode::Direct)
+        {
+            _readVersusExpected(in, mode, expectedInput, 490);
+        }
+        else
+        {
+            // We can't read too far for direct because we have to loop
+            // to get all the right key records and we'll end up in an infinite wait.
+            _readVersusExpected(in, mode, expectedInput, 5);
+        }
     });
-
-    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
-
-    Log::Comment(L"Set the codepage to Japanese");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
-
-    Log::Comment(L"Write something into the read queue.");
-
-    std::wstring sendInput;
-    sendInput.append(wide[0]);
-    sendInput.append(wide[1]);
-    sendInput.append(wide[2]);
-    sendInput.append(wide[3]);
-    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
-
-    Log::Comment(L"send the string");
-    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
-
-    Log::Comment(L"Read only part of it including leaving behind a trailing byte.");
-    std::string expectedInput;
-    expectedInput = char932[0];
-
-    std::string recvInput;
-    recvInput.resize(2); // two bytes of first alpha
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    Log::Comment(L"Set the codepage to English");
-    Log::Comment(L"Changing codepage should discard all partial bytes!");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(437));
-
-    Log::Comment(L"Read the rest of it and validate that it was re-encoded as English");
-    expectedInput.clear();
-    // TODO: I believe v2 shouldn't lose this character by switching codepages.
-    // expectedInput.append(char437[1]);
-    expectedInput.append(char437[2]);
-    expectedInput.append(char437[3]);
-    expectedInput.append(crlf);
-
-    recvInput.clear();
-    recvInput.resize(490);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
