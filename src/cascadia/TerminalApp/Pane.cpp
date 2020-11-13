@@ -1093,13 +1093,14 @@ void Pane::_SetupEntranceAnimation()
     // Windows" setting in the OS
     winrt::Windows::UI::ViewManagement::UISettings uiSettings;
     const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+    const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
     const bool splitWidth = _splitState == SplitState::Vertical;
     const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
     // If we don't have a size yet, it's likely that we're in startup, or we're
     // being executed as a sequence of actions. In that case, just skip the
     // animation.
-    if (totalSize <= 0 || !animationsEnabledInOS)
+    if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
     {
         return;
     }
