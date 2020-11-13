@@ -264,6 +264,7 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
 
         if (key == VirtualKey::Up)
         {
@@ -289,13 +290,13 @@ namespace winrt::TerminalApp::implementation
             ScrollPageDown();
             e.Handled(true);
         }
-        else if (key == VirtualKey::Home)
+        else if (key == VirtualKey::Home && ctrlDown)
         {
             // Action Mode: Move focus to the first item in the list.
             ScrollToTop();
             e.Handled(true);
         }
-        else if (key == VirtualKey::End)
+        else if (key == VirtualKey::End && ctrlDown)
         {
             // Action Mode: Move focus to the last item in the list.
             ScrollToBottom();
