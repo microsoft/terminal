@@ -1218,6 +1218,14 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
+        if (CommandPalette().Visibility() == Visibility::Visible)
+        {
+            // If the tab switcher is currently open, don't change its mode.
+            // Just select the new tab.
+            CommandPalette().SelectNextItem(bMoveRight);
+            return;
+        }
+
         if (_settings.GlobalSettings().UseTabSwitcher())
         {
             CommandPalette().SetTabActions(_mruTabActions);
@@ -1227,15 +1235,10 @@ namespace winrt::TerminalApp::implementation
             uint32_t tabCount = _mruTabActions.Size();
             auto newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
 
-            if (CommandPalette().Visibility() == Visibility::Visible)
-            {
-                CommandPalette().SelectNextItem(bMoveRight);
-            }
-            else
-            {
-                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().Visibility(Visibility::Visible);
-            }
+            // Otherwise, set up the tab switcher in the selected mode, with
+            // the given ordering, and make it visible.
+            CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+            CommandPalette().Visibility(Visibility::Visible);
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
