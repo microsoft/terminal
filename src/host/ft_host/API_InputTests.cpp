@@ -67,31 +67,29 @@ class InputTests
         TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
         TEST_METHOD_PROPERTY(L"Data:inputcp", L"{437, 932}")
         TEST_METHOD_PROPERTY(L"Data:outputcp", L"{437, 932}")
-        TEST_METHOD_PROPERTY(L"Data:inputmode", L"{487, 481}") // 487 is 0x1e7, 485 is 0x1e1 (ENABLE_LINE_INPUT on/off)
+        TEST_METHOD_PROPERTY(L"Data:inputmode", L"{487, 481}") // 487 is 0x1e7, 481 is 0x1e1 (ENABLE_LINE_INPUT on/off)
         TEST_METHOD_PROPERTY(L"Data:outputmode", L"{7}")
         TEST_METHOD_PROPERTY(L"Data:font", L"{Consolas, MS Gothic}")
     END_TEST_METHOD()
 
-    BEGIN_TEST_METHOD(TestCookedReadCharByChar)
+    BEGIN_TEST_METHOD(TestReadCharByChar)
+        TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 
-    BEGIN_TEST_METHOD(TestCookedReadLeadTrailString)
+    BEGIN_TEST_METHOD(TestReadLeadTrailString)
+        TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 
     BEGIN_TEST_METHOD(TestCookedReadChangeCodepageInMiddle)
+        TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
     END_TEST_METHOD()
 
     BEGIN_TEST_METHOD(TestCookedReadChangeCodepageBetweenBytes)
+        TEST_METHOD_PROPERTY(L"Data:readmode", L"{cooked, raw, direct}")
         //TEST_METHOD_PROPERTY(L"TestTimeout", L"00:01:00")
-    END_TEST_METHOD()
-
-    BEGIN_TEST_METHOD(TestDirectReadCharByChar)
-    END_TEST_METHOD()
-
-    BEGIN_TEST_METHOD(TestDirectReadLeadTrailString)
     END_TEST_METHOD()
 };
 
@@ -756,7 +754,6 @@ void InputTests::RawReadUnpacksCoalescedInputRecords()
     VERIFY_ARE_EQUAL(eventCount, static_cast<DWORD>(0));
 }
 
-
 static std::vector<INPUT_RECORD> _stringToInputs(std::wstring_view wstr)
 {
     std::vector<INPUT_RECORD> result;
@@ -972,9 +969,54 @@ void InputTests::TestCookedTextEntry()
     }
 }
 
-// tests todo:
-// - test alpha in/out in 437/932 permutations
-// - test leftover leadbyte/trailbyte when buffer too small
+// Greek letters, lowercase...
+const std::array<std::wstring, 4> wide = {
+    L"\u03b1", // alpha
+    L"\u03b2", // beta
+    // no gamma because it doesn't translate to 437
+    L"\u03b4", // delta
+    L"\u03b5" //epsilon
+};
+
+const std::array<std::string, 4> char437 = {
+    "\xe0",
+    "\xe1",
+    "\xeb",
+    "\xee"
+};
+
+const std::array<std::string, 4> char932 = {
+    "\x83\xbf",
+    "\x83\xc0",
+    "\x83\xc2",
+    "\x83\xc3"
+};
+
+const std::wstring widecrlf = L"\r\n";
+const std::string crlf = "\r\n";
+
+enum class ReadMode
+{
+    Cooked, // ReadConsoleA with ENABLE_LINE_INPUT
+    Raw, // ReadConsoleA without ENABLE_LINE_INPUT
+    Direct // ReadConsoleInputA
+};
+
+static HRESULT _readString(HANDLE in, ReadMode mode, std::string& buf, bool async = true)
+{
+    switch (mode)
+    {
+    case ReadMode::Cooked:
+    case ReadMode::Raw:
+        return _readStringFromInput(in, buf, async);
+    case ReadMode::Direct:
+        return _readStringFromInputDirect(in, buf, async);
+    default:
+        VERIFY_FAIL(L"Not supported");
+        return E_NOTIMPL;
+    }
+}
+
 void InputTests::TestCookedAlphaPermutations()
 {
     DWORD inputcp, outputcp, inputmode, outputmode;
@@ -1029,9 +1071,9 @@ void InputTests::TestCookedAlphaPermutations()
 
     VERIFY_WIN32_BOOL_SUCCEEDED(SetCurrentConsoleFontEx(out, FALSE, &ourFont));
 
-    const wchar_t alpha = L'\u03b1';
-    const std::string alpha437 = "\xe0";
-    const std::string alpha932 = "\x83\xbf";
+    const wchar_t alpha = wide[0][0];
+    const std::string alpha437 = char437[0];
+    const std::string alpha932 = char932[0];
 
     std::string expected = inputcp == 932 ? alpha932 : alpha437;
 
@@ -1041,8 +1083,8 @@ void InputTests::TestCookedAlphaPermutations()
     // If we're in line input, we have to send a newline and we'll get one back.
     if (WI_IsFlagSet(inputmode, ENABLE_LINE_INPUT))
     {
-        expected.append("\r\n");
-        sendInput.append(L"\r\n");
+        expected.append(crlf);
+        sendInput.append(widecrlf);
     }
 
     Log::Comment(L"send the string");
@@ -1084,368 +1126,214 @@ void InputTests::TestCookedAlphaPermutations()
     }
 }
 
+void _unifiedReadTest(std::function<void(HANDLE, ReadMode)> fn)
+{
+    String readmode;
+    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"readmode", readmode), L"Get read mode");
+
+    ReadMode rm = ReadMode::Raw;
+    if (readmode == L"cooked")
+    {
+        rm = ReadMode::Cooked;
+    }
+    else if (readmode == L"raw")
+    {
+        rm = ReadMode::Raw;
+    }
+    else if (readmode == L"direct")
+    {
+        rm = ReadMode::Direct;
+    }
+    else
+    {
+        VERIFY_FAIL(L"Read mode not implemented on test.");
+    }
+
+    const auto in = GetStdInputHandle();
+
+    DWORD originalInMode = 0;
+    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+
+    DWORD originalCodepage = GetConsoleCP();
+
+    auto restoreInModeOnExit = wil::scope_exit([&] {
+        SetConsoleMode(in, originalInMode);
+        SetConsoleCP(originalCodepage);
+    });
+
+    const DWORD testInMode = rm == ReadMode::Raw ? 0 : ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
+
+    Log::Comment(L"Set the codepage to Japanese");
+
+    if (GetACP() != 932 && !Common::_isV2)
+    {
+        Log::Comment(L"The v1 console cannot switch to Japanese unless the system ACP is 932");
+        Log::Comment(L"Set it in the regional control panel legacy settings and reboot first.");
+        VERIFY_FAIL(L"System state invalid for v1 test. Must be in Japanese (Japan) legacy locale.");
+    }
+
+    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
+
+    Log::Comment(L"Flush out the read queue.");
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(in));
+
+    Log::Comment(L"Write something into the read queue.");
+
+    std::wstring sendInput;
+    sendInput.append(wide[0]);
+    sendInput.append(wide[1]);
+    sendInput.append(wide[2]);
+    sendInput.append(wide[3]);
+    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
+
+    Log::Comment(L"send the string");
+    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
+
+    fn(in, rm);
+}
+
+std::wstring _stringToHexString(const std::string& str)
+{
+    std::wstring ret;
+    for (auto& ch : str)
+    {
+        ret.append(fmt::format(L"{:#04x} ", (byte)ch));
+    }
+    return ret;
+}
+
+void _readVersusExpected(const HANDLE in, const ReadMode mode, const std::string& expected, size_t readSize)
+{
+    std::string recvInput;
+    recvInput.resize(readSize);
+    VERIFY_SUCCEEDED(_readString(in, mode, recvInput));
+
+    Log::Comment(fmt::format(L"Expected: {}", _stringToHexString(expected)).c_str());
+    Log::Comment(fmt::format(L"Actual  : {}", _stringToHexString(recvInput)).c_str());
+
+    VERIFY_ARE_EQUAL(expected, recvInput);
+}
+
 // TODO tests:
-// - leaving behind a lead/trail byte
-// - leaving behind a lead/trail byte and having more data
-// -- doing it in a loop/continuously.
-// - read it char by char
 // - ensure leftover bytes are lost when read off a different handle?!
 
-void InputTests::TestCookedReadCharByChar()
+void InputTests::TestReadCharByChar()
 {
-    const auto in = GetStdInputHandle();
+    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
+        Log::Comment(L"Read byte by byte, should leave trailing each time.");
+        std::string expectedInput;
+        expectedInput = char932[0][0];
 
-    DWORD originalInMode = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+        if (mode != ReadMode::Direct)
+        {
+            // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+            // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+            // do this either to signal there are more or as a mistake that was never
+            // matched up on API review.
+            expectedInput.append(1, '\0');
+        }
 
-    DWORD originalCodepage = GetConsoleCP();
+        _readVersusExpected(in, mode, expectedInput, 1);
 
-    auto restoreInModeOnExit = wil::scope_exit([&] {
-        SetConsoleMode(in, originalInMode);
-        SetConsoleCP(originalCodepage);
+        // TODO: CHv1 completely loses the trailing byte.
+
+        expectedInput[0] = char932[1][0];
+        _readVersusExpected(in, mode, expectedInput, 1);
+
+        // TODO: CHv1 completely loses the trailing byte.
+
+        expectedInput[0] = char932[2][0];
+        _readVersusExpected(in, mode, expectedInput, 1);
+
+        // TODO: CHv1 completely loses the trailing byte.
+
+        expectedInput[0] = char932[3][0];
+        _readVersusExpected(in, mode, expectedInput, 1);
+
+        // TODO: CHv1 completely loses the trailing byte.
+
+        expectedInput = crlf[0];
+        _readVersusExpected(in, mode, expectedInput, 1);
+
+        if (mode != ReadMode::Raw) // Raw mode will not return the \n.
+        {
+            expectedInput = crlf[1];
+            _readVersusExpected(in, mode, expectedInput, 1);
+        }
     });
-
-    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
-
-    Log::Comment(L"Set the codepage to Japanese");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
-
-    Log::Comment(L"Write something into the read queue.");
-
-    // Greek letters, lowercase...
-    const std::array<std::wstring, 4> wide = {
-        L"\u03b1", // alpha
-        L"\u03b2", // beta
-        // no gamma because it doesn't translate to 437
-        L"\u03b4", // delta
-        L"\u03b5" //epsilon
-    };
-
-    const std::array<std::string, 4> char932 = {
-        "\x83\xbf",
-        "\x83\xc0",
-        "\x83\xc2",
-        "\x83\xc3"
-    };
-
-    const std::string crlf = "\r\n";
-
-    std::wstring sendInput;
-    sendInput.append(wide[0]);
-    sendInput.append(wide[1]);
-    sendInput.append(wide[2]);
-    sendInput.append(wide[3]);
-    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
-
-    Log::Comment(L"send the string");
-    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
-
-    Log::Comment(L"Read byte by byte, should leave trailing each time.");
-    std::string expectedInput;
-    expectedInput = char932[0][0];
-       
-    // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
-    // which can be longer than the buffer we gave. `ReadConsoleA` appears to
-    // do this either to signal there are more or as a mistake that was never
-    // matched up on API review.
-    expectedInput.append(1, '\0');
-
-    std::string recvInput;
-    recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO: CHv1 completely loses the trailing byte.
-    
-    expectedInput = char932[1][0];
-    expectedInput.append(1, '\0');
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO: CHv1 completely loses the trailing byte.
-    
-    expectedInput = char932[2][0];
-    expectedInput.append(1, '\0');
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO: CHv1 completely loses the trailing byte.
-
-    expectedInput = char932[3][0];
-    expectedInput.append(1, '\0');
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO: CHv1 completely loses the trailing byte.
-
-    expectedInput = crlf[0];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    expectedInput = crlf[1];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
 
-void InputTests::TestDirectReadCharByChar()
+void InputTests::TestReadLeadTrailString()
 {
-    const auto in = GetStdInputHandle();
+    _unifiedReadTest([](HANDLE in, ReadMode mode) -> void {
+        Log::Comment(L"Read byte by byte, should leave trailing each time.");
+        std::string expectedInput;
+        expectedInput = char932[0][0];
 
-    DWORD originalInMode = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
+        if (mode != ReadMode::Direct)
+        {
+            // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
+            // which can be longer than the buffer we gave. `ReadConsoleA` appears to
+            // do this either to signal there are more or as a mistake that was never
+            // matched up on API review.
+            expectedInput.append(1, '\0');
+        }
 
-    DWORD originalCodepage = GetConsoleCP();
+        _readVersusExpected(in, mode, expectedInput, 1);
 
-    auto restoreInModeOnExit = wil::scope_exit([&] {
-        SetConsoleMode(in, originalInMode);
-        SetConsoleCP(originalCodepage);
+        Log::Comment(L"Read everything else");
+        // TODO: CHv1 completely loses the trailing byte.
+
+        expectedInput.clear();
+
+        if (mode != ReadMode::Raw)
+        {
+            // Direct mode can successfully return the trailing byte...
+            // but in v1... only when the read length is > 1 record total.
+            // Since this is the "string remaining" test... that's >1 record.
+            // (as opposed to the char-by-char test where Direct loses it just like
+            //  Cooked and Raw do.)
+            if (mode == ReadMode::Direct)
+            {
+                expectedInput.append(1, char932[0][1]);
+            }
+
+            expectedInput.append(char932[1]);
+            expectedInput.append(char932[2]);
+            expectedInput.append(char932[3]);
+            expectedInput.append(1, crlf[0]);
+            expectedInput.append(1, crlf[1]);
+        }
+        else
+        {
+            // Raw mode messes up completely here and just returns the UTF-16 characters.
+            // oh and a null at the end for fun. and it loses the \n.
+            expectedInput.append(1, LOBYTE(wide[1][0]));
+            expectedInput.append(1, HIBYTE(wide[1][0]));
+            expectedInput.append(1, LOBYTE(wide[2][0]));
+            expectedInput.append(1, HIBYTE(wide[2][0]));
+            expectedInput.append(1, LOBYTE(wide[3][0]));
+            expectedInput.append(1, HIBYTE(wide[3][0]));
+            expectedInput.append(1, crlf[0]);
+            expectedInput.append(1, '\0');
+        }
+
+        // The test helper is authored such that direct mode will keep retrying
+        // to read until it gets every record requested because there's a high
+        // potential for other events (focus, mouse) to drop into the queue
+        // for random reasons.
+        // As such, we can read to excess on cooked/raw, but we have to read
+        // to the exact expected length for direct.
+        if (mode != ReadMode::Direct) 
+        {
+            _readVersusExpected(in, mode, expectedInput, 100);
+        }
+        else
+        {
+            _readVersusExpected(in, mode, expectedInput, 9);
+        }
     });
-
-    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
-
-    Log::Comment(L"Set the codepage to Japanese");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
-
-    Log::Comment(L"Write something into the read queue.");
-
-    // Greek letters, lowercase...
-    const std::array<std::wstring, 4> wide = {
-        L"\u03b1", // alpha
-        L"\u03b2", // beta
-        // no gamma because it doesn't translate to 437
-        L"\u03b4", // delta
-        L"\u03b5" //epsilon
-    };
-
-    const std::array<std::string, 4> char932 = {
-        "\x83\xbf",
-        "\x83\xc0",
-        "\x83\xc2",
-        "\x83\xc3"
-    };
-
-    const std::string crlf = "\r\n";
-
-    std::wstring sendInput;
-    sendInput.append(wide[0]);
-    sendInput.append(wide[1]);
-    sendInput.append(wide[2]);
-    sendInput.append(wide[3]);
-    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
-
-    Log::Comment(L"send the string");
-    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
-
-    Log::Comment(L"Read byte by byte, should leave trailing each time.");
-    std::string expectedInput;
-    expectedInput = char932[0][0];
-
-    std::string recvInput;
-    recvInput.resize(1); // only gets the leading byte
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO v1, loses the trailing byte
-
-    expectedInput = char932[1][0];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO v1, loses the trailing byte
-
-    expectedInput = char932[2][0];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO v1, loses the trailing byte
-
-    expectedInput = char932[3][0];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO v1, loses the trailing byte
-
-    expectedInput = crlf[0];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    expectedInput = crlf[1];
-    recvInput.clear();
-    recvInput.resize(1);
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-}
-
-void InputTests::TestCookedReadLeadTrailString()
-{
-    const auto in = GetStdInputHandle();
-
-    DWORD originalInMode = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
-
-    DWORD originalCodepage = GetConsoleCP();
-
-    auto restoreInModeOnExit = wil::scope_exit([&] {
-        SetConsoleMode(in, originalInMode);
-        SetConsoleCP(originalCodepage);
-    });
-
-    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
-
-    Log::Comment(L"Set the codepage to Japanese");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
-
-    Log::Comment(L"Write something into the read queue.");
-
-    // Greek letters, lowercase...
-    const std::array<std::wstring, 4> wide = {
-        L"\u03b1", // alpha
-        L"\u03b2", // beta
-        // no gamma because it doesn't translate to 437
-        L"\u03b4", // delta
-        L"\u03b5" //epsilon
-    };
-
-    const std::array<std::string, 4> char932 = {
-        "\x83\xbf",
-        "\x83\xc0",
-        "\x83\xc2",
-        "\x83\xc3"
-    };
-
-    const std::string crlf = "\r\n";
-
-    std::wstring sendInput;
-    sendInput.append(wide[0]);
-    sendInput.append(wide[1]);
-    sendInput.append(wide[2]);
-    sendInput.append(wide[3]);
-    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
-
-    Log::Comment(L"send the string");
-    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
-
-    Log::Comment(L"Read first byte, should leave trailing.");
-    std::string expectedInput;
-    expectedInput = char932[0][0];
-
-    // this is an artifact of resizing our string to the `lpNumberOfCharsRead`
-    // which can be longer than the buffer we gave. `ReadConsoleA` appears to
-    // do this either to signal there are more or as a mistake that was never
-    // matched up on API review.
-    expectedInput.append(1, '\0');
-
-    std::string recvInput;
-    recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    // TODO: CHv1 completely loses the trailing byte.
-
-    Log::Comment(L"Read everything else.");
-
-    expectedInput = char932[1];
-    expectedInput.append(char932[2]);
-    expectedInput.append(char932[3]);
-    expectedInput.append(crlf);
-    recvInput.clear();
-    recvInput.resize(100);
-    VERIFY_SUCCEEDED(_readStringFromInput(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-}
-
-void InputTests::TestDirectReadLeadTrailString()
-{
-    const auto in = GetStdInputHandle();
-
-    DWORD originalInMode = 0;
-    VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleMode(in, &originalInMode));
-
-    DWORD originalCodepage = GetConsoleCP();
-
-    auto restoreInModeOnExit = wil::scope_exit([&] {
-        SetConsoleMode(in, originalInMode);
-        SetConsoleCP(originalCodepage);
-    });
-
-    const DWORD testInMode = ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleMode(in, testInMode));
-
-    Log::Comment(L"Set the codepage to Japanese");
-    VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
-
-    Log::Comment(L"Write something into the read queue.");
-
-    // Greek letters, lowercase...
-    const std::array<std::wstring, 4> wide = {
-        L"\u03b1", // alpha
-        L"\u03b2", // beta
-        // no gamma because it doesn't translate to 437
-        L"\u03b4", // delta
-        L"\u03b5" //epsilon
-    };
-
-    const std::array<std::string, 4> char932 = {
-        "\x83\xbf",
-        "\x83\xc0",
-        "\x83\xc2",
-        "\x83\xc3"
-    };
-
-    const std::string crlf = "\r\n";
-
-    std::wstring sendInput;
-    sendInput.append(wide[0]);
-    sendInput.append(wide[1]);
-    sendInput.append(wide[2]);
-    sendInput.append(wide[3]);
-    sendInput.append(L"\r\n"); // send a newline to finish the line since we're in ENABLE_LINE_INPUT mode
-
-    Log::Comment(L"send the string");
-    VERIFY_SUCCEEDED(_sendStringToInput(in, sendInput));
-
-    Log::Comment(L"Read first byte, should leave trailing.");
-    std::string expectedInput;
-    expectedInput = char932[0][0];
-
-    std::string recvInput;
-    recvInput.resize(1); // two bytes of first alpha and then a lead byte of the second one.
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
-
-    Log::Comment(L"Read everything else.");
-
-    expectedInput = char932[0][1];
-    expectedInput.append(char932[1]);
-    expectedInput.append(char932[2]);
-    expectedInput.append(char932[3]);
-    expectedInput.append(crlf);
-    recvInput.clear();
-    recvInput.resize(9);
-    VERIFY_SUCCEEDED(_readStringFromInputDirect(in, recvInput));
-    VERIFY_ARE_EQUAL(expectedInput, recvInput);
 }
 
 void InputTests::TestCookedReadChangeCodepageInMiddle()
@@ -1469,31 +1357,6 @@ void InputTests::TestCookedReadChangeCodepageInMiddle()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
 
     Log::Comment(L"Write something into the read queue.");
-
-    // Greek letters, lowercase...
-    const std::array<std::wstring, 4> wide = {
-        L"\u03b1", // alpha
-        L"\u03b2", // beta
-        // no gamma because it doesn't translate to 437
-        L"\u03b4", // delta
-        L"\u03b5" //epsilon
-    };
-
-    const std::array<std::string, 4> char437 = {
-        "\xe0",
-        "\xe1",
-        "\xeb",
-        "\xee"
-    };
-
-    const std::array<std::string, 4> char932 = {
-        "\x83\xbf",
-        "\x83\xc0",
-        "\x83\xc2",
-        "\x83\xc3"
-    };
-
-    const std::string crlf = "\r\n";
 
     std::wstring sendInput;
     sendInput.append(wide[0]);
@@ -1562,31 +1425,6 @@ void InputTests::TestCookedReadChangeCodepageBetweenBytes()
     VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleCP(932));
 
     Log::Comment(L"Write something into the read queue.");
-
-    // Greek letters, lowercase...
-    const std::array<std::wstring, 4> wide = {
-        L"\u03b1", // alpha
-        L"\u03b2", // beta
-        // no gamma because it doesn't translate to 437
-        L"\u03b4", // delta
-        L"\u03b5" //epsilon
-    };
-
-    const std::array<std::string, 4> char437 = {
-        "\xe0",
-        "\xe1",
-        "\xeb",
-        "\xee"
-    };
-
-    const std::array<std::string, 4> char932 = {
-        "\x83\xbf",
-        "\x83\xc0",
-        "\x83\xc2",
-        "\x83\xc3"
-    };
-
-    const std::string crlf = "\r\n";
 
     std::wstring sendInput;
     sendInput.append(wide[0]);
