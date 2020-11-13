@@ -886,11 +886,16 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+#pragma warning(push)
+#pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
 //   may be provided.
 //   If there is a URI, the well formatted string looks like:
 //          "<params>;<URI>"
+//   To be specific, params is an optional list of key=value assignments, separated by the ':'. Example:
+//          "id=xyz123:foo=bar:baz=quux"
 //   If there is no URI, we need to close the hyperlink and the string looks like:
 //          ";"
 // Arguments:
@@ -929,6 +934,8 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
     }
     return false;
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST
