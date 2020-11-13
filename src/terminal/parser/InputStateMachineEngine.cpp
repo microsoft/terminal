@@ -311,7 +311,7 @@ bool InputStateMachineEngine::ActionEscDispatch(const VTID id)
     bool success = false;
 
     // There are no intermediates, so the id is effectively the final char.
-    const wchar_t wch = gsl::narrow_cast<wchar_t>(id);
+    const auto wch = gsl::narrow_cast<wchar_t>(id);
 
     // 0x7f is DEL, which we treat effectively the same as a ctrl character.
     if (wch == 0x7f)
@@ -694,7 +694,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const wchar_t wch, const short vke
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modifierState)
 {
-    const wchar_t wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
+    const auto wch = gsl::narrow_cast<wchar_t>(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR));
     return _WriteSingleKey(wch, vkey, modifierState);
 }
 
@@ -710,7 +710,7 @@ bool InputStateMachineEngine::_WriteSingleKey(const short vkey, const DWORD modi
 // - true iff we successfully wrote the keypress to the input callback.
 bool InputStateMachineEngine::_WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags)
 {
-    COORD uiPos = { gsl::narrow<short>(column) - 1, gsl::narrow<short>(line) - 1 };
+    COORD uiPos = { static_cast<SHORT>(gsl::narrow<short>(column) - 1), static_cast<SHORT>(gsl::narrow<short>(line) - 1) };
 
     INPUT_RECORD rgInput;
     rgInput.EventType = MOUSE_EVENT;

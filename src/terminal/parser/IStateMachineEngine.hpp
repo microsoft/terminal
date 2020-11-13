@@ -47,14 +47,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) = 0;
 
-        virtual bool ParseControlSequenceAfterSs3() const = 0;
-        virtual bool FlushAtEndOfString() const = 0;
-        virtual bool DispatchControlCharsFromEscape() const = 0;
-        virtual bool DispatchIntermediatesFromEscape() const = 0;
+        [[nodiscard]] virtual bool ParseControlSequenceAfterSs3() const = 0;
+        [[nodiscard]] virtual bool FlushAtEndOfString() const = 0;
+        [[nodiscard]] virtual bool DispatchControlCharsFromEscape() const = 0;
+        [[nodiscard]] virtual bool DispatchIntermediatesFromEscape() const = 0;
 
     protected:
         IStateMachineEngine() = default;
     };
 
-    inline IStateMachineEngine::~IStateMachineEngine() {}
+    inline IStateMachineEngine::~IStateMachineEngine() = default;
 }

@@ -11,8 +11,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     class some
     {
     private:
-        std::array<T, N> _array;
-        size_t _used;
+        std::array<T, N> _array{};
+        size_t _used{ 0 };
 
 #ifdef UNIT_TESTING
         friend class SomeTests;
@@ -33,9 +33,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         using reverse_iterator = typename decltype(_array)::reverse_iterator;
         using const_reverse_iterator = typename decltype(_array)::const_reverse_iterator;
 
-        some() noexcept :
-            _array{},
-            _used{ 0 }
+        some() noexcept 
+            
         {
         }
 
@@ -72,57 +71,57 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             std::swap(_used, _Other._used);
         }
 
-        constexpr const_iterator begin() const noexcept
+        [[nodiscard]] constexpr const_iterator begin() const noexcept
         {
             return _array.begin();
         }
 
-        constexpr const_iterator end() const noexcept
+        [[nodiscard]] constexpr const_iterator end() const noexcept
         {
             return _array.begin() + _used;
         }
 
-        constexpr const_reverse_iterator rbegin() const noexcept
+        [[nodiscard]] constexpr const_reverse_iterator rbegin() const noexcept
         {
             return const_reverse_iterator(end());
         }
 
-        constexpr const_reverse_iterator rend() const noexcept
+        [[nodiscard]] constexpr const_reverse_iterator rend() const noexcept
         {
             return const_reverse_iterator(begin());
         }
 
-        constexpr const_iterator cbegin() const noexcept
+        [[nodiscard]] constexpr const_iterator cbegin() const noexcept
         {
             return begin();
         }
 
-        constexpr const_iterator cend() const noexcept
+        [[nodiscard]] constexpr const_iterator cend() const noexcept
         {
             return end();
         }
 
-        constexpr const_reverse_iterator crbegin() const noexcept
+        [[nodiscard]] constexpr const_reverse_iterator crbegin() const noexcept
         {
             return rbegin();
         }
 
-        constexpr const_reverse_iterator crend() const noexcept
+        [[nodiscard]] constexpr const_reverse_iterator crend() const noexcept
         {
             return rend();
         }
 
-        constexpr size_type size() const noexcept
+        [[nodiscard]] constexpr size_type size() const noexcept
         {
             return _used;
         }
 
-        constexpr size_type max_size() const noexcept
+        [[nodiscard]] constexpr size_type max_size() const noexcept
         {
             return N;
         }
 
-        constexpr bool empty() const noexcept
+        [[nodiscard]] constexpr bool empty() const noexcept
         {
             return !_used;
         }
@@ -133,7 +132,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _array = {}; // should free members, if necessary.
         }
 
-        constexpr const_reference at(size_type pos) const
+        [[nodiscard]] constexpr const_reference at(size_type pos) const
         {
             if (_used <= pos)
             {
@@ -148,17 +147,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _array[pos];
         }
 
-        constexpr const_reference front() const noexcept
+        [[nodiscard]] constexpr const_reference front() const noexcept
         {
             return _array[0];
         }
 
-        constexpr const_reference back() const noexcept
+        [[nodiscard]] constexpr const_reference back() const noexcept
         {
             return _array[_used - 1];
         }
 
-        constexpr const T* data() const noexcept
+        [[nodiscard]] constexpr const T* data() const noexcept
         {
             return _array.data();
         }
@@ -209,7 +208,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             throw std::out_of_range("invalid some<T, N> subscript");
         }
 
-        std::wstring to_string() const
+        [[nodiscard]] std::wstring to_string() const
         {
             std::wstringstream wss;
             wss << std::endl

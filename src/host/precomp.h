@@ -65,7 +65,9 @@ Abstract:
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #include <telemetry\ProjectTelemetry.h>
+#if 0
 #include <TraceLoggingActivity.h>
+#endif
 #include "telemetry.hpp"
 #include "tracing.hpp"
 
@@ -88,8 +90,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #include "..\inc\operators.hpp"
 #include "..\inc\conattrs.hpp"
 
-// TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
-[[nodiscard]] inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
-{
-    return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
-}
+#define NTSTATUS_FROM_HRESULT(...) ((NTSTATUS)(NTSTATUS_FROM_WIN32(HRESULT_CODE((__VA_ARGS__)))))

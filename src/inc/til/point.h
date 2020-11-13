@@ -262,7 +262,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return point{ x, y };
         }
 
-        constexpr ptrdiff_t x() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t x() const noexcept
         {
             return _x;
         }
@@ -275,7 +275,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        constexpr ptrdiff_t y() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t y() const noexcept
         {
             return _y;
         }
@@ -325,7 +325,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-        std::wstring to_string() const
+        [[nodiscard]] std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());
         }

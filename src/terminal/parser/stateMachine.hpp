@@ -51,7 +51,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool FlushToTerminal();
 
-        const IStateMachineEngine& Engine() const noexcept;
+        [[nodiscard]] const IStateMachineEngine& Engine() const noexcept;
         IStateMachineEngine& Engine() noexcept;
 
     private:
@@ -115,7 +115,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _EventVariableLengthStringTermination(const wchar_t wch);
 
         void _AccumulateTo(const wchar_t wch, size_t& value) noexcept;
-        const bool _IsVariableLengthStringState() const noexcept;
+        [[nodiscard]] bool _IsVariableLengthStringState() const noexcept;
 
         enum class VTStates
         {

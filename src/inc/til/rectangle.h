@@ -208,12 +208,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                    _topLeft.y() < _bottomRight.y();
         }
 
-        constexpr const_iterator begin() const
+        [[nodiscard]] constexpr const_iterator begin() const
         {
             return const_iterator(_topLeft, _bottomRight);
         }
 
-        constexpr const_iterator end() const
+        [[nodiscard]] constexpr const_iterator end() const
         {
             // For the standard walk: Left-To-Right then Top-To-Bottom
             // the end box is one cell below the left most column.
@@ -650,7 +650,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // scale_up will scale the entire rectangle up by the size factor
         // This includes moving the origin.
-        rectangle scale_up(const size& size) const
+        [[nodiscard]] rectangle scale_up(const size& size) const
         {
             const auto topLeft = _topLeft * size;
             const auto bottomRight = _bottomRight * size;
@@ -660,7 +660,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // scale_down will scale the entire rectangle down by the size factor,
         // but rounds the bottom-right corner out.
         // This includes moving the origin.
-        rectangle scale_down(const size& size) const
+        [[nodiscard]] rectangle scale_down(const size& size) const
         {
             auto topLeft = _topLeft;
             auto bottomRight = _bottomRight;
@@ -682,7 +682,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
 #pragma endregion
 
-        constexpr ptrdiff_t top() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t top() const noexcept
         {
             return _topLeft.y();
         }
@@ -695,7 +695,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        constexpr ptrdiff_t bottom() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t bottom() const noexcept
         {
             return _bottomRight.y();
         }
@@ -708,7 +708,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        constexpr ptrdiff_t left() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t left() const noexcept
         {
             return _topLeft.x();
         }
@@ -721,7 +721,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        constexpr ptrdiff_t right() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t right() const noexcept
         {
             return _bottomRight.x();
         }
@@ -734,7 +734,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        ptrdiff_t width() const
+        [[nodiscard]] ptrdiff_t width() const
         {
             ptrdiff_t ret;
             THROW_HR_IF(E_ABORT, !::base::CheckSub(right(), left()).AssignIfValid(&ret));
@@ -749,7 +749,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        ptrdiff_t height() const
+        [[nodiscard]] ptrdiff_t height() const
         {
             ptrdiff_t ret;
             THROW_HR_IF(E_ABORT, !::base::CheckSub(bottom(), top()).AssignIfValid(&ret));
@@ -764,33 +764,33 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        constexpr point origin() const noexcept
+        [[nodiscard]] constexpr point origin() const noexcept
         {
             return _topLeft;
         }
 
-        size size() const
+        [[nodiscard]] size size() const
         {
             return til::size{ width(), height() };
         }
 
-        constexpr bool empty() const noexcept
+        [[nodiscard]] constexpr bool empty() const noexcept
         {
             return !operator bool();
         }
 
-        constexpr bool contains(til::point pt) const
+        [[nodiscard]] constexpr bool contains(til::point pt) const
         {
             return pt.x() >= _topLeft.x() && pt.x() < _bottomRight.x() &&
                    pt.y() >= _topLeft.y() && pt.y() < _bottomRight.y();
         }
 
-        bool contains(ptrdiff_t index) const
+        [[nodiscard]] bool contains(ptrdiff_t index) const
         {
             return index >= 0 && index < size().area();
         }
 
-        constexpr bool contains(til::rectangle rc) const
+        [[nodiscard]] constexpr bool contains(til::rectangle rc) const
         {
             // Union the other rectangle and ourselves.
             // If the result of that didn't grow at all, then we already
@@ -798,7 +798,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return (*this | rc) == *this;
         }
 
-        ptrdiff_t index_of(til::point pt) const
+        [[nodiscard]] ptrdiff_t index_of(til::point pt) const
         {
             THROW_HR_IF(E_INVALIDARG, !contains(pt));
 
@@ -818,7 +818,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return result;
         }
 
-        til::point point_at(ptrdiff_t index) const
+        [[nodiscard]] til::point point_at(ptrdiff_t index) const
         {
             THROW_HR_IF(E_INVALIDARG, !contains(index));
 
@@ -875,7 +875,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-        std::wstring to_string() const
+        [[nodiscard]] std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"(L:%td, T:%td, R:%td, B:%td) [W:%td, H:%td]", left(), top(), right(), bottom(), width(), height());
         }

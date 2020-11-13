@@ -16,7 +16,6 @@ Author(s):
 --*/
 #pragma once
 
-#include <TraceLoggingActivity.h>
 
 class Telemetry
 {
@@ -135,7 +134,7 @@ private:
 
     static const int c_iMaxProcessesConnected = 100;
 
-    TraceLoggingActivity<g_hConhostV2EventTraceProvider> _activity;
+    //TraceLoggingActivity<g_hConhostV2EventTraceProvider> _activity;
 
     float _fpFindStringLengthAverage;
     float _fpDirectionDownAverage;

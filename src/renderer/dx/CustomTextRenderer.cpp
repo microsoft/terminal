@@ -73,7 +73,7 @@ using namespace Microsoft::Console::Render;
     RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     // Retrieve as D2D1 matrix then copy into DWRITE matrix.
-    D2D1_MATRIX_3X2_F d2d1Matrix{ 0 };
+    D2D1_MATRIX_3X2_F d2d1Matrix{ {0} };
     drawingContext->renderTarget->GetTransform(&d2d1Matrix);
 
     transform->dx = d2d1Matrix.dx;

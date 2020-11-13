@@ -7,7 +7,7 @@
 #include "CustomTextLayout.h"
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
-#include "../../types/inc/Viewport.hpp"
+#include "../../types/inc/viewport.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
 #include <VersionHelpers.h>

@@ -49,8 +49,8 @@
 #include <regex>
 
 // WIL
-#include <wil/Common.h>
-#include <wil/Result.h>
+#include <wil/common.h>
+#include <wil/result.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 #include <wil/stl.h>
@@ -66,7 +66,7 @@
 #include <gsl/span_ext>
 
 // CppCoreCheck
-#include <CppCoreCheck/Warnings.h>
+#include <CppCoreCheck/warnings.h>
 
 // Chromium Numerics (safe math)
 #pragma warning(push)

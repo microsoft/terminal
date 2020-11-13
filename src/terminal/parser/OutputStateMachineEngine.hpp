@@ -49,15 +49,15 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) noexcept override;
 
-        bool ParseControlSequenceAfterSs3() const noexcept override;
-        bool FlushAtEndOfString() const noexcept override;
-        bool DispatchControlCharsFromEscape() const noexcept override;
-        bool DispatchIntermediatesFromEscape() const noexcept override;
+        [[nodiscard]] bool ParseControlSequenceAfterSs3() const noexcept override;
+        [[nodiscard]] bool FlushAtEndOfString() const noexcept override;
+        [[nodiscard]] bool DispatchControlCharsFromEscape() const noexcept override;
+        [[nodiscard]] bool DispatchIntermediatesFromEscape() const noexcept override;
 
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
 
-        const ITermDispatch& Dispatch() const noexcept;
+        [[nodiscard]] const ITermDispatch& Dispatch() const noexcept;
         ITermDispatch& Dispatch() noexcept;
 
     private:

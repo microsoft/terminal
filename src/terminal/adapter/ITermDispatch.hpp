@@ -123,5 +123,5 @@ public:
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;
 };
-inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
+inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() = default;
 #pragma warning(pop)

@@ -23,14 +23,9 @@ using namespace Microsoft::Console::VirtualTerminal;
 // Disable 4351 so we can initialize the arrays to 0 without a warning.
 #pragma warning(disable : 4351)
 TermTelemetry::TermTelemetry() noexcept :
-    _uiTimesUsedCurrent(0),
-    _uiTimesFailedCurrent(0),
-    _uiTimesFailedOutsideRangeCurrent(0),
-    _uiTimesUsed(),
-    _uiTimesFailed(),
-    _uiTimesFailedOutsideRange(0),
-    _activityId(),
-    _fShouldWriteFinalLog(false)
+    
+    _activityId()
+    
 {
     TraceLoggingRegister(g_hConsoleVirtTermParserEventTraceProvider);
 
@@ -173,9 +168,9 @@ void TermTelemetry::WriteFinalTraceLog() const
 
         if (!fLoggedSequence)
         {
-            for (int n = 0; n < ARRAYSIZE(_uiTimesUsed); n++)
+            for (unsigned int n : _uiTimesUsed)
             {
-                if (_uiTimesUsed[n] > 0)
+                if (n > 0)
                 {
                     fLoggedSequence = true;
                     break;
@@ -185,9 +180,9 @@ void TermTelemetry::WriteFinalTraceLog() const
 
         if (!fLoggedSequence)
         {
-            for (int n = 0; n < ARRAYSIZE(_uiTimesFailed); n++)
+            for (unsigned int n : _uiTimesFailed)
             {
-                if (_uiTimesFailed[n] > 0)
+                if (n > 0)
                 {
                     fLoggedSequence = true;
                     break;

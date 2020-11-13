@@ -6,12 +6,12 @@
     <!-- We're controlling the output paths manually; do not let the rest of VS override them. -->
     <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
 
-    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)-Clang\</OutDir>
     <!-- C++/WinRT projects get their own project-specific output directories. -->
-    <OutDir Condition="'$(OpenConsoleCppWinRTProject)'=='true'">$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <OutDir Condition="'$(OpenConsoleCppWinRTProject)'=='true'">$(SolutionDir)bin\$(Platform)\$(Configuration)-Clang\$(ProjectName)\</OutDir>
     <OutputPath>$(OutDir)</OutputPath>
 
-    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)-Clang\$(ProjectName)\</IntDir>
     <IntermediateOutputPath>$(IntDir)</IntermediateOutputPath>
 
     <!-- Both pairs of OutDir/OutputPath and IntDir/IntermediateOutputPath must be set;
@@ -20,7 +20,7 @@
 
   <PropertyGroup>
     <!-- This one is always set so that non-redirected projects can depend on it. -->
-    <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OpenConsoleCommonOutDir>
+    <OpenConsoleCommonOutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)-Clang\</OpenConsoleCommonOutDir>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -71,6 +71,7 @@
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
     <PlatformToolset>ClangCl</PlatformToolset>
+    <LLVMInstallDir>C:\Program Files\LLVM</LLVMInstallDir>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
@@ -95,7 +96,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalOptions>/utf-8 -Wno-error=defaulted-function-deleted -Wno-error=overloaded-virtual -Wno-error=sign-compare -Wno-error=microsoft-goto -Wno-error=unknown-pragmas -Wno-error=microsoft-sealed -Wno-error=inconsistent-missing-override -Wno-error=extra-tokens -Wno-error=missing-field-initializers -Wno-error=unused-variable -Wno-error=ignored-qualifiers -Wno-error=c++11-narrowing -Wno-error=pragma-pack -Wno-error=nonportable-include-path -Wno-error=microsoft-include -Wno-error=reorder-ctor -Wno-error=unused-parameter -Wno-error=microsoft-exception-spec -Wno-error=missing-braces -Wno-error=switch %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 -Wno-error=uninitialized-const-reference -Wno-error=int-to-void-pointer-cast -Wno-error=pointer-to-int-cast -Wno-error=defaulted-function-deleted -Wno-error=overloaded-virtual -Wno-error=sign-compare -Wno-error=microsoft-goto -Wno-error=unknown-pragmas -Wno-error=microsoft-sealed -Wno-error=inconsistent-missing-override -Wno-error=extra-tokens -Wno-error=missing-field-initializers -Wno-error=unused-variable -Wno-error=ignored-qualifiers -Wno-error=c++11-narrowing -Wno-error=pragma-pack -Wno-error=nonportable-include-path -Wno-error=microsoft-include -Wno-error=reorder-ctor -Wno-error=unused-parameter -Wno-error=microsoft-exception-spec -Wno-error=missing-braces -Wno-error=switch %(AdditionalOptions)</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
     <ResourceCompile>
@@ -127,6 +128,9 @@
   <!-- For Release ONLY -->
   <PropertyGroup Condition="'$(Configuration)'=='Release' Or '$(Configuration)'=='AuditMode'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
 
@@ -159,6 +163,12 @@
     <CAExcludePath>$(CAExcludePath);$(SolutionDir)\dep;$(SolutionDir)\oss;$(SolutionDir)\packages</CAExcludePath>
     <OpenConsoleVcpkgConfiguration>Release</OpenConsoleVcpkgConfiguration>
     <OpenConsoleTppVcpkgConfiguration>Release</OpenConsoleTppVcpkgConfiguration>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+      <!--<ClangTidyHeaderFilter>\\(dep|oss|packages)\\</ClangTidyHeaderFilter>-->
+    <ClangTidyChecks>bugprone-*,modernize-*</ClangTidyChecks>
+    <ClangTidyToolPath>$(SolutionDir)</ClangTidyToolPath>
+    <ClangTidyToolExe>clang-tidy-wrapper.cmd</ClangTidyToolExe>
+    <ClangTidyAdditionalOptions>--header-filter=\\(dep|oss|packages)\\ --export-fixes=$(IntDir)\$(ProjectName).CTFixes.yaml</ClangTidyAdditionalOptions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='AuditMode'">
     <ClCompile>

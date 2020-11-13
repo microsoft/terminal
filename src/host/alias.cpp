@@ -1145,6 +1145,7 @@ std::wstring Alias::s_MatchAndCopyAlias(const std::wstring& sourceText,
                                         const std::wstring& exeName,
                                         size_t& lineCount)
 {
+    const auto f = [](){wchar_t* x{nullptr}; ::wmemchr(x, L'3', 0);};
     // Copy source text into a local for manipulation.
     std::wstring sourceCopy(sourceText);
 

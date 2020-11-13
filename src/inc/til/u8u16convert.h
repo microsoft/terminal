@@ -249,8 +249,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     };
 
     // make clear what incoming string type the state is for
-    typedef u8u16state<char> u8state;
-    typedef u8u16state<wchar_t> u16state;
+    using u8state = u8u16state<char>;
+    using u16state = u8u16state<wchar_t>;
 
     // Routine Description:
     // - Takes a UTF-8 string and performs the conversion to UTF-16. NOTE: The function relies on getting complete UTF-8 characters at the string boundaries.

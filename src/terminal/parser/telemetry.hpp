@@ -123,14 +123,14 @@ namespace Microsoft::Console::VirtualTerminal
 
         void WriteFinalTraceLog() const;
 
-        unsigned int _uiTimesUsedCurrent;
-        unsigned int _uiTimesFailedCurrent;
-        unsigned int _uiTimesFailedOutsideRangeCurrent;
-        unsigned int _uiTimesUsed[NUMBER_OF_CODES];
-        unsigned int _uiTimesFailed[CHAR_MAX + 1];
-        unsigned int _uiTimesFailedOutsideRange;
+        unsigned int _uiTimesUsedCurrent{0};
+        unsigned int _uiTimesFailedCurrent{0};
+        unsigned int _uiTimesFailedOutsideRangeCurrent{0};
+        unsigned int _uiTimesUsed[NUMBER_OF_CODES]{};
+        unsigned int _uiTimesFailed[CHAR_MAX + 1]{};
+        unsigned int _uiTimesFailedOutsideRange{0};
         GUID _activityId;
 
-        bool _fShouldWriteFinalLog;
+        bool _fShouldWriteFinalLog{false};
     };
 }

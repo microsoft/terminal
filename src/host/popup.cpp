@@ -51,7 +51,7 @@ Popup::Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize) :
     TargetRect.Bottom = _region.Bottom;
 
     // copy the data into the backup buffer
-    _oldContents = std::move(screenInfo.ReadRect(Viewport::FromInclusive(TargetRect)));
+    _oldContents = screenInfo.ReadRect(Viewport::FromInclusive(TargetRect));
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto countWas = gci.PopupCount.fetch_add(1ui16);

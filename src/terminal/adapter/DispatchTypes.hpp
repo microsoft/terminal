@@ -29,7 +29,7 @@ namespace Microsoft::Console::VirtualTerminal
             return SubSequence(offset)._value & 0xFF;
         }
 
-        constexpr VTID SubSequence(const size_t offset) const
+        [[nodiscard]] constexpr VTID SubSequence(const size_t offset) const
         {
             return _value >> (CHAR_BIT * offset);
         }
@@ -93,8 +93,8 @@ namespace Microsoft::Console::VirtualTerminal
     class VTParameter
     {
     public:
-        constexpr VTParameter() noexcept :
-            _value{ -1 }
+        constexpr VTParameter() noexcept 
+            
         {
         }
 
@@ -103,18 +103,18 @@ namespace Microsoft::Console::VirtualTerminal
         {
         }
 
-        constexpr bool has_value() const noexcept
+        [[nodiscard]] constexpr bool has_value() const noexcept
         {
             // A negative value indicates that the parameter was omitted.
             return _value >= 0;
         }
 
-        constexpr size_t value() const noexcept
+        [[nodiscard]] constexpr size_t value() const noexcept
         {
             return _value;
         }
 
-        constexpr size_t value_or(size_t defaultValue) const noexcept
+        [[nodiscard]] constexpr size_t value_or(size_t defaultValue) const noexcept
         {
             return has_value() ? _value : defaultValue;
         }
@@ -133,47 +133,46 @@ namespace Microsoft::Console::VirtualTerminal
         }
 
     private:
-        std::make_signed<size_t>::type _value;
+        std::make_signed<size_t>::type _value{ -1 };
     };
 
     class VTParameters
     {
     public:
         constexpr VTParameters() noexcept
-        {
-        }
+        = default;
 
         constexpr VTParameters(const VTParameter* ptr, const size_t count) noexcept :
             _values{ ptr, count }
         {
         }
 
-        constexpr VTParameter at(const size_t index) const noexcept
+        [[nodiscard]] constexpr VTParameter at(const size_t index) const noexcept
         {
             // If the index is out of range, we return a parameter with no value.
             return index < _values.size() ? _values[index] : VTParameter{};
         }
 
-        constexpr bool empty() const noexcept
+        [[nodiscard]] constexpr bool empty() const noexcept
         {
             return _values.empty();
         }
 
-        constexpr size_t size() const noexcept
+        [[nodiscard]] constexpr size_t size() const noexcept
         {
             // We always return a size of at least 1, since an empty parameter
             // list is the equivalent of a single "default" parameter.
             return std::max<size_t>(_values.size(), 1);
         }
 
-        VTParameters subspan(const size_t offset) const noexcept
+        [[nodiscard]] VTParameters subspan(const size_t offset) const noexcept
         {
             const auto subValues = _values.subspan(offset);
             return { subValues.data(), subValues.size() };
         }
 
         template<typename T>
-        bool for_each(const T&& predicate) const
+        [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] bool for_each(const T&& predicate) const
         {
             // We always return at least 1 value here, since an empty parameter
             // list is the equivalent of a single "default" parameter.

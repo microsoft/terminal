@@ -514,7 +514,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
         // If we have no parameters and we're about to add one, get the next value ready here.
         if (_parameters.empty())
         {
-            _parameters.push_back({});
+            _parameters.emplace_back();
         }
 
         // On a delimiter, increase the number of params we've seen.
@@ -532,7 +532,7 @@ void StateMachine::_ActionParam(const wchar_t wch)
             else
             {
                 // Otherwise move to next param.
-                _parameters.push_back({});
+                _parameters.emplace_back();
             }
         }
         else
@@ -1475,7 +1475,7 @@ void StateMachine::_EventVt52Param(const wchar_t wch)
     }
     else
     {
-        _parameters.push_back(wch);
+        _parameters.emplace_back(wch);
         if (_parameters.size() == 2)
         {
             // The command character is processed before the parameter values,
@@ -2049,7 +2049,7 @@ void StateMachine::_AccumulateTo(const wchar_t wch, size_t& value) noexcept
 // - <none>
 // Return Value:
 // - True if it is. False if it isn't.
-const bool StateMachine::_IsVariableLengthStringState() const noexcept
+bool StateMachine::_IsVariableLengthStringState() const noexcept
 {
     return _state == VTStates::OscString || _state == VTStates::DcsPassThrough || _state == VTStates::SosPmApcString;
 }

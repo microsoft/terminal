@@ -56,7 +56,7 @@ Telemetry::Telemetry() :
 {
     time(&_tStartedAt);
     TraceLoggingRegister(g_hConhostV2EventTraceProvider);
-    TraceLoggingWriteStart(_activity, "ActivityStart");
+    //TraceLoggingWriteStart(_activity, "ActivityStart");
     // initialize wil tracelogging
     wil::SetResultLoggingCallback(&Tracing::TraceFailure);
 }
@@ -64,7 +64,7 @@ Telemetry::Telemetry() :
 
 Telemetry::~Telemetry()
 {
-    TraceLoggingWriteStop(_activity, "ActivityStop");
+    //TraceLoggingWriteStop(_activity, "ActivityStop");
     TraceLoggingUnregister(g_hConhostV2EventTraceProvider);
 }
 
@@ -198,6 +198,7 @@ void Telemetry::FindDialogClosed()
     // clang-format off
 #pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
     // clang-format on
+#if 0
     TraceLoggingWriteTagged(_activity,
                             "FindDialogUsed",
                             TraceLoggingValue(_fpFindStringLengthAverage, "StringLengthAverage"),
@@ -206,6 +207,7 @@ void Telemetry::FindDialogClosed()
                             TraceLoggingValue(_uiFindNextClickedTotal, "FindNextButtonClickedTotal"),
                             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                             TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+#endif
 
     // Get ready for the next time the dialog is used.
     _fpFindStringLengthAverage = 0;
@@ -361,7 +363,7 @@ void Telemetry::WriteFinalTraceLog()
     {
         // Normally we would set the activity Id earlier, but since we know the parser only sends
         // one final log at the end, setting the activity this late should be fine.
-        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetActivityId(_activity.Id());
+        //Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetActivityId(_activity.Id());
         Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
 
         if (_fUserInteractiveForTelemetry)
@@ -374,6 +376,7 @@ void Telemetry::WriteFinalTraceLog()
             // clang-format off
 #pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
             // clang-format on
+#if 0
             TraceLoggingWriteTagged(_activity,
                                     "SessionEnding",
                                     TraceLoggingBool(_fBashUsed, "BashUsed"),
@@ -559,6 +562,7 @@ void Telemetry::WriteFinalTraceLog()
                     break;
                 }
             }
+#endif
         }
     }
 }
@@ -582,8 +586,10 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
         // clang-format off
 #pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
         // clang-format on
+#if 0
         TraceLoggingWriteTagged(_activity,
                                 "RipMessage",
                                 TraceLoggingString(szMessageEvaluated, "Message"));
+#endif
     }
 }

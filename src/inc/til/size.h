@@ -170,7 +170,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return size{ width, height };
         }
 
-        size divide_ceil(const size& other) const
+        [[nodiscard]] size divide_ceil(const size& other) const
         {
             // Divide normally to get the floor.
             const size floor = *this / other;
@@ -217,7 +217,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return floor + size{ adjWidth, adjHeight };
         }
 
-        constexpr ptrdiff_t width() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t width() const noexcept
         {
             return _width;
         }
@@ -230,7 +230,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        constexpr ptrdiff_t height() const noexcept
+        [[nodiscard]] constexpr ptrdiff_t height() const noexcept
         {
             return _height;
         }
@@ -243,7 +243,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return ret;
         }
 
-        ptrdiff_t area() const
+        [[nodiscard]] ptrdiff_t area() const
         {
             ptrdiff_t result;
             THROW_HR_IF(E_ABORT, !base::CheckMul(_width, _height).AssignIfValid(&result));
@@ -285,7 +285,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
-        std::wstring to_string() const
+        [[nodiscard]] std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"[W:%td, H:%td]", width(), height());
         }

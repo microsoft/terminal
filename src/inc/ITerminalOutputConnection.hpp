@@ -27,6 +27,6 @@ namespace Microsoft::Console
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view wstr) = 0;
     };
 
-    inline Microsoft::Console::ITerminalOutputConnection::~ITerminalOutputConnection() {}
+    inline Microsoft::Console::ITerminalOutputConnection::~ITerminalOutputConnection() = default;
 #pragma warning(pop)
 }

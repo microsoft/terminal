@@ -31,18 +31,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__ // Clang, GCC
                 uint8_t a, b, g, r;
 #else
-                uint8_t r, g, b, a;
+                uint8_t r{ 0 }, g{ 0 }, b{ 0 }, a{ 0 };
 #endif
             };
             uint32_t abgr;
         };
 #pragma warning(pop)
 
-        constexpr color() noexcept :
-            r{ 0 },
-            g{ 0 },
-            b{ 0 },
-            a{ 0 }
+        constexpr color() noexcept 
+            
         {
         }
 
@@ -124,7 +121,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        constexpr color with_alpha(uint8_t alpha) const
+        [[nodiscard]] constexpr color with_alpha(uint8_t alpha) const
         {
             return color{
                 r,
@@ -168,13 +165,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        std::wstring to_string() const
+        [[nodiscard]] std::wstring to_string() const
         {
             std::wstringstream wss;
             wss << L"Color " << ToHexString(false);
             return wss.str();
         }
-        std::wstring ToHexString(const bool omitAlpha = false) const
+        [[nodiscard]] std::wstring ToHexString(const bool omitAlpha = false) const
         {
             std::wstringstream wss;
             wss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;

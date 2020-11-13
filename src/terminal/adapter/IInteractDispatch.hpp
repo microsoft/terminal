@@ -41,6 +41,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool MoveCursor(const size_t row,
                                 const size_t col) = 0;
 
-        virtual bool IsVtInputEnabled() const = 0;
+        [[nodiscard]] virtual bool IsVtInputEnabled() const = 0;
     };
 }

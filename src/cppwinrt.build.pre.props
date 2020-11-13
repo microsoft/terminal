@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
+    <PlatformToolset>ClangCl</PlatformToolset>
     <!-- this will trigger the use of a project-specific out dir -->
     <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
