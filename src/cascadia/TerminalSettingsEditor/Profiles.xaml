@@ -69,85 +69,74 @@ the MIT License. See LICENSE in the project root for license information. -->
         <!-- Appearance Tab -->
         <PivotItem x:Uid="Profile_Appearance">
             <ScrollViewer>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <!-- TODO GH#1564: Add an embedded TermControl in the 0th row-->
+                <StackPanel HorizontalAlignment="Left">
+                    <TextBox x:Uid="Profile_FontFace"
+                             Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"/>
+                    <Controls:NumberBox x:Uid="Profile_FontSize"
+                                        Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
+                                        SmallChange="1"
+                                        LargeChange="10"/>
+                    <TextBox x:Uid="Profile_FontWeight"/>
+                    <TextBox x:Uid="Profile_Padding"
+                             Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"/>
+                    <Controls:RadioButtons x:Uid="Profile_CursorShape"
+                                           ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <Controls:NumberBox x:Uid="Profile_CursorHeight"
+                                        Value="100"
+                                        SmallChange="1"
+                                        LargeChange="10"/>
+                    <ComboBox x:Uid="Profile_ColorScheme">
+                        <ComboBox.Items>
+                            <ComboBoxItem Content="Campbell"/>
+                            <ComboBoxItem Content="Campbell Powershell"/>
+                            <ComboBoxItem Content="Vintage"/>
+                            <ComboBoxItem Content="One Half Dark"/>
+                            <ComboBoxItem Content="One Half Light"/>
+                            <ComboBoxItem Content="Tango Dark"/>
+                            <ComboBoxItem Content="Tango Light"/>
+                        </ComboBox.Items>
+                    </ComboBox>
 
-                    <!-- Group 1 of Appearance Settings -->
-                    <StackPanel Grid.Column="0" HorizontalAlignment="Left">
-                        <TextBox x:Uid="Profile_FontFace"
-                                 Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"/>
-                        <Controls:NumberBox x:Uid="Profile_FontSize"
-                                            Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
-                                            SmallChange="1"
-                                            LargeChange="10"/>
-                        <TextBox x:Uid="Profile_FontWeight"/>
-                        <TextBox x:Uid="Profile_Padding"
-                                 Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"/>
-                        <Controls:RadioButtons x:Uid="Profile_CursorShape"
-                                               ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                        <Controls:NumberBox x:Uid="Profile_CursorHeight"
-                                            Value="100"
-                                            SmallChange="1"
-                                            LargeChange="10"/>
-                        <ComboBox x:Uid="Profile_ColorScheme">
-                            <ComboBox.Items>
-                                <ComboBoxItem Content="Campbell"/>
-                                <ComboBoxItem Content="Campbell Powershell"/>
-                                <ComboBoxItem Content="Vintage"/>
-                                <ComboBoxItem Content="One Half Dark"/>
-                                <ComboBoxItem Content="One Half Light"/>
-                                <ComboBoxItem Content="Tango Dark"/>
-                                <ComboBoxItem Content="Tango Light"/>
-                            </ComboBox.Items>
-                        </ComboBox>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Uid="Profile_BackgroundImage"
+                                 x:Name="BackgroundImage"
+                                 Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"/>
+                        <Button x:Uid="Profile_BackgroundImageBrowse"
+                                Click="BackgroundImage_Click"
+                                Margin="10,0,0,0"/>
                     </StackPanel>
-
-                    <!-- Group 2 of Appearance Settings -->
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Left">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBox x:Uid="Profile_BackgroundImage"
-                                     x:Name="BackgroundImage" Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"/>
-                            <Button x:Uid="Profile_BackgroundImageBrowse"
-                                    Click="BackgroundImage_Click"
-                                    Margin="10,0,0,0"/>
-                        </StackPanel>
-                        <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
-                                                   ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                        <ComboBox x:Uid="Profile_BackgroundImageAlignment">
-                            <ComboBox.Items>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
-                            </ComboBox.Items>
-                        </ComboBox>
-                        <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity"
-                                            Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}"
-                                            SmallChange="10"
-                                            LargeChange="25"/>
-                        <CheckBox x:Uid="Profile_UseAcrylic"
-                                  IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
-                        <Controls:NumberBox x:Uid="Profile_AcrylicOpacity"
-                                            Value="{x:Bind State.Profile.AcrylicOpacity, Mode=TwoWay}"
-                                            SmallChange="0.1"
-                                            LargeChange="0.25"/>
-                        <CheckBox x:Uid="Profile_RetroTerminalEffect"
-                                  IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
-                    </StackPanel>
-                </Grid>
+                    <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
+                                           ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <ComboBox x:Uid="Profile_BackgroundImageAlignment">
+                        <ComboBox.Items>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
+                        </ComboBox.Items>
+                    </ComboBox>
+                    <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity"
+                                        Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}"
+                                        SmallChange="10"
+                                        LargeChange="25"/>
+                    <CheckBox x:Uid="Profile_UseAcrylic"
+                              IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
+                    <Controls:NumberBox x:Uid="Profile_AcrylicOpacity"
+                                        Value="{x:Bind State.Profile.AcrylicOpacity, Mode=TwoWay}"
+                                        SmallChange="0.1"
+                                        LargeChange="0.25"/>
+                    <CheckBox x:Uid="Profile_RetroTerminalEffect"
+                              IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
+                </StackPanel>
             </ScrollViewer>
         </PivotItem>
 

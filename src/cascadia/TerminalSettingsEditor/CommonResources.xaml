@@ -42,6 +42,7 @@
         <Setter Property="FontSize" Value="15"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="Width" Value="300"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
 
     <Style TargetType="muxc:NumberBox">
