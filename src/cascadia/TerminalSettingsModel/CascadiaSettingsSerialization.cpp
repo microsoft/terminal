@@ -1040,33 +1040,6 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 }
 
 // Method Description:
-// - Create a timestamped backup file with the current contents
-// Arguments:
-// - content - the content that we're writing to the backup file
-// - settingsPath - the path to the settings file that we're going to create a backup for
-// Return Value:
-// - <none>
-void CascadiaSettings::_WriteBackupFile(std::string_view content, const winrt::hstring settingsPath)
-{
-    // create a timestamped backup file
-    const auto clock{ std::chrono::system_clock() };
-    const auto timeStamp{ clock.to_time_t(clock.now()) };
-    const auto backupSettingsPath{ fmt::format(L"{}.{:%Y-%m-%dT%H:%M:%S}.backup", settingsPath, fmt::localtime(timeStamp)) };
-
-    wil::unique_hfile backupFile{ CreateFileW(backupSettingsPath.c_str(),
-                                              GENERIC_READ,
-                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                              nullptr,
-                                              CREATE_NEW,
-                                              FILE_ATTRIBUTE_NORMAL,
-                                              nullptr) };
-
-    // throw if backup file already exists
-    THROW_LAST_ERROR_IF(INVALID_HANDLE_VALUE == backupFile.get());
-    THROW_LAST_ERROR_IF(!WriteFile(backupFile.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
-}
-
-// Method Description:
 // - Write the current state of CascadiaSettings to our settings file
 // - Create a backup file with the current contents, if one does not exist
 // Arguments:
@@ -1079,13 +1052,21 @@ void CascadiaSettings::WriteSettingsToDisk() const
 
     try
     {
-        _WriteBackupFile(_userSettingsString, settingsPath);
+        // create a timestamped backup file
+        const auto clock{ std::chrono::system_clock() };
+        const auto timeStamp{ clock.to_time_t(clock.now()) };
+        const winrt::hstring backupSettingsPath{ fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath, fmt::localtime(timeStamp)) };
+        _WriteSettings(_userSettingsString, backupSettingsPath);
     }
     CATCH_LOG();
 
     // write current settings to current settings file
-    const auto json{ ToJson() };
-    _WriteSettings(json.toStyledString(), settingsPath);
+    Json::StreamWriterBuilder wbuilder;
+    wbuilder.settings_["indentation"] = "    ";
+    wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+
+    const auto styledString{ Json::writeString(wbuilder, ToJson()) };
+    _WriteSettings(styledString, settingsPath);
 }
 
 // Method Description:
@@ -1103,7 +1084,8 @@ Json::Value CascadiaSettings::ToJson() const
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
-    profiles[JsonKey(DefaultSettingsKey)] = _userDefaultProfileSettings->ToJson();
+    profiles[JsonKey(DefaultSettingsKey)] = _userDefaultProfileSettings ? _userDefaultProfileSettings->ToJson() :
+                                                                          Json::ValueType::objectValue;
     Json::Value profilesList{ Json::ValueType::arrayValue };
     for (const auto& entry : _allProfiles)
     {
@@ -1124,9 +1106,15 @@ Json::Value CascadiaSettings::ToJson() const
     }
     json[JsonKey(SchemesKey)] = schemes;
 
-    // "actions" whatever blob we had in the file, we inject here
-    json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
-    json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
+    // "actions"/"keybindings" will be whatever blob we had in the file
+    if (_userSettings.isMember(JsonKey(LegacyKeybindingsKey)))
+    {
+        json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
+    }
+    if (_userSettings.isMember(JsonKey(ActionsKey)))
+    {
+        json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
+    }
 
     return json;
 }

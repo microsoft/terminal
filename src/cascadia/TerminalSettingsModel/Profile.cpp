@@ -291,7 +291,6 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
-    JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
