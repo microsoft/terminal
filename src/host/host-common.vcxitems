@@ -56,6 +56,7 @@
     <ClCompile Include="..\utf8ToWideCharParser.cpp" />
     <ClCompile Include="..\VtInputThread.cpp" />
     <ClCompile Include="..\VtIo.cpp" />
+    <ClCompile Include="..\LogIO.cpp" />
     <ClCompile Include="..\writeData.cpp" />
     <ClCompile Include="..\_output.cpp" />
     <ClCompile Include="..\_stream.cpp" />
@@ -115,6 +116,7 @@
     <ClInclude Include="..\utf8ToWideCharParser.hpp" />
     <ClInclude Include="..\VtInputThread.hpp" />
     <ClInclude Include="..\VtIo.hpp" />
+    <ClInclude Include="..\LogIO.hpp" />
     <ClInclude Include="..\writeData.hpp" />
     <ClInclude Include="..\_output.h" />
     <ClInclude Include="..\_stream.h" />

@@ -153,6 +153,8 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 
 [[nodiscard]] ULONG_PTR ConDrvDeviceComm::PutHandle(const void* handle)
 {
+    // ConDrv will pass back whatever large integer we send it, as an opaque data blob
+    // We'll use that to smuggle the actual pointer value to the handle.
     return reinterpret_cast<ULONG_PTR>(handle);
 }
 
