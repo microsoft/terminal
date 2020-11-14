@@ -446,7 +446,7 @@ CATCH_RETURN()
     // Draw the background
     // The rectangle needs to be deduced based on the origin and the BidiDirection
     const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
-    const auto totalSpan = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), 0.0f);
+    const auto totalSpan = std::accumulate(advancesSpan.begin(), advancesSpan.end(), 0.0f);
 
     D2D1_RECT_F rect;
     rect.top = origin.y;

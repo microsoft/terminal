@@ -148,10 +148,14 @@ class TextBufferTests
 
     void WriteLinesToBuffer(const std::vector<std::wstring>& text, TextBuffer& buffer);
     TEST_METHOD(GetWordBoundaries);
+    TEST_METHOD(MoveByWord);
     TEST_METHOD(GetGlyphBoundaries);
 
     TEST_METHOD(GetTextRects);
     TEST_METHOD(GetText);
+
+    TEST_METHOD(HyperlinkTrim);
+    TEST_METHOD(NoHyperlinkTrim);
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -665,11 +669,11 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), RGB(64, 128, 255));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), gci.LookupBackgroundColor(si.GetAttributes()));
+    const auto fgColor = RGB(64, 128, 255);
+    const auto bgColor = gci.LookupAttributeColors(si.GetAttributes()).second;
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), RGB(64, 128, 255));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), gci.LookupBackgroundColor(si.GetAttributes()));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -709,11 +713,11 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(64, 128, 255));
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), gci.LookupForegroundColor(si.GetAttributes()));
+    const auto bgColor = RGB(64, 128, 255);
+    const auto fgColor = gci.LookupAttributeColors(si.GetAttributes()).first;
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64, 128, 255));
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), gci.LookupForegroundColor(si.GetAttributes()));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -751,14 +755,14 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(64, 128, 255));
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), gci.LookupForegroundColor(si.GetAttributes()));
+    const auto bgColor = RGB(64, 128, 255);
+    const auto fgColor = gci.LookupAttributeColors(si.GetAttributes()).first;
 
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64, 128, 255));
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), gci.LookupForegroundColor(si.GetAttributes()));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
-    VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, 0);
-    VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
+    VERIFY_ARE_EQUAL(attrA.IsUnderlined(), false);
+    VERIFY_ARE_EQUAL(attrB.IsUnderlined(), true);
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -799,8 +803,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), bright_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -850,14 +854,14 @@ void TextBufferTests::TestRgbEraseLine()
         const auto attr0 = attrs[0];
 
         VERIFY_ARE_EQUAL(attr0.IsLegacy(), false);
-        VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr0), RGB(64, 128, 255));
+        VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr0).second, RGB(64, 128, 255));
 
         for (auto i = 1; i < len; i++)
         {
             const auto attr = attrs[i];
             LOG_ATTR(attr);
             VERIFY_ARE_EQUAL(attr.IsLegacy(), false);
-            VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr), RGB(128, 128, 255));
+            VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr).second, RGB(128, 128, 255));
         }
         std::wstring reset = L"\x1b[0m";
         stateMachine.ProcessString(reset);
@@ -908,8 +912,8 @@ void TextBufferTests::TestUnBold()
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, bright_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_green);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -963,8 +967,8 @@ void TextBufferTests::TestUnBoldRgb()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, bright_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_green);
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -1036,28 +1040,22 @@ void TextBufferTests::TestComplexUnBold()
     VERIFY_ARE_EQUAL(attrE.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrF.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), RGB(1, 2, 3));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(bright_green, RGB(1, 2, 3)));
     VERIFY_IS_TRUE(attrA.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(1, 2, 3));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(dark_green, RGB(1, 2, 3)));
     VERIFY_IS_FALSE(attrB.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), RGB(32, 32, 32));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), RGB(1, 2, 3));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(RGB(32, 32, 32), RGB(1, 2, 3)));
     VERIFY_IS_FALSE(attrC.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrD), gci.LookupForegroundColor(attrC));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrD), gci.LookupBackgroundColor(attrC));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrD), gci.LookupAttributeColors(attrC));
     VERIFY_IS_TRUE(attrD.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrE), RGB(64, 64, 64));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrE), RGB(1, 2, 3));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrE), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
     VERIFY_IS_TRUE(attrE.IsBold());
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrF), RGB(64, 64, 64));
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrF), RGB(1, 2, 3));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrF), std::make_pair(RGB(64, 64, 64), RGB(1, 2, 3)));
     VERIFY_IS_FALSE(attrF.IsBold());
 
     std::wstring reset = L"\x1b[0m";
@@ -1109,8 +1107,8 @@ void TextBufferTests::CopyAttrs()
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), dark_blue);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_magenta);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_blue);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, dark_magenta);
 }
 
 void TextBufferTests::EmptySgrTest()
@@ -1127,8 +1125,7 @@ void TextBufferTests::EmptySgrTest()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
-    const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
 
     // Case 1 -
     //      Write '\x1b[0mX\x1b[31mX\x1b[31;m'
@@ -1164,14 +1161,11 @@ void TextBufferTests::EmptySgrTest()
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), defaultFg);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), defaultBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(defaultFg, defaultBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), darkRed);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), defaultBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(darkRed, defaultBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), defaultFg);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), defaultBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(defaultFg, defaultBg));
 
     stateMachine.ProcessString(reset);
 }
@@ -1191,8 +1185,7 @@ void TextBufferTests::TestReverseReset()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
-    const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
 
     // Case 1 -
     //      Write '\E[42m\E[38;2;128;5;255mX\E[7mX\E[27mX'
@@ -1230,14 +1223,11 @@ void TextBufferTests::TestReverseReset()
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), rgbColor);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(rgbColor, dark_green));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), rgbColor);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(dark_green, rgbColor));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), rgbColor);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrC), dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC), std::make_pair(rgbColor, dark_green));
 
     stateMachine.ProcessString(reset);
 }
@@ -1259,8 +1249,7 @@ void TextBufferTests::CopyLastAttr()
 
     std::wstring reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
-    const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
-    const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
 
     const COLORREF solFg = RGB(101, 123, 131);
     const COLORREF solBg = RGB(0, 43, 54);
@@ -1348,23 +1337,17 @@ void TextBufferTests::CopyLastAttr()
     LOG_ATTR(attr3B);
     LOG_ATTR(attr3C);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr1A), solFg);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr1A), solBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr1A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr2A), solFg);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr2A), solBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr2A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr2B), solCyan);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr2B), solBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr2B), std::make_pair(solCyan, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr3A), solFg);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr3A), solBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3A), std::make_pair(solFg, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr3B), solCyan);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr3B), solBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3B), std::make_pair(solCyan, solBg));
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr3C), solFg);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr3C), solBg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attr3C), std::make_pair(solFg, solBg));
 
     stateMachine.ProcessString(reset);
 }
@@ -1405,10 +1388,8 @@ void TextBufferTests::TestRgbThenBold()
     VERIFY_ARE_EQUAL(attrA.IsLegacy(), false);
     VERIFY_ARE_EQUAL(attrB.IsLegacy(), false);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), foreground);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrA), background);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), foreground);
-    VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), background);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(foreground, background));
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(foreground, background));
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
@@ -1430,8 +1411,7 @@ void TextBufferTests::TestResetClearsBoldness()
     TextAttribute defaultAttribute;
     si.SetAttributes(defaultAttribute);
 
-    const COLORREF defaultFg = gci.LookupForegroundColor(si.GetAttributes());
-    const COLORREF defaultBg = gci.LookupBackgroundColor(si.GetAttributes());
+    const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
     const auto dark_green = gci.GetColorTableEntry(2);
     const auto bright_green = gci.GetColorTableEntry(10);
 
@@ -1460,10 +1440,10 @@ void TextBufferTests::TestResetClearsBoldness()
     LOG_ATTR(attrC);
     LOG_ATTR(attrD);
 
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), dark_green);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), bright_green);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrC), defaultFg);
-    VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrD), dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrC).first, defaultFg);
+    VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrD).first, dark_green);
 
     VERIFY_IS_FALSE(attrA.IsBold());
     VERIFY_IS_TRUE(attrB.IsBold());
@@ -1573,7 +1553,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     std::unique_ptr<WriteData> waiter;
 
     size_t aCb = 2;
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
 
     size_t seqCb = 6;
     Log::Comment(NoThrowString().Format(
@@ -1587,9 +1567,9 @@ void TextBufferTests::TestBackspaceStringsAPI()
 
         Log::Comment(NoThrowString().Format(
             L"Using DoWriteConsole, write \\b \\b as a single string."));
-        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, false, waiter));
 
-        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, waiter));
+        VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, false, waiter));
         VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
         VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
     }
@@ -1599,10 +1579,10 @@ void TextBufferTests::TestBackspaceStringsAPI()
     Log::Comment(NoThrowString().Format(
         L"Using DoWriteConsole, write \\b \\b as separate strings."));
 
-    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, waiter));
-    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, false, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L" ", &seqCb, si, false, waiter));
+    VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, false, waiter));
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
@@ -2086,7 +2066,7 @@ void TextBufferTests::GetWordBoundaries()
         { { 79, 0 },    {{ 10, 0 },      { 5, 0 }} },
 
         // tests for second line of text
-        { {  0, 1 },     {{ 0, 1 },       { 0, 1 }} },
+        { {  0, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  1, 1 },     {{ 0, 1 },       { 5, 0 }} },
         { {  2, 1 },     {{ 2, 1 },       { 2, 1 }} },
         { {  3, 1 },     {{ 2, 1 },       { 2, 1 }} },
@@ -2150,6 +2130,87 @@ void TextBufferTests::GetWordBoundaries()
         COORD result = _buffer->GetWordEnd(test.startPos, delimiters, accessibilityMode);
         const auto expected = accessibilityMode ? test.expected.accessibilityModeEnabled : test.expected.accessibilityModeDisabled;
         VERIFY_ARE_EQUAL(expected, result);
+    }
+}
+
+void TextBufferTests::MoveByWord()
+{
+    COORD bufferSize{ 80, 9001 };
+    UINT cursorSize = 12;
+    TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    // Setup: Write lines of text to the buffer
+    const std::vector<std::wstring> text = { L"word other",
+                                             L"  more   words" };
+    WriteLinesToBuffer(text, *_buffer);
+
+    // Test Data:
+    // - COORD - starting position
+    // - COORD - expected result (moving forwards)
+    // - COORD - expected result (moving backwards)
+    struct ExpectedResult
+    {
+        COORD moveForwards;
+        COORD moveBackwards;
+    };
+
+    struct Test
+    {
+        COORD startPos;
+        ExpectedResult expected;
+    };
+
+    // Set testData for GetWordStart tests
+    // clang-format off
+    std::vector<Test> testData = {
+        // tests for first line of text
+        { {  0, 0 },    {{  5, 0 },      { 0, 0 }} },
+        { {  1, 0 },    {{  5, 0 },      { 1, 0 }} },
+        { {  3, 0 },    {{  5, 0 },      { 3, 0 }} },
+        { {  4, 0 },    {{  5, 0 },      { 4, 0 }} },
+        { {  5, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { {  6, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 20, 0 },    {{  2, 1 },      { 0, 0 }} },
+        { { 79, 0 },    {{  2, 1 },      { 0, 0 }} },
+
+        // tests for second line of text
+        { {  0, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  1, 1 },     {{ 2, 1 },       { 0, 0 }} },
+        { {  2, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  3, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  5, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  6, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  7, 1 },     {{ 9, 1 },       { 5, 0 }} },
+        { {  9, 1 },     {{ 9, 1 },       { 2, 1 }} },
+        { { 10, 1 },     {{10, 1 },       { 2, 1 }} },
+        { { 20, 1 },     {{20, 1 },       { 2, 1 }} },
+        { { 79, 1 },     {{79, 1 },       { 2, 1 }} },
+    };
+    // clang-format on
+
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:movingForwards", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool movingForwards;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"movingForwards", movingForwards), L"Get movingForwards variant");
+
+    const std::wstring_view delimiters = L" ";
+    const COORD lastCharPos = _buffer->GetLastNonSpaceCharacter();
+    for (const auto& test : testData)
+    {
+        Log::Comment(NoThrowString().Format(L"COORD (%hd, %hd)", test.startPos.X, test.startPos.Y));
+        auto pos{ test.startPos };
+        const auto result = movingForwards ?
+                                _buffer->MoveToNextWord(pos, delimiters, lastCharPos) :
+                                _buffer->MoveToPreviousWord(pos, delimiters);
+        const auto expected = movingForwards ? test.expected.moveForwards : test.expected.moveBackwards;
+        VERIFY_ARE_EQUAL(expected, pos);
+
+        // if we moved, result is true and pos != startPos.
+        // otherwise, result is false and pos == startPos.
+        VERIFY_ARE_EQUAL(result, pos != test.startPos);
     }
 }
 
@@ -2466,4 +2527,85 @@ void TextBufferTests::GetText()
         // Verify expected output and actual output are the same
         VERIFY_ARE_EQUAL(expectedText, result);
     }
+}
+
+// This tests that when we increment the circular buffer, obsolete hyperlink references
+// are removed from the hyperlink map
+void TextBufferTests::HyperlinkTrim()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    const auto url = L"test.url";
+    const auto otherUrl = L"other.url";
+    const auto customId = L"CustomId";
+    const auto otherCustomId = L"OtherCustomId";
+
+    // Set a hyperlink id in the first row and add a hyperlink to our map
+    const COORD pos{ 70, 0 };
+    const auto id = _buffer->GetHyperlinkId(url, customId);
+    TextAttribute newAttr{ 0x7f };
+    newAttr.SetHyperlinkId(id);
+    _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
+    _buffer->AddHyperlinkToMap(url, id);
+
+    // Set a different hyperlink id somewhere else in the buffer
+    const COORD otherPos{ 70, 5 };
+    const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
+    newAttr.SetHyperlinkId(otherId);
+    _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
+    _buffer->AddHyperlinkToMap(otherUrl, otherId);
+
+    // Increment the circular buffer
+    _buffer->IncrementCircularBuffer();
+
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, std::hash<std::wstring_view>{}(otherUrl));
+
+    // The hyperlink reference that was only in the first row should be deleted from the map
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
+    // Since there was a custom id, that should be deleted as well
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(finalCustomId), _buffer->_hyperlinkCustomIdMap.end());
+
+    // The other hyperlink reference should not be deleted
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap[otherId], otherUrl);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalOtherCustomId], otherId);
+}
+
+// This tests that when we increment the circular buffer, non-obsolete hyperlink references
+// do not get removed from the hyperlink map
+void TextBufferTests::NoHyperlinkTrim()
+{
+    // Set up a text buffer for us
+    const COORD bufferSize{ 80, 10 };
+    const UINT cursorSize = 12;
+    const TextAttribute attr{ 0x7f };
+    auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
+
+    const auto url = L"test.url";
+    const auto customId = L"CustomId";
+
+    // Set a hyperlink id in the first row and add a hyperlink to our map
+    const COORD pos{ 70, 0 };
+    const auto id = _buffer->GetHyperlinkId(url, customId);
+    TextAttribute newAttr{ 0x7f };
+    newAttr.SetHyperlinkId(id);
+    _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
+    _buffer->AddHyperlinkToMap(url, id);
+
+    // Set the same hyperlink id somewhere else in the buffer
+    const COORD otherPos{ 70, 5 };
+    _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
+
+    // Increment the circular buffer
+    _buffer->IncrementCircularBuffer();
+
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+
+    // The hyperlink reference should not be deleted from the map since it is still present in the buffer
+    VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
 }

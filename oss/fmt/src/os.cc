@@ -73,14 +73,14 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 FMT_BEGIN_NAMESPACE
 
 #ifdef _WIN32
-internal::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
+detail::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
   if (int error_code = convert(s)) {
     FMT_THROW(windows_error(error_code,
                             "cannot convert string from UTF-16 to UTF-8"));
   }
 }
 
-int internal::utf16_to_utf8::convert(wstring_view s) {
+int detail::utf16_to_utf8::convert(wstring_view s) {
   if (s.size() > INT_MAX) return ERROR_INVALID_PARAMETER;
   int s_size = static_cast<int>(s.size());
   if (s_size == 0) {
@@ -105,13 +105,13 @@ void windows_error::init(int err_code, string_view format_str,
                          format_args args) {
   error_code_ = err_code;
   memory_buffer buffer;
-  internal::format_windows_error(buffer, err_code, vformat(format_str, args));
+  detail::format_windows_error(buffer, err_code, vformat(format_str, args));
   std::runtime_error& base = *this;
   base = std::runtime_error(to_string(buffer));
 }
 
-void internal::format_windows_error(internal::buffer<char>& out, int error_code,
-                                    string_view message) FMT_NOEXCEPT {
+void detail::format_windows_error(detail::buffer<char>& out, int error_code,
+                                  string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     wmemory_buffer buf;
     buf.resize(inline_buffer_size);
@@ -124,10 +124,7 @@ void internal::format_windows_error(internal::buffer<char>& out, int error_code,
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          internal::writer w(out);
-          w.write(message);
-          w.write(": ");
-          w.write(utf8_message);
+          format_to(std::back_inserter(out), "{}: {}", message, utf8_message);
           return;
         }
         break;
@@ -143,7 +140,7 @@ void internal::format_windows_error(internal::buffer<char>& out, int error_code,
 
 void report_windows_error(int error_code,
                           fmt::string_view message) FMT_NOEXCEPT {
-  report_error(internal::format_windows_error, error_code, message);
+  report_error(detail::format_windows_error, error_code, message);
 }
 #endif  // _WIN32
 
@@ -234,14 +231,14 @@ std::size_t file::read(void* buffer, std::size_t count) {
   RWResult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
   if (result < 0) FMT_THROW(system_error(errno, "cannot read from file"));
-  return internal::to_unsigned(result);
+  return detail::to_unsigned(result);
 }
 
 std::size_t file::write(const void* buffer, std::size_t count) {
   RWResult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
   if (result < 0) FMT_THROW(system_error(errno, "cannot write to file"));
-  return internal::to_unsigned(result);
+  return detail::to_unsigned(result);
 }
 
 file file::dup(int fd) {
@@ -292,7 +289,11 @@ void file::pipe(file& read_end, file& write_end) {
 
 buffered_file file::fdopen(const char* mode) {
   // Don't retry as fdopen doesn't return EINTR.
+  #if defined(__MINGW32__) && defined(_POSIX_)
+  FILE* f = ::fdopen(fd_, mode);
+  #else
   FILE* f = FMT_POSIX_CALL(fdopen(fd_, mode));
+  #endif
   if (!f)
     FMT_THROW(
         system_error(errno, "cannot associate stream with file descriptor"));

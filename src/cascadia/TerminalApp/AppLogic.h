@@ -4,10 +4,8 @@
 #pragma once
 
 #include "AppLogic.g.h"
-
-#include "Tab.h"
-#include "CascadiaSettings.h"
 #include "TerminalPage.h"
+#include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
@@ -16,6 +14,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         static AppLogic* Current() noexcept;
+        static const Microsoft::Terminal::Settings::Model::CascadiaSettings CurrentAppSettings();
 
         AppLogic();
         ~AppLogic() = default;
@@ -25,27 +24,29 @@ namespace winrt::TerminalApp::implementation
         void RunAsUwp();
         bool IsElevated() const noexcept;
         void LoadSettings();
-        [[nodiscard]] std::shared_ptr<::TerminalApp::CascadiaSettings> GetSettings() const noexcept;
+        [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
-        winrt::hstring ApplicationDisplayName() const;
-        winrt::hstring ApplicationVersion() const;
+        bool FocusMode() const;
+        bool Fullscreen() const;
+        bool AlwaysOnTop() const;
 
-        Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
-        winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
+        Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
+        TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
+        Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
+        bool GetInitialAlwaysOnTop();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 
         hstring Title();
         void TitlebarClicked();
-        bool OnDirectKeyEvent(const uint32_t vkey, const bool down);
+        bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         void WindowCloseButtonClicked();
 
@@ -65,7 +66,7 @@ namespace winrt::TerminalApp::implementation
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
-        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
+        Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};
@@ -83,6 +84,8 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
+        bool _IsKeyboardServiceEnabled();
+        void _ShowKeyboardServiceDisabledDialog();
 
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();
@@ -104,7 +107,9 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(SetTitleBarContent, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement, _root, SetTitleBarContent);
         FORWARDED_TYPED_EVENT(TitleChanged, winrt::Windows::Foundation::IInspectable, winrt::hstring, _root, TitleChanged);
         FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
-        FORWARDED_TYPED_EVENT(ToggleFullscreen, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::ToggleFullscreenEventArgs, _root, ToggleFullscreen);
+        FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
+        FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
+        FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
     };
 }
 

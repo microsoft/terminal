@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -29,10 +28,12 @@ public:
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
+    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> pfn) noexcept;
     void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
-    void ToggleFullscreen();
+    void FocusModeChanged(const bool focusMode);
+    void FullscreenChanged(const bool fullscreen);
+    void SetAlwaysOnTop(const bool alwaysOnTop);
 
 #pragma endregion
 
@@ -54,21 +55,34 @@ protected:
 
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
-    std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
+    std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> _pfnCreateCallback;
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
     [[nodiscard]] LRESULT _OnSizing(const WPARAM wParam, const LPARAM lParam);
 
+    bool _borderless{ false };
     bool _fullscreen{ false };
+    bool _alwaysOnTop{ false };
     RECT _fullscreenWindowSize;
     RECT _nonFullscreenWindowSize;
 
+    virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
     void _BackupWindowSizes(const bool currentIsInFullscreen);
     void _ApplyWindowSize();
 
+    LONG _getDesiredWindowStyle() const;
+
+    void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
+    long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
+
 private:
     // This minimum width allows for width the tabs fit
     static constexpr long minimumWidth = 460L;
+
+    // We run with no height requirement for client area,
+    // though the total height will take into account the non-client area
+    // and the requirements of components hosted in the client area
+    static constexpr long minimumHeight = 0L;
 };

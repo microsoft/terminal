@@ -9,15 +9,18 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 
-#include "winrt/Microsoft.Terminal.Settings.h"
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
-using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
+
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -41,6 +44,7 @@ Terminal::Terminal() :
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
     _defaultBg{ ARGB(0, 0, 0, 0) },
+    _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
     _snapOnInput{ true },
@@ -76,6 +80,10 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
+    // Add regex pattern recognizers to the buffer
+    // For now, we only add the URI regex pattern
+    std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
+    _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
 }
 
 // Method Description:
@@ -83,8 +91,8 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
-void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
-                                  Microsoft::Console::Render::IRenderTarget& renderTarget)
+void Terminal::CreateFromSettings(ICoreSettings settings,
+                                  IRenderTarget& renderTarget)
 {
     const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
                               Utils::ClampToShortMax(settings.InitialRows(), 1) };
@@ -100,7 +108,7 @@ void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSet
 //   CoreSettings object.
 // Arguments:
 // - settings: an ICoreSettings with new settings values for us to use.
-void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings)
+void Terminal::UpdateSettings(ICoreSettings settings)
 {
     _defaultFg = settings.DefaultForeground();
     _defaultBg = settings.DefaultBackground();
@@ -133,6 +141,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
                                       cursorShape);
     }
 
+    _defaultCursorShape = cursorShape;
+
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = settings.GetColorTableEntry(i);
@@ -145,6 +155,19 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _startingTitle = settings.StartingTitle();
 
     _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
+
+    if (settings.TabColor() == nullptr)
+    {
+        _tabColor = std::nullopt;
+    }
+    else
+    {
+        _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
+    }
+    if (_pfnTabColorChanged)
+    {
+        _pfnTabColorChanged(_tabColor);
+    }
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
@@ -343,7 +366,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     // If the old scrolloffset was 0, then we weren't scrolled back at all
     // before, and shouldn't be now either.
-    _scrollOffset = originalOffsetWasZero ? 0 : ::base::ClampSub(_mutableViewport.Top(), newVisibleTop);
+    _scrollOffset = originalOffsetWasZero ? 0 : static_cast<int>(::base::ClampSub(_mutableViewport.Top(), newVisibleTop));
 
     // GH#5029 - make sure to InvalidateAll here, so that we'll paint the entire visible viewport.
     try
@@ -393,6 +416,70 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
+// - Given a coord, get the URI at that location
+// Arguments:
+// - The position
+std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
+{
+    auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
+    if (attr.IsHyperlink())
+    {
+        auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return uri;
+    }
+    // also look through our known pattern locations in our pattern interval tree
+    const auto result = GetHyperlinkIntervalFromPosition(position);
+    if (result.has_value() && result->value == _hyperlinkPatternId)
+    {
+        const auto start = result->start;
+        const auto end = result->stop;
+        std::wstring uri;
+
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        for (auto iter = startIter; iter != endIter; ++iter)
+        {
+            uri += iter->Chars();
+        }
+        return uri;
+    }
+    return {};
+}
+
+// Method Description:
+// - Gets the hyperlink ID of the text at the given terminal position
+// Arguments:
+// - The position of the text
+// Return value:
+// - The hyperlink ID
+uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
+{
+    return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+}
+
+// Method description:
+// - Given a position in a URI pattern, gets the start and end coordinates of the URI
+// Arguments:
+// - The position
+// Return value:
+// - The interval representing the start and end coordinates
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+{
+    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    if (results.size() > 0)
+    {
+        for (const auto& result : results)
+        {
+            if (result.value == _hyperlinkPatternId)
+            {
+                return result;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
+// Method Description:
 // - Send this particular (non-character) key event to the terminal.
 // - The terminal will translate the key and the modifiers pressed into the
 //   appropriate VT sequence for that key chord. If we do translate the key,
@@ -429,8 +516,25 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     _StoreKeyEvent(vkey, scanCode);
 
+    // Certain applications like AutoHotKey and its keyboard remapping feature,
+    // send us key events using SendInput() whose values are outside of the valid range.
+    // GH#7064
+    if (vkey == 0 || vkey >= 0xff)
+    {
+        return false;
+    }
+
+    // While not explicitly permitted, a wide range of software, including Windows' own touch keyboard,
+    // sets the wScan member of the KEYBDINPUT structure to 0, resulting in scanCode being 0 as well.
+    // --> Alternatively get the scanCode from the vkey if possible.
+    // GH#7495
+    const auto sc = scanCode ? scanCode : _ScanCodeFromVirtualKey(vkey);
+    if (sc == 0)
+    {
+        return false;
+    }
+
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
-    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed();
 
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximize, size, move, close.
@@ -450,7 +554,8 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // as TerminalInput::HandleKey will then fall back to using the vkey which
     // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
     // See GH#5525/GH#6211 for more details
-    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
+    const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed() && !states.IsAltGrPressed();
+    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, sc, states);
 
     // Delegate it to the character event handler if this key event can be
     // mapped to one (see method description above). For Alt+key combinations
@@ -465,7 +570,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         return false;
     }
 
-    KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -483,16 +588,16 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta)
+bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButton, const ControlKeyStates states, const short wheelDelta, const TerminalInput::MouseButtonState state)
 {
-    // viewportPos must be within the dimensions of the viewport
-    const auto viewportDimensions = _mutableViewport.Dimensions();
-    if (viewportPos.X < 0 || viewportPos.X >= viewportDimensions.X || viewportPos.Y < 0 || viewportPos.Y >= viewportDimensions.Y)
-    {
-        return false;
-    }
-
-    return _terminalInput->HandleMouse(viewportPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta);
+    // GH#6401: VT applications should be able to receive mouse events from outside the
+    // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
+    // We shouldn't throw away perfectly good events when they're offscreen, so we just
+    // clamp them to be within the range [(0, 0), (W, H)].
+#pragma warning(suppress : 26496) // analysis can't tell we're assigning through a reference below
+    auto clampedPos{ viewportPos };
+    _mutableViewport.ToOrigin().Clamp(clampedPos);
+    return _terminalInput->HandleMouse(clampedPos, uiButton, GET_KEYSTATE_WPARAM(states.Value()), wheelDelta, state);
 }
 
 // Method Description:
@@ -535,6 +640,53 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     const auto handledDown = _terminalInput->HandleKey(&keyDown);
     const auto handledUp = _terminalInput->HandleKey(&keyUp);
     return handledDown || handledUp;
+}
+
+// Method Description:
+// - Invalidates the regions described in the given pattern tree for the rendering purposes
+// Arguments:
+// - The interval tree containing regions that need to be invalidated
+void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
+{
+    const auto vis = _VisibleStartIndex();
+    auto invalidate = [=](const PointTree::interval& interval) {
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
+        _InvalidateFromCoords(startCoord, endCoord);
+    };
+    tree.visit_all(invalidate);
+}
+
+// Method Description:
+// - Given start and end coords, invalidates all the regions between them
+// Arguments:
+// - The start and end coords
+void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
+{
+    if (start.Y == end.Y)
+    {
+        SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
+    else
+    {
+        const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
+
+        // invalidate the first line
+        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+
+        if ((end.Y - start.Y) > 1)
+        {
+            // invalidate the lines in between the first and last line
+            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        }
+
+        // invalidate the last line
+        region = til::rectangle(0, end.Y, end.X, end.Y);
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
 }
 
 // Method Description:
@@ -582,8 +734,6 @@ WORD Terminal::_VirtualKeyFromCharacter(const wchar_t ch) noexcept
 wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept
 try
 {
-    const auto sc = scanCode != 0 ? scanCode : _ScanCodeFromVirtualKey(vkey);
-
     // We might want to use GetKeyboardState() instead of building our own keyState.
     // The question is whether that's necessary though. For now it seems to work fine as it is.
     std::array<BYTE, 256> keyState = {};
@@ -602,7 +752,7 @@ try
     // * If bit 0 is set, a menu is active.
     //   If this flag is not specified ToUnicodeEx will send us character events on certain Alt+Key combinations (e.g. Alt+Arrow-Up).
     // * If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
-    const auto result = ToUnicodeEx(vkey, sc, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
+    const auto result = ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
 
     // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
     return result == 1 || result == -1 ? buffer.at(0) : 0;
@@ -788,15 +938,18 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
     // If we're about to scroll past the bottom of the buffer, instead cycle the
     // buffer.
     SHORT rowsPushedOffTopOfBuffer = 0;
+    const auto newRows = std::max(0, proposedCursorPosition.Y - bufferSize.Height() + 1);
     if (proposedCursorPosition.Y >= bufferSize.Height())
     {
-        const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         for (auto dy = 0; dy < newRows; dy++)
         {
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
         }
+
+        // manually erase our pattern intervals since the locations have changed now
+        _patternIntervalTree = {};
     }
 
     // Update Cursor Position
@@ -804,7 +957,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // Move the viewport down if the cursor moved below the viewport.
     bool updatedViewport = false;
-    if (proposedCursorPosition.Y > _mutableViewport.BottomInclusive())
+    const auto scrollAmount = std::max(0, proposedCursorPosition.Y - _mutableViewport.BottomInclusive());
+    if (scrollAmount > 0)
     {
         const auto newViewTop = std::max(0, proposedCursorPosition.Y - (_mutableViewport.Height() - 1));
         if (newViewTop != _mutableViewport.Top())
@@ -815,6 +969,29 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         }
     }
 
+    // If the viewport moved, or we circled the buffer, we might need to update
+    // our _scrollOffset
+    if (updatedViewport || newRows != 0)
+    {
+        const auto oldScrollOffset = _scrollOffset;
+
+        // scroll if...
+        //   - no selection is active
+        //   - viewport is already at the bottom
+        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+
+        _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
+
+        // Clamp the range to make sure that we don't scroll way off the top of the buffer
+        _scrollOffset = std::clamp(_scrollOffset,
+                                   0,
+                                   _buffer->GetSize().Height() - _mutableViewport.Height());
+
+        // If the new scroll offset is different, then we'll still want to raise a scroll event
+        updatedViewport = updatedViewport || (oldScrollOffset != _scrollOffset);
+    }
+
+    // If the viewport moved, then send a scrolling notification.
     if (updatedViewport)
     {
         _NotifyScrollEvent();
@@ -886,9 +1063,19 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
     _pfnWriteInput.swap(pfn);
 }
 
+void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
+{
+    _pfnWarningBell.swap(pfn);
+}
+
 void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
+}
+
+void Terminal::SetTabColorChangedCallback(std::function<void(const std::optional<til::color>)> pfn) noexcept
+{
+    _pfnTabColorChanged.swap(pfn);
 }
 
 void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
@@ -918,7 +1105,7 @@ void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) no
 void Terminal::_InitializeColorTable()
 try
 {
-    const gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
     Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
@@ -946,4 +1133,38 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
     return cursor.IsBlinkingAllowed();
+}
+
+// Method Description:
+// - Update our internal knowledge about where regex patterns are on the screen
+// - This is called by TerminalControl (through a throttled function) when the visible
+//   region changes (for example by text entering the buffer or scrolling)
+void Terminal::UpdatePatterns() noexcept
+{
+    auto lock = LockForWriting();
+    auto oldTree = _patternIntervalTree;
+    _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _InvalidatePatternTree(oldTree);
+    _InvalidatePatternTree(_patternIntervalTree);
+}
+
+// Method Description:
+// - Clears and invalidates the interval pattern tree
+// - This is called to prevent the renderer from rendering patterns while the
+//   visible region is changing
+void Terminal::ClearPatternTree() noexcept
+{
+    auto oldTree = _patternIntervalTree;
+    _patternIntervalTree = {};
+    _InvalidatePatternTree(oldTree);
+}
+
+const std::optional<til::color> Terminal::GetTabColor() const noexcept
+{
+    return _tabColor;
+}
+
+BlinkingState& Terminal::GetBlinkingState() const noexcept
+{
+    return _blinkingState;
 }

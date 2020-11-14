@@ -159,8 +159,8 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    std::basic_string_view<COLORREF> Get16ColorTable() const;
-    std::basic_string_view<COLORREF> Get256ColorTable() const;
+    gsl::span<const COLORREF> Get16ColorTable() const;
+    gsl::span<const COLORREF> Get256ColorTable() const;
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
 
@@ -184,11 +184,6 @@ public:
 
     bool GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
-
-    COLORREF CalculateDefaultForeground() const noexcept;
-    COLORREF CalculateDefaultBackground() const noexcept;
-    COLORREF LookupForegroundColor(const TextAttribute& attr) const noexcept;
-    COLORREF LookupBackgroundColor(const TextAttribute& attr) const noexcept;
 
 private:
     DWORD _dwHotKey;

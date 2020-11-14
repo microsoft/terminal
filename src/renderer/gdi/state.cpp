@@ -188,8 +188,7 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
-    const COLORREF colorForeground = pData->GetForegroundColor(textAttributes);
-    const COLORREF colorBackground = pData->GetBackgroundColor(textAttributes);
+    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     if (colorForeground != _lastFg)
     {
@@ -232,6 +231,61 @@ GdiEngine::~GdiEngine()
 
     // Save off the font metrics for various other calculations
     RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
+
+    // There is no font metric for the grid line width, so we use a small
+    // multiple of the font size, which typically rounds to a pixel.
+    const auto fontSize = _tmFontMetrics.tmHeight - _tmFontMetrics.tmInternalLeading;
+    _lineMetrics.gridlineWidth = std::lround(fontSize * 0.025);
+
+    OUTLINETEXTMETRICW outlineMetrics;
+    if (GetOutlineTextMetricsW(_hdcMemoryContext, sizeof(outlineMetrics), &outlineMetrics))
+    {
+        // For TrueType fonts, the other line metrics can be obtained from
+        // the font's outline text metric structure.
+        _lineMetrics.underlineOffset = outlineMetrics.otmsUnderscorePosition;
+        _lineMetrics.underlineWidth = outlineMetrics.otmsUnderscoreSize;
+        _lineMetrics.strikethroughOffset = outlineMetrics.otmsStrikeoutPosition;
+        _lineMetrics.strikethroughWidth = outlineMetrics.otmsStrikeoutSize;
+    }
+    else
+    {
+        // If we can't obtain the outline metrics for the font, we just pick
+        // some reasonable values for the offsets and widths.
+        _lineMetrics.underlineOffset = -std::lround(fontSize * 0.05);
+        _lineMetrics.underlineWidth = _lineMetrics.gridlineWidth;
+        _lineMetrics.strikethroughOffset = std::lround(_tmFontMetrics.tmAscent / 3.0);
+        _lineMetrics.strikethroughWidth = _lineMetrics.gridlineWidth;
+    }
+
+    // We always want the lines to be visible, so if a stroke width ends
+    // up being zero, we need to make it at least 1 pixel.
+    _lineMetrics.gridlineWidth = std::max(_lineMetrics.gridlineWidth, 1);
+    _lineMetrics.underlineWidth = std::max(_lineMetrics.underlineWidth, 1);
+    _lineMetrics.strikethroughWidth = std::max(_lineMetrics.strikethroughWidth, 1);
+
+    // Offsets are relative to the base line of the font, so we subtract
+    // from the ascent to get an offset relative to the top of the cell.
+    const auto ascent = _tmFontMetrics.tmAscent;
+    _lineMetrics.underlineOffset = ascent - _lineMetrics.underlineOffset;
+    _lineMetrics.strikethroughOffset = ascent - _lineMetrics.strikethroughOffset;
+
+    // For double underlines we need a second offset, just below the first,
+    // but with a bit of a gap (about double the grid line width).
+    _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset +
+                                    _lineMetrics.underlineWidth +
+                                    std::lround(fontSize * 0.05);
+
+    // However, we don't want the underline to extend past the bottom of the
+    // cell, so we clamp the offset to fit just inside.
+    const auto maxUnderlineOffset = Font.GetSize().Y - _lineMetrics.underlineWidth;
+    _lineMetrics.underlineOffset2 = std::min(_lineMetrics.underlineOffset2, maxUnderlineOffset);
+
+    // But if the resulting gap isn't big enough even to register as a thicker
+    // line, it's better to place the second line slightly above the first.
+    if (_lineMetrics.underlineOffset2 < _lineMetrics.underlineOffset + _lineMetrics.gridlineWidth)
+    {
+        _lineMetrics.underlineOffset2 = _lineMetrics.underlineOffset - _lineMetrics.gridlineWidth;
+    }
 
     // Now find the size of a 0 in this current font and save it for conversions done later.
     _coordFontLast = Font.GetSize();

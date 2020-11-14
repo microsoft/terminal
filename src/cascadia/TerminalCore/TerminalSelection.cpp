@@ -253,14 +253,12 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool sin
 {
     const auto selectionRects = _GetSelectionRects();
 
-    std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
-    std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
+    const auto GetAttributeColors = std::bind(&Terminal::GetAttributeColors, this, std::placeholders::_1);
 
     return _buffer->GetText(!singleLine,
                             !singleLine,
                             selectionRects,
-                            GetForegroundColor,
-                            GetBackgroundColor);
+                            GetAttributeColors);
 }
 
 // Method Description:

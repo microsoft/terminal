@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+    <!-- this will trigger the use of a project-specific out dir -->
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
+  </PropertyGroup>
+
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.200316.3\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.201017.1\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
     <!-- 17134 is RS4, 17763 is RS5, 18362 is 19H1 -->
@@ -22,10 +27,19 @@
        at the winmd we build to generate type info.
        In general, cppwinrt projects all want this.
   -->
-  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='false'">
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'=='true'">
     <MinimalCoreWin>true</MinimalCoreWin>
     <AppContainerApplication>true</AppContainerApplication>
+    <WindowsStoreApp>true</WindowsStoreApp>
     <ApplicationType>Windows Store</ApplicationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OpenConsoleUniversalApp)'!='true'">
+    <!-- Some of our projects include the cppwinrt build options to
+         just build cppwinrt things, but don't want the store bits
+         in full swing. MinimalCoreWin != false means "don't let me
+         use win32 APIs"
+    -->
+    <MinimalCoreWin>false</MinimalCoreWin>
   </PropertyGroup>
 
   <!-- This is magic that tells msbuild to link against the Desktop platform
@@ -43,7 +57,6 @@
   -->
   <PropertyGroup>
     <_NoWinAPIFamilyApp>true</_NoWinAPIFamilyApp>
-    <GenerateProjectSpecificOutputFolder>false</GenerateProjectSpecificOutputFolder>
   </PropertyGroup>
 
   <PropertyGroup Label="Configuration">
@@ -65,6 +78,10 @@
       <DisableSpecificWarnings>28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+
+      <!-- Many of our projects use XAML, which cannot handle make detection.
+      We cannot link static libs with differing values of WINRT_NO_MAKE_DETECTION, so let's force it for everyone. -->
+      <PreprocessorDefinitions>WINRT_NO_MAKE_DETECTION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem Condition="'%(SubSystem)'==''">Console</SubSystem>
@@ -88,7 +105,7 @@
       <PreprocessorDefinitions>_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <ModuleDefinitionFile>$(ProjectName).def</ModuleDefinitionFile>
+      <ModuleDefinitionFile Condition="Exists('$(ProjectName).def')">$(ProjectName).def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
 

@@ -125,7 +125,7 @@ using namespace Microsoft::Console::Types;
 //   will be false.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                 const COORD coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
@@ -198,9 +198,14 @@ using namespace Microsoft::Console::Types;
     // If both the FG and BG should be the defaults, emit a SGR reset.
     if (fg.IsDefault() && bg.IsDefault() && !(lastFg.IsDefault() && lastBg.IsDefault()))
     {
-        // SGR Reset will clear all attributes.
+        // SGR Reset will clear all attributes (except hyperlink ID) - which means
+        // we cannot reset _lastTextAttributes by simply doing
+        // _lastTextAttributes = {};
+        // because we want to retain the last hyperlink ID
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _lastTextAttributes = {};
+        _lastTextAttributes.SetDefaultBackground();
+        _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultMetaAttrs();
         lastFg = {};
         lastBg = {};
     }
@@ -269,9 +274,14 @@ using namespace Microsoft::Console::Types;
     // We can't reset FG and BG to default individually.
     if ((fg.IsDefault() && !lastFg.IsDefault()) || (bg.IsDefault() && !lastBg.IsDefault()))
     {
-        // SGR Reset will clear all attributes.
+        // SGR Reset will clear all attributes (except hyperlink ID) - which means
+        // we cannot reset _lastTextAttributes by simply doing
+        // _lastTextAttributes = {};
+        // because we want to retain the last hyperlink ID
         RETURN_IF_FAILED(_SetGraphicsDefault());
-        _lastTextAttributes = {};
+        _lastTextAttributes.SetDefaultBackground();
+        _lastTextAttributes.SetDefaultForeground();
+        _lastTextAttributes.SetDefaultMetaAttrs();
         lastFg = {};
         lastBg = {};
     }
@@ -327,7 +337,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(gsl::span<const Cluster> const clusters,
                                                       const COORD coord) noexcept
 {
     try
@@ -362,7 +372,7 @@ using namespace Microsoft::Console::Types;
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(gsl::span<const Cluster> const clusters,
                                                      const COORD coord,
                                                      const bool lineWrapped) noexcept
 {

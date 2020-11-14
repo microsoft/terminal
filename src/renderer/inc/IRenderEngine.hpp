@@ -35,7 +35,11 @@ namespace Microsoft::Console::Render
             Top = 0x1,
             Bottom = 0x2,
             Left = 0x4,
-            Right = 0x8
+            Right = 0x8,
+            Underline = 0x10,
+            DoubleUnderline = 0x20,
+            Strikethrough = 0x40,
+            HyperlinkUnderline = 0x80
         };
 
         virtual ~IRenderEngine() = 0;
@@ -71,7 +75,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+        [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                       const COORD coord,
                                                       const bool fTrimLeft,
                                                       const bool lineWrapped) noexcept = 0;

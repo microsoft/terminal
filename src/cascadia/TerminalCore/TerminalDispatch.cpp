@@ -109,6 +109,13 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::WarningBell() noexcept
+try
+{
+    return _terminalApi.WarningBell();
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool TerminalDispatch::CarriageReturn() noexcept
 try
 {
@@ -143,6 +150,13 @@ bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorSty
 try
 {
     return _terminalApi.SetCursorStyle(cursorStyle);
+}
+CATCH_LOG_RETURN_FALSE()
+
+bool TerminalDispatch::SetCursorColor(const DWORD color) noexcept
+try
+{
+    return _terminalApi.SetCursorColor(color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -253,6 +267,18 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
     return true;
 }
 
+// Routine Description:
+// - DECSCNM - Sets the screen mode to either normal or reverse.
+//    When in reverse screen mode, the background and foreground colors are switched.
+// Arguments:
+// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool TerminalDispatch::SetScreenMode(const bool reverseMode) noexcept
+{
+    return _terminalApi.SetScreenMode(reverseMode);
+}
+
 // Method Description:
 // - win32-input-mode: Enable sending full input records encoded as a string of
 //   characters to the client application.
@@ -342,42 +368,41 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
-bool TerminalDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept
 {
-    return _SetResetPrivateModes(params, true);
+    return _PrivateModeParamsHelper(param, true);
 }
 
-bool TerminalDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept
 {
-    return _SetResetPrivateModes(params, false);
+    return _PrivateModeParamsHelper(param, false);
 }
 
-// Routine Description:
-// - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
-//     All params in the rgParams will attempt to be executed, even if one
-//     fails, to allow us to successfully re/set params that are chained with
-//     params we don't yet support.
+// Method Description:
+// - Start a hyperlink
 // Arguments:
-// - params - array of params to set/reset
-// - enable - True for set, false for unset.
+// - uri - the hyperlink URI
+// - params - the optional custom ID
 // Return Value:
-// - True if ALL params were handled successfully. False otherwise.
-bool TerminalDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable) noexcept
+// - true
+bool TerminalDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept
 {
-    // because the user might chain together params we don't support with params we DO support, execute all
-    // params in the sequence, and only return failure if we failed at least one of them
-    size_t failures = 0;
-    for (const auto& p : params)
-    {
-        failures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
-    }
-    return failures == 0;
+    return _terminalApi.AddHyperlink(uri, params);
+}
+
+// Method Description:
+// - End a hyperlink
+// Return Value:
+// - true
+bool TerminalDispatch::EndHyperlink() noexcept
+{
+    return _terminalApi.EndHyperlink();
 }
 
 // Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:
-// - params - array of params to set/reset
+// - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
@@ -389,6 +414,9 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
     case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
+        break;
+    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        success = SetScreenMode(enable);
         break;
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
@@ -453,8 +481,7 @@ bool TerminalDispatch::SoftReset() noexcept
     //     success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     // }
 
-    const auto opt = DispatchTypes::GraphicsOptions::Off;
-    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+    success = SetGraphicsRendition({}) && success; // Normal rendition.
 
     // // Reset the saved cursor state.
     // // Note that XTerm only resets the main buffer state, but that
@@ -493,8 +520,8 @@ bool TerminalDispatch::HardReset() noexcept
     success = EraseInDisplay(DispatchTypes::EraseType::All) && success;
     success = EraseInDisplay(DispatchTypes::EraseType::Scrollback) && success;
 
-    // // Set the DECSCNM screen mode back to normal.
-    // success = SetScreenMode(false) && success;
+    // Set the DECSCNM screen mode back to normal.
+    success = SetScreenMode(false) && success;
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;

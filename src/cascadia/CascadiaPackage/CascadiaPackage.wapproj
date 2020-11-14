@@ -3,6 +3,8 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
   <PropertyGroup Label="Configuration">
+    <!-- This is necessary so the build system doesn't think we're a .NET project... -->
+    <TargetRuntime>Native</TargetRuntime>
     <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <!--
@@ -13,6 +15,8 @@
      -->
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
+    <OCExecutionAliasName Condition="'$(WindowsTerminalBranding)'==''">wtd</OCExecutionAliasName>
+    <OCExecutionAliasName Condition="'$(OCExecutionAliasName)'==''">wt</OCExecutionAliasName>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
@@ -66,6 +70,7 @@
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
     <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
     <ProjectReference Include="..\ShellExtension\WindowsTerminalShellExt.vcxproj" />
+    <ProjectReference Include="..\wt\wt.vcxproj" />
   </ItemGroup>
 
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
@@ -77,6 +82,8 @@
         <!-- Blank the SourceProject here to vend all files into the root of the package. -->
         <SourceProject>
         </SourceProject>
+        <!-- Replace the filename for wt/wtd.exe with the one the manifest wants. -->
+        <TargetPath Condition="'%(Filename)' == 'wt' and '%(Extension)' == '.exe'">$(OCExecutionAliasName).exe</TargetPath>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>

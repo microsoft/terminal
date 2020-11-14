@@ -6,16 +6,22 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
-
 #include "resource.h"
+
+#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
+
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 AppHost::AppHost() noexcept :
     _app{},
@@ -52,6 +58,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 }
 
@@ -63,11 +70,11 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnDirectKeyEvent(vkey, down);
+        return _logic.OnDirectKeyEvent(vkey, scanCode, down);
     }
     return false;
 }
@@ -156,7 +163,9 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
+    _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
+    _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
+    _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
 
     _logic.Create();
 
@@ -228,14 +237,14 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
-    winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
-    proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
-    proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
+    auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    proposedRect.left = static_cast<long>(initialPos.X);
+    proposedRect.top = static_cast<long>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
@@ -283,9 +292,9 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
     const short islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
+        static_cast<long>(ceil(initialSize.Width)), 1);
     const short islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
+        static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -352,10 +361,22 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, cons
     _window->OnApplicationThemeChanged(arg);
 }
 
-void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFullscreen();
+    _window->FocusModeChanged(_logic.FocusMode());
+}
+
+void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->FullscreenChanged(_logic.Fullscreen());
+}
+
+void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
+                                  const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
 }
 
 // Method Description:
@@ -390,7 +411,11 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 
                     const til::point offsetPoint = coord - controlOrigin;
 
-                    if (control.OnMouseWheel(offsetPoint, delta))
+                    const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
+                    const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
+                    const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
+
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.

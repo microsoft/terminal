@@ -176,6 +176,23 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
 }
 
 // Routine Description:
+// - Finds the hyperlink IDs present in this row and returns them
+// Return value:
+// - An unordered set containing the hyperlink IDs present in this row
+std::unordered_set<uint16_t> ATTR_ROW::GetHyperlinks()
+{
+    std::unordered_set<uint16_t> ids;
+    for (const auto& run : _list)
+    {
+        if (run.GetAttributes().IsHyperlink())
+        {
+            ids.emplace(run.GetAttributes().GetHyperlinkId());
+        }
+    }
+    return ids;
+}
+
+// Routine Description:
 // - Sets the attributes (colors) of all character positions from the given position through the end of the row.
 // Arguments:
 // - iStart - Starting index position within the row
@@ -223,7 +240,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 // Return Value:
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
-[[nodiscard]] HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
+[[nodiscard]] HRESULT ATTR_ROW::InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
                                                const size_t iStart,
                                                const size_t iEnd,
                                                const size_t cBufferWidth)
@@ -250,7 +267,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     if (newAttrs.size() == 1)
     {
         // Get the new color attribute we're trying to apply
-        const TextAttribute NewAttr = newAttrs.at(0).GetAttributes();
+        const TextAttribute NewAttr = til::at(newAttrs, 0).GetAttributes();
 
         // If the existing run was only 1 element...
         // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
@@ -372,7 +389,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     if (iStart == 0 && iEnd == iLastBufferCol)
     {
         // Just dump what we're given over what we have and call it a day.
-        _list.assign(newAttrs.cbegin(), newAttrs.cend());
+        _list.assign(newAttrs.begin(), newAttrs.end());
 
         return S_OK;
     }

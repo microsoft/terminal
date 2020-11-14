@@ -254,6 +254,160 @@ void VtIoTests::DtorTestStackAllocMany()
     }
 }
 
+class MockRenderData : public IRenderData, IUiaData
+{
+public:
+    Microsoft::Console::Types::Viewport GetViewport() noexcept override
+    {
+        return Microsoft::Console::Types::Viewport{};
+    }
+
+    COORD GetTextBufferEndPosition() const noexcept override
+    {
+        return COORD{};
+    }
+
+    const TextBuffer& GetTextBuffer() noexcept override
+    {
+        FAIL_FAST_HR(E_NOTIMPL);
+    }
+
+    const FontInfo& GetFontInfo() noexcept override
+    {
+        FAIL_FAST_HR(E_NOTIMPL);
+    }
+
+    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override
+    {
+        return std::vector<Microsoft::Console::Types::Viewport>{};
+    }
+
+    void LockConsole() noexcept override
+    {
+    }
+
+    void UnlockConsole() noexcept override
+    {
+    }
+
+    const TextAttribute GetDefaultBrushColors() noexcept override
+    {
+        return TextAttribute{};
+    }
+
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override
+    {
+        return std::make_pair(COLORREF{}, COLORREF{});
+    }
+
+    COORD GetCursorPosition() const noexcept override
+    {
+        return COORD{};
+    }
+
+    bool IsCursorVisible() const noexcept override
+    {
+        return false;
+    }
+
+    bool IsCursorOn() const noexcept override
+    {
+        return false;
+    }
+
+    ULONG GetCursorHeight() const noexcept override
+    {
+        return 42ul;
+    }
+
+    CursorType GetCursorStyle() const noexcept override
+    {
+        return CursorType::FullBox;
+    }
+
+    ULONG GetCursorPixelWidth() const noexcept override
+    {
+        return 12ul;
+    }
+
+    COLORREF GetCursorColor() const noexcept override
+    {
+        return COLORREF{};
+    }
+
+    bool IsCursorDoubleWidth() const override
+    {
+        return false;
+    }
+
+    bool IsScreenReversed() const noexcept override
+    {
+        return false;
+    }
+
+    const std::vector<RenderOverlay> GetOverlays() const noexcept override
+    {
+        return std::vector<RenderOverlay>{};
+    }
+
+    const bool IsGridLineDrawingAllowed() noexcept override
+    {
+        return false;
+    }
+
+    const std::wstring GetConsoleTitle() const noexcept override
+    {
+        return std::wstring{};
+    }
+
+    const bool IsSelectionActive() const override
+    {
+        return false;
+    }
+
+    const bool IsBlockSelection() const noexcept override
+    {
+        return false;
+    }
+
+    void ClearSelection() override
+    {
+    }
+
+    void SelectNewRegion(const COORD /*coordStart*/, const COORD /*coordEnd*/) override
+    {
+    }
+
+    const COORD GetSelectionAnchor() const noexcept
+    {
+        return COORD{};
+    }
+
+    const COORD GetSelectionEnd() const noexcept
+    {
+        return COORD{};
+    }
+
+    void ColorSelection(const COORD /*coordSelectionStart*/, const COORD /*coordSelectionEnd*/, const TextAttribute /*attr*/)
+    {
+    }
+
+    const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::wstring GetHyperlinkCustomId(uint16_t /*id*/) const noexcept
+    {
+        return {};
+    }
+
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    {
+        return {};
+    }
+};
+
 void VtIoTests::RendererDtorAndThread()
 {
     Log::Comment(NoThrowString().Format(
@@ -261,9 +415,10 @@ void VtIoTests::RendererDtorAndThread()
 
     for (int i = 0; i < 16; ++i)
     {
+        auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
         // Sleep for a hot sec to make sure the thread starts before we enable painting
         // If you don't, the thread might wait on the paint enabled event AFTER
@@ -286,9 +441,10 @@ void VtIoTests::RendererDtorAndThreadAndDx()
 
     for (int i = 0; i < 16; ++i)
     {
+        auto data = std::make_unique<MockRenderData>();
         auto thread = std::make_unique<Microsoft::Console::Render::RenderThread>();
         auto* pThread = thread.get();
-        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(nullptr, nullptr, 0, std::move(thread));
+        auto pRenderer = std::make_unique<Microsoft::Console::Render::Renderer>(data.get(), nullptr, 0, std::move(thread));
         VERIFY_SUCCEEDED(pThread->Initialize(pRenderer.get()));
 
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();

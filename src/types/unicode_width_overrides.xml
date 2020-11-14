@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<ucd xmlns="http://www.unicode.org/ns/2003/ucd/1.0">
+   <repertoire>
+      <override first-cp="2500" last-cp="259F" ea="H" comment="box-drawing and block elements require 1-cell alignment" />
+      <override first-cp="4DC0" last-cp="4DFF" ea="H" comment="hexagrams are historically narrow" />
+      <override first-cp="FE20" last-cp="FE2F" ea="H" comment="narrow combining ligatures (split into left/right halves, which take 2 columns together)" />
+   </repertoire>
+</ucd>
+

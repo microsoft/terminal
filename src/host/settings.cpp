@@ -5,7 +5,7 @@
 #include "settings.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
-#include "../types/inc/utils.hpp"
+#include "../types/inc/colorTable.hpp"
 
 #pragma hdrstop
 
@@ -81,7 +81,7 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
@@ -122,7 +122,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _colorTable.data(), gsl::narrow<ptrdiff_t>(_colorTable.size()) };
+    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 
     _fTrimLeadingZeros = false;
@@ -726,12 +726,12 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-std::basic_string_view<COLORREF> Settings::Get16ColorTable() const
+gsl::span<const COLORREF> Settings::Get16ColorTable() const
 {
-    return Get256ColorTable().substr(0, 16);
+    return Get256ColorTable().subspan(0, 16);
 }
 
-std::basic_string_view<COLORREF> Settings::Get256ColorTable() const
+gsl::span<const COLORREF> Settings::Get256ColorTable() const
 {
     return { _colorTable.data(), _colorTable.size() };
 }
@@ -829,76 +829,6 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
 bool Settings::GetUseDx() const noexcept
 {
     return _fUseDx;
-}
-
-// Method Description:
-// - Return the default foreground color of the console. If the settings are
-//      configured to have a default foreground color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default legacy attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - the default foreground color of the console.
-COLORREF Settings::CalculateDefaultForeground() const noexcept
-{
-    const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(_wFillAttribute) & FG_ATTRS);
-}
-
-// Method Description:
-// - Return the default background color of the console. If the settings are
-//      configured to have a default background color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default legacy attributes.
-// Arguments:
-// - <none>
-// Return Value:
-// - the default background color of the console.
-COLORREF Settings::CalculateDefaultBackground() const noexcept
-{
-    const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(_wFillAttribute) & BG_ATTRS) >> 4);
-}
-
-// Method Description:
-// - Get the foreground color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the foreground color of.
-// Return Value:
-// - The color value of the attribute's foreground TextColor.
-COLORREF Settings::LookupForegroundColor(const TextAttribute& attr) const noexcept
-{
-    const auto tableView = Get256ColorTable();
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-}
-
-// Method Description:
-// - Get the background color of a particular text attribute, using our color
-//      table, and our configured default attributes.
-// Arguments:
-// - attr: the TextAttribute to retrieve the background color of.
-// Return Value:
-// - The color value of the attribute's background TextColor.
-COLORREF Settings::LookupBackgroundColor(const TextAttribute& attr) const noexcept
-{
-    const auto tableView = Get256ColorTable();
-    if (_fScreenReversed)
-    {
-        return attr.CalculateRgbForeground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
-    else
-    {
-        return attr.CalculateRgbBackground(tableView, CalculateDefaultForeground(), CalculateDefaultBackground());
-    }
 }
 
 bool Settings::GetCopyColor() const noexcept

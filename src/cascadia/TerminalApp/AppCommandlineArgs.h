@@ -2,8 +2,6 @@
 // Licensed under the MIT license.
 #pragma once
 
-#include "ActionAndArgs.h"
-
 #include "Commandline.h"
 
 #ifdef UNIT_TESTING
@@ -28,17 +26,19 @@ public:
 
     AppCommandlineArgs();
     ~AppCommandlineArgs() = default;
+
     int ParseCommand(const Commandline& command);
+    int ParseArgs(winrt::array_view<const winrt::hstring>& args);
 
     static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     void ValidateStartupCommands();
-    std::deque<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
-    std::optional<winrt::TerminalApp::LaunchMode> GetLaunchMode() const noexcept;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
 
 private:
     static const std::wregex _commandDelimiterRegex;
@@ -56,14 +56,20 @@ private:
         CLI::Option* titleOption;
     };
 
+    struct NewPaneSubcommand : public NewTerminalSubcommand
+    {
+        CLI::Option* _horizontalOption;
+        CLI::Option* _verticalOption;
+    };
+
     // --- Subcommands ---
     NewTerminalSubcommand _newTabCommand;
-    NewTerminalSubcommand _newPaneCommand;
+    NewTerminalSubcommand _newTabShort;
+    NewPaneSubcommand _newPaneCommand;
+    NewPaneSubcommand _newPaneShort;
     CLI::App* _focusTabCommand;
+    CLI::App* _focusTabShort;
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
-
-    CLI::Option* _horizontalOption;
-    CLI::Option* _verticalOption;
 
     std::string _profileName;
     std::string _startingDirectory;
@@ -81,14 +87,14 @@ private:
     bool _focusNextTab{ false };
     bool _focusPrevTab{ false };
 
-    std::optional<winrt::TerminalApp::LaunchMode> _launchMode{ std::nullopt };
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
-    std::deque<winrt::TerminalApp::ActionAndArgs> _startupActions;
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
 
-    winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
     void _buildNewTabParser();

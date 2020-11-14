@@ -35,7 +35,7 @@ void UnicodeStorage::StoreGlyph(const key_type key, const mapped_type& glyph)
 // - erases key and its associated data from the storage
 // Arguments:
 // - key - the key to remove
-void UnicodeStorage::Erase(const key_type key)
+void UnicodeStorage::Erase(const key_type key) noexcept
 {
     _map.erase(key);
 }

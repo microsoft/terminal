@@ -23,11 +23,16 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
+using namespace Microsoft::Console::VirtualTerminal;
 using Microsoft::Console::Interactivity::ServiceLocator;
 // For usage with WM_SYSKEYDOWN message processing.
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
 // Bit 29 is whether ALT was held when the message was posted.
 #define WM_SYSKEYDOWN_ALT_PRESSED (0x20000000)
+
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 // ----------------------------
 // Helpers
@@ -123,7 +128,20 @@ bool HandleTerminalMouseEvent(const COORD cMousePosition,
     // Virtual terminal input mode
     if (IsInVirtualTerminalInputMode())
     {
-        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(cMousePosition, uiButton, sModifierKeystate, sWheelDelta);
+        const TerminalInput::MouseButtonState state{
+            WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed),
+            WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed),
+            WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed)
+        };
+
+        // GH#6401: VT applications should be able to receive mouse events from outside the
+        // terminal buffer. This is likely to happen when the user drags the cursor offscreen.
+        // We shouldn't throw away perfectly good events when they're offscreen, so we just
+        // clamp them to be within the range [(0, 0), (W, H)].
+        auto clampedPosition{ cMousePosition };
+        const auto clampViewport{ gci.GetActiveOutputBuffer().GetViewport().ToOrigin() };
+        clampViewport.Clamp(clampedPosition);
+        fWasHandled = gci.GetActiveInputBuffer()->GetTerminalInput().HandleMouse(clampedPosition, uiButton, sModifierKeystate, sWheelDelta, state);
     }
 
     return fWasHandled;
@@ -630,24 +648,30 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
         short sDelta = 0;
         if (Message == WM_MOUSEWHEEL)
         {
-            short sWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-            // For most devices, we'll get mouse events as multiples of
-            // WHEEL_DELTA, where WHEEL_DELTA represents a single scroll unit
-            // But sometimes, things like trackpads will scroll in finer
-            // measurements. In this case, the VT mouse scrolling wouldn't work.
-            // So if that happens, ensure we scroll at least one time.
-            if (abs(sWheelDelta) < WHEEL_DELTA)
-            {
-                sDelta = sWheelDelta < 0 ? -1 : 1;
-            }
-            else
-            {
-                sDelta = sWheelDelta / WHEEL_DELTA;
-            }
+            sDelta = GET_WHEEL_DELTA_WPARAM(wParam);
         }
 
         if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
         {
+            // GH#6401: Capturing the mouse ensures that we get drag/release events
+            // even if the user moves outside the window.
+            // HandleTerminalMouseEvent returns false if the terminal's not in VT mode,
+            // so capturing/releasing here should not impact other console mouse event
+            // consumers.
+            switch (Message)
+            {
+            case WM_LBUTTONDOWN:
+            case WM_MBUTTONDOWN:
+            case WM_RBUTTONDOWN:
+                SetCapture(ServiceLocator::LocateConsoleWindow()->GetWindowHandle());
+                break;
+            case WM_LBUTTONUP:
+            case WM_MBUTTONUP:
+            case WM_RBUTTONUP:
+                ReleaseCapture();
+                break;
+            }
+
             return FALSE;
         }
     }

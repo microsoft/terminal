@@ -69,7 +69,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // Return Value:
 // - S_OK, E_INVALIDARG or similar HRESULT error.
 [[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                                   const std::basic_string_view<WORD> attrs,
+                                                                   const gsl::span<const WORD> attrs,
                                                                    const COORD target,
                                                                    size_t& used) noexcept
 {
@@ -91,7 +91,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return E_INVALIDARG;
     }
 
-    const OutputCellIterator it(attrs, true);
+    const OutputCellIterator it(attrs);
     const auto done = screenInfo.Write(it, target);
 
     used = done.GetCellDistance(it);

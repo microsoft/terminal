@@ -263,9 +263,10 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
+    // No border when maximized or fullscreen.
+    // Yet we still need it in the focus mode to allow dragging (GH#7012)
     if (_isMaximized || _fullscreen)
     {
-        // no border when maximized
         return 0;
     }
 
@@ -369,7 +370,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
                                    newIslandPos.Y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
-                                   SWP_SHOWWINDOW));
+                                   SWP_SHOWWINDOW | SWP_NOACTIVATE));
 
     // This happens when we go from maximized to restored or the opposite
     // because topBorderHeight changes.
@@ -812,6 +813,46 @@ void NonClientIslandWindow::OnApplicationThemeChanged(const ElementTheme& reques
 }
 
 // Method Description:
+// - Enable or disable borderless mode. When entering borderless mode, we'll
+//   need to manually hide the entire titlebar.
+// - See also IslandWindow::_SetIsBorderless, which does similar, but different work.
+// Arguments:
+// - borderlessEnabled: If true, we're entering borderless mode. If false, we're leaving.
+// Return Value:
+// - <none>
+void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
+{
+    _borderless = borderlessEnabled;
+
+    // Explicitly _don't_ call IslandWindow::_SetIsBorderless. That version will
+    // change the window styles appropriately for the window with the default
+    // titlebar, but for the tabs-in-titlebar mode, we can just get rid of the
+    // title bar entirely.
+
+    if (_titlebar)
+    {
+        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
+    }
+
+    // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
+    // always get another window message to trigger us to remove the drag bar.
+    // So, make sure to update the size of the drag region here, so that it
+    // _definitely_ goes away.
+    _ResizeDragBarWindow();
+
+    // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
+    // recalculate the non/client areas
+    const til::rectangle windowPos{ GetWindowRect() };
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 windowPos.left<int>(),
+                 windowPos.top<int>(),
+                 windowPos.width<int>(),
+                 windowPos.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+}
+
+// Method Description:
 // - Enable or disable fullscreen mode. When entering fullscreen mode, we'll
 //   need to manually hide the entire titlebar.
 // - See also IslandWindow::_SetIsFullscreen, which does additional work.
@@ -824,7 +865,7 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
     IslandWindow::_SetIsFullscreen(fullscreenEnabled);
     if (_titlebar)
     {
-        _titlebar.Visibility(!fullscreenEnabled ? Visibility::Visible : Visibility::Collapsed);
+        _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
     }
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
@@ -835,16 +876,14 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 
 // Method Description:
 // - Returns true if the titlebar is visible. For things like fullscreen mode,
-//   borderless mode, this will return false.
+//   borderless mode (aka "focus mode"), this will return false.
 // Arguments:
 // - <none>
 // Return Value:
 // - true iff the titlebar is visible
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
-    // TODO:GH#2238 - When we add support for titlebar-less mode, this should be
-    // updated to include that mode.
-    return !_fullscreen;
+    return !(_fullscreen || _borderless);
 }
 
 // Method Description:

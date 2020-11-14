@@ -2,7 +2,7 @@
 Do Not Translate or Localize
 
 This software incorporates material from third parties. Microsoft makes certain
-open source code available at http://3rdpartysource.microsoft.com, or you may
+open source code available at [http://3rdpartysource.microsoft.com](http://3rdpartysource.microsoft.com), or you may
 send a check or money order for US $5.00, including the product name, the open
 source component name, and version number, to:
 
@@ -20,7 +20,7 @@ General Public License.
 
 ## jsoncpp
 
-**Source**: https://github.com/open-source-parsers/jsoncpp
+**Source**: [https://github.com/open-source-parsers/jsoncpp](https://github.com/open-source-parsers/jsoncpp)
 
 ### License
 
@@ -48,39 +48,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## telnetpp
-
-**Source**: https://github.com/KazDragon/telnetpp
-
-### License 
-
-```
-The MIT License (MIT)
-
-Copyright (c) 2015-2017 Matthew Chaplain a.k.a KazDragon
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
 ## chromium/base/numerics
 
-**Source**: https://github.com/chromium/chromium/tree/master/base/numerics
+**Source**: [https://github.com/chromium/chromium/tree/master/base/numerics](https://github.com/chromium/chromium/tree/master/base/numerics)
 
 ### License
 
@@ -116,7 +86,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## kimwalisch/libpopcnt
 
-**Source**: https://github.com/kimwalisch/libpopcnt
+**Source**: [https://github.com/kimwalisch/libpopcnt](https://github.com/kimwalisch/libpopcnt)
 
 ### License
 
@@ -152,7 +122,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## dynamic_bitset
 
-**Source**: https://github.com/pinam45/dynamic_bitset
+**Source**: [https://github.com/pinam45/dynamic_bitset](https://github.com/pinam45/dynamic_bitset)
 
 ### License
 
@@ -181,9 +151,9 @@ SOFTWARE.
 
 ```
 
-## &#x7b;fmt&#x7d;
+## \{fmt\}
 
-**Source**: https://github.com/fmtlib/fmt
+**Source**: [https://github.com/fmtlib/fmt](https://github.com/fmtlib/fmt)
 
 ### License
 
@@ -217,4 +187,33 @@ As an exception, if, as a result of your compiling your source code, portions
 of this Software are embedded into a machine-executable object form of such
 source code, you may redistribute such embedded portions in such object form
 without including the above copyright and permission notices.
+```
+
+## interval_tree
+
+**Source**: [https://github.com/ekg/IntervalTree](https://github.com/ekg/IntervalTree)
+
+### License
+
+```
+Copyright (c) 2011 Erik Garrison
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ```

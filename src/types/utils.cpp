@@ -3,8 +3,20 @@
 
 #include "precomp.h"
 #include "inc/utils.hpp"
+#include "inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
+
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isNumber(const wchar_t wch) noexcept
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+}
 
 // Function Description:
 // - Creates a String representation of a guid, in the format
@@ -100,6 +112,317 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 }
 
 // Routine Description:
+// - Given a color string, attempts to parse the color.
+//   The color are specified by name or RGB specification as per XParseColor.
+// Arguments:
+// - string - The string containing the color spec string to parse.
+// Return Value:
+// - An optional color which contains value if a color was successfully parsed
+std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view string) noexcept
+{
+    auto color = ColorFromXParseColorSpec(string);
+    if (!color.has_value())
+    {
+        // Try again, but use the app color name parser
+        color = ColorFromXOrgAppColorName(string);
+    }
+
+    return color;
+}
+
+// Routine Description:
+// - Given a color spec string, attempts to parse the color that's encoded.
+//
+//   Based on the XParseColor documentation, the supported specs currently are the following:
+//      spec1: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//      spec2: a color in the following format:
+//          "#<red><green><blue>"
+//
+//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
+// Arguments:
+// - string - The string containing the color spec string to parse.
+// Return Value:
+// - An optional color which contains value if a color was successfully parsed
+std::optional<til::color> Utils::ColorFromXParseColorSpec(const std::wstring_view string) noexcept
+try
+{
+    bool foundXParseColorSpec = false;
+    bool foundValidColorSpec = false;
+
+    bool isSharpSignFormat = false;
+    size_t rgbHexDigitCount = 0;
+    std::array<unsigned int, 3> colorValues = { 0 };
+    std::array<unsigned int, 3> parameterValues = { 0 };
+    const auto stringSize = string.size();
+
+    // First we look for "rgb:"
+    // Other colorspaces are theoretically possible, but we don't support them.
+    auto curr = string.cbegin();
+    if (stringSize > 4)
+    {
+        auto prefix = std::wstring(string.substr(0, 4));
+
+        // The "rgb:" indicator should be case insensitive. To prevent possible issues under
+        // different locales, transform only ASCII range latin characters.
+        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
+            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(std::towlower(x)) : x;
+        });
+
+        if (prefix.compare(L"rgb:") == 0)
+        {
+            // If all the components have the same digit count, we can have one of the following formats:
+            // 9 "rgb:h/h/h"
+            // 12 "rgb:hh/hh/hh"
+            // 15 "rgb:hhh/hhh/hhh"
+            // 18 "rgb:hhhh/hhhh/hhhh"
+            // Note that the component sizes aren't required to be the same.
+            // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
+            // Any fewer cannot be valid, and any more will be too many. Return early in this case.
+            if (stringSize < 9 || stringSize > 18)
+            {
+                return std::nullopt;
+            }
+
+            foundXParseColorSpec = true;
+
+            std::advance(curr, 4);
+        }
+    }
+
+    // Try the sharp sign format.
+    if (!foundXParseColorSpec && stringSize > 1)
+    {
+        if (til::at(string, 0) == L'#')
+        {
+            // We can have one of the following formats:
+            // 4 "#hhh"
+            // 7 "#hhhhhh"
+            // 10 "#hhhhhhhhh"
+            // 13 "#hhhhhhhhhhhh"
+            // Any other cases will be invalid. Return early in this case.
+            if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
+            {
+                return std::nullopt;
+            }
+
+            isSharpSignFormat = true;
+            foundXParseColorSpec = true;
+            rgbHexDigitCount = (stringSize - 1) / 3;
+
+            std::advance(curr, 1);
+        }
+    }
+
+    // No valid spec is found. Return early.
+    if (!foundXParseColorSpec)
+    {
+        return std::nullopt;
+    }
+
+    // Try to parse the actual color value of each component.
+    for (size_t component = 0; component < 3; component++)
+    {
+        bool foundColor = false;
+        auto& parameterValue = til::at(parameterValues, component);
+        // For "sharp sign" format, the rgbHexDigitCount is known.
+        // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
+        const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
+        for (size_t i = 0; i < iteration && curr < string.cend(); i++)
+        {
+            const wchar_t wch = *curr++;
+
+            parameterValue *= 16;
+            unsigned int intVal = 0;
+            const auto ret = HexToUint(wch, intVal);
+            if (!ret)
+            {
+                // Encountered something weird oh no
+                return std::nullopt;
+            }
+
+            parameterValue += intVal;
+
+            if (isSharpSignFormat)
+            {
+                // If we get this far, any number can be seen as a valid part
+                // of this component.
+                foundColor = true;
+
+                if (i >= rgbHexDigitCount)
+                {
+                    // Successfully parsed this component. Start the next one.
+                    break;
+                }
+            }
+            else
+            {
+                // Record the hex digit count of the current component.
+                rgbHexDigitCount = i + 1;
+
+                // If this is the first 2 component...
+                if (component < 2 && curr < string.cend() && *curr == L'/')
+                {
+                    // ...and we have successfully parsed this component, we need
+                    // to skip the delimiter before starting the next one.
+                    curr++;
+                    foundColor = true;
+                    break;
+                }
+                // Or we have reached the end of the string...
+                else if (curr >= string.cend())
+                {
+                    // ...meaning that this is the last component. We're not going to
+                    // see any delimiter. We can just break out.
+                    foundColor = true;
+                    break;
+                }
+            }
+        }
+
+        if (!foundColor)
+        {
+            // Indicates there was some error parsing color.
+            return std::nullopt;
+        }
+
+        // Calculate the actual color value based on the hex digit count.
+        auto& colorValue = til::at(colorValues, component);
+        const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
+        const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
+        colorValue = parameterValue * scaleMultiplier / scaleDivisor;
+    }
+
+    if (curr >= string.cend())
+    {
+        // We're at the end of the string and we have successfully parsed the color.
+        foundValidColorSpec = true;
+    }
+
+    // Only if we find a valid colorspec can we pass it out successfully.
+    if (foundValidColorSpec)
+    {
+        return til::color(LOBYTE(til::at(colorValues, 0)),
+                          LOBYTE(til::at(colorValues, 1)),
+                          LOBYTE(til::at(colorValues, 2)));
+    }
+
+    return std::nullopt;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return std::nullopt;
+}
+
+// Routine Description:
+// - Converts a hex character to its equivalent integer value.
+// Arguments:
+// - wch - Character to convert.
+// - value - receives the int value of the char
+// Return Value:
+// - true iff the character is a hex character.
+bool Utils::HexToUint(const wchar_t wch,
+                      unsigned int& value) noexcept
+{
+    value = 0;
+    bool success = false;
+    if (wch >= L'0' && wch <= L'9')
+    {
+        value = wch - L'0';
+        success = true;
+    }
+    else if (wch >= L'A' && wch <= L'F')
+    {
+        value = (wch - L'A') + 10;
+        success = true;
+    }
+    else if (wch >= L'a' && wch <= L'f')
+    {
+        value = (wch - L'a') + 10;
+        success = true;
+    }
+    return success;
+}
+
+// Routine Description:
+// - Converts a number string to its equivalent unsigned integer value.
+// Arguments:
+// - wstr - String to convert.
+// - value - receives the int value of the string
+// Return Value:
+// - true iff the string is a unsigned integer string.
+bool Utils::StringToUint(const std::wstring_view wstr,
+                         unsigned int& value)
+{
+    if (wstr.size() < 1)
+    {
+        return false;
+    }
+
+    unsigned int result = 0;
+    size_t current = 0;
+    while (current < wstr.size())
+    {
+        const wchar_t wch = wstr.at(current);
+        if (_isNumber(wch))
+        {
+            result *= 10;
+            result += wch - L'0';
+
+            ++current;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    value = result;
+
+    return true;
+}
+
+// Routine Description:
+// - Split a string into different parts using the delimiter provided.
+// Arguments:
+// - wstr - String to split.
+// - delimiter - delimiter to use.
+// Return Value:
+// - a vector containing the result string parts.
+std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
+                                                  const wchar_t delimiter)
+{
+    std::vector<std::wstring_view> result;
+    size_t current = 0;
+    while (current < wstr.size())
+    {
+        const auto nextDelimiter = wstr.find(delimiter, current);
+        if (nextDelimiter == std::wstring::npos)
+        {
+            result.push_back(wstr.substr(current));
+            break;
+        }
+        else
+        {
+            const auto length = nextDelimiter - current;
+            result.push_back(wstr.substr(current, length));
+            // Skip this part and the delimiter. Start the next one
+            current += length + 1;
+            // The next index is larger than string size, which means the string
+            // is in the format of "part1;part2;" (assuming use ';' as delimiter).
+            // Add the last part which is an empty string.
+            if (current >= wstr.size())
+            {
+                result.push_back(L"");
+            }
+        }
+    }
+
+    return result;
+}
+
+// Routine Description:
 // - Shorthand check if a handle value is null or invalid.
 // Arguments:
 // - Handle
@@ -108,337 +431,6 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
     return handle != nullptr && handle != INVALID_HANDLE_VALUE;
-}
-
-// Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the ANSI/VT RGB order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-
-    // clang-format off
-    table[0]   = RGB(12,   12,   12);
-    table[1]   = RGB(197,  15,   31);
-    table[2]   = RGB(19,   161,  14);
-    table[3]   = RGB(193,  156,  0);
-    table[4]   = RGB(0,    55,   218);
-    table[5]   = RGB(136,  23,   152);
-    table[6]   = RGB(58,   150,  221);
-    table[7]   = RGB(204,  204,  204);
-    table[8]   = RGB(118,  118,  118);
-    table[9]   = RGB(231,  72,   86);
-    table[10]  = RGB(22,   198,  12);
-    table[11]  = RGB(249,  241,  165);
-    table[12]  = RGB(59,   120,  255);
-    table[13]  = RGB(180,  0,    158);
-    table[14]  = RGB(97,   214,  214);
-    table[15]  = RGB(242,  242,  242);
-    // clang-format on
-}
-
-// Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the Windows BGR order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    InitializeCampbellColorTable(table);
-    SwapANSIColorOrderForConhost(table);
-}
-
-// Function Description:
-// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    std::swap(table[1], table[4]);
-    std::swap(table[3], table[6]);
-    std::swap(table[9], table[12]);
-    std::swap(table[11], table[14]);
-}
-
-// Function Description:
-// - Fill the first 255 entries of a given color table with the default values
-//      of a full 256-color table
-// Arguments:
-// - table: a color table with at least 256 entries
-// Return Value:
-// - <none>, throws if the table has less that 256 entries
-void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 256);
-
-    // clang-format off
-    table[0]   = RGB(0x00, 0x00, 0x00);
-    table[1]   = RGB(0x80, 0x00, 0x00);
-    table[2]   = RGB(0x00, 0x80, 0x00);
-    table[3]   = RGB(0x80, 0x80, 0x00);
-    table[4]   = RGB(0x00, 0x00, 0x80);
-    table[5]   = RGB(0x80, 0x00, 0x80);
-    table[6]   = RGB(0x00, 0x80, 0x80);
-    table[7]   = RGB(0xc0, 0xc0, 0xc0);
-    table[8]   = RGB(0x80, 0x80, 0x80);
-    table[9]   = RGB(0xff, 0x00, 0x00);
-    table[10]  = RGB(0x00, 0xff, 0x00);
-    table[11]  = RGB(0xff, 0xff, 0x00);
-    table[12]  = RGB(0x00, 0x00, 0xff);
-    table[13]  = RGB(0xff, 0x00, 0xff);
-    table[14]  = RGB(0x00, 0xff, 0xff);
-    table[15]  = RGB(0xff, 0xff, 0xff);
-    table[16]  = RGB(0x00, 0x00, 0x00);
-    table[17]  = RGB(0x00, 0x00, 0x5f);
-    table[18]  = RGB(0x00, 0x00, 0x87);
-    table[19]  = RGB(0x00, 0x00, 0xaf);
-    table[20]  = RGB(0x00, 0x00, 0xd7);
-    table[21]  = RGB(0x00, 0x00, 0xff);
-    table[22]  = RGB(0x00, 0x5f, 0x00);
-    table[23]  = RGB(0x00, 0x5f, 0x5f);
-    table[24]  = RGB(0x00, 0x5f, 0x87);
-    table[25]  = RGB(0x00, 0x5f, 0xaf);
-    table[26]  = RGB(0x00, 0x5f, 0xd7);
-    table[27]  = RGB(0x00, 0x5f, 0xff);
-    table[28]  = RGB(0x00, 0x87, 0x00);
-    table[29]  = RGB(0x00, 0x87, 0x5f);
-    table[30]  = RGB(0x00, 0x87, 0x87);
-    table[31]  = RGB(0x00, 0x87, 0xaf);
-    table[32]  = RGB(0x00, 0x87, 0xd7);
-    table[33]  = RGB(0x00, 0x87, 0xff);
-    table[34]  = RGB(0x00, 0xaf, 0x00);
-    table[35]  = RGB(0x00, 0xaf, 0x5f);
-    table[36]  = RGB(0x00, 0xaf, 0x87);
-    table[37]  = RGB(0x00, 0xaf, 0xaf);
-    table[38]  = RGB(0x00, 0xaf, 0xd7);
-    table[39]  = RGB(0x00, 0xaf, 0xff);
-    table[40]  = RGB(0x00, 0xd7, 0x00);
-    table[41]  = RGB(0x00, 0xd7, 0x5f);
-    table[42]  = RGB(0x00, 0xd7, 0x87);
-    table[43]  = RGB(0x00, 0xd7, 0xaf);
-    table[44]  = RGB(0x00, 0xd7, 0xd7);
-    table[45]  = RGB(0x00, 0xd7, 0xff);
-    table[46]  = RGB(0x00, 0xff, 0x00);
-    table[47]  = RGB(0x00, 0xff, 0x5f);
-    table[48]  = RGB(0x00, 0xff, 0x87);
-    table[49]  = RGB(0x00, 0xff, 0xaf);
-    table[50]  = RGB(0x00, 0xff, 0xd7);
-    table[51]  = RGB(0x00, 0xff, 0xff);
-    table[52]  = RGB(0x5f, 0x00, 0x00);
-    table[53]  = RGB(0x5f, 0x00, 0x5f);
-    table[54]  = RGB(0x5f, 0x00, 0x87);
-    table[55]  = RGB(0x5f, 0x00, 0xaf);
-    table[56]  = RGB(0x5f, 0x00, 0xd7);
-    table[57]  = RGB(0x5f, 0x00, 0xff);
-    table[58]  = RGB(0x5f, 0x5f, 0x00);
-    table[59]  = RGB(0x5f, 0x5f, 0x5f);
-    table[60]  = RGB(0x5f, 0x5f, 0x87);
-    table[61]  = RGB(0x5f, 0x5f, 0xaf);
-    table[62]  = RGB(0x5f, 0x5f, 0xd7);
-    table[63]  = RGB(0x5f, 0x5f, 0xff);
-    table[64]  = RGB(0x5f, 0x87, 0x00);
-    table[65]  = RGB(0x5f, 0x87, 0x5f);
-    table[66]  = RGB(0x5f, 0x87, 0x87);
-    table[67]  = RGB(0x5f, 0x87, 0xaf);
-    table[68]  = RGB(0x5f, 0x87, 0xd7);
-    table[69]  = RGB(0x5f, 0x87, 0xff);
-    table[70]  = RGB(0x5f, 0xaf, 0x00);
-    table[71]  = RGB(0x5f, 0xaf, 0x5f);
-    table[72]  = RGB(0x5f, 0xaf, 0x87);
-    table[73]  = RGB(0x5f, 0xaf, 0xaf);
-    table[74]  = RGB(0x5f, 0xaf, 0xd7);
-    table[75]  = RGB(0x5f, 0xaf, 0xff);
-    table[76]  = RGB(0x5f, 0xd7, 0x00);
-    table[77]  = RGB(0x5f, 0xd7, 0x5f);
-    table[78]  = RGB(0x5f, 0xd7, 0x87);
-    table[79]  = RGB(0x5f, 0xd7, 0xaf);
-    table[80]  = RGB(0x5f, 0xd7, 0xd7);
-    table[81]  = RGB(0x5f, 0xd7, 0xff);
-    table[82]  = RGB(0x5f, 0xff, 0x00);
-    table[83]  = RGB(0x5f, 0xff, 0x5f);
-    table[84]  = RGB(0x5f, 0xff, 0x87);
-    table[85]  = RGB(0x5f, 0xff, 0xaf);
-    table[86]  = RGB(0x5f, 0xff, 0xd7);
-    table[87]  = RGB(0x5f, 0xff, 0xff);
-    table[88]  = RGB(0x87, 0x00, 0x00);
-    table[89]  = RGB(0x87, 0x00, 0x5f);
-    table[90]  = RGB(0x87, 0x00, 0x87);
-    table[91]  = RGB(0x87, 0x00, 0xaf);
-    table[92]  = RGB(0x87, 0x00, 0xd7);
-    table[93]  = RGB(0x87, 0x00, 0xff);
-    table[94]  = RGB(0x87, 0x5f, 0x00);
-    table[95]  = RGB(0x87, 0x5f, 0x5f);
-    table[96]  = RGB(0x87, 0x5f, 0x87);
-    table[97]  = RGB(0x87, 0x5f, 0xaf);
-    table[98]  = RGB(0x87, 0x5f, 0xd7);
-    table[99]  = RGB(0x87, 0x5f, 0xff);
-    table[100] = RGB(0x87, 0x87, 0x00);
-    table[101] = RGB(0x87, 0x87, 0x5f);
-    table[102] = RGB(0x87, 0x87, 0x87);
-    table[103] = RGB(0x87, 0x87, 0xaf);
-    table[104] = RGB(0x87, 0x87, 0xd7);
-    table[105] = RGB(0x87, 0x87, 0xff);
-    table[106] = RGB(0x87, 0xaf, 0x00);
-    table[107] = RGB(0x87, 0xaf, 0x5f);
-    table[108] = RGB(0x87, 0xaf, 0x87);
-    table[109] = RGB(0x87, 0xaf, 0xaf);
-    table[110] = RGB(0x87, 0xaf, 0xd7);
-    table[111] = RGB(0x87, 0xaf, 0xff);
-    table[112] = RGB(0x87, 0xd7, 0x00);
-    table[113] = RGB(0x87, 0xd7, 0x5f);
-    table[114] = RGB(0x87, 0xd7, 0x87);
-    table[115] = RGB(0x87, 0xd7, 0xaf);
-    table[116] = RGB(0x87, 0xd7, 0xd7);
-    table[117] = RGB(0x87, 0xd7, 0xff);
-    table[118] = RGB(0x87, 0xff, 0x00);
-    table[119] = RGB(0x87, 0xff, 0x5f);
-    table[120] = RGB(0x87, 0xff, 0x87);
-    table[121] = RGB(0x87, 0xff, 0xaf);
-    table[122] = RGB(0x87, 0xff, 0xd7);
-    table[123] = RGB(0x87, 0xff, 0xff);
-    table[124] = RGB(0xaf, 0x00, 0x00);
-    table[125] = RGB(0xaf, 0x00, 0x5f);
-    table[126] = RGB(0xaf, 0x00, 0x87);
-    table[127] = RGB(0xaf, 0x00, 0xaf);
-    table[128] = RGB(0xaf, 0x00, 0xd7);
-    table[129] = RGB(0xaf, 0x00, 0xff);
-    table[130] = RGB(0xaf, 0x5f, 0x00);
-    table[131] = RGB(0xaf, 0x5f, 0x5f);
-    table[132] = RGB(0xaf, 0x5f, 0x87);
-    table[133] = RGB(0xaf, 0x5f, 0xaf);
-    table[134] = RGB(0xaf, 0x5f, 0xd7);
-    table[135] = RGB(0xaf, 0x5f, 0xff);
-    table[136] = RGB(0xaf, 0x87, 0x00);
-    table[137] = RGB(0xaf, 0x87, 0x5f);
-    table[138] = RGB(0xaf, 0x87, 0x87);
-    table[139] = RGB(0xaf, 0x87, 0xaf);
-    table[140] = RGB(0xaf, 0x87, 0xd7);
-    table[141] = RGB(0xaf, 0x87, 0xff);
-    table[142] = RGB(0xaf, 0xaf, 0x00);
-    table[143] = RGB(0xaf, 0xaf, 0x5f);
-    table[144] = RGB(0xaf, 0xaf, 0x87);
-    table[145] = RGB(0xaf, 0xaf, 0xaf);
-    table[146] = RGB(0xaf, 0xaf, 0xd7);
-    table[147] = RGB(0xaf, 0xaf, 0xff);
-    table[148] = RGB(0xaf, 0xd7, 0x00);
-    table[149] = RGB(0xaf, 0xd7, 0x5f);
-    table[150] = RGB(0xaf, 0xd7, 0x87);
-    table[151] = RGB(0xaf, 0xd7, 0xaf);
-    table[152] = RGB(0xaf, 0xd7, 0xd7);
-    table[153] = RGB(0xaf, 0xd7, 0xff);
-    table[154] = RGB(0xaf, 0xff, 0x00);
-    table[155] = RGB(0xaf, 0xff, 0x5f);
-    table[156] = RGB(0xaf, 0xff, 0x87);
-    table[157] = RGB(0xaf, 0xff, 0xaf);
-    table[158] = RGB(0xaf, 0xff, 0xd7);
-    table[159] = RGB(0xaf, 0xff, 0xff);
-    table[160] = RGB(0xd7, 0x00, 0x00);
-    table[161] = RGB(0xd7, 0x00, 0x5f);
-    table[162] = RGB(0xd7, 0x00, 0x87);
-    table[163] = RGB(0xd7, 0x00, 0xaf);
-    table[164] = RGB(0xd7, 0x00, 0xd7);
-    table[165] = RGB(0xd7, 0x00, 0xff);
-    table[166] = RGB(0xd7, 0x5f, 0x00);
-    table[167] = RGB(0xd7, 0x5f, 0x5f);
-    table[168] = RGB(0xd7, 0x5f, 0x87);
-    table[169] = RGB(0xd7, 0x5f, 0xaf);
-    table[170] = RGB(0xd7, 0x5f, 0xd7);
-    table[171] = RGB(0xd7, 0x5f, 0xff);
-    table[172] = RGB(0xd7, 0x87, 0x00);
-    table[173] = RGB(0xd7, 0x87, 0x5f);
-    table[174] = RGB(0xd7, 0x87, 0x87);
-    table[175] = RGB(0xd7, 0x87, 0xaf);
-    table[176] = RGB(0xd7, 0x87, 0xd7);
-    table[177] = RGB(0xd7, 0x87, 0xff);
-    table[178] = RGB(0xd7, 0xaf, 0x00);
-    table[179] = RGB(0xd7, 0xaf, 0x5f);
-    table[180] = RGB(0xd7, 0xaf, 0x87);
-    table[181] = RGB(0xd7, 0xaf, 0xaf);
-    table[182] = RGB(0xd7, 0xaf, 0xd7);
-    table[183] = RGB(0xd7, 0xaf, 0xff);
-    table[184] = RGB(0xd7, 0xd7, 0x00);
-    table[185] = RGB(0xd7, 0xd7, 0x5f);
-    table[186] = RGB(0xd7, 0xd7, 0x87);
-    table[187] = RGB(0xd7, 0xd7, 0xaf);
-    table[188] = RGB(0xd7, 0xd7, 0xd7);
-    table[189] = RGB(0xd7, 0xd7, 0xff);
-    table[190] = RGB(0xd7, 0xff, 0x00);
-    table[191] = RGB(0xd7, 0xff, 0x5f);
-    table[192] = RGB(0xd7, 0xff, 0x87);
-    table[193] = RGB(0xd7, 0xff, 0xaf);
-    table[194] = RGB(0xd7, 0xff, 0xd7);
-    table[195] = RGB(0xd7, 0xff, 0xff);
-    table[196] = RGB(0xff, 0x00, 0x00);
-    table[197] = RGB(0xff, 0x00, 0x5f);
-    table[198] = RGB(0xff, 0x00, 0x87);
-    table[199] = RGB(0xff, 0x00, 0xaf);
-    table[200] = RGB(0xff, 0x00, 0xd7);
-    table[201] = RGB(0xff, 0x00, 0xff);
-    table[202] = RGB(0xff, 0x5f, 0x00);
-    table[203] = RGB(0xff, 0x5f, 0x5f);
-    table[204] = RGB(0xff, 0x5f, 0x87);
-    table[205] = RGB(0xff, 0x5f, 0xaf);
-    table[206] = RGB(0xff, 0x5f, 0xd7);
-    table[207] = RGB(0xff, 0x5f, 0xff);
-    table[208] = RGB(0xff, 0x87, 0x00);
-    table[209] = RGB(0xff, 0x87, 0x5f);
-    table[210] = RGB(0xff, 0x87, 0x87);
-    table[211] = RGB(0xff, 0x87, 0xaf);
-    table[212] = RGB(0xff, 0x87, 0xd7);
-    table[213] = RGB(0xff, 0x87, 0xff);
-    table[214] = RGB(0xff, 0xaf, 0x00);
-    table[215] = RGB(0xff, 0xaf, 0x5f);
-    table[216] = RGB(0xff, 0xaf, 0x87);
-    table[217] = RGB(0xff, 0xaf, 0xaf);
-    table[218] = RGB(0xff, 0xaf, 0xd7);
-    table[219] = RGB(0xff, 0xaf, 0xff);
-    table[220] = RGB(0xff, 0xd7, 0x00);
-    table[221] = RGB(0xff, 0xd7, 0x5f);
-    table[222] = RGB(0xff, 0xd7, 0x87);
-    table[223] = RGB(0xff, 0xd7, 0xaf);
-    table[224] = RGB(0xff, 0xd7, 0xd7);
-    table[225] = RGB(0xff, 0xd7, 0xff);
-    table[226] = RGB(0xff, 0xff, 0x00);
-    table[227] = RGB(0xff, 0xff, 0x5f);
-    table[228] = RGB(0xff, 0xff, 0x87);
-    table[229] = RGB(0xff, 0xff, 0xaf);
-    table[230] = RGB(0xff, 0xff, 0xd7);
-    table[231] = RGB(0xff, 0xff, 0xff);
-    table[232] = RGB(0x08, 0x08, 0x08);
-    table[233] = RGB(0x12, 0x12, 0x12);
-    table[234] = RGB(0x1c, 0x1c, 0x1c);
-    table[235] = RGB(0x26, 0x26, 0x26);
-    table[236] = RGB(0x30, 0x30, 0x30);
-    table[237] = RGB(0x3a, 0x3a, 0x3a);
-    table[238] = RGB(0x44, 0x44, 0x44);
-    table[239] = RGB(0x4e, 0x4e, 0x4e);
-    table[240] = RGB(0x58, 0x58, 0x58);
-    table[241] = RGB(0x62, 0x62, 0x62);
-    table[242] = RGB(0x6c, 0x6c, 0x6c);
-    table[243] = RGB(0x76, 0x76, 0x76);
-    table[244] = RGB(0x80, 0x80, 0x80);
-    table[245] = RGB(0x8a, 0x8a, 0x8a);
-    table[246] = RGB(0x94, 0x94, 0x94);
-    table[247] = RGB(0x9e, 0x9e, 0x9e);
-    table[248] = RGB(0xa8, 0xa8, 0xa8);
-    table[249] = RGB(0xb2, 0xb2, 0xb2);
-    table[250] = RGB(0xbc, 0xbc, 0xbc);
-    table[251] = RGB(0xc6, 0xc6, 0xc6);
-    table[252] = RGB(0xd0, 0xd0, 0xd0);
-    table[253] = RGB(0xda, 0xda, 0xda);
-    table[254] = RGB(0xe4, 0xe4, 0xe4);
-    table[255] = RGB(0xee, 0xee, 0xee);
-    // clang-format on
 }
 
 // Function Description:
