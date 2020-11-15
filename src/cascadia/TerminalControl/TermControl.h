@@ -253,6 +253,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _selectionNeedsToBeCopied;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
+        Windows::Foundation::IReference<winrt::Windows::UI::Color> _startingTabColor;
 
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;

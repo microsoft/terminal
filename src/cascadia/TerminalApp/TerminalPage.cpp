@@ -603,13 +603,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
-        const auto newTab = _CreateNewTabFromSettings(profileGuid, settings);
-        if (newTerminalArgs && newTerminalArgs.TabColor())
-        {
-            // We set the tab color we got from terminal arguments
-            // as runtime color so it won't be reset upon settings reload
-            _GetTerminalTabImpl(newTab)->SetRuntimeTabColor(newTerminalArgs.TabColor().Value());
-        }
+        _CreateNewTabFromSettings(profileGuid, settings);
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -651,9 +645,7 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    // Return value:
-    // - the created tab
-    TerminalApp::TerminalTab TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalApp::TerminalSettings settings)
     {
         // Initialize the new tab
 
@@ -741,7 +733,6 @@ namespace winrt::TerminalApp::implementation
         // This kicks off TabView::SelectionChanged, in response to which
         // we'll attach the terminal's Xaml control to the Xaml root.
         _tabView.SelectedItem(tabViewItem);
-        return *newTabImpl;
     }
 
     // Method Description:

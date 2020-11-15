@@ -111,6 +111,8 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, SoftwareRendering, false);
         GETSET_PROPERTY(bool, ForceVTInput, false);
 
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, StartingTabColor, nullptr);
+
 #pragma warning(pop)
 
     private:
