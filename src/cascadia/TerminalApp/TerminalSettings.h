@@ -69,6 +69,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, CopyOnSelect, false);
 
         GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
 
         // ------------------------ End of Core Settings -----------------------
 
@@ -110,8 +111,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
         GETSET_PROPERTY(bool, ForceVTInput, false);
-
-        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, StartingTabColor, nullptr);
 
 #pragma warning(pop)
 

@@ -228,6 +228,7 @@ private:
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
     std::optional<til::color> _tabColor;
+    std::optional<til::color> _startingTabColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;

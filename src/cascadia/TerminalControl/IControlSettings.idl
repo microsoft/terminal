@@ -57,7 +57,5 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean RetroTerminalEffect;
         Boolean ForceFullRepaintRendering;
         Boolean SoftwareRendering;
-
-        Windows.Foundation.IReference<Windows.UI.Color> StartingTabColor;
     };
 }

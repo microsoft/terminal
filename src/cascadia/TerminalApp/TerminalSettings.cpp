@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (newTerminalArgs.TabColor())
             {
-                settings.StartingTabColor(newTerminalArgs.TabColor());
+                settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
         }
 

@@ -119,7 +119,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         });
 
         _terminal->UpdateSettings(settings);
-        _startingTabColor = settings.StartingTabColor();
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connectionStateChangedRevoker = _connection.StateChanged(winrt::auto_revoke, [this](auto&& /*s*/, auto&& /*v*/) {
@@ -3086,16 +3085,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _settings;
     }
 
-    // Method Description:
-    // - Returns the suggested tab color as defined for terminal
-    // If starting color was specified it gets priority above the color defined by terminal
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {
-        if (_startingTabColor)
-        {
-            return _startingTabColor;
-        }
-
         auto coreColor = _terminal->GetTabColor();
         return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
     }
