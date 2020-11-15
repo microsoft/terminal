@@ -1170,7 +1170,7 @@ void Terminal::ClearPatternTree() noexcept
 // If the starting color exits it's value is preferred
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
-    return til::coalesce(_startingTabColor, _tabColor);
+    return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
 }
 
 BlinkingState& Terminal::GetBlinkingState() const noexcept
