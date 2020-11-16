@@ -157,7 +157,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <CheckBox x:Uid="Profile_SnapOnInput"
                               IsChecked="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
                     <Controls:NumberBox x:Uid="Profile_HistorySize"
-                                        Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"/>
+                                        Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
+                                        SmallChange="10"
+                                        LargeChange="100"/>
                     <Controls:RadioButtons x:Uid="Profile_CloseOnExit"
                                            ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"

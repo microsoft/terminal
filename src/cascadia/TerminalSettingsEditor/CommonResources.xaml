@@ -50,8 +50,6 @@
         <Setter Property="FontSize" Value="15"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="SpinButtonPlacementMode" Value="Compact"/>
-        <Setter Property="SmallChange" Value="10"/>
-        <Setter Property="LargeChange" Value="100"/>
     </Style>
 
 </ResourceDictionary>
