@@ -1,7 +1,7 @@
 ---
 authors: Carlos Zamora (@carlos-zamora) and Kayla Cinnamon (@cinnamon-msft)
 created on: 2020-11-10
-last updated: 2020-11-13
+last updated: 2020-11-15
 issue id: 1564
 ---
 
@@ -15,15 +15,15 @@ This spec explores how to represent this feature in the Settings UI.
 
 ## Inspiration
 
-Cascading settings (and `profiles.defaults` by extension) provides some major benefits:
+Cascading settings (and `profiles.defaults` by extension) provide some major benefits:
 1. opt-in behavior for settings values provided in-box (i.e. reset to default)
-2. easy way to apply a setting to all your Profiles
-3. (future feature) simple way to base a Profile off of another Profile
+2. easy way to apply a setting to all your profiles
+3. (possible future feature) simple way to base a profile off of another profile
 
 The following terminal emulators approach this issue as follows.
 | Terminal Emulator(s) | Relevant Features/Approach |
 |--|--|
-| ConEmu, Cmder | "Clone" a separate Profile |
+| ConEmu, Cmder | "Clone" a separate profile |
 | Fluent Terminal | "Restore Defaults" button on each page |
 | iTerm2 | "Bulk Copy from Selected Profile..." and "Duplicate Profile" |
 
@@ -111,11 +111,25 @@ Every setting will have a lock button next to it. If the lock is locked, that me
 
 ### Partial Parity with JSON
 
-#### Add New --> Duplicate/Clone/Copy Profile
+The settings UI does not necessarily need to have full parity with JSON. Below are proposals for partial parity with JSON, while also providing the simplicity of the settings UI.
+
+#### Add New --> Duplicate Profile
+
+The Add new profile button in the navigation menu would take you to a new page. This page will have radio buttons listing your profiles along with a default settings option. The user can choose to either duplicate a profile or create a enw one from the default settings. Once the user makes a selection, the settings UI will take them to their new profile page. The fields on that profile page will be filled according to which profile selection the user made.
+
+![Add new profile](./add-new-profile.png)
 
 #### Reset Profile button
 
+On the Advanced pivot of a profile's page, there will be a button at the bottom for resetting a profile called "Reset to default settings". This button will remove the user's custom settings inside this profile's object and reset it to defaults.
+
 #### "Apply to all profiles" button
+
+A way we could apply settings to all profiles is by adding a "Copy settings to..." button to the Advanced page of each profile. This button will open a content dialog with a tree view listing every profile setting. The user can select which settings they would like to copy over to another profile. At the bottom of the content dialog will list the user's profiles with checkboxes, allowing them to pick which profiles they'd like to copy settings to.
+
+![Copy settings button](./copy-settings-1.png)
+
+![Copy settings modal](./copy-settings-2.png)
 
 ## Capabilities
 
