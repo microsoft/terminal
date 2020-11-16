@@ -115,7 +115,7 @@ The settings UI does not necessarily need to have full parity with JSON. Below a
 
 #### Add New --> Duplicate Profile
 
-The Add new profile button in the navigation menu would take you to a new page. This page will have radio buttons listing your profiles along with a default settings option. The user can choose to either duplicate a profile or create a enw one from the default settings. Once the user makes a selection, the settings UI will take them to their new profile page. The fields on that profile page will be filled according to which profile selection the user made.
+The Add new profile button in the navigation menu would take you to a new page. This page will have radio buttons listing your profiles along with a default settings option. The user can choose to either duplicate a profile or create a new one from the default settings. Once the user makes a selection, the settings UI will take them to their new profile page. The fields on that profile page will be filled according to which profile selection the user made.
 
 ![Add new profile](./add-new-profile.png)
 
@@ -137,19 +137,19 @@ A way we could apply settings to all profiles is by adding a "Copy settings to..
 
 ### Accessibility
 
-[comment]: # How will the proposed change impact accessibility for users of screen readers, assistive input devices, etc.
+All of these additions to the settings UI will have to be accessibility tested.
 
 ### Security
 
-[comment]: # How will the proposed change impact security?
+These changes will not impact security.
 
 ### Reliability
 
-[comment]: # Will the proposed change improve reliability? If not, why make the change?
+These changes will not impact reliability.
 
 ### Compatibility
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+The partial parity with JSON route will give the settings UI a different compatibility from the JSON file itself. This is not necessarily a bad thing. The settings UI is intended to be a simplistic way for people to successfully edit their settings. If too many options are added to give it fully parity with JSON, it could compromise the simplistic benefit the settings UI provides.
 
 ### Performance, Power, and Efficiency
 
