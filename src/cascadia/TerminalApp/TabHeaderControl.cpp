@@ -45,15 +45,6 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    // Method Description
-    // - Updates the current title and bubbles the event up to the UI
-    // Arguments:
-    // - The desired title
-    void TabHeaderControl::UpdateHeaderText(winrt::hstring title)
-    {
-        Title(title);
-    }
-
     // Method Description:
     // - Updates the zoom icon indicating whether a pane is zoomed
     // Arguments:

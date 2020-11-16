@@ -13,7 +13,6 @@ namespace winrt::TerminalApp::implementation
     struct TabHeaderControl : TabHeaderControlT<TabHeaderControl>
     {
         TabHeaderControl();
-        void UpdateHeaderText(winrt::hstring title);
         void SetZoomIcon(Windows::UI::Xaml::Visibility state);
         void ConstructTabRenameBox();
 

@@ -221,14 +221,15 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_foreground(TabViewItem().Dispatcher());
         if (auto tab{ weakThis.get() })
         {
+            const auto activeTitle = _GetActiveTitle();
             // Bubble our current tab text to anyone who's listening for changes.
-            Title(_GetActiveTitle());
+            Title(activeTitle);
 
             // Update SwitchToTab command's name
             SwitchToTabCommand().Name(Title());
 
             // Update the control to reflect the changed title
-            _headerControl.UpdateHeaderText(Title());
+            _headerControl.Title(activeTitle);
         }
     }
 
