@@ -535,6 +535,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, -overflow, false));
         }
 
+        // And also that the cursor position is clamped within the buffer boundaries.
+        auto& cursor = screenInfo.GetTextBuffer().GetCursor();
+        auto clampedCursorPosition = cursor.GetPosition();
+        screenInfo.GetBufferSize().Clamp(clampedCursorPosition);
+        if (clampedCursorPosition != cursor.GetPosition())
+        {
+            cursor.SetPosition(clampedCursorPosition);
+        }
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -634,6 +643,15 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         {
             overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };
             RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, -overflow, false));
+        }
+
+        // And also that the cursor position is clamped within the buffer boundaries.
+        auto& cursor = context.GetTextBuffer().GetCursor();
+        auto clampedCursorPosition = cursor.GetPosition();
+        context.GetBufferSize().Clamp(clampedCursorPosition);
+        if (clampedCursorPosition != cursor.GetPosition())
+        {
+            cursor.SetPosition(clampedCursorPosition);
         }
 
         return S_OK;
