@@ -70,5 +70,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 // For commandline argument processing
 #include <shellapi.h>
 #include <processenv.h>
-
+#include <WinUser.h>
 #include "til.h"

@@ -640,116 +640,108 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
                                                  const std::wstring_view string)
 {
     bool success = false;
-    std::wstring title;
-    std::wstring setClipboardContent;
-    std::wstring params;
-    std::wstring uri;
-    bool queryClipboard = false;
-    std::vector<size_t> tableIndexes;
-    std::vector<DWORD> colors;
 
     switch (parameter)
     {
     case OscActionCodes::SetIconAndWindowTitle:
     case OscActionCodes::SetWindowIcon:
     case OscActionCodes::SetWindowTitle:
+    {
+        std::wstring title;
         success = _GetOscTitle(string, title);
+        success = success && _dispatch->SetWindowTitle(title);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
         break;
+    }
     case OscActionCodes::SetColor:
+    {
+        std::vector<size_t> tableIndexes;
+        std::vector<DWORD> colors;
         success = _GetOscSetColorTable(string, tableIndexes, colors);
+        for (size_t i = 0; i < tableIndexes.size(); i++)
+        {
+            const auto tableIndex = til::at(tableIndexes, i);
+            const auto rgb = til::at(colors, i);
+            success = success && _dispatch->SetColorTableEntry(tableIndex, rgb);
+        }
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
         break;
+    }
     case OscActionCodes::SetForegroundColor:
-    case OscActionCodes::SetBackgroundColor:
-    case OscActionCodes::SetCursorColor:
+    {
+        std::vector<DWORD> colors;
         success = _GetOscSetColor(string, colors);
+        if (success && colors.size() > 0)
+        {
+            success = _dispatch->SetDefaultForeground(til::at(colors, 0));
+        }
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
         break;
+    }
+    case OscActionCodes::SetBackgroundColor:
+    {
+        std::vector<DWORD> colors;
+        success = _GetOscSetColor(string, colors);
+        if (success && colors.size() > 0)
+        {
+            success = _dispatch->SetDefaultBackground(til::at(colors, 0));
+        }
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
+        break;
+    }
+    case OscActionCodes::SetCursorColor:
+    {
+        std::vector<DWORD> colors;
+        success = _GetOscSetColor(string, colors);
+        if (success && colors.size() > 0)
+        {
+            success = _dispatch->SetCursorColor(til::at(colors, 0));
+        }
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
+        break;
+    }
     case OscActionCodes::SetClipboard:
+    {
+        std::wstring setClipboardContent;
+        bool queryClipboard = false;
         success = _GetOscSetClipboard(string, setClipboardContent, queryClipboard);
+        if (success && !queryClipboard)
+        {
+            success = _dispatch->SetClipboard(setClipboardContent);
+        }
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
         break;
+    }
     case OscActionCodes::ResetCursorColor:
-        success = true;
+    {
+        success = _dispatch->SetCursorColor(0xffffffff);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
         break;
+    }
     case OscActionCodes::Hyperlink:
+    {
+        std::wstring params;
+        std::wstring uri;
         success = _ParseHyperlink(string, params, uri);
+        if (uri.empty())
+        {
+            success = success && _dispatch->EndHyperlink();
+        }
+        else
+        {
+            success = success && _dispatch->AddHyperlink(uri, params);
+        }
         break;
+    }
     case OscActionCodes::ConEmuAction:
-        success = true;
+    {
+        success = _dispatch->DoConEmuAction(string);
         break;
+    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
         break;
-    }
-    if (success)
-    {
-        switch (parameter)
-        {
-        case OscActionCodes::SetIconAndWindowTitle:
-        case OscActionCodes::SetWindowIcon:
-        case OscActionCodes::SetWindowTitle:
-            success = _dispatch->SetWindowTitle(title);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCWT);
-            break;
-        case OscActionCodes::SetColor:
-            for (size_t i = 0; i < tableIndexes.size(); i++)
-            {
-                const auto tableIndex = til::at(tableIndexes, i);
-                const auto rgb = til::at(colors, i);
-                success = _dispatch->SetColorTableEntry(tableIndex, rgb);
-            }
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
-            break;
-        case OscActionCodes::SetForegroundColor:
-            if (colors.size() > 0)
-            {
-                success = _dispatch->SetDefaultForeground(til::at(colors, 0));
-            }
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
-            break;
-        case OscActionCodes::SetBackgroundColor:
-            if (colors.size() > 0)
-            {
-                success = _dispatch->SetDefaultBackground(til::at(colors, 0));
-            }
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
-            break;
-        case OscActionCodes::SetCursorColor:
-            if (colors.size() > 0)
-            {
-                success = _dispatch->SetCursorColor(til::at(colors, 0));
-            }
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCC);
-            break;
-        case OscActionCodes::SetClipboard:
-            if (!queryClipboard)
-            {
-                success = _dispatch->SetClipboard(setClipboardContent);
-            }
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCSCB);
-            break;
-        case OscActionCodes::ResetCursorColor:
-            // the console uses 0xffffffff as an "invalid color" value
-            success = _dispatch->SetCursorColor(0xffffffff);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCRCC);
-            break;
-        case OscActionCodes::Hyperlink:
-            if (uri.empty())
-            {
-                success = _dispatch->EndHyperlink();
-            }
-            else
-            {
-                success = _dispatch->AddHyperlink(uri, params);
-            }
-            break;
-        case OscActionCodes::ConEmuAction:
-            success = _dispatch->DoConEmuAction(string);
-            break;
-        default:
-            // If no functions to call, overall dispatch was a failure.
-            success = false;
-            break;
-        }
     }
 
     // If we were unable to process the string, and there's a TTY attached to us,
