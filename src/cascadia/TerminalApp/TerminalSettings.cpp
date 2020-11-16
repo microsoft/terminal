@@ -95,6 +95,7 @@ namespace winrt::TerminalApp::implementation
         _Commandline = profile.Commandline();
 
         _StartingDirectory = profile.EvaluatedStartingDirectory();
+        _DetectPatterns = profile.DetectPatterns();
 
         // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
         // use the profile name

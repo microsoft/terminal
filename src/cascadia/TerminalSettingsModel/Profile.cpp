@@ -58,6 +58,7 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
+static constexpr std::string_view DetectPatternsKey{ "detectPatterns" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -109,6 +110,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_CursorShape = source->_CursorShape;
     profile->_CursorHeight = source->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
+    profile->_DetectPatterns = source->_DetectPatterns;
     profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
 
@@ -337,6 +339,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
+    JsonUtils::GetValueForKey(json, DetectPatternsKey, _DetectPatterns);
 }
 
 // Method Description:
