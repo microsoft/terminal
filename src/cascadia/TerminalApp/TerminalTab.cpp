@@ -38,11 +38,11 @@ namespace winrt::TerminalApp::implementation
         _MakeTabViewItem();
         _CreateContextMenu();
 
-        // Add an event handler for the header control to tell us when the title changes
-        _headerControl.HeaderTitleChanged([weakThis = get_weak()]() {
+        // Add an event handler for the header control to tell us when they want their title to change
+        _headerControl.HeaderTitleChanged([weakThis = get_weak()](auto&& title) {
             if (auto tab{ weakThis.get() })
             {
-                tab->SetTabText(tab->_headerControl.CurrentHeaderText());
+                tab->SetTabText(title);
             }
         });
 

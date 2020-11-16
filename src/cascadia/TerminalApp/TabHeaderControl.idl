@@ -3,12 +3,13 @@
 
 namespace TerminalApp
 {
-    delegate void HeaderTitleChangedArgs();
+    delegate void HeaderTitleChangedArgs(String title);
 
     [default_interface] runtimeclass TabHeaderControl : Windows.UI.Xaml.Controls.UserControl
     {
+        String Title { get; };
+
         TabHeaderControl();
-        String CurrentHeaderText();
         void UpdateHeaderText(String title);
         void SetZoomIcon(Windows.UI.Xaml.Visibility state);
         void ConstructTabRenameBox();

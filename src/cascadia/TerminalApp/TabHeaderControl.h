@@ -13,7 +13,6 @@ namespace winrt::TerminalApp::implementation
     struct TabHeaderControl : TabHeaderControlT<TabHeaderControl>
     {
         TabHeaderControl();
-        winrt::hstring CurrentHeaderText();
         void UpdateHeaderText(winrt::hstring title);
         void SetZoomIcon(Windows::UI::Xaml::Visibility state);
         void ConstructTabRenameBox();
@@ -23,8 +22,10 @@ namespace winrt::TerminalApp::implementation
 
         WINRT_CALLBACK(HeaderTitleChanged, TerminalApp::HeaderTitleChangedArgs);
 
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
+
     private:
-        winrt::hstring _currentTitle;
         bool _receivedKeyDown{ false };
 
         void _CloseRenameBox();
