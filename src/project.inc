@@ -44,6 +44,7 @@ INCLUDES= \
     $(CONSOLE_SRC_PATH)\..\oss\libpopcnt; \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
     $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
+    $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
