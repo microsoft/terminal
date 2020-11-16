@@ -10,24 +10,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Dark">
-                    <Thickness x:Key="NavigationViewHeaderMargin">20,5,0,0</Thickness>
-                </ResourceDictionary>
-
-                <ResourceDictionary x:Key="Light">
-                    <Thickness x:Key="NavigationViewHeaderMargin">20,5,0,0</Thickness>
-                </ResourceDictionary>
-
-                <ResourceDictionary x:Key="HighContrast">
-                    <Thickness x:Key="NavigationViewHeaderMargin">20,5,0,0</Thickness>
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-        </ResourceDictionary>
-    </Page.Resources>
-
     <Grid>
         <Grid.Resources>
             <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
@@ -54,7 +36,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <muxc:NavigationView.HeaderTemplate>
                 <DataTemplate x:DataType="x:String">
                     <TextBlock Text="{x:Bind}"
-                               Margin="0,10,0,0"
+                               Margin="8,10,0,0"
                                Style="{StaticResource TitleTextBlockStyle}"/>
                 </DataTemplate>
             </muxc:NavigationView.HeaderTemplate>
