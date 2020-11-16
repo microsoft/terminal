@@ -9,56 +9,55 @@
 #include <memory>
 #include <conio.h>
 
+// WIL
+#include <wil/Common.h>
+#include <wil/Result.h>
+#include <wil/resource.h>
+#include <wil/wistd_memory.h>
+#include <wil/stl.h>
+#include <wil/com.h>
+#include <wil/filesystem.h>
+#include <wil/win32_helpers.h>
+
 using namespace Microsoft::WRL;
 
-void main()
+// Holds the wwinmain open until COM tells us there are no more server connections
+wil::unique_event _comServerExitEvent;
+// Routine Description:
+// - Called back when COM says there is nothing left for our server to do and we can tear down.
+void _releaseNotifier() noexcept
+{
+    printf("Top of _releaseNotifier()\n");
+    _comServerExitEvent.SetEvent();
+}
+
+int main()
 {
     auto hr = S_OK;
     printf("Top of main()\n");
-    hr = CoInitialize(nullptr);
-    printf("CoInitialize -> %d\n", hr);
 
-    // create a module object using WRL::Module<OutOfProc>::Create(),
-    // and call module.RegisterObjects() on startup,
-    // and module.UnregisterObjects()
-    // and module.Terminate() on shutdown.
+    // Set up OutOfProc COM server stuff in case we become one.
+    // WRL Module gets going right before winmain is called, so if we don't
+    // set this up appropriately... other things using WRL that aren't us
+    // could get messed up by the singleton module and cause unexpected errors.
+    _comServerExitEvent.create();
+    printf("create'd event\n");
 
-    // create a module object using WRL::Module<OutOfProc>::Create(),
-    auto& mod{ Module<OutOfProc>::Create([] {
-        printf("Create callback\n");
-        auto hr = S_OK;
-        auto& modInner = Module<OutOfProc>::GetModule();
-        // and module.UnregisterObjects()
-        hr = modInner.UnregisterObjects();
-        printf("UnregisterObjects -> %d\n", hr);
+    // hr = CoInitialize(nullptr);
+    // printf("CoInitialize -> %d\n", hr);
 
-        // and module.Terminate() on shutdown.
-        hr = modInner.Terminate();
-        printf("Terminate -> %d\n", hr);
+    auto comScope{ wil::CoInitializeEx(COINIT_MULTITHREADED) };
+    printf("initialized COM\n");
 
-        printf("type a character to exit\n");
-        auto ch = _getch();
-        ch;
-        printf("getch\n");
-    }) };
-    // and call module.RegisterObjects() on startup,
-    hr = mod.RegisterObjects();
-    printf("RegisterObjects -> %d\n", hr);
+    auto& module{ Module<OutOfProc>::Create(&_releaseNotifier) };
+    printf("Create'd module\n");
 
-    // printf("type a character to exit\n");
-    // auto ch = _getch();
-    // ch;
-    // printf("getch\n");
+    RETURN_IF_FAILED(module.RegisterObjects());
+    printf("RegisterObjects\n");
 
-    // // and module.UnregisterObjects()
-    // hr = module.UnregisterObjects();
-    // printf("UnregisterObjects -> %d\n", hr);
+    _comServerExitEvent.wait();
+    printf("after wait()\n");
 
-    // // and module.Terminate() on shutdown.
-    // hr = module.Terminate();
-    // printf("Terminate -> %d\n", hr);
-
-    SetProcessShutdownParameters(0, 0);
-
-    ExitThread(hr);
+    RETURN_IF_FAILED(module.UnregisterObjects());
+    printf("UnregisterObjects()\n");
 }

@@ -5,7 +5,9 @@
 
 using namespace Microsoft::WRL;
 
-class CalculatorComponent : public RuntimeClass<RuntimeClassFlags<ClassicCom>, ICalculatorComponent>
+struct
+    __declspec(uuid("E68F5EDD-6257-4E72-A10B-4067ED8E85F2"))
+        CalculatorComponent : public RuntimeClass<RuntimeClassFlags<ClassicCom>, ICalculatorComponent>
 {
 public:
     CalculatorComponent()

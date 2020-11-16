@@ -175,7 +175,12 @@
     <Midl Include="..\ICalculatorComponent.idl" />
     <Midl Include="..\RpcServer\CalculatorComponent.idl" />
   </ItemGroup>
+
   <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- <PreprocessorDefinitions>PROXY_CLSID=CLSID_ICalculatorProxy;REGISTER_PROXY_DLL;$(PreprocessorDefinitions)</PreprocessorDefinitions> -->
+      <PreprocessorDefinitions>PROXY_CLSID=CLSID_ICalculatorProxy;$(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>Rpcrt4.lib;RuntimeObject.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile Condition="Exists('$(ProjectName).def')">$(ProjectName).def</ModuleDefinitionFile>
@@ -184,6 +189,7 @@
       <ApplicationConfigurationMode>true</ApplicationConfigurationMode>
     </Midl> -->
   </ItemDefinitionGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

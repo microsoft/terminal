@@ -59,9 +59,9 @@
 
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
-                <com:ProxyStub Id="1111d2f1-1c69-4c91-949e-4bb67a85bdc5" DisplayName="ProxyStub" Path="ProxyStub.dll"/>
-                <com:Interface Id="BB64926F-1111-470D-BB8A-3D2CC4B035E4" ProxyStubClsid="1111d2f1-1c69-4c91-949e-4bb67a85bdc5"/>
-                <com:Interface Id="0DBABB94-CE99-42F7-ACBD-E698B2332C60" ProxyStubClsid="1111d2f1-1c69-4c91-949e-4bb67a85bdc5"/>
+                <com:ProxyStub Id="1111d2f1-1c69-4c91-949e-12345a85bdc5" DisplayName="ProxyStub" Path="ProxyStub.dll"/>
+                <com:Interface Id="BB64926F-1111-470D-BB8A-3D2CC4B035E4" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>
+                <com:Interface Id="0DBABB94-CE99-42F7-ACBD-E698B2332C60" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>
             </com:ComInterface>
         </com:Extension>
 
