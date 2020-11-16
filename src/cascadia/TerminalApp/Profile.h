@@ -96,7 +96,7 @@ namespace winrt::TerminalApp::implementation
 
         GETSET_PROPERTY(hstring, BackgroundImagePath);
         GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
-        GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
+        GETSET_PROPERTY(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
         GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_PROPERTY(bool, RetroTerminalEffect, false);
