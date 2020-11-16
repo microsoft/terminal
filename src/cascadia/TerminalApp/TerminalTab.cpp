@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
         _CreateContextMenu();
 
         // Add an event handler for the header control to tell us when they want their title to change
-        _headerControl.HeaderTitleChanged([weakThis = get_weak()](auto&& title) {
+        _headerControl.HeaderTitleWantsToChange([weakThis = get_weak()](auto&& title) {
             if (auto tab{ weakThis.get() })
             {
                 tab->SetTabText(title);
