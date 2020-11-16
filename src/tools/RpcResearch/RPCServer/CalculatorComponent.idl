@@ -1,0 +1,12 @@
+import "ocidl.idl";
+import "../ICalculatorComponent.idl";
+
+[uuid(9D3E6826-CB8E-4D86-8B14-89F0D7EFCD01), version(1.0)]
+library CalculatorComponentLib
+{
+    [uuid(E68F5EDD-6257-4E72-A10B-4067ED8E85F2), version(1.0)]
+    coclass CalculatorComponent
+    {
+        [default] interface ICalculatorComponent;
+    }
+};

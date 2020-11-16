@@ -144,24 +144,23 @@
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>Rpcrt4.lib;RuntimeObject.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+
+    <ClCompile>
+      <AdditionalIncludeDirectories>Generated Files</AdditionalIncludeDirectories>
+    </ClCompile>
+
     <Midl>
-      <ApplicationConfigurationMode>true</ApplicationConfigurationMode>
+      <OutputDirectory>Generated Files</OutputDirectory>
     </Midl>
   </ItemDefinitionGroup>
 
   <ItemGroup>
     <ClCompile Include="RpcClient.cpp" />
-    <ClCompile Include="hello_c.c">
-      <DependentUpon>..\hello.idl</DependentUpon>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="..\hello.idl" />
     <Midl Include="..\IScratch.idl" />
-
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\hello.acf" />
+    <Midl Include="..\ICalculatorComponent.idl" />
+    <Midl Include="..\RpcServer\CalculatorComponent.idl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

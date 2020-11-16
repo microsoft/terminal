@@ -3,7 +3,7 @@
 #include "IScratch_h.h"
 #include <wrl.h>
 
-class __declspec(uuid("E68F5EDD-6257-4E72-A10B-4067ED8E85F2"))
+class __declspec(uuid("E68F5EDD-2222-4E72-A10B-4067ED8E85F2"))
     ScratchImpl : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>, IScratch>
 {
 public:

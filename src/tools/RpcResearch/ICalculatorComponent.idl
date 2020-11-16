@@ -1,0 +1,7 @@
+import "ocidl.idl";
+
+[uuid(0DBABB94-CE99-42F7-ACBD-E698B2332C60), version(1.0)]
+interface ICalculatorComponent : IUnknown
+{
+    HRESULT Add([in] int a, [in] int b, [out, retval] int* value);
+}

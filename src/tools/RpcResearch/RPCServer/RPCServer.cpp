@@ -3,190 +3,62 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string>
-#include "hello_h.h"
 #include "ScratchImpl.h"
+#include "CalculatorComponent.h"
 #include <windows.h>
 #include <memory>
+#include <conio.h>
 
-int g_doCount = 22;
-// IScratch* g_iScratch = nullptr;
-Microsoft::WRL::ComPtr<ScratchImpl> g_scratch{ nullptr };
-
-void CreateScratch()
-{
-    auto impl = Microsoft::WRL::Make<ScratchImpl>();
-    // ScratchImpl* foo = Microsoft::WRL::make<ScratchImpl>();
-
-    // g_iScratch = impl.Get();
-    g_scratch = impl;
-}
-
-void HelloProc(const wchar_t* psz)
-{
-    printf("Hello: %ws\n", psz);
-    g_doCount++;
-    printf("The do count is: %d\n", g_doCount);
-
-    if (g_scratch)
-    {
-        int count;
-        g_scratch->MyCount(&count);
-        printf("The scratch's do count is: %d\n", count);
-        g_scratch->MyMethod();
-        g_scratch->MyCount(&count);
-        printf("Now the scratch's do count is: %d\n", count);
-    }
-    else
-    {
-        printf("Creating a new scratch object\n");
-        CreateScratch();
-    }
-}
-HRESULT MarshallTheThing(IStream* pStream)
-{
-    printf("MarshalTheThing\n");
-    auto hr = pStream->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
-    printf("Seek %d\n", hr);
-    hr = CoMarshalInterface(pStream, __uuidof(IScratch), g_scratch.Get(), MSHCTX_LOCAL, nullptr, MSHLFLAGS_NORMAL);
-    printf("CoMarshalInterface %d\n", hr);
-
-    return hr;
-}
-
-void InternallyMarshalAThing()
-{
-    printf("InternallyMarshalAThing\n");
-
-    auto hr = S_OK;
-    CoInitialize(nullptr);
-    // auto f = Microsoft::WRL::Make<Microsoft::WRL::SimpleClassFactory<ScratchImpl>>();
-    // DWORD registrationHostClass;
-    // hr = CoRegisterClassObject(__uuidof(IScratch), f.Get(), CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &registrationHostClass);
-    // printf("CoRegisterClassObject: %d\n", hr);
-
-    Microsoft::WRL::ComPtr<IStream> pStream;
-    hr = CreateStreamOnHGlobal(NULL,
-                               TRUE,
-                               &pStream);
-    printf("CreateStreamOnHGlobal: %d\n", hr);
-
-    hr = pStream->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
-    printf("Seek: %d\n", hr);
-
-    hr = CoMarshalInterface(pStream.Get(), __uuidof(IScratch), g_scratch.Get(), MSHCTX_LOCAL, nullptr, MSHLFLAGS_NORMAL);
-    printf("CoMarshalInterface: %d\n", hr);
-    if (FAILED(hr))
-    {
-        printf("Exiting because CoMarshalInterface failed\n");
-        exit(hr);
-    }
-
-    hr = pStream->Seek({ 0, 0 }, STREAM_SEEK_SET, nullptr);
-    printf("Seek (2): %d\n", hr);
-
-    STATSTG stat;
-    ULARGE_INTEGER ulSize{};
-    hr = pStream->Stat(&stat, STATFLAG_NONAME);
-    printf("Stat: %d\n", hr);
-    ulSize = stat.cbSize;
-    size_t size = ulSize.QuadPart;
-    printf("size was: %lu\n", size);
-    auto buffer = std::make_unique<char[]>(size + 1);
-
-    ULONG numRead{};
-    // DebugBreak();
-    hr = pStream->Read(buffer.get(), size + 1, &numRead);
-    if (FAILED(hr) || size != numRead)
-    {
-        printf("Read failed %d", hr);
-    }
-    else
-    {
-        printf("Marshalled as: %s", buffer.get());
-    }
-}
-
-int GetDoCount()
-{
-    return g_doCount;
-}
-
-void Shutdown()
-{
-    printf("Goodbye\n");
-
-    RPC_STATUS status;
-    status = RpcMgmtStopServerListening(NULL);
-
-    if (status)
-    {
-        exit(status);
-    }
-
-    status = RpcServerUnregisterIf(NULL, NULL, FALSE);
-
-    if (status)
-    {
-        exit(status);
-    }
-}
+using namespace Microsoft::WRL;
 
 void main()
 {
-    RPC_STATUS status;
-    std::wstring pszProtocolSequence{ L"ncacn_np" };
-    char* pszSecurity = NULL;
-    std::wstring pszEndpoint{ L"\\pipe\\hello" };
-    unsigned int cMinCalls = 1;
-    unsigned int fDontWait = FALSE;
+    auto hr = S_OK;
+    printf("Top of main()\n");
+    hr = CoInitialize(nullptr);
+    printf("CoInitialize -> %d\n", hr);
 
-    status = RpcServerUseProtseqEp(reinterpret_cast<RPC_WSTR>(const_cast<wchar_t*>(pszProtocolSequence.data())),
-                                   RPC_C_LISTEN_MAX_CALLS_DEFAULT,
-                                   reinterpret_cast<RPC_WSTR>(const_cast<wchar_t*>(pszEndpoint.data())),
-                                   pszSecurity);
+    // create a module object using WRL::Module<OutOfProc>::Create(),
+    // and call module.RegisterObjects() on startup,
+    // and module.UnregisterObjects()
+    // and module.Terminate() on shutdown.
 
-    if (status)
-    {
-        printf("RpcServerUseProtseqEp returned an error:%d\n", status);
-        exit(status);
-    }
+    // create a module object using WRL::Module<OutOfProc>::Create(),
+    auto& mod{ Module<OutOfProc>::Create([] {
+        printf("Create callback\n");
+        auto hr = S_OK;
+        auto& modInner = Module<OutOfProc>::GetModule();
+        // and module.UnregisterObjects()
+        hr = modInner.UnregisterObjects();
+        printf("UnregisterObjects -> %d\n", hr);
 
-    // status = RpcServerRegisterIf(hello_IfHandle,
-    status = RpcServerRegisterIf(hello_v1_0_s_ifspec,
-                                 NULL,
-                                 NULL);
+        // and module.Terminate() on shutdown.
+        hr = modInner.Terminate();
+        printf("Terminate -> %d\n", hr);
 
-    if (status)
-    {
-        printf("RpcServerRegisterIf returned an error:%d\n", status);
-        exit(status);
-    }
+        printf("type a character to exit\n");
+        auto ch = _getch();
+        ch;
+        printf("getch\n");
+    }) };
+    // and call module.RegisterObjects() on startup,
+    hr = mod.RegisterObjects();
+    printf("RegisterObjects -> %d\n", hr);
 
-    status = RpcServerListen(cMinCalls,
-                             RPC_C_LISTEN_MAX_CALLS_DEFAULT,
-                             fDontWait);
+    // printf("type a character to exit\n");
+    // auto ch = _getch();
+    // ch;
+    // printf("getch\n");
 
-    if (status)
-    {
-        printf("RpcServerListen returned an error:%d\n", status);
-        exit(status);
-    }
-    else
-    {
-        printf("RpcServerListen returned 0\n");
-    }
-}
+    // // and module.UnregisterObjects()
+    // hr = module.UnregisterObjects();
+    // printf("UnregisterObjects -> %d\n", hr);
 
-/******************************************************/
-/*         MIDL allocate and free                     */
-/******************************************************/
+    // // and module.Terminate() on shutdown.
+    // hr = module.Terminate();
+    // printf("Terminate -> %d\n", hr);
 
-void __RPC_FAR* __RPC_USER midl_user_allocate(size_t len)
-{
-    return (malloc(len));
-}
+    SetProcessShutdownParameters(0, 0);
 
-void __RPC_USER midl_user_free(void __RPC_FAR* ptr)
-{
-    free(ptr);
+    ExitThread(hr);
 }

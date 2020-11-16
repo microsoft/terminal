@@ -20,15 +20,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="..\hello.idl">
-      <Filter>Source Files</Filter>
-    </Midl>
     <Midl Include="..\IScratch.idl">
       <Filter>Source Files</Filter>
     </Midl>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\hello.acf" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IScratch.h">
