@@ -227,7 +227,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
     // Give the new profile a distinct name so a guid is properly generated
     const auto newName = fmt::format(L"Profile {}", _allProfiles.Size());
     newProfile->Name(to_hstring(newName.c_str()));
-    newProfile->GenerateGuidIfNecessary();
 
     return *newProfile;
 }
