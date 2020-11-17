@@ -1,11 +1,11 @@
-/* file: helloc.c */
+#include "pch.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
-#include "IScratch_h.h"
-#include "ICalculatorComponent_h.h"
+// #include "IScratch_h.h"
+// #include "ICalculatorComponent_h.h"
 #include <windows.h>
-
+#include "../RPCServer/ICalculatorComponent.h"
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
@@ -20,7 +20,7 @@ using namespace Microsoft::WRL;
 class __declspec(uuid("E68F5EDD-6257-4E72-A10B-4067ED8E85F2")) CalculatorComponentImpl;
 class __declspec(uuid("c4e46d11-dd74-43e8-a4b9-d0f789ad3751")) WindowBrokerImpl;
 
-void main()
+int main()
 {
     auto hr = S_OK;
     printf("Top of main()\n");
@@ -56,4 +56,6 @@ void main()
         // Object creation failed. Print a message.
         printf("CoCreateInstance: %d\n", hr);
     }
+
+    return 0;
 }

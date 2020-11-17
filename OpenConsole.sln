@@ -356,6 +356,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RPCServer", "src\tools\RpcResearch\RPCServer\RPCServer.vcxproj", "{C36B5299-7353-4726-8007-31551D80A09C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RpcClient", "src\tools\RpcResearch\RpcClient\RpcClient.vcxproj", "{4961296E-123F-4744-986B-760D0FBDC83A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7D8C8D8E-C87D-49F2-9FB1-77FFF2DD123A} = {7D8C8D8E-C87D-49F2-9FB1-77FFF2DD123A}
+		{C36B5299-7353-4726-8007-31551D80A09C} = {C36B5299-7353-4726-8007-31551D80A09C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ProxyStub", "src\tools\RpcResearch\ProxyStub\ProxyStub.vcxproj", "{7D8C8D8E-C87D-49F2-9FB1-77FFF2DD123A}"
 EndProject
