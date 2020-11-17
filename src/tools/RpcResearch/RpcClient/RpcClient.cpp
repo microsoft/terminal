@@ -1,11 +1,7 @@
 #include "pch.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-// #include "IScratch_h.h"
-// #include "ICalculatorComponent_h.h"
-#include <windows.h>
 #include "../RPCServer/ICalculatorComponent.h"
+#include <conio.h>
+
 #include <wrl.h>
 using namespace Microsoft::WRL;
 
@@ -56,6 +52,10 @@ int main()
         // Object creation failed. Print a message.
         printf("CoCreateInstance: %d\n", hr);
     }
+
+    printf("Press a key to exit\n");
+    auto ch = _getch();
+    ch;
 
     return 0;
 }
