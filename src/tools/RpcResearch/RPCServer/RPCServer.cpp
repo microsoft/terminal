@@ -1,23 +1,19 @@
 /* file: hellos.c */
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <string>
+#include "pch.h"
+
+#include <conio.h>
 #include "ScratchImpl.h"
 #include "CalculatorComponent.h"
-#include <windows.h>
-#include <memory>
-#include <conio.h>
 
-// WIL
-#include <wil/Common.h>
-#include <wil/Result.h>
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
-#include <wil/stl.h>
-#include <wil/com.h>
-#include <wil/filesystem.h>
-#include <wil/win32_helpers.h>
+// // WIL
+// #include <wil/Common.h>
+// #include <wil/Result.h>
+// #include <wil/resource.h>
+// #include <wil/wistd_memory.h>
+// #include <wil/stl.h>
+// #include <wil/com.h>
+// #include <wil/filesystem.h>
+// #include <wil/win32_helpers.h>
 
 using namespace Microsoft::WRL;
 
@@ -60,4 +56,6 @@ int main()
 
     RETURN_IF_FAILED(module.UnregisterObjects());
     printf("UnregisterObjects()\n");
+
+    return hr;
 }
