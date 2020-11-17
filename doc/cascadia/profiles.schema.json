@@ -963,9 +963,9 @@
           "description": "By default Windows treats Ctrl+Alt as an alias for AltGr. When altGrAliasing is set to false, this behavior will be disabled.",
           "type": "boolean"
         },
-        "detectPatterns": {
+        "detectHyperlinks": {
           "default": true,
-          "description": "By default, we detect URLs in the application and make them clickable. When detectPatterns is set to false, this behavior will be disabled.",
+          "description": "By default, we detect URLs in the application and make them clickable. When detectHyperlinks is set to false, this behavior will be disabled.",
           "type": "boolean"
         }
         "source": {

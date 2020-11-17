@@ -173,8 +173,8 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearBellStyle();
         BellStyle BellStyle;
 
-        Boolean HasDetectPatterns();
-        void ClearDetectPatterns();
-        Boolean DetectPatterns;
+        Boolean HasDetectHyperlinks();
+        void ClearDetectHyperlinks();
+        Boolean DetectHyperlinks;
     }
 }

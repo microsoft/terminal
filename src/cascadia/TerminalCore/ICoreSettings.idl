@@ -24,7 +24,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
-        Boolean DetectPatterns;
+        Boolean DetectHyperlinks;
 
         UInt32 CursorColor;
         CursorStyle CursorShape;

@@ -99,7 +99,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, Commandline);
         GETSET_PROPERTY(hstring, StartingDirectory);
         GETSET_PROPERTY(hstring, StartingTitle);
-        GETSET_PROPERTY(bool, DetectPatterns);
+        GETSET_PROPERTY(bool, DetectHyperlinks);
         GETSET_PROPERTY(bool, SuppressApplicationTitle);
         GETSET_PROPERTY(hstring, EnvironmentVariables);
 
