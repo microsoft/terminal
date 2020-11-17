@@ -25,6 +25,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
 
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="ComboBoxItemTemplate">
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
         </ResourceDictionary>
     </Page.Resources>
@@ -111,19 +115,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <ComboBox x:Uid="Profile_BackgroundImageAlignment">
-                        <ComboBox.Items>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
-                        </ComboBox.Items>
-                    </ComboBox>
+                    <ComboBox x:Uid="Profile_BackgroundImageAlignment"
+                              ItemsSource="{x:Bind BackgroundImageAlignmentList, Mode=OneWay}"
+                              SelectedItem="{x:Bind CurrentBackgroundImageAlignment, Mode=TwoWay}"
+                              ItemTemplate="{StaticResource ComboBoxItemTemplate}"/>
                     <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity"
                                         Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}"
                                         SmallChange="10"
