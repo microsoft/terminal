@@ -5,7 +5,7 @@
 
 using namespace Microsoft::WRL;
 
-struct
+class
     __declspec(uuid("c4e46d11-dd74-43e8-a4b9-d0f789ad3751"))
         WindowBroker : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IWindowBroker>
 {
@@ -14,19 +14,8 @@ public:
     {
     }
 
-    STDMETHODIMP CreateNewContent(_In_ GUID guid)
-    {
-        guid;
-        printf("CreateNewContent\n");
-        return S_OK;
-    }
-
-    STDMETHODIMP AddWindow(_In_ IWindowProc* pWindow)
-    {
-        pWindow;
-        printf("AddWindow\n");
-        return S_OK;
-    }
+    STDMETHODIMP CreateNewContent(_In_ GUID guid);
+    STDMETHODIMP AddWindow(_In_ IWindowProc* pWindow);
 };
 
 CoCreatableClass(WindowBroker);

@@ -24,6 +24,7 @@
   <!-- Source Files -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="WindowProc.h" />
   </ItemGroup>
 
   <ItemGroup>

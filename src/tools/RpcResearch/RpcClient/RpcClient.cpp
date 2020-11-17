@@ -1,5 +1,7 @@
 #include "pch.h"
-#include "../RPCServer/ICalculatorComponent.h"
+// #include "../RPCServer/ICalculatorComponent.h"
+#include "ICalculatorComponent_h.h"
+#include "WindowProc.h"
 #include <conio.h>
 
 #include <wrl.h>
@@ -51,6 +53,19 @@ int main()
     {
         // Object creation failed. Print a message.
         printf("CoCreateInstance: %d\n", hr);
+    }
+
+    winrt::com_ptr<IWindowBroker> broker = winrt::create_instance<IWindowBroker>(_uuidof(WindowBrokerImpl), CLSCTX_LOCAL_SERVER);
+    if (broker)
+    {
+        printf("Got broker\n");
+        // auto f = winrt::make<WindowProc>();
+        // WindowProc* f = new WindowProc();
+        ComPtr<WindowProc> p = Make<WindowProc>();
+        int pid;
+        RETURN_IF_FAILED(p->GetPID(&pid));
+        printf("our pid=%d\n", pid);
+        broker->AddWindow(p.Get());
     }
 
     printf("Press a key to exit\n");
