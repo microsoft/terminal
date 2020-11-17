@@ -129,8 +129,8 @@ void ColorScheme::LayerJson(const Json::Value& json)
 // Arguments:
 // - <none>
 // Return Value:
-// <none>
-Json::Value ColorScheme::ToJson()
+// - the JsonObject representing this instance
+Json::Value ColorScheme::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 

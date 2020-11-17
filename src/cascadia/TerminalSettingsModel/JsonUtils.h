@@ -88,6 +88,13 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         static constexpr auto&& Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
     };
 
+    class SerializationError : public std::runtime_error
+    {
+    public:
+        SerializationError() :
+            runtime_error("failed to serialize") {}
+    };
+
     class DeserializationError : public std::runtime_error
     {
     public:
@@ -517,7 +524,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                     return { pair.first.data() };
                 }
             }
-            FAIL_FAST();
+            throw SerializationError{};
         }
 
         std::string TypeDescription() const
