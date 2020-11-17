@@ -139,8 +139,9 @@ namespace winrt::TerminalApp::implementation
         _BackgroundImageOpacity = profile.BackgroundImageOpacity();
         _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
 
-        _BackgroundImageHorizontalAlignment = profile.BackgroundImageHorizontalAlignment();
-        _BackgroundImageVerticalAlignment = profile.BackgroundImageVerticalAlignment();
+        const auto biAlignment{ profile.BackgroundImageAlignment() };
+        _BackgroundImageHorizontalAlignment = biAlignment.Horizontal;
+        _BackgroundImageVerticalAlignment = biAlignment.Vertical;
 
         _RetroTerminalEffect = profile.RetroTerminalEffect();
 

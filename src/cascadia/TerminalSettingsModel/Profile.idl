@@ -16,6 +16,12 @@ namespace Microsoft.Terminal.Settings.Model
         Audible
     };
 
+    struct Alignment
+    {
+        Windows.UI.Xaml.HorizontalAlignment Horizontal;
+        Windows.UI.Xaml.VerticalAlignment Vertical;
+    };
+
     [default_interface] runtimeclass Profile {
         Profile();
         Profile(Guid guid);
@@ -110,8 +116,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasBackgroundImageAlignment();
         void ClearBackgroundImageAlignment();
-        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
-        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+        Alignment BackgroundImageAlignment;
 
         Boolean HasAntialiasingMode();
         void ClearAntialiasingMode();
