@@ -53,12 +53,16 @@ static constexpr bool debugFeaturesDefault{ true };
 static constexpr bool debugFeaturesDefault{ false };
 #endif
 
+bool GlobalAppSettings::_getDefaultDebugFeaturesValue()
+{
+    return debugFeaturesDefault;
+}
+
 GlobalAppSettings::GlobalAppSettings() :
     _keymap{ winrt::make_self<KeyMapping>() },
     _keybindingsWarnings{},
     _validDefaultProfile{ false },
-    _defaultProfile{},
-    _DebugFeaturesEnabled{ debugFeaturesDefault }
+    _defaultProfile{}
 {
     _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
@@ -346,4 +350,50 @@ std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> G
 winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Command> GlobalAppSettings::Commands() noexcept
 {
     return _commands.GetView();
+}
+
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// - the JsonObject representing this instance
+Json::Value GlobalAppSettings::ToJson() const
+{
+    Json::Value json{ Json::ValueType::objectValue };
+
+    // clang-format off
+    JsonUtils::SetValueForKey(json, DefaultProfileKey,              _UnparsedDefaultProfile);
+    JsonUtils::SetValueForKey(json, AlwaysShowTabsKey,              _AlwaysShowTabs);
+    JsonUtils::SetValueForKey(json, ConfirmCloseAllKey,             _ConfirmCloseAllTabs);
+    JsonUtils::SetValueForKey(json, InitialRowsKey,                 _InitialRows);
+    JsonUtils::SetValueForKey(json, InitialColsKey,                 _InitialCols);
+    JsonUtils::SetValueForKey(json, InitialPositionKey,             _InitialPosition);
+    JsonUtils::SetValueForKey(json, ShowTitleInTitlebarKey,         _ShowTitleInTitlebar);
+    JsonUtils::SetValueForKey(json, ShowTabsInTitlebarKey,          _ShowTabsInTitlebar);
+    JsonUtils::SetValueForKey(json, WordDelimitersKey,              _WordDelimiters);
+    JsonUtils::SetValueForKey(json, CopyOnSelectKey,                _CopyOnSelect);
+    JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
+    JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);
+    JsonUtils::SetValueForKey(json, WarnAboutMultiLinePasteKey,     _WarnAboutMultiLinePaste);
+    JsonUtils::SetValueForKey(json, LaunchModeKey,                  _LaunchMode);
+    JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);
+    JsonUtils::SetValueForKey(json, TabWidthModeKey,                _TabWidthMode);
+    JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
+    JsonUtils::SetValueForKey(json, DebugFeaturesKey,               _DebugFeaturesEnabled);
+    JsonUtils::SetValueForKey(json, ForceFullRepaintRenderingKey,   _ForceFullRepaintRendering);
+    JsonUtils::SetValueForKey(json, SoftwareRenderingKey,           _SoftwareRendering);
+    JsonUtils::SetValueForKey(json, ForceVTInputKey,                _ForceVTInput);
+    JsonUtils::SetValueForKey(json, EnableStartupTaskKey,           _StartOnUserLogin);
+    JsonUtils::SetValueForKey(json, AlwaysOnTopKey,                 _AlwaysOnTop);
+    JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
+    JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
+    // clang-format on
+
+    // TODO GH#8100: keymap needs to be serialized here
+    //   For deserialization, we iterate over each action in the Json and interpret it as a keybinding, then as a command.
+    //   Converting this back to JSON is a problem because we have no way to know if a Command and Keybinding come from
+    //     the same entry.
+
+    return json;
 }
