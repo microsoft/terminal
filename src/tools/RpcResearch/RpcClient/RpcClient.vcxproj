@@ -34,11 +34,6 @@
 
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- <Midl Include="..\IScratch.idl" /> -->
-    <!-- <Midl Include="..\ICalculatorComponent.idl" /> -->
-    <!-- <Midl Include="..\RpcServer\CalculatorComponent.idl" /> -->
-  </ItemGroup>
 
   <ItemGroup>
     <None Include="packages.config" />

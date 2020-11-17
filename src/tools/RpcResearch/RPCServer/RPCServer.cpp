@@ -5,16 +5,6 @@
 #include "ScratchImpl.h"
 #include "CalculatorComponent.h"
 
-// // WIL
-// #include <wil/Common.h>
-// #include <wil/Result.h>
-// #include <wil/resource.h>
-// #include <wil/wistd_memory.h>
-// #include <wil/stl.h>
-// #include <wil/com.h>
-// #include <wil/filesystem.h>
-// #include <wil/win32_helpers.h>
-
 using namespace Microsoft::WRL;
 
 // Holds the wwinmain open until COM tells us there are no more server connections

@@ -26,6 +26,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="IScratch.h" />
     <ClInclude Include="ICalculatorComponent.h" />
+
     <ClInclude Include="ScratchImpl.h" />
     <ClInclude Include="CalculatorComponent.h" />
     <ClInclude Include="WindowBroker.h" />
@@ -40,9 +41,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <Midl Include="..\IScratch.idl" /> -->
-    <!-- <Midl Include="..\ICalculatorComponent.idl" /> -->
-    <!-- <Midl Include="..\RpcServer\CalculatorComponent.idl" /> -->
+    <!-- COM classes that should be used by external processes should be
+    included in the ProxyStub.vcxproj's Midl files, not here. -->
   </ItemGroup>
 
   <ItemGroup>
@@ -51,9 +51,6 @@
 
   <!-- Dependencies -->
   <ItemGroup>
-    <!-- <ProjectReference Include="..\ScratchWinRTServer\ScratchWinRTServer.vcxproj">
-      <Project>{d46d9547-f085-4645-b8f7-e8cd21559ab4}</Project>
-    </ProjectReference> -->
     <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj" />
   </ItemGroup>
 
