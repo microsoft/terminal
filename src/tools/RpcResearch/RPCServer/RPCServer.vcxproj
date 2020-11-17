@@ -179,9 +179,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IScratch.h" />
+    <ClInclude Include="ICalculatorComponent.h" />
     <ClInclude Include="ScratchImpl.h" />
     <ClInclude Include="CalculatorComponent.h" />
-    <ClInclude Include="ICalculatorComponent.h" />
+    <ClInclude Include="WindowBroker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

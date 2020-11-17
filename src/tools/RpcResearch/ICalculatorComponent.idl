@@ -7,3 +7,25 @@ interface ICalculatorComponent : IUnknown
 {
     HRESULT Add([in] int a, [in] int b, [out, retval] int* value);
 }
+
+
+[uuid(4df20d16-8082-4d1a-bb24-f636e4985cfd), version(1.0)]
+interface IContentProc : IUnknown
+{
+    HRESULT SetID([in] GUID guid);
+    HRESULT GetPID([out, retval] int* pid);
+}
+
+[uuid(378a1c59-570e-404f-93a9-eda91de865ff), version(1.0)]
+interface IWindowProc : IUnknown
+{
+    HRESULT GetPID([out, retval] int* pid);
+    HRESULT ConnectContent([in] GUID guid, [in] IContentProc* content);
+}
+
+[uuid(782fad04-badb-4021-a857-06abcaaa3d62), version(1.0)]
+interface IWindowBroker : IUnknown
+{
+    HRESULT CreateNewContent([in] GUID guid);
+    HRESULT AddWindow([in] IWindowProc* pWindow);
+}
