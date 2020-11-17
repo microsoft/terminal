@@ -713,7 +713,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -731,7 +731,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }

@@ -276,10 +276,77 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
 }
 
+// Method Description:
+// - Handles a WM_GETMINMAXINFO message, issued before the window sizing starts.
+//   This message allows to modify the minimal and maximal dimensions of the window.
+//   We focus on minimal dimensions here
+//   (the maximal dimension will be calculate upon maximizing)
+//   Our goal is to protect against to downsizing to less than minimal allowed dimensions,
+//   that might occur in the scenarios where _OnSizing is bypassed.
+//   An example of such scenario is anchoring the window to the top/bottom screen border
+//   in order to maximize window height (GH# 8026).
+//   The computation is similar to what we do in _OnSizing:
+//   we need to consider both the client area and non-client exclusive area sizes,
+//   while taking DPI into account as well.
+// Arguments:
+// - lParam: Pointer to the requested MINMAXINFO struct,
+//   a ptMinTrackSize field of which we want to update with the computed dimensions.
+//   It also acts as the return value (it's a ref parameter).
+// Return Value:
+// - <none>
+
+void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam)
+{
+    // Without a callback we don't know to snap the dimensions of the client area.
+    // Should not be a problem, the callback is not set early in the startup
+    // The initial dimensions will be set later on
+    if (!_pfnSnapDimensionCallback)
+    {
+        return;
+    }
+
+    HMONITOR hmon = MonitorFromWindow(GetHandle(), MONITOR_DEFAULTTONEAREST);
+    if (hmon == NULL)
+    {
+        return;
+    }
+
+    UINT dpix = USER_DEFAULT_SCREEN_DPI;
+    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+    // From now we use dpix for all computations (same as in _OnSizing).
+    const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
+    const auto scale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
+
+    auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
+    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * scale, nonClientSizeScaled.cx);
+    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * scale, nonClientSizeScaled.cy);
+}
+
+// Method Description:
+// - Helper function that calculates a singe dimension value, given initialWindow and nonClientSizes
+// Arguments:
+// - isWidth: parameter to pass to SnapDimensionCallback.
+//   True if the method is invoked for width computation, false if for height.
+// - clientSize: the size of the client area (already)
+// - nonClientSizeScaled: the exclusive non-client size (already scaled)
+// Return Value:
+// - The total dimension
+long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize)
+{
+    return gsl::narrow_cast<int>(_pfnSnapDimensionCallback(isWidth, gsl::narrow_cast<float>(clientSize)) + nonClientSize);
+}
+
 [[nodiscard]] LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message)
     {
+    case WM_GETMINMAXINFO:
+    {
+        _OnGetMinMaxInfo(wparam, lparam);
+        return 0;
+    }
     case WM_CREATE:
     {
         _HandleCreateWindow(wparam, lparam);
