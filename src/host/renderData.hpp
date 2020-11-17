@@ -46,7 +46,7 @@ public:
     CursorType GetCursorStyle() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     COLORREF GetCursorColor() const noexcept override;
-    bool IsCursorDoubleWidth() const noexcept override;
+    bool IsCursorDoubleWidth() const override;
 
     bool IsScreenReversed() const noexcept override;
 
