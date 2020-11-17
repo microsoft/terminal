@@ -165,7 +165,7 @@
     <ClCompile Include="ICalculatorComponent_i.c" />
     <ClCompile Include="ICalculatorComponent_p.c" />
     <ClCompile Include="CalculatorComponent_i.c" />
-    <ClCompile Include="WindowBroker_i.c" />
+    <!-- <ClCompile Include="WindowBroker_i.c" /> -->
     <!-- <ClCompile Include="CalculatorComponent_p.c" /> -->
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
