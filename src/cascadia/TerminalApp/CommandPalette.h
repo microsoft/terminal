@@ -123,6 +123,9 @@ namespace winrt::TerminalApp::implementation
         void _scrollToIndex(uint32_t index);
         uint32_t _getNumVisibleItems();
 
+        static constexpr int CommandLineHistoryLength = 10;
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
+
         friend class TerminalAppLocalTests::TabTests;
     };
 }

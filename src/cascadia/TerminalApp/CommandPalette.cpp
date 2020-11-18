@@ -29,6 +29,7 @@ namespace winrt::TerminalApp::implementation
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _commandLineHistory = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -538,7 +539,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _tabActions;
         case CommandPaletteMode::CommandlineMode:
-            return winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+            return _commandLineHistory;
         default:
             return _allCommands;
         }
@@ -633,15 +634,30 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dispatchCommandline()
     {
-        auto cmdline{ _getTrimmedInput() };
-        if (cmdline.empty())
+        const auto selectedCommand = _filteredActionsView().SelectedItem();
+        auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
+        if (!filteredCommand)
         {
-            return;
+            auto cmdline{ _getTrimmedInput() };
+            if (cmdline.empty())
+            {
+                return;
+            }
+
+            // Build the ExecuteCommandline action from the values we've parsed on the commandline.
+            ExecuteCommandlineArgs args{ cmdline };
+            ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
+            Command command{};
+            command.Action(executeActionAndArgs);
+            command.Name(cmdline);
+            filteredCommand = winrt::make<FilteredCommand>(command);
         }
 
-        // Build the ExecuteCommandline action from the values we've parsed on the commandline.
-        ExecuteCommandlineArgs args{ cmdline };
-        ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
+        if (_commandLineHistory.Size() == CommandLineHistoryLength)
+        {
+            _commandLineHistory.RemoveAtEnd();
+        }
+        _commandLineHistory.InsertAt(0, filteredCommand);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -650,7 +666,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-        if (_dispatch.DoAction(executeActionAndArgs))
+        if (_dispatch.DoAction(filteredCommand.Command().Action()))
         {
             _close();
         }
@@ -698,7 +714,9 @@ namespace winrt::TerminalApp::implementation
         _lastFilterTextWasEmpty = _searchBox().Text().empty();
 
         _updateFilteredActions();
-        _filteredActionsView().SelectedIndex(0);
+
+        // In the command line mode we want the user to explicitly select the command
+        _filteredActionsView().SelectedIndex(_currentMode == CommandPaletteMode::CommandlineMode ? -1 : 0);
 
         if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode)
         {
@@ -871,7 +889,7 @@ namespace winrt::TerminalApp::implementation
         // We want to present the commands sorted,
         // unless we are in the TabSwitcherMode and TabSearchMode,
         // in which we want to preserve the original order (to be aligned with the tab view)
-        if (_currentMode != CommandPaletteMode::TabSearchMode && _currentMode != CommandPaletteMode::TabSwitchMode)
+        if (_currentMode != CommandPaletteMode::TabSearchMode && _currentMode != CommandPaletteMode::TabSwitchMode && _currentMode != CommandPaletteMode::CommandlineMode)
         {
             std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
         }
@@ -887,12 +905,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_updateFilteredActions()
     {
-        if (_currentMode == CommandPaletteMode::CommandlineMode)
-        {
-            _filteredActions.Clear();
-            return;
-        }
-
         auto actions = _collectFilteredActions();
 
         // Make _filteredActions look identical to actions, using only Insert and Remove.
