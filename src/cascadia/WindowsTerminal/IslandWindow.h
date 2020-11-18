@@ -36,6 +36,7 @@ public:
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
     void FlashTaskbar();
+    void SetTaskbarProgress(const size_t state, const size_t progress);
 
 #pragma endregion
 
@@ -75,6 +76,8 @@ protected:
     void _ApplyWindowSize();
 
     LONG _getDesiredWindowStyle() const;
+
+    wil::com_ptr<ITaskbarList3> _taskbar;
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
