@@ -1,8 +1,8 @@
 ---
 author: Dustin Howett @DHowett
 created on: 2020-10-19
-last updated: 2020-10-19
-issue id: #xxxx
+last updated: 2020-11-18
+issue id: #8324
 ---
 
 # Application State (in the Terminal Settings Model)
