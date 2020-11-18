@@ -671,38 +671,49 @@
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>Black</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightBold.Content" xml:space="preserve">
     <value>Bold</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightCustom.Content" xml:space="preserve">
     <value>Custom</value>
   </data>
   <data name="Profile_FontWeightExtra-black.Content" xml:space="preserve">
     <value>Extra-Black</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightExtra-bold.Content" xml:space="preserve">
     <value>Extra-Bold</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightExtra-light.Content" xml:space="preserve">
     <value>Extra-Light</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightLight.Content" xml:space="preserve">
     <value>Light</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightMedium.Content" xml:space="preserve">
     <value>Medium</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightNormal.Content" xml:space="preserve">
     <value>Normal</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightSemi-bold.Content" xml:space="preserve">
     <value>Semi-Bold</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightSemi-light.Content" xml:space="preserve">
     <value>Semi-Light</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
   <data name="Profile_FontWeightThin.Content" xml:space="preserve">
     <value>Thin</value>
+    <comment>This is the formal name for a font weight.</comment>
   </data>
 </root>
