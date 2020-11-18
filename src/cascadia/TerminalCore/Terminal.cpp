@@ -1167,7 +1167,7 @@ void Terminal::ClearPatternTree() noexcept
 
 // Method Description:
 // - Returns the tab color
-// If the starting color exits it's value is preferred
+// If the starting color exits, it's value is preferred
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
     return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
