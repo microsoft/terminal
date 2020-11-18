@@ -166,7 +166,7 @@ void AppHost::Initialize()
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
-    _logic.FlashTaskbar({ this, &AppHost::_FlashTaskbar });
+    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
 
     _logic.Create();
 
@@ -385,7 +385,7 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
 //   something needs their attention
 // Arguments
 // - <unused>
-void AppHost::_FlashTaskbar(const winrt::Windows::Foundation::IInspectable&,
+void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
                             const winrt::Windows::Foundation::IInspectable&)
 {
     _window->FlashTaskbar();

@@ -373,10 +373,10 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
             const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
             PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
         }
-        if (WI_IsAnyFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
+        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
         {
             // Bubble this event up to app host, starting with bubbling to the hosting tab
-            _PaneFlashTaskbarHandlers(nullptr);
+            _PaneRaiseVisualBellHandlers(nullptr);
         }
     }
 }
@@ -2082,4 +2082,4 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-DEFINE_EVENT(Pane, PaneFlashTaskbar, _PaneFlashTaskbarHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);
