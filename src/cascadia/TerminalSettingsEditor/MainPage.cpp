@@ -129,29 +129,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    void MainPage::SettingsNav_BackRequested(MUX::Controls::NavigationView const&, MUX::Controls::NavigationViewBackRequestedEventArgs const& /*args*/)
-    {
-        On_BackRequested();
-    }
-
-    bool MainPage::On_BackRequested()
-    {
-        if (!contentFrame().CanGoBack())
-        {
-            return false;
-        }
-
-        if (SettingsNav().IsPaneOpen() &&
-            (SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(1) ||
-             SettingsNav().DisplayMode() == MUX::Controls::NavigationViewDisplayMode(0)))
-        {
-            return false;
-        }
-
-        contentFrame().GoBack();
-        return true;
-    }
-
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
@@ -201,14 +178,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index)
     {
-        auto newProfile = _settingsClone.CreateNewProfile();
-        auto navItem = _CreateProfileNavViewItem(newProfile);
+        const auto newProfile{ _settingsClone.CreateNewProfile() };
+        const auto navItem{ _CreateProfileNavViewItem(newProfile) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
-        // Now nav to the new profile
-        // TODO: Setting SelectedItem here doesn't seem to update
-        // the NavigationView selected visual indicator, not sure where
-        // it needs to be...
+        // Select and navigate to the new profile
+        // TODO: Setting SelectedItem here doesn't update the NavigationView's selected visual indicator
+        SettingsNav().SelectedItem(navItem);
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes()));
     }
 

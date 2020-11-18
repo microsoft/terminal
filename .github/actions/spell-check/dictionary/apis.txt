@@ -4,6 +4,7 @@ alignof
 bitfield
 bitfields
 CLASSNOTAVAILABLE
+cmdletbinding
 COLORPROPERTY
 CXICON
 CYICON
@@ -35,6 +36,7 @@ ITab
 llabs
 LCID
 llabs
+localtime
 lround
 LSHIFT
 msappx
@@ -55,6 +57,7 @@ roundf
 RSHIFT
 rx
 schandle
+semver
 serializer
 SIZENS
 GETDESKWALLPAPER

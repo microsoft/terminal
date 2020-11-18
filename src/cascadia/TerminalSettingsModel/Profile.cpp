@@ -59,7 +59,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 
-static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
+static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
 Profile::Profile()
 {
@@ -291,12 +291,13 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
-    _Foreground.set = JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground.setting);
-    _Background.set = JsonUtils::GetValueForKey(json, BackgroundKey, _Background.setting);
-    _SelectionBackground.set = JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground.setting);
-    _CursorColor.set = JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor.setting);
+    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
@@ -320,18 +321,11 @@ void Profile::LayerJson(const Json::Value& json)
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
+    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
 
-    // StartingDirectory is "nullable". But we represent a null starting directory as the empty string
-    // When null is set in the JSON, we empty initialize startDir (empty string), and set StartingDirectory to that
-    // Without this, we're accidentally setting StartingDirectory to nullopt instead.
-    hstring startDir;
-    if (JsonUtils::GetValueForKey(json, StartingDirectoryKey, startDir))
-    {
-        _StartingDirectory = startDir;
-    }
+    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
@@ -341,7 +335,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
 
-    _TabColor.set = JsonUtils::GetValueForKey(json, TabColorKey, _TabColor.setting);
+    JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 }
@@ -362,7 +356,7 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     }
     // checks if the user would like to copy their desktop wallpaper
     // if so, replaces the path with the desktop wallpaper's path
-    else if (path == to_hstring(DesktopWallpaperEnum))
+    else if (path == DesktopWallpaperEnum)
     {
         WCHAR desktopWallpaper[MAX_PATH];
 
@@ -421,27 +415,6 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
         THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
 
         return std::wstring(defaultPath.get(), numCharsDefault);
-    }
-}
-
-// Method Description:
-// - If this profile never had a GUID set for it, generate a runtime GUID for
-//   the profile. If a profile had their guid manually set to {0}, this method
-//   will _not_ change the profile's GUID.
-void Profile::GenerateGuidIfNecessary() noexcept
-{
-    if (!_getGuidImpl().has_value())
-    {
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        _Guid = Profile::_GenerateGuidForProfile(Name(), Source());
-
-        TraceLoggingWrite(
-            g_hSettingsModelProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 }
 
@@ -547,3 +520,63 @@ void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) n
     }
 }
 #pragma endregion
+
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// - the JsonObject representing this instance
+Json::Value Profile::ToJson() const
+{
+    Json::Value json{ Json::ValueType::objectValue };
+
+    // Profile-specific Settings
+    JsonUtils::SetValueForKey(json, NameKey, _Name);
+    JsonUtils::SetValueForKey(json, GuidKey, _Guid);
+    JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::SetValueForKey(json, SourceKey, _Source);
+
+    // Core Settings
+    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
+
+    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
+    JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
+    JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
+    JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
+    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
+    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
+
+    // Control Settings
+    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
+    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
+    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
+    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
+    JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
+    JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
+    JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
+    JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
+
+    // PermissiveStringConverter is unnecessary for serialization
+    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+
+    JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
+    JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
+    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
+    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
+    JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
+    JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+    return json;
+}

@@ -154,6 +154,19 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         return weight;
     }
 
+    Json::Value ToJson(const ::winrt::Windows::UI::Text::FontWeight& val)
+    {
+        const auto weight{ val.Weight };
+        try
+        {
+            return BaseEnumMapper::ToJson(weight);
+        }
+        catch (SerializationError&)
+        {
+            return weight;
+        }
+    }
+
     bool CanConvert(const Json::Value& json)
     {
         return BaseEnumMapper::CanConvert(json) || json.isUInt();

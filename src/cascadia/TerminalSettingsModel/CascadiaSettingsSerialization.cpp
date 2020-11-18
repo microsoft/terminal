@@ -9,6 +9,7 @@
 #include "JsonUtils.h"
 #include <appmodel.h>
 #include <shlobj.h>
+#include <fmt/chrono.h>
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
@@ -28,10 +29,12 @@ static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Wi
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
 static constexpr std::string_view SchemaKey{ "$schema" };
+static constexpr std::string_view SchemaValue{ "https://aka.ms/terminal-profiles-schema" };
 static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
-static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
+static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
@@ -188,7 +191,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 
             try
             {
-                _WriteSettings(resultPtr->_userSettingsString);
+                _WriteSettings(resultPtr->_userSettingsString, CascadiaSettings::SettingsPath());
             }
             catch (...)
             {
@@ -221,7 +224,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             }
 
             // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-            auto userKeybindings = resultPtr->_userSettings[JsonKey(KeybindingsKey)];
+            auto userKeybindings = resultPtr->_userSettings[JsonKey(LegacyKeybindingsKey)];
             if (!userKeybindings.empty())
             {
                 // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
@@ -366,8 +369,6 @@ void CascadiaSettings::_LoadDynamicProfiles()
                 auto profiles = generator->GenerateProfiles();
                 for (auto& profile : profiles)
                 {
-                    // If the profile did not have a GUID when it was generated,
-                    // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
                     profile.Source(generatorNamespace);
 
                     _allProfiles.Append(profile);
@@ -829,7 +830,7 @@ bool CascadiaSettings::_IsPackaged()
 }
 
 // Method Description:
-// - Writes the given content in UTF-8 to our settings file using the Win32 APIS's.
+// - Writes the given content in UTF-8 to a settings file using the Win32 APIS's.
 //   Will overwrite any existing content in the file.
 // Arguments:
 // - content: the given string of content to write to the file.
@@ -837,11 +838,9 @@ bool CascadiaSettings::_IsPackaged()
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_WriteSettings(const std::string_view content)
+void CascadiaSettings::_WriteSettings(const std::string_view content, const hstring filepath)
 {
-    auto pathToSettingsFile{ CascadiaSettings::SettingsPath() };
-
-    wil::unique_hfile hOut{ CreateFileW(pathToSettingsFile.c_str(),
+    wil::unique_hfile hOut{ CreateFileW(filepath.c_str(),
                                         GENERIC_WRITE,
                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
                                         nullptr,
@@ -1038,4 +1037,84 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
         return Json::Value::nullSingleton();
     }
     return json[JsonKey(DisabledProfileSourcesKey)];
+}
+
+// Method Description:
+// - Write the current state of CascadiaSettings to our settings file
+// - Create a backup file with the current contents, if one does not exist
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::WriteSettingsToDisk() const
+{
+    const auto settingsPath{ CascadiaSettings::SettingsPath() };
+
+    try
+    {
+        // create a timestamped backup file
+        const auto clock{ std::chrono::system_clock() };
+        const auto timeStamp{ clock.to_time_t(clock.now()) };
+        const winrt::hstring backupSettingsPath{ fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath, fmt::localtime(timeStamp)) };
+        _WriteSettings(_userSettingsString, backupSettingsPath);
+    }
+    CATCH_LOG();
+
+    // write current settings to current settings file
+    Json::StreamWriterBuilder wbuilder;
+    wbuilder.settings_["indentation"] = "    ";
+    wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
+
+    const auto styledString{ Json::writeString(wbuilder, ToJson()) };
+    _WriteSettings(styledString, settingsPath);
+}
+
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// the JsonObject representing this instance
+Json::Value CascadiaSettings::ToJson() const
+{
+    // top-level json object
+    // directly inject "globals" and "$schema" into here
+    Json::Value json{ _globals->ToJson() };
+    JsonUtils::SetValueForKey(json, SchemaKey, JsonKey(SchemaValue));
+
+    // "profiles" will always be serialized as an object
+    Json::Value profiles{ Json::ValueType::objectValue };
+    profiles[JsonKey(DefaultSettingsKey)] = _userDefaultProfileSettings ? _userDefaultProfileSettings->ToJson() :
+                                                                          Json::ValueType::objectValue;
+    Json::Value profilesList{ Json::ValueType::arrayValue };
+    for (const auto& entry : _allProfiles)
+    {
+        const auto prof{ winrt::get_self<implementation::Profile>(entry) };
+        profilesList.append(prof->ToJson());
+    }
+    profiles[JsonKey(ProfilesListKey)] = profilesList;
+    json[JsonKey(ProfilesKey)] = profiles;
+
+    // TODO GH#8100:
+    // "schemes" will be an accumulation of _all_ the color schemes
+    // including all of the ones from defaults.json
+    Json::Value schemes{ Json::ValueType::arrayValue };
+    for (const auto& entry : _globals->ColorSchemes())
+    {
+        const auto scheme{ winrt::get_self<implementation::ColorScheme>(entry.Value()) };
+        schemes.append(scheme->ToJson());
+    }
+    json[JsonKey(SchemesKey)] = schemes;
+
+    // "actions"/"keybindings" will be whatever blob we had in the file
+    if (_userSettings.isMember(JsonKey(LegacyKeybindingsKey)))
+    {
+        json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
+    }
+    if (_userSettings.isMember(JsonKey(ActionsKey)))
+    {
+        json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
+    }
+
+    return json;
 }

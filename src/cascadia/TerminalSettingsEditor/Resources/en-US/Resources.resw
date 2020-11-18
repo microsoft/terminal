@@ -150,9 +150,6 @@
   <data name="ColorScheme_BrightYellow.Header" xml:space="preserve">
     <value>Bright yellow</value>
   </data>
-  <data name="ColorScheme_ColorSchemes.Text" xml:space="preserve">
-    <value>Color schemes</value>
-  </data>
   <data name="ColorScheme_CursorColor.Text" xml:space="preserve">
     <value>Cursor color</value>
   </data>
@@ -220,9 +217,6 @@
   <data name="Globals_ForceFullRepaint.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, the terminal will redraw the entire screen each frame. When unchecked, the terminal will render only the updates to the screen between frames.</value>
   </data>
-  <data name="Globals_GlobalAppearance.Text" xml:space="preserve">
-    <value>Global Appearance</value>
-  </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
     <value>Columns on first launch (in characters)</value>
   </data>
@@ -234,9 +228,6 @@
   </data>
   <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load.</value>
-  </data>
-  <data name="Globals_Interaction.Text" xml:space="preserve">
-    <value>Interaction</value>
   </data>
   <data name="Globals_LaunchPosition.Header" xml:space="preserve">
     <value>Launch position</value>
@@ -259,9 +250,6 @@
   </data>
   <data name="Globals_LaunchSizeMaximized.Content" xml:space="preserve">
     <value>Maximized</value>
-  </data>
-  <data name="Globals_Rendering.Text" xml:space="preserve">
-    <value>Rendering</value>
   </data>
   <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
     <value>These settings may be useful for troubleshooting an issue, however they will impact your performance.</value>
@@ -295,9 +283,6 @@
   </data>
   <data name="Globals_StartOnUserLogin.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
-  </data>
-  <data name="Globals_Startup.Text" xml:space="preserve">
-    <value>Startup</value>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
@@ -403,37 +388,37 @@
   <data name="Profile_BackgroundImage.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets the file location of the image to draw over the window background.</value>
   </data>
-  <data name="Profile_BackgroundImageAlignment.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignment.Header" xml:space="preserve">
     <value>Background image alignment</value>
   </data>
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets how the background image aligns to the boundaries of the window.</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentBottom.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentBottom.Content" xml:space="preserve">
     <value>Bottom</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentBottomLeft.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentBottomLeft.Content" xml:space="preserve">
     <value>Bottom left</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentBottomRight.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentBottomRight.Content" xml:space="preserve">
     <value>Bottom right</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentCenter.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentCenter.Content" xml:space="preserve">
     <value>Center</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentLeft.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentLeft.Content" xml:space="preserve">
     <value>Left</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentRight.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentRight.Content" xml:space="preserve">
     <value>Right</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentTop.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentTop.Content" xml:space="preserve">
     <value>Top</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentTopLeft.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentTopLeft.Content" xml:space="preserve">
     <value>Top left</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentTopRight.Text" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentTopRight.Content" xml:space="preserve">
     <value>Top right</value>
   </data>
   <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
@@ -478,7 +463,7 @@
   <data name="Profile_CloseOnExitNever.Content" xml:space="preserve">
     <value>Never</value>
   </data>
-  <data name="Profile_ColorScheme.Content" xml:space="preserve">
+  <data name="Profile_ColorScheme.Header" xml:space="preserve">
     <value>Color scheme</value>
   </data>
   <data name="Profile_ColorScheme.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">

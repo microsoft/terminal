@@ -694,7 +694,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -712,7 +712,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -753,7 +753,16 @@
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
-          "type": ["string", "null"]
+          "oneOf": [
+            {
+              "type": ["string", null]
+            },
+            {
+              "enum": [
+                "desktopWallpaper"
+              ]
+            }
+          ]
         },
         "backgroundImageAlignment": {
           "default": "center",
