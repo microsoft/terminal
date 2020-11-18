@@ -851,7 +851,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
-        _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Visible);
+        _headerControl.SetZoomIconVisibility(Windows::UI::Xaml::Visibility::Visible);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -859,7 +859,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
-        _headerControl.SetZoomIcon(Windows::UI::Xaml::Visibility::Collapsed);
+        _headerControl.SetZoomIconVisibility(Windows::UI::Xaml::Visibility::Collapsed);
         Content(_rootPane->GetRootElement());
     }
 

@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
     // - Updates the zoom icon indicating whether a pane is zoomed
     // Arguments:
     // - The desired visibility state of the zoom icon
-    void TabHeaderControl::SetZoomIcon(Windows::UI::Xaml::Visibility state)
+    void TabHeaderControl::SetZoomIconVisibility(Windows::UI::Xaml::Visibility state)
     {
         HeaderZoomIcon().Visibility(state);
     }
@@ -71,6 +71,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Event handler for when the rename box loses focus
+    // - When the rename box loses focus, we use the text in it as the new title
+    //   (i.e. we commit the change instead of cancelling it)
     void TabHeaderControl::RenameBoxLostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                                      Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {

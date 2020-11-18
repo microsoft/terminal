@@ -13,7 +13,7 @@ namespace winrt::TerminalApp::implementation
     struct TabHeaderControl : TabHeaderControlT<TabHeaderControl>
     {
         TabHeaderControl();
-        void SetZoomIcon(Windows::UI::Xaml::Visibility state);
+        void SetZoomIconVisibility(Windows::UI::Xaml::Visibility state);
         void ConstructTabRenameBox();
 
         void RenameBoxLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
@@ -33,7 +33,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TabHeaderControl : TabHeaderControlT<TabHeaderControl, implementation::TabHeaderControl>
-    {
-    };
+    BASIC_FACTORY(TabHeaderControl);
 }
