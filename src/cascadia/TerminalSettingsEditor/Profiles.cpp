@@ -20,8 +20,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static const auto CustomFontWeight{ winrt::make<EnumEntry>(RS_(L"Profile_FontWeightCustom/Content"), winrt::box_value<uint16_t>(0u)) };
-
     Profiles::Profiles()
     {
         InitializeComponent();
@@ -35,7 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // manually add Custom FontWeight option. Don't add it to the Map
         INITIALIZE_BINDABLE_ENUM_SETTING(FontWeight, FontWeight, uint16_t, L"Profile_FontWeight", L"Content");
-        _FontWeightList.Append(CustomFontWeight);
+        _CustomFontWeight = winrt::make<EnumEntry>(RS_(L"Profile_FontWeightCustom/Content"), winrt::box_value<uint16_t>(0u));
+        _FontWeightList.Append(_CustomFontWeight);
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -122,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // if no value was found, we have a custom value, and we show the slider.
         const auto maybeEnumEntry{ _FontWeightMap.TryLookup(_State.Profile().FontWeight().Weight) };
         CustomFontWeightControl().Visibility(maybeEnumEntry ? Visibility::Collapsed : Visibility::Visible);
-        return winrt::box_value<Editor::EnumEntry>(maybeEnumEntry ? maybeEnumEntry : CustomFontWeight);
+        return maybeEnumEntry ? maybeEnumEntry : _CustomFontWeight;
     }
 
     void Profiles::CurrentFontWeight(const IInspectable& enumEntry)

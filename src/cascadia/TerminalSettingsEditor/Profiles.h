@@ -53,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         winrt::Windows::Foundation::Collections::IMap<uint16_t, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
+        Editor::EnumEntry _CustomFontWeight{ nullptr };
 
         static bool _IsCustomFontWeight(const Windows::UI::Text::FontWeight& weight);
     };
