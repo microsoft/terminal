@@ -69,6 +69,11 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     {
         return BaseFlagMapper::CanConvert(json) || json.isBool();
     }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::BellStyle& bellStyle)
+    {
+        return BaseFlagMapper::ToJson(bellStyle);
+    }
 };
 
 JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
