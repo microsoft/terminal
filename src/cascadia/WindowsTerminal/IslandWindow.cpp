@@ -263,12 +263,11 @@ void IslandWindow::Initialize()
     _source.Content(_rootGrid);
 
     // initialize the taskbar object
-    HRESULT hr = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&_taskbar));
-    if (SUCCEEDED(hr))
+    if (auto taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList))
     {
-        if (SUCCEEDED(_taskbar->HrInit()))
+        if (SUCCEEDED(taskbar->HrInit()))
         {
-            _taskbarInitialized = true;
+            _taskbar = std::move(taskbar);
         }
     }
 }
@@ -595,7 +594,7 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
 // - progress: indicates the progress value
 void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
 {
-    if (_taskbarInitialized)
+    if (_taskbar)
     {
         switch (state)
         {

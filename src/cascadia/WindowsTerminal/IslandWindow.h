@@ -77,7 +77,6 @@ protected:
     LONG _getDesiredWindowStyle() const;
 
     wil::com_ptr<ITaskbarList3> _taskbar;
-    bool _taskbarInitialized{ false };
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);

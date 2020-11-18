@@ -415,18 +415,16 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
     unsigned int progress = 0;
 
     const auto parts = Utils::SplitString(string, L';');
-
     unsigned int subParam = 0;
-    const auto subParamSuccess = Utils::StringToUint(til::at(parts, 0), subParam);
 
     // For now, the only ConEmu action we support is setting the taskbar state/progress,
     // which has a sub param value of 4
-    if (parts.size() < 1 || !subParamSuccess || subParam != 4)
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam) || subParam != 4)
     {
         return false;
     }
 
-    if (parts.size() == 2)
+    if (parts.size() >= 2)
     {
         // A state parameter is defined, parse it out
         const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
@@ -434,15 +432,14 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
         {
             return false;
         }
-    }
-    else if (parts.size() > 2)
-    {
-        // Both state and progress are defined, parse them out
-        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-        const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-        if (!stateSuccess || !progressSuccess)
+        if (parts.size() >= 3)
         {
-            return false;
+            // A progress parameter is also defined, parse it out
+            const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+            if (!progressSuccess)
+            {
+                return false;
+            }
         }
     }
 

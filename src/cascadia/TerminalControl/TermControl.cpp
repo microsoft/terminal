@@ -3106,7 +3106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Gets the internal taskbar state value
     // Return Value:
     // - The taskbar state of this control
-    const size_t TermControl::GetTaskbarState() const noexcept
+    const size_t TermControl::TaskbarState() const noexcept
     {
         return _terminal->GetTaskbarState();
     }
@@ -3115,7 +3115,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Gets the internal taskbar progress value
     // Return Value:
     // - The taskbar progress of this control
-    const size_t TermControl::GetTaskbarProgress() const noexcept
+    const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
     }
