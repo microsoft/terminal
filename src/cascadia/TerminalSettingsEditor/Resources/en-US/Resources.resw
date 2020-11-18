@@ -358,7 +358,7 @@
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
   </data>
-  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
+  <data name="Profile_AcrylicOpacity.Text" xml:space="preserve">
     <value>Acrylic opacity</value>
   </data>
   <data name="Profile_AcrylicOpacity.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
@@ -439,7 +439,7 @@
   <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
   </data>
-  <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
+  <data name="Profile_BackgroundImageOpacity.Text" xml:space="preserve">
     <value>Background image opacity</value>
   </data>
   <data name="Profile_BackgroundImageOpacity.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">

@@ -18,6 +18,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
+            <Style x:Key="SliderValueLabel" TargetType="TextBlock">
+                <Setter Property="Width" Value="35"/>
+                <Setter Property="Margin" Value="10,0,0,20"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+            </Style>
+
+            <Style x:Key="SliderHeader" TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,0,0,20"/>
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+            </Style>
+
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
@@ -93,11 +109,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                                           ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
                                           FontSize="15"
                                           ToolTipService.Placement="Mouse"/>
-                                <Slider x:Name="FontWeightSlider"
-                                        Minimum="1" Maximum="999"
-                                        Value="{x:Bind State.Profile.FontWeight,
-                                                Converter={StaticResource FontWeightConverter},
-                                                Mode=TwoWay}"/>
+                                <Grid x:Name="CustomFontWeightControl">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="FontWeightSlider"
+                                            Grid.Column="0"
+                                            Minimum="0" Maximum="1000"
+                                            TickFrequency="50" TickPlacement="Outside"
+                                            Value="{x:Bind State.Profile.FontWeight,
+                                                    Converter={StaticResource FontWeightConverter},
+                                                    Mode=TwoWay}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}"
+                                               Style="{StaticResource SliderValueLabel}"/>
+                                </Grid>
                             </StackPanel>
                             <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind State.Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
                             <Controls:RadioButtons x:Uid="Profile_CursorShape"
@@ -244,9 +271,39 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     </MenuFlyout>
                                 </DropDownButton.Flyout>
                             </DropDownButton>
-                            <Slider x:Uid="Profile_BackgroundImageOpacity" Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                            <StackPanel>
+                                <TextBlock x:Uid="Profile_BackgroundImageOpacity"
+                                           Style="{StaticResource SliderHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="BIOpacitySlider"
+                                            Grid.Column="0"
+                                            Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}"
+                                               Style="{StaticResource SliderValueLabel}"/>
+                                </Grid>
+                            </StackPanel>
                             <CheckBox x:Uid="Profile_UseAcrylic" IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
-                            <Slider x:Uid="Profile_AcrylicOpacity" Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                            <StackPanel>
+                                <TextBlock x:Uid="Profile_AcrylicOpacity"
+                                           Style="{StaticResource SliderHeader}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="AcrylicOpacitySlider"
+                                            Grid.Column="0"
+                                            Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}"
+                                               Style="{StaticResource SliderValueLabel}"/>
+                                </Grid>
+                            </StackPanel>
                             <CheckBox x:Uid="Profile_RetroTerminalEffect" IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                         </StackPanel>
                     </Grid>

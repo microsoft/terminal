@@ -121,7 +121,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // if no value was found, we have a custom value, and we show the slider.
         const auto maybeEnumEntry{ _FontWeightMap.TryLookup(_State.Profile().FontWeight().Weight) };
-        FontWeightSlider().Visibility(maybeEnumEntry ? Visibility::Collapsed : Visibility::Visible);
+        CustomFontWeightControl().Visibility(maybeEnumEntry ? Visibility::Collapsed : Visibility::Visible);
         return winrt::box_value<Editor::EnumEntry>(maybeEnumEntry ? maybeEnumEntry : CustomFontWeight);
     }
 
@@ -135,13 +135,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 // Custom FontWeight is selected using the slider
                 // Initialize the value to what is currently set
-                FontWeightSlider().Visibility(Visibility::Visible);
+                CustomFontWeightControl().Visibility(Visibility::Visible);
                 FontWeightSlider().Value(_State.Profile().FontWeight().Weight);
             }
             else
             {
                 // Otherwise, the selected ComboBox item has an associated fontWeight
-                FontWeightSlider().Visibility(Visibility::Collapsed);
+                CustomFontWeightControl().Visibility(Visibility::Collapsed);
                 _State.Profile().FontWeight(setting);
             }
         }
