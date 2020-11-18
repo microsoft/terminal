@@ -304,21 +304,9 @@ namespace winrt::TerminalApp::implementation
         }
         else if (key == VirtualKey::Enter)
         {
-            // Action, TabSwitch or TabSearchMode Mode: Dispatch the action of the selected command.
-            if (_currentMode != CommandPaletteMode::CommandlineMode)
-            {
-                const auto selectedCommand = _filteredActionsView().SelectedItem();
-                if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
-                {
-                    _dispatchCommand(filteredCommand);
-                }
-            }
-            // Commandline Mode: Use the input to synthesize an ExecuteCommandline action
-            else if (_currentMode == CommandPaletteMode::CommandlineMode)
-            {
-                _dispatchCommandline();
-            }
-
+            const auto selectedCommand = _filteredActionsView().SelectedItem();
+            const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
+            _dispatchCommand(filteredCommand);
             e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
@@ -556,7 +544,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dispatchCommand(winrt::TerminalApp::FilteredCommand const& filteredCommand)
     {
-        if (filteredCommand)
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            _dispatchCommandline(filteredCommand);
+        }
+        else if (filteredCommand)
         {
             if (filteredCommand.Command().HasNestedCommands())
             {
@@ -629,47 +621,48 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Dispatch the current search text as a ExecuteCommandline action.
     // Arguments:
-    // - <none>
+    // - filteredCommand - Selected filtered command - might be null
     // Return Value:
     // - <none>
-    void CommandPalette::_dispatchCommandline()
+    void CommandPalette::_dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command)
     {
-        const auto selectedCommand = _filteredActionsView().SelectedItem();
-        auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>();
-        if (!filteredCommand)
+        const auto filteredCommand = command ? command : _buildCommandLineCommand(_getTrimmedInput());
+        if (filteredCommand.has_value())
         {
-            auto cmdline{ _getTrimmedInput() };
-            if (cmdline.empty())
+            if (_commandLineHistory.Size() == CommandLineHistoryLength)
             {
-                return;
+                _commandLineHistory.RemoveAtEnd();
             }
+            _commandLineHistory.InsertAt(0, filteredCommand.value());
 
-            // Build the ExecuteCommandline action from the values we've parsed on the commandline.
-            ExecuteCommandlineArgs args{ cmdline };
-            ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
-            Command command{};
-            command.Action(executeActionAndArgs);
-            command.Name(cmdline);
-            filteredCommand = winrt::make<FilteredCommand>(command);
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "CommandPaletteDispatchedCommandline",
+                TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+            if (_dispatch.DoAction(filteredCommand.value().Command().Action()))
+            {
+                _close();
+            }
         }
+    }
 
-        if (_commandLineHistory.Size() == CommandLineHistoryLength)
+    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(std::wstring const& commandLine)
+    {
+        if (commandLine.empty())
         {
-            _commandLineHistory.RemoveAtEnd();
+            return std::nullopt;
         }
-        _commandLineHistory.InsertAt(0, filteredCommand);
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "CommandPaletteDispatchedCommandline",
-            TraceLoggingDescription("Event emitted when the user runs a commandline in the Command Palette"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
-        if (_dispatch.DoAction(filteredCommand.Command().Action()))
-        {
-            _close();
-        }
+        // Build the ExecuteCommandline action from the values we've parsed on the commandline.
+        ExecuteCommandlineArgs args{ commandLine };
+        ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
+        Command command{};
+        command.Action(executeActionAndArgs);
+        command.Name(commandLine);
+        return winrt::make<FilteredCommand>(command);
     }
 
     // Method Description:
