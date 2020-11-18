@@ -2386,7 +2386,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto control{ _GetActiveControl() })
         {
-            return control.TaskbarState();
+            return gsl::narrow_cast<size_t>(control.TaskbarState());
         }
         return {};
     }
@@ -2399,7 +2399,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto control{ _GetActiveControl() })
         {
-            return control.TaskbarProgress();
+            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
         }
         return {};
     }
