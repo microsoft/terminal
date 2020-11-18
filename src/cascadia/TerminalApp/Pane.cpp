@@ -1169,6 +1169,15 @@ void Pane::_SetupEntranceAnimation()
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
             control.HorizontalAlignment(HorizontalAlignment::Left);
             control.Width(isFirstChild ? totalSize : size);
+
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control](auto&&, auto&&) {
+                control.Width(NAN);
+                childGrid.Width(NAN);
+                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                control.HorizontalAlignment(HorizontalAlignment::Stretch);
+            });
         }
         else
         {
@@ -1178,43 +1187,19 @@ void Pane::_SetupEntranceAnimation()
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
             control.VerticalAlignment(VerticalAlignment::Top);
             control.Height(isFirstChild ? totalSize : size);
+
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control](auto&&, auto&&) {
+                control.Height(NAN);
+                childGrid.Height(NAN);
+                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                control.VerticalAlignment(VerticalAlignment::Stretch);
+            });
         }
 
         // Start the animation.
         s.Begin();
-
-        std::weak_ptr<Pane> weakThis{ shared_from_this() };
-        // When the animation is completed, undo the trickiness from before, to
-        // restore the controls to the behavior they'd usually have.
-        animation.Completed([weakThis, isFirstChild, splitWidth](auto&&, auto&&) {
-            if (auto pane{ weakThis.lock() })
-            {
-                auto child = isFirstChild ? pane->_firstChild : pane->_secondChild;
-
-                // ensure the child was not release in meanwhile
-                if (child)
-                {
-                    auto childGrid = child->_root;
-                    if (auto control = child->_control)
-                    {
-                        if (splitWidth)
-                        {
-                            control.Width(NAN);
-                            childGrid.Width(NAN);
-                            childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                            control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                        }
-                        else
-                        {
-                            control.Height(NAN);
-                            childGrid.Height(NAN);
-                            childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                            control.VerticalAlignment(VerticalAlignment::Stretch);
-                        }
-                    }
-                }
-            }
-        });
     };
 
     // TODO: GH#7365 - animating the first child right now doesn't _really_ do
