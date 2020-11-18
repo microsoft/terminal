@@ -1132,6 +1132,9 @@ namespace winrt::TerminalApp::implementation
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
+        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
+        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
+
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
@@ -1985,6 +1988,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Send an event (which will be caught by AppHost) to set the progress indicator on the taskbar
+    // Arguments:
+    // - sender (not used)
+    // - eventArgs: the arguments specifying how to set the progress indicator
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    {
+        _setTaskbarProgressHandlers(*this, nullptr);
+    }
+
+    // Method Description:
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
@@ -2363,6 +2376,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarState()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarState());
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
+        }
+        return {};
     }
 
     // Method Description:
@@ -2890,4 +2929,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

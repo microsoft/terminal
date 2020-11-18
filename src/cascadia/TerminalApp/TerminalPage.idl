@@ -29,6 +29,9 @@ namespace TerminalApp
         void ShowKeyboardServiceWarning();
         String KeyboardServiceDisabledText { get; };
 
+        UInt64 GetLastActiveControlTaskbarState();
+        UInt64 GetLastActiveControlTaskbarProgress();
+
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
@@ -36,5 +39,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.RoutedEventArgs> Initialized;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
     }
 }

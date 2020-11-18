@@ -733,6 +733,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         }
         break;
     }
+    case OscActionCodes::ConEmuAction:
+    {
+        success = _dispatch->DoConEmuAction(string);
+        break;
+    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;

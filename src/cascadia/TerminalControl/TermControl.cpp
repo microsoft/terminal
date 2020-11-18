@@ -107,6 +107,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
 
+        _terminal->TaskbarProgressChangedCallback([&]() { TermControl::TaskbarProgressChanged(); });
+
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
@@ -3091,6 +3093,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
     }
 
+    // Method Description:
+    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    //   to set the progress indicator on the taskbar
+    winrt::fire_and_forget TermControl::TaskbarProgressChanged()
+    {
+        co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+        _setTaskbarProgressHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Gets the internal taskbar state value
+    // Return Value:
+    // - The taskbar state of this control
+    const size_t TermControl::TaskbarState() const noexcept
+    {
+        return _terminal->GetTaskbarState();
+    }
+
+    // Method Description:
+    // - Gets the internal taskbar progress value
+    // Return Value:
+    // - The taskbar progress of this control
+    const size_t TermControl::TaskbarProgress() const noexcept
+    {
+        return _terminal->GetTaskbarProgress();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
@@ -3101,6 +3130,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
     // clang-format on
 }

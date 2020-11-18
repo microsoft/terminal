@@ -600,3 +600,21 @@ bool Terminal::EndHyperlink() noexcept
     _buffer->SetCurrentAttributes(attr);
     return true;
 }
+
+// Method Description:
+// - Updates the taskbar progress indicator
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - true
+bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+{
+    _taskbarState = state;
+    _taskbarProgress = progress;
+    if (_pfnTaskbarProgressChanged)
+    {
+        _pfnTaskbarProgressChanged();
+    }
+    return true;
+}

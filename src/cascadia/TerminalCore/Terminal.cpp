@@ -50,7 +50,9 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _altGrAliasing{ true },
     _blockSelection{ false },
-    _selection{ std::nullopt }
+    _selection{ std::nullopt },
+    _taskbarState{ 0 },
+    _taskbarProgress{ 0 }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -1102,6 +1104,16 @@ void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) no
     _pfnBackgroundColorChanged.swap(pfn);
 }
 
+// Method Description:
+// - Allows settings a callback for settings the taskbar progress indicator
+// Arguments:
+// - pfn: a function callback that takes 2 size_t parameters, one indicating the progress state
+//        and the other indicating the progress value
+void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnTaskbarProgressChanged.swap(pfn);
+}
+
 void Terminal::_InitializeColorTable()
 try
 {
@@ -1167,4 +1179,22 @@ const std::optional<til::color> Terminal::GetTabColor() const noexcept
 BlinkingState& Terminal::GetBlinkingState() const noexcept
 {
     return _blinkingState;
+}
+
+// Method Description:
+// - Gets the internal taskbar state value
+// Return Value:
+// - The taskbar state
+const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexcept
+{
+    return _taskbarState;
+}
+
+// Method Description:
+// - Gets the internal taskbar progress value
+// Return Value:
+// - The taskbar progress
+const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
+{
+    return _taskbarProgress;
 }

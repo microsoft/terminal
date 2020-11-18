@@ -71,6 +71,9 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
 
+        size_t GetLastActiveControlTaskbarState();
+        size_t GetLastActiveControlTaskbarProgress();
+
         void ShowKeyboardServiceWarning();
         winrt::hstring KeyboardServiceDisabledText();
 
@@ -81,6 +84,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -194,6 +198,8 @@ namespace winrt::TerminalApp::implementation
         void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
+
+        void _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
         void _PasteText();
 
