@@ -35,6 +35,7 @@ public:
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
+    void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
 #pragma endregion

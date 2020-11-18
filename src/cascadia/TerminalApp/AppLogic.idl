@@ -66,6 +66,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
     }
 }
