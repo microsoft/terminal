@@ -13,51 +13,66 @@ the MIT License. See LICENSE in the project root for license information. -->
     <Grid>
         <Grid.Resources>
             <AcrylicBrush x:Key="NavigationViewDefaultPaneBackground"
-                  BackgroundSource="Backdrop" TintColor="{ThemeResource SystemChromeMediumColor}" TintOpacity=".5"/>
+                          BackgroundSource="Backdrop"
+                          TintColor="{ThemeResource SystemChromeMediumColor}"
+                          TintOpacity=".5"/>
             <AcrylicBrush x:Key="NavigationViewTopPaneBackground"
-                  BackgroundSource="Backdrop" TintColor="{ThemeResource SystemChromeMediumColor}" TintOpacity=".5"/>
+                          BackgroundSource="Backdrop"
+                          TintColor="{ThemeResource SystemChromeMediumColor}"
+                          TintOpacity=".5"/>
             <AcrylicBrush x:Key="NavigationViewExpandedPaneBackground"
-                  BackgroundSource="HostBackdrop" TintColor="{ThemeResource SystemChromeMediumColor}" TintOpacity=".7"/>
+                          BackgroundSource="HostBackdrop"
+                          TintColor="{ThemeResource SystemChromeMediumColor}"
+                          TintOpacity=".7"/>
         </Grid.Resources>
+
         <muxc:NavigationView x:Name="SettingsNav"
-                        IsSettingsVisible="False"
-                        Loaded="SettingsNav_Loaded"
-                        ItemInvoked="SettingsNav_ItemInvoked"
-                        IsBackButtonVisible="Auto"
-                        IsBackEnabled="True"
-                        BackRequested="SettingsNav_BackRequested">
+                             IsSettingsVisible="False"
+                             Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
+                             Loaded="SettingsNav_Loaded"
+                             ItemInvoked="SettingsNav_ItemInvoked"
+                             IsBackButtonVisible="Collapsed">
+
+            <muxc:NavigationView.HeaderTemplate>
+                <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{x:Bind}"
+                               Margin="8,10,0,0"
+                               Style="{StaticResource TitleTextBlockStyle}"/>
+                </DataTemplate>
+            </muxc:NavigationView.HeaderTemplate>
+            
             <muxc:NavigationView.MenuItems>
 
                 <muxc:NavigationViewItem x:Uid="Nav_Launch"
-                                                Tag="Launch_Nav">
+                                         Tag="Launch_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7B5;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
                 <muxc:NavigationViewItem x:Uid="Nav_Interaction"
-                                                Tag="Interaction_Nav">
+                                         Tag="Interaction_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7C9;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
                 <muxc:NavigationViewItem x:Uid="Nav_Appearance"
-                                                Tag="GlobalAppearance_Nav">
+                                         Tag="GlobalAppearance_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE771;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
                 <muxc:NavigationViewItem x:Uid="Nav_ColorSchemes"
-                                                Tag="ColorSchemes_Nav">
+                                         Tag="ColorSchemes_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE790;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
                 <muxc:NavigationViewItem x:Uid="Nav_Rendering"
-                                                 Tag="Rendering_Nav" >
+                                         Tag="Rendering_Nav" >
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE7F8;"/>
                     </muxc:NavigationViewItem.Icon>
@@ -66,7 +81,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
 
                 <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
-                                            Tag="GlobalProfile_Nav">
+                                         Tag="GlobalProfile_Nav">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE756;"/>
                     </muxc:NavigationViewItem.Icon>
@@ -74,7 +89,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             </muxc:NavigationView.MenuItems>
             <muxc:NavigationView.PaneFooter>
-                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON" Tapped="OpenJsonTapped" KeyDown="OpenJsonKeyDown">
+                <muxc:NavigationViewItem x:Uid="Nav_OpenJSON"
+                                         Tapped="OpenJsonTapped"
+                                         KeyDown="OpenJsonKeyDown">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </muxc:NavigationViewItem.Icon>
@@ -92,10 +109,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning" Visibility="Collapsed" Foreground="Goldenrod" FontSize="15" VerticalAlignment="Center" HorizontalAlignment="Left" TextAlignment="Left" Margin="30,0,0,0"/>
+                    <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
+                               Visibility="Collapsed"
+                               Foreground="Goldenrod"
+                               FontSize="15"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left"
+                               TextAlignment="Left"
+                               Margin="30,0,0,0"/>
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
-                        <Button x:Uid="Settings_ResetSettingsButton" FontSize="15" ToolTipService.Placement="Mouse"/>
-                        <Button x:Uid="Settings_SaveSettingsButton" FontSize="15" Style="{StaticResource AccentButtonStyle}" Margin="10,0,0,0"/>
+                        <Button x:Uid="Settings_ResetSettingsButton"
+                                FontSize="15"
+                                ToolTipService.Placement="Mouse"/>
+                        <Button x:Uid="Settings_SaveSettingsButton"
+                                FontSize="15"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Margin="10,0,0,0"/>
                     </StackPanel>
                 </Grid>
             </Grid>

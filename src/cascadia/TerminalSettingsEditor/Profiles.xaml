@@ -9,7 +9,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
-    xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -17,6 +16,10 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="ScrollViewer">
+                <Setter Property="Margin" Value="0,10,0,0"/>
+            </Style>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
@@ -26,251 +29,147 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
-        <Pivot>
-            <PivotItem x:Uid="Profile_General">
-                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-                  Margin="0,12,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBox x:Uid="Profile_Commandline" x:Name="Commandline" Margin="0,0,0,20" Grid.Row="0" Grid.Column="0" FontSize="15" Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                    <Button x:Uid="Profile_CommandlineBrowse" Click="Commandline_Click" Margin="5,0,0,0" Grid.Row="0" Grid.Column="1" FontSize="15"/>
-                    <TextBox x:Uid="Profile_StartingDirectory" x:Name="StartingDirectory" Margin="0,0,0,20" Grid.Row="1" Grid.Column="0" FontSize="15" Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                    <Button x:Uid="Profile_StartingDirectoryBrowse" Margin="5,0,0,0" Grid.Row="1" Grid.Column="1" FontSize="15"/>
-                    <TextBox x:Uid="Profile_Icon" Margin="0,0,0,20" Grid.Row="2" Grid.Column="0" FontSize="15" Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                    <Button x:Uid="Profile_IconBrowse" Margin="5,0,0,0" Grid.Row="2" Grid.Column="1" FontSize="15" />
-                    <StackPanel Grid.Row="3" Grid.Column="0">
-                        <TextBox x:Uid="Profile_TabTitle" Margin="0,0,0,20" FontSize="15" Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                        <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+    <Pivot>
+        <!-- General Tab -->
+        <PivotItem x:Uid="Profile_General">
+            <ScrollViewer>
+                <StackPanel HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Uid="Profile_Commandline"
+                             x:Name="Commandline"
+                             Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"/>
+                        <Button x:Uid="Profile_CommandlineBrowse"
+                            Click="Commandline_Click"
+                            Margin="10,0,0,0"/>
                     </StackPanel>
-                </Grid>
-            </PivotItem>
-            <PivotItem x:Uid="Profile_Appearance">
-                <ScrollViewer>
-                    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-                      Margin="0,12,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <!-- THIS IS WHERE THE MINI-TERMINAL WOULD GO -->
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Uid="Profile_StartingDirectory"
+                                 x:Name="StartingDirectory"
+                                 Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"/>
+                        <Button x:Uid="Profile_StartingDirectoryBrowse"
+                                Margin="10,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Uid="Profile_Icon"
+                                 Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"/>
+                        <Button x:Uid="Profile_IconBrowse"
+                                Margin="10,0,0,0"/>
+                    </StackPanel>
+                    <TextBox x:Uid="Profile_TabTitle"
+                             Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
+                             HorizontalAlignment="Left"/>
+                    <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                           ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </PivotItem>
 
+        <!-- Appearance Tab -->
+        <PivotItem x:Uid="Profile_Appearance">
+            <ScrollViewer>
+                <StackPanel HorizontalAlignment="Left">
+                    <TextBox x:Uid="Profile_FontFace"
+                             Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"/>
+                    <Controls:NumberBox x:Uid="Profile_FontSize"
+                                        Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
+                                        SmallChange="1"
+                                        LargeChange="10"/>
+                    <TextBox x:Uid="Profile_FontWeight"/>
+                    <TextBox x:Uid="Profile_Padding"
+                             Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"/>
+                    <Controls:RadioButtons x:Uid="Profile_CursorShape"
+                                           ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <Controls:NumberBox x:Uid="Profile_CursorHeight"
+                                        Value="100"
+                                        SmallChange="1"
+                                        LargeChange="10"/>
+                    <ComboBox x:Uid="Profile_ColorScheme">
+                        <ComboBox.Items>
+                            <ComboBoxItem Content="Campbell"/>
+                            <ComboBoxItem Content="Campbell Powershell"/>
+                            <ComboBoxItem Content="Vintage"/>
+                            <ComboBoxItem Content="One Half Dark"/>
+                            <ComboBoxItem Content="One Half Light"/>
+                            <ComboBoxItem Content="Tango Dark"/>
+                            <ComboBoxItem Content="Tango Light"/>
+                        </ComboBox.Items>
+                    </ComboBox>
 
-                        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,100,0">
-                            <TextBox x:Uid="Profile_FontFace" Margin="0,0,0,20" FontSize="15" Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,100,0">
-                            <Controls:NumberBox x:Uid="Profile_FontSize" Margin="0,0,0,20" FontSize="15" Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
-                            <TextBox x:Uid="Profile_FontWeight" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse"/>
-                            <TextBox x:Uid="Profile_Padding" Margin="0,0,0,20" FontSize="15" Text="{x:Bind State.Profile.Padding, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                            <Controls:RadioButtons x:Uid="Profile_CursorShape"
-                                                   ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                            <Controls:NumberBox x:Uid="Profile_CursorHeight" Margin="0,0,0,20" FontSize="15" Value="100" SpinButtonPlacementMode="Compact" SmallChange="1" LargeChange="10" ToolTipService.Placement="Mouse" />
-                            <StackPanel x:Uid="Profile_CursorColorToolTip"
-                                    Orientation="Horizontal"
-                                    Margin="0,0,0,20"
-                                    ToolTipService.Placement="Mouse">
-                                <TextBox x:Uid="Profile_CursorColor"
-                                     FontSize="15"
-                                     Text="#FFFFFF" />
-                                <Button Background="White"
-                                    BorderBrush="{StaticResource SystemBaseLowColor}"
-                                    Height="37"
-                                    Width="37"
-                                    Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                    <Button.Flyout>
-                                        <Flyout>
-                                            <ColorPicker IsColorSliderVisible="False"
-                                                     IsColorChannelTextInputVisible="False"
-                                                     IsHexInputVisible="False"
-                                                     IsAlphaEnabled="False"
-                                                     IsAlphaSliderVisible="True"
-                                                     IsAlphaTextInputVisible="True" />
-                                        </Flyout>
-                                    </Button.Flyout>
-                                </Button>
-                            </StackPanel>
-                            <DropDownButton x:Uid="Profile_ColorScheme" Margin="0,0,0,20" FontSize="15" ToolTipService.Placement="Mouse">
-                                <DropDownButton.Flyout>
-                                    <MenuFlyout Placement="Bottom">
-                                        <MenuFlyoutItem Text="Campbell"/>
-                                        <MenuFlyoutItem Text="Campbell Powershell"/>
-                                        <MenuFlyoutItem Text="Vintage"/>
-                                        <MenuFlyoutItem Text="One Half Dark"/>
-                                        <MenuFlyoutItem Text="One Half Light"/>
-                                        <MenuFlyoutItem Text="Tango Dark"/>
-                                        <MenuFlyoutItem Text="Tango Light"/>
-                                    </MenuFlyout>
-                                </DropDownButton.Flyout>
-                            </DropDownButton>
-                            <StackPanel x:Uid="Profile_ForegroundColorToolTip"
-                                    Orientation="Horizontal"
-                                    Margin="0,0,0,20"
-                                    ToolTipService.Placement="Mouse">
-                                <TextBox x:Uid="Profile_ForegroundColor"
-                                     FontSize="15"
-                                     Text="#FFFFFF" />
-                                <Button Background="White"
-                                    BorderBrush="{StaticResource SystemBaseLowColor}"
-                                    Height="37"
-                                    Width="37"
-                                    Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                    <Button.Flyout>
-                                        <Flyout>
-                                            <ColorPicker IsColorSliderVisible="False"
-                                                     IsColorChannelTextInputVisible="False"
-                                                     IsHexInputVisible="False"
-                                                     IsAlphaEnabled="False"
-                                                     IsAlphaSliderVisible="True"
-                                                     IsAlphaTextInputVisible="True" />
-                                        </Flyout>
-                                    </Button.Flyout>
-                                </Button>
-                            </StackPanel>
-                            <StackPanel x:Uid="Profile_BackgroundColorToolTip"
-                                    Orientation="Horizontal"
-                                    Margin="0,0,0,20"
-                                    ToolTipService.Placement="Mouse">
-                                <TextBox x:Uid="Profile_BackgroundColor"
-                                     FontSize="15"
-                                     Text="#000000" />
-                                <Button Background="Black"
-                                    BorderBrush="{StaticResource SystemBaseLowColor}"
-                                    Height="37"
-                                    Width="37"
-                                    Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                    <Button.Flyout>
-                                        <Flyout>
-                                            <ColorPicker IsColorSliderVisible="False"
-                                                     IsColorChannelTextInputVisible="False"
-                                                     IsHexInputVisible="False"
-                                                     IsAlphaEnabled="False"
-                                                     IsAlphaSliderVisible="True"
-                                                     IsAlphaTextInputVisible="True" />
-                                        </Flyout>
-                                    </Button.Flyout>
-                                </Button>
-                            </StackPanel>
-                            <StackPanel x:Uid="Profile_SelectionBackgroundColorToolTip"
-                                    Orientation="Horizontal"
-                                    Margin="0,0,0,20"
-                                    ToolTipService.Placement="Mouse">
-                                <TextBox x:Uid="Profile_SelectionBackgroundColor"
-                                     FontSize="15"
-                                     Text="#808080" />
-                                <Button Background="Gray"
-                                    BorderBrush="{StaticResource SystemBaseLowColor}"
-                                    Height="37"
-                                    Width="37"
-                                    Margin="10,22,0,0"
-                                    CornerRadius="2">
-                                    <Button.Flyout>
-                                        <Flyout>
-                                            <ColorPicker IsColorSliderVisible="False"
-                                                     IsColorChannelTextInputVisible="False"
-                                                     IsHexInputVisible="False"
-                                                     IsAlphaEnabled="False"
-                                                     IsAlphaSliderVisible="True"
-                                                     IsAlphaTextInputVisible="True" />
-                                        </Flyout>
-                                    </Button.Flyout>
-                                </Button>
-                            </StackPanel>
-                        </StackPanel>
-                        <TextBox x:Uid="Profile_BackgroundImage" x:Name="BackgroundImage" Margin="0,0,0,20" FontSize="15" Grid.Column="1" Grid.Row="0" Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}" ToolTipService.Placement="Mouse"/>
-                        <Button x:Uid="Profile_BackgroundImageBrowse" Click="BackgroundImage_Click" Margin="5,0,0,0" Grid.Column="2" Grid.Row="0"/>
-                        <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,100,0">
-                            <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
-                                                   ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
-                                                   SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
-                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                            <DropDownButton x:Uid="Profile_BackgroundImageAlignment"
-                                            Margin="0,0,0,20"
-                                            FontSize="15"
-                                            ToolTipService.Placement="Mouse">
-                                <DropDownButton.Flyout>
-                                    <MenuFlyout Placement="Bottom">
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
-                                        <MenuFlyoutItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
-                                    </MenuFlyout>
-                                </DropDownButton.Flyout>
-                            </DropDownButton>
-                            <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="10" LargeChange="25" ToolTipService.Placement="Mouse" />
-                            <CheckBox x:Uid="Profile_UseAcrylic" IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
-                            <Controls:NumberBox x:Uid="Profile_AcrylicOpacity" Margin="0,0,0,20" FontSize="15" Value="{x:Bind State.Profile.AcrylicOpacity, Mode=TwoWay}" SpinButtonPlacementMode="Compact" SmallChange="0.1" LargeChange="0.25" ToolTipService.Placement="Mouse" />
-                            <CheckBox x:Uid="Profile_RetroTerminalEffect" IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
-                        </StackPanel>
-                    </Grid>
-                </ScrollViewer>
-            </PivotItem>
-            <PivotItem x:Uid="Profile_Advanced">
-                <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          Margin="0,12,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                        <CheckBox x:Uid="Profile_Hidden" IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"/>
-                        <CheckBox x:Uid="Profile_SuppressApplicationTitle" IsChecked="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
-                        <Controls:RadioButtons x:Uid="Profile_AntialiasingMode"
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Uid="Profile_BackgroundImage"
+                                 x:Name="BackgroundImage"
+                                 Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"/>
+                        <Button x:Uid="Profile_BackgroundImageBrowse"
+                                Click="BackgroundImage_Click"
+                                Margin="10,0,0,0"/>
+                    </StackPanel>
+                    <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
+                                           ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <ComboBox x:Uid="Profile_BackgroundImageAlignment">
+                        <ComboBox.Items>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
+                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
+                        </ComboBox.Items>
+                    </ComboBox>
+                    <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity"
+                                        Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}"
+                                        SmallChange="10"
+                                        LargeChange="25"/>
+                    <CheckBox x:Uid="Profile_UseAcrylic"
+                              IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
+                    <Controls:NumberBox x:Uid="Profile_AcrylicOpacity"
+                                        Value="{x:Bind State.Profile.AcrylicOpacity, Mode=TwoWay}"
+                                        SmallChange="0.1"
+                                        LargeChange="0.25"/>
+                    <CheckBox x:Uid="Profile_RetroTerminalEffect"
+                              IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </PivotItem>
+
+        <!-- Advanced Tab -->
+        <PivotItem x:Uid="Profile_Advanced">
+            <ScrollViewer>
+                <StackPanel HorizontalAlignment="Left">
+                    <CheckBox x:Uid="Profile_Hidden"
+                              IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"/>
+                    <CheckBox x:Uid="Profile_SuppressApplicationTitle"
+                              IsChecked="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
+                    <Controls:RadioButtons x:Uid="Profile_AntialiasingMode"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                        <CheckBox x:Uid="Profile_AltGrAliasing" IsChecked="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}" />
-                        <CheckBox x:Uid="Profile_SnapOnInput" IsChecked="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
-                        <Controls:NumberBox x:Uid="Profile_HistorySize"
-                                            Margin="0,0,0,20"
-                                            FontSize="15"
-                                            Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
-                                            SpinButtonPlacementMode="Compact"
-                                            SmallChange="10"
-                                            LargeChange="100"
-                                            ToolTipService.Placement="Mouse" />
-                        <Controls:RadioButtons x:Uid="Profile_CloseOnExit"
-                                               ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                        <Controls:RadioButtons x:Uid="Profile_BellStyle"
-                                               ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    </StackPanel>
-                </Grid>
-            </PivotItem>
-        </Pivot>
-    </ScrollViewer>
+                    <CheckBox x:Uid="Profile_AltGrAliasing"
+                              IsChecked="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}" />
+                    <CheckBox x:Uid="Profile_SnapOnInput"
+                              IsChecked="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
+                    <Controls:NumberBox x:Uid="Profile_HistorySize"
+                                        Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
+                                        SmallChange="10"
+                                        LargeChange="100"/>
+                    <Controls:RadioButtons x:Uid="Profile_CloseOnExit"
+                                           ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <Controls:RadioButtons x:Uid="Profile_BellStyle"
+                                           ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                </StackPanel>
+            </ScrollViewer>
+        </PivotItem>
+    </Pivot>
 </Page>

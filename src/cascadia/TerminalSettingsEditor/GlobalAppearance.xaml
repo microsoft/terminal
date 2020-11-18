@@ -23,34 +23,25 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
-        <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
-          Margin="0,12,0,0">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
-            </Grid.ColumnDefinitions>
-            <TextBlock x:Uid="Globals_GlobalAppearance"
-                   Style="{StaticResource SubheaderTextBlockStyle}"
-                   Margin="0,0,0,20" />
-            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
-                <Controls:RadioButtons x:Uid="Globals_Theme"
+        <StackPanel>
+            <Controls:RadioButtons x:Uid="Globals_Theme"
                                        SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                        ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                <CheckBox x:Uid="Globals_ShowTitlebar" IsChecked="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
-                <CheckBox x:Uid="Globals_ShowTitleInTitlebar" IsChecked="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
-                <CheckBox x:Uid="Globals_AlwaysShowTabs" IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
-                <Controls:RadioButtons x:Uid="Globals_TabWidthMode"
-                                       SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
-                                       ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs" IsChecked="{x:Bind State.Globals.ConfirmCloseAllTabs, Mode=TwoWay}"/>
-                <CheckBox x:Uid="Globals_DisableAnimations" IsChecked="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
-            </StackPanel>
-        </Grid>
+            <CheckBox x:Uid="Globals_ShowTitlebar"
+                      IsChecked="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
+            <CheckBox x:Uid="Globals_ShowTitleInTitlebar"
+                      IsChecked="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
+            <CheckBox x:Uid="Globals_AlwaysShowTabs"
+                      IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
+            <Controls:RadioButtons x:Uid="Globals_TabWidthMode"
+                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
+                                   ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+            <CheckBox x:Uid="Globals_ConfirmCloseAllTabs"
+                      IsChecked="{x:Bind State.Globals.ConfirmCloseAllTabs, Mode=TwoWay}"/>
+            <CheckBox x:Uid="Globals_DisableAnimations"
+                      IsChecked="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
+        </StackPanel>
     </ScrollViewer>
 </Page>
