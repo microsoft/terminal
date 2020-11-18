@@ -386,7 +386,7 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
 // Arguments
 // - <unused>
 void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
-                            const winrt::Windows::Foundation::IInspectable&)
+                               const winrt::Windows::Foundation::IInspectable&)
 {
     _window->FlashTaskbar();
 }
