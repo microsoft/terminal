@@ -48,6 +48,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:PercentageConverter x:Key="PercentageConverter"/>
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
+            <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -188,8 +189,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </Grid>
                     </StackPanel>
                     <CheckBox x:Uid="Profile_UseAcrylic"
+                              x:Name="UseAcrylicCheckBox"
                               IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
-                    <StackPanel>
+                    <StackPanel x:Name="AcrylicOpacityControl"
+                                Visibility="{Binding ElementName=UseAcrylicCheckBox, Path=IsChecked, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                         <TextBlock x:Uid="Profile_AcrylicOpacity"
                                    Style="{StaticResource SliderHeader}"/>
                         <Grid>

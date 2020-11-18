@@ -47,6 +47,9 @@
     <ClInclude Include="PercentageConverter.h">
       <DependentUpon>PercentageConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="BooleanToVisibilityConverter.h">
+      <DependentUpon>BooleanToVisibilityConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
@@ -136,6 +139,9 @@
     <ClCompile Include="PercentageConverter.cpp">
       <DependentUpon>PercentageConverter.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="BooleanToVisibilityConverter.cpp">
+      <DependentUpon>BooleanToVisibilityConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
@@ -181,6 +187,7 @@
     <Midl Include="ColorToHexConverter.idl" />
     <Midl Include="FontWeightConverter.idl" />
     <Midl Include="PercentageConverter.idl" />
+    <Midl Include="BooleanToVisibilityConverter.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
