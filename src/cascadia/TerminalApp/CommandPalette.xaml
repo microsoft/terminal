@@ -178,6 +178,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 x:Name="_prefixCharacter"
                 Margin="16,16,0,-8"
                 FontSize="14"
+                HorizontalAlignment="Left"
                 Visibility="{x:Bind PrefixCharacter,
                              Mode=OneWay,
                              Converter={StaticResource ParentCommandVisibilityConverter}}"
@@ -185,7 +186,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 >
             </TextBlock>
 
-          <StackPanel Orientation="Horizontal"
+            <StackPanel Orientation="Horizontal"
                     Padding="16, 0, 16, 4"
                     Grid.Row="1"
                     Visibility="{x:Bind ParentCommandName,
@@ -199,9 +200,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     Click="_moveBackButtonClicked"
                     ClickMode="Press"
                     VerticalAlignment="Center">
-                    <FontIcon 
+                    <FontIcon
                         FontSize="12"
-                        FontFamily="Segoe MDL2 Assets" 
+                        FontFamily="Segoe MDL2 Assets"
                         Glyph="&#xE76b;">
                     </FontIcon>
                 </Button>
@@ -267,7 +268,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="1"
                                     HorizontalAlignment="Left"
                                     Text="{x:Bind HighlightedName, Mode=OneWay}"/>
-                                
+
                                 <!-- The block for the key chord is only visible
                                 when there's actual text set as the label. See
                                 CommandKeyChordVisibilityConverter for details. -->
