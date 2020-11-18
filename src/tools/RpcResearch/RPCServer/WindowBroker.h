@@ -10,9 +10,7 @@ class
         WindowBroker : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IWindowBroker>
 {
 public:
-    WindowBroker()
-    {
-    }
+    WindowBroker();
 
     STDMETHODIMP CreateNewContent(_In_ GUID guid);
     STDMETHODIMP AddWindow(_In_ IWindowProc* pWindow);
