@@ -15,7 +15,7 @@ namespace winrt::TerminalApp::implementation
     {
         // extract horizontal alignment
         Windows::UI::Xaml::HorizontalAlignment horizAlign;
-        switch (alignment & static_cast<ConvergedAlignment>(0x0000FFFF))
+        switch (alignment & static_cast<ConvergedAlignment>(0x0F))
         {
         case ConvergedAlignment::Horizontal_Left:
             horizAlign = Windows::UI::Xaml::HorizontalAlignment::Left;
@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
 
         // extract vertical alignment
         Windows::UI::Xaml::VerticalAlignment vertAlign;
-        switch (alignment & static_cast<ConvergedAlignment>(0xFFFF0000))
+        switch (alignment & static_cast<ConvergedAlignment>(0xF0))
         {
         case ConvergedAlignment::Vertical_Top:
             vertAlign = Windows::UI::Xaml::VerticalAlignment::Top;

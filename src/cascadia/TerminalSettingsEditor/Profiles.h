@@ -46,37 +46,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, State().Profile, ScrollState);
-
-    //public:
-    //    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> BackgroundImageAlignmentList()
-    //    {
-    //        return _BackgroundImageAlignmentList;
-    //    }
-
-    //    winrt::Windows::Foundation::IInspectable CurrentBackgroundImageAlignment()
-    //    {
-    //        const auto val{ State().Profile().BackgroundImageAlignment() };
-    //        const auto res{ _BackgroundImageAlignmentMap.Lookup(val) };
-    //        auto enum_name{ res.EnumName() };
-    //        auto enum_val{ res.EnumValue() };
-    //        auto enum_val_unwrapped{ winrt::unbox_value<Model::Alignment>(enum_val) };
-
-    //        return res;
-    //        //return _BackgroundImageAlignmentMap.Lookup(State().Profile().BackgroundImageAlignment());
-    //    }
-
-    //    void CurrentBackgroundImageAlignment(const winrt::Windows::Foundation::IInspectable& enumEntry)
-    //    {
-    //        if (auto ee = enumEntry.try_as<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>())
-    //        {
-    //            auto setting = winrt::unbox_value<Model::Alignment>(ee.EnumValue());
-    //            State().Profile().BackgroundImageAlignment(setting);
-    //        }
-    //    }
-
-    //private:
-    //    winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _BackgroundImageAlignmentList;
-    //    winrt::Windows::Foundation::Collections::IMap<Model::Alignment, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _BackgroundImageAlignmentMap;
     };
 };
 
