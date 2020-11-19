@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
+#include "AppLogic.h"
 
 #include <LibraryResources.h>
 
@@ -185,7 +186,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
+    void CommandPalette::_previewKeyDownHandler(IInspectable const& sender,
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
@@ -211,6 +212,14 @@ namespace winrt::TerminalApp::implementation
                 e.Handled(true);
             }
         }
+        if (_currentMode == CommandPaletteMode::ActionMode && key == VirtualKey::Tab)
+        {
+            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control);
+            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            {
+                _keyDownHandler(sender, e);
+            }
+        }
     }
 
     // Method Description:
@@ -225,7 +234,24 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
+        winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+        auto setting = ::winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings();
+        auto keymap = setting.GlobalSettings().KeyMap();
+        const auto action = keymap.TryLookup(kc);
+
+        if (action)
+        {
+            if (action.Action() != ShortcutAction::ToggleCommandPalette)
+            {
+                _close();
+            }
+            _dispatch.DoAction(action);
+            return;
+        }
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
