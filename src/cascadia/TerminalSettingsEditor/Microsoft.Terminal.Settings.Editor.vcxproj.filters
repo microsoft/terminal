@@ -28,9 +28,6 @@
     <Midl Include="PercentageConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
-    <Midl Include="BooleanToVisibilityConverter.idl">
-      <Filter>Converters</Filter>
-    </Midl>
     <Midl Include="EnumEntry.idl" />
   </ItemGroup>
   <ItemGroup>
