@@ -51,19 +51,16 @@ namespace Microsoft::Console::Interactivity::Win32
         // IHighDpi Interface
         BOOL SetProcessDpiAwarenessContext();
         [[nodiscard]] HRESULT SetProcessPerMonitorDpiAwareness();
-        BOOL EnablePerMonitorDialogScaling();
 
         // Module-internal Functions
         BOOL SetProcessDpiAwarenessContext(_In_ DPI_AWARENESS_CONTEXT dpiContext);
-        BOOL EnableChildWindowDpiMessage(const HWND hwnd,
-                                         const BOOL fEnable);
         BOOL AdjustWindowRectExForDpi(_Inout_ LPRECT const lpRect,
                                       const DWORD dwStyle,
                                       const BOOL bMenu,
                                       const DWORD dwExStyle,
                                       const UINT dpi);
 
-        int GetWindowDPI(const HWND hwnd);
+        int GetDpiForWindow(const HWND hwnd);
         int GetSystemMetricsForDpi(const int nIndex,
                                    const UINT dpi);
 
