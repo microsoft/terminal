@@ -1,7 +1,7 @@
 ---
 authors: Carlos Zamora (@carlos-zamora) and Kayla Cinnamon (@cinnamon-msft)
 created on: 2020-11-10
-last updated: 2020-11-15
+last updated: 2020-11-19
 issue id: 1564
 ---
 
@@ -117,8 +117,6 @@ Every setting will have a lock button next to it. If the lock is locked, that me
 
 ## Capabilities
 
-[comment]: # Discuss how the proposed fixes/features impact the following key considerations:
-
 ### Accessibility
 
 All of these additions to the settings UI will have to be accessibility tested.
@@ -139,12 +137,8 @@ The partial parity with JSON route will give the settings UI a different compati
 
 ## Potential Issues
 
-[comment]: # What are some of the things that might cause problems with the fixes/features proposed? Consider how the user might be negatively impacted.
-
 ## Future considerations
 
-[comment]: # What are some of the things that the fixes/features might unlock in the future? Does the implementation of this spec enable scenarios?
+When we add profile inheritance later, we can implement a layering page using a rearrangeable TreeView.
 
 ## Resources
-
-[comment]: # Be sure to add links to references, resources, footnotes, etc.
