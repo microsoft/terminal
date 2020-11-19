@@ -41,5 +41,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, TextAntialiasingMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::CursorStyle, CursorStyle);
     DEFINE_ENUM_MAP(Model::BellStyle, BellStyle);
-    DEFINE_ENUM_MAP(Model::Alignment, BackgroundImageAlignment);
+    DEFINE_ENUM_MAP(Model::ConvergedAlignment, BackgroundImageAlignment);
 }

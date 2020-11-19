@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode> TextAntialiasingMode();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, winrt::Microsoft::Terminal::TerminalControl::CursorStyle> CursorStyle();
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, BellStyle> BellStyle();
-        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Alignment> BackgroundImageAlignment();
+        static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, ConvergedAlignment> BackgroundImageAlignment();
     };
 }
 

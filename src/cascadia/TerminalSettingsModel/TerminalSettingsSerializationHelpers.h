@@ -55,21 +55,19 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::Alignment)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
-    // reduce repetition
-    using HA = ::winrt::Windows::UI::Xaml::HorizontalAlignment;
-    using VA = ::winrt::Windows::UI::Xaml::VerticalAlignment;
+    using CA = ::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment;
     static constexpr std::array<pair_type, 9> mappings = {
-        pair_type{ "center", { HA::Center, VA::Center } },
-        pair_type{ "topLeft", { HA::Left, VA::Top } },
-        pair_type{ "bottomLeft", { HA::Left, VA::Bottom } },
-        pair_type{ "left", { HA::Left, VA::Center } },
-        pair_type{ "topRight", { HA::Right, VA::Top } },
-        pair_type{ "bottomRight", { HA::Right, VA::Bottom } },
-        pair_type{ "right", { HA::Right, VA::Center } },
-        pair_type{ "top", { HA::Center, VA::Top } },
-        pair_type{ "bottom", { HA::Center, VA::Bottom } }
+        pair_type{ "center", CA::Horizontal_Center & CA::Vertical_Center },
+        pair_type{ "topLeft", CA::Horizontal_Left & CA::Vertical_Top },
+        pair_type{ "bottomLeft", CA::Horizontal_Left & CA::Vertical_Bottom },
+        pair_type{ "left", CA::Horizontal_Left & CA::Vertical_Center },
+        pair_type{ "topRight", CA::Horizontal_Right & CA::Vertical_Top },
+        pair_type{ "bottomRight", CA::Horizontal_Right & CA::Vertical_Bottom },
+        pair_type{ "right", CA::Horizontal_Right & CA::Vertical_Center },
+        pair_type{ "top", CA::Horizontal_Center & CA::Vertical_Top },
+        pair_type{ "bottom", CA::Horizontal_Center & CA::Vertical_Bottom }
     };
 };
 

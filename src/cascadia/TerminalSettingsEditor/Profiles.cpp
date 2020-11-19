@@ -22,29 +22,30 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, L"Profile_CursorShape", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageAlignment, BackgroundImageAlignment, winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment, L"Profile_BackgroundImageAlignment", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
-        struct equalTo
-        {
-            bool operator()(const Model::Alignment& lhs, const Model::Alignment& rhs) const
-            {
-                return lhs.Horizontal == rhs.Horizontal && lhs.Vertical == rhs.Vertical;
-            }
-        };
+        //struct equalTo
+        //{
+        //    bool operator()(const Model::Alignment& lhs, const Model::Alignment& rhs) const
+        //    {
+        //        return lhs.Horizontal == rhs.Horizontal && lhs.Vertical == rhs.Vertical;
+        //    }
+        //};
 
-        _BackgroundImageAlignmentList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>();
-        _BackgroundImageAlignmentMap = winrt::single_threaded_map<Model::Alignment, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry, equalTo>();
-        auto enumMappingBackgroundImageAlignment = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::BackgroundImageAlignment();
-        for (auto [key, value] : enumMappingBackgroundImageAlignment)
-        {
-            auto enumName = LocalizedNameForEnumName(L"Profile_BackgroundImageAlignment", key, L"Content");
-            auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<Model::Alignment>(value));
-            _BackgroundImageAlignmentList.Append(entry);
-            _BackgroundImageAlignmentMap.Insert(value, entry);
-        }
+        //_BackgroundImageAlignmentList = winrt::single_threaded_observable_vector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>();
+        //_BackgroundImageAlignmentMap = winrt::single_threaded_map<Model::Alignment, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry, equalTo>();
+        //auto enumMappingBackgroundImageAlignment = winrt::Microsoft::Terminal::Settings::Model::EnumMappings::BackgroundImageAlignment();
+        //for (auto [key, value] : enumMappingBackgroundImageAlignment)
+        //{
+        //    auto enumName = LocalizedNameForEnumName(L"Profile_BackgroundImageAlignment", key, L"Content");
+        //    auto entry = winrt::make<winrt::Microsoft::Terminal::Settings::Editor::implementation::EnumEntry>(enumName, winrt::box_value<Model::Alignment>(value));
+        //    _BackgroundImageAlignmentList.Append(entry);
+        //    _BackgroundImageAlignmentMap.Insert(value, entry);
+        //}
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
