@@ -620,7 +620,7 @@
           "type": "boolean"
         },
         "useTabSwitcher": {
-          "default": true,
+          "default": false,
           "description": "When set to \"true\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI.",
           "type": "boolean"
         }

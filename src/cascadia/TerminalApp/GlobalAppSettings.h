@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, DebugFeaturesEnabled); // default value set in constructor
         GETSET_PROPERTY(bool, StartOnUserLogin, false);
         GETSET_PROPERTY(bool, AlwaysOnTop, false);
-        GETSET_PROPERTY(bool, UseTabSwitcher, true);
+        GETSET_PROPERTY(bool, UseTabSwitcher, false);
 
     private:
         hstring _unparsedDefaultProfile;
