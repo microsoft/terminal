@@ -25,10 +25,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
 
-            <DataTemplate x:DataType="local:EnumEntry" x:Key="ComboBoxItemTemplate">
-                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
-            </DataTemplate>
-
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
         </ResourceDictionary>
     </Page.Resources>
@@ -40,8 +36,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <StackPanel HorizontalAlignment="Left">
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_Commandline"
-                             x:Name="Commandline"
-                             Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"/>
+                                 x:Name="Commandline"
+                                 Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"/>
                         <Button x:Uid="Profile_CommandlineBrowse"
                             Click="Commandline_Click"
                             Margin="10,0,0,0"/>
@@ -115,10 +111,102 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <ComboBox x:Uid="Profile_BackgroundImageAlignment"
-                              ItemsSource="{x:Bind BackgroundImageAlignmentList, Mode=OneWay}"
-                              SelectedItem="{x:Bind CurrentBackgroundImageAlignment, Mode=TwoWay}"
-                              ItemTemplate="{StaticResource ComboBoxItemTemplate}"/>
+                    <!--<Controls:RadioButtons x:Uid="Profile_BackgroundImageAlignment"
+                                           ItemsSource="{x:Bind BackgroundImageAlignmentList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentBackgroundImageAlignment, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource BackgroundImageAlignmentTemplate}"/>-->
+                    <StackPanel Margin="0,0,0,20">
+                        <TextBlock x:Uid="Profile_BackgroundImageAlignment"
+                                   Margin="0"
+                                   FontSize="15"
+                                   HorizontalAlignment="Left"
+                                   ToolTipService.Placement="Mouse"/>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.Resources>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Margin" Value="2"/>
+                                    <Setter Property="Width" Value="40"/>
+                                    <Setter Property="Height" Value="40"/>
+                                    <Setter Property="CornerRadius" Value="2"/>
+                                    <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+                                </Style>
+                            </Grid.Resources>
+
+                            <!--Top Row-->
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopLeft"
+                                          x:Name="BIAlignment_TopLeft"
+                                          Grid.Row="0" Grid.Column="0">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE744;" RenderTransformOrigin="0.5,0.5">
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform Angle="90"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
+                            </ToggleButton>
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTop"
+                                          x:Name="BIAlignment_Top"
+                                          Grid.Row="0" Grid.Column="1">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE745;" RenderTransformOrigin="0.5,0.5">
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform Angle="180"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
+                            </ToggleButton>
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopRight"
+                                          x:Name="BIAlignment_TopRight"
+                                          Grid.Row="0" Grid.Column="2">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA5F;" RenderTransformOrigin="0.5,0.5">
+                                    <FontIcon.RenderTransform>
+                                        <RotateTransform Angle="270"/>
+                                    </FontIcon.RenderTransform>
+                                </FontIcon>
+                            </ToggleButton>
+
+                            <!--Middle Row-->
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentLeft"
+                                          x:Name="BIAlignment_Left"
+                                          Grid.Row="1" Grid.Column="0">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE746;"/>
+                            </ToggleButton>
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentCenter"
+                                          x:Name="BIAlignment_Center"
+                                          Grid.Row="1" Grid.Column="1">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xF16E;"/>
+                            </ToggleButton>
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentRight"
+                                          x:Name="BIAlignment_Right"
+                                          Grid.Row="1" Grid.Column="2">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA61;"/>
+                            </ToggleButton>
+
+                            <!--Bottom Row-->
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
+                                          x:Name="BIAlignment_BottomLeft"
+                                          Grid.Row="2" Grid.Column="0">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE744;"/>
+                            </ToggleButton>
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottom"
+                                          x:Name="BIAlignment_Bottom"
+                                          Grid.Row="2" Grid.Column="1">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE745;"/>
+                            </ToggleButton>
+                            <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomRight"
+                                          x:Name="BIAlignment_BottomRight"
+                                          Grid.Row="2" Grid.Column="2">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA5F;"/>
+                            </ToggleButton>
+                        </Grid>
+                    </StackPanel>
                     <Controls:NumberBox x:Uid="Profile_BackgroundImageOpacity"
                                         Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}"
                                         SmallChange="10"

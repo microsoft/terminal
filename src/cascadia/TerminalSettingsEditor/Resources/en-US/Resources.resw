@@ -388,38 +388,47 @@
   <data name="Profile_BackgroundImage.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets the file location of the image to draw over the window background.</value>
   </data>
-  <data name="Profile_BackgroundImageAlignment.Header" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignment.Text" xml:space="preserve">
     <value>Background image alignment</value>
   </data>
   <data name="Profile_BackgroundImageAlignment.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Sets how the background image aligns to the boundaries of the window.</value>
   </data>
-  <data name="Profile_BackgroundImageAlignmentBottom.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentBottom.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Bottom</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentBottomLeft.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentBottomLeft.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Bottom left</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentBottomRight.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentBottomRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Bottom right</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentCenter.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentCenter.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Center</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentLeft.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentLeft.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Left</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentRight.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Right</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentTop.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Top</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentTopLeft.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentTopLeft.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Top left</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
-  <data name="Profile_BackgroundImageAlignmentTopRight.Content" xml:space="preserve">
+  <data name="Profile_BackgroundImageAlignmentTopRight.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Top right</value>
+    <comment>This is the formal name for a visual alignment.</comment>
   </data>
   <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
