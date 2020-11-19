@@ -721,7 +721,7 @@
           "deprecated": true
         },
         "tabSwitcherMode": {
-          "default": true,
+          "default": "inOrder",
           "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", these actions will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
           "oneOf": [
             {
