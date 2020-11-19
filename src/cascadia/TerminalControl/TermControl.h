@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         hstring GetProfileName() const;
+        hstring WorkingDirectory() const;
 
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();

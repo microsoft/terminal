@@ -1015,6 +1015,13 @@ namespace winrt::TerminalApp::implementation
                     if (profileGuid.has_value())
                     {
                         const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
+                        const auto workingDirectory = terminalTab->GetActiveTerminalControl().WorkingDirectory();
+                        const auto validWorkingDirectory = !workingDirectory.empty();
+                        if (validWorkingDirectory)
+                        {
+                            settings.StartingDirectory(workingDirectory);
+                        }
+
                         _CreateNewTabFromSettings(profileGuid.value(), settings);
                     }
                 }
