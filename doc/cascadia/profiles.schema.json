@@ -58,6 +58,7 @@
         "duplicateTab",
         "find",
         "moveFocus",
+        "moveTab",
         "newTab",
         "nextTab",
         "openNewTabDropdown",
@@ -95,6 +96,13 @@
         "right",
         "up",
         "down"
+      ],
+      "type": "string"
+    },
+    "MoveTabDirection": {
+      "enum": [
+        "forward",
+        "backward"
       ],
       "type": "string"
     },
@@ -474,6 +482,22 @@
         }
       ]
     },
+    "MoveTabction": {
+      "description": "Arguments for moving a tab",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "moveTab" },
+            "direction": {
+              "$ref": "#/definitions/MoveTabDirection",
+              "description": "The direction to move the tab"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -497,6 +521,7 @@
               { "$ref": "#/definitions/CloseTabsAfterAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
+              { "$ref": "#/definitions/MoveTabAction" },
               { "type": "null" }
             ]
         },

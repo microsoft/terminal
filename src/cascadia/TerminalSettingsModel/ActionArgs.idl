@@ -46,6 +46,12 @@ namespace Microsoft.Terminal.Settings.Model
         AllFiles
     };
 
+    enum MoveTabDirection
+    {
+        Forward = 0,
+        Backward
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -154,6 +160,12 @@ namespace Microsoft.Terminal.Settings.Model
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    {
+        MoveTabArgs(MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
     };
 
     [default_interface] runtimeclass ScrollUpArgs : IActionArgs

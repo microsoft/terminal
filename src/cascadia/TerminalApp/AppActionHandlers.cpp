@@ -534,4 +534,21 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleMoveTab(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
+        {
+            auto direction = realArgs.Direction();
+            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            {
+                auto currentTabIndex = focusedTabIndex.value();
+                auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+            }
+
+            actionArgs.Handled(true);
+        }
+    }
 }
