@@ -91,6 +91,9 @@
 // {fmt}, a C++20-compatible formatting library
 #include <fmt/format.h>
 
+#define USE_INTERVAL_TREE_NAMESPACE
+#include <IntervalTree.h>
+
 // SAL
 #include <sal.h>
 

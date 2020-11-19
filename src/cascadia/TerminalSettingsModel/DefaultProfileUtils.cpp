@@ -19,6 +19,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CreateDefaultProfile(const 
 {
     const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
                                                                            gsl::as_bytes(gsl::make_span(name))) };
+
     auto newProfile = winrt::make<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profileGuid);
     newProfile.Name(name);
 

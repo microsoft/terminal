@@ -11,6 +11,8 @@ namespace Microsoft.Terminal.Settings.Model
         CascadiaSettings(String json);
         CascadiaSettings Copy();
 
+        void WriteSettingsToDisk();
+
         static CascadiaSettings LoadDefaults();
         static CascadiaSettings LoadAll();
         static CascadiaSettings LoadUniversal();
@@ -23,7 +25,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         GlobalAppSettings GlobalSettings { get; };
 
-        Windows.Foundation.Collections.IObservableVector<Profile> Profiles { get; };
+        Windows.Foundation.Collections.IObservableVector<Profile> AllProfiles { get; };
+        Windows.Foundation.Collections.IObservableVector<Profile> ActiveProfiles { get; };
 
         KeyMapping KeyMap { get; };
 

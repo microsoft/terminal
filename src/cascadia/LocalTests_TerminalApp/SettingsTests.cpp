@@ -139,9 +139,9 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         auto keymap = settings.GlobalSettings().KeyMap();
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        const auto profile2Guid = settings.Profiles().GetAt(2).Guid();
+        const auto profile2Guid = settings.ActiveProfiles().GetAt(2).Guid();
         VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
 
         VERIFY_ARE_EQUAL(12u, keymap.Size());
@@ -478,8 +478,8 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsString) };
 
         VERIFY_ARE_EQUAL(2u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(2u, settings.Profiles().Size());
-        VERIFY_ARE_EQUAL(settings.GlobalSettings().DefaultProfile(), settings.Profiles().GetAt(0).Guid());
+        VERIFY_ARE_EQUAL(2u, settings.ActiveProfiles().Size());
+        VERIFY_ARE_EQUAL(settings.GlobalSettings().DefaultProfile(), settings.ActiveProfiles().GetAt(0).Guid());
         try
         {
             const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, nullptr, nullptr);
@@ -499,6 +499,7 @@ namespace TerminalAppLocalTests
 
         const std::string settings0String{ R"(
         {
+            "defaultProfile": "profile5",
             "profiles": [
                 {
                     "name" : "profile0",
@@ -539,7 +540,7 @@ namespace TerminalAppLocalTests
 
         CascadiaSettings settings{ til::u8u16(settings0String) };
 
-        VERIFY_ARE_EQUAL(6u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(6u, settings.ActiveProfiles().Size());
         VERIFY_ARE_EQUAL(2u, settings.GlobalSettings().ColorSchemes().Size());
 
         auto createTerminalSettings = [&](const auto& profile, const auto& schemes) {
@@ -548,12 +549,12 @@ namespace TerminalAppLocalTests
             return terminalSettings;
         };
 
-        auto terminalSettings0 = createTerminalSettings(settings.Profiles().GetAt(0), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings1 = createTerminalSettings(settings.Profiles().GetAt(1), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings2 = createTerminalSettings(settings.Profiles().GetAt(2), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings3 = createTerminalSettings(settings.Profiles().GetAt(3), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings4 = createTerminalSettings(settings.Profiles().GetAt(4), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings5 = createTerminalSettings(settings.Profiles().GetAt(5), settings.GlobalSettings().ColorSchemes());
+        auto terminalSettings0 = createTerminalSettings(settings.ActiveProfiles().GetAt(0), settings.GlobalSettings().ColorSchemes());
+        auto terminalSettings1 = createTerminalSettings(settings.ActiveProfiles().GetAt(1), settings.GlobalSettings().ColorSchemes());
+        auto terminalSettings2 = createTerminalSettings(settings.ActiveProfiles().GetAt(2), settings.GlobalSettings().ColorSchemes());
+        auto terminalSettings3 = createTerminalSettings(settings.ActiveProfiles().GetAt(3), settings.GlobalSettings().ColorSchemes());
+        auto terminalSettings4 = createTerminalSettings(settings.ActiveProfiles().GetAt(4), settings.GlobalSettings().ColorSchemes());
+        auto terminalSettings5 = createTerminalSettings(settings.ActiveProfiles().GetAt(5), settings.GlobalSettings().ColorSchemes());
 
         VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default
@@ -608,7 +609,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
@@ -631,7 +632,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -735,7 +736,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
@@ -758,7 +759,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -864,7 +865,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
@@ -887,7 +888,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1001,10 +1002,10 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1096,10 +1097,10 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1219,10 +1220,10 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1356,10 +1357,10 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1459,10 +1460,10 @@ namespace TerminalAppLocalTests
         CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1601,7 +1602,7 @@ namespace TerminalAppLocalTests
         // we add a warning saying "the color scheme is unknown"
         VERIFY_ARE_EQUAL(1u, settings.Warnings().Size());
 
-        VERIFY_ARE_EQUAL(3u, settings.Profiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
         auto commands = settings.GlobalSettings().Commands();
         VERIFY_ARE_EQUAL(1u, commands.Size());
@@ -1624,7 +1625,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.Profiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         // This is the same warning as above

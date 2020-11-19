@@ -29,6 +29,7 @@ Abstract:
 #include <cstring>
 #include <shellscalingapi.h>
 #include <windowsx.h>
+#include <ShObjIdl.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -69,5 +70,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
 // For commandline argument processing
 #include <shellapi.h>
 #include <processenv.h>
-
+#include <WinUser.h>
 #include "til.h"

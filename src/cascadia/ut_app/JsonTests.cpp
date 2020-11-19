@@ -120,7 +120,7 @@ namespace TerminalAppUnitTests
     {
         // Parse some profiles without guids. We should NOT generate new guids
         // for them. If a profile doesn't have a GUID, we'll leave its _guid
-        // set to nullopt. CascadiaSettings::_ValidateProfilesHaveGuid will
+        // set to nullopt. The Profile::Guid() getter will
         // ensure all profiles have a GUID that's actually set.
         // The null guid _is_ a valid guid, so we won't re-generate that
         // guid. null is _not_ a valid guid, so we'll leave that nullopt
