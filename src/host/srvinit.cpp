@@ -177,10 +177,6 @@ static bool s_IsOnDesktop()
         {
             // Fallback to per-monitor aware V1 if the API isn't available.
             LOG_IF_FAILED(pHighDpiApi->SetProcessPerMonitorDpiAwareness());
-
-            // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
-            // Note that we don't need to do this if we're PMv2.
-            pHighDpiApi->EnablePerMonitorDialogScaling();
         }
     }
 
