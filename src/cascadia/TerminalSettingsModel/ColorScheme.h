@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
 
-        Json::Value ToJson();
+        Json::Value ToJson() const;
 
         static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 

@@ -701,6 +701,19 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // The RaiseVisualBell event has been bubbled up to here from the pane,
+        // the next part of the chain is bubbling up to app logic, which will
+        // forward it to app host.
+        newTabImpl->TabRaiseVisualBell([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_raiseVisualBellHandlers(nullptr, nullptr);
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
         _ReapplyCompactTabSize();
@@ -1121,6 +1134,8 @@ namespace winrt::TerminalApp::implementation
     // - hostingTab: The Tab that's hosting this TermControl instance
     void TerminalPage::_RegisterTerminalEvents(TermControl term, TerminalTab& hostingTab)
     {
+        term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
+
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
         term.CopyToClipboard({ this, &TerminalPage::_CopyToClipboardHandler });
@@ -1129,6 +1144,9 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
+
+        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
+        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -1206,6 +1224,14 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
+        if (CommandPalette().Visibility() == Visibility::Visible)
+        {
+            // If the tab switcher is currently open, don't change its mode.
+            // Just select the new tab.
+            CommandPalette().SelectNextItem(bMoveRight);
+            return;
+        }
+
         const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
         const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
 
@@ -1250,19 +1276,10 @@ namespace winrt::TerminalApp::implementation
                 CommandPalette().SetTabActions(_mruTabActions, true);
             }
 
-            if (CommandPalette().Visibility() == Visibility::Visible)
-            {
-                // If the tab switcher is currently open, don't change its mode.
-                // Just select the new tab.
-                CommandPalette().SelectNextItem(bMoveRight);
-            }
-            else
-            {
-                // Otherwise, set up the tab switcher in the selected mode, with
-                // the given ordering, and make it visible.
-                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().Visibility(Visibility::Visible);
-            }
+            // Otherwise, set up the tab switcher in the selected mode, with
+            // the given ordering, and make it visible.
+            CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+            CommandPalette().Visibility(Visibility::Visible);
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
@@ -1750,7 +1767,7 @@ namespace winrt::TerminalApp::implementation
     // - See Pane::CalcSnappedDimension
     float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        if (_settings.GlobalSettings().SnapToGridOnResize())
+        if (_settings && _settings.GlobalSettings().SnapToGridOnResize())
         {
             if (auto index{ _GetFocusedTabIndex() })
             {
@@ -1928,6 +1945,48 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs)
+    {
+        winrt::hstring message = eventArgs.Message();
+
+        winrt::hstring title;
+
+        switch (eventArgs.Level())
+        {
+        case TerminalControl::NoticeLevel::Debug:
+            title = RS_(L"NoticeDebug"); //\xebe8
+            break;
+        case TerminalControl::NoticeLevel::Info:
+            title = RS_(L"NoticeInfo"); // \xe946
+            break;
+        case TerminalControl::NoticeLevel::Warning:
+            title = RS_(L"NoticeWarning"); //\xe7ba
+            break;
+        case TerminalControl::NoticeLevel::Error:
+            title = RS_(L"NoticeError"); //\xe783
+            break;
+        }
+
+        _ShowControlNoticeDialog(title, message);
+    }
+
+    void TerminalPage::_ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            // FindName needs to be called first to actually load the xaml object
+            auto controlNoticeDialog = FindName(L"ControlNoticeDialog").try_as<WUX::Controls::ContentDialog>();
+
+            ControlNoticeDialog().Title(winrt::box_value(title));
+
+            // Insert the message
+            NoticeMessage().Text(message);
+
+            // Show the dialog
+            presenter.ShowDialog(controlNoticeDialog);
+        }
+    }
+
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
@@ -1939,6 +1998,16 @@ namespace winrt::TerminalApp::implementation
     {
         const auto control = _GetActiveControl();
         return control.CopySelectionToClipboard(singleLine, formats);
+    }
+
+    // Method Description:
+    // - Send an event (which will be caught by AppHost) to set the progress indicator on the taskbar
+    // Arguments:
+    // - sender (not used)
+    // - eventArgs: the arguments specifying how to set the progress indicator
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    {
+        _setTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2320,6 +2389,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarState()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarState());
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
+        }
+        return {};
     }
 
     // Method Description:
@@ -2847,4 +2942,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

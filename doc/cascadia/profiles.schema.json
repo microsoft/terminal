@@ -27,11 +27,30 @@
       "type": "string"
     },
     "BellStyle": {
-      "enum": [
-        "none",
-        "audible"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "audible",
+              "visual"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "audible",
+            "visual",
+            "all",
+            "none"
+          ]
+        }
+      ]
     },
     "ProfileGuid": {
       "default": "{}",
@@ -161,6 +180,11 @@
         "index": {
           "type": "integer",
           "description": "The index of the profile in the new tab dropdown (starting at 0)"
+        },
+        "tabColor": {
+          "$ref": "#/definitions/Color",
+          "default": null,
+          "description": "If provided, will set the tab's color to the given value"
         }
       },
       "type": "object"
@@ -694,7 +718,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -702,7 +726,7 @@
           "deprecated": true
         },
         "tabSwitcherMode": {
-          "default": true,
+          "default": "inOrder",
           "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", these actions will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
           "oneOf": [
             {
@@ -712,7 +736,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -800,7 +824,7 @@
         },
         "bellStyle": {
           "default": "audible",
-          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound and flash the taskbar icon. An array of specific behaviors can also be used. Supported array values include `audible` and `visual`. When set to \"none\", nothing will happen.",
           "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {

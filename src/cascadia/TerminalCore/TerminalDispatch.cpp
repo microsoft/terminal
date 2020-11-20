@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "TerminalDispatch.hpp"
+#include "../../types/inc/utils.hpp"
+
+using namespace Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::VirtualTerminal;
 
@@ -397,6 +400,60 @@ bool TerminalDispatch::AddHyperlink(const std::wstring_view uri, const std::wstr
 bool TerminalDispatch::EndHyperlink() noexcept
 {
     return _terminalApi.EndHyperlink();
+}
+
+// Method Description:
+// - Performs a ConEmu action
+// - Currently, the only action we support is setting the taskbar state/progress
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - true
+bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
+{
+    unsigned int state = 0;
+    unsigned int progress = 0;
+
+    const auto parts = Utils::SplitString(string, L';');
+    unsigned int subParam = 0;
+
+    // For now, the only ConEmu action we support is setting the taskbar state/progress,
+    // which has a sub param value of 4
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam) || subParam != 4)
+    {
+        return false;
+    }
+
+    if (parts.size() >= 2)
+    {
+        // A state parameter is defined, parse it out
+        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+        if (!stateSuccess)
+        {
+            return false;
+        }
+        if (parts.size() >= 3)
+        {
+            // A progress parameter is also defined, parse it out
+            const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+            if (!progressSuccess)
+            {
+                return false;
+            }
+        }
+    }
+
+    if (state > TaskbarMaxState)
+    {
+        // state is out of bounds, return false
+        return false;
+    }
+    if (progress > TaskbarMaxProgress)
+    {
+        // progress is greater than the maximum allowed value, clamp it to the max
+        progress = TaskbarMaxProgress;
+    }
+    return _terminalApi.SetTaskbarProgress(state, progress);
 }
 
 // Routine Description:

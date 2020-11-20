@@ -4,6 +4,9 @@
 #include "../../terminal/adapter/termDispatch.hpp"
 #include "ITerminalApi.hpp"
 
+static constexpr size_t TaskbarMaxState{ 4 };
+static constexpr size_t TaskbarMaxProgress{ 100 };
+
 class TerminalDispatch : public Microsoft::Console::VirtualTerminal::TermDispatch
 {
 public:
@@ -66,6 +69,8 @@ public:
 
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+
+    bool DoConEmuAction(const std::wstring_view string) noexcept override;
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;

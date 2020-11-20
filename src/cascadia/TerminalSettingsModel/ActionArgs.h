@@ -60,12 +60,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(winrt::hstring, Commandline, L"");
         GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
         GETSET_PROPERTY(winrt::hstring, TabTitle, L"");
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         GETSET_PROPERTY(winrt::hstring, Profile, L"");
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
         static constexpr std::string_view TabTitleKey{ "tabTitle" };
+        static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
 
@@ -77,6 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return other.Commandline() == _Commandline &&
                    other.StartingDirectory() == _StartingDirectory &&
                    other.TabTitle() == _TabTitle &&
+                   other.TabColor() == _TabColor &&
                    other.ProfileIndex() == _ProfileIndex &&
                    other.Profile() == _Profile;
         };
@@ -89,6 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, TabTitleKey, args->_TabTitle);
             JsonUtils::GetValueForKey(json, ProfileIndexKey, args->_ProfileIndex);
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
+            JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             return *args;
         }
         Model::NewTerminalArgs Copy() const
@@ -97,6 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Commandline = _Commandline;
             copy->_StartingDirectory = _StartingDirectory;
             copy->_TabTitle = _TabTitle;
+            copy->_TabColor = _TabColor;
             copy->_ProfileIndex = _ProfileIndex;
             copy->_Profile = _Profile;
             return *copy;
@@ -493,7 +498,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
     {
         SetTabColorArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
 
         static constexpr std::string_view ColorKey{ "color" };
 
@@ -513,10 +518,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SetTabColorArgs>();
-            if (const auto temp{ JsonUtils::GetValueForKey<std::optional<til::color>>(json, ColorKey) })
-            {
-                args->_TabColor = static_cast<uint32_t>(*temp);
-            }
+            JsonUtils::GetValueForKey(json, ColorKey, args->_TabColor);
             return { *args, {} };
         }
         IActionArgs Copy() const

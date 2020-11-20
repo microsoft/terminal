@@ -1053,6 +1053,32 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarState()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarState();
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarProgress()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarProgress();
+        }
+        return {};
+    }
+
+    // Method Description:
     // - Sets the initial commandline to process on startup, and attempts to
     //   parse it. Commands will be parsed into a list of ShortcutActions that
     //   will be processed on TerminalPage::Create().

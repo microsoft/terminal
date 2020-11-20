@@ -22,6 +22,12 @@ public:
     {
         _reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
     };
+
+    void InitializeJsonWriter()
+    {
+        _writer = std::unique_ptr<Json::StreamWriter>(Json::StreamWriterBuilder::StreamWriterBuilder().newStreamWriter());
+    }
+
     Json::Value VerifyParseSucceeded(std::string content)
     {
         Json::Value root;
@@ -31,6 +37,14 @@ public:
         return root;
     };
 
+    std::string toString(const Json::Value& json)
+    {
+        std::stringstream s;
+        _writer->write(json, &s);
+        return s.str();
+    }
+
 protected:
     std::unique_ptr<Json::CharReader> _reader;
+    std::unique_ptr<Json::StreamWriter> _writer;
 };

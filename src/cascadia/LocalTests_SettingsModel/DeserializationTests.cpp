@@ -886,7 +886,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
     }
 
     void DeserializationTests::TestReorderWithNullGuids()
@@ -937,7 +937,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
         VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
@@ -1038,7 +1038,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(0).Name());
@@ -1192,8 +1192,8 @@ namespace SettingsModelLocalTests
 
         VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(4).HasGuid());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_allProfiles.GetAt(0).Name());

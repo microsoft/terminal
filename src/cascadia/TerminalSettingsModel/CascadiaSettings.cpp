@@ -247,11 +247,6 @@ void CascadiaSettings::_ValidateSettings()
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
-    // Verify all profiles actually had a GUID specified, otherwise generate a
-    // GUID for them. Make sure to do this before de-duping profiles and
-    // checking that the default profile is set.
-    _ValidateProfilesHaveGuid();
-
     // Re-order profiles so that all profiles from the user's settings appear
     // before profiles that _weren't_ in the user profiles.
     _ReorderProfilesToMatchUserSettingsOrder();
@@ -307,19 +302,6 @@ void CascadiaSettings::_ValidateProfilesExist()
         // object is not going to be returned at any point.
 
         throw SettingsException(Microsoft::Terminal::Settings::Model::SettingsLoadErrors::NoProfiles);
-    }
-}
-
-// Method Description:
-// - Walks through each profile, and ensures that they had a GUID set at some
-//   point. If the profile did _not_ have a GUID ever set for it, generate a
-//   temporary runtime GUID for it. This validation does not add any warnings.
-void CascadiaSettings::_ValidateProfilesHaveGuid()
-{
-    for (auto profile : _allProfiles)
-    {
-        auto profileImpl = winrt::get_self<implementation::Profile>(profile);
-        profileImpl->GenerateGuidIfNecessary();
     }
 }
 
@@ -511,7 +493,8 @@ void CascadiaSettings::_ValidateAllSchemesExist()
         const auto schemeName = profile.ColorSchemeName();
         if (!_globals->ColorSchemes().HasKey(schemeName))
         {
-            profile.ColorSchemeName({ L"Campbell" });
+            // Clear the user set color scheme. We'll just fallback instead.
+            profile.ClearColorSchemeName();
             foundInvalidScheme = true;
         }
     }
@@ -787,7 +770,8 @@ bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
 //   we find any invalid background images.
 void CascadiaSettings::_ValidateNoGlobalsKey()
 {
-    if (auto oldGlobalsProperty{ _userSettings["globals"] })
+    // use isMember here. If you use [], you're actually injecting "globals": null.
+    if (_userSettings.isMember("globals"))
     {
         _warnings.Append(SettingsLoadWarnings::LegacyGlobalsProperty);
     }
