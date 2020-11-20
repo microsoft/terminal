@@ -79,7 +79,7 @@ echo Starting build...
 
 @rem start indeterminate progress in the taskbar
 @rem this `<NUL set /p =` magic will output the text _without a newline_
-<NUL set /p =]9;4;3;0
+<NUL set /p =]9;4;3
 
 %_BUILD_CMDLINE%
 
@@ -88,7 +88,7 @@ set _build_result=%errorlevel%
 if (%_build_result%) == (0) (
 
 @rem clear the progress
-<NUL set /p =]9;4;0;0
+<NUL set /p =]9;4
 
 ) else (
 
@@ -103,7 +103,7 @@ if (%_build_result%) == (0) (
 
 ping 128.0.0.1 -n 1 -w 500 > nul
 
-<NUL set /p =]9;4;0;0
+<NUL set /p =]9;4
 
 )
 
