@@ -50,9 +50,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Load="False"
             x:Name="CloseAllDialog"
             x:Uid="CloseAllDialog"
-            DefaultButton="Primary"
-            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick"
-            CloseButtonClick="_CloseWarningCloseButtonOnClick">
+            DefaultButton="Primary">
         </ContentDialog>
 
         <ContentDialog
