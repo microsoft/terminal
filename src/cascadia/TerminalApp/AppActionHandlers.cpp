@@ -350,23 +350,20 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        std::optional<til::color> tabColor;
+        Windows::Foundation::IReference<Windows::UI::Color> tabColor;
 
         if (const auto& realArgs = args.ActionArgs().try_as<SetTabColorArgs>())
         {
-            if (realArgs.TabColor() != nullptr)
-            {
-                tabColor = realArgs.TabColor().Value();
-            }
+            tabColor = realArgs.TabColor();
         }
 
         if (auto focusedTab = _GetFocusedTab())
         {
             if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                if (tabColor.has_value())
+                if (tabColor)
                 {
-                    activeTab->SetRuntimeTabColor(tabColor.value());
+                    activeTab->SetRuntimeTabColor(tabColor.Value());
                 }
                 else
                 {
@@ -524,12 +521,7 @@ namespace winrt::TerminalApp::implementation
                                             const ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        auto tabCommands = winrt::single_threaded_vector<Command>();
-        for (const auto& tab : _tabs)
-        {
-            tabCommands.Append(tab.SwitchToTabCommand());
-        }
-        CommandPalette().SetTabActions(tabCommands);
+        _UpdatePaletteWithInOrderTabs();
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);

@@ -701,6 +701,19 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // The RaiseVisualBell event has been bubbled up to here from the pane,
+        // the next part of the chain is bubbling up to app logic, which will
+        // forward it to app host.
+        newTabImpl->TabRaiseVisualBell([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_raiseVisualBellHandlers(nullptr, nullptr);
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
         _ReapplyCompactTabSize();
@@ -1040,12 +1053,24 @@ namespace winrt::TerminalApp::implementation
         if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
         {
             _mruTabActions.RemoveAt(mruIndex);
-            CommandPalette().SetTabActions(_mruTabActions);
         }
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
+
+        // If the tab switcher is currently open, update it to reflect the
+        // current list of tabs.
+        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
+        if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
+        {
+            CommandPalette().SetTabActions(_mruTabActions, false);
+        }
+        else if (commandPaletteIsVisible)
+        {
+            _UpdatePaletteWithInOrderTabs();
+        }
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
@@ -1109,6 +1134,8 @@ namespace winrt::TerminalApp::implementation
     // - hostingTab: The Tab that's hosting this TermControl instance
     void TerminalPage::_RegisterTerminalEvents(TermControl term, TerminalTab& hostingTab)
     {
+        term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
+
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
         term.CopyToClipboard({ this, &TerminalPage::_CopyToClipboardHandler });
@@ -1117,6 +1144,9 @@ namespace winrt::TerminalApp::implementation
         term.PasteFromClipboard({ this, &TerminalPage::_PasteFromClipboardHandler });
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
+
+        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
+        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -1178,35 +1208,81 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Updates the command palette (tab switcher) with a list of actions
+    //   reflecting the current in-order list of tabs.
+    void TerminalPage::_UpdatePaletteWithInOrderTabs()
+    {
+        auto tabCommands = winrt::single_threaded_vector<Command>();
+        for (const auto& tab : _tabs)
+        {
+            tabCommands.Append(tab.SwitchToTabCommand());
+        }
+        CommandPalette().SetTabActions(tabCommands, true);
+    }
+
+    // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        if (_settings.GlobalSettings().UseTabSwitcher())
+        if (CommandPalette().Visibility() == Visibility::Visible)
         {
-            CommandPalette().SetTabActions(_mruTabActions);
+            // If the tab switcher is currently open, don't change its mode.
+            // Just select the new tab.
+            CommandPalette().SelectNextItem(bMoveRight);
+            return;
+        }
 
-            // Since ATS is always MRU, our focused tab index is always 0.
-            // So, going next should go to index 1, and going prev should wrap to the end.
-            uint32_t tabCount = _mruTabActions.Size();
-            auto newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
+        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+        const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
 
-            if (CommandPalette().Visibility() == Visibility::Visible)
+        // First, determine what the index of the newly selected tab should be.
+        // This changes if we're doing an in-order traversal vs a MRU traversal.
+        auto newTabIndex = 0;
+        if (useInOrderTabIndex)
+        {
+            // Determine what the next in-order tab index is
+            if (auto index{ _GetFocusedTabIndex() })
             {
-                CommandPalette().SelectNextItem(bMoveRight);
+                uint32_t tabCount = _tabs.Size();
+                // Wraparound math. By adding tabCount and then calculating
+                // modulo tabCount, we clamp the values to the range [0,
+                // tabCount) while still supporting moving leftward from 0 to
+                // tabCount - 1.
+                newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
+            }
+        }
+        else
+        {
+            // Determine what the next "most recently used" index is.
+            // In this case, our focused tab index (in the MRU ordering) is
+            // always 0. So, going next should go to index 1, and going prev
+            // should wrap to the end.
+            uint32_t tabCount = _mruTabActions.Size();
+            newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
+        }
+
+        const bool useTabSwitcher = tabSwitchMode != TabSwitcherMode::Disabled;
+
+        if (useTabSwitcher)
+        {
+            if (useInOrderTabIndex)
+            {
+                // Set up the list of in-order tabs
+                _UpdatePaletteWithInOrderTabs();
             }
             else
             {
-                CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
-                CommandPalette().Visibility(Visibility::Visible);
+                // Set up the list of MRU tabs
+                CommandPalette().SetTabActions(_mruTabActions, true);
             }
+
+            // Otherwise, set up the tab switcher in the selected mode, with
+            // the given ordering, and make it visible.
+            CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+            CommandPalette().Visibility(Visibility::Visible);
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
-            uint32_t tabCount = _tabs.Size();
-            // Wraparound math. By adding tabCount and then calculating modulo tabCount,
-            // we clamp the values to the range [0, tabCount) while still supporting moving
-            // leftward from 0 to tabCount - 1.
-            auto newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
             _SelectTab(newTabIndex);
         }
     }
@@ -1691,7 +1767,7 @@ namespace winrt::TerminalApp::implementation
     // - See Pane::CalcSnappedDimension
     float TerminalPage::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        if (_settings.GlobalSettings().SnapToGridOnResize())
+        if (_settings && _settings.GlobalSettings().SnapToGridOnResize())
         {
             if (auto index{ _GetFocusedTabIndex() })
             {
@@ -1869,6 +1945,48 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_ControlNoticeRaisedHandler(const IInspectable /*sender*/, const Microsoft::Terminal::TerminalControl::NoticeEventArgs eventArgs)
+    {
+        winrt::hstring message = eventArgs.Message();
+
+        winrt::hstring title;
+
+        switch (eventArgs.Level())
+        {
+        case TerminalControl::NoticeLevel::Debug:
+            title = RS_(L"NoticeDebug"); //\xebe8
+            break;
+        case TerminalControl::NoticeLevel::Info:
+            title = RS_(L"NoticeInfo"); // \xe946
+            break;
+        case TerminalControl::NoticeLevel::Warning:
+            title = RS_(L"NoticeWarning"); //\xe7ba
+            break;
+        case TerminalControl::NoticeLevel::Error:
+            title = RS_(L"NoticeError"); //\xe783
+            break;
+        }
+
+        _ShowControlNoticeDialog(title, message);
+    }
+
+    void TerminalPage::_ShowControlNoticeDialog(const winrt::hstring& title, const winrt::hstring& message)
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            // FindName needs to be called first to actually load the xaml object
+            auto controlNoticeDialog = FindName(L"ControlNoticeDialog").try_as<WUX::Controls::ContentDialog>();
+
+            ControlNoticeDialog().Title(winrt::box_value(title));
+
+            // Insert the message
+            NoticeMessage().Text(message);
+
+            // Show the dialog
+            presenter.ShowDialog(controlNoticeDialog);
+        }
+    }
+
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
@@ -1880,6 +1998,16 @@ namespace winrt::TerminalApp::implementation
     {
         const auto control = _GetActiveControl();
         return control.CopySelectionToClipboard(singleLine, formats);
+    }
+
+    // Method Description:
+    // - Send an event (which will be caught by AppHost) to set the progress indicator on the taskbar
+    // Arguments:
+    // - sender (not used)
+    // - eventArgs: the arguments specifying how to set the progress indicator
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    {
+        _setTaskbarProgressHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -2261,6 +2389,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarState()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarState());
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
+        }
+        return {};
     }
 
     // Method Description:
@@ -2698,7 +2852,15 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabActions.RemoveAt(mruIndex);
                 _mruTabActions.InsertAt(0, command);
-                CommandPalette().SetTabActions(_mruTabActions);
+
+                // If the tab switcher is currently open, AND we're using it in
+                // MRU mode, then update it to reflect the current list of tabs.
+                const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
+                const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
+                if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
+                {
+                    CommandPalette().SetTabActions(_mruTabActions, false);
+                }
             }
         }
     }
@@ -2780,4 +2942,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

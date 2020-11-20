@@ -25,6 +25,7 @@ PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
     ..\Cluster.cpp \
+    ..\BlinkingState.cpp \
     ..\FontInfo.cpp \
     ..\FontInfoBase.cpp \
     ..\FontInfoDesired.cpp \

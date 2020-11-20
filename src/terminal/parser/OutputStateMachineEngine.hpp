@@ -160,6 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
             Hyperlink = 8,
+            ConEmuAction = 9,
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,

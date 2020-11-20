@@ -55,10 +55,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
         static bool IsDynamicProfileObject(const Json::Value& json);
+        Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
         hstring ExpandedBackgroundImagePath() const;
-        void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         // BackgroundImageAlignment is 1 setting saved as 2 separate values
@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(hstring, BackgroundImagePath);
         GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
-        GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
+        GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_SETTING(bool, RetroTerminalEffect, false);
