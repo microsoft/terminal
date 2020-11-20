@@ -541,13 +541,15 @@ namespace winrt::TerminalApp::implementation
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
         {
             auto direction = realArgs.Direction();
-            if (auto focusedTabIndex = _GetFocusedTabIndex())
+            if (direction != MoveTabDirection::None)
             {
-                auto currentTabIndex = focusedTabIndex.value();
-                auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
-                _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+                if (auto focusedTabIndex = _GetFocusedTabIndex())
+                {
+                    auto currentTabIndex = focusedTabIndex.value();
+                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+                }
             }
-
             actionArgs.Handled(true);
         }
     }

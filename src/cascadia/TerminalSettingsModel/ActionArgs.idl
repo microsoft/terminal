@@ -48,7 +48,8 @@ namespace Microsoft.Terminal.Settings.Model
 
     enum MoveTabDirection
     {
-        Forward = 0,
+        None = 0,
+        Forward,
         Backward
     };
 

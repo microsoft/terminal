@@ -679,7 +679,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MoveTabArgs() = default;
         MoveTabArgs(MoveTabDirection direction) :
             _Direction{ direction } {};
-        GETSET_PROPERTY(MoveTabDirection, Direction);
+        GETSET_PROPERTY(MoveTabDirection, Direction, MoveTabDirection::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -700,7 +700,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MoveTabArgs>();
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            return { *args, {} };
+            if (args->_Direction == MoveTabDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
         }
         IActionArgs Copy() const
         {
