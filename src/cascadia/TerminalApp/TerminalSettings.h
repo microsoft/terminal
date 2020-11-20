@@ -70,6 +70,7 @@ namespace winrt::TerminalApp::implementation
 
         GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
+        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::ICustomConfigObj, UnfocusedConfig, nullptr);
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
         // Due to this prioritization, the tab color will be preserved upon settings reload
