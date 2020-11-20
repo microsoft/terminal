@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
         void DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e);
 
     private:
+        bool _focused;
         void _OnMaximizeOrRestore(byte flag);
         HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
     };
