@@ -2,7 +2,7 @@
 author: <Pankaj> <Bhojwani> <pabhojwa@microsoft.com>
 created on: <2020-11-20>
 last updated: <2020-11-20>
-issue id: <github issue id>
+issue id: <#8345>
 ---
 
 # Configuration object for focused/unfocused states
@@ -84,7 +84,8 @@ does not cause the window to flash/show a jarring indicator that the rendering v
 
 ## Future considerations
 
-[comment]: # What are some of the things that the fixes/features might unlock in the future? Does the implementation of this spec enable scenarios?
+When we allow for running elevated states in Terminal, a similar object can be used for rendering that session
+differently.
 
 ## Resources
 
