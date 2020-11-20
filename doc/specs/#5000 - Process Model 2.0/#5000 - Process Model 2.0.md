@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-10-30
+last updated: 2020-11-20
 issue id: #5000
 ---
 
@@ -23,37 +23,28 @@ following scenarios:
 * Run `wt` in the current window ([#4472])
 * Single Instance Mode ([#2227])
 * Quake Mode ([#653])
-* Mixed Elevation ([#1032] & [#632])
+
+Also discussed as a part of this spec is the "mixed elevation" ([#1032] &
+[#632]) scenario, which is closely related to the above scenarios, and was
+investigated as a part of this re-architecture.
 
 ## Inspiration
 
-Much of the design for this feature was inspired by (what I believe is) the web
-browser process model. For a web browser, there's often a separate process for
-each of the tabs within the browser, to help isolate the actual tabs from one
-another.
+Much of the design for this feature was inspired by an older web browser process
+model. For a time, web browsers, would use a separate process for each of the
+tabs within the browser, to help isolate the actual tabs from one another.
+(Nowadays, browsers will have multiple tabs all hosted in a single process, to
+attempt to reuse some resources between tabs. They do still break out the tab
+content from the actual window's process).
+
+Aditionally, the rxvt-unicode terminal emulator uses a similar client/server
+architecture, where the terminal "content" is hosted by a server process, and
+windows act as a "client" for that content.
 
 ## Background
 
 In order to better understand some of the following technical solutions, it's
 important to understand some of the technical hurdles that need to be overcome.
-
-### Mixed admin and unelevated clients in a single window
-
-Let's presume that you're a user who wants to be able to open an elevated tab
-within an otherwise unelevated Terminal window. We call this scenario "mixed
-elevation" - the tabs within the Terminal can be running either unelevated _or_
-elevated client applications.
-
-It wouldn't be terribly difficult for the unelevated Terminal to request the
-permission of the user to spawn an elevated client application. The user would
-see a UAC prompt, they'd accept, and then they'd be able to have an elevated
-shell alongside their unelevated tabs.
-
-However, this creates an escalation of privilege vector. Now, there's an
-unelevated window which is connected directly to an elevated process. At this
-point, any other unelevated application could send input to the Terminal's
-`HWND`, making it possible for another unelevated process to "drive" the
-Terminal window and send commands to the elevated client application.
 
 ### Drag and drop tabs to create new windows
 
@@ -84,6 +75,24 @@ extremely fragile, if not impossible to do robustly.
 
 What we need is a more effective way for separate Terminal windows to to be able
 to connect to and display content that's being hosted in another process.
+
+### Mixed admin and unelevated clients in a single window
+
+Let's presume that you're a user who wants to be able to open an elevated tab
+within an otherwise unelevated Terminal window. We call this scenario "mixed
+elevation" - the tabs within the Terminal can be running either unelevated _or_
+elevated client applications.
+
+It wouldn't be terribly difficult for the unelevated Terminal to request the
+permission of the user to spawn an elevated client application. The user would
+see a UAC prompt, they'd accept, and then they'd be able to have an elevated
+shell alongside their unelevated tabs.
+
+However, this creates an escalation of privilege vector. Now, there's an
+unelevated window which is connected directly to an elevated process. At this
+point, any other unelevated application could send input to the Terminal's
+`HWND`, making it possible for another unelevated process to "drive" the
+Terminal window and send commands to the elevated client application.
 
 ## Solution Design
 
@@ -208,12 +217,6 @@ which would allow us to easily pass the `HANDLE` between these processes.
 Instead we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT
 boundary, and cast it back to a `HANDLE` when we want to use it.
 
-We can't just have the content process duplicate the handle to the window
-process directly. If the content process is unelevated, and the window process
-is elevated (in a mixed elevation scenario), then the content process won't have
-permission to `DuplicateHandle` the `HANDLE` to the swapchain into the window's
-process. (more on mixed elevation below).
-
 Instead, the window will always need to be the one responsible for calling
 `DuplicateHandle`. Fortunately, the `DuplicateHandle` function does allow a
 caller to duplicate from another process into your own process.
@@ -250,6 +253,11 @@ The terminal buffer never needs to move from one process to another - it always
 stays in just a single content process. The only thing that changes is the
 window process which is rendering the content process's swapchain.
 
+When a new window is created from a torn-out tab in this manner, we will want to
+ensure that the created window maintains the same maximized state as the origin
+window. If the user tries to tera out a tab from a maximized window, the window
+we create should _also_ be maximized.
+
 Similar to dragging a tab from one window to another window, we can also detect
 when the tab was dropped somewhere outside the bounds of a tab strip. When that
 happens, we'll create a new WT window, and use the data package from the
@@ -265,63 +273,57 @@ it.
 
 #### Scenario: Mixed Elevation
 
-With the ability for window processes to connect to other pre-existing content
-processes, we can now also support mixed elevation scenarios as well.
+It was initially theorized that this window/content model architecture would
+also help enable "mixed elevation", where there are tabs running at different
+integrity levels (read: elevated and unelevated) within the same terminal
+window. However, after investigation and research, it has become apparent that
+this scenario is not possible to do safely after all. There are numerous
+technical difficulties involved, and each with their own security risks. At the
+end of the day, the team wouldn't be comfortable shipping a mixed-elevation
+solution, because there's simply no way for us to be confident that we haven't
+introduced an escalation-of-privledge vector utilizing the Terminal. No matter
+how small the attack surface might be, we wouldn't be confident that there are
+_no_ vectors for an attack.
 
-If a user requests a new elevated tab from an otherwise unelevated window, we
-can use UAC to create a new, elevated window process, and "move" all the current
-tabs to that window process, as well as the new elevated client. Now, the window
-process is elevated, preventing it from input injection, but still contains all
-the previously existing tabs. The original window process can now be discarded,
-as the new elevated window process will pretend to be the original window.
+For the time being we'll continue with the current model of having one window
+for unelevated processes, and another for elevated windows. We can revisit mixed
+elevation in the future if we can get the focus and attention from some security
+experts that could back up a technical solution.
 
-![mixed-elevation](mixed-elevation.png)
+Instead of supporting mixed elevation in a single window, we'll introduce a
+number of new properties to profiles and various actions, to improve the user
+experience of running elevated instances. These are detailed in the spec at
+[TODO!](FILL THIS LINK IN!!!!                             !)
 
-We would probably want to provide some additional configuration options here as
-well:
-* Users will most likely want to be able to specify that a given profile should
-  always run elevated.
-  - We should also provide some argument to the `NewTerminalArgs` (used by the
-    `new-tab` and `split-pane` actions) to allow a user to elevate an otherwise
-    unelevated profile.
-* We'll probably want to create new content processes in a medium-IL context by
-  default, unless the profile or launch args otherwise indicates launching
-  elevated. So a window process running elevated would still create unelevated
-  profiles by default.
-* Currently, if a user launches the terminal as an administrator, then _all_ of
-  their tabs run elevated. We'll probably want to provide a similar
-  configuration as well. Maybe if a window process is initially launched as
-  elevated (rather than inheriting from an existing session), then it could
-  either:
-  - default all future connections it creates to elevated connections
-  - assume the _first_ tab (or all the terminals created by the startup
-    commandline) should be elevated, but then subsequent connections would
-    default to unelevated processes.
+Some things we considered during this investigation:
 
-It's a long-standing platform bug that you cannot use drag-and-drop in elevated
-scenarios. This unfortunately means that elevated window processes will _not_ be
-able to tear tabs out into their own windows. Even tabs that only contain
-unelevated content processes in them will not be able to be torn out, because
-the drag-and-drop service is fundamentally incapable of connecting to elevated
-windows.
-
-We should probably have a discussion about what happens when the last elevated
-content process in an elevated window process is closed. If an elevated window
-process doesn't have any remaining elevated content processes, then it should be
-able to revert to an unelevated window process. Should we do this? There's
-likely some visual flickering that will happen as we re-create the new window
-process, so maybe it would be unappealing to users. However, there's also the
-negative side effect that come from elevated windows (the aforementioned lack of
-drag/drop), so maybe users will want to return to the more permissive unelevated
-window process.
-
-This is one section where unfortunately I don't have a working prototype yet.
-From my research, an elevated process cannot simply `create_instance` a class
-that's hosted by an unelevated process. However, after proposing this idea to
-the broad C++/WinRT discussion alias, no one on that thread immediately shot
-down the idea as being impossible or terrible from a security perspective, so I
-believe that it _will_ be possible. We still need to do some research on the
-actual mechanisms for some token impersonation.
+* If a user requests a new elevated tab from an otherwise unelevated window, we
+  could use UAC to create a new, elevated window process, and "move" all the
+  current tabs to that window process, as well as the new elevated client. Now,
+  the window process would be elevated, preventing it from input injection, and
+  it would still contains all the previously existing tabs. The original window
+  process could now be discarded, as the new elevated window process will
+  pretend to be the original window.
+  - However, it is unfortunately not possible with COM to have an elevated
+    client attach to an unelevated server that's registered at runtime. Even in
+    a packaged environment, the OS will reject the attempt to `CoCreateInstance`
+    the content process object. this will prevent elevated windows from
+    re-connecting to unelevated client processes.
+  - We could theoretically build an RPC tunnel between content and window
+    processes, and use the RPC connection to marshal the content process to the
+    elevated window. However, then _we_ would need to be responsible for
+    securing access the the RPC endpoint, and we feel even less confident doing
+    that.
+  - Attempts were also made to use a window-broker-content architecture, with
+    the broker process having a static CLSID in the registry, and having the
+    window and content processes at mixed elevation levels `CoCreateInstance`
+    that broker. This however _also_ did not work across elevation levels. This
+    may be due to a lack of Packaged COM support for mixed elevation levels.
+    Even if this approach did end up working, we would still need to be
+    responsible for securing the elevated windows so that an unelevated attacker
+    couldn't hijack a content process and trigger unexepected code in the window
+    process. We didn't feel confident that we could properly secure this channel
+    either.
 
 ### Monarch and Peasant Processes
 
@@ -928,69 +930,18 @@ spec.
 
 ### Mixed elevation & Monarch / Peasant issues
 
-Previously, we've mentioned that windows who wish to have a tab open elevated
-will re-open as an elevated process, connected to all the content processes the
-window was previously connected to. However, what happens when the window that
-needs to re-open as an elevated window is the monarch process? If the elevated
-window were to retain its monarch status, then all the other (unelevated) window
-processes would be unable to connect to it and call methods and trigger
-callbacks on it.
+Because we won't be able to `CoCreateInstance` across different elevation
+levels, we won't be able to have elevated window processes communicate with
+unelevated ones. This means that we'll end up having one monarch per elevation
+level. This may end up a little confusing, as window IDs will be tracked
+per-elevation level. That means there could be two different windows that share
+the same ID - one elevated window, and one unelevated window. Only the windows
+running at the same integrity level will be addressable via the commandline.
 
-So if the monarch is going to enter a mixed-elevation state, the new process for
-the elevated window shouldn't try to register as the monarch, and instead rely
-on another process being the monarch.
-
-This comes with a variety of other edge cases as well.
-
-When a process does re-open as an elevated window, it will need a mechanism to
-retain its original ID as assigned by the monarch. This is so that commands like
-`wt -s 2 split-pane` will continue to refer to the same logical window, even if
-there's a new process hosting it now.
-
-What if there's only one window, and it becomes elevated? In that case, there is
-no other monarch to rely on. We'll need a way for us to start `wt` as a
-"headless monarch". This headless monarch process will _not_ display its own
-window, but will act as the monarch. The old monarch (who's now a different
-process altogether, and is elevated), should treat that medium-IL headless
-monarch the same as the other monarchs, and attempt to find a new monarch as
-soon as it goes away. The headless monarch will attempt to register to be the
-monarch - if it turns out that another process is the current monarch, then the
-headless monarch will immediately kill itself, causing the old monarch to
-immediately attempt to find a new monarch. If the headless monarch dies
-unexpectedly, and the elevated process is unable to create a connection to the
-existing monarch, it'll need to spawn a new headless monarch.
-
-If there are only a bunch of elevated monarchs, then they'll each attempt to
-spawn a headless monarch. Only one will succeed - the others will all connect to
-the first headless monarch, and immediately die.
-
-We need to be especially careful about the commands that can be run in an
-existing window. Opening a new tab, split, these are relatively safe. The new
-terminal that's created in the elevated window will still be unelevated by
-default.
-
-What we _absolutely cannot do_, under any circumstance, is allow for the sending
-of input to another window across elevation boundary. I don't think it's
-entirely out of the realm of possibility to add a `send-input` command to write
-input to the terminal using the `SendInputAction`. However, we must absolutely
-make sure that the input isn't allowed to cross the elevation boundary. To make
-this easier, we should have the `send-input` command just fail if the targeted
-window is both:
-- Is elevated.
-- Is not this window. Sending input within the same window seems like it would
-  be safe enough - you're already inside the airtight hatch.
-
-### Duplicating `HANDLE`s from content process to elevated window process
-
-We can't just have the content process dupe the handle to the window process. If
-the content process is unelevated, and the window process is elevated (in a
-mixed elevation scenario), then the content process won't have permission to
-`DuplicateHandle` the `HANDLE` to the swapchain into the window's process.
-
-Instead, the window will always need to be the one responsible for calling
-duplicate handle. Fortunately, the `DuplicateHandle` function does allow a
-caller to duplicate from another process into your own process.
-
+This might be a little confusing to the end user, but is seen as an acceptable
+experience to the alternative of just completely disallowing running commands in
+other elevated windows. If a user is running in an elevated window, they
+probably will still want `wt -s 0 new-tab` to open in the current window.
 
 ### What happens to the content if the monarch dies unexpectedly?
 
@@ -1128,9 +1079,10 @@ of each other.
     isn't already elevated.
 18. (Dependent on 16, 17) Users can mark a profile as `"elevated": true`, to
     always force a new elevated window to be created for elevated profiles.
-19. (Dependent on 18, 13) When a user creates an elevated profile, we'll
-    automatically create an elevated version of the current window, and move all
-    the current tabs to that new window.
+19. (Dependent on 18) Add an `elevated` parameter to `NewTerminalArgs` that will
+    allow a newTab or splitPane action to use that value of `elevated`, rather
+    than the value from the profile.
+20. Add a UAC shield to elevated terminal windows
 
 ## Footnotes
 
@@ -1209,7 +1161,8 @@ prompt the user for permission, but that's an acceptable user experience.
 
 ## TODOs
 
-* [ ] Experimentally prove that a elevated window can host an unelevated content
+* [x] Experimentally prove that a elevated window can host an unelevated content
+  - Research proved the opposite actually.
 * [ ] Experimentally prove that I can toss content process IDs from one window
   to another
   - I don't have any doubt that this will work, but I want to have a
@@ -1247,6 +1200,7 @@ prompt the user for permission, but that's an acceptable user experience.
 [#7972]: https://github.com/microsoft/terminal/pull/7972
 [#961]: https://github.com/microsoft/terminal/issues/961
 [`30b8335`]: https://github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
+[#8135]: https://github.com/microsoft/terminal/pull/8135
 
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
