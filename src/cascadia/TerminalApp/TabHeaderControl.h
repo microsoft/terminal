@@ -13,16 +13,16 @@ namespace winrt::TerminalApp::implementation
     struct TabHeaderControl : TabHeaderControlT<TabHeaderControl>
     {
         TabHeaderControl();
-        void SetZoomIconVisibility(Windows::UI::Xaml::Visibility state);
-        void ConstructTabRenameBox();
+        void BeginRename();
 
         void RenameBoxLostFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                        winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
-        WINRT_CALLBACK(HeaderTitleWantsToChange, TerminalApp::HeaderTitleWantsToChangeArgs);
+        WINRT_CALLBACK(TitleChangeRequested, TerminalApp::TitleChangeRequestedArgs);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, IsPaneZoomed, _PropertyChangedHandlers);
 
     private:
         bool _receivedKeyDown{ false };

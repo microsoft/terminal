@@ -39,7 +39,7 @@ namespace winrt::TerminalApp::implementation
         _CreateContextMenu();
 
         // Add an event handler for the header control to tell us when they want their title to change
-        _headerControl.HeaderTitleWantsToChange([weakThis = get_weak()](auto&& title) {
+        _headerControl.TitleChangeRequested([weakThis = get_weak()](auto&& title) {
             if (auto tab{ weakThis.get() })
             {
                 tab->SetTabText(title);
@@ -379,7 +379,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::ActivateTabRenamer()
     {
-        _headerControl.ConstructTabRenameBox();
+        _headerControl.BeginRename();
     }
 
     // Method Description:
@@ -851,7 +851,7 @@ namespace winrt::TerminalApp::implementation
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
-        _headerControl.SetZoomIconVisibility(Windows::UI::Xaml::Visibility::Visible);
+        _headerControl.IsPaneZoomed(true);
         Content(_zoomedPane->GetRootElement());
     }
     void TerminalTab::ExitZoom()
@@ -859,7 +859,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
-        _headerControl.SetZoomIconVisibility(Windows::UI::Xaml::Visibility::Collapsed);
+        _headerControl.IsPaneZoomed(false);
         Content(_rootPane->GetRootElement());
     }
 

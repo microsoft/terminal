@@ -46,18 +46,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Updates the zoom icon indicating whether a pane is zoomed
-    // Arguments:
-    // - The desired visibility state of the zoom icon
-    void TabHeaderControl::SetZoomIconVisibility(Windows::UI::Xaml::Visibility state)
-    {
-        HeaderZoomIcon().Visibility(state);
-    }
-
-    // Method Description:
     // - Show the tab rename box for the user to rename the tab title
     // - We automatically use the previous title as the initial text of the box
-    void TabHeaderControl::ConstructTabRenameBox()
+    void TabHeaderControl::BeginRename()
     {
         _receivedKeyDown = false;
 
@@ -89,6 +80,6 @@ namespace winrt::TerminalApp::implementation
         HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
         HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
 
-        _HeaderTitleWantsToChangeHandlers(HeaderRenamerTextBox().Text());
+        _TitleChangeRequestedHandlers(HeaderRenamerTextBox().Text());
     }
 }
