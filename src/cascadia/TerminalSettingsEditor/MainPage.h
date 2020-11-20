@@ -17,12 +17,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);
         void SettingsNav_Loaded(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
+        void SaveButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void ResetButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         TYPED_EVENT(OpenJson, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget);
 
     private:
-        // XAML should data-bind to the _settingsClone
-        // When "save" is pressed, _settingsSource = _settingsClone
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsSource;
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsClone;
         winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Settings::Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;

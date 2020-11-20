@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     MainPage::MainPage(const CascadiaSettings& settings) :
         _settingsSource{ settings },
-        _settingsClone{ settings },
+        _settingsClone{ settings.Copy() },
         _profileToNavItemMap{ winrt::single_threaded_map<Model::Profile, MUX::Controls::NavigationViewItem>() }
     {
         InitializeComponent();
@@ -148,6 +148,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto target = args.KeyStatus().IsMenuKeyDown ? SettingsTarget::DefaultsFile : SettingsTarget::SettingsFile;
             _OpenJsonHandlers(nullptr, target);
         }
+    }
+
+    void MainPage::SaveButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    {
+        _settingsClone.WriteSettingsToDisk();
+    }
+
+    void MainPage::ResetButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    {
+        _settingsClone = _settingsSource.Copy();
     }
 
     void MainPage::_InitializeProfilesList()
