@@ -180,6 +180,11 @@
         "index": {
           "type": "integer",
           "description": "The index of the profile in the new tab dropdown (starting at 0)"
+        },
+        "tabColor": {
+          "$ref": "#/definitions/Color",
+          "default": null,
+          "description": "If provided, will set the tab's color to the given value"
         }
       },
       "type": "object"

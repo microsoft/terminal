@@ -350,23 +350,20 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        std::optional<til::color> tabColor;
+        Windows::Foundation::IReference<Windows::UI::Color> tabColor;
 
         if (const auto& realArgs = args.ActionArgs().try_as<SetTabColorArgs>())
         {
-            if (realArgs.TabColor() != nullptr)
-            {
-                tabColor = realArgs.TabColor().Value();
-            }
+            tabColor = realArgs.TabColor();
         }
 
         if (auto focusedTab = _GetFocusedTab())
         {
             if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                if (tabColor.has_value())
+                if (tabColor)
                 {
-                    activeTab->SetRuntimeTabColor(tabColor.value());
+                    activeTab->SetRuntimeTabColor(tabColor.Value());
                 }
                 else
                 {

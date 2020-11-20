@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppLogic.h"
 #include "AppCommandlineArgs.h"
+#include "../types/inc/utils.hpp"
 #include <LibraryResources.h>
 
 using namespace winrt::TerminalApp;
@@ -355,6 +356,10 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                _startingTitle,
                                                                RS_A(L"CmdTitleArgDesc"));
 
+    subcommand.tabColorOption = subcommand.subcommand->add_option("--tabColor",
+                                                                  _startingTabColor,
+                                                                  RS_A(L"CmdTabColorArgDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -416,6 +421,12 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.TabTitle(winrt::to_hstring(_startingTitle));
     }
 
+    if (*subcommand.tabColorOption)
+    {
+        const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
+        args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+    }
+
     return args;
 }
 
@@ -450,6 +461,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _profileName.clear();
     _startingDirectory.clear();
     _startingTitle.clear();
+    _startingTabColor.clear();
     _commandline.clear();
 
     _splitVertical = false;

@@ -166,9 +166,15 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
     }
+
+    if (!_startingTabColor && settings.StartingTabColor())
+    {
+        _startingTabColor = til::color(settings.StartingTabColor().Value() | 0xff000000);
+    }
+
     if (_pfnTabColorChanged)
     {
-        _pfnTabColorChanged(_tabColor);
+        _pfnTabColorChanged(GetTabColor());
     }
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
@@ -1171,9 +1177,12 @@ void Terminal::ClearPatternTree() noexcept
     _InvalidatePatternTree(oldTree);
 }
 
+// Method Description:
+// - Returns the tab color
+// If the starting color exits, it's value is preferred
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
-    return _tabColor;
+    return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
 }
 
 BlinkingState& Terminal::GetBlinkingState() const noexcept
