@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppLogic.h"
 #include "AppCommandlineArgs.h"
+#include "../types/inc/utils.hpp"
 #include <LibraryResources.h>
 
 using namespace winrt::TerminalApp;
@@ -69,50 +70,29 @@ int AppCommandlineArgs::ParseCommand(const Commandline& command)
         {
             throw CLI::CallForHelp();
         }
-        // Clear the parser's internal state
-        _app.clear();
 
-        // attempt to parse the commandline
+        // attempt to parse the commandline prefix of the form [options][subcommand]
         _app.parse(args);
+        auto remainingParams = _app.remaining_size();
 
         // If we parsed the commandline, and _no_ subcommands were provided, try
-        // parsing again as a "new-tab" command.
-
+        // parse the remaining suffix as a "new-tab" command.
         if (_noCommandsProvided())
         {
-            _newTabCommand.subcommand->clear();
             _newTabCommand.subcommand->parse(args);
+            remainingParams = _newTabCommand.subcommand->remaining_size();
         }
-    }
-    catch (const CLI::CallForHelp& e)
-    {
-        return _handleExit(_app, e);
+
+        // if after parsing the prefix and (optionally) the implicit tab subcommand
+        // we still have unparsed parameters we need to fail
+        if (remainingParams > 0)
+        {
+            throw CLI::ExtrasError(args);
+        }
     }
     catch (const CLI::ParseError& e)
     {
-        // If we parsed the commandline, and _no_ subcommands were provided, try
-        // parsing again as a "new-tab" command.
-        if (_noCommandsProvided())
-        {
-            try
-            {
-                // CLI11 mutated the original vector the first time it tried to
-                // parse the args. Reconstruct it the way CLI11 wants here.
-                // "See above for why it's begin() + 1"
-                std::vector<std::string> args{ command.Args().begin() + 1, command.Args().end() };
-                std::reverse(args.begin(), args.end());
-                _newTabCommand.subcommand->clear();
-                _newTabCommand.subcommand->parse(args);
-            }
-            catch (const CLI::ParseError& e)
-            {
-                return _handleExit(*_newTabCommand.subcommand, e);
-            }
-        }
-        else
-        {
-            return _handleExit(_app, e);
-        }
+        return _handleExit(_app, e);
     }
     return 0;
 }
@@ -157,6 +137,15 @@ int AppCommandlineArgs::_handleExit(const CLI::App& command, const CLI::Error& e
 // - <none>
 void AppCommandlineArgs::_buildParser()
 {
+    // We define or parser as a prefix command, to support "implicit new tab subcommand" scenario.
+    // In this scenario we will try to parse the prefix that contains parameters like launch mode,
+    // but will not encounter an explicit command.
+    // Instead we will encounter an argument that doesn't belong to the prefix indicating the prefix is over.
+    // Then we will try to parse the remaining arguments as a new tab subcommand.
+    // E.g., for "wt.exe -M -d c:/", we will use -M for the launch mode, but once we will encounter -d
+    // we will know that the prefix is over and try to handle the suffix as a new tab subcommand
+    _app.prefix_command();
+
     // -v,--version: Displays version info
     auto versionCallback = [this](int64_t /*count*/) {
         // Set our message to display the application name and the current version.
@@ -367,6 +356,10 @@ void AppCommandlineArgs::_addNewTerminalArgs(AppCommandlineArgs::NewTerminalSubc
                                                                _startingTitle,
                                                                RS_A(L"CmdTitleArgDesc"));
 
+    subcommand.tabColorOption = subcommand.subcommand->add_option("--tabColor",
+                                                                  _startingTabColor,
+                                                                  RS_A(L"CmdTabColorArgDesc"));
+
     // Using positionals_at_end allows us to support "wt new-tab -d wsl -d Ubuntu"
     // without CLI11 thinking that we've specified -d twice.
     // There's an alternate construction where we make all subcommands "prefix commands",
@@ -428,6 +421,12 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.TabTitle(winrt::to_hstring(_startingTitle));
     }
 
+    if (*subcommand.tabColorOption)
+    {
+        const auto tabColor = Microsoft::Console::Utils::ColorFromHexString(_startingTabColor);
+        args.TabColor(static_cast<winrt::Windows::UI::Color>(tabColor));
+    }
+
     return args;
 }
 
@@ -462,6 +461,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _profileName.clear();
     _startingDirectory.clear();
     _startingTitle.clear();
+    _startingTabColor.clear();
     _commandline.clear();
 
     _splitVertical = false;

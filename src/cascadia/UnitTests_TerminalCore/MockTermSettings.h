@@ -62,6 +62,7 @@ namespace TerminalCoreUnitTests
         void ForceVTInput(bool) {}
 
         GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
 
     private:
         int32_t _historySize;

@@ -71,9 +71,7 @@ namespace TerminalCoreUnitTests
     {
         // Certain applications like AutoHotKey and its keyboard remapping feature,
         // send us key events using SendInput() whose values are outside of the valid range.
-        // We don't want to handle those events as we're probably going to get a proper followup character event.
         VERIFY_IS_FALSE(term.SendKeyEvent(0, 123, {}, true));
         VERIFY_IS_FALSE(term.SendKeyEvent(255, 123, {}, true));
-        VERIFY_IS_FALSE(term.SendKeyEvent(123, 0, {}, true));
     }
 }

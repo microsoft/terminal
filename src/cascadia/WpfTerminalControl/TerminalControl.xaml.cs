@@ -191,7 +191,7 @@ namespace Microsoft.Terminal.Wpf
 
             if (this.TerminalRendererSize.Height != 0)
             {
-                height = controlSize.Height - (this.TerminalRendererSize.Height / dpiScale.DpiScaleX);
+                height = controlSize.Height - (this.TerminalRendererSize.Height / dpiScale.DpiScaleY);
             }
 
             width -= this.scrollbar.ActualWidth;
