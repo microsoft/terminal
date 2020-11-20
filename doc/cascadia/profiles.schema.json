@@ -482,7 +482,7 @@
         }
       ]
     },
-    "MoveTabction": {
+    "MoveTabAction": {
       "description": "Arguments for moving a tab",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
