@@ -47,6 +47,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
     }
 
+    void MainPage::UpdateSettings(Model::CascadiaSettings settings)
+    {
+        _settingsSource = settings;
+        _settingsClone = settings.Copy();
+    }
+
     // Function Description:
     // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView, if no item is selected
     // Arguments:

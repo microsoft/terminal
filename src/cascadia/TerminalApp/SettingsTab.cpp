@@ -12,6 +12,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Editor;
 using namespace winrt::Windows::System;
 
 namespace winrt
@@ -22,13 +23,19 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    SettingsTab::SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI)
+    SettingsTab::SettingsTab(MainPage settingsUI)
     {
         Content(settingsUI);
 
         _MakeTabViewItem();
         _CreateContextMenu();
         _CreateIcon();
+    }
+
+    void SettingsTab::UpdateSettings(CascadiaSettings settings)
+    {
+        auto settingsUI{ Content().as<MainPage>() };
+        settingsUI.UpdateSettings(settings);
     }
 
     // Method Description:

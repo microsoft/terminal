@@ -13,6 +13,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MainPage() = delete;
         MainPage(const Model::CascadiaSettings& settings);
 
+        void UpdateSettings(Model::CascadiaSettings settings);
+
         void OpenJsonKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args);
         void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);
         void SettingsNav_Loaded(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
@@ -20,16 +22,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SaveButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void ResetButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
-        TYPED_EVENT(OpenJson, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget);
+        TYPED_EVENT(OpenJson, winrt::Windows::Foundation::IInspectable, Model::SettingsTarget);
 
     private:
-        winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsSource;
-        winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsClone;
-        winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Settings::Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
+        Model::CascadiaSettings _settingsSource;
+        Model::CascadiaSettings _settingsClone;
+        winrt::Windows::Foundation::Collections::IMap<Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
 
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index);
-        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Model::Profile& profile);
 
         void _Navigate(hstring clickedItemTag);
     };
