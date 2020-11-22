@@ -18,6 +18,7 @@ Author(s):
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
 #include "IRenderData.hpp"
+#include "../../buffer/out/LineRendition.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -74,6 +75,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
+
+        [[nodiscard]] virtual HRESULT ResetLineTransform() noexcept = 0;
+        [[nodiscard]] virtual HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                           const size_t targetRow,
+                                                           const size_t viewportLeft) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,

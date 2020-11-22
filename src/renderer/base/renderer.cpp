@@ -220,6 +220,18 @@ void Renderer::TriggerRedraw(const Viewport& region)
     Viewport view = _viewport;
     SMALL_RECT srUpdateRegion = region.ToExclusive();
 
+    // If the dirty region has double width lines, we need to double the size of
+    // the right margin to make sure all the affected cells are invalidated.
+    const auto& buffer = _pData->GetTextBuffer();
+    for (auto row = srUpdateRegion.Top; row < srUpdateRegion.Bottom; row++)
+    {
+        if (buffer.IsDoubleWidthLine(row))
+        {
+            srUpdateRegion.Right *= 2;
+            break;
+        }
+    }
+
     if (view.TrimToViewport(&srUpdateRegion))
     {
         view.ConvertToOrigin(&srUpdateRegion);
@@ -630,6 +642,11 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
     gsl::span<const til::rectangle> dirtyAreas;
     LOG_IF_FAILED(pEngine->GetDirtyArea(dirtyAreas));
 
+    // This is to make sure any transforms are reset when this paint is finished.
+    auto resetLineTransform = wil::scope_exit([&]() {
+        LOG_IF_FAILED(pEngine->ResetLineTransform());
+    });
+
     for (const auto& dirtyRect : dirtyAreas)
     {
         auto dirty = Viewport::FromInclusive(dirtyRect);
@@ -654,14 +671,19 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
             {
                 // Calculate the boundaries of a single line. This is from the left to right edge of the dirty
                 // area in width and exactly 1 tall.
-                const auto bufferLine = Viewport::FromDimensions({ redraw.Left(), row }, { redraw.Width(), 1 });
+                const auto screenLine = SMALL_RECT{ redraw.Left(), row, redraw.RightInclusive(), row };
+
+                // Convert the screen coordinates of the line to an equivalent
+                // range of buffer cells, taking line rendition into account.
+                const auto lineRendition = buffer.GetLineRendition(row);
+                const auto bufferLine = Viewport::FromInclusive(ScreenToBufferLine(screenLine, lineRendition));
 
                 // Find where on the screen we should place this line information. This requires us to re-map
-                // the buffer-based origin of the line back onto the screen-based origin of the line
-                // For example, the screen might say we need to paint 1,1 because it is dirty but the viewport is actually looking
-                // at 13,26 relative to the buffer.
-                // This means that we need 14,27 out of the backing buffer to fill in the 1,1 cell of the screen.
-                const auto screenLine = Viewport::Offset(bufferLine, -view.Origin());
+                // the buffer-based origin of the line back onto the screen-based origin of the line.
+                // For example, the screen might say we need to paint line because it is dirty but the viewport
+                // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
+                // of the backing buffer to fill in line 1 of the screen.
+                const auto screenPosition = bufferLine.Origin() - COORD{ 0, view.Top() };
 
                 // Retrieve the cell information iterator limited to just this line we want to redraw.
                 auto it = buffer.GetCellDataAt(bufferLine.Origin(), bufferLine);
@@ -673,8 +695,11 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
                 const auto lineWrapped = (buffer.GetRowByOffset(bufferLine.Origin().Y).WasWrapForced()) &&
                                          (bufferLine.RightExclusive() == buffer.GetSize().Width());
 
+                // Prepare the appropriate line transform for the current row and viewport offset.
+                LOG_IF_FAILED(pEngine->PrepareLineTransform(lineRendition, screenPosition.Y, view.Left()));
+
                 // Ask the helper to paint through this specific line.
-                _PaintBufferOutputHelper(pEngine, it, screenLine.Origin(), lineWrapped);
+                _PaintBufferOutputHelper(pEngine, it, screenPosition, lineWrapped);
             }
         }
     }
