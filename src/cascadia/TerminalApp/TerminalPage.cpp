@@ -576,6 +576,21 @@ namespace winrt::TerminalApp::implementation
             newTabFlyout.Items().Append(aboutFlyout);
         }
 
+        // Before opening the fly-out set focus on the current tab
+        // so no matter how fly-out is closed later on the focus will return to some tab.
+        // We cannot do it on closing because if the window loses focus (alt+tab)
+        // the closing event is not fired.
+        // It is important to set the focus on the tab
+        // Sine the previous focus location might be discarded in the background,
+        // e.g., the command palette will be dismissed by the menu,
+        // and then closing the fly-out will move the focus to wrong location.
+        newTabFlyout.Opening([this](auto&&, auto&&) {
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
+        });
         _newTabButton.Flyout(newTabFlyout);
     }
 
@@ -2657,11 +2672,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {
-        // Return focus to the active control
-        if (auto index{ _GetFocusedTabIndex() })
+        // We don't want to set focus on the tab if fly-out is open as it will be closed
+        // TODO: consider checking we are not in the opening state, by hooking both Opening and Open events
+        if (!_newTabButton.Flyout().IsOpen())
         {
-            _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-            _UpdateMRUTab(index.value());
+            // Return focus to the active control
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
         }
     }
 
