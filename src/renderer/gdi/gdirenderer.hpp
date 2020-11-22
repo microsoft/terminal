@@ -41,6 +41,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const size_t targetRow,
+                                                   const size_t viewportLeft) noexcept override;
+
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               const COORD coord,
@@ -125,6 +130,9 @@ namespace Microsoft::Console::Render
         COLORREF _lastFg;
         COLORREF _lastBg;
         bool _lastFontItalic;
+
+        XFORM _currentLineTransform;
+        LineRendition _currentLineRendition;
 
         // Memory pooling to save alloc/free work to the OS for things
         // frequently created and dropped.

@@ -369,15 +369,21 @@ using namespace Microsoft::Console::Render;
             }
         }
 
+        // If the line rendition is double height, we need to adjust the top or bottom
+        // of the clipping rect to clip half the height of the rendered characters.
+        const auto halfHeight = coordFontSize.Y >> 1;
+        const auto topOffset = _currentLineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
+        const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
+
         pPolyTextLine->lpstr = polyString.data();
         pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
-        pPolyTextLine->rcl.top = pPolyTextLine->y;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
-        pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
+        pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (SHORT)cchCharWidths;
+        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.Y - bottomOffset;
         pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
