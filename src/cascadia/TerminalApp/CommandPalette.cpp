@@ -435,7 +435,33 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
                                              Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
-        _dismissPalette();
+        if (Visibility() != Visibility::Collapsed)
+        {
+            _dismissPalette();
+        }
+    }
+
+    // Method Description:
+    // - The purpose of this event handler is to hind the palette if it loses focus.
+    // Since the focus might move within the palette we need to register this handler for all focusable children
+    // Right now this is achieved by explicitly registering on the root on the highlighted text controls.
+    // Few notes:
+    // - found no way to entires disable focus on list-view elements in single-item-selection mode without breaking list behavior
+    // - TODO: the explicit implementation can be generalized by checking if the focused element is a descendant of palette
+    //         by iterating from it to the root of the Xaml tree using VisualTreeHelper::GetParent.
+    //         If this element is a descendant of palette register lost-focus-handler on it as well
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_lostFocusHandler(Windows::Foundation::IInspectable const& /* sender*/,
+                                           Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
+    {
+        auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<FrameworkElement>();
+        if (focusedElement && focusedElement != *this && focusedElement.Name() != L"_highlightedTextControl" && Visibility() != Visibility::Collapsed)
+        {
+            _dismissPalette();
+        }
     }
 
     // Method Description:
