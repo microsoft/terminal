@@ -33,6 +33,7 @@ IMap
 IObject
 IStorage
 ITab
+ITaskbar
 llabs
 LCID
 llabs
@@ -44,6 +45,7 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOPROGRESS
 NOREDIRECTIONBITMAP
 oaidl
 ocidl
@@ -70,6 +72,7 @@ Subheader
 Subpage
 UPDATEINIFILE
 syscall
+TBPF
 THEMECHANGED
 tmp
 tolower

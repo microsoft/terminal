@@ -47,12 +47,33 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
-        pair_type{ "none", ValueType::None },
-        pair_type{ "audible", ValueType::Audible }
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "audible", ValueType::Audible },
+        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "all", AllSet },
     };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::BellStyle& bellStyle)
+    {
+        return BaseFlagMapper::ToJson(bellStyle);
+    }
 };
 
 JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)

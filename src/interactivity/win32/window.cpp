@@ -352,8 +352,6 @@ void Window::_UpdateSystemMetrics() const
                         SendMessageW(hWnd, WM_SETHOTKEY, gci.GetHotKey(), 0);
                     }
 
-                    ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
-
                     // Post a window size update so that the new console window will size itself correctly once it's up and
                     // running. This works around chicken & egg cases involving window size calculations having to do with font
                     // sizes, DPI, and non-primary monitors (see MSFT #2367234).

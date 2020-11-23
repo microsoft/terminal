@@ -69,6 +69,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
+        DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
@@ -80,6 +81,7 @@ namespace winrt::TerminalApp::implementation
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeOtherTabsMenuItem{};
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
+        winrt::TerminalApp::TabHeaderControl _headerControl{};
 
         bool _receivedKeyDown{ false };
 
@@ -103,8 +105,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateActivePane(std::shared_ptr<Pane> pane);
 
         winrt::hstring _GetActiveTitle() const;
-        void _UpdateTabHeader();
-        void _ConstructTabRenameBox(const winrt::hstring& tabText);
 
         void _RecalculateAndApplyTabColor();
         void _ApplyTabColor(const winrt::Windows::UI::Color& color);

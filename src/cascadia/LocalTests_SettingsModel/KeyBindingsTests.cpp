@@ -408,7 +408,7 @@ namespace SettingsModelLocalTests
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.TabColor());
             // Remember that COLORREFs are actually BBGGRR order, while the string is in #RRGGBB order
-            VERIFY_ARE_EQUAL(static_cast<uint32_t>(til::color(0x563412)), realArgs.TabColor().Value());
+            VERIFY_ARE_EQUAL(til::color(0x563412), til::color(realArgs.TabColor().Value()));
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };

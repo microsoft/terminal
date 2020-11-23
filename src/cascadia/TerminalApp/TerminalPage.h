@@ -56,7 +56,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring ThirdPartyNoticesLink();
 
-        void CloseWindow();
+        winrt::fire_and_forget CloseWindow();
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -71,6 +71,9 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
 
+        size_t GetLastActiveControlTaskbarState();
+        size_t GetLastActiveControlTaskbarProgress();
+
         void ShowKeyboardServiceWarning();
         winrt::hstring KeyboardServiceDisabledText();
 
@@ -81,6 +84,8 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(Initialized, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
@@ -130,7 +135,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
-        void _ShowCloseWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
@@ -144,8 +149,6 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
-        void _CloseWarningCloseButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
@@ -196,6 +199,8 @@ namespace winrt::TerminalApp::implementation
         void _OpenHyperlinkHandler(const IInspectable sender, const Microsoft::Terminal::TerminalControl::OpenHyperlinkEventArgs eventArgs);
         void _ShowCouldNotOpenDialog(winrt::hstring reason, winrt::hstring uri);
         bool _CopyText(const bool singleLine, const Windows::Foundation::IReference<Microsoft::Terminal::TerminalControl::CopyFormat>& formats);
+
+        void _SetTaskbarProgressHandler(const IInspectable sender, const IInspectable eventArgs);
 
         void _PasteText();
 

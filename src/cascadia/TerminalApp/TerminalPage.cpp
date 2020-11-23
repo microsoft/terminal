@@ -375,12 +375,13 @@ namespace winrt::TerminalApp::implementation
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    void TerminalPage::_ShowCloseWarningDialog()
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+            co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
         }
+        co_return ContentDialogResult::None;
     }
 
     // Method Description:
@@ -699,6 +700,19 @@ namespace winrt::TerminalApp::implementation
             {
                 // Possibly update the icon of the tab.
                 page->_UpdateTabIcon(*tab);
+            }
+        });
+
+        // The RaiseVisualBell event has been bubbled up to here from the pane,
+        // the next part of the chain is bubbling up to app logic, which will
+        // forward it to app host.
+        newTabImpl->TabRaiseVisualBell([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_raiseVisualBellHandlers(nullptr, nullptr);
             }
         });
 
@@ -1133,6 +1147,9 @@ namespace winrt::TerminalApp::implementation
 
         term.OpenHyperlink({ this, &TerminalPage::_OpenHyperlinkHandler });
 
+        // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
+        term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
+
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
@@ -1450,17 +1467,21 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    void TerminalPage::CloseWindow()
+    fire_and_forget TerminalPage::CloseWindow()
     {
         if (_tabs.Size() > 1 && _settings.GlobalSettings().ConfirmCloseAllTabs() && !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
-            _ShowCloseWarningDialog();
+            ContentDialogResult warningResult = co_await _ShowCloseWarningDialog();
+            _displayingCloseDialog = false;
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return;
+            }
         }
-        else
-        {
-            _CloseAllTabs();
-        }
+
+        _CloseAllTabs();
     }
 
     // Method Description:
@@ -1986,6 +2007,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Send an event (which will be caught by AppHost) to set the progress indicator on the taskbar
+    // Arguments:
+    // - sender (not used)
+    // - eventArgs: the arguments specifying how to set the progress indicator
+    void TerminalPage::_SetTaskbarProgressHandler(const IInspectable /*sender*/, const IInspectable /*eventArgs*/)
+    {
+        _setTaskbarProgressHandlers(*this, nullptr);
+    }
+
+    // Method Description:
     // - Paste text from the Windows Clipboard to the focused terminal
     void TerminalPage::_PasteText()
     {
@@ -2172,34 +2203,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the primary button of the content dialog is clicked.
-    //   This calls _CloseAllTabs(), which closes all the tabs currently
-    //   opened and then the Terminal app. This method will be called if
-    //   the user confirms to close all the tabs.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        _CloseAllTabs();
-    }
-
-    // Method Description:
-    // - Called when the close button of the content dialog is clicked.
-    //   This resets the flag _displayingCloseDialog, which was set before
-    //   opening the dialog. Otherwise, the Terminal app would be closed
-    //   on the next close request without showing the warning dialog.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningCloseButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                       WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        _displayingCloseDialog = false;
-    }
-
-    // Method Description:
     // - Hook up keybindings, and refresh the UI of the terminal.
     //   This includes update the settings of all the tabs according
     //   to their profiles, update the title and icon of each tab, and
@@ -2371,6 +2374,32 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter)
     {
         _dialogPresenter = dialogPresenter;
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarState()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarState());
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    {
+        if (auto control{ _GetActiveControl() })
+        {
+            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
+        }
+        return {};
     }
 
     // Method Description:
@@ -2962,4 +2991,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FocusModeChanged, _focusModeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, FullscreenChanged, _fullscreenChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, AlwaysOnTopChanged, _alwaysOnTopChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, RaiseVisualBell, _raiseVisualBellHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTaskbarProgress, _setTaskbarProgressHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 }

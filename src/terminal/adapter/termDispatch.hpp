@@ -116,4 +116,6 @@ public:
 
     bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
     bool EndHyperlink() noexcept override { return false; }
+
+    bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override { return false; }
 };

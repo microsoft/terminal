@@ -50,7 +50,9 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _altGrAliasing{ true },
     _blockSelection{ false },
-    _selection{ std::nullopt }
+    _selection{ std::nullopt },
+    _taskbarState{ 0 },
+    _taskbarProgress{ 0 }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -164,9 +166,15 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     {
         _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
     }
+
+    if (!_startingTabColor && settings.StartingTabColor())
+    {
+        _startingTabColor = til::color(settings.StartingTabColor().Value() | 0xff000000);
+    }
+
     if (_pfnTabColorChanged)
     {
-        _pfnTabColorChanged(_tabColor);
+        _pfnTabColorChanged(GetTabColor());
     }
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
@@ -1102,6 +1110,16 @@ void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) no
     _pfnBackgroundColorChanged.swap(pfn);
 }
 
+// Method Description:
+// - Allows settings a callback for settings the taskbar progress indicator
+// Arguments:
+// - pfn: a function callback that takes 2 size_t parameters, one indicating the progress state
+//        and the other indicating the progress value
+void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnTaskbarProgressChanged.swap(pfn);
+}
+
 void Terminal::_InitializeColorTable()
 try
 {
@@ -1159,12 +1177,33 @@ void Terminal::ClearPatternTree() noexcept
     _InvalidatePatternTree(oldTree);
 }
 
+// Method Description:
+// - Returns the tab color
+// If the starting color exits, it's value is preferred
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
-    return _tabColor;
+    return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
 }
 
 BlinkingState& Terminal::GetBlinkingState() const noexcept
 {
     return _blinkingState;
+}
+
+// Method Description:
+// - Gets the internal taskbar state value
+// Return Value:
+// - The taskbar state
+const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexcept
+{
+    return _taskbarState;
+}
+
+// Method Description:
+// - Gets the internal taskbar progress value
+// Return Value:
+// - The taskbar progress
+const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
+{
+    return _taskbarProgress;
 }
