@@ -21,6 +21,7 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
     _rowWidth{ gsl::narrow<size_t>(rowWidth) },
     _charRow{ gsl::narrow<size_t>(rowWidth), this },
     _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
+    _wrapForced{ false },
     _pParent{ pParent }
 {
 }
@@ -68,6 +69,7 @@ void ROW::SetId(const SHORT id) noexcept
 // - <none>
 bool ROW::Reset(const TextAttribute Attr)
 {
+    _wrapForced = false;
     _charRow.Reset();
     try
     {
@@ -231,7 +233,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 if (wrap.has_value() && fillingLastColumn)
                 {
                     // set wrap status on the row to parameter's value.
-                    _charRow.SetWrapForced(wrap.value());
+                    SetWrapForced(*wrap);
                 }
             }
             else
@@ -256,3 +258,26 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     return it;
 }
+
+// Routine Description:
+// - Sets the wrap status for the current row
+// Arguments:
+// - wrapForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
+// Return Value:
+// - <none>
+void ROW::SetWrapForced(const bool wrapForced) noexcept
+{
+    _wrapForced = wrapForced;
+}
+
+// Routine Description:
+// - Gets the wrap status for the current row
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
+bool ROW::WasWrapForced() const noexcept
+{
+    return _wrapForced;
+}
+

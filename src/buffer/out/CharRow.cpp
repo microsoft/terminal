@@ -16,33 +16,10 @@
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
-    _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
     _pParent{ FAIL_FAST_IF_NULL(pParent) }
 {
-}
-
-// Routine Description:
-// - Sets the wrap status for the current row
-// Arguments:
-// - wrapForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
-// Return Value:
-// - <none>
-void CharRow::SetWrapForced(const bool wrapForced) noexcept
-{
-    _wrapForced = wrapForced;
-}
-
-// Routine Description:
-// - Gets the wrap status for the current row
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
-bool CharRow::WasWrapForced() const noexcept
-{
-    return _wrapForced;
 }
 
 // Routine Description:
@@ -91,7 +68,6 @@ void CharRow::Reset() noexcept
         cell.Reset();
     }
 
-    _wrapForced = false;
     _doubleBytePadded = false;
 }
 

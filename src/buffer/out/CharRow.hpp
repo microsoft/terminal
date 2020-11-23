@@ -55,8 +55,6 @@ public:
 
     CharRow(size_t rowWidth, ROW* const pParent);
 
-    void SetWrapForced(const bool wrap) noexcept;
-    bool WasWrapForced() const noexcept;
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept;
@@ -97,8 +95,6 @@ private:
     void Reset() noexcept;
 
 protected:
-    // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
-    bool _wrapForced;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 
@@ -111,8 +107,7 @@ protected:
 
 constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept
 {
-    return (a._wrapForced == b._wrapForced &&
-            a._doubleBytePadded == b._doubleBytePadded &&
+    return (a._doubleBytePadded == b._doubleBytePadded &&
             a._data == b._data);
 }
 

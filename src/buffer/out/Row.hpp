@@ -36,6 +36,9 @@ public:
 
     size_t size() const noexcept;
 
+    void SetWrapForced(const bool wrap) noexcept;
+    bool WasWrapForced() const noexcept;
+
     const CharRow& GetCharRow() const noexcept;
     CharRow& GetCharRow() noexcept;
 
@@ -70,6 +73,8 @@ private:
     ATTR_ROW _attrRow;
     SHORT _id;
     size_t _rowWidth;
+    // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
+    bool _wrapForced;
     TextBuffer* _pParent; // non ownership pointer
 };
 
@@ -79,5 +84,6 @@ inline bool operator==(const ROW& a, const ROW& b) noexcept
             a._attrRow == b._attrRow &&
             a._rowWidth == b._rowWidth &&
             a._pParent == b._pParent &&
+            a._wrapForced == b._wrapForced &&
             a._id == b._id);
 }

@@ -479,7 +479,7 @@ void TextBuffer::_AdjustWrapOnCurrentRow(const bool fSet)
     const UINT uiCurrentRowOffset = GetCursor().GetPosition().Y;
 
     // Set the wrap status as appropriate
-    GetRowByOffset(uiCurrentRowOffset).GetCharRow().SetWrapForced(fSet);
+    GetRowByOffset(uiCurrentRowOffset).SetWrapForced(fSet);
 }
 
 //Routine Description:
@@ -1578,7 +1578,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
             it++;
         }
 
-        const bool forcedWrap = GetRowByOffset(iRow).GetCharRow().WasWrapForced();
+        const bool forcedWrap = GetRowByOffset(iRow).WasWrapForced();
 
         if (trimTrailingWhitespace)
         {
@@ -2061,7 +2061,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // included.)
         // As such, adjust the "right" to be the width of the row
         // to capture all these spaces
-        if (charRow.WasWrapForced())
+        if (row.WasWrapForced())
         {
             iRight = cOldColsTotal;
 
@@ -2134,7 +2134,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !charRow.WasWrapForced())
+            if (iRight < cOldColsTotal && !row.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -2178,7 +2178,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
                     const COORD coordNewCursor = newCursor.GetPosition();
                     if (coordNewCursor.X == 0 && coordNewCursor.Y > 0)
                     {
-                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).GetCharRow().WasWrapForced())
+                        if (newBuffer.GetRowByOffset(gsl::narrow_cast<size_t>(coordNewCursor.Y) - 1).WasWrapForced())
                         {
                             hr = newBuffer.NewlineCursor() ? hr : E_OUTOFMEMORY;
                         }
@@ -2211,7 +2211,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
 
             // If the last row of the new buffer wrapped, there's going to be one less newline needed,
             //   because the cursor is already on the next line
-            if (newBuffer.GetRowByOffset(cNewLastChar.Y).GetCharRow().WasWrapForced())
+            if (newBuffer.GetRowByOffset(cNewLastChar.Y).WasWrapForced())
             {
                 iNewlines = std::max(iNewlines - 1, 0);
             }
@@ -2219,7 +2219,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             {
                 // if this buffer didn't wrap, but the old one DID, then the d(columns) of the
                 //   old buffer will be one more than in this buffer, so new need one LESS.
-                if (oldBuffer.GetRowByOffset(cOldLastChar.Y).GetCharRow().WasWrapForced())
+                if (oldBuffer.GetRowByOffset(cOldLastChar.Y).WasWrapForced())
                 {
                     iNewlines = std::max(iNewlines - 1, 0);
                 }
