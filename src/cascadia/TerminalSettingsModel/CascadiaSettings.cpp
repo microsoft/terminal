@@ -228,9 +228,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
     const auto newName = fmt::format(L"Profile {}", _allProfiles.Size());
     newProfile->Name(to_hstring(newName.c_str()));
 
-    // Set the default Icon to Segoe MDL2 CommandPrompt icon
-    newProfile->Icon(L"\uE756");
-
     return *newProfile;
 }
 
