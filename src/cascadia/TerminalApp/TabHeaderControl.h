@@ -5,7 +5,6 @@
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 #include "inc/cppwinrt_utils.h"
-#include "AppLogic.h"
 
 #include "TabHeaderControl.g.h"
 

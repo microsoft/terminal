@@ -54,7 +54,7 @@ namespace winrt::TerminalApp::implementation
         auto TabHeaderProfile = settings.FindProfile(profile);
         if (TabHeaderProfile)
         {
-            if (WI_IsFlagSet(TabHeaderProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            if (!WI_IsFlagSet(TabHeaderProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
             {
                 _headerControl.IsAudible(true);
             }
