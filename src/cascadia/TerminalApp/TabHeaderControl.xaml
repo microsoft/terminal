@@ -20,6 +20,12 @@ the MIT License. See LICENSE in the project root for license information. -->
         <TextBlock x:Name="HeaderTextBlock"
                    Visibility="Visible"
                    Text="{x:Bind Title, Mode=OneWay}"/>
+        <FontIcon x:Name="BellIndicatior"
+                  FontFamily="Segoe MDL2 Assets"
+                  Visibility="{x:Bind IsAudible, Mode=OneWay}"
+                  Glyph="&#xE189;"
+                  FontSize="12"
+                  Margin="5,0,8,0"/>
         <TextBox x:Name="HeaderRenamerTextBox"
                  Visibility="Collapsed"
                  MinHeight="0"

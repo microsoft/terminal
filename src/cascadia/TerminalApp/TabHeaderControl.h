@@ -5,6 +5,7 @@
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 #include "inc/cppwinrt_utils.h"
+#include "AppLogic.h"
 
 #include "TabHeaderControl.g.h"
 
@@ -23,6 +24,7 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(bool, IsPaneZoomed, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(bool, IsAudible, _PropertyChangedHandlers);
 
     private:
         bool _receivedKeyDown{ false };

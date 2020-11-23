@@ -8,6 +8,7 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -48,6 +49,16 @@ namespace winrt::TerminalApp::implementation
 
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
+
+        auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+        auto TabHeaderProfile = settings.FindProfile(profile);
+        if (TabHeaderProfile)
+        {
+            if (WI_IsFlagSet(TabHeaderProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            {
+                _headerControl.IsAudible(true);
+            }
+        }
     }
 
     // Method Description:
@@ -155,7 +166,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
     }
