@@ -11,7 +11,7 @@ issue id: <github issue id>
 
 ## Abstract
 
-[comment]: # Outline what this spec describes
+[comment]: # Outline what this spec describes. Include links to issues that might be relevant.
 
 ## Background
 
