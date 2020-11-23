@@ -11,7 +11,7 @@ issue id: <github issue id>
 
 ## Abstract
 
-[comment]: # Outline what this spec describes. Include links to issues that might be relevant.
+[comment]: # Outline what this spec describes.
 
 ## Background
 
@@ -21,7 +21,7 @@ issue id: <github issue id>
 
 ### User Stories
 
-[comment]: # List off the use cases where two users might want a feature to have different behavior based on user preference
+[comment]: # List off the use cases where two users might want a feature to have different behavior based on user preference. Include links to issues that might be relevant.
 
 ### Future Considerations
 
