@@ -5,12 +5,15 @@ last updated: <2020-11-20>
 issue id: <#8345>
 ---
 
-# Configuration object for focused/unfocused states
+# Configuration object for profiles
 
 ## Abstract
 
 This spec outlines how we can support 'configuration objects' in our profiles, which
-will allow us to render differently depending on whether the control is focused or unfocused.
+will allow us to render differently depending on the state of the control. For example, a
+control can be rendered differently if its focused as compared to when its unfocused. Another
+example is that an elevated state control can be rendered differently as compared to a
+non-elevated one.
 
 ## Inspiration
 
@@ -21,9 +24,9 @@ pane is focused and which panes are unfocused. This change would grant us that f
 
 ## Solution Design
 
-A new object in the `TerminalControl` namespace, called `UnfocusedRenderingParams`,
-that will contain parameters for determining how a control, in an unfocused state, should be rendered.
-This object will be available to both `TermControl` and `TerminalCore`.
+A new class in the `TerminalControl` namespace, called `CustomRenderConfig`, that will contain rendering
+parameters. `TermControl` and `TerminalCore` will use objects of this class to pass along rendering parameters
+to the renderer.
 
 Our `TerminalSettingsModel` will parse out that object from the settings json file and pipe it over to
 `TermControl`/`TerminalCore` to use. This will be done through `IControlSettings` and `ICoreSettings`, which
@@ -84,8 +87,7 @@ does not cause the window to flash/show a jarring indicator that the rendering v
 
 ## Future considerations
 
-When we allow for running elevated states in Terminal, a similar object can be used for rendering that session
-differently.
+We will need to decide how this will look in the settings UI.
 
 ## Resources
 
