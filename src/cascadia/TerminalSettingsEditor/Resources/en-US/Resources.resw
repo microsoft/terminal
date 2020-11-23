@@ -421,9 +421,6 @@
   <data name="Profile_BackgroundImageAlignmentTopRight.Content" xml:space="preserve">
     <value>Top right</value>
   </data>
-  <data name="Profile_BackgroundImageBrowse.Content" xml:space="preserve">
-    <value>Browse...</value>
-  </data>
   <data name="Profile_BackgroundImageOpacity.Header" xml:space="preserve">
     <value>Background image opacity</value>
   </data>
@@ -474,9 +471,6 @@
   </data>
   <data name="Profile_Commandline.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Executable used in the profile.</value>
-  </data>
-  <data name="Profile_CommandlineBrowse.Content" xml:space="preserve">
-    <value>Browse...</value>
   </data>
   <data name="Profile_CursorColor.Header" xml:space="preserve">
     <value>Cursor color</value>
@@ -556,9 +550,6 @@
   <data name="Profile_Icon.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Image file location of the icon used in the profile. Displays within the tab and the dropdown menu.</value>
   </data>
-  <data name="Profile_IconBrowse.Content" xml:space="preserve">
-    <value>Browse...</value>
-  </data>
   <data name="Profile_Padding.Header" xml:space="preserve">
     <value>Padding</value>
   </data>
@@ -600,9 +591,6 @@
   </data>
   <data name="Profile_StartingDirectory.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The directory the shell starts in when it is loaded.</value>
-  </data>
-  <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
-    <value>Browse...</value>
   </data>
   <data name="Profile_SuppressApplicationTitle.Content" xml:space="preserve">
     <value>Suppress title changes</value>

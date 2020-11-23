@@ -34,27 +34,12 @@ the MIT License. See LICENSE in the project root for license information. -->
         <PivotItem x:Uid="Profile_General">
             <ScrollViewer>
                 <StackPanel HorizontalAlignment="Left">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_Commandline"
-                             x:Name="Commandline"
+                    <TextBox x:Uid="Profile_Commandline"
                              Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_CommandlineBrowse"
-                            Click="Commandline_Click"
-                            Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_StartingDirectory"
-                                 x:Name="StartingDirectory"
-                                 Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_StartingDirectoryBrowse"
-                                Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_Icon"
-                                 Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_IconBrowse"
-                                Margin="10,0,0,0"/>
-                    </StackPanel>
+                    <TextBox x:Uid="Profile_StartingDirectory"
+                             Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"/>
+                    <TextBox x:Uid="Profile_Icon"
+                             Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"/>
                     <TextBox x:Uid="Profile_TabTitle"
                              Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
                              HorizontalAlignment="Left"/>
@@ -99,14 +84,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ComboBox.Items>
                     </ComboBox>
 
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_BackgroundImage"
-                                 x:Name="BackgroundImage"
-                                 Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_BackgroundImageBrowse"
-                                Click="BackgroundImage_Click"
-                                Margin="10,0,0,0"/>
-                    </StackPanel>
+                    <TextBox x:Uid="Profile_BackgroundImage"
+                             Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"/>
                     <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
                                            ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
