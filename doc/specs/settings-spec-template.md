@@ -27,9 +27,11 @@ issue id: <github issue id>
 
 [comment]: # Are there other future features planned that might affect the current design of this setting? The team can help with this section during the review.
 
-## Solution Proposals
+## Solution Design
 
-[comment]: # Outline various different proposed designs for this setting. These won't all be winners, but may help during the decision making process. For each proposed design:
+[comment]: # Add notes that might be relevant to the proposed solutions.
+
+[comment]: # Also, outline various different proposed designs for this setting. These won't all be winners, but may help during the decision making process. For each proposed design:
 
 ### Proposal 1: <name of proposal>
 
