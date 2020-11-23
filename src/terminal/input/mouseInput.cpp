@@ -146,7 +146,7 @@ constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState 
 // Parameters:
 // - button - the message to decode.
 // - isHover - whether or not this is a hover event
-// - modifierKeyState - the modifer keys _in console format_
+// - modifierKeyState - the modifier keys _in console format_
 // - delta - scroll wheel delta
 // Return value:
 // - the int representing the equivalent X button encoding.
@@ -204,7 +204,7 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
 //  See MSFT:19461988 and https://github.com/Microsoft/console/issues/296
 // Parameters:
 // - button - the message to decode.
-// - modifierKeyState - the modifer keys _in console format_
+// - modifierKeyState - the modifier keys _in console format_
 // Return value:
 // - the int representing the equivalent X button encoding.
 static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
