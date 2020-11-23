@@ -10,7 +10,6 @@
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
-#include "Keybindings.h"
 
 #include <LibraryResources.h>
 

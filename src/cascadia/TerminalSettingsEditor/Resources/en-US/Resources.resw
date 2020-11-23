@@ -337,8 +337,8 @@
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
   </data>
-  <data name="Nav_ProfileGlobal.Content" xml:space="preserve">
-    <value>Global</value>
+  <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
+    <value>Base Layer</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
