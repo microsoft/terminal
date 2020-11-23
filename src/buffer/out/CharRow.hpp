@@ -60,7 +60,6 @@ public:
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept;
-    void Reset() noexcept;
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const;
     size_t MeasureRight() const noexcept;
@@ -92,11 +91,14 @@ public:
 
     friend CharRowCellReference;
     friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
+    friend class ROW;
+
+private:
+    void Reset() noexcept;
 
 protected:
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
-
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
 

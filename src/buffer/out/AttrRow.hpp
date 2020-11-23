@@ -30,8 +30,6 @@ public:
 
     ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
 
-    void Reset(const TextAttribute attr);
-
     TextAttribute GetAttrByColumn(const size_t column) const;
     TextAttribute GetAttrByColumn(const size_t column,
                                   size_t* const pApplies) const;
@@ -63,8 +61,11 @@ public:
 
     friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
     friend class AttrRowIterator;
+    friend class ROW;
 
 private:
+    void Reset(const TextAttribute attr);
+
     std::vector<TextAttributeRun> _list;
     size_t _cchRowWidth;
 
