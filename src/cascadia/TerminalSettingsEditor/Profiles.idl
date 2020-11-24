@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "EnumEntry.idl";
+import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -9,6 +10,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         Microsoft.Terminal.Settings.Model.Profile Profile;
+        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page

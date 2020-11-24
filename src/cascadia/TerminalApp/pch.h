@@ -64,6 +64,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <TraceLoggingActivity.h>
 
 #include <shellapi.h>
+#include <shobjidl_core.h>
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
