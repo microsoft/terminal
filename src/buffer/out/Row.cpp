@@ -22,6 +22,7 @@ ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttrib
     _charRow{ gsl::narrow<size_t>(rowWidth), this },
     _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
     _wrapForced{ false },
+    _doubleBytePadded{ false },
     _pParent{ pParent }
 {
 }
@@ -70,6 +71,7 @@ void ROW::SetId(const SHORT id) noexcept
 bool ROW::Reset(const TextAttribute Attr)
 {
     _wrapForced = false;
+    _doubleBytePadded = false;
     _charRow.Reset();
     try
     {
@@ -215,7 +217,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 else if (fillingLastColumn && it->DbcsAttr().IsLeading())
                 {
                     _charRow.ClearCell(currentIndex);
-                    _charRow.SetDoubleBytePadded(true);
+                    SetDoubleBytePadded(true);
                 }
                 // Otherwise, copy the data given and increment the iterator.
                 else
@@ -281,3 +283,24 @@ bool ROW::WasWrapForced() const noexcept
     return _wrapForced;
 }
 
+// Routine Description:
+// - Sets the double byte padding for the current row
+// Arguments:
+// - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
+// Return Value:
+// - <none>
+void ROW::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
+{
+    _doubleBytePadded = doubleBytePadded;
+}
+
+// Routine Description:
+// - Gets the double byte padding status for the current row.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
+bool ROW::WasDoubleBytePadded() const noexcept
+{
+    return _doubleBytePadded;
+}

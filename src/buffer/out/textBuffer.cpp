@@ -295,8 +295,8 @@ bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute
         if (GetCursor().GetPosition().X == sBufferWidth - 1)
         {
             // set that we're wrapping for double byte reasons
-            CharRow& charRow = GetRowByOffset(GetCursor().GetPosition().Y).GetCharRow();
-            charRow.SetDoubleBytePadded(true);
+            auto& row = GetRowByOffset(GetCursor().GetPosition().Y);
+            row.SetDoubleBytePadded(true);
 
             // then move the cursor forward and onto the next row
             fSuccess = IncrementCursor();
@@ -2070,7 +2070,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // piece of padding because of a double byte LEADING
             // character, then remove one from the "right" to
             // leave this padding out of the copy process.
-            if (charRow.WasDoubleBytePadded())
+            if (row.WasDoubleBytePadded())
             {
                 iRight--;
             }

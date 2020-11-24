@@ -16,32 +16,9 @@
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
-    _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
     _pParent{ FAIL_FAST_IF_NULL(pParent) }
 {
-}
-
-// Routine Description:
-// - Sets the double byte padding for the current row
-// Arguments:
-// - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
-// Return Value:
-// - <none>
-void CharRow::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
-{
-    _doubleBytePadded = doubleBytePadded;
-}
-
-// Routine Description:
-// - Gets the double byte padding status for the current row.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
-bool CharRow::WasDoubleBytePadded() const noexcept
-{
-    return _doubleBytePadded;
 }
 
 // Routine Description:
@@ -67,8 +44,6 @@ void CharRow::Reset() noexcept
     {
         cell.Reset();
     }
-
-    _doubleBytePadded = false;
 }
 
 // Routine Description:

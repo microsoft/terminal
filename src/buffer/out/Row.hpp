@@ -39,6 +39,9 @@ public:
     void SetWrapForced(const bool wrap) noexcept;
     bool WasWrapForced() const noexcept;
 
+    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
+    bool WasDoubleBytePadded() const noexcept;
+
     const CharRow& GetCharRow() const noexcept;
     CharRow& GetCharRow() noexcept;
 
@@ -75,6 +78,8 @@ private:
     size_t _rowWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
+    // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
+    bool _doubleBytePadded;
     TextBuffer* _pParent; // non ownership pointer
 };
 
@@ -85,5 +90,6 @@ inline bool operator==(const ROW& a, const ROW& b) noexcept
             a._rowWidth == b._rowWidth &&
             a._pParent == b._pParent &&
             a._wrapForced == b._wrapForced &&
+            a._doubleBytePadded == b._doubleBytePadded &&
             a._id == b._id);
 }

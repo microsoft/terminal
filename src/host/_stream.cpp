@@ -817,7 +817,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             {
                 const COORD TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
-                CharRow& charRow = Row.GetCharRow();
+                const CharRow& charRow = Row.GetCharRow();
 
                 try
                 {
@@ -849,7 +849,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                charRow.SetDoubleBytePadded(true);
+                Row.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;

@@ -289,15 +289,15 @@ void TextBufferTests::TestDoubleBytePadFlag()
     ROW& Row = textBuffer._GetFirstRow();
 
     // no padding by default
-    VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
+    VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 
     // try set and check
-    Row.GetCharRow().SetDoubleBytePadded(true);
-    VERIFY_IS_TRUE(Row.GetCharRow().WasDoubleBytePadded());
+    Row.SetDoubleBytePadded(true);
+    VERIFY_IS_TRUE(Row.WasDoubleBytePadded());
 
     // try unset and check
-    Row.GetCharRow().SetDoubleBytePadded(false);
-    VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
+    Row.SetDoubleBytePadded(false);
+    VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 }
 
 void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
