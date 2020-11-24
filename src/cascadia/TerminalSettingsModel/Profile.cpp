@@ -9,6 +9,7 @@
 
 #include "LegacyProfileGeneratorNamespaces.h"
 #include "TerminalSettingsSerializationHelpers.h"
+#include "CustomConfigSerialization.h"
 
 #include "Profile.g.cpp"
 
@@ -58,6 +59,7 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
+static constexpr std::string_view UnfocusedConfigKey{ "unfocusedConfig" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -338,6 +340,13 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
+
+    if (json.isMember(JsonKey(UnfocusedConfigKey)))
+    {
+        auto unfocusedConfig{ winrt::make_self<implementation::CustomConfigSerialization>() };
+        unfocusedConfig->LayerJson(json[JsonKey(UnfocusedConfigKey)]);
+        _UnfocusedConfig = *unfocusedConfig;
+    }
 }
 
 // Method Description:

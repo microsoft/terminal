@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "CustomConfigSerialization.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     enum CloseOnExitMode
@@ -174,5 +176,9 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasBellStyle();
         void ClearBellStyle();
         BellStyle BellStyle;
+
+        Boolean HasUnfocusedConfig();
+        void ClearUnfocusedConfig();
+        CustomConfigSerialization UnfocusedConfig;
     }
 }

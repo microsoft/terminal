@@ -1,0 +1,37 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
+
+#include "pch.h"
+#include "CustomConfigSerialization.g.h"
+#include "JsonUtils.h"
+#include "../inc/cppwinrt_utils.h"
+#include "IInheritable.h"
+
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+{
+    struct CustomConfigSerialization : CustomConfigSerializationT<CustomConfigSerialization>, IInheritable<CustomConfigSerialization>
+    {
+    public:
+        CustomConfigSerialization();
+
+        void LayerJson(const Json::Value& json);
+
+        GETSET_SETTING(hstring, ColorSchemeName, L"Campbell");
+        GETSET_NULLABLE_SETTING(Windows::UI::Color, Foreground, nullptr);
+        GETSET_NULLABLE_SETTING(Windows::UI::Color, Background, nullptr);
+        GETSET_NULLABLE_SETTING(Windows::UI::Color, SelectionBackground, nullptr);
+        GETSET_NULLABLE_SETTING(Windows::UI::Color, CursorColor, nullptr);
+        GETSET_SETTING(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Bar);
+        GETSET_SETTING(hstring, BackgroundImagePath);
+
+    private:
+
+    };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(CustomConfigSerialization);
+}
