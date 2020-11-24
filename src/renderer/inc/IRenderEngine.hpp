@@ -65,7 +65,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
         [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;

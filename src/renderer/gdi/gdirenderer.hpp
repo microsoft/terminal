@@ -30,7 +30,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;

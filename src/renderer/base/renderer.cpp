@@ -265,25 +265,30 @@ void Renderer::TriggerRedraw(const COORD* const pcoord)
 // - <none>
 void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
 {
-    Viewport view = _pData->GetViewport();
-    COORD updateCoord = *pcoord;
-
-    if (view.IsInBounds(updateCoord))
+    // We first need to make sure the cursor position is within the buffer,
+    // otherwise testing for a double width character can throw an exception.
+    const auto& buffer = _pData->GetTextBuffer();
+    if (buffer.GetSize().IsInBounds(*pcoord))
     {
-        view.ConvertToOrigin(&updateCoord);
-        for (IRenderEngine* pEngine : _rgpEngines)
+        // We then calculate the region covered by the cursor.
+        const SHORT cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
+        Viewport cursorView = Viewport::FromDimensions(*pcoord, { cursorWidth, 1 });
+
+        // The region is clamped within the viewport boundaries and we only
+        // trigger a redraw if the region is not empty.
+        Viewport view = _pData->GetViewport();
+        cursorView = view.Clamp(cursorView);
+
+        if (cursorView.IsValid())
         {
-            LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
-
-            // Double-wide cursors need to invalidate the right half as well.
-            if (_pData->IsCursorDoubleWidth())
+            const SMALL_RECT updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
+            for (IRenderEngine* pEngine : _rgpEngines)
             {
-                updateCoord.X++;
-                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateCoord));
+                LOG_IF_FAILED(pEngine->InvalidateCursor(&updateRect));
             }
-        }
 
-        _NotifyPaintFrame();
+            _NotifyPaintFrame();
+        }
     }
 }
 
