@@ -14,10 +14,10 @@ namespace Microsoft.Terminal.TerminalControl
         EmptyBox
     };
 
-    interface ICoreSettings
+    interface ICoreSettings requires ICustomConfigObj
     {
-        UInt32 DefaultForeground;
-        UInt32 DefaultBackground;
+        //UInt32 DefaultForeground;
+        //UInt32 DefaultBackground;
         UInt32 GetColorTableEntry(Int32 index);
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize;
@@ -27,7 +27,7 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean SnapOnInput;
         Boolean AltGrAliasing;
 
-        UInt32 CursorColor;
+        //UInt32 CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
         String StartingTitle;

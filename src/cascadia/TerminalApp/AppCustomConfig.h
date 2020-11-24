@@ -14,14 +14,13 @@ namespace winrt::TerminalApp::implementation
         AppCustomConfig() = default;
 
         GETSET_PROPERTY(hstring, ColorSchemeName);
-        GETSET_PROPERTY(uint32_t, Foreground, DEFAULT_FOREGROUND_WITH_ALPHA);
-        GETSET_PROPERTY(uint32_t, Background, DEFAULT_BACKGROUND_WITH_ALPHA);
+        GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
+        GETSET_PROPERTY(uint32_t, DefaultBackground, DEFAULT_BACKGROUND_WITH_ALPHA);
         GETSET_PROPERTY(uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
         GETSET_PROPERTY(uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
         GETSET_PROPERTY(hstring, BackgroundImage);
 
     private:
-
     };
 }
 

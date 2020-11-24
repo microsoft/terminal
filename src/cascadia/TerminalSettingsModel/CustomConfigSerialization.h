@@ -27,7 +27,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(hstring, BackgroundImagePath);
 
     private:
-
     };
 }
 

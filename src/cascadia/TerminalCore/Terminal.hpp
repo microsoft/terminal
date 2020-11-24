@@ -22,6 +22,7 @@
 namespace winrt::Microsoft::Terminal::TerminalControl
 {
     struct ICoreSettings;
+    struct ICustomConfigObj;
 }
 
 namespace Microsoft::Terminal::Core
@@ -62,6 +63,7 @@ public:
                             Microsoft::Console::Render::IRenderTarget& renderTarget);
 
     void UpdateSettings(winrt::Microsoft::Terminal::TerminalControl::ICoreSettings settings);
+    void UpdateAppearance(winrt::Microsoft::Terminal::TerminalControl::ICustomConfigObj appearance);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);

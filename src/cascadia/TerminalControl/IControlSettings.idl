@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.TerminalControl
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires ICoreSettings
+    interface IControlSettings requires ICoreSettings, ICustomConfigObj
     {
         String ProfileName;
 
@@ -44,13 +44,13 @@ namespace Microsoft.Terminal.TerminalControl
         String StartingDirectory;
         String EnvironmentVariables;
 
-        String BackgroundImage;
+        //String BackgroundImage;
         Double BackgroundImageOpacity;
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 
-        UInt32 SelectionBackground;
+        //UInt32 SelectionBackground;
 
         TextAntialiasingMode AntialiasingMode;
 

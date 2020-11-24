@@ -164,11 +164,11 @@ namespace winrt::TerminalApp::implementation
             unfocusedConfig->ColorSchemeName(profile.UnfocusedConfig().ColorSchemeName());
             if (profile.UnfocusedConfig().Background())
             {
-                unfocusedConfig->Background(til::color{ profile.UnfocusedConfig().Background().Value() });
+                unfocusedConfig->DefaultBackground(til::color{ profile.UnfocusedConfig().Background().Value() });
             }
             if (profile.UnfocusedConfig().Foreground())
             {
-                unfocusedConfig->Foreground(til::color{ profile.UnfocusedConfig().Foreground().Value() });
+                unfocusedConfig->DefaultForeground(til::color{ profile.UnfocusedConfig().Foreground().Value() });
             }
             if (profile.UnfocusedConfig().SelectionBackground())
             {

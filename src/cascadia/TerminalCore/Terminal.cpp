@@ -184,6 +184,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // remains at the bottom of the buffer.
 }
 
+void Terminal::UpdateAppearance(ICustomConfigObj appearance)
+{
+    _defaultFg = appearance.DefaultForeground();
+    _defaultBg = appearance.DefaultBackground();
+}
+
 // Method Description:
 // - Resize the terminal as the result of some user interaction.
 // Arguments:

@@ -321,6 +321,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    winrt::fire_and_forget TermControl::UpdateAppearance(ICustomConfigObj newAppearance)
+    {
+        auto weakThis{ get_weak() };
+
+        // Dispatch a call to the UI thread to apply the new settings to the
+        // terminal.
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // If 'weakThis' is locked, then we can safely work with 'this'
+        if (auto control{ weakThis.get() })
+        {
+            if (_closing)
+            {
+                co_return;
+            }
+
+            // Update our control settings
+            COLORREF bg = newAppearance.DefaultBackground();
+            _BackgroundColorChanged(bg);
+
+            Media::SolidColorBrush foregroundBrush{};
+            foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
+            TSFInputControl().Foreground(foregroundBrush);
+
+            // Update the terminal core with its new Core settings
+            _terminal->UpdateAppearance(newAppearance);
+
+            auto lock = _terminal->LockForWriting();
+
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(newAppearance.SelectionBackground());
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
     // Method Description:
     // - Writes the given sequence as input to the active terminal connection,
     // Arguments:
@@ -1873,6 +1908,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _UpdateSystemParameterSettings();
+
+        UpdateAppearance(_settings);
     }
 
     // Method Description
@@ -1922,6 +1959,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _blinkTimer.value().Stop();
         }
+
+        UpdateAppearance(_settings.UnfocusedConfig());
     }
 
     // Method Description:

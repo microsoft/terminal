@@ -12,5 +12,4 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
-    
 }
