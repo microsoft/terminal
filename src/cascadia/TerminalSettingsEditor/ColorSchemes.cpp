@@ -11,6 +11,7 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
@@ -116,6 +117,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentColorTable.GetAt(index).Color(args.NewColor());
             }
         }
+    }
+
+    void ColorSchemes::Delete_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        return;
+    }
+
+    void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        return;
     }
 
     // Function Description:

@@ -34,6 +34,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         <PivotItem x:Uid="Profile_General">
             <ScrollViewer>
                 <StackPanel HorizontalAlignment="Left">
+                    <TextBox x:Uid="Profile_Name"
+                             Text="{x:Bind State.Profile.Name, Mode=TwoWay}"/>
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_Commandline"
                              x:Name="Commandline"
@@ -62,6 +64,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <Button x:Uid="Profile_DeleteButton"
+                            Click="Delete_Click"/>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>

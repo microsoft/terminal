@@ -30,11 +30,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Setter Property="CornerRadius" Value="2"/>
         </Style>
 
-        <Style TargetType="TextBox">
-            <Setter Property="Width" Value="100"/>
-            <Setter Property="FontSize" Value="15"/>
-        </Style>
-
         <Style TargetType="ColorPicker">
             <Setter Property="IsColorSliderVisible" Value="False"/>
             <Setter Property="IsColorChannelTextInputVisible" Value="False"/>
@@ -51,25 +46,43 @@ the MIT License. See LICENSE in the project root for license information. -->
         <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" MaxWidth="480"/>
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
 
-            <ComboBox x:Name="ColorSchemeComboBox"
-                      Grid.Row="0"
-                      Grid.Column="0"
-                      Margin="10,0,0,20"
-                      SelectedIndex="0"
-                      ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                      SelectionChanged="ColorSchemeSelectionChanged"/>
+            <!--Select Color and Add New Button-->
+            <StackPanel Orientation="Horizontal"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Margin="10,0,0,20">
+                <ComboBox x:Name="ColorSchemeComboBox"
+                          SelectedIndex="0"
+                          ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                          SelectionChanged="ColorSchemeSelectionChanged"/>
+                <Button x:Uid="ColorScheme_AddNewButton"
+                        Click="AddNew_Click"/>
+            </StackPanel>
 
-            <!-- Color Table -->
+            <!--Modify Color Scheme Name-->
+            <TextBox x:Uid="ColorScheme_Name"
+                     Grid.Row="1"
+                     Grid.Column="0"
+                     Grid.ColumnSpan="2"
+                     Text="{x:Bind CurrentColorScheme.Name, Mode=TwoWay}"
+                     HorizontalAlignment="Left"
+                     Margin="10,0,0,20"
+                     Width="300"/>
+
+            <!-- Color Table (Left Column)-->
             <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentColorTable, Mode=OneWay}"
-                          Grid.Row="1"
+                          Grid.Row="2"
                           Grid.Column="0">
 
                 <ItemsControl.ItemsPanel>
@@ -96,7 +109,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Additional Colors -->
+            <!-- Additional Colors (Right Column) -->
             <ItemsControl Grid.Row="2"
                           Grid.Column="1">
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
@@ -143,6 +156,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                 </StackPanel>
             </ItemsControl>
+
+            <!--Delete Button-->
+            <Button x:Uid="ColorScheme_DeleteButton"
+                    Grid.Row="3"
+                    Grid.Column="0"
+                    Width="auto"
+                    Click="Delete_Click"/>
         </Grid>
     </ScrollViewer>
 </Page>

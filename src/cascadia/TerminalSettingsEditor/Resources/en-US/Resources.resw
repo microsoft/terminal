@@ -675,4 +675,25 @@
   <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
     <value>Visual (Flash Taskbar)</value>
   </data>
+  <data name="ColorScheme_AddNewButton.Content" xml:space="preserve">
+    <value>Add new</value>
+  </data>
+  <data name="ColorScheme_DeleteButton.Content" xml:space="preserve">
+    <value>Delete color scheme</value>
+  </data>
+  <data name="ColorScheme_Name.Header" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ColorScheme_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>The name of the color scheme.</value>
+  </data>
+  <data name="Profile_DeleteButton.Content" xml:space="preserve">
+    <value>Delete profile</value>
+  </data>
+  <data name="Profile_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>The name of the profile that appears in the dropdown.</value>
+  </data>
+  <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Name</value>
+  </data>
 </root>

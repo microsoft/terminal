@@ -33,6 +33,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
     }
 
+    void Profiles::Delete_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        return;
+    }
+
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
