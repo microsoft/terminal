@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
+#include "AppCustomConfig.h"
 
 #include "TerminalSettings.g.cpp"
 
@@ -154,6 +155,34 @@ namespace winrt::TerminalApp::implementation
         {
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<uint32_t>(colorRef);
+        }
+
+        if (profile.UnfocusedConfig())
+        {
+            auto unfocusedConfig = winrt::make_self<implementation::AppCustomConfig>();
+
+            unfocusedConfig->ColorSchemeName(profile.UnfocusedConfig().ColorSchemeName());
+            if (profile.UnfocusedConfig().Background())
+            {
+                unfocusedConfig->Background(til::color{ profile.UnfocusedConfig().Background().Value() });
+            }
+            if (profile.UnfocusedConfig().Foreground())
+            {
+                unfocusedConfig->Foreground(til::color{ profile.UnfocusedConfig().Foreground().Value() });
+            }
+            if (profile.UnfocusedConfig().SelectionBackground())
+            {
+                unfocusedConfig->SelectionBackground(til::color{ profile.UnfocusedConfig().SelectionBackground().Value() });
+            }
+            if (profile.UnfocusedConfig().CursorColor())
+            {
+                unfocusedConfig->CursorColor(til::color{ profile.UnfocusedConfig().CursorColor().Value() });
+            }
+            if (!profile.UnfocusedConfig().BackgroundImagePath().empty())
+            {
+                unfocusedConfig->BackgroundImage(profile.UnfocusedConfig().BackgroundImagePath());
+            }
+            _UnfocusedConfig = *unfocusedConfig;
         }
     }
 
