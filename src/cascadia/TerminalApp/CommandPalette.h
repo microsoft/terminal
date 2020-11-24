@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
         void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs, const bool clearList);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
-        void EnableCommandPaletteMode();
+        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const& launchMode);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 

@@ -399,3 +399,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
         return BaseEnumMapper::CanConvert(json) || json.isBool();
     }
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "action", ValueType::Action },
+        pair_type{ "commandLine", ValueType::CommandLine },
+    };
+};

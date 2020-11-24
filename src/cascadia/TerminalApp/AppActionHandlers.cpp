@@ -313,13 +313,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const ActionEventArgs& args)
     {
-        // TODO GH#6677: When we add support for commandline mode, first set the
-        // mode that the command palette should be in, before making it visible.
-        CommandPalette().EnableCommandPaletteMode();
-        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                        Visibility::Collapsed :
-                                        Visibility::Visible);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
+        {
+            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,

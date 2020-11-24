@@ -22,6 +22,7 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "ToggleCommandPaletteArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -392,5 +393,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ScrollDownCommandKey");
+    }
+
+    winrt::hstring ToggleCommandPaletteArgs::GenerateName() const
+    {
+        if (_LaunchMode == CommandPaletteLaunchMode::CommandLine)
+        {
+            return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
+        }
+        return RS_(L"ToggleCommandPaletteCommandKey");
     }
 }
