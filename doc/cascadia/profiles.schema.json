@@ -108,7 +108,7 @@
       ],
       "type": "string"
     },
-    "Direction": {
+    "FocusDirection": {
       "enum": [
         "left",
         "right",
@@ -116,6 +116,15 @@
         "down",
         "next",
         "previous"
+      ],
+      "type": "string"
+    },
+    "ResizeDirection": {
+      "enum": [
+        "left",
+        "right",
+        "up",
+        "down"
       ],
       "type": "string"
     },
@@ -209,7 +218,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "adjustFontSize" },
+            "action": {
+              "type": "string",
+              "pattern": "adjustFontSize"
+            },
             "delta": {
               "type": "integer",
               "default": 0,
@@ -226,7 +238,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "copy" },
+            "action": {
+              "type": "string",
+              "pattern": "copy"
+            },
             "singleLine": {
               "type": "boolean",
               "default": false,
@@ -255,7 +270,10 @@
         { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "newTab" }
+            "action": {
+              "type": "string",
+              "pattern": "newTab"
+            }
           }
         }
       ]
@@ -266,7 +284,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "switchToTab" },
+            "action": {
+              "type": "string",
+              "pattern": "switchToTab"
+            },
             "index": {
               "type": "integer",
               "default": 0,
@@ -283,9 +304,12 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "moveFocus" },
+            "action": {
+              "type": "string",
+              "pattern": "moveFocus"
+            },
             "direction": {
-              "$ref": "#/definitions/Direction",
+              "$ref": "#/definitions/FocusDirection",
               "default": "left",
               "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane or 'next' to move to the least recently used pane."
             }
@@ -300,11 +324,14 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "resizePane" },
+            "action": {
+              "type": "string",
+              "pattern": "resizePane"
+            },
             "direction": {
-              "$ref": "#/definitions/Direction",
+              "$ref": "#/definitions/ResizeDirection",
               "default": "left",
-              "description": "The direction to move the pane separator in. Direction cannot be 'next' or 'previous'."
+              "description": "The direction to move the pane separator in."
             }
           }
         }
@@ -340,7 +367,10 @@
         { "$ref": "#/definitions/NewTerminalArgs" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "splitPane" },
+            "action": {
+              "type": "string",
+              "pattern": "splitPane"
+            },
             "split": {
               "$ref": "#/definitions/SplitState",
               "default": "auto",
@@ -386,7 +416,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "setTabColor" },
+            "action": {
+              "type": "string",
+              "pattern": "setTabColor"
+            },
             "color": {
               "$ref": "#/definitions/Color",
               "default": null,
@@ -402,7 +435,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "setColorScheme" },
+            "action": {
+              "type": "string",
+              "pattern": "setColorScheme"
+            },
             "colorScheme": {
               "type": "string",
               "default": "",
@@ -419,7 +455,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "wt" },
+            "action": {
+              "type": "string",
+              "pattern": "wt"
+            },
             "commandline": {
               "type": "string",
               "default": "",
@@ -436,7 +475,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "closeOtherTabs" },
+            "action": {
+              "type": "string",
+              "pattern": "closeOtherTabs"
+            },
             "index": {
               "oneOf": [
                 { "type": "integer" },
@@ -455,7 +497,10 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "closeTabsAfter" },
+            "action": {
+              "type": "string",
+              "pattern": "closeTabsAfter"
+            },
             "index": {
               "oneOf": [
                 { "type": "integer" },
@@ -474,9 +519,12 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "scrollUp" },
+            "action": {
+              "type": "string",
+              "pattern": "scrollUp"
+            },
             "rowsToScroll": {
-              "type": ["integer", "null"],
+              "type": [ "integer", "null" ],
               "default": null,
               "description": "Scroll up rowsToScroll lines. If no value is provided, use the system-level defaults."
             }
@@ -490,9 +538,12 @@
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "scrollDown" },
+            "action": {
+              "type": "string",
+              "pattern": "scrollDown"
+            },
             "rowsToScroll": {
-              "type": ["integer", "null"],
+              "type": [ "integer", "null" ],
               "default": null,
               "description": "Scroll down rowsToScroll lines. If no value is provided, use the system-level defaults."
             }
@@ -505,26 +556,26 @@
       "properties": {
         "command": {
           "description": "The action executed when the associated key bindings are pressed.",
-            "oneOf": [
-              { "$ref": "#/definitions/AdjustFontSizeAction" },
-              { "$ref": "#/definitions/CopyAction" },
-              { "$ref": "#/definitions/ShortcutActionName" },
-              { "$ref": "#/definitions/NewTabAction" },
-              { "$ref": "#/definitions/SwitchToTabAction" },
-              { "$ref": "#/definitions/MoveFocusAction" },
-              { "$ref": "#/definitions/ResizePaneAction" },
-              { "$ref": "#/definitions/SendInputAction" },
-              { "$ref": "#/definitions/SplitPaneAction" },
-              { "$ref": "#/definitions/OpenSettingsAction" },
-              { "$ref": "#/definitions/SetTabColorAction" },
-              { "$ref": "#/definitions/SetColorSchemeAction" },
-              { "$ref": "#/definitions/WtAction" },
-              { "$ref": "#/definitions/CloseOtherTabsAction" },
-              { "$ref": "#/definitions/CloseTabsAfterAction" },
-              { "$ref": "#/definitions/ScrollUpAction" },
-              { "$ref": "#/definitions/ScrollDownAction" },
-              { "type": "null" }
-            ]
+          "oneOf": [
+            { "$ref": "#/definitions/AdjustFontSizeAction" },
+            { "$ref": "#/definitions/CopyAction" },
+            { "$ref": "#/definitions/ShortcutActionName" },
+            { "$ref": "#/definitions/NewTabAction" },
+            { "$ref": "#/definitions/SwitchToTabAction" },
+            { "$ref": "#/definitions/MoveFocusAction" },
+            { "$ref": "#/definitions/ResizePaneAction" },
+            { "$ref": "#/definitions/SendInputAction" },
+            { "$ref": "#/definitions/SplitPaneAction" },
+            { "$ref": "#/definitions/OpenSettingsAction" },
+            { "$ref": "#/definitions/SetTabColorAction" },
+            { "$ref": "#/definitions/SetColorSchemeAction" },
+            { "$ref": "#/definitions/WtAction" },
+            { "$ref": "#/definitions/CloseOtherTabsAction" },
+            { "$ref": "#/definitions/CloseTabsAfterAction" },
+            { "$ref": "#/definitions/ScrollUpAction" },
+            { "$ref": "#/definitions/ScrollDownAction" },
+            { "type": "null" }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
@@ -775,7 +826,7 @@
           "$ref": "#/definitions/Color",
           "default": "#0c0c0c",
           "description": "Sets the background color of the text. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
-          "type": ["string", "null"]
+          "type": [ "string", "null" ]
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
@@ -789,6 +840,7 @@
               ]
             }
           ]
+          "type": [ "string", "null" ]
         },
         "backgroundImageAlignment": {
           "default": "center",
@@ -858,7 +910,7 @@
         "cursorColor": {
           "oneOf": [
             { "$ref": "#/definitions/Color" },
-            {"type": "null"}
+            { "type": "null" }
           ],
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
@@ -866,7 +918,7 @@
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 25-100.",
           "maximum": 100,
           "minimum": 25,
-          "type": ["integer","null"],
+          "type": [ "integer", "null" ],
           "default": 25
         },
         "cursorShape": {
@@ -927,7 +979,7 @@
           "$ref": "#/definitions/Color",
           "default": "#cccccc",
           "description": "Sets the text color. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
-          "type": ["string", "null"]
+          "type": [ "string", "null" ]
         },
         "guid": {
           "$ref": "#/definitions/ProfileGuid",
@@ -944,7 +996,7 @@
           "minimum": -1,
           "type": "integer"
         },
-        "icon":{ "$ref": "#/definitions/Icon" },
+        "icon": { "$ref": "#/definitions/Icon" },
         "name": {
           "description": "Name of the profile. Displays in the dropdown menu.",
           "minLength": 1,
@@ -974,7 +1026,7 @@
         },
         "selectionBackground": {
           "oneOf": [
-            {"$ref": "#/definitions/Color"},
+            { "$ref": "#/definitions/Color" },
             { "type": "null" }
           ],
           "description": "Sets the background color of selected text. Overrides selectionBackground set in the color scheme. Uses hex color format: \"#rrggbb\"."
@@ -991,7 +1043,7 @@
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
-          "type": ["string", "null"]
+          "type": [ "string", "null" ]
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
@@ -1004,7 +1056,7 @@
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
-          "type": ["string", "null"]
+          "type": [ "string", "null" ]
         },
         "useAcrylic": {
           "default": false,
