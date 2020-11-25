@@ -786,7 +786,7 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::EnableCommandPaletteMode(CommandPaletteLaunchMode const& launchMode)
     {
-        auto mode = (launchMode == CommandPaletteLaunchMode::CommandLine) ?
+        const auto mode = (launchMode == CommandPaletteLaunchMode::CommandLine) ?
                         CommandPaletteMode::CommandlineMode :
                         CommandPaletteMode::ActionMode;
 
