@@ -295,7 +295,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane or 'next' to move to the least recently used pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
             }
           }
         }
@@ -722,7 +722,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -740,7 +740,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
