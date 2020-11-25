@@ -61,6 +61,7 @@ rx
 schandle
 semver
 serializer
+shobjidl
 SIZENS
 GETDESKWALLPAPER
 snprintf

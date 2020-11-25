@@ -1062,7 +1062,9 @@ IFont
 ifstream
 IGNOREEND
 IHigh
+IHosted
 iid
+IInitialize
 IInput
 IInspectable
 IInteract
