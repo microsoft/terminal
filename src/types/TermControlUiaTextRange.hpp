@@ -16,7 +16,7 @@ Author(s):
 
 #pragma once
 
-#include "..\types\UiaTextRangeBase.hpp"
+#include "../types/UiaTextRangeBase.hpp"
 
 namespace Microsoft::Terminal
 {

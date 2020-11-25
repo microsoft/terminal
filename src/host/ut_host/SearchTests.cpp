@@ -3,11 +3,11 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;

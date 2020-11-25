@@ -11,14 +11,14 @@
 #include "consoleKeyInfo.hpp"
 #include "window.hpp"
 
-#include "..\..\host\ApiRoutines.h"
-#include "..\..\host\init.hpp"
-#include "..\..\host\input.h"
-#include "..\..\host\handle.h"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\output.h"
+#include "../../host/ApiRoutines.h"
+#include "../../host/init.hpp"
+#include "../../host/input.h"
+#include "../../host/handle.h"
+#include "../../host/scrolling.hpp"
+#include "../../host/output.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

@@ -68,7 +68,7 @@ __inline NTSTATUS_FROM_WIN32(long x)
 #include "LibraryIncludes.h"
 
 // private dependencies
-#include "..\host\conddkrefs.h"
+#include "../host/conddkrefs.h"
 
 #include <conmsgl1.h>
 #include <conmsgl2.h>
