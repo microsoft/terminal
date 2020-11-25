@@ -64,7 +64,6 @@ public:
     const DbcsAttribute& DbcsAttrAt(const size_t column) const;
     DbcsAttribute& DbcsAttrAt(const size_t column);
     void ClearGlyph(const size_t column);
-    std::wstring GetText() const;
 
     const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
 
@@ -89,6 +88,7 @@ public:
 
 private:
     void Reset() noexcept;
+    std::wstring GetText() const;
 
 protected:
     // storage for glyph data and dbcs attributes

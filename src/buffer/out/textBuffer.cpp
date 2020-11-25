@@ -2406,7 +2406,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     for (auto i = firstRow; i <= lastRow; ++i)
     {
         auto row = GetRowByOffset(i);
-        concatAll += row.GetCharRow().GetText();
+        concatAll += row.GetText();
     }
 
     // for each pattern we know of, iterate through the string
