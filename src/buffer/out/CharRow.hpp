@@ -59,7 +59,6 @@ public:
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const;
     size_t MeasureRight() const noexcept;
-    void ClearCell(const size_t column);
     bool ContainsText() const noexcept;
     const DbcsAttribute& DbcsAttrAt(const size_t column) const;
     DbcsAttribute& DbcsAttrAt(const size_t column);
@@ -88,6 +87,7 @@ public:
 
 private:
     void Reset() noexcept;
+    void ClearCell(const size_t column);
     std::wstring GetText() const;
 
 protected:
