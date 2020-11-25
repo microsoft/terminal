@@ -267,12 +267,3 @@ COORD CharRow::GetStorageKey(const size_t column) const noexcept
 {
     return { gsl::narrow<SHORT>(column), _pParent->GetId() };
 }
-
-// Routine Description:
-// - Updates the pointer to the parent row (which might change if we shuffle the rows around)
-// Arguments:
-// - pParent - Pointer to the parent row
-void CharRow::UpdateParent(ROW* const pParent)
-{
-    _pParent = FAIL_FAST_IF_NULL(pParent);
-}
