@@ -2823,7 +2823,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex)
     {
-        uint32_t newTabIndex = std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1);
+        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
         if (currentTabIndex != newTabIndex)
         {
             auto tab = _tabs.GetAt(currentTabIndex);
