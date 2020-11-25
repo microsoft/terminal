@@ -114,7 +114,6 @@
         "right",
         "up",
         "down",
-        "next",
         "previous"
       ],
       "type": "string"
