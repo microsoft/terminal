@@ -16,7 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _Profile{ profile },
             _Schemes{ schemes },
             _WindowRoot{ windowRoot }
-        {}
+        {
+        }
 
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }

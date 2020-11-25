@@ -198,7 +198,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Implements the IInitializeWithWindow interface from shobjidl_core.
-    HRESULT AppLogic::Initialize(HWND hwnd) {
+    HRESULT AppLogic::Initialize(HWND hwnd)
+    {
         return _root->Initialize(hwnd);
     }
 
