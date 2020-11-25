@@ -8,7 +8,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:model="using:Microsoft.Terminal.Settings.Model"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="clr-namespace:Windows.UI.Xaml.Controls;assembly=Windows.Foundation.UniversalApiContract" xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -47,7 +46,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -64,9 +63,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ComboBox x:Name="ColorSchemeComboBox"
                           SelectedIndex="0"
                           ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                          SelectionChanged="ColorSchemeSelectionChanged"/>
+                          SelectionChanged="ColorSchemeSelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="model:ColorScheme">
+                            <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
                 <Button x:Uid="ColorScheme_AddNewButton"
-                        Click="AddNew_Click"/>
+                        Click="AddNew_Click"
+                        Margin="10,0,0,0"/>
             </StackPanel>
 
             <!--Modify Color Scheme Name-->

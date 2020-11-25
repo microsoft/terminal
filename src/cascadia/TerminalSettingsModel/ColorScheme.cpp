@@ -46,15 +46,44 @@ ColorScheme::ColorScheme() :
     _SelectionBackground{ DEFAULT_FOREGROUND },
     _CursorColor{ DEFAULT_CURSOR_COLOR }
 {
+    _InitializeColorTable();
+}
+
+ColorScheme::ColorScheme(winrt::hstring name) :
+    ColorScheme{}
+{
+    _Name = name;
 }
 
 ColorScheme::ColorScheme(winrt::hstring name, Color defaultFg, Color defaultBg, Color cursorColor) :
-    _Name{ name },
-    _Foreground{ defaultFg },
-    _Background{ defaultBg },
-    _SelectionBackground{ DEFAULT_FOREGROUND },
-    _CursorColor{ cursorColor }
+    ColorScheme{ name }
 {
+    _Foreground = defaultFg;
+    _Background = defaultBg;
+    _SelectionBackground = DEFAULT_FOREGROUND;
+    _CursorColor = cursorColor;
+}
+
+// Method Description:
+// - Sets the color table to Cambell's values
+void ColorScheme::_InitializeColorTable()
+{
+    _table.at(0) = Utils::ColorFromHexString("#0C0C0C");
+    _table.at(1) = Utils::ColorFromHexString("#C50F1F");
+    _table.at(2) = Utils::ColorFromHexString("#13A10E");
+    _table.at(3) = Utils::ColorFromHexString("#C19C00");
+    _table.at(4) = Utils::ColorFromHexString("#0037DA");
+    _table.at(5) = Utils::ColorFromHexString("#881798");
+    _table.at(6) = Utils::ColorFromHexString("#3A96DD");
+    _table.at(7) = Utils::ColorFromHexString("#CCCCCC");
+    _table.at(8) = Utils::ColorFromHexString("#767676");
+    _table.at(9) = Utils::ColorFromHexString("#E74856");
+    _table.at(10) = Utils::ColorFromHexString("#16C60C");
+    _table.at(11) = Utils::ColorFromHexString("#F9F1A5");
+    _table.at(12) = Utils::ColorFromHexString("#3B78FF");
+    _table.at(13) = Utils::ColorFromHexString("#B4009E");
+    _table.at(14) = Utils::ColorFromHexString("#61D6D6");
+    _table.at(15) = Utils::ColorFromHexString("#F2F2F2");
 }
 
 winrt::com_ptr<ColorScheme> ColorScheme::Copy() const

@@ -4,6 +4,8 @@
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass ColorScheme {
+        ColorScheme(String name);
+
         String Name;
 
         Windows.UI.Color Foreground;
@@ -11,7 +13,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.UI.Color SelectionBackground;
         Windows.UI.Color CursorColor;
 
-        Windows.UI.Color[] Table { get; };
+        Windows.UI.Color[] Table();
         void SetColorTableEntry(UInt8 index, Windows.UI.Color value);
     }
 }

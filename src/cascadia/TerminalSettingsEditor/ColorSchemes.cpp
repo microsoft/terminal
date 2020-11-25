@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     };
 
     ColorSchemes::ColorSchemes() :
-        _ColorSchemeList{ single_threaded_observable_vector<hstring>() },
+        _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
@@ -74,8 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                    SelectionChangedEventArgs const& args)
     {
         //  Update the color scheme this page is modifying
-        auto str = winrt::unbox_value<hstring>(args.AddedItems().GetAt(0));
-        auto colorScheme = _State.Globals().ColorSchemes().Lookup(str);
+        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
     }
@@ -91,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto colorSchemeMap = _State.Globals().ColorSchemes();
         for (const auto& pair : _State.Globals().ColorSchemes())
         {
-            _ColorSchemeList.Append(pair.Key());
+            _ColorSchemeList.Append(pair.Value());
         }
     }
 
@@ -121,12 +120,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::Delete_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        return;
+        const auto schemeName{ CurrentColorScheme().Name() };
+        _State.Globals().RemoveColorScheme(schemeName);
+
+        const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
+        if (static_cast<uint32_t>(removedSchemeIndex) < _ColorSchemeList.Size() - 1)
+        {
+            // select same index
+            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex);
+        }
+        else
+        {
+            // select last color scheme (avoid out of bounds error)
+            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
+        }
+        _ColorSchemeList.RemoveAt(removedSchemeIndex);
     }
 
     void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        return;
+        // Give the new scheme a distinct name
+        const hstring schemeName{ fmt::format(L"Color Scheme {}", _State.Globals().ColorSchemes().Size() + 1) };
+        Model::ColorScheme scheme{ schemeName };
+
+        // Add the new color scheme
+        _State.Globals().AddColorScheme(scheme);
+
+        // Update current page
+        _ColorSchemeList.Append(scheme);
+        ColorSchemeComboBox().SelectedItem(scheme);
     }
 
     // Function Description:
