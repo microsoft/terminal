@@ -34,7 +34,7 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
 
-        IInspectable CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<String> ColorSchemeList { get; };
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
     }
 }

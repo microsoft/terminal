@@ -89,7 +89,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         LargeChange="10"/>
                     <ComboBox x:Uid="Profile_ColorScheme"
                               ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                              SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"/>
+                              SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:ColorScheme">
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_BackgroundImage"
