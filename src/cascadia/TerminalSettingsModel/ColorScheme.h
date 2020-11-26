@@ -57,8 +57,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         std::array<til::color, COLOR_TABLE_SIZE> _table;
 
-        void _InitializeColorTable();
-
         friend class SettingsModelLocalTests::SettingsTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;
     };

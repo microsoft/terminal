@@ -70,9 +70,17 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <Button x:Uid="ColorScheme_AddNewButton"
-                        Click="AddNew_Click"
-                        Margin="10,0,0,0"/>
+                <Button Click="AddNew_Click"
+                        Width="auto"
+                        Margin="10,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE710;"
+                                  FontSize="15"/>
+                        <TextBlock x:Uid="ColorScheme_AddNewButton"
+                                   Margin="10,0,0,0"
+                                   FontSize="15"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
 
             <!--Modify Color Scheme Name-->
@@ -164,11 +172,18 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ItemsControl>
 
             <!--Delete Button-->
-            <Button x:Uid="ColorScheme_DeleteButton"
-                    Grid.Row="3"
+            <Button Grid.Row="3"
                     Grid.Column="0"
                     Width="auto"
-                    Click="Delete_Click"/>
+                    Click="Delete_Click">
+                <StackPanel Orientation="Horizontal">
+                    <FontIcon Glyph="&#xE74D;"
+                              FontSize="15"/>
+                    <TextBlock x:Uid="ColorScheme_DeleteButton"
+                               FontSize="15"
+                               Margin="10,0,0,0"/>
+                </StackPanel>
+            </Button>
         </Grid>
     </ScrollViewer>
 </Page>

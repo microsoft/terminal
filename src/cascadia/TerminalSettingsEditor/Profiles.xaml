@@ -21,6 +21,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="Margin" Value="0,10,0,0"/>
             </Style>
 
+            <Style TargetType="Button">
+                <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="CornerRadius" Value="2"/>
+            </Style>
+
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
@@ -64,8 +70,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <Button x:Uid="Profile_DeleteButton"
-                            Click="Delete_Click"/>
+                    <Button Click="Delete_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE74D;"
+                                      FontSize="15"/>
+                            <TextBlock x:Uid="Profile_DeleteButton"
+                                       FontSize="15"
+                                       Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>

@@ -13,6 +13,9 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.UI.Color SelectionBackground;
         Windows.UI.Color CursorColor;
 
+        // winrt::com_arrays prevent data binding.
+        // Instead of representing Table as a property,
+        // we expose the getter as a function.
         Windows.UI.Color[] Table();
         void SetColorTableEntry(UInt8 index, Windows.UI.Color value);
     }
