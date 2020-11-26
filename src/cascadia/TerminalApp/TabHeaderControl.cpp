@@ -37,8 +37,8 @@ namespace winrt::TerminalApp::implementation
                 else if (e.OriginalKey() == Windows::System::VirtualKey::Escape)
                 {
                     // User wants to discard the changes they made,
-                    // reset the rename box text to the old text and close the rename box
-                    HeaderRenamerTextBox().Text(Title());
+                    // set _renameCancelled to true and close the rename box
+                    _renameCancelled = true;
                     _CloseRenameBox();
                 }
             }
@@ -51,6 +51,7 @@ namespace winrt::TerminalApp::implementation
     void TabHeaderControl::BeginRename()
     {
         _receivedKeyDown = false;
+        _renameCancelled = false;
 
         HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
         HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Visible);
@@ -62,24 +63,23 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Event handler for when the rename box loses focus
-    // - When the rename box loses focus, we use the text in it as the new title
-    //   (i.e. we commit the change instead of cancelling it)
+    // - When the rename box loses focus, we send a request for the title change depending
+    //   on whether the rename was cancelled
     void TabHeaderControl::RenameBoxLostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                                      Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
         _CloseRenameBox();
+        if (!_renameCancelled)
+        {
+            _TitleChangeRequestedHandlers(HeaderRenamerTextBox().Text());
+        }
     }
 
     // Method Description:
     // - Hides the rename box and displays the title text block
-    // - Sends an event to the hosting tab to let them know we wish to change the title
-    //   to whatever is in the renamer box right now - the tab will process that event
-    //   and tell us to update our title
     void TabHeaderControl::_CloseRenameBox()
     {
         HeaderRenamerTextBox().Visibility(Windows::UI::Xaml::Visibility::Collapsed);
         HeaderTextBlock().Visibility(Windows::UI::Xaml::Visibility::Visible);
-
-        _TitleChangeRequestedHandlers(HeaderRenamerTextBox().Text());
     }
 }
