@@ -175,7 +175,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         TerminalApp::TabBase _GetFocusedTab();
-        void _SetFocusedTab(const TerminalApp::TabBase& tab);
+        winrt::fire_and_forget _SetFocusedTab(const TerminalApp::TabBase& tabToFocus);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();

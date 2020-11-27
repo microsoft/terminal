@@ -1431,13 +1431,25 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to focus
     // Return Value:
     // - <none>
-    void TerminalPage::_SetFocusedTab(const TerminalApp::TabBase& tab)
+    winrt::fire_and_forget TerminalPage::_SetFocusedTab(const TerminalApp::TabBase& tabToFocus)
     {
-        uint32_t tabIndex;
-        auto tabViewitem{ tab.TabViewItem() };
-        if (_tabView.TabItems().IndexOf(tabViewitem, tabIndex))
+        // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
+        //          sometimes set focus to an incorrect tab after removing some tabs
+        auto weakThis{ get_weak() };
+        auto weakTab{ _GetTerminalTabImpl(tabToFocus)->get_weak() };
+
+        co_await winrt::resume_foreground(_tabView.Dispatcher());
+
+        auto page{ weakThis.get() };
+        auto tab{ weakTab.get() };
+        if (page && tab)
         {
-            _tabView.SelectedIndex(tabIndex);
+            uint32_t tabIndex;
+            auto tabViewitem{ tab->TabViewItem() };
+            if (page->_tabView.TabItems().IndexOf(tabViewitem, tabIndex))
+            {
+                page->_tabView.SelectedIndex(tabIndex);
+            }
         }
     }
 
