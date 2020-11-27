@@ -226,22 +226,9 @@ namespace winrt::TerminalApp::implementation
                 _CommandPaletteClosed(nullptr, nullptr);
             }
         });
-        CommandPalette().DispatchCommandRequested([this](auto /*sender*/, auto command) {
-            const auto& actionAndArgs = command.Action();
-            _actionDispatch->DoAction(actionAndArgs);
-        });
-        CommandPalette().CommandLineExecutionRequested([this](auto /*sender*/, auto commandLine) {
-            ExecuteCommandlineArgs args{ commandLine };
-            ActionAndArgs actionAndArgs{ ShortcutAction::ExecuteCommandline, args };
-            _actionDispatch->DoAction(actionAndArgs);
-        });
-        CommandPalette().SwitchToTabRequested([this](auto /*sender*/, auto tab) {
-            uint32_t index;
-            if (_tabs.IndexOf(tab, index))
-            {
-                _SelectTab(index);
-            }
-        });
+        CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
+        CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -256,6 +243,49 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+    }
+
+    // Method Description:
+    // - This method is called once command palette action was chosen for dispatching
+    //   We'll use this event to dispatch this command.
+    // Arguments:
+    // - command - command to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    {
+        const auto& actionAndArgs = command.Action();
+        _actionDispatch->DoAction(actionAndArgs);
+    }
+
+    // Method Description:
+    // - This method is called once command palette command line was chosen for execution
+    //   We'll use this event to create a command line execution command and dispatch it.
+    // Arguments:
+    // - command - command to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnCommandLineExecutionRequested(const IInspectable& /*sender*/, const winrt::hstring& commandLine)
+    {
+        ExecuteCommandlineArgs args{ commandLine };
+        ActionAndArgs actionAndArgs{ ShortcutAction::ExecuteCommandline, args };
+        _actionDispatch->DoAction(actionAndArgs);
+    }
+
+    // Method Description:
+    // - This method is called once a tab was selected in tab switcher
+    //   We'll use this event to select the relevant tab
+    // Arguments:
+    // - tab - tab to select
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
+    {
+        uint32_t index;
+        if (_tabs.IndexOf(tab, index))
+        {
+            _SelectTab(index);
+        }
     }
 
     // Method Description:

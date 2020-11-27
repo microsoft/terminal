@@ -215,6 +215,10 @@ namespace winrt::TerminalApp::implementation
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
         void _UpdatedSelectedTab(const int32_t index);
 
+        void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
+        void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
+        void _OnSwitchToTabRequested(const IInspectable& sender, const winrt::TerminalApp::TabBase& tab);
+
         void _Find();
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
