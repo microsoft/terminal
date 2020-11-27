@@ -95,6 +95,10 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearInitialPosition();
         LaunchPosition InitialPosition;
 
+        Boolean HasCentreOnLaunch();
+        void ClearCentreOnLaunch();
+        Boolean CentreOnLaunch;
+
         Boolean HasLaunchMode();
         void ClearLaunchMode();
         LaunchMode LaunchMode;

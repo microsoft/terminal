@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "AppLogic.h"
 #include "AppLogic.g.cpp"
+#include "wtypes.h"
+#include "TerminalPage.h"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
@@ -630,17 +632,46 @@ namespace winrt::TerminalApp::implementation
     // - a point containing the requested initial position in pixels.
     TerminalApp::InitialPosition AppLogic::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
     {
+        
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
             LoadSettings();
         }
 
+        UINT dpi = USER_DEFAULT_SCREEN_DPI;
+        int _width = 0;
+        int _height = 0;
+        GetDesktopResolution(_width, _height);
         const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
-        return {
-            initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
-            initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
-        };
+        const auto CentreOnLaunch{ _settings.GlobalSettings().CentreOnLaunch() };
+        const auto dimentions = GetLaunchDimensions(dpi);
+        const auto appWidth = dimentions.Width;
+        const auto appHeight = dimentions.Height;
+
+        if (CentreOnLaunch)
+        {
+            return {
+                (_width / 2) - (static_cast<int>(appWidth) / 2),
+                (_height / 2) - (static_cast<int>(appHeight) / 2)
+            };
+        }
+        else
+        {
+            return {
+                initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
+                initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
+            };
+        }
+    }
+
+    void AppLogic::GetDesktopResolution(int& width, int& height)
+    {
+        RECT desktop;
+        const HWND hDesktop = GetDesktopWindow();
+        GetWindowRect(hDesktop, &desktop);
+        width = desktop.right;
+        height= desktop.bottom;
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()

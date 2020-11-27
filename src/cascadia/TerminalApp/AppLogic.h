@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
+        void GetDesktopResolution(int& horizontal, int& vertical);
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
@@ -70,7 +71,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
-
+        
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};
 
