@@ -114,8 +114,10 @@ namespace winrt::TerminalApp::implementation
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
 
-        // If the list is empty or not item selected we cannot select another one
-        if (numItems != 0 && selected != -1)
+        // Do not try to select an item if
+        // - the list is empty
+        // - if no item is selected and "up" is pressed
+        if (numItems != 0 && (selected != -1 || moveDown))
         {
             // Wraparound math. By adding numItems and then calculating modulo numItems,
             // we clamp the values to the range [0, numItems) while still supporting moving
