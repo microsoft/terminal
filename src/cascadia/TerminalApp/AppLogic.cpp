@@ -5,7 +5,6 @@
 #include "AppLogic.h"
 #include "AppLogic.g.cpp"
 #include "wtypes.h"
-#include "TerminalPage.h"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include <LibraryResources.h>
@@ -632,7 +631,6 @@ namespace winrt::TerminalApp::implementation
     // - a point containing the requested initial position in pixels.
     TerminalApp::InitialPosition AppLogic::GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY)
     {
-        
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
@@ -671,7 +669,7 @@ namespace winrt::TerminalApp::implementation
         const HWND hDesktop = GetDesktopWindow();
         GetWindowRect(hDesktop, &desktop);
         width = desktop.right;
-        height= desktop.bottom;
+        height = desktop.bottom;
     }
 
     winrt::Windows::UI::Xaml::ElementTheme AppLogic::GetRequestedTheme()

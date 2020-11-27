@@ -71,7 +71,7 @@ namespace winrt::TerminalApp::implementation
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
-        
+
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};
 
