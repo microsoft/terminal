@@ -674,7 +674,7 @@ namespace winrt::TerminalApp::implementation
 
             if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
             {
-                _CommandLineExecutionRequestedHandlers(*this, commandLinePaletteItem.CommandLine());
+                _CommandLineExecutionRequestedHandlers(commandLinePaletteItem.CommandLine());
                 _close();
             }
         }

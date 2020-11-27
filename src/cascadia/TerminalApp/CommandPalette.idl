@@ -3,7 +3,6 @@
 
 import "TabBase.idl";
 import "IDirectKeyListener.idl";
-import "ShortcutActionDispatch.idl";
 import "HighlightedTextControl.idl";
 import "FilteredCommand.idl";
 
@@ -28,8 +27,10 @@ namespace TerminalApp
 
         void SelectNextItem(Boolean moveDown);
 
-        void SetDispatch(ShortcutActionDispatch dispatch);
-
         void EnableTabSwitcherMode(Boolean searchMode, UInt32 startIdx);
+
+        event Windows.Foundation.TypedEventHandler<CommandPalette, TabBase> SwitchToTabRequested;
+        event Windows.Foundation.TypedEventHandler<CommandPalette, Microsoft.Terminal.Settings.Model.Command> DispatchCommandRequested;
+        event Windows.Foundation.TypedEventHandler<CommandPalette, String> CommandLineExecutionRequested;
     }
 }

@@ -217,7 +217,6 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        CommandPalette().SetDispatch(*_actionDispatch);
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active
         // control.
@@ -225,6 +224,22 @@ namespace winrt::TerminalApp::implementation
             if (CommandPalette().Visibility() == Visibility::Collapsed)
             {
                 _CommandPaletteClosed(nullptr, nullptr);
+            }
+        });
+        CommandPalette().DispatchCommandRequested([this](auto /*sender*/, auto command) {
+            const auto& actionAndArgs = command.Action();
+            _actionDispatch->DoAction(actionAndArgs);
+        });
+        CommandPalette().CommandLineExecutionRequested([this](auto /*sender*/, auto commandLine) {
+            ExecuteCommandlineArgs args{ commandLine };
+            ActionAndArgs actionAndArgs{ ShortcutAction::ExecuteCommandline, args };
+            _actionDispatch->DoAction(actionAndArgs);
+        });
+        CommandPalette().SwitchToTabRequested([this](auto /*sender*/, auto tab) {
+            uint32_t index;
+            if (_tabs.IndexOf(tab, index))
+            {
+                _SelectTab(index);
             }
         });
 
@@ -670,7 +685,6 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings, connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
-        _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
         // Add the new tab to the list of our tabs.
         _tabs.Append(*newTabImpl);
@@ -2738,27 +2752,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Initializes a SwitchToTab command object for this Tab instance.
-    //   This should be done before the tab is added to the _tabs vector so that
-    //   controls like the CmdPal that observe the vector changes can always expect
-    //   a SwitchToTab command to be available.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index)
-    {
-        SwitchToTabArgs args{ index };
-        ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
-
-        Command command;
-        command.Action(focusTabAction);
-        command.Name(tab.Title());
-        command.Icon(tab.Icon());
-
-        tab.SwitchToTabCommand(command);
-    }
-
     // Method Description:
     // - Computes the delta for scrolling the tab's viewport.
     // Arguments:

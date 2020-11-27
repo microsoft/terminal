@@ -869,10 +869,10 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
         RunOnUIThread([&page]() {
-            page->_tabs.GetAt(0).SwitchToTabCommand().Name(L"a");
-            page->_tabs.GetAt(1).SwitchToTabCommand().Name(L"b");
-            page->_tabs.GetAt(2).SwitchToTabCommand().Name(L"c");
-            page->_tabs.GetAt(3).SwitchToTabCommand().Name(L"d");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
         });
 
         Log::Comment(L"Change the tab switch order to MRU switching");

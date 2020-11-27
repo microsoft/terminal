@@ -35,8 +35,6 @@ namespace winrt::TerminalApp::implementation
 
         void EnableCommandPaletteMode();
 
-        void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
-
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         void SelectNextItem(const bool moveDown);
@@ -57,6 +55,10 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
 
+        TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
+        TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
+        TYPED_EVENT(DispatchCommandRequested, winrt::TerminalApp::CommandPalette, Microsoft::Terminal::Settings::Model::Command);
+
     private:
         friend struct CommandPaletteT<CommandPalette>; // for Xaml to bind events
 
@@ -65,7 +67,6 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _nestedActionStack{ nullptr };
 
-        winrt::TerminalApp::ShortcutActionDispatch _dispatch;
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandsToFilter();
 
         bool _lastFilterTextWasEmpty{ true };
