@@ -520,13 +520,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        // Tab search is always in-order.
-        CommandPalette().SetTabs(_tabs, true);
-
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
 
-        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().EnableTabSearchMode(startIdx);
         CommandPalette().Visibility(Visibility::Visible);
 
         args.Handled(true);

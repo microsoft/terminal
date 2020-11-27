@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabs{ winrt::single_threaded_vector<TerminalApp::TabBase>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
     {
         InitializeComponent();
@@ -229,6 +229,8 @@ namespace winrt::TerminalApp::implementation
         CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
         CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
         CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
+        CommandPalette().SetTabs(_tabs);
+        CommandPalette().SetMRUTabs(_mruTabs);
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -1105,16 +1107,6 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
 
-        // If the tab switcher is currently open, update it to reflect the
-        // current list of tabs.
-        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-        const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
-        if (commandPaletteIsVisible)
-        {
-            auto tabs = tabSwitchMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabs : _tabs;
-            CommandPalette().SetTabs(tabs, true);
-        }
-
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
@@ -1292,17 +1284,11 @@ namespace winrt::TerminalApp::implementation
         }
 
         const bool useTabSwitcher = tabSwitchMode != TabSwitcherMode::Disabled;
-
         if (useTabSwitcher)
         {
-            auto tabs = useInOrderTabIndex ? _tabs : _mruTabs;
-            // Set up the list of in-order tabs
-            // Set up the list of MRU tabs
-            CommandPalette().SetTabs(tabs, true);
-
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
-            CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+            CommandPalette().EnableTabSwitcherMode(newTabIndex, tabSwitchMode);
             CommandPalette().Visibility(Visibility::Visible);
         }
         else if (auto index{ _GetFocusedTabIndex() })
@@ -2831,15 +2817,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabs.RemoveAt(mruIndex);
                 _mruTabs.InsertAt(0, tab);
-
-                // If the tab switcher is currently open, AND we're using it in
-                // MRU mode, then update it to reflect the current list of tabs.
-                const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-                const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
-                if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
-                {
-                    CommandPalette().SetTabs(_mruTabs, false);
-                }
             }
         }
     }

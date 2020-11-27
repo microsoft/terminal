@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _commandLineHistory = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
@@ -532,7 +533,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSearchMode:
             return _tabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _tabActions;
+            return _tabSwitcherMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabActions : _tabActions;
         case CommandPaletteMode::CommandlineMode:
             return _commandLineHistory;
         default:
@@ -796,28 +797,46 @@ namespace winrt::TerminalApp::implementation
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabs(Collections::IVector<TabBase> const& tabs, const bool clearList)
+    void CommandPalette::_bindTabs(
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& source,
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& target)
     {
-        _tabActions.Clear();
-        for (const auto& tab : tabs)
+        target.Clear();
+        for (const auto& tab : source)
         {
             auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(tab) };
             auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
-            _tabActions.Append(filteredCommand);
+            target.Append(filteredCommand);
         }
 
-        // The smooth remove/add animations that happen during
-        // UpdateFilteredActions don't work very well with changing the tab
-        // order, because of the sheer amount of remove/adds. So, let's just
-        // clear & rebuild the list when we change the set of tabs.
-        //
-        // Some callers might actually want smooth updating, like when the list
-        // of tabs changes.
-        if (clearList && _currentMode == CommandPaletteMode::TabSwitchMode)
-        {
-            _filteredActions.Clear();
-        }
-        _updateFilteredActions();
+        source.VectorChanged([this, source, target](auto&&, auto&& eventArgs) {
+            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemRemoved)
+            {
+                target.RemoveAt(eventArgs.Index());
+            }
+
+            if (eventArgs.CollectionChange() == Windows::Foundation::Collections::CollectionChange::ItemInserted)
+            {
+                auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(source.GetAt(eventArgs.Index())) };
+                auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
+                target.InsertAt(eventArgs.Index(), filteredCommand);
+            }
+
+            if (Visibility() == Visibility::Visible && (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode))
+            {
+                _updateFilteredActions();
+            }
+        });
+    }
+
+    void CommandPalette::SetTabs(Collections::IObservableVector<TabBase> const& tabs)
+    {
+        _bindTabs(tabs, _tabActions);
+    }
+
+    void CommandPalette::SetMRUTabs(Collections::IObservableVector<TabBase> const& tabs)
+    {
+        _bindTabs(tabs, _mruTabActions);
     }
 
     void CommandPalette::EnableCommandPaletteMode()
@@ -985,19 +1004,19 @@ namespace winrt::TerminalApp::implementation
         _currentNestedCommands.Clear();
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx)
+    void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, Microsoft::Terminal::Settings::Model::TabSwitcherMode tabSwitcherMode)
     {
         _switcherStartIdx = startIdx;
+        _tabSwitcherMode = tabSwitcherMode;
+        _switchToMode(CommandPaletteMode::TabSwitchMode);
+        _filteredActions.Clear();
+        _updateFilteredActions();
+    }
 
-        if (searchMode)
-        {
-            _switchToMode(CommandPaletteMode::TabSearchMode);
-        }
-        else
-        {
-            _switchToMode(CommandPaletteMode::TabSwitchMode);
-        }
-
+    void CommandPalette::EnableTabSearchMode(const uint32_t startIdx)
+    {
+        _switcherStartIdx = startIdx;
+        _switchToMode(CommandPaletteMode::TabSearchMode);
         _updateFilteredActions();
     }
 
