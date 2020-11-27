@@ -575,8 +575,8 @@ namespace winrt::TerminalApp::implementation
                     for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
                     {
                         const auto action = nameAndCommand.Value();
-                        auto nestedActionpaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionpaletteItem) };
+                        auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
                         _currentNestedCommands.Append(nestedFilteredCommand);
                     }
 
