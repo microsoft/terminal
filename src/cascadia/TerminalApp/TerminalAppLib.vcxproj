@@ -69,16 +69,20 @@
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="ActionPaletteItem.h" />
     <ClInclude Include="App.base.h" />
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
+    <ClInclude Include="CommandLinePaletteItem.h" />
     <ClInclude Include="Jumplist.h" />
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TabPaletteItem.h" />
     <ClInclude Include="TerminalTab.h">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
@@ -137,6 +141,8 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="ActionPaletteItem.cpp" />
+    <ClCompile Include="CommandLinePaletteItem.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
@@ -144,9 +150,11 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TabPaletteItem.cpp" />
     <ClCompile Include="TerminalTab.cpp">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
@@ -214,10 +222,13 @@
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
+    <Midl Include="ActionPaletteItem.idl" />
+    <Midl Include="CommandLinePaletteItem.idl" />
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
@@ -226,6 +237,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="TabBase.idl" />
+    <Midl Include="TabPaletteItem.idl" />
     <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
