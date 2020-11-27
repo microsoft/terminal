@@ -175,7 +175,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         TerminalApp::TabBase _GetFocusedTab();
-        winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
+        void _SetFocusedTab(const TerminalApp::TabBase& tab);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseAllTabs();
@@ -213,7 +213,7 @@ namespace winrt::TerminalApp::implementation
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
-        void _UpdatedSelectedTab(const int32_t index);
+        void _UpdatedSelectedTab(const TerminalApp::TabBase& tab);
 
         void _OnDispatchCommandRequested(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& command);
         void _OnCommandLineExecutionRequested(const IInspectable& sender, const winrt::hstring& commandLine);
@@ -238,13 +238,11 @@ namespace winrt::TerminalApp::implementation
 
         void _ReapplyCompactTabSize();
 
-        void _MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index);
-
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
         static uint32_t _ReadSystemRowsToScroll();
 
         void _UpdateTabSwitcherCommands(const bool mru);
-        void _UpdateMRUTab(const uint32_t index);
+        void _UpdateMRUTab(const TerminalApp::TabBase& tab);
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
 

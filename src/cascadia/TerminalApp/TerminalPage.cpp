@@ -1136,15 +1136,15 @@ namespace winrt::TerminalApp::implementation
             // * C (tabIndex=2): We'll want to focus tab B (now in index 1)
             // * D (tabIndex=3): We'll want to focus tab C (now in index 2)
             const auto newSelectedIndex = std::clamp<int32_t>(tabIndex - 1, 0, _tabs.Size());
+            auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
             // _UpdatedSelectedTab will do the work of setting up the new tab as
             // the focused one, and unfocusing all the others.
-            _UpdatedSelectedTab(newSelectedIndex);
+            _UpdatedSelectedTab(newSelectedTab);
 
             // Also, we need to _manually_ set the SelectedItem of the tabView
             // here. If we don't, then the TabView will technically not have a
             // selected item at all, which can make things like ClosePane not
             // work correctly.
-            auto newSelectedTab{ _tabs.GetAt(newSelectedIndex) };
             _tabView.SelectedItem(newSelectedTab.TabViewItem());
         }
 
@@ -1311,15 +1311,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (tabIndex >= 0 && tabIndex < _tabs.Size())
         {
+            auto tab{ _tabs.GetAt(tabIndex) };
             if (_startupState == StartupState::InStartup)
             {
-                auto tab{ _tabs.GetAt(tabIndex) };
                 _tabView.SelectedItem(tab.TabViewItem());
-                _UpdatedSelectedTab(tabIndex);
+                _UpdatedSelectedTab(tab);
             }
             else
             {
-                _SetFocusedTabIndex(tabIndex);
+                _SetFocusedTab(tab);
             }
 
             return true;
@@ -1428,21 +1428,16 @@ namespace winrt::TerminalApp::implementation
     //   in TerminalPage::_OnTabSelectionChanged, where we'll mark the new tab
     //   as focused.
     // Arguments:
-    // - tabIndex: the index in the list of tabs to focus.
+    // - tab: tab to focus
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_SetFocusedTabIndex(const uint32_t tabIndex)
+    void TerminalPage::_SetFocusedTab(const TerminalApp::TabBase& tab)
     {
-        // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
-        //          sometimes set focus to an incorrect tab after removing some tabs
-        auto weakThis{ get_weak() };
-
-        co_await winrt::resume_foreground(_tabView.Dispatcher());
-
-        if (auto page{ weakThis.get() })
+        uint32_t tabIndex;
+        auto tabViewitem{ tab.TabViewItem() };
+        if (_tabView.TabItems().IndexOf(tabViewitem, tabIndex))
         {
-            auto tabToFocus = page->_tabs.GetAt(tabIndex);
-            _tabView.SelectedItem(tabToFocus.TabViewItem());
+            _tabView.SelectedIndex(tabIndex);
         }
     }
 
@@ -2113,7 +2108,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_UpdatedSelectedTab(const int32_t index)
+    void TerminalPage::_UpdatedSelectedTab(const TerminalApp::TabBase& tab)
     {
         // Unfocus all the tabs.
         for (auto tab : _tabs)
@@ -2121,12 +2116,10 @@ namespace winrt::TerminalApp::implementation
             tab.Focus(FocusState::Unfocused);
         }
 
-        if (index >= 0)
+        if (tab)
         {
             try
             {
-                auto tab{ _tabs.GetAt(index) };
-
                 _tabContent.Children().Clear();
                 _tabContent.Children().Append(tab.Content());
 
@@ -2143,7 +2136,7 @@ namespace winrt::TerminalApp::implementation
                 if (CommandPalette().Visibility() != Visibility::Visible)
                 {
                     tab.Focus(FocusState::Programmatic);
-                    _UpdateMRUTab(index);
+                    _UpdateMRUTab(tab);
                 }
 
                 // Raise an event that our title changed
@@ -2165,7 +2158,11 @@ namespace winrt::TerminalApp::implementation
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
-            _UpdatedSelectedTab(selectedIndex);
+            if (selectedIndex >= 0 && selectedIndex < gsl::narrow_cast<int>(_tabs.Size()))
+            {
+                auto tab{ _tabs.GetAt(selectedIndex) };
+                _UpdatedSelectedTab(tab);
+            }
         }
     }
 
@@ -2681,8 +2678,9 @@ namespace winrt::TerminalApp::implementation
         // Return focus to the active control
         if (auto index{ _GetFocusedTabIndex() })
         {
-            _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-            _UpdateMRUTab(index.value());
+            auto tab{ _tabs.GetAt(*index) };
+            tab.Focus(FocusState::Programmatic);
+            _UpdateMRUTab(tab);
         }
     }
 
@@ -2807,10 +2805,9 @@ namespace winrt::TerminalApp::implementation
     // - index: the in-order index of the tab to bump.
     // Return Value:
     // - <none>
-    void TerminalPage::_UpdateMRUTab(const uint32_t index)
+    void TerminalPage::_UpdateMRUTab(const TerminalApp::TabBase& tab)
     {
         uint32_t mruIndex;
-        const auto tab = _tabs.GetAt(index);
         if (_mruTabs.IndexOf(tab, mruIndex))
         {
             if (mruIndex > 0)
