@@ -30,7 +30,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
-        void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs, const bool clearList);
+        void SetTabs(Windows::Foundation::Collections::IVector<winrt::TerminalApp::TabBase> const& tabs, const bool clearList);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
         void EnableCommandPaletteMode();
@@ -93,12 +93,8 @@ namespace winrt::TerminalApp::implementation
 
         void _updateFilteredActions();
 
-        void _populateFilteredActions(Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& vectorToPopulate,
-                                      Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
-
         std::vector<winrt::TerminalApp::FilteredCommand> _collectFilteredActions();
 
-        static int _getWeight(const winrt::hstring& searchText, const winrt::hstring& name);
         void _close();
 
         CommandPaletteMode _currentMode;
@@ -118,6 +114,7 @@ namespace winrt::TerminalApp::implementation
 
         void _dispatchCommand(winrt::TerminalApp::FilteredCommand const& command);
         void _dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command);
+        void _switchToTab(winrt::TerminalApp::FilteredCommand const& command);
         std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(std::wstring const& commandLine);
 
         void _dismissPalette();

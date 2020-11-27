@@ -865,7 +865,7 @@ namespace TerminalAppLocalTests
             page->_OpenNewTab(newTerminalArgs);
             page->_OpenNewTab(newTerminalArgs);
         });
-        VERIFY_ARE_EQUAL(4u, page->_mruTabActions.Size());
+        VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
         RunOnUIThread([&page]() {
@@ -888,11 +888,11 @@ namespace TerminalAppLocalTests
             page->_UpdatedSelectedTab(3);
         });
 
-        VERIFY_ARE_EQUAL(4u, page->_mruTabActions.Size());
-        VERIFY_ARE_EQUAL(L"d", page->_mruTabActions.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"c", page->_mruTabActions.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"b", page->_mruTabActions.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"a", page->_mruTabActions.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
+        VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+        VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+        VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+        VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
 
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
@@ -906,9 +906,9 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Verify command palette preserves MRU order of tabs");
         VERIFY_ARE_EQUAL(4u, palette->_filteredActions.Size());
-        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Command().Name());
-        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Command().Name());
-        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Command().Name());
-        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Command().Name());
+        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Item().Name());
+        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Item().Name());
+        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Item().Name());
+        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Item().Name());
     }
 }
