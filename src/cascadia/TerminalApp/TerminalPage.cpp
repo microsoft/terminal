@@ -283,11 +283,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
     {
-        uint32_t index;
-        if (_tabs.IndexOf(tab, index))
-        {
-            _SelectTab(index);
-        }
+        _SetFocusedTab(tab);
     }
 
     // Method Description:
