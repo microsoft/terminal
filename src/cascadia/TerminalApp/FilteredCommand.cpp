@@ -229,9 +229,16 @@ namespace winrt::TerminalApp::implementation
 
         if (firstWeight == secondWeight)
         {
-            std::wstring_view firstName{ first.Command().Name() };
-            std::wstring_view secondName{ second.Command().Name() };
-            return firstName.compare(secondName) < 0;
+            const auto locale = std::locale();
+            const auto& caseConverter = std::use_facet<std::ctype<wchar_t>>(locale);
+            const auto& lexComparator = std::use_facet<std::collate<wchar_t>>(locale);
+
+            std::wstring firstName{ first.Command().Name() };
+            std::wstring secondName{ second.Command().Name() };
+
+            caseConverter.tolower(firstName.data(), firstName.data() + firstName.size());
+            caseConverter.tolower(secondName.data(), secondName.data() + secondName.size());
+            return lexComparator.compare(firstName.data(), firstName.data() + firstName.size(), secondName.data(), secondName.data() + secondName.size()) < 0;
         }
 
         return firstWeight > secondWeight;
