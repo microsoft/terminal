@@ -1441,8 +1441,8 @@ namespace winrt::TerminalApp::implementation
         if (page && tab)
         {
             uint32_t tabIndex;
-            auto tabViewitem{ tab->TabViewItem() };
-            if (page->_tabView.TabItems().IndexOf(tabViewitem, tabIndex))
+            auto tabViewItem{ tab->TabViewItem() };
+            if (page->_tabView.TabItems().IndexOf(tabViewItem, tabIndex))
             {
                 page->_tabView.SelectedIndex(tabIndex);
             }
