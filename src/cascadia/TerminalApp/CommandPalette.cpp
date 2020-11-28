@@ -794,7 +794,10 @@ namespace winrt::TerminalApp::implementation
             _allCommands.Append(filteredCommand);
         }
 
-        _updateFilteredActions();
+        if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
+        {
+            _updateFilteredActions();
+        }
     }
 
     void CommandPalette::_bindTabs(
@@ -842,7 +845,6 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::EnableCommandPaletteMode()
     {
         _switchToMode(CommandPaletteMode::ActionMode);
-        _updateFilteredActions();
     }
 
     void CommandPalette::_switchToMode(CommandPaletteMode mode)
@@ -1013,5 +1015,4 @@ namespace winrt::TerminalApp::implementation
         _switcherStartIdx = startIdx;
         _switchToMode(CommandPaletteMode::TabSearchMode);
     }
-
 }
