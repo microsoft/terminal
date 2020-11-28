@@ -68,7 +68,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     _filteredActionsView().SelectedIndex(0);
                     _searchBox().Focus(FocusState::Programmatic);
-                    _updateFilteredActions();
                 }
 
                 TraceLoggingWrite(
@@ -849,18 +848,7 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::_switchToMode(CommandPaletteMode mode)
     {
-        // The smooth remove/add animations that happen during
-        // UpdateFilteredActions don't work very well when switching between
-        // modes because of the sheer amount of remove/adds. So, let's just
-        // clear + append when switching between modes.
         _currentMode = mode;
-        _filteredActions.Clear();
-        auto commandsToFilter = _commandsToFilter();
-
-        for (auto action : commandsToFilter)
-        {
-            _filteredActions.Append(action);
-        }
 
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
@@ -892,6 +880,13 @@ namespace winrt::TerminalApp::implementation
             PrefixCharacter(L">");
             break;
         }
+
+        // The smooth remove/add animations that happen during
+        // UpdateFilteredActions don't work very well when switching between
+        // modes because of the sheer amount of remove/adds. So, let's just
+        // clear + append when switching between modes.
+        _filteredActions.Clear();
+        _updateFilteredActions();
     }
 
     // Method Description:
