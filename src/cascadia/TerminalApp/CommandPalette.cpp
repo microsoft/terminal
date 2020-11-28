@@ -851,16 +851,13 @@ namespace winrt::TerminalApp::implementation
         // UpdateFilteredActions don't work very well when switching between
         // modes because of the sheer amount of remove/adds. So, let's just
         // clear + append when switching between modes.
-        if (mode != _currentMode)
-        {
-            _currentMode = mode;
-            _filteredActions.Clear();
-            auto commandsToFilter = _commandsToFilter();
+        _currentMode = mode;
+        _filteredActions.Clear();
+        auto commandsToFilter = _commandsToFilter();
 
-            for (auto action : commandsToFilter)
-            {
-                _filteredActions.Append(action);
-            }
+        for (auto action : commandsToFilter)
+        {
+            _filteredActions.Append(action);
         }
 
         _searchBox().Text(L"");
@@ -1009,15 +1006,12 @@ namespace winrt::TerminalApp::implementation
         _switcherStartIdx = startIdx;
         _tabSwitcherMode = tabSwitcherMode;
         _switchToMode(CommandPaletteMode::TabSwitchMode);
-        _filteredActions.Clear();
-        _updateFilteredActions();
     }
 
     void CommandPalette::EnableTabSearchMode(const uint32_t startIdx)
     {
         _switcherStartIdx = startIdx;
         _switchToMode(CommandPaletteMode::TabSearchMode);
-        _updateFilteredActions();
     }
 
 }
