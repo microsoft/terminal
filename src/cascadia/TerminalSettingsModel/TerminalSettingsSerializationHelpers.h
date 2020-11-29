@@ -400,6 +400,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
     }
 };
 
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "forward", ValueType::Forward },
+        pair_type{ "backward", ValueType::Backward },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode)
 {
     JSON_MAPPINGS(2) = {

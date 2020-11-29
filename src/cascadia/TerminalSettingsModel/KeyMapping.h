@@ -17,7 +17,7 @@ Author(s):
 
 #include "KeyMapping.g.h"
 #include "ActionArgs.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests

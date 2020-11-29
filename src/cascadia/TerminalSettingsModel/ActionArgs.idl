@@ -46,6 +46,13 @@ namespace Microsoft.Terminal.Settings.Model
         AllFiles
     };
 
+    enum MoveTabDirection
+    {
+        None = 0,
+        Forward,
+        Backward
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
@@ -161,6 +168,12 @@ namespace Microsoft.Terminal.Settings.Model
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    {
+        MoveTabArgs(MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
     };
 
     [default_interface] runtimeclass ScrollUpArgs : IActionArgs

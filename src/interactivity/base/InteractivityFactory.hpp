@@ -7,7 +7,7 @@
 
 #include "ApiDetector.hpp"
 
-#include "..\inc\IInteractivityFactory.hpp"
+#include "../inc/IInteractivityFactory.hpp"
 
 #include <map>
 

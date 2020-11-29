@@ -2,15 +2,15 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "..\precomp.h"
+#include "../precomp.h"
 #include <windows.h>
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include "..\..\input\terminalInput.hpp"
+#include "../../input/terminalInput.hpp"
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\..\..\interactivity\inc\VtApiRedirection.hpp"
+#include "../../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 
 using namespace WEX::Common;

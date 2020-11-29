@@ -24,6 +24,7 @@
 #include "CloseTabsAfterArgs.g.h"
 #include "ScrollUpArgs.g.h"
 #include "ScrollDownArgs.g.h"
+#include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -676,6 +677,49 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
+    struct MoveTabArgs : public MoveTabArgsT<MoveTabArgs>
+    {
+        MoveTabArgs() = default;
+        MoveTabArgs(MoveTabDirection direction) :
+            _Direction{ direction } {};
+        GETSET_PROPERTY(MoveTabDirection, Direction, MoveTabDirection::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<MoveTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MoveTabArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->_Direction == MoveTabDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<MoveTabArgs>() };
+            copy->_Direction = _Direction;
+            return *copy;
+        }
+    };
+
     struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
     {
         ScrollUpArgs() = default;
@@ -792,4 +836,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);
+    BASIC_FACTORY(MoveTabArgs);
 }
