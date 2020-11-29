@@ -52,6 +52,7 @@ public:
     bool SetAnsiMode(const bool /*ansiMode*/) noexcept override { return false; } // DECANM
     bool SetScreenMode(const bool /*reverseMode*/) noexcept override { return false; } // DECSCNM
     bool SetOriginMode(const bool /*relativeMode*/) noexcept override { return false; }; // DECOM
+    bool SetInsertMode(const bool /*insertMode*/) noexcept override { return false; }; // IRM
     bool SetAutoWrapMode(const bool /*wrapAtEOL*/) noexcept override { return false; }; // DECAWM
     bool SetTopBottomScrollingMargins(const size_t /*topMargin*/, const size_t /*bottomMargin*/) noexcept override { return false; } // DECSTBM
     bool WarningBell() noexcept override { return false; } // BEL

@@ -241,6 +241,8 @@ public:
     void SetIgnoreLegacyEquivalentVTAttributes() noexcept;
     void ResetIgnoreLegacyEquivalentVTAttributes() noexcept;
 
+    void SetInsertMode(bool insertMode) noexcept;
+
 private:
     SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
                        _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
@@ -304,6 +306,7 @@ private:
     ScreenBufferRenderTarget _renderTarget;
 
     bool _ignoreLegacyEquivalentVTAttributes;
+    bool _insertMode;
 
 #ifdef UNIT_TESTING
     friend class TextBufferIteratorTests;

@@ -585,6 +585,21 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 }
 
 // Routine Description:
+// - Returns a list of attribute runs that cover the specified columns (inclusive) with
+//   updated counts such that the list of runs stands alone.
+std::vector<TextAttributeRun> ATTR_ROW::GetAttributeRunsInRange(const size_t iStart, const size_t iEnd)
+{
+    size_t startApplies{}, endApplies{};
+    auto firstRun{ FindAttrIndex(iStart, &startApplies) };
+    auto lastRun{ FindAttrIndex(iEnd, &endApplies) };
+
+    std::vector<TextAttributeRun> returnRuns{ _list.begin() + firstRun, _list.begin() + lastRun + 1 };
+    returnRuns.front().SetLength(startApplies); // Trim the first run...
+    returnRuns.back().SetLength(returnRuns.back().GetLength() - endApplies + 1); // ...and the last one
+    return returnRuns;
+}
+
+// Routine Description:
 // - packs a vector of TextAttribute into a vector of TextAttributeRun
 // Arguments:
 // - attrs - text attributes to pack

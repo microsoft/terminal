@@ -97,7 +97,7 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 // - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
 // - iterator to first cell that was not written to this row.
-OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight, bool insert)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
@@ -105,9 +105,21 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
     const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
+    const auto iteratorEmitsText = it && it->TextAttrBehavior() != TextAttributeBehavior::StoredOnly;
+    insert = insert && iteratorEmitsText; // we only support insert mode for textful iterators
 
     if (it)
     {
+        std::unique_ptr<CharRow> bupCharRow;
+        std::unique_ptr<ATTR_ROW> bupAttrRow;
+        const auto start = currentIndex;
+
+        if (insert)
+        {
+            bupCharRow = std::make_unique<CharRow>(_charRow);
+            bupAttrRow = std::make_unique<ATTR_ROW>(_attrRow);
+        }
+
         // Accumulate usages of the same color so we can spend less time in InsertAttrRuns rewriting it.
         auto currentColor = it->TextAttr();
         size_t colorUses = 0;
@@ -140,7 +152,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             }
 
             // Fill the text if the behavior isn't set to saying there's only a color stored in this iterator.
-            if (it->TextAttrBehavior() != TextAttributeBehavior::StoredOnly)
+            if (iteratorEmitsText)
             {
                 const bool fillingLastColumn = currentIndex == finalColumnInRow;
 
@@ -197,6 +209,32 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                                                   colorStarts,
                                                   currentIndex - 1,
                                                   _charRow.size()));
+        }
+
+        // if there was a credible request for insertion, _and_ we didn't run off the end of the allocated space
+        if (insert && (currentIndex <= finalColumnInRow))
+        {
+            // currentIndex is one beyond the final cell we filled
+            auto outIt = _charRow.begin() + currentIndex;
+            const auto bst = bupCharRow->cbegin() + start;
+            // copy the raw cells from the original position to the new shifted one
+            std::copy(bst, bst + (finalColumnInRow - currentIndex) + 1, outIt);
+
+            if (_charRow.DbcsAttrAt(finalColumnInRow).IsLeading())
+            {
+                // we pushed the trailing half of a DBCS char off, we have to destroy the leading half
+                _charRow.ClearCell(finalColumnInRow);
+                _charRow.SetDoubleBytePadded(true);
+            }
+            else
+            {
+                // we've probably filled the final column now (by shifting), so there's no point
+                // in keeping the padding flag.
+                _charRow.SetDoubleBytePadded(false);
+            }
+
+            const auto oldAttrRuns{ bupAttrRow->GetAttributeRunsInRange(start, finalColumnInRow) };
+            LOG_IF_FAILED(_attrRow.InsertAttrRuns(oldAttrRuns, currentIndex, finalColumnInRow, _charRow.size()));
         }
     }
 

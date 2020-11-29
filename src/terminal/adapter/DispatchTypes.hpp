@@ -322,6 +322,10 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
 
     enum ModeParams : size_t
     {
+        // ANSI modes
+        IRM_InsertReplaceMode = ANSIStandardMode(4),
+
+        // DEC Private modes
         DECCKM_CursorKeysMode = DECPrivateMode(1),
         DECANM_AnsiMode = DECPrivateMode(2),
         DECCOLM_SetNumberOfColumns = DECPrivateMode(3),

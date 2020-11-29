@@ -322,6 +322,15 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
     return finalIt;
 }
 
+OutputCellIterator TextBuffer::Insert(const OutputCellIterator givenIt)
+{
+    const auto& cursor = GetCursor();
+    const auto target = cursor.GetPosition();
+
+    const auto finalIt = Write(givenIt, target, std::nullopt, true);
+
+    return finalIt;
+}
 // Routine Description:
 // - Writes cells to the output buffer.
 // Arguments:
@@ -332,7 +341,8 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
 // - The final position of the iterator
 OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
                                      const COORD target,
-                                     const std::optional<bool> wrap)
+                                     const std::optional<bool> wrap,
+                                     bool insert)
 {
     // Make mutable copy so we can walk.
     auto it = givenIt;
@@ -348,7 +358,7 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
     {
         // Attempt to write as much data as possible onto this line.
         // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
-        it = WriteLine(it, lineTarget, wrap);
+        it = WriteLine(it, lineTarget, wrap, std::nullopt, insert);
 
         // Move to the next line down.
         lineTarget.X = 0;
@@ -370,7 +380,8 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
 OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
                                          const COORD target,
                                          const std::optional<bool> wrap,
-                                         std::optional<size_t> limitRight)
+                                         std::optional<size_t> limitRight,
+                                         bool insert)
 {
     // If we're not in bounds, exit early.
     if (!GetSize().IsInBounds(target))
@@ -380,10 +391,11 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 
     //  Get the row and write the cells
     ROW& row = GetRowByOffset(target.Y);
-    const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight);
+    const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight, insert);
 
     // Take the cell distance written and notify that it needs to be repainted.
-    const auto written = newIt.GetCellDistance(givenIt);
+    // Insert damages the entire rest of the line, so mark it appropriately.
+    const auto written = insert ? (row.size() - target.X) : newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
     _NotifyPaint(paint);
 

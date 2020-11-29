@@ -1102,6 +1102,9 @@ bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, con
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
+    case DispatchTypes::ModeParams::IRM_InsertReplaceMode:
+        success = SetInsertMode(enable);
+        break;
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -1794,7 +1797,7 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
-//    Insert/replace              IRM         Replace mode.
+//  X Insert/replace              IRM         Replace mode.
 //  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //  X Autowrap                    DECAWM      Autowrap enabled (matches XTerm behavior).
 //    National replacement        DECNRCM     Multinational set.
@@ -1826,6 +1829,7 @@ bool AdaptDispatch::SoftReset()
     success = SetAutoWrapMode(true) && success; // Wrap at end of line.
     success = SetCursorKeysMode(false) && success; // Normal characters.
     success = SetKeypadMode(false) && success; // Numeric characters.
+    success = SetInsertMode(false) && success; // Disable IRM - replace mode
 
     // Top margin = 1; bottom margin = page length.
     success = _DoSetTopBottomScrollingMargins(0, 0) && success;
@@ -2410,4 +2414,9 @@ bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
     // impact on the actual connected terminal. We can't remove this check,
     // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
     return _pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled();
+}
+
+bool AdaptDispatch::SetInsertMode(bool insertMode) noexcept
+{
+    return _pConApi->PrivateEnableInsertMode(insertMode);
 }

@@ -117,7 +117,7 @@
 "DECSKCV","","Set Keyclick Volume","`VT510`","Audible Indicators","Character Renditions","","",""
 "DECSWBV","","Set Warning Bell Volume","`VT510`","Audible Indicators","Character Renditions","","",""
 "DECSMBV","","Set Margin Bell Volume","`VT510`","Audible Indicators","Character Renditions","","",""
-"IRM","","Insert/Replacement Mode","`VT102`","Editing Functions","DEC Private","","",""
+"IRM","","Insert/Replacement Mode","`VT102`","Editing Functions","ANSI","","",""
 "ICH","","Insert Character","`VT102`","Editing Functions","DEC Private","","",""
 "DCH","","Delete Character","`VT102`","Editing Functions","DEC Private","","",""
 "IL","","Insert Line","`VT100`","Editing Functions","DEC Private","","",""

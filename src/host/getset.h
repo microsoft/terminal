@@ -87,3 +87,5 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
                                                const std::optional<SMALL_RECT> clipRect,
                                                const COORD destinationOrigin,
                                                const bool standardFillAttrs) noexcept;
+
+[[nodiscard]] NTSTATUS DoSrvPrivateSetInsertMode(SCREEN_INFORMATION& screenInfo, bool insertMode) noexcept;

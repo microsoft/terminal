@@ -59,6 +59,7 @@ public:
     virtual bool SetScreenMode(const bool reverseMode) = 0; // DECSCNM
     virtual bool SetOriginMode(const bool relativeMode) = 0; // DECOM
     virtual bool SetAutoWrapMode(const bool wrapAtEOL) = 0; // DECAWM
+    virtual bool SetInsertMode(const bool insertMode) = 0; // IRM
     virtual bool SetTopBottomScrollingMargins(const size_t topMargin, const size_t bottomMargin) = 0; // DECSTBM
     virtual bool WarningBell() = 0; // BEL
     virtual bool CarriageReturn() = 0; // CR

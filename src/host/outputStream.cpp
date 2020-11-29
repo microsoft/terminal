@@ -786,3 +786,8 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
     DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
     return true;
 }
+
+bool ConhostInternalGetSet::PrivateEnableInsertMode(bool insertMode) const noexcept
+{
+    return NT_SUCCESS(DoSrvPrivateSetInsertMode(_io.GetActiveOutputBuffer(), insertMode));
+}

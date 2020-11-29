@@ -87,15 +87,18 @@ public:
 
     // Text insertion functions
     OutputCellIterator Write(const OutputCellIterator givenIt);
+    OutputCellIterator Insert(const OutputCellIterator givenIt);
 
     OutputCellIterator Write(const OutputCellIterator givenIt,
                              const COORD target,
-                             const std::optional<bool> wrap = true);
+                             const std::optional<bool> wrap = true,
+                             bool insert = false);
 
     OutputCellIterator WriteLine(const OutputCellIterator givenIt,
                                  const COORD target,
                                  const std::optional<bool> setWrap = std::nullopt,
-                                 const std::optional<size_t> limitRight = std::nullopt);
+                                 const std::optional<size_t> limitRight = std::nullopt,
+                                 bool insert = false);
 
     bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);

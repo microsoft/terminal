@@ -58,7 +58,7 @@ public:
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
+    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt, bool insert = false);
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 

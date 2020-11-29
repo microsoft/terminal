@@ -76,6 +76,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetAnsiMode(const bool ansiMode) override; // DECANM
         bool SetScreenMode(const bool reverseMode) override; // DECSCNM
         bool SetOriginMode(const bool relativeMode) noexcept override; // DECOM
+        bool SetInsertMode(const bool insertMode) noexcept override; // IRM
         bool SetAutoWrapMode(const bool wrapAtEOL) override; // DECAWM
         bool SetTopBottomScrollingMargins(const size_t topMargin,
                                           const size_t bottomMargin) override; // DECSTBM

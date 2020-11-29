@@ -63,6 +63,8 @@ public:
                                          const size_t iEnd,
                                          const size_t cBufferWidth);
 
+    std::vector<TextAttributeRun> GetAttributeRunsInRange(const size_t start, const size_t end);
+
     static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
 
     const_iterator begin() const noexcept;

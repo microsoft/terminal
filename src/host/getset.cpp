@@ -2250,3 +2250,15 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
     }
     CATCH_RETURN();
 }
+
+[[nodiscard]] NTSTATUS DoSrvPrivateSetInsertMode(SCREEN_INFORMATION& screenInfo, bool insertMode) noexcept
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    if (NT_SUCCESS(Status))
+    {
+        screenInfo.GetActiveBuffer().SetInsertMode(insertMode);
+    }
+
+    return Status;
+}
