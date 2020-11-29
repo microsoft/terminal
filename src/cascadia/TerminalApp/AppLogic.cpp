@@ -643,9 +643,9 @@ namespace winrt::TerminalApp::implementation
         GetDesktopResolution(_width, _height);
         const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
         const auto CentreOnLaunch{ _settings.GlobalSettings().CentreOnLaunch() };
-        const auto dimentions = GetLaunchDimensions(dpi);
-        const auto appWidth = dimentions.Width;
-        const auto appHeight = dimentions.Height;
+        const auto dimensions = GetLaunchDimensions(dpi);
+        const auto appWidth = dimensions.Width;
+        const auto appHeight = dimensions.Height;
 
         if (CentreOnLaunch)
         {
