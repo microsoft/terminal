@@ -231,7 +231,6 @@ namespace winrt::TerminalApp::implementation
         {
             std::wstring_view firstName{ first.Command().Name() };
             std::wstring_view secondName{ second.Command().Name() };
-
             return lstrcmpi(firstName.data(), secondName.data()) < 0;
         }
 
