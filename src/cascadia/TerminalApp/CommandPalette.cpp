@@ -251,6 +251,24 @@ namespace winrt::TerminalApp::implementation
                 e.Handled(true);
             }
         }
+        else if (key == VirtualKey::Home)
+        {
+            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control);
+            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            {
+                ScrollToTop();
+                e.Handled(true);
+            }
+        }
+        else if (key == VirtualKey::End)
+        {
+            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control);
+            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            {
+                ScrollToBottom();
+                e.Handled(true);
+            }
+        }
     }
 
     // Method Description:
@@ -265,6 +283,7 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
 
         if (key == VirtualKey::Up)
         {
@@ -288,18 +307,6 @@ namespace winrt::TerminalApp::implementation
         {
             // Action Mode: Move focus to the last visible item in the list.
             ScrollPageDown();
-            e.Handled(true);
-        }
-        else if (key == VirtualKey::Home)
-        {
-            // Action Mode: Move focus to the first item in the list.
-            ScrollToTop();
-            e.Handled(true);
-        }
-        else if (key == VirtualKey::End)
-        {
-            // Action Mode: Move focus to the last item in the list.
-            ScrollToBottom();
             e.Handled(true);
         }
         else if (key == VirtualKey::Enter)
