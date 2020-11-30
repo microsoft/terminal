@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "CustomConfigSerialization.idl";
+import "AppearanceConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -179,6 +179,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasUnfocusedConfig();
         void ClearUnfocusedConfig();
-        CustomConfigSerialization UnfocusedConfig;
+        AppearanceConfig UnfocusedConfig;
     }
 }

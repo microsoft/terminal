@@ -321,7 +321,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    winrt::fire_and_forget TermControl::UpdateAppearance(ICustomConfigObj newAppearance)
+    winrt::fire_and_forget TermControl::UpdateAppearance(IAppearance newAppearance)
     {
         auto weakThis{ get_weak() };
 

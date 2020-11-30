@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.TerminalControl
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires ICoreSettings, ICustomConfigObj
+    interface IControlSettings requires ICoreSettings, IAppearance
     {
         String ProfileName;
 

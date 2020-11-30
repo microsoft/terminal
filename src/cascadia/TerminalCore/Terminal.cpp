@@ -184,7 +184,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // remains at the bottom of the buffer.
 }
 
-void Terminal::UpdateAppearance(ICustomConfigObj appearance)
+void Terminal::UpdateAppearance(IAppearance appearance)
 {
     _defaultFg = appearance.DefaultForeground();
     _defaultBg = appearance.DefaultBackground();

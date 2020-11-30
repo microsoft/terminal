@@ -45,7 +45,7 @@
 
   <ItemGroup>
     <Midl Include="..\ICoreSettings.idl" />
-    <Midl Include="..\ICustomConfigObj.idl" />
+    <Midl Include="..\IAppearance.idl" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>

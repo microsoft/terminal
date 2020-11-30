@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
 
-        GETSET_SETTING(CustomConfigSerialization, UnfocusedConfig, nullptr);
+        GETSET_SETTING(AppearanceConfig, UnfocusedConfig, nullptr);
 
     private:
         std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };

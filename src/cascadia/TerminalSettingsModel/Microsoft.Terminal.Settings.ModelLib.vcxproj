@@ -50,8 +50,8 @@
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="CustomConfigSerialization.h">
-      <DependentUpon>CustomConfigSerialization.idl</DependentUpon>
+    <ClInclude Include="AppearanceConfig.h">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
@@ -102,8 +102,8 @@
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="CustomConfigSerialization.cpp">
-      <DependentUpon>CustomConfigSerialization.idl</DependentUpon>
+    <ClCompile Include="AppearanceConfig.cpp">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
@@ -124,7 +124,7 @@
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
-    <Midl Include="CustomConfigSerialization.idl" />
+    <Midl Include="AppearanceConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

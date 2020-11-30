@@ -4,17 +4,17 @@
 #pragma once
 
 #include "pch.h"
-#include "CustomConfigSerialization.g.h"
+#include "AppearanceConfig.g.h"
 #include "JsonUtils.h"
 #include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct CustomConfigSerialization : CustomConfigSerializationT<CustomConfigSerialization>, IInheritable<CustomConfigSerialization>
+    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
     {
     public:
-        CustomConfigSerialization();
+        AppearanceConfig();
 
         void LayerJson(const Json::Value& json);
 
@@ -32,5 +32,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
-    BASIC_FACTORY(CustomConfigSerialization);
+    BASIC_FACTORY(AppearanceConfig);
 }

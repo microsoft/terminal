@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include "AppCustomConfig.g.h"
+#include "AppAppearanceConfig.g.h"
 #include "..\inc\cppwinrt_utils.h"
 #include <DefaultSettings.h>
 
 namespace winrt::TerminalApp::implementation
 {
-    struct AppCustomConfig : AppCustomConfigT<AppCustomConfig>
+    struct AppAppearanceConfig : AppAppearanceConfigT<AppAppearanceConfig>
     {
-        AppCustomConfig() = default;
+        AppAppearanceConfig() = default;
 
         GETSET_PROPERTY(hstring, ColorSchemeName);
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
@@ -26,5 +26,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    BASIC_FACTORY(AppCustomConfig);
+    BASIC_FACTORY(AppAppearanceConfig);
 }

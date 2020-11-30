@@ -9,7 +9,7 @@
 
 #include "LegacyProfileGeneratorNamespaces.h"
 #include "TerminalSettingsSerializationHelpers.h"
-#include "CustomConfigSerialization.h"
+#include "AppearanceConfig.h"
 
 #include "Profile.g.cpp"
 
@@ -343,7 +343,7 @@ void Profile::LayerJson(const Json::Value& json)
 
     if (json.isMember(JsonKey(UnfocusedConfigKey)))
     {
-        auto unfocusedConfig{ winrt::make_self<implementation::CustomConfigSerialization>() };
+        auto unfocusedConfig{ winrt::make_self<implementation::AppearanceConfig>() };
         unfocusedConfig->LayerJson(json[JsonKey(UnfocusedConfigKey)]);
         _UnfocusedConfig = *unfocusedConfig;
     }

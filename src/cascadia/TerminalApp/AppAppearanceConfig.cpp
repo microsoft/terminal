@@ -2,9 +2,9 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "AppCustomConfig.h"
+#include "AppAppearanceConfig.h"
 
-#include "AppCustomConfig.g.cpp"
+#include "AppAppearanceConfig.g.cpp"
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;

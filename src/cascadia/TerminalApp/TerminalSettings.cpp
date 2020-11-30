@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
-#include "AppCustomConfig.h"
+#include "AppAppearanceConfig.h"
 
 #include "TerminalSettings.g.cpp"
 
@@ -159,7 +159,7 @@ namespace winrt::TerminalApp::implementation
 
         if (profile.UnfocusedConfig())
         {
-            auto unfocusedConfig = winrt::make_self<implementation::AppCustomConfig>();
+            auto unfocusedConfig = winrt::make_self<implementation::AppAppearanceConfig>();
 
             unfocusedConfig->ColorSchemeName(profile.UnfocusedConfig().ColorSchemeName());
             if (profile.UnfocusedConfig().Background())

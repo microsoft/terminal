@@ -122,8 +122,8 @@
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="AppCustomConfig.h">
-      <DependentUpon>AppCustomConfig.idl</DependentUpon>
+    <ClInclude Include="AppAppearanceConfig.h">
+      <DependentUpon>AppAppearanceConfig.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
@@ -190,8 +190,8 @@
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="AppCustomConfig.cpp">
-      <DependentUpon>AppCustomConfig.idl</DependentUpon>
+    <ClCompile Include="AppAppearanceConfig.cpp">
+      <DependentUpon>AppAppearanceConfig.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -217,7 +217,7 @@
     </Midl>
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
-    <Midl Include="AppCustomConfig.idl" />
+    <Midl Include="AppAppearanceConfig.idl" />
     <Midl Include="AppLogic.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>

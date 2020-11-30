@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "..\ICustomConfigObj.idl";
+import "..\IAppearance.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {
@@ -14,7 +14,7 @@ namespace Microsoft.Terminal.TerminalControl
         EmptyBox
     };
 
-    interface ICoreSettings requires ICustomConfigObj
+    interface ICoreSettings requires IAppearance
     {
         //UInt32 DefaultForeground;
         //UInt32 DefaultBackground;
@@ -39,7 +39,7 @@ namespace Microsoft.Terminal.TerminalControl
         Windows.Foundation.IReference<UInt32> TabColor;
         Windows.Foundation.IReference<UInt32> StartingTabColor;
 
-        Microsoft.Terminal.TerminalControl.ICustomConfigObj UnfocusedConfig;
+        Microsoft.Terminal.TerminalControl.IAppearance UnfocusedConfig;
     };
 
 }

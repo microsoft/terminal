@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "CustomConfigSerialization.h"
-#include "CustomConfigSerialization.g.cpp"
+#include "AppearanceConfig.h"
+#include "AppearanceConfig.g.cpp"
 #include "TerminalSettingsSerializationHelpers.h"
 #include "JsonUtils.h"
 
@@ -19,11 +19,11 @@ static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 
-CustomConfigSerialization::CustomConfigSerialization()
+AppearanceConfig::AppearanceConfig()
 {
 }
 
-void CustomConfigSerialization::LayerJson(const Json::Value& json)
+void AppearanceConfig::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);

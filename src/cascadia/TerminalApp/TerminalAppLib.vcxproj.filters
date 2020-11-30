@@ -79,7 +79,7 @@
     <Midl Include="AppKeyBindings.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="AppCustomConfig.idl">
+    <Midl Include="AppAppearanceConfig.idl">
       <Filter>settings</Filter>
     </Midl>
     <Midl Include="ShortcutActionDispatch.idl">

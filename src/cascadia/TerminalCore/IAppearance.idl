@@ -4,7 +4,7 @@
 namespace Microsoft.Terminal.TerminalControl
 {
     // [default_interface]
-    interface ICustomConfigObj
+    interface IAppearance
     {
         UInt32 DefaultForeground { get; set; };
         UInt32 DefaultBackground { get; set; };

@@ -3,8 +3,8 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    [default_interface] runtimeclass CustomConfigSerialization {
-        CustomConfigSerialization();
+    [default_interface] runtimeclass AppearanceConfig {
+        AppearanceConfig();
 
         Boolean HasColorSchemeName();
         void ClearColorSchemeName();
