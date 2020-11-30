@@ -2568,9 +2568,9 @@ namespace SettingsModelLocalTests
             const auto copy{ settings->Copy() };
             const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
 
-            // test optimization: if we don't have profiles.defaults, don't add it to the tree
-            VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
-            VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings, copyImpl->_userDefaultProfileSettings);
+            // if we don't have profiles.defaults, it should still be in the tree
+            VERIFY_IS_NOT_NULL(settings->_userDefaultProfileSettings);
+            VERIFY_IS_NOT_NULL(copyImpl->_userDefaultProfileSettings);
 
             VERIFY_ARE_EQUAL(settings->ActiveProfiles().Size(), 1u);
             VERIFY_ARE_EQUAL(settings->ActiveProfiles().Size(), copyImpl->ActiveProfiles().Size());
@@ -2578,7 +2578,7 @@ namespace SettingsModelLocalTests
             // so we should only have one parent, instead of two
             auto srcProfile{ winrt::get_self<implementation::Profile>(settings->ActiveProfiles().GetAt(0)) };
             auto copyProfile{ winrt::get_self<implementation::Profile>(copyImpl->ActiveProfiles().GetAt(0)) };
-            VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 0u);
+            VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 1u);
             VERIFY_ARE_EQUAL(srcProfile->Parents().size(), copyProfile->Parents().size());
         };
 
