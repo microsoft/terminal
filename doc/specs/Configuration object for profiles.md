@@ -24,11 +24,11 @@ pane is focused and which panes are unfocused. This change would grant us that f
 
 ## Solution Design
 
-We will add an new interface in the `TerminalControl` namespace, called `IAppearanceConfig`, which defines how
+We will add an new interface in the `TerminalControl` namespace, called `IAppearance`, which defines how
 `TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about (such as `FontFace`).
 `TerminalApp` will implement this interface through a class called `AppAppearanceConfig`.
 
-On the Settings Model side, there will be a new class called `ProfileAppearanceConfig`. When we parse out the
+On the Settings Model side, there will be a new class called `AppearanceConfig`. When we parse out the
 settings json file, each state-appearance will be stored in an object of this class. Later on, these values get
 piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the way we already pipe over information
 such as `FontFace` and `CursorStyle` from the settings model to the app.
