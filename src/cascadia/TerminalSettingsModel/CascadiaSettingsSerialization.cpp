@@ -732,6 +732,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
 {
     // If `profiles` was an object, then look for the `defaults` object
     // underneath it for the default profile settings.
+    // If there isn't one, we still want to add an empty "default" profile to the inheritance tree.
     Json::Value defaultSettings{ Json::ValueType::objectValue };
     if (const auto profiles{ _userSettings[JsonKey(ProfilesKey)] })
     {
