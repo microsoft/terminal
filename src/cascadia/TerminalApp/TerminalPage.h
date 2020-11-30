@@ -41,6 +41,10 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
+        // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
+        // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
+        STDMETHODIMP Initialize(HWND hwnd);
+
         winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
@@ -90,6 +94,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
+        std::optional<HWND> _hostingHwnd;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
