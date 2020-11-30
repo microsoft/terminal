@@ -45,9 +45,18 @@ namespace winrt::TerminalApp::implementation
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabActions{ winrt::single_threaded_vector<Command>() },
-        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
+        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
+        _hostingHwnd{}
     {
         InitializeComponent();
+    }
+
+    // Method Description:
+    // - implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT TerminalPage::Initialize(HWND hwnd)
+    {
+        _hostingHwnd = hwnd;
+        return S_OK;
     }
 
     // Function Description:
@@ -2738,6 +2747,11 @@ namespace winrt::TerminalApp::implementation
         if (!_switchToSettingsCommand)
         {
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
+            if (_hostingHwnd)
+            {
+                sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
+            }
+
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
                 {

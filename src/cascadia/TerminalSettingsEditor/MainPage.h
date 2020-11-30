@@ -18,6 +18,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SettingsNav_Loaded(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
 
+        void SetHostingWindow(uint64_t hostingWindow) noexcept;
+        bool TryPropagateHostingWindow(IInspectable object) noexcept;
+
         TYPED_EVENT(OpenJson, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget);
 
     private:
@@ -26,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsSource;
         winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings _settingsClone;
         winrt::Windows::Foundation::Collections::IMap<winrt::Microsoft::Terminal::Settings::Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
+
+        std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index);
