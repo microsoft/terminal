@@ -581,7 +581,7 @@ namespace winrt::TerminalApp::implementation
         // We cannot do it on closing because if the window loses focus (alt+tab)
         // the closing event is not fired.
         // It is important to set the focus on the tab
-        // Sine the previous focus location might be discarded in the background,
+        // Since the previous focus location might be discarded in the background,
         // e.g., the command palette will be dismissed by the menu,
         // and then closing the fly-out will move the focus to wrong location.
         newTabFlyout.Opening([this](auto&&, auto&&) {
