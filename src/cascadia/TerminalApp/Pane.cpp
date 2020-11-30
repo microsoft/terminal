@@ -1570,9 +1570,9 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 // - Retrieves the ID of this pane
 // Return Value:
 // - The ID of this pane
-uint16_t Pane::PaneId() noexcept
+uint16_t Pane::Id() noexcept
 {
-    return _paneId;
+    return _id;
 }
 
 // Method Description:
@@ -1580,9 +1580,9 @@ uint16_t Pane::PaneId() noexcept
 // - Panes are given IDs upon creation by TerminalTab
 // Arguments:
 // - The number to set this pane's ID to
-void Pane::PaneId(uint16_t id) noexcept
+void Pane::Id(uint16_t id) noexcept
 {
-    _paneId = id;
+    _id = id;
 }
 
 // Method Description:
@@ -1591,7 +1591,7 @@ void Pane::PaneId(uint16_t id) noexcept
 // - The ID of the pane we want to focus
 void Pane::FocusPane(const uint16_t id)
 {
-    if (_IsLeaf() && id == _paneId)
+    if (_IsLeaf() && id == _id)
     {
         _control.Focus(FocusState::Programmatic);
     }

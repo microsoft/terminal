@@ -29,7 +29,7 @@ namespace winrt::TerminalApp::implementation
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
-        _rootPane->PaneId(_nextPaneId);
+        _rootPane->Id(_nextPaneId);
         _mruPanes.InsertAt(0, _nextPaneId);
         ++_nextPaneId;
 
@@ -279,10 +279,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
-        const auto activePaneId = _activePane->PaneId();
+        const auto activePaneId = _activePane->Id();
         auto [first, second] = _activePane->Split(splitType, profile, control);
-        first->PaneId(activePaneId);
-        second->PaneId(_nextPaneId);
+        first->Id(activePaneId);
+        second->Id(_nextPaneId);
         ++_nextPaneId;
         _activePane = first;
         _AttachEventHandlersToControl(control);
@@ -470,7 +470,7 @@ namespace winrt::TerminalApp::implementation
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
         uint32_t mruPaneIndex;
-        const auto paneId = pane->PaneId();
+        const auto paneId = pane->Id();
         if (_mruPanes.IndexOf(paneId, mruPaneIndex))
         {
             _mruPanes.RemoveAt(mruPaneIndex);
@@ -522,7 +522,7 @@ namespace winrt::TerminalApp::implementation
                 if (auto pane = weakPane.lock())
                 {
                     uint32_t mruIndex;
-                    if (tab->_mruPanes.IndexOf(pane->PaneId(), mruIndex))
+                    if (tab->_mruPanes.IndexOf(pane->Id(), mruIndex))
                     {
                         tab->_mruPanes.RemoveAt(mruIndex);
                     }

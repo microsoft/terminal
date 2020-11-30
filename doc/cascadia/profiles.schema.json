@@ -790,7 +790,7 @@
                 "desktopWallpaper"
               ]
             }
-          ]
+          ],
           "type": [ "string", "null" ]
         },
         "backgroundImageAlignment": {
