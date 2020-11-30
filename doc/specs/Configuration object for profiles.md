@@ -11,7 +11,7 @@ issue id: <#8345>
 
 This spec outlines how we can support 'configuration objects' in our profiles, which
 will allow us to render differently depending on the state of the control. For example, a
-control can be rendered differently if its focused as compared to when its unfocused. Another
+control can be rendered differently if it's focused as compared to when it's unfocused. Another
 example is that an elevated state control can be rendered differently as compared to a
 non-elevated one.
 
@@ -24,20 +24,22 @@ pane is focused and which panes are unfocused. This change would grant us that f
 
 ## Solution Design
 
-A new class in the `TerminalControl` namespace, called `CustomRenderConfig`, that will contain rendering
-parameters. `TermControl` and `TerminalCore` will use objects of this class to pass along rendering parameters
-to the renderer.
+We will add an new interface in the `TerminalControl` namespace, called `IAppearanceConfig`, which defines how
+`TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about (such as `FontFace`).
+`TerminalApp` will implement this interface through a class called `AppAppearanceConfig`.
 
-Our `TerminalSettingsModel` will parse out that object from the settings json file and pipe it over to
-`TermControl`/`TerminalCore` to use. This will be done through `IControlSettings` and `ICoreSettings`, which
-is the way we already pipe over information that these interfaces need to know regarding rendering (such as
-`CursorStyle` and `FontFace`).
+On the Settings Model side, there will be a new class called `ProfileAppearanceConfig`. When we parse out the
+settings json file, each state-appearance will be stored in an object of this class. Later on, these values get
+piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the way we already pipe over information
+such as `FontFace` and `CursorStyle` from the settings model to the app.
+
+#### Need to talk about inheritance here
 
 ### Allowed parameters
 
-Not all parameters which can be defined in a `Profile` can be defined in this new object (for example, we
-do not want parameters which would cause a resize in this object.) Here are the list of parameters we
-will allow:
+For now, these states are meant to be entirely appearance-based. So, not all parameters which can be
+defined in a `Profile` can be defined in this new object (for example, we do not want parameters which
+would cause a resize in this object.) Here are the list of parameters we will allow:
 
 - Anything regarding colors: `colorScheme`, `foreground`, `background`, `cursorColor` etc
 - `cursorShape`
