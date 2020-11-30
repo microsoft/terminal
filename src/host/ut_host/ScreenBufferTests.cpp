@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -13,9 +13,9 @@
 #include "getset.h"
 #include "_stream.h" // For WriteCharsLegacy
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\..\inc\conattrs.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../../inc/conattrs.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 #include <sstream>
 
@@ -215,6 +215,7 @@ class ScreenBufferTests
     TEST_METHOD(TestAddHyperlinkCustomIdDifferentUri);
 
     TEST_METHOD(UpdateVirtualBottomWhenCursorMovesBelowIt);
+    TEST_METHOD(RetainHorizontalOffsetWhenMovingToBottom);
 
     TEST_METHOD(TestWriteConsoleVTQuirkMode);
 };
@@ -6018,6 +6019,44 @@ void ScreenBufferTests::UpdateVirtualBottomWhenCursorMovesBelowIt()
     Log::Comment(L"But after MoveToBottom, the viewport should align with the new virtual bottom");
     si.MoveToBottom();
     VERIFY_ARE_EQUAL(newVirtualBottom, si.GetViewport().BottomInclusive());
+}
+
+void ScreenBufferTests::RetainHorizontalOffsetWhenMovingToBottom()
+{
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Make the viewport half the default width");
+    auto initialSize = COORD{ CommonState::s_csWindowWidth / 2, CommonState::s_csWindowHeight };
+    si.SetViewportSize(&initialSize);
+
+    Log::Comment(L"Offset the viewport both vertically and horizontally");
+    auto initialOrigin = COORD{ 10, 20 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, initialOrigin, true));
+
+    Log::Comment(L"Verify that the virtual viewport is where it's expected to be");
+    VERIFY_ARE_EQUAL(initialSize, si.GetVirtualViewport().Dimensions());
+    VERIFY_ARE_EQUAL(initialOrigin, si.GetVirtualViewport().Origin());
+
+    Log::Comment(L"Set the cursor position at the viewport origin");
+    cursor.SetPosition(initialOrigin);
+    VERIFY_ARE_EQUAL(initialOrigin, cursor.GetPosition());
+
+    Log::Comment(L"Pan the viewport up by 10 lines");
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(false, { 0, -10 }, false));
+
+    Log::Comment(L"Verify Y offset has moved up and X is unchanged");
+    VERIFY_ARE_EQUAL(initialOrigin.Y - 10, si.GetViewport().Top());
+    VERIFY_ARE_EQUAL(initialOrigin.X, si.GetViewport().Left());
+
+    Log::Comment(L"Move the viewport back to the virtual bottom");
+    si.MoveToBottom();
+
+    Log::Comment(L"Verify Y offset has moved back and X is unchanged");
+    VERIFY_ARE_EQUAL(initialOrigin.Y, si.GetViewport().Top());
+    VERIFY_ARE_EQUAL(initialOrigin.X, si.GetViewport().Left());
 }
 
 void ScreenBufferTests::TestWriteConsoleVTQuirkMode()

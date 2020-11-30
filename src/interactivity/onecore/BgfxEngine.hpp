@@ -22,7 +22,7 @@ Author(s):
 
 #pragma once
 
-#include "..\..\renderer\inc\RenderEngineBase.hpp"
+#include "../../renderer/inc/RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {

@@ -930,6 +930,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
+        _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
     }
 
     // Method Description:
@@ -2925,6 +2926,30 @@ namespace winrt::TerminalApp::implementation
                     CommandPalette().SetTabActions(_mruTabActions, false);
                 }
             }
+        }
+    }
+
+    // Method Description:
+    // - Moves the tab to another index in the tabs row (if required).
+    // Arguments:
+    // - currentTabIndex: the current index of the tab to move
+    // - suggestedNewTabIndex: the new index of the tab, might get clamped to fit int the tabs row boundaries
+    // Return Value:
+    // - <none>
+    void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex)
+    {
+        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
+        if (currentTabIndex != newTabIndex)
+        {
+            auto tab = _tabs.GetAt(currentTabIndex);
+            auto tabViewItem = tab.TabViewItem();
+            _tabs.RemoveAt(currentTabIndex);
+            _tabs.InsertAt(newTabIndex, tab);
+            _UpdateTabIndices();
+
+            _tabView.TabItems().RemoveAt(currentTabIndex);
+            _tabView.TabItems().InsertAt(newTabIndex, tabViewItem);
+            _tabView.SelectedItem(tabViewItem);
         }
     }
 

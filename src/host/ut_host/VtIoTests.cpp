@@ -3,17 +3,17 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
+#include "../../types/inc/Viewport.hpp"
 
-#include "..\..\renderer\vt\Xterm256Engine.hpp"
-#include "..\..\renderer\vt\XtermEngine.hpp"
-#include "..\..\renderer\base\Renderer.hpp"
-#include "..\Settings.hpp"
-#include "..\VtIo.hpp"
+#include "../../renderer/vt/Xterm256Engine.hpp"
+#include "../../renderer/vt/XtermEngine.hpp"
+#include "../../renderer/base/Renderer.hpp"
+#include "../Settings.hpp"
+#include "../VtIo.hpp"
 
 #ifndef __INSIDE_WINDOWS
-#include "..\..\renderer\dx\DxRenderer.hpp"
+#include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
 using namespace WEX::Common;

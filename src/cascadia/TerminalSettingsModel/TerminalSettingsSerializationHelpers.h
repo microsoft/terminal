@@ -400,3 +400,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
         return BaseEnumMapper::CanConvert(json) || json.isBool();
     }
 };
+
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "forward", ValueType::Forward },
+        pair_type{ "backward", ValueType::Backward },
+    };
+};

@@ -8,8 +8,8 @@
 #include "output.h"
 #include "srvinit.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\types\inc\convert.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/convert.hpp"
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::Render::BlinkingState;
