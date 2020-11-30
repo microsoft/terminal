@@ -10,10 +10,12 @@ namespace Microsoft.Terminal.Settings.Model
         Always
     };
 
+    [flags]
     enum BellStyle
     {
-        None,
-        Audible
+        Audible = 0x1,
+        Visual = 0x2,
+        All = 0xffffffff
     };
 
     [default_interface] runtimeclass Profile {

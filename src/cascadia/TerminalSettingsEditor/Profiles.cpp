@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         FileOpenPicker picker;
 
+        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
         picker.ViewMode(PickerViewMode::Thumbnail);
         picker.SuggestedStartLocation(PickerLocationId::PicturesLibrary);
         picker.FileTypeFilter().ReplaceAll({ L".jpg", L".jpeg", L".png", L".gif" });
@@ -66,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         FileOpenPicker picker;
 
         //TODO: SETTINGS UI Commandline handling should be robust and intelligent
+        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
         picker.ViewMode(PickerViewMode::Thumbnail);
         picker.SuggestedStartLocation(PickerLocationId::ComputerFolder);
         picker.FileTypeFilter().ReplaceAll({ L".bat", L".exe" });
@@ -77,14 +79,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    // TODO GH#1564: Settings UI
-    // This crashes on click, for some reason
-    /*
     fire_and_forget Profiles::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
         FolderPicker picker;
+        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
         picker.SuggestedStartLocation(PickerLocationId::DocumentsLibrary);
+        picker.FileTypeFilter().ReplaceAll({ L"*" });
         StorageFolder folder = co_await picker.PickSingleFolderAsync();
         if (folder != nullptr)
         {
@@ -92,7 +93,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             StartingDirectory().Text(folder.Path());
         }
     }
-    */
 
     bool Profiles::_IsCustomFontWeight(const Windows::UI::Text::FontWeight& weight)
     {

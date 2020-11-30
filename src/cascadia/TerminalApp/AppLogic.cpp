@@ -197,6 +197,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT AppLogic::Initialize(HWND hwnd)
+    {
+        return _root->Initialize(hwnd);
+    }
+
+    // Method Description:
     // - Called around the codebase to discover if this is a UWP where we need to turn off specific settings.
     // Arguments:
     // - <none> - reports internal state
@@ -1049,6 +1056,32 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarState()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarState();
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarProgress()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarProgress();
+        }
+        return {};
     }
 
     // Method Description:

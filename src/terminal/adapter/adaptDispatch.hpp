@@ -123,6 +123,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 
+        bool DoConEmuAction(const std::wstring_view string) noexcept override;
+
     private:
         enum class ScrollDirection
         {

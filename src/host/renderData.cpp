@@ -7,7 +7,7 @@
 
 #include "dbcs.h"
 #include "handle.h"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -276,7 +276,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const noexcept
+bool RenderData::IsCursorDoubleWidth() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();

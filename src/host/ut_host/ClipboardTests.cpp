@@ -8,15 +8,15 @@
 
 #include "globals.h"
 
-#include "..\interactivity\win32\Clipboard.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/win32/Clipboard.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #include "dbcs.h"
 
 #include <cctype>
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 
 #include "../../inc/consoletaeftemplates.hpp"

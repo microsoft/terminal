@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, DebugFeaturesEnabled, _getDefaultDebugFeaturesValue());
         GETSET_SETTING(bool, StartOnUserLogin, false);
         GETSET_SETTING(bool, AlwaysOnTop, false);
-        GETSET_SETTING(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::MostRecentlyUsed);
+        GETSET_SETTING(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
         GETSET_SETTING(bool, DisableAnimations, false);
 
     private:

@@ -16,9 +16,9 @@ Revision History:
 
 #pragma once
 
-#include "..\host\conapi.h"
+#include "../host/conapi.h"
 
-#include <wil\resource.h>
+#include <wil/resource.h>
 
 class DeviceComm
 {

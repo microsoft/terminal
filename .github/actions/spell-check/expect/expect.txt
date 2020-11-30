@@ -1062,7 +1062,9 @@ IFont
 ifstream
 IGNOREEND
 IHigh
+IHosted
 iid
+IInitialize
 IInput
 IInspectable
 IInteract
@@ -2835,3 +2837,4 @@ BBBBBCCC
 abcd
 LPMINMAXINFO
 MINMAXINFO
+lstrcmpi
