@@ -162,6 +162,7 @@ namespace winrt::TerminalApp::implementation
             auto unfocusedConfig = winrt::make_self<implementation::AppAppearanceConfig>();
 
             unfocusedConfig->ColorSchemeName(profile.UnfocusedConfig().ColorSchemeName());
+            unfocusedConfig->CursorShape(profile.UnfocusedConfig().CursorShape());
             if (profile.UnfocusedConfig().Background())
             {
                 unfocusedConfig->DefaultBackground(til::color{ profile.UnfocusedConfig().Background().Value() });

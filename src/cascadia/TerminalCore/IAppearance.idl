@@ -3,6 +3,15 @@
 
 namespace Microsoft.Terminal.TerminalControl
 {
+    enum CursorStyle
+    {
+        Vintage,
+        Bar,
+        Underscore,
+        FilledBox,
+        EmptyBox
+    };
+
     // [default_interface]
     interface IAppearance
     {
@@ -10,7 +19,7 @@ namespace Microsoft.Terminal.TerminalControl
         UInt32 DefaultBackground { get; set; };
         UInt32 CursorColor { get; set; };
         UInt32 SelectionBackground { get; set; };
-        //CursorStyle CursorShape;
+        CursorStyle CursorShape;
         String BackgroundImage { get; set; };
     };
 }

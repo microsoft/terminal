@@ -44,13 +44,10 @@ namespace Microsoft.Terminal.TerminalControl
         String StartingDirectory;
         String EnvironmentVariables;
 
-        //String BackgroundImage;
         Double BackgroundImageOpacity;
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
-
-        //UInt32 SelectionBackground;
 
         TextAntialiasingMode AntialiasingMode;
 
