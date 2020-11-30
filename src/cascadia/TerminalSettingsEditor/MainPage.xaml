@@ -80,10 +80,10 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles"/>
 
-                <muxc:NavigationViewItem x:Uid="Nav_ProfileGlobal"
+                <muxc:NavigationViewItem x:Uid="Nav_ProfileDefaults"
                                          Tag="GlobalProfile_Nav">
                     <muxc:NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE756;"/>
+                        <FontIcon Glyph="&#xE81E;"/>
                     </muxc:NavigationViewItem.Icon>
                 </muxc:NavigationViewItem>
 
@@ -105,7 +105,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Frame x:Name="contentFrame"
                        Margin="20"
                        Grid.Row="0"></Frame>
-                <Grid Height="100" Grid.Row="1" BorderBrush="{ThemeResource SystemBaseLowColor}" BorderThickness="0,1,0,0">
+                <Grid Height="100" Grid.Row="1"
+                      BorderBrush="{ThemeResource SystemBaseLowColor}"
+                      BorderThickness="0,1,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>

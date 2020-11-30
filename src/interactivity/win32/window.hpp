@@ -14,7 +14,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IConsoleWindow.hpp"
+#include "../inc/IConsoleWindow.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {

@@ -337,8 +337,8 @@
   <data name="Nav_OpenJSON.Content" xml:space="preserve">
     <value>Open JSON file</value>
   </data>
-  <data name="Nav_ProfileGlobal.Content" xml:space="preserve">
-    <value>Global</value>
+  <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
+    <value>Base Layer</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
@@ -668,5 +668,11 @@
   </data>
   <data name="Globals_DisableDynamicProfiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
+  </data>
+  <data name="Profile_BellStyleAll.Content" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
+    <value>Visual (Flash Taskbar)</value>
   </data>
 </root>

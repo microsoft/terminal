@@ -47,6 +47,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                  x:Name="StartingDirectory"
                                  Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"/>
                         <Button x:Uid="Profile_StartingDirectoryBrowse"
+                                Click="StartingDirectory_Click"
                                 Margin="10,0,0,0"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">

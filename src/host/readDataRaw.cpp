@@ -7,7 +7,7 @@
 #include "stream.h"
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Constructs raw read data class to hold context across sessions

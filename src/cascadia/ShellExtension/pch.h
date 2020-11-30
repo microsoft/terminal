@@ -27,4 +27,4 @@
 #include <shlwapi.h>
 
 #include <wrl.h>
-#include <wrl\module.h>
+#include <wrl/module.h>

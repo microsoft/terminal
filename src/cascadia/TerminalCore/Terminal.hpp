@@ -115,6 +115,8 @@ public:
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+
+    bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -185,6 +187,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
+    void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
@@ -195,6 +198,9 @@ public:
     const std::optional<til::color> GetTabColor() const noexcept;
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
+    const size_t GetTaskbarState() const noexcept;
+    const size_t GetTaskbarProgress() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -221,6 +227,7 @@ private:
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
+    std::function<void()> _pfnTaskbarProgressChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -228,6 +235,7 @@ private:
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
     std::optional<til::color> _tabColor;
+    std::optional<til::color> _startingTabColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
@@ -239,6 +247,9 @@ private:
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
+
+    size_t _taskbarState;
+    size_t _taskbarProgress;
 
     size_t _hyperlinkPatternId;
 

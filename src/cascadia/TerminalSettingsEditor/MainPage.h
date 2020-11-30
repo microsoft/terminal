@@ -22,12 +22,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SaveButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void ResetButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
-        TYPED_EVENT(OpenJson, winrt::Windows::Foundation::IInspectable, Model::SettingsTarget);
+        void SetHostingWindow(uint64_t hostingWindow) noexcept;
+        bool TryPropagateHostingWindow(IInspectable object) noexcept;
+
+        TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 
     private:
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
         winrt::Windows::Foundation::Collections::IMap<Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
+
+        std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index);

@@ -261,6 +261,15 @@ void IslandWindow::Initialize()
 
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _source.Content(_rootGrid);
+
+    // initialize the taskbar object
+    if (auto taskbar = wil::CoCreateInstanceNoThrow<ITaskbarList3>(CLSID_TaskbarList))
+    {
+        if (SUCCEEDED(taskbar->HrInit()))
+        {
+            _taskbar = std::move(taskbar);
+        }
+    }
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -573,6 +582,57 @@ void IslandWindow::SetAlwaysOnTop(const bool alwaysOnTop)
                      0,
                      0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+}
+
+// Method Description
+// - Flash the taskbar icon, indicating to the user that something needs their attention
+void IslandWindow::FlashTaskbar()
+{
+    // Using 'false' as the boolean argument ensures that the taskbar is
+    // only flashed if the app window is not focused
+    FlashWindow(_window.get(), false);
+}
+
+// Method Description:
+// - Sets the taskbar progress indicator
+// - We follow the ConEmu style for the state and progress values,
+//   more details at https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
+{
+    if (_taskbar)
+    {
+        switch (state)
+        {
+        case 0:
+            // removes the taskbar progress indicator
+            _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
+            break;
+        case 1:
+            // sets the progress value to value given by the 'progress' parameter
+            _taskbar->SetProgressState(_window.get(), TBPF_NORMAL);
+            _taskbar->SetProgressValue(_window.get(), progress, 100);
+            break;
+        case 2:
+            // sets the progress indicator to an error state
+            _taskbar->SetProgressState(_window.get(), TBPF_ERROR);
+            _taskbar->SetProgressValue(_window.get(), progress, 100);
+            break;
+        case 3:
+            // sets the progress indicator to an indeterminate state
+            _taskbar->SetProgressState(_window.get(), TBPF_INDETERMINATE);
+            break;
+        case 4:
+            // sets the progress indicator to a pause state
+            _taskbar->SetProgressState(_window.get(), TBPF_PAUSED);
+            _taskbar->SetProgressValue(_window.get(), progress, 100);
+            break;
+        default:
+            break;
+        }
     }
 }
 

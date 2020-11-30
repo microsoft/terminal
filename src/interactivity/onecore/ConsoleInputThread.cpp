@@ -9,9 +9,9 @@
 
 #include "ConIoSrv.h"
 
-#include "..\..\host\input.h"
+#include "../../host/input.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::OneCore;

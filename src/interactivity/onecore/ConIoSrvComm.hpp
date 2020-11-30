@@ -17,10 +17,10 @@ Author(s):
 #include <condrv.h>
 
 #include "ConIoSrv.h"
-#include "..\..\inc\IInputServices.hpp"
+#include "../../inc/IInputServices.hpp"
 
 #include "BgfxEngine.hpp"
-#include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
+#include "../../renderer/wddmcon/wddmconrenderer.hpp"
 
 #pragma hdrstop
 

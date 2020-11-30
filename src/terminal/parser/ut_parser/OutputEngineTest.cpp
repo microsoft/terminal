@@ -1456,6 +1456,11 @@ public:
         return true;
     }
 
+    bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override
+    {
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;

@@ -10,7 +10,6 @@
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
-#include "Keybindings.h"
 
 #include <LibraryResources.h>
 
@@ -120,6 +119,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
+    {
+        _hostingHwnd.emplace(reinterpret_cast<HWND>(hostingWindow));
+    }
+
+    bool MainPage::TryPropagateHostingWindow(IInspectable object) noexcept
+    {
+        if (_hostingHwnd)
+        {
+            if (auto initializeWithWindow{ object.try_as<IInitializeWithWindow>() })
+            {
+                return SUCCEEDED(initializeWithWindow->Initialize(*_hostingHwnd));
+            }
+        }
+        return false;
+    }
+
     // Function Description:
     // - Called when the NavigationView is loaded. Navigates to the first item in the NavigationView, if no item is selected
     // Arguments:
@@ -169,7 +185,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
             {
                 // Navigate to a page with the given profile
-                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes()));
+                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
             }
         }
     }
@@ -190,7 +206,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes()));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes(), *this));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -269,7 +285,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Select and navigate to the new profile
         // TODO: Setting SelectedItem here doesn't update the NavigationView's selected visual indicator
         SettingsNav().SelectedItem(navItem);
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes()));
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
     }
 
     MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Profile& profile)
