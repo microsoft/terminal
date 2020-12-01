@@ -251,7 +251,7 @@ invoke the "pane switcher" as anything different than the "tab switcher". The
 "pane switcher" should really just exist as a part of the functionality of the
 advanced tab switcher, not as it's own thing.
 
-Additionally, we concured that the new "direction" value should be `prev`, not
+Additionally, we concurred that the new "direction" value should be `prev`, not
 `last`, for consistency's sake.
 
 ## UI/UX Design
