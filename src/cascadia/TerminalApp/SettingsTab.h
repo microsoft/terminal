@@ -29,6 +29,7 @@ namespace winrt::TerminalApp::implementation
     public:
         SettingsTab(winrt::Microsoft::Terminal::Settings::Editor::MainPage settingsUI);
 
+        void UpdateSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings);
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
     private:

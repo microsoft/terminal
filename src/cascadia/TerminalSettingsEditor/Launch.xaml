@@ -39,11 +39,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,100,0">
                 <ComboBox x:Uid="Globals_DefaultProfile"
                           x:Name="DefaultProfile"
-                          Margin="0,0,0,20"
                           ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
-                          SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
-                          FontSize="15"
-                          ToolTipService.Placement="Mouse">
+                          SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="SettingsModel:Profile">
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >

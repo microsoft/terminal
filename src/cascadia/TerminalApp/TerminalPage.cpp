@@ -2263,6 +2263,10 @@ namespace winrt::TerminalApp::implementation
                 // Force the TerminalTab to re-grab its currently active control's title.
                 terminalTab->UpdateTitle();
             }
+            else if (auto settingsTab = tab.try_as<TerminalApp::SettingsTab>())
+            {
+                settingsTab.UpdateSettings(_settings);
+            }
         }
 
         auto weakThis{ get_weak() };

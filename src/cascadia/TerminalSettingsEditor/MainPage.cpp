@@ -38,12 +38,85 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     MainPage::MainPage(const CascadiaSettings& settings) :
         _settingsSource{ settings },
-        _settingsClone{ settings },
+        _settingsClone{ settings.Copy() },
         _profileToNavItemMap{ winrt::single_threaded_map<Model::Profile, MUX::Controls::NavigationViewItem>() }
     {
         InitializeComponent();
 
         _InitializeProfilesList();
+    }
+
+    fire_and_forget MainPage::UpdateSettings(Model::CascadiaSettings settings)
+    {
+        _settingsSource = settings;
+        _settingsClone = settings.Copy();
+
+        co_await winrt::resume_foreground(Dispatcher());
+
+        // reconstruct our list of profiles
+        auto menuItems{ SettingsNav().MenuItems() };
+        unsigned int i = 0;
+        while (i < menuItems.Size())
+        {
+            if (const auto navViewItem{ menuItems.GetAt(i).try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                const auto tag{ navViewItem.Tag() };
+                if (tag.try_as<Model::Profile>())
+                {
+                    // remove NavViewItem pointing to a Profile
+                    menuItems.RemoveAt(i);
+                    continue;
+                }
+                else if (const auto stringTag{ tag.try_as<hstring>() })
+                {
+                    if (stringTag == addProfileTag)
+                    {
+                        // remove NavViewItem pointing to "Add Profile"
+                        menuItems.RemoveAt(i);
+                        continue;
+                    }
+                }
+            }
+            ++i;
+        }
+        _InitializeProfilesList();
+
+        _RefreshCurrentPage();
+    }
+
+    void MainPage::_RefreshCurrentPage()
+    {
+        auto navigationMenu{ SettingsNav() };
+        if (const auto selectedItem{ navigationMenu.SelectedItem() })
+        {
+            if (const auto tag{ selectedItem.as<MUX::Controls::NavigationViewItem>().Tag() })
+            {
+                if (const auto profile{ tag.try_as<Model::Profile>() })
+                {
+                    // check if the profile still exists
+                    if (_settingsClone.FindProfile(profile.Guid()))
+                    {
+                        // Navigate to the page with the given profile
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
+                        return;
+                    }
+                }
+                else if (const auto stringTag{ tag.try_as<hstring>() })
+                {
+                    // navigate to the page with this tag
+                    _Navigate(*stringTag);
+                    return;
+                }
+            }
+        }
+
+        // could not find the page we were on, fallback to first menu item
+        const auto firstItem{ navigationMenu.MenuItems().GetAt(0) };
+        navigationMenu.SelectedItem(firstItem);
+        if (const auto tag{ navigationMenu.SelectedItem().as<NavigationViewItem>().Tag() })
+        {
+            _Navigate(unbox_value<hstring>(tag));
+        }
     }
 
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
@@ -166,6 +239,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
+    void MainPage::SaveButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    {
+        _settingsClone.WriteSettingsToDisk();
+    }
+
+    void MainPage::ResetButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
+    {
+        _settingsClone = _settingsSource.Copy();
+        _RefreshCurrentPage();
+    }
+
     void MainPage::_InitializeProfilesList()
     {
         // Manually create a NavigationViewItem for each profile
@@ -181,7 +265,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Top off (the end of the nav view) with the Add Profile item
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
-        addProfileItem.Tag(box_value(L"AddProfile"));
+        addProfileItem.Tag(box_value(addProfileTag));
         addProfileItem.SelectsOnInvoked(false);
 
         FontIcon icon;

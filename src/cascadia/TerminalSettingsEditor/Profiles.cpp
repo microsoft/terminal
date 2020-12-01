@@ -20,7 +20,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    Profiles::Profiles()
+    Profiles::Profiles() :
+        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
     {
         InitializeComponent();
 
@@ -40,6 +41,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
+
+        const auto& colorSchemeMap{ _State.Schemes() };
+        for (const auto& pair : colorSchemeMap)
+        {
+            _ColorSchemeList.Append(pair.Value());
+        }
+    }
+
+    ColorScheme Profiles::CurrentColorScheme()
+    {
+        const auto schemeName{ _State.Profile().ColorSchemeName() };
+        if (const auto scheme{ _State.Schemes().TryLookup(schemeName) })
+        {
+            return scheme;
+        }
+        else
+        {
+            // This Profile points to a color scheme that was renamed or deleted.
+            // Fallback to Campbell.
+            return _State.Schemes().TryLookup(L"Campbell");
+        }
+    }
+
+    void Profiles::CurrentColorScheme(const ColorScheme& val)
+    {
+        _State.Profile().ColorSchemeName(val.Name());
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
