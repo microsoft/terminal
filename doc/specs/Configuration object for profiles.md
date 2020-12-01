@@ -33,8 +33,6 @@ settings json file, each state-appearance will be stored in an object of this cl
 piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the way we already pipe over information
 such as `FontFace` and `CursorStyle` from the settings model to the app.
 
-#### Need to talk about inheritance here
-
 ### Allowed parameters
 
 For now, these states are meant to be entirely appearance-based. So, not all parameters which can be
@@ -44,6 +42,18 @@ would cause a resize in this object.) Here are the list of parameters we will al
 - Anything regarding colors: `colorScheme`, `foreground`, `background`, `cursorColor` etc
 - `cursorShape`
 - `backgroundImage`
+
+We may wish to allow further parameters in these objects in the future (like `bellStyle`?). The addition
+of further parameters can be discussed in the future and is out of scope for this spec.
+
+### Inheritance
+
+We have to decide how we want to deal with the case(s) where not all parameters are defined - i.e. what
+values should we use for undefined parameters? The current proposal is as follows:
+
+If the profile defines an `unfocusedState`, any parameters not explicitly defined within it will adopt
+the values from the profile itself. If the profile does not define an `unfocusedState`, then the global/default `unfocusedState` is used
+for this profile.
 
 ## UI/UX Design
 
