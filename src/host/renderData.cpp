@@ -7,7 +7,7 @@
 
 #include "dbcs.h"
 #include "handle.h"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -276,7 +276,7 @@ const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOver
 // - <none>
 // Return Value:
 // - true if the cursor should be drawn twice as wide as usual
-bool RenderData::IsCursorDoubleWidth() const noexcept
+bool RenderData::IsCursorDoubleWidth() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
@@ -346,6 +346,12 @@ const std::wstring RenderData::GetHyperlinkCustomId(uint16_t id) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer().GetTextBuffer().GetCustomIdFromId(id);
+}
+
+// For now, we ignore regex patterns in conhost
+const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) const noexcept
+{
+    return {};
 }
 
 // Routine Description:

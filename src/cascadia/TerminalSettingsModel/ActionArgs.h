@@ -22,6 +22,9 @@
 #include "ExecuteCommandlineArgs.g.h"
 #include "CloseOtherTabsArgs.g.h"
 #include "CloseTabsAfterArgs.g.h"
+#include "ScrollUpArgs.g.h"
+#include "ScrollDownArgs.g.h"
+#include "MoveTabArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -58,12 +61,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(winrt::hstring, Commandline, L"");
         GETSET_PROPERTY(winrt::hstring, StartingDirectory, L"");
         GETSET_PROPERTY(winrt::hstring, TabTitle, L"");
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
         GETSET_PROPERTY(Windows::Foundation::IReference<int32_t>, ProfileIndex, nullptr);
         GETSET_PROPERTY(winrt::hstring, Profile, L"");
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
         static constexpr std::string_view TabTitleKey{ "tabTitle" };
+        static constexpr std::string_view TabColorKey{ "tabColor" };
         static constexpr std::string_view ProfileIndexKey{ "index" };
         static constexpr std::string_view ProfileKey{ "profile" };
 
@@ -75,6 +80,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return other.Commandline() == _Commandline &&
                    other.StartingDirectory() == _StartingDirectory &&
                    other.TabTitle() == _TabTitle &&
+                   other.TabColor() == _TabColor &&
                    other.ProfileIndex() == _ProfileIndex &&
                    other.Profile() == _Profile;
         };
@@ -87,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::GetValueForKey(json, TabTitleKey, args->_TabTitle);
             JsonUtils::GetValueForKey(json, ProfileIndexKey, args->_ProfileIndex);
             JsonUtils::GetValueForKey(json, ProfileKey, args->_Profile);
+            JsonUtils::GetValueForKey(json, TabColorKey, args->_TabColor);
             return *args;
         }
         Model::NewTerminalArgs Copy() const
@@ -95,6 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Commandline = _Commandline;
             copy->_StartingDirectory = _StartingDirectory;
             copy->_TabTitle = _TabTitle;
+            copy->_TabColor = _TabColor;
             copy->_ProfileIndex = _ProfileIndex;
             copy->_Profile = _Profile;
             return *copy;
@@ -491,7 +499,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
     {
         SetTabColorArgs() = default;
-        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
+        GETSET_PROPERTY(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
 
         static constexpr std::string_view ColorKey{ "color" };
 
@@ -511,10 +519,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SetTabColorArgs>();
-            if (const auto temp{ JsonUtils::GetValueForKey<std::optional<til::color>>(json, ColorKey) })
-            {
-                args->_TabColor = static_cast<uint32_t>(*temp);
-            }
+            JsonUtils::GetValueForKey(json, ColorKey, args->_TabColor);
             return { *args, {} };
         }
         IActionArgs Copy() const
@@ -670,6 +675,117 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return *copy;
         }
     };
+
+    struct MoveTabArgs : public MoveTabArgsT<MoveTabArgs>
+    {
+        MoveTabArgs() = default;
+        MoveTabArgs(MoveTabDirection direction) :
+            _Direction{ direction } {};
+        GETSET_PROPERTY(MoveTabDirection, Direction, MoveTabDirection::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<MoveTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MoveTabArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->_Direction == MoveTabDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<MoveTabArgs>() };
+            copy->_Direction = _Direction;
+            return *copy;
+        }
+    };
+
+    struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
+    {
+        ScrollUpArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+
+        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ScrollUpArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_RowsToScroll == _RowsToScroll;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ScrollUpArgs>();
+            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ScrollUpArgs>() };
+            copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
+        }
+    };
+
+    struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
+    {
+        ScrollDownArgs() = default;
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
+
+        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ScrollDownArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_RowsToScroll == _RowsToScroll;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ScrollDownArgs>();
+            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ScrollDownArgs>() };
+            copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
+        }
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -683,4 +799,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);
+    BASIC_FACTORY(MoveTabArgs);
 }

@@ -54,6 +54,7 @@ private:
         CLI::Option* profileNameOption;
         CLI::Option* startingDirectoryOption;
         CLI::Option* titleOption;
+        CLI::Option* tabColorOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -74,6 +75,7 @@ private:
     std::string _profileName;
     std::string _startingDirectory;
     std::string _startingTitle;
+    std::string _startingTabColor;
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;

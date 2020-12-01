@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IConsoleInputThread.hpp"
+#include "../inc/IConsoleInputThread.hpp"
 #include "ConIoSrvComm.hpp"
 
 #pragma hdrstop

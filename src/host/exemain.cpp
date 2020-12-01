@@ -5,8 +5,8 @@
 
 #include "ConsoleArguments.hpp"
 #include "srvinit.h"
-#include "..\server\Entrypoints.h"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../server/Entrypoints.h"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Define TraceLogging provider
 TRACELOGGING_DEFINE_PROVIDER(

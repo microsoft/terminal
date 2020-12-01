@@ -138,7 +138,10 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
 
-            this.Resize(this.TerminalControlSize);
+            if (!this.RenderSize.IsEmpty)
+            {
+                this.Resize(this.TerminalControlSize);
+            }
         }
 
         /// <summary>
@@ -161,6 +164,11 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="renderSize">Size of the rendering window.</param>
         internal void Resize(Size renderSize)
         {
+            if (renderSize.Width == 0 || renderSize.Height == 0)
+            {
+                throw new ArgumentException(nameof(renderSize), "Terminal column or row count cannot be 0.");
+            }
+
             NativeMethods.TerminalTriggerResize(
                 this.terminal,
                 Convert.ToInt16(renderSize.Width),
@@ -181,6 +189,15 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="columns">Number of columns to show.</param>
         internal void Resize(uint rows, uint columns)
         {
+            if (rows == 0)
+            {
+                throw new ArgumentException(nameof(rows), "Terminal row count cannot be 0.");
+            }
+            else if (columns == 0)
+            {
+                throw new ArgumentException(nameof(columns), "Terminal column count cannot be 0.");
+            }
+
             NativeMethods.SIZE dimensionsInPixels;
             NativeMethods.COORD dimensions = new NativeMethods.COORD
             {
@@ -343,7 +360,8 @@ namespace Microsoft.Terminal.Wpf
 
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
-                        if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE))
+                        if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE)
+                            || (windowpos.cx == 0 && windowpos.cy == 0))
                         {
                             break;
                         }

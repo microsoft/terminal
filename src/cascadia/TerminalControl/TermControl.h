@@ -7,6 +7,7 @@
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
+#include "NoticeEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -81,6 +82,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring _uri;
     };
 
+    struct NoticeEventArgs :
+        public NoticeEventArgsT<NoticeEventArgs>
+    {
+    public:
+        NoticeEventArgs(const NoticeLevel level, const hstring& message) :
+            _level(level),
+            _message(message) {}
+
+        NoticeLevel Level() { return _level; };
+        hstring Message() { return _message; };
+
+    private:
+        const NoticeLevel _level;
+        const hstring _message;
+    };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -118,6 +135,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
 
+        void UpdatePatternLocations();
+
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
@@ -139,6 +158,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
+        winrt::fire_and_forget TaskbarProgressChanged();
+        const size_t TaskbarState() const noexcept;
+        const size_t TaskbarProgress() const noexcept;
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
@@ -148,6 +171,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
@@ -179,6 +204,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo _actualFont;
 
         std::shared_ptr<ThrottledFunc<>> _tsfTryRedrawCanvas;
+
+        std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
 
         struct ScrollBarUpdate
         {
@@ -212,6 +239,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         COORD _lastHoveredCell;
         // Track the last hyperlink ID we hovered over
         uint16_t _lastHoveredId;
+
+        std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _lastHoveredInterval;
 
         using Timestamp = uint64_t;
 
@@ -250,7 +279,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         winrt::fire_and_forget _DragDropHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const e);
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
-        void _HyperlinkHandler(const std::wstring_view uri);
+        winrt::fire_and_forget _HyperlinkHandler(const std::wstring_view uri);
 
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);

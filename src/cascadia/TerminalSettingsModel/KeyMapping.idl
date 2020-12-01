@@ -43,11 +43,13 @@ namespace Microsoft.Terminal.Settings.Model
         SetTabColor,
         OpenTabColorPicker,
         RenameTab,
+        OpenTabRenamer,
         ExecuteCommandline,
         ToggleCommandPalette,
         CloseOtherTabs,
         CloseTabsAfter,
-        TabSearch
+        TabSearch,
+        MoveTab
     };
 
     [default_interface] runtimeclass ActionAndArgs {

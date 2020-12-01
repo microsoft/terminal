@@ -47,12 +47,33 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
-        pair_type{ "none", ValueType::None },
-        pair_type{ "audible", ValueType::Audible }
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "audible", ValueType::Audible },
+        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "all", AllSet },
     };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::BellStyle& bellStyle)
+    {
+        return BaseFlagMapper::ToJson(bellStyle);
+    }
 };
 
 JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
@@ -152,6 +173,19 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
             static_cast<uint16_t>(std::clamp(value, 100u, 990u))
         };
         return weight;
+    }
+
+    Json::Value ToJson(const ::winrt::Windows::UI::Text::FontWeight& val)
+    {
+        const auto weight{ val.Weight };
+        try
+        {
+            return BaseEnumMapper::ToJson(weight);
+        }
+        catch (SerializationError&)
+        {
+            return weight;
+        }
     }
 
     bool CanConvert(const Json::Value& json)
@@ -340,5 +374,37 @@ JSON_ENUM_MAPPER(::winrt::Windows::System::VirtualKey)
         pair_type{ "ctrl", ValueType::Control },
         pair_type{ "alt", ValueType::Menu },
         pair_type{ "shift", ValueType::Shift },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "mru", ValueType::MostRecentlyUsed },
+        pair_type{ "inOrder", ValueType::InOrder },
+        pair_type{ "disabled", ValueType::Disabled },
+    };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? ValueType::MostRecentlyUsed : ValueType::Disabled;
+        }
+        return BaseEnumMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseEnumMapper::CanConvert(json) || json.isBool();
+    }
+};
+
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "forward", ValueType::Forward },
+        pair_type{ "backward", ValueType::Backward },
     };
 };

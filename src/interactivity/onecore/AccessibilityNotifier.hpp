@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IAccessibilityNotifier.hpp"
+#include "../inc/IAccessibilityNotifier.hpp"
 
 #pragma hdrstop
 

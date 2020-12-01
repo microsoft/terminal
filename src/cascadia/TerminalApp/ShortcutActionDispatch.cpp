@@ -212,6 +212,11 @@ namespace winrt::TerminalApp::implementation
             _RenameTabHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::OpenTabRenamer:
+        {
+            _OpenTabRenamerHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::ExecuteCommandline:
         {
             _ExecuteCommandlineHandlers(*this, eventArgs);
@@ -225,6 +230,11 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::CloseTabsAfter:
         {
             _CloseTabsAfterHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::MoveTab:
+        {
+            _MoveTabHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::TabSearch:

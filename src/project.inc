@@ -29,6 +29,7 @@ USE_NATIVE_EH           = 1
 # -------------------------------------
 
 MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS            = $(USER_C_FLAGS) /utf-8
 
 # -------------------------------------
 # Common Console Includes and Libraries
@@ -44,6 +45,7 @@ INCLUDES= \
     $(CONSOLE_SRC_PATH)\..\oss\libpopcnt; \
     $(CONSOLE_SRC_PATH)\..\oss\chromium; \
     $(CONSOLE_SRC_PATH)\..\oss\fmt\include; \
+    $(CONSOLE_SRC_PATH)\..\oss\interval_tree; \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINWIN_RESTRICTED_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \

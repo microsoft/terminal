@@ -57,5 +57,4 @@ namespace til
     {
         return t1.has_value() ? t1 : coalesce(std::forward<Ts>(t2)...);
     }
-
 }

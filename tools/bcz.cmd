@@ -76,13 +76,46 @@ set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:"%_MSBUILD_TARGET%" 
 
 echo %_BUILD_CMDLINE%
 echo Starting build...
+
+@rem start indeterminate progress in the taskbar
+@rem this `<NUL set /p =` magic will output the text _without a newline_
+<NUL set /p =]9;4;3
+
 %_BUILD_CMDLINE%
+
+@rem capture the return value of msbuild, so we can return that as our return value.
+set _build_result=%errorlevel%
+if (%_build_result%) == (0) (
+
+@rem clear the progress
+<NUL set /p =]9;4
+
+) else (
+
+@rem set the taskbar to the error state, then sleep for 500ms, before clearing
+@rem the progress state. This will "blink" the error state into the taskbar
+
+<NUL set /p =]9;4;2;100
+
+@rem this works to "sleep" the console for 500ms. `ping` can't wait for less
+@rem than 500ms, and it will only wait if the target address _doesn't_ respond,
+@rem hence why we're using 128., not 127.
+
+ping 128.0.0.1 -n 1 -w 500 > nul
+
+<NUL set /p =]9;4
+
+)
 
 rem Cleanup unused variables here. Note we cannot use setlocal because we need to pass modified
 rem _LAST_BUILD_CONF out to OpenCon.cmd later.
 rem
 set _MSBUILD_TARGET=
 set _BIN_=%~dp0\bin\%PLATFORM%\%_LAST_BUILD_CONF%
+
+@rem Exit with the value from msbuild. If msbuild is unsuccessful in building, this will be 1
+EXIT /b %_build_result%
+
 goto :eof
 
 rem ############################################################################
