@@ -68,6 +68,8 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(ValidateKeybindingsWarnings);
 
+        TEST_METHOD(ValidateColorSchemeInCommands);
+
         TEST_METHOD(ValidateExecuteCommandlineWarning);
 
         TEST_METHOD(ValidateLegacyGlobalsWarning);
@@ -1323,6 +1325,140 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
         VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).ColorSchemeName());
         VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
+    }
+
+    void DeserializationTests::ValidateColorSchemeInCommands()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Ensure that setting a command's color scheme to a non-existent scheme causes a warning."));
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                }
+            ],
+            "actions": [
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "schemeOne" }
+                },
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
+                }
+            ]
+        })" };
+
+        const std::string settings1String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                }
+            ],
+            "actions": [
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "schemeOne" }
+                },
+                {
+                    "name": "parent",
+                    "commands": [                        
+                        { "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" } }
+                    ]
+                }
+            ]
+        })" };
+
+        const std::string settings2String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                }
+            ],
+            "actions": [
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "schemeOne" }
+                },
+                {
+                    "name": "grandparent",
+                    "commands": [                        
+                        {
+                            "name": "parent",
+                            "commands": [
+                                { 
+                                    "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        })" };
+
+        {
+            // Case 1: setColorScheme command with invalid scheme
+            Log::Comment(NoThrowString().Format(
+                L"Testing a simple command with invalid scheme"));
+            VerifyParseSucceeded(settings0String);
+
+            auto settings = winrt::make_self<implementation::CascadiaSettings>();
+            settings->_ParseJsonString(settings0String, false);
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateColorSchemesInCommands();
+
+            VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
+            VERIFY_ARE_EQUAL(SettingsLoadWarnings::InvalidColorSchemeInCmd, settings->_warnings.GetAt(0));
+        }
+        {
+            // Case 2: nested setColorScheme command with invalid scheme
+            Log::Comment(NoThrowString().Format(
+                L"Testing a nested command with invalid scheme"));
+            VerifyParseSucceeded(settings1String);
+
+            auto settings = winrt::make_self<implementation::CascadiaSettings>();
+            settings->_ParseJsonString(settings1String, false);
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateColorSchemesInCommands();
+
+            VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
+            VERIFY_ARE_EQUAL(SettingsLoadWarnings::InvalidColorSchemeInCmd, settings->_warnings.GetAt(0));
+        }
+        {
+            // Case 3: nested-in-nested setColorScheme command with invalid scheme
+            Log::Comment(NoThrowString().Format(
+                L"Testing a nested-in-nested command with invalid scheme"));
+            VerifyParseSucceeded(settings2String);
+
+            auto settings = winrt::make_self<implementation::CascadiaSettings>();
+            settings->_ParseJsonString(settings2String, false);
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateColorSchemesInCommands();
+
+            VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
+            VERIFY_ARE_EQUAL(SettingsLoadWarnings::InvalidColorSchemeInCmd, settings->_warnings.GetAt(0));
+        }
     }
 
     void DeserializationTests::TestHelperFunctions()
