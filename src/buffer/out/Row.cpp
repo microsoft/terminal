@@ -16,16 +16,16 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
+ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
-    _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ gsl::narrow<size_t>(rowWidth), this },
-    _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
+    _rowWidth{ rowWidth },
+    _charRow{ rowWidth, this },
+    _attrRow{ rowWidth, fillAttribute },
     _pParent{ pParent }
 {
 }
 
-size_t ROW::size() const noexcept
+unsigned short ROW::size() const noexcept
 {
     return _rowWidth;
 }
@@ -87,7 +87,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
-[[nodiscard]] HRESULT ROW::Resize(const size_t width)
+[[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
     try
@@ -122,12 +122,12 @@ std::wstring ROW::GetText() const
     return _charRow.GetText();
 }
 
-RowCellIterator ROW::AsCellIter(const size_t startIndex) const
+RowCellIterator ROW::AsCellIter(const unsigned int startIndex) const
 {
     return AsCellIter(startIndex, size() - startIndex);
 }
 
-RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) const
+RowCellIterator ROW::AsCellIter(const unsigned int startIndex, const unsigned int count) const
 {
     return RowCellIterator(*this, startIndex, count);
 }
@@ -151,11 +151,11 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 // - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
 // - iterator to first cell that was not written to this row.
-OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const unsigned int index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
-    size_t currentIndex = index;
+    unsigned int currentIndex = index;
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
     const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
@@ -164,8 +164,8 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     {
         // Accumulate usages of the same color so we can spend less time in InsertAttrRuns rewriting it.
         auto currentColor = it->TextAttr();
-        size_t colorUses = 0;
-        size_t colorStarts = index;
+        unsigned int colorUses = 0;
+        unsigned int colorStarts = index;
 
         while (it && currentIndex <= finalColumnInRow)
         {
@@ -186,7 +186,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                     LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
                                                           colorStarts,
                                                           currentIndex - 1,
-                                                          _charRow.size()));
+                                                          gsl::narrow<unsigned int>(_charRow.size())));
                     currentColor = it->TextAttr();
                     colorUses = 1;
                     colorStarts = currentIndex;
@@ -250,7 +250,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &run, 1 },
                                                   colorStarts,
                                                   currentIndex - 1,
-                                                  _charRow.size()));
+                                                  gsl::narrow<unsigned int>(_charRow.size())));
         }
     }
 

@@ -32,9 +32,9 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
+    ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
 
-    size_t size() const noexcept;
+    unsigned short size() const noexcept;
 
     const CharRow& GetCharRow() const noexcept;
     CharRow& GetCharRow() noexcept;
@@ -46,18 +46,18 @@ public:
     void SetId(const SHORT id) noexcept;
 
     bool Reset(const TextAttribute Attr);
-    [[nodiscard]] HRESULT Resize(const size_t width);
+    [[nodiscard]] HRESULT Resize(const unsigned short width);
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const;
 
-    RowCellIterator AsCellIter(const size_t startIndex) const;
-    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const;
+    RowCellIterator AsCellIter(const unsigned int startIndex) const;
+    RowCellIterator AsCellIter(const unsigned int startIndex, const unsigned int count) const;
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
+    OutputCellIterator WriteCells(OutputCellIterator it, const unsigned int index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
@@ -69,7 +69,7 @@ private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
     SHORT _id;
-    size_t _rowWidth;
+    unsigned short _rowWidth;
     TextBuffer* _pParent; // non ownership pointer
 };
 

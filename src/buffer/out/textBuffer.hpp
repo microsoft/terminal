@@ -49,6 +49,8 @@ filling in the last row, and updating the screen.
 
 #pragma once
 
+#include <vector>
+
 #include "cursor.h"
 #include "Row.hpp"
 #include "TextAttribute.hpp"
@@ -189,7 +191,7 @@ public:
 private:
     void _UpdateSize();
     Microsoft::Console::Types::Viewport _size;
-    std::deque<ROW> _storage;
+    std::vector<ROW> _storage;
     Cursor _cursor;
 
     SHORT _firstRow; // indexes top row (not necessarily 0)

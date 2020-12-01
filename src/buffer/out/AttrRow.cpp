@@ -37,7 +37,7 @@ void ATTR_ROW::Reset(const TextAttribute attr)
 // - newWidth - The new width of the row.
 // Return Value:
 // - <none>, throws exceptions on failures.
-void ATTR_ROW::Resize(const size_t newWidth)
+void ATTR_ROW::Resize(const unsigned int newWidth)
 {
     THROW_HR_IF(E_INVALIDARG, 0 == newWidth);
 
@@ -58,7 +58,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
     else
     {
         // Get the attribute that covers the final column of the new width
-        size_t CountOfAttr = 0;
+        unsigned int CountOfAttr = 0;
         const auto runPos = FindAttrIndex(newWidth - 1, &CountOfAttr);
         auto& run = _list.at(runPos);
 
@@ -89,7 +89,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
 // - the text attribute at column
 // Note:
 // - will throw on error
-TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column) const
+TextAttribute ATTR_ROW::GetAttrByColumn(const unsigned int column) const
 {
     return GetAttrByColumn(column, nullptr);
 }
@@ -103,8 +103,8 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column) const
 // - the text attribute at column
 // Note:
 // - will throw on error
-TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column,
-                                        size_t* const pApplies) const
+TextAttribute ATTR_ROW::GetAttrByColumn(const unsigned int column,
+                                        unsigned int* const pApplies) const
 {
     THROW_HR_IF(E_INVALIDARG, column >= _cchRowWidth);
     const auto runPos = FindAttrIndex(column, pApplies);
@@ -129,11 +129,11 @@ size_t ATTR_ROW::GetNumberOfRuns() const noexcept
 //             index was 3, CountOfAttr would be 2.
 // Return Value:
 // - const reference to attribute run object
-size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
+size_t ATTR_ROW::FindAttrIndex(const unsigned int index, unsigned int* const pApplies) const
 {
     FAIL_FAST_IF(!(index < _cchRowWidth)); // The requested index cannot be longer than the total length described by this set of Attrs.
 
-    size_t cTotalLength = 0;
+    unsigned int cTotalLength = 0;
 
     FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
 
@@ -201,7 +201,7 @@ std::unordered_set<uint16_t> ATTR_ROW::GetHyperlinks()
 // - <none>
 bool ATTR_ROW::SetAttrToEnd(const UINT iStart, const TextAttribute attr)
 {
-    size_t const length = _cchRowWidth - iStart;
+    unsigned int const length = _cchRowWidth - iStart;
 
     const TextAttributeRun run(length, attr);
     return SUCCEEDED(InsertAttrRuns({ &run, 1 }, iStart, _cchRowWidth - 1, _cchRowWidth));
@@ -241,9 +241,9 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
 [[nodiscard]] HRESULT ATTR_ROW::InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
-                                               const size_t iStart,
-                                               const size_t iEnd,
-                                               const size_t cBufferWidth)
+                                               const unsigned int iStart,
+                                               const unsigned int iEnd,
+                                               const unsigned int cBufferWidth)
 {
     // Definitions:
     // Existing Run = The run length encoded color array we're already storing in memory before this was called.
@@ -260,7 +260,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     // We'll need to know what the last valid column is for some calculations versus iEnd
     // because iEnd is specified to us as an inclusive index value.
     // Do the -1 math here now so we don't have to have -1s scattered all over this function.
-    const size_t iLastBufferCol = cBufferWidth - 1;
+    const unsigned int iLastBufferCol = cBufferWidth - 1;
 
     // If the insertion size is 1, do some pre-processing to
     // see if we can get this done quickly.
@@ -414,7 +414,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     const auto pExistingRunEnd = _list.end();
     auto pInsertRunPos = newAttrs.begin();
     size_t cInsertRunRemaining = newAttrs.size();
-    size_t iExistingRunCoverage = 0;
+    unsigned int iExistingRunCoverage = 0;
 
     // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.
     // If the new run starts at 0, we have nothing to copy from the beginning.
@@ -447,7 +447,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         //      the new/final run.
 
         // Fetch out the length so we can fix it up based on the below conditions.
-        size_t length = newRun.back().GetLength();
+        unsigned int length = newRun.back().GetLength();
 
         // If we've covered more cells already than the start of the attributes to be inserted...
         if (iExistingRunCoverage > iStart)
@@ -519,7 +519,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
             // so we can just adjust the final run's column count instead of adding another segment here.
             if (newRun.back().GetAttributes() == pExistingRunPos->GetAttributes())
             {
-                size_t length = newRun.back().GetLength();
+                unsigned int length = newRun.back().GetLength();
                 length += (iExistingRunCoverage - (iEnd + 1));
                 newRun.back().SetLength(length);
             }
@@ -557,7 +557,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         else if (newRun.back().GetAttributes() == pExistingRunPos->GetAttributes())
         {
             // Add the value from the existing run into the current new run position.
-            size_t length = newRun.back().GetLength();
+            unsigned int length = newRun.back().GetLength();
             length += pExistingRunPos->GetLength();
             newRun.back().SetLength(length);
 

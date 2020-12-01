@@ -42,6 +42,7 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _currentPatternId{ 0 }
 {
     // initialize ROWs
+    _storage.reserve(static_cast<size_t>(screenBufferSize.Y));
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {
         _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, _currentAttributes, this);
@@ -841,7 +842,8 @@ void TextBuffer::Reset()
         while (&newTopRow != &_storage.front())
         {
             _storage.push_back(std::move(_storage.front()));
-            _storage.pop_front();
+            //AUSTINL_TODO: need to figure out what to do here with the vector version, and how to hit this code to confirm correctness.
+            //_storage.pop_front();
         }
 
         _SetFirstRowIndex(0);

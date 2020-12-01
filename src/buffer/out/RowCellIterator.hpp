@@ -28,7 +28,7 @@ public:
     using pointer = OutputCellView*;
     using reference = OutputCellView&;
 
-    RowCellIterator(const ROW& row, const size_t start, const size_t length);
+    RowCellIterator(const ROW& row, const unsigned int start, const unsigned int length);
     ~RowCellIterator() = default;
 
     RowCellIterator& operator=(const RowCellIterator& it) = delete;
@@ -48,12 +48,12 @@ public:
 
 private:
     const ROW& _row;
-    const size_t _start;
-    const size_t _length;
+    const unsigned int _start;
+    const unsigned int _length;
 
-    size_t _pos;
+    unsigned int _pos;
     OutputCellView _view;
 
     void _RefreshView();
-    static OutputCellView s_GenerateView(const ROW& row, const size_t pos);
+    static OutputCellView s_GenerateView(const ROW& row, const unsigned int pos);
 };

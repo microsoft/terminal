@@ -22,7 +22,6 @@
     <ClCompile Include="..\search.cpp" />
     <ClCompile Include="..\TextColor.cpp" />
     <ClCompile Include="..\TextAttribute.cpp" />
-    <ClCompile Include="..\TextAttributeRun.cpp" />
     <ClCompile Include="..\textBuffer.cpp" />
     <ClCompile Include="..\textBufferCellIterator.cpp" />
     <ClCompile Include="..\textBufferTextIterator.cpp" />

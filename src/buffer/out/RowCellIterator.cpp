@@ -9,7 +9,7 @@
 #include "../../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
 
-RowCellIterator::RowCellIterator(const ROW& row, const size_t start, const size_t length) :
+RowCellIterator::RowCellIterator(const ROW& row, const unsigned int start, const unsigned int length) :
     _row(row),
     _start(start),
     _length(length),
@@ -39,7 +39,7 @@ bool RowCellIterator::operator!=(const RowCellIterator& it) const noexcept
 
 RowCellIterator& RowCellIterator::operator+=(const ptrdiff_t& movement) noexcept
 {
-    _pos += movement;
+    _pos += gsl::narrow<unsigned int>(movement);
 
     return (*this);
 }
@@ -96,7 +96,7 @@ void RowCellIterator::_RefreshView()
 // Return Value:
 // - Object representing the view into this cell
 OutputCellView RowCellIterator::s_GenerateView(const ROW& row,
-                                               const size_t pos)
+                                               const unsigned int pos)
 {
     const auto& charRow = row.GetCharRow();
 
