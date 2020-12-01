@@ -122,11 +122,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
                         <Button x:Uid="Settings_ResetSettingsButton"
                                 FontSize="15"
-                                ToolTipService.Placement="Mouse"/>
+                                ToolTipService.Placement="Mouse"
+                                Click="ResetButton_Click"/>
                         <Button x:Uid="Settings_SaveSettingsButton"
                                 FontSize="15"
                                 Style="{StaticResource AccentButtonStyle}"
-                                Margin="10,0,0,0"/>
+                                Margin="10,0,0,0"
+                                Click="SaveButton_Click"/>
                     </StackPanel>
                 </Grid>
             </Grid>
