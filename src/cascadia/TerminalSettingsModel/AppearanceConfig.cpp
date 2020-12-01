@@ -33,3 +33,33 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
 }
+
+// NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
+winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
+{
+    const auto path{ BackgroundImagePath() };
+    if (path.empty())
+    {
+        return path;
+    }
+    // checks if the user would like to copy their desktop wallpaper
+    // if so, replaces the path with the desktop wallpaper's path
+    else if (path == L"desktopWallpaper")
+    {
+        WCHAR desktopWallpaper[MAX_PATH];
+
+        // "The returned string will not exceed MAX_PATH characters" as of 2020
+        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
+        {
+            return winrt::hstring{ (desktopWallpaper) };
+        }
+        else
+        {
+            return winrt::hstring{ L"" };
+        }
+    }
+    else
+    {
+        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+    }
+}

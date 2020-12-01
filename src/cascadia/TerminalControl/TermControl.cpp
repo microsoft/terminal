@@ -337,6 +337,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 co_return;
             }
 
+            if (!newAppearance.BackgroundImage().empty())
+            {
+                Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
+
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                BackgroundImage().Source(image);
+
+                // Apply stretch, opacity and alignment settings
+                BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
+                BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
+                BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
+                BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
+            }
+            else
+            {
+                BackgroundImage().Source(nullptr);
+            }
+
             // Update our control settings
             COLORREF bg = newAppearance.DefaultBackground();
             _BackgroundColorChanged(bg);

@@ -12,6 +12,7 @@ namespace winrt::TerminalApp::implementation
     struct AppAppearanceConfig : AppAppearanceConfigT<AppAppearanceConfig>
     {
         AppAppearanceConfig() = default;
+        void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
 
         GETSET_PROPERTY(hstring, ColorSchemeName);
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);

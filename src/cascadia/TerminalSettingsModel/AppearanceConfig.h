@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         AppearanceConfig();
 
         void LayerJson(const Json::Value& json);
+        winrt::hstring ExpandedBackgroundImagePath();
 
         GETSET_SETTING(hstring, ColorSchemeName, L"Campbell");
         GETSET_NULLABLE_SETTING(Windows::UI::Color, Foreground, nullptr);

@@ -188,6 +188,36 @@ void Terminal::UpdateAppearance(IAppearance appearance)
 {
     _defaultFg = appearance.DefaultForeground();
     _defaultBg = appearance.DefaultBackground();
+
+    CursorType cursorShape = CursorType::VerticalBar;
+    switch (appearance.CursorShape())
+    {
+    case CursorStyle::Underscore:
+        cursorShape = CursorType::Underscore;
+        break;
+    case CursorStyle::FilledBox:
+        cursorShape = CursorType::FullBox;
+        break;
+    case CursorStyle::EmptyBox:
+        cursorShape = CursorType::EmptyBox;
+        break;
+    case CursorStyle::Vintage:
+        cursorShape = CursorType::Legacy;
+        break;
+    default:
+    case CursorStyle::Bar:
+        cursorShape = CursorType::VerticalBar;
+        break;
+    }
+
+    if (_buffer)
+    {
+        _buffer->GetCursor().SetStyle(GetCursorHeight(),
+                                      GetCursorColor(),
+                                      cursorShape);
+    }
+
+    _defaultCursorShape = cursorShape;
 }
 
 // Method Description:

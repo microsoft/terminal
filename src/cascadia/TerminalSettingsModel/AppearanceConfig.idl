@@ -33,5 +33,6 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasBackgroundImagePath();
         void ClearBackgroundImagePath();
         String BackgroundImagePath;
+        String ExpandedBackgroundImagePath { get; };
     }
 }

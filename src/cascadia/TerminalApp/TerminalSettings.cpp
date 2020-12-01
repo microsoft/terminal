@@ -161,8 +161,14 @@ namespace winrt::TerminalApp::implementation
         {
             auto unfocusedConfig = winrt::make_self<implementation::AppAppearanceConfig>();
 
-            unfocusedConfig->ColorSchemeName(profile.UnfocusedConfig().ColorSchemeName());
             unfocusedConfig->CursorShape(profile.UnfocusedConfig().CursorShape());
+            if (!profile.UnfocusedConfig().ColorSchemeName().empty())
+            {
+                if (const auto scheme = schemes.TryLookup(profile.UnfocusedConfig().ColorSchemeName()))
+                {
+                    unfocusedConfig->ApplyColorScheme(scheme);
+                }
+            }
             if (profile.UnfocusedConfig().Background())
             {
                 unfocusedConfig->DefaultBackground(til::color{ profile.UnfocusedConfig().Background().Value() });
@@ -181,7 +187,7 @@ namespace winrt::TerminalApp::implementation
             }
             if (!profile.UnfocusedConfig().BackgroundImagePath().empty())
             {
-                unfocusedConfig->BackgroundImage(profile.UnfocusedConfig().BackgroundImagePath());
+                unfocusedConfig->BackgroundImage(profile.UnfocusedConfig().ExpandedBackgroundImagePath());
             }
             _UnfocusedConfig = *unfocusedConfig;
         }

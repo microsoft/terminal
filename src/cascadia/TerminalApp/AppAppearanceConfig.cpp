@@ -12,4 +12,11 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
+    void AppAppearanceConfig::ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme)
+    {
+        _DefaultForeground = til::color{ scheme.Foreground() };
+        _DefaultBackground = til::color{ scheme.Background() };
+        _SelectionBackground = til::color{ scheme.SelectionBackground() };
+        _CursorColor = til::color{ scheme.CursorColor() };
+    }
 }
