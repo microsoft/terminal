@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-11-23
-last updated: 2020-11-23
+last updated: 2020-12-01
 issue id: #2871
 ---
 
@@ -23,13 +23,12 @@ these sorts of scenarios.
 command. The `select-pane` command works in the following way:
 
 ```
-select-pane [-DdegLlMmRU] [-T title] [-t target-pane]
+select-pane [-DLlMmRU] [-T title] [-t target-pane]
 
      Make pane target-pane the active pane in window target-window, or set its
      style (with -P).  If one of -D, -L, -R, or -U is used, respectively the
      pane below, to the left, to the right, or above the target pane is used.
-     -l is the same as using the last-pane command.  -e enables or -d disables
-     input to the pane.
+     -l is the same as using the last-pane command.
 
      -m and -M are used to set and clear the marked pane.  There is one marked
      pane at a time, setting a new marked pane clears the last.  The marked pane
@@ -64,7 +63,6 @@ in addition to just tabs. This would allow users to navigate through the ATS
 directly to a pane, and see all the panes in a tab. Currently, `tabSwitcherMode`
 changes the behavior of `nextTab`, `prevTab` - should we just build the
 `paneSwitcherMode` directly into the action we end up designing?
-
 
 ## Solution Design
 
@@ -114,7 +112,7 @@ almost certainly necessitate a "pane switcher", like the tab switcher.
 { "command": { "action": "focusPane", "id": 1 } },
 
 // Focus the next MRU pane
-// - Withough the switcher, this can only go one pane deep in the MRU stack
+// - Without the switcher, this can only go one pane deep in the MRU stack
 // - presumably once there's a pane switcher, it would default to enabled?
 { "command": { "action": "focusNextPane", "order": "mru" } },
 
@@ -198,7 +196,7 @@ switcher UX. Neither of these actions would summon the pane switcher UX.
 In this design, neither `focusPane` nor `moveFocus` will summon the pane
 switcher UI (even once it's added). However, the `focusLastPane` one _could_,
 and subsequent keypresses could pop you through the MRU stack, while it's
-visible? The pane switcher could then display the panes for the tab in MUR
+visible? The pane switcher could then display the panes for the tab in MRU
 order, and the user could just use the arrow keys to navigate the list if they
 so choose.
 
@@ -247,37 +245,50 @@ So `focusPane(target=1, direction=up)` will attempt to focus the pane above pane
 
 ## Conclusion
 
-We have not yet come to a conclusion as a team.
+After much discussion as a team, we decided that **Proposal D** would be the
+best option. We felt that there wasn't a need to add any extra configuration to
+invoke the "pane switcher" as anything different than the "tab switcher". The
+"pane switcher" should really just exist as a part of the functionality of the
+advanced tab switcher, not as it's own thing.
+
+Additionally, we concured that the new "direction" value should be `prev`, not
+`last`, for consistency's sake.
 
 ## UI/UX Design
 
-[comment]: # How will different values of this setting affect the end user?
+The only real UX being added with the agreed upon design is allowing the user to
+execute an action to move to the previously active pane within a single tab. No
+additional UX (including the pane switcher) is being prescribed in this spec at
+this time.
 
 ## Potential Issues
 
 <table>
-
 <tr>
 <td><strong>Compatibility</strong></td>
 <td>
 
-[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+We've only adding a single enum value to an existing enum. Since we're not
+changing the meaning of any of the existing values, we do not expect any
+compatibility issues there. Additionally, we're not changing the default value
+of the `direction` param of the `moveFocus` action, so there are no further
+compatibility concerns there. Furthermore, no additional parameters are being
+added to the `moveFocus` action that would potentially gibe it a different
+meaning.
 
 </td>
 </tr>
 </table>
 
-[comment]: # If there are any other potential issues, make sure to include them here.
+In the current design, there's no way to move through all the panes with a
+single keybinding. For example, if a user wanted to bind <kbd>Alt+]</kbd> to
+move to the "next" pane, and <kbd>Alt+[</kbd> to move to the "previous" one.
+These movements would necessarily need to be in-order traversals, since there's
+no way of doing multiple MRU steps.
 
-
-## Resources
-
-[comment]: # Be sure to add links to references, resources, footnotes, etc.
-
-
-### Footnotes
-
-<a name="footnote-1"><a>[1]:
+Fortunately, no one's really asked for traversing the panes in-order, so we're
+not really worried about this. Otherwise, it would maybe make sense for `last`
+to be the "previous MRU pane", and reserve `next`/`prev` for in-order traversal.
 
 
 [#2871]: https://github.com/microsoft/terminal/issues/2871
