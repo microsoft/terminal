@@ -212,14 +212,6 @@ namespace winrt::TerminalApp::implementation
                 e.Handled(true);
             }
         }
-        if (_currentMode == CommandPaletteMode::ActionMode && key == VirtualKey::Tab)
-        {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
-            {
-                _keyDownHandler(sender, e);
-            }
-        }
     }
 
     // Method Description:
