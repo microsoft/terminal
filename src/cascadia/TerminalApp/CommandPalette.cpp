@@ -110,12 +110,19 @@ namespace winrt::TerminalApp::implementation
     {
         const auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
-        // Wraparound math. By adding numItems and then calculating modulo numItems,
-        // we clamp the values to the range [0, numItems) while still supporting moving
-        // upward from 0 to numItems - 1.
-        const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
-        _filteredActionsView().SelectedIndex(newIndex);
-        _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+
+        // Do not try to select an item if
+        // - the list is empty
+        // - if no item is selected and "up" is pressed
+        if (numItems != 0 && (selected != -1 || moveDown))
+        {
+            // Wraparound math. By adding numItems and then calculating modulo numItems,
+            // we clamp the values to the range [0, numItems) while still supporting moving
+            // upward from 0 to numItems - 1.
+            const auto newIndex = ((numItems + selected + (moveDown ? 1 : -1)) % numItems);
+            _filteredActionsView().SelectedIndex(newIndex);
+            _filteredActionsView().ScrollIntoView(_filteredActionsView().SelectedItem());
+        }
     }
 
     // Method Description:
