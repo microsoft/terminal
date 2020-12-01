@@ -25,41 +25,6 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
 {
 }
 
-unsigned short ROW::size() const noexcept
-{
-    return _rowWidth;
-}
-
-const CharRow& ROW::GetCharRow() const noexcept
-{
-    return _charRow;
-}
-
-CharRow& ROW::GetCharRow() noexcept
-{
-    return _charRow;
-}
-
-const ATTR_ROW& ROW::GetAttrRow() const noexcept
-{
-    return _attrRow;
-}
-
-ATTR_ROW& ROW::GetAttrRow() noexcept
-{
-    return _attrRow;
-}
-
-SHORT ROW::GetId() const noexcept
-{
-    return _id;
-}
-
-void ROW::SetId(const SHORT id) noexcept
-{
-    _id = id;
-}
-
 // Routine Description:
 // - Sets all properties of the ROW to default values
 // Arguments:
@@ -111,25 +76,6 @@ void ROW::ClearColumn(const size_t column)
 {
     THROW_HR_IF(E_INVALIDARG, column >= _charRow.size());
     _charRow.ClearCell(column);
-}
-
-// Routine Description:
-// - gets the text of the row as it would be shown on the screen
-// Return Value:
-// - wstring containing text for the row
-std::wstring ROW::GetText() const
-{
-    return _charRow.GetText();
-}
-
-RowCellIterator ROW::AsCellIter(const unsigned int startIndex) const
-{
-    return AsCellIter(startIndex, size() - startIndex);
-}
-
-RowCellIterator ROW::AsCellIter(const unsigned int startIndex, const unsigned int count) const
-{
-    return RowCellIterator(*this, startIndex, count);
 }
 
 UnicodeStorage& ROW::GetUnicodeStorage() noexcept
