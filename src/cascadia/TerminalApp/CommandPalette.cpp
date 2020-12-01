@@ -186,7 +186,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::_previewKeyDownHandler(IInspectable const& sender,
+    void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
                                                 Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
