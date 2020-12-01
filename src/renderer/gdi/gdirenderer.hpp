@@ -102,6 +102,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 
         std::vector<RECT> cursorInvertRects;
+        XFORM cursorInvertTransform;
 
         struct LineMetrics
         {

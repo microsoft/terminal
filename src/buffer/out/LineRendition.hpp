@@ -26,3 +26,9 @@ constexpr SMALL_RECT ScreenToBufferLine(const SMALL_RECT& line, const LineRendit
     const auto scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
     return { line.Left >> scale, line.Top, line.Right >> scale, line.Bottom };
 }
+
+constexpr SMALL_RECT BufferToScreenLine(const SMALL_RECT& line, const LineRendition lineRendition)
+{
+    const SHORT scale = lineRendition == LineRendition::SingleWidth ? 0 : 1;
+    return { line.Left << scale, line.Top, (line.Right << scale) + scale, line.Bottom };
+}

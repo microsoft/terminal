@@ -270,9 +270,13 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
     const auto& buffer = _pData->GetTextBuffer();
     if (buffer.GetSize().IsInBounds(*pcoord))
     {
-        // We then calculate the region covered by the cursor.
+        // We then calculate the region covered by the cursor. This requires
+        // converting the buffer coordinates to an equivalent range of screen
+        // cells for the cursor, taking line rendition into account.
+        const LineRendition lineRendition = buffer.GetLineRendition(pcoord->Y);
         const SHORT cursorWidth = _pData->IsCursorDoubleWidth() ? 2 : 1;
-        Viewport cursorView = Viewport::FromDimensions(*pcoord, { cursorWidth, 1 });
+        const SMALL_RECT cursorRect = { pcoord->X, pcoord->Y, pcoord->X + cursorWidth - 1, pcoord->Y };
+        Viewport cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
 
         // The region is clamped within the viewport boundaries and we only
         // trigger a redraw if the region is not empty.
@@ -989,11 +993,25 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
         // bottom of the viewport, the space that's not quite a full line in
         // height. Since we don't draw that text, we shouldn't draw the cursor
         // there either.
-        Viewport view = _pData->GetViewport();
-        if (view.IsInBounds(coordCursor))
+
+        // The cursor is never rendered as double height, so we don't care about
+        // the exact line rendition - only whether it's double width or not.
+        const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.Y);
+        const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
+
+        // We need to convert the screen coordinates of the viewport to an
+        // equivalent range of buffer cells, taking line rendition into account.
+        const auto view = ScreenToBufferLine(_pData->GetViewport().ToInclusive(), lineRendition);
+
+        // Note that we allow the X coordinate to be outside the left border by 1 position,
+        // because the cursor could still be visible if the focused character is double width.
+        const auto xInRange = coordCursor.X >= view.Left - 1 && coordCursor.X <= view.Right;
+        const auto yInRange = coordCursor.Y >= view.Top && coordCursor.Y <= view.Bottom;
+        if (xInRange && yInRange)
         {
-            // Adjust cursor to viewport
-            view.ConvertToOrigin(&coordCursor);
+            // Adjust cursor Y offset to viewport.
+            // The viewport X offset is saved in the options and handled with a transform.
+            coordCursor.Y -= view.Top;
 
             COLORREF cursorColor = _pData->GetCursorColor();
             bool useColor = cursorColor != INVALID_COLOR;
@@ -1001,6 +1019,8 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
             // Build up the cursor parameters including position, color, and drawing options
             CursorOptions options;
             options.coordCursor = coordCursor;
+            options.viewportLeft = _pData->GetViewport().Left();
+            options.lineRendition = lineRendition;
             options.ulCursorHeightPercent = _pData->GetCursorHeight();
             options.cursorPixelWidth = _pData->GetCursorPixelWidth();
             options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
