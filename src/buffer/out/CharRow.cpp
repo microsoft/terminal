@@ -105,7 +105,7 @@ void CharRow::Reset() noexcept
 {
     try
     {
-        const value_type insertVals;
+        const value_type insertVals{ UNICODE_SPACE, DbcsAttribute() };
         _data.resize(newSize, insertVals);
     }
     CATCH_RETURN();
