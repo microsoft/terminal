@@ -99,7 +99,7 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
     float _desiredSplitPosition;
 
-    uint16_t _id;
+    std::optional<uint16_t> _id;
 
     bool _lastActive{ false };
     std::optional<GUID> _profile{ std::nullopt };

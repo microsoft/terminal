@@ -655,9 +655,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // inherited from us, so the flag will be set for both children.
         _borders = _firstChild->_borders & _secondChild->_borders;
 
-        // take the control and profile of the pane that _wasn't_ closed.
+        // take the control, profile and id of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
+        _id = remainingChild->Id();
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
@@ -1493,6 +1494,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _SetupEntranceAnimation();
 
+    // Clear out our ID, only leaves should have IDs
+    _id = {};
+
     return { _firstChild, _secondChild };
 }
 
@@ -1568,11 +1572,13 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 
 // Method Description:
 // - Retrieves the ID of this pane
+// - NOTE: The caller should make sure that this pane is a leaf,
+//   otherwise the ID value will not make sense (leaves have IDs, parents do not)
 // Return Value:
 // - The ID of this pane
 uint16_t Pane::Id() noexcept
 {
-    return _id;
+    return _id.value();
 }
 
 // Method Description:
