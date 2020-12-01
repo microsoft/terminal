@@ -88,16 +88,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         Value="100"
                                         SmallChange="1"
                                         LargeChange="10"/>
-                    <ComboBox x:Uid="Profile_ColorScheme">
-                        <ComboBox.Items>
-                            <ComboBoxItem Content="Campbell"/>
-                            <ComboBoxItem Content="Campbell Powershell"/>
-                            <ComboBoxItem Content="Vintage"/>
-                            <ComboBoxItem Content="One Half Dark"/>
-                            <ComboBoxItem Content="One Half Light"/>
-                            <ComboBoxItem Content="Tango Dark"/>
-                            <ComboBoxItem Content="Tango Light"/>
-                        </ComboBox.Items>
+                    <ComboBox x:Uid="Profile_ColorScheme"
+                              ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                              SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:ColorScheme">
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
                     </ComboBox>
 
                     <StackPanel Orientation="Horizontal">
