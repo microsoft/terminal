@@ -55,6 +55,11 @@ If the profile defines an `unfocusedState`, any parameters not explicitly define
 the values from the profile itself. If the profile does not define an `unfocusedState`, then the global/default `unfocusedState` is used
 for this profile.
 
+Thus, if a user wishes for the unfocused state to look the same as the focused state for a particular profile,
+while still having a global/default unfocused state appearance, they simply need to define an emplty `unfocusedState`
+for that profile (similarly, they could define just 1 or 2 parameters if they wish for minimal changes between the focused
+and unfocused states for that profile).
+
 ## UI/UX Design
 
 Users will be able to add a new setting to their profiles that will look like this:
