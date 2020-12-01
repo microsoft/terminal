@@ -97,7 +97,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     if (_settingsClone.FindProfile(profile.Guid()))
                     {
                         // Navigate to the page with the given profile
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes()));
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
                         return;
                     }
                 }
