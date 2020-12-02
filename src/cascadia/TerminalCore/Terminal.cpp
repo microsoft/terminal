@@ -144,11 +144,6 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     _defaultCursorShape = cursorShape;
 
-    for (int i = 0; i < 16; i++)
-    {
-        _colorTable.at(i) = settings.GetColorTableEntry(i);
-    }
-
     _snapOnInput = settings.SnapOnInput();
     _altGrAliasing = settings.AltGrAliasing();
     _wordDelimiters = settings.WordDelimiters();
@@ -187,6 +182,11 @@ void Terminal::UpdateAppearance(IAppearance appearance)
 {
     _defaultFg = appearance.DefaultForeground();
     _defaultBg = appearance.DefaultBackground();
+
+    for (int i = 0; i < 16; i++)
+    {
+        _colorTable.at(i) = appearance.GetColorTableEntry(i);
+    }
 }
 
 // Method Description:

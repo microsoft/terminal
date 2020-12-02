@@ -15,6 +15,7 @@ namespace Microsoft.Terminal.TerminalControl
     // [default_interface]
     interface IAppearance
     {
+        UInt32 GetColorTableEntry(Int32 index);
         UInt32 DefaultForeground { get; set; };
         UInt32 DefaultBackground { get; set; };
         UInt32 CursorColor { get; set; };

@@ -18,5 +18,15 @@ namespace winrt::TerminalApp::implementation
         _DefaultBackground = til::color{ scheme.Background() };
         _SelectionBackground = til::color{ scheme.SelectionBackground() };
         _CursorColor = til::color{ scheme.CursorColor() };
+
+        const auto table = scheme.Table();
+        std::transform(table.cbegin(), table.cend(), _colorTable.begin(), [](auto&& color) {
+            return static_cast<uint32_t>(til::color{ color });
+        });
+    }
+
+    uint32_t AppAppearanceConfig::GetColorTableEntry(int32_t index) const noexcept
+    {
+        return _colorTable.at(index);
     }
 }

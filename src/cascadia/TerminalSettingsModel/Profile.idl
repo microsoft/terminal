@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IAppearanceConfig.idl";
 import "AppearanceConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
@@ -20,7 +21,7 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff
     };
 
-    [default_interface] runtimeclass Profile {
+    [default_interface] runtimeclass Profile : IAppearanceConfig {
         Profile();
         Profile(Guid guid);
 
@@ -99,11 +100,6 @@ namespace Microsoft.Terminal.Settings.Model
         String StartingDirectory;
         String EvaluatedStartingDirectory { get; };
 
-        Boolean HasBackgroundImagePath();
-        void ClearBackgroundImagePath();
-        String BackgroundImagePath;
-        String ExpandedBackgroundImagePath { get; };
-
         Boolean HasBackgroundImageOpacity();
         void ClearBackgroundImageOpacity();
         Double BackgroundImageOpacity;
@@ -133,26 +129,6 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearSoftwareRendering();
         Boolean SoftwareRendering;
 
-        Boolean HasColorSchemeName();
-        void ClearColorSchemeName();
-        String ColorSchemeName;
-
-        Boolean HasForeground();
-        void ClearForeground();
-        Windows.Foundation.IReference<Windows.UI.Color> Foreground;
-
-        Boolean HasBackground();
-        void ClearBackground();
-        Windows.Foundation.IReference<Windows.UI.Color> Background;
-
-        Boolean HasSelectionBackground();
-        void ClearSelectionBackground();
-        Windows.Foundation.IReference<Windows.UI.Color> SelectionBackground;
-
-        Boolean HasCursorColor();
-        void ClearCursorColor();
-        Windows.Foundation.IReference<Windows.UI.Color> CursorColor;
-
         Boolean HasHistorySize();
         void ClearHistorySize();
         Int32 HistorySize;
@@ -164,10 +140,6 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasAltGrAliasing();
         void ClearAltGrAliasing();
         Boolean AltGrAliasing;
-
-        Boolean HasCursorShape();
-        void ClearCursorShape();
-        Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
 
         Boolean HasCursorHeight();
         void ClearCursorHeight();

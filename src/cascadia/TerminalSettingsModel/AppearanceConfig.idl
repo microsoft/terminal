@@ -1,38 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IAppearanceConfig.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
-    [default_interface] runtimeclass AppearanceConfig {
+    [default_interface] runtimeclass AppearanceConfig : IAppearanceConfig {
         AppearanceConfig();
-
-        Boolean HasColorSchemeName();
-        void ClearColorSchemeName();
-        String ColorSchemeName;
-
-        Boolean HasForeground();
-        void ClearForeground();
-        Windows.Foundation.IReference<Windows.UI.Color> Foreground;
-
-        Boolean HasBackground();
-        void ClearBackground();
-        Windows.Foundation.IReference<Windows.UI.Color> Background;
-
-        Boolean HasSelectionBackground();
-        void ClearSelectionBackground();
-        Windows.Foundation.IReference<Windows.UI.Color> SelectionBackground;
-
-        Boolean HasCursorColor();
-        void ClearCursorColor();
-        Windows.Foundation.IReference<Windows.UI.Color> CursorColor;
-
-        Boolean HasCursorShape();
-        void ClearCursorShape();
-        Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
-
-        Boolean HasBackgroundImagePath();
-        void ClearBackgroundImagePath();
-        String BackgroundImagePath;
-        String ExpandedBackgroundImagePath { get; };
     }
 }

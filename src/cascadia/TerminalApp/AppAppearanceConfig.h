@@ -6,6 +6,7 @@
 #include "AppAppearanceConfig.g.h"
 #include "..\inc\cppwinrt_utils.h"
 #include <DefaultSettings.h>
+#include <conattrs.hpp>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -13,6 +14,7 @@ namespace winrt::TerminalApp::implementation
     {
         AppAppearanceConfig() = default;
         void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
+        uint32_t GetColorTableEntry(int32_t index) const noexcept;
 
         GETSET_PROPERTY(hstring, ColorSchemeName);
         GETSET_PROPERTY(uint32_t, DefaultForeground, DEFAULT_FOREGROUND_WITH_ALPHA);
@@ -23,6 +25,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(hstring, BackgroundImage);
 
     private:
+        std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
     };
 }
 
