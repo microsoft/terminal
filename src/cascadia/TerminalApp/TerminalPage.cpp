@@ -665,11 +665,19 @@ namespace winrt::TerminalApp::implementation
     {
         auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
-        // If the elevated property was provided, then maybe
+        // If the elevated property was provided, we might need to spawn this
+        // tab in another window.
         if (settings.Elevated())
         {
             const bool requestedElevation = settings.Elevated().Value();
             const bool currentlyElevated = IsElevated();
+
+            // Manually set the Profile of the NewTerminalArgs to the guid we've
+            // resolved to. If there was a profile in the NewTerminalArgs, this
+            // will be that profile's GUID. If there wasn't, then we'll use
+            // whatever the default profile's GUID is.
+            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+
             if (requestedElevation && !currentlyElevated)
             {
                 // We aren't elevated, but we want to be
@@ -682,6 +690,7 @@ namespace winrt::TerminalApp::implementation
                 _OpenUnElevatedWT(newTerminalArgs);
                 return;
             }
+            // else: the requested elevation level matched our own.
         }
 
         _CreateNewTabFromSettings(profileGuid, settings);
