@@ -9,12 +9,11 @@ issue id: #5000
 
 ## Abstract
 
-The Windows Terminal currently exists as a single process per window, with one
-connection per terminal pane (which could be an additional conpty process and
-associated client processes). This model has proven effective for the simple
-windowing we've done so far. However, in order to support scenarios like
-dragging tabs into other windows, or having one top-level window with different
-elevation levels within it, this single process model will not be sufficient.
+The Windows Terminal currently exists as a single process per window. It has one
+connection per terminal pan, which could be an additional conpty process and
+associated client processes. This model has proven effective for the simple
+windowing we've done so far. However, this single process model will not be
+enough for more complex scenarios, like dragging tabs into other windows.
 
 This spec outlines changes to the Terminal process model in order to enable the
 following scenarios:
@@ -24,9 +23,8 @@ following scenarios:
 * Single Instance Mode ([#2227])
 * Quake Mode ([#653])
 
-Also discussed as a part of this spec is the "mixed elevation" ([#1032] &
-[#632]) scenario, which is closely related to the above scenarios, and was
-investigated as a part of this re-architecture.
+Also discussed is "mixed elevation" ([#1032] & [#632]), which is closely related
+to the above scenarios, and was investigated as a part of this re-architecture.
 
 ## Inspiration
 
@@ -37,9 +35,9 @@ tabs within the browser, to help isolate the actual tabs from one another.
 attempt to reuse some resources between tabs. They do still break out the tab
 content from the actual window's process).
 
-Aditionally, the rxvt-unicode terminal emulator uses a similar client/server
-architecture, where the terminal "content" is hosted by a server process, and
-windows act as a "client" for that content.
+The rxvt-unicode terminal emulator uses a similar client/server architecture. In
+this model, the terminal "content" is hosted by a server process, and windows
+act as a "client" for that content.
 
 ## Background
 
@@ -48,11 +46,10 @@ important to understand some of the technical hurdles that need to be overcome.
 
 ### Drag and drop tabs to create new windows
 
-Another important scenario we're targeting is the ability to drag a tab out of
-the Terminal window and create a new Terminal window. Obviously, when we do
-this, we want the newly created window to be able to persist all the same state
-that the original window had for that tab. For us, that primarily means the
-buffer contents and connection state.
+An important scenario we're targeting is the ability to drag a tab out of the
+window, and create a new Terminal window. When we do this, we want the new
+window to be able to persist all the same state that the original window had for
+that tab. For us, that primarily means the buffer contents and connection state.
 
 However, _how_ do we move the terminal state to another window? The terminal
 state is all located in-memory of the thread that created the `TermControl`
@@ -65,13 +62,13 @@ background on how the scenario might work.
 
 There's really only a limited selection of things that a process could transfer
 to another with a drag and drop operation. If we wanted to use a string to
-transfer the data, we'd somehow need to serialize then entire state of the tab,
-it's tree of panes, and the state of each of the buffers in the tab, into some
-sort of string, and then have the new window deserialize that string to
-re-create the tab state. Consider that each buffer might include 32000 rows of
-80+ characters each, each with possibly RGB attributes, and you're looking at
-30MB+ of raw data to serialize and de-serialize per buffer, minimum. This sounds
-extremely fragile, if not impossible to do robustly.
+transfer the data, we'd somehow need to serialize then entire state of the tab.
+That would mean turning its tree of panes, and the state of each of the buffers
+in the tab, into some sort of string. Then, we would have the new window
+deserialize that string to re-create the tab state. Consider that each buffer
+might include 32000 rows of 80+ characters each, each with RGB attributes.  You
+are looking at 30MB+ of raw data to serialize and de-serialize per buffer,
+minimum. This sounds extremely fragile, if not impossible to do robustly.
 
 What we need is a more effective way for separate Terminal windows to to be able
 to connect to and display content that's being hosted in another process.
@@ -104,10 +101,10 @@ process looks today:
 ![figure-001](figure-001.png)
 
 Currently, the entire Windows Terminal exists as a single process composed of
-many parts. it has a top Win32 layer responsible for the window, which includes
-a UWP XAML-like App layer, which embeds many `TermControl`s, each of which
-contains the buffer and renderer, and communicates with a connection to another
-process.
+many parts. It has a top Win32 layer responsible for the window. This window
+includes a UWP XAML-like App layer, which embeds many `TermControl`s. Each of
+these contains the buffer and renderer, and communicates with a connection to
+another process.
 
 The primary concept introduced by this spec is the idea of two types of process,
 which will work together to create a single Terminal window. These processes
@@ -116,14 +113,14 @@ will be referred to as the "Window Process" and the "Content Process".
   the desktop, and accepting input from the user. This is a window which hosts
   our XAML content, and the window which the user interacts with.
 * A **Content Process** is a process which hosts a single terminal instance.
-  This is the process that hosts the terminal buffer, state machine, connection,
-  and is also responsible for the `Renderer` and `DxEngine`.
+  This is the process that hosts the terminal buffer, state machine, and
+  connection. It is also responsible for the `Renderer` and `DxEngine`.
 
 These two types of processes will work together to present both the UI of the
 Windows Terminal app, as well as the contents of the terminal buffers. A single
-window process may be in communication with multiple content processes - one per
-terminal instance. That means that each and every `TermControl` in a window
-process will be hosted in a separate process.
+window process may be in communication with many content processes - one per
+terminal instance. That means that each `TermControl` in a window process will
+be hosted in a separate process.
 
 The window process will be full of "thin" `TermControl`s - controls which are
 only the XAML layer and a WinRT object which is hosted by the content process.
@@ -138,15 +135,16 @@ As a broad outline, whenever the window wants to create a terminal, the flow
 will be something like the following:
 
 1. A window process will spawn a new content process, with a unique ID.
-2. The window process will attach itself to the content process, indicating that
-   it (the window process) is the content process's hosting window.
-3. When the content process creates it's swap chain, it will raise an event
-   which the window process will use to connect that swap chain to the window
-   process's `SwapChainPanel`.
-4. The content process will read output from the connection and draw to the swap chain. The
-   contents that are rendered to the swap chain will be visible in the window
-   process's `SwapChainPanel`, because they share the same underlying kernel
-   object.
+2. The window process will attach itself to the content process. It will
+   indicate that it (the window process) is the content process's hosting
+   window.
+3. When the content process creates its swap chain, it will raise an event. The
+   window process will use to connect that swap chain to the window process's
+   `SwapChainPanel`.
+4. The content process will read output from the connection and draw to the swap
+   chain. The contents that are rendered to the swap chain will be visible in
+   the window process's `SwapChainPanel`. This is because they share the same
+   underlying kernel object.
 
 ![figure-003](figure-003.png)
 
@@ -194,42 +192,40 @@ auto myClass = create_instance<winrt::MyClass>(MyClassGUID, CLSCTX_LOCAL_SERVER)
 
 We're going to be using that system a little differently here. Instead of using
 a GUID to represent a single _Class_, we're going to use the GUID to uniquely
-identify _content processes_. Each content process will receive a unique GUID
-when it is created, and it will register as the server for that GUID. Then, any
-window process will be able to connect to that specific content process strictly
-by GUID. Because each GUID is unique to each content process, any time any
-client calls `create_instance<>(theGuid, ...)`, it will uniquely attempt to
-connect to the content process hosting `theGuid`.
+identify _content processes_. Each content process will receive a unique GUID on
+creation. It will register as the server for that GUID. Any window process will
+be able to connect to that specific content process strictly by GUID. Because
+each GUID is unique to each content process, any time any client calls
+`create_instance<>(theGuid, ...)`, it will uniquely attempt to connect to the
+content process hosting `theGuid`.
 
-This means that if we wanted to have a second window process connect to the
+If we wanted to have a second window process connect to the
 _same_ content process as another window, all it needs is the content process's
 GUID.
 
 Now that we have a WinRT object that the content process hosts, we can have the
 window and content process interact using that interface. The next important
 thing to communicate between these processes is the swapchain. The swapchain
-will need to be created by the content process, but also we need to be able to
-communicate the `HANDLE` to that swapchain out to the window process, so the
-window process can attach that swapchain to the `SwapChainPanel` in the window.
+will need to be created by the content process. We also need to be able to
+communicate the `HANDLE` to that swapchain out to the window process. The window process needs to be able to attach that swapchain to the `SwapChainPanel` in the window.
 
-This is a little tricky, because WinRT does not natively expose a `HANDLE` type
-which would allow us to easily pass the `HANDLE` between these processes.
-Instead we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT
-boundary, and cast it back to a `HANDLE` when we want to use it.
+This is tricky, because WinRT does not natively expose a `HANDLE` type. That
+would allow us to easily pass the `HANDLE` between these processes. Instead
+we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT boundary,
+and cast it back to a `HANDLE` when we want to use it.
 
 Instead, the window will always need to be the one responsible for calling
 `DuplicateHandle`. Fortunately, the `DuplicateHandle` function does allow a
 caller to duplicate from another process into your own process.
 
-So when the content process needs to create a new swapchain, it'll raise an
-event that the window process can listen for to indicate that the swapchain
-changed. The window will then query for the content process's PID (which it will
-use to create a handle to the content process), and the window will query the
-current value of the content process's `HANDLE` to the swapchain. The window
-will then duplicate that `HANDLE` into it's own process space. Now that the
-window has a handle to the swapchain, it can use
-[`ISwapChainPanelNative2::SetSwapChainHandle`] to set the SwapChainPanel to use
-the same swapchain.
+When the content process needs to create a new swapchain, it'll raise an event.
+The window process can listen for that event to indicate that the swapchain
+changed. The window will then query for the content process's PID and create a
+handle to the content process. The window will query the current value of the
+content process's `HANDLE` to the swapchain. The window will then duplicate that
+`HANDLE` into it's own process space. Now that the window has a handle to the
+swapchain, it can use [`ISwapChainPanelNative2::SetSwapChainHandle`] to set the
+SwapChainPanel to use the same swapchain.
 
 This will allow the content process to draw to the swapchain, and the window
 process to render that same swapchain.
@@ -242,16 +238,16 @@ is the GUID of the content process, it becomes fairly trivial to be able to
 
 ![drop-tab-on-existing-window](drop-tab-on-existing-window.png)
 
-When a drag/drop operation happens, the payload of the event will simply contain
-the structure of the tree of panes, and the GUIDs of the content processes that
-make up the leaf nodes of the tree. The receiving window process will then be
-able to use that tree to be able to re-create a similar pane structure in its
-window, and use the GUIDs to be able to connect to the content processes for the
-terminals in that tab.
+When a drag/drop operation happens, the payload of the event will contain the
+structure of the tree of panes. This tree will contain the GUIDs of the content
+processes that make up the leaf nodes of the tree. The receiving window process
+will then be able to use that tree to be able to re-create a similar pane
+structure in its window. It will use the GUIDs to be able to connect to the
+content processes for the terminals in that tab.
 
-The terminal buffer never needs to move from one process to another - it always
-stays in just a single content process. The only thing that changes is the
-window process which is rendering the content process's swapchain.
+The terminal buffer never needs to move from one process to another.  It always
+stays in a single content process. The only thing that changes is which window
+process is rendering the content process's swapchain.
 
 When a new window is created from a torn-out tab in this manner, we will want to
 ensure that the created window maintains the same maximized state as the origin
@@ -281,7 +277,7 @@ this scenario is not possible to do safely after all. There are numerous
 technical difficulties involved, and each with their own security risks. At the
 end of the day, the team wouldn't be comfortable shipping a mixed-elevation
 solution, because there's simply no way for us to be confident that we haven't
-introduced an escalation-of-privledge vector utilizing the Terminal. No matter
+introduced an escalation-of-privlege vector utilizing the Terminal. No matter
 how small the attack surface might be, we wouldn't be confident that there are
 _no_ vectors for an attack.
 
@@ -321,7 +317,7 @@ Some things we considered during this investigation:
     may be due to a lack of Packaged COM support for mixed elevation levels.
     Even if this approach did end up working, we would still need to be
     responsible for securing the elevated windows so that an unelevated attacker
-    couldn't hijack a content process and trigger unexepected code in the window
+    couldn't hijack a content process and trigger unexpected code in the window
     process. We didn't feel confident that we could properly secure this channel
     either.
 

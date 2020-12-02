@@ -2017,6 +2017,7 @@ runuia
 runut
 rvalue
 RVERTICAL
+rxvt
 RWIN
 safearray
 SAFECAST
