@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "..\inc\VtIoModes.hpp"
-#include "..\inc\ITerminalOwner.hpp"
-#include "..\renderer\vt\vtrenderer.hpp"
+#include "../inc/VtIoModes.hpp"
+#include "../inc/ITerminalOwner.hpp"
+#include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
 

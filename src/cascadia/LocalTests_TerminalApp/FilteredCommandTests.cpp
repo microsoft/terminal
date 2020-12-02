@@ -24,6 +24,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(VerifyHighlighting);
         TEST_METHOD(VerifyWeight);
         TEST_METHOD(VerifyCompare);
+        TEST_METHOD(VerifyCompareIgnoreCase);
     };
 
     void FilteredCommandTests::VerifyHighlighting()
@@ -266,6 +267,40 @@ namespace TerminalAppLocalTests
 
             VERIFY_IS_TRUE(filteredCommand->Weight() < filteredCommand2->Weight()); // Second command gets more points due to the beginning of the word
             VERIFY_IS_FALSE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
+        }
+    }
+
+    void FilteredCommandTests::VerifyCompareIgnoreCase()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                }
+            ],
+            "keybindings": [
+                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "a" },
+                { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "horizontal" }, "name": "B" }
+            ]
+        })" };
+
+        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        const auto commands = settings.GlobalSettings().Commands();
+        VERIFY_ARE_EQUAL(2u, commands.Size());
+
+        const auto command = commands.Lookup(L"a");
+        const auto command2 = commands.Lookup(L"B");
+        {
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command2);
+
+            VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
+            VERIFY_IS_TRUE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
         }
     }
 }

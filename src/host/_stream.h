@@ -17,7 +17,7 @@ Revision History:
 
 #pragma once
 
-#include "..\server\IWaitRoutine.h"
+#include "../server/IWaitRoutine.h"
 #include "writeData.hpp"
 
 /*++

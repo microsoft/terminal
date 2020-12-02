@@ -482,54 +482,6 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
-#pragma region BackgroundImageAlignment
-bool Profile::HasBackgroundImageAlignment() const noexcept
-{
-    return _BackgroundImageAlignment.has_value();
-}
-
-void Profile::ClearBackgroundImageAlignment() noexcept
-{
-    _BackgroundImageAlignment = std::nullopt;
-}
-
-const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
-}
-
-void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
-    }
-}
-
-const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
-}
-
-void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
-    }
-}
-#pragma endregion
-
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:

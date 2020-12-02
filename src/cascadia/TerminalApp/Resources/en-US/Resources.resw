@@ -245,6 +245,10 @@
     <value>Failed to expand a command with "iterateOn" set. This command will be ignored.</value>
     <comment>{Locked="\"iterateOn\""} </comment>
   </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>Found a command with an invalid "colorScheme". This command will be ignored. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>

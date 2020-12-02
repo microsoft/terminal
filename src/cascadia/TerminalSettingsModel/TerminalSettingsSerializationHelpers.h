@@ -76,21 +76,19 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     }
 };
 
-JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
     // reduce repetition
-    using HA = ::winrt::Windows::UI::Xaml::HorizontalAlignment;
-    using VA = ::winrt::Windows::UI::Xaml::VerticalAlignment;
     static constexpr std::array<pair_type, 9> mappings = {
-        pair_type{ "center", std::make_tuple(HA::Center, VA::Center) },
-        pair_type{ "topLeft", std::make_tuple(HA::Left, VA::Top) },
-        pair_type{ "bottomLeft", std::make_tuple(HA::Left, VA::Bottom) },
-        pair_type{ "left", std::make_tuple(HA::Left, VA::Center) },
-        pair_type{ "topRight", std::make_tuple(HA::Right, VA::Top) },
-        pair_type{ "bottomRight", std::make_tuple(HA::Right, VA::Bottom) },
-        pair_type{ "right", std::make_tuple(HA::Right, VA::Center) },
-        pair_type{ "top", std::make_tuple(HA::Center, VA::Top) },
-        pair_type{ "bottom", std::make_tuple(HA::Center, VA::Bottom) }
+        pair_type{ "center", ValueType::Horizontal_Center | ValueType::Vertical_Center },
+        pair_type{ "topLeft", ValueType::Horizontal_Left | ValueType::Vertical_Top },
+        pair_type{ "bottomLeft", ValueType::Horizontal_Left | ValueType::Vertical_Bottom },
+        pair_type{ "left", ValueType::Horizontal_Left | ValueType::Vertical_Center },
+        pair_type{ "topRight", ValueType::Horizontal_Right | ValueType::Vertical_Top },
+        pair_type{ "bottomRight", ValueType::Horizontal_Right | ValueType::Vertical_Bottom },
+        pair_type{ "right", ValueType::Horizontal_Right | ValueType::Vertical_Center },
+        pair_type{ "top", ValueType::Horizontal_Center | ValueType::Vertical_Top },
+        pair_type{ "bottom", ValueType::Horizontal_Center | ValueType::Vertical_Bottom }
     };
 };
 
@@ -398,4 +396,13 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
     {
         return BaseEnumMapper::CanConvert(json) || json.isBool();
     }
+};
+
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "forward", ValueType::Forward },
+        pair_type{ "backward", ValueType::Backward },
+    };
 };
