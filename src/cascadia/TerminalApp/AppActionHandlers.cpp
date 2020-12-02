@@ -167,6 +167,20 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleScrollHome(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        _ScrollHome(ScrollUp);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollEnd(const IInspectable& /*sender*/,
+        const ActionEventArgs& args)
+    {
+        _ScrollHome(ScrollDown);
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {

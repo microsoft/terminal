@@ -102,7 +102,16 @@ namespace winrt::TerminalApp::implementation
             _ScrollDownPageHandlers(*this, eventArgs);
             break;
         }
-
+        case ShortcutAction::ScrollHome:
+        {
+            _ScrollHomeHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::ScrollEnd:
+        {
+            _ScrollEndHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::NextTab:
         {
             _NextTabHandlers(*this, eventArgs);

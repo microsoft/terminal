@@ -896,6 +896,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch->ScrollHome({ this, &TerminalPage::_HandleScrollHome });
+        _actionDispatch->ScrollEnd({ this, &TerminalPage::_HandleScrollEnd });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
         _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
@@ -1665,6 +1667,22 @@ namespace winrt::TerminalApp::implementation
             const auto control = _GetActiveControl();
             const auto termHeight = control.GetViewHeight();
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
+            terminalTab->Scroll(scrollDelta);
+        }
+    }
+
+    void TerminalPage::_ScrollHome(ScrollDirection scrollDirection)
+    {
+        auto indexOpt = _GetFocusedTabIndex();
+        // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
+        if (!indexOpt)
+        {
+            return;
+        }
+
+        if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
+        {
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, UINT16_MAX);
             terminalTab->Scroll(scrollDelta);
         }
     }
