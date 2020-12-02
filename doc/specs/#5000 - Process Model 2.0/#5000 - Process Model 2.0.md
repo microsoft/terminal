@@ -277,7 +277,7 @@ this scenario is not possible to do safely after all. There are numerous
 technical difficulties involved, and each with their own security risks. At the
 end of the day, the team wouldn't be comfortable shipping a mixed-elevation
 solution, because there's simply no way for us to be confident that we haven't
-introduced an escalation-of-privlege vector utilizing the Terminal. No matter
+introduced an escalation-of-privilege vector utilizing the Terminal. No matter
 how small the attack surface might be, we wouldn't be confident that there are
 _no_ vectors for an attack.
 
@@ -1195,10 +1195,10 @@ prompt the user for permission, but that's an acceptable user experience.
 [#4000]: https://github.com/microsoft/terminal/issues/4000
 [#7972]: https://github.com/microsoft/terminal/pull/7972
 [#961]: https://github.com/microsoft/terminal/issues/961
-[`30b8335`]: https://github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
+[`30b8335`]: https://www.github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
 [#8135]: https://github.com/microsoft/terminal/pull/8135
 
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
-[Elevation QOL Improvements]: https://github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md?rgh-link-date=2020-12-01T22%3A50%3A26Z
+[Elevation QOL Improvements]: https://www.github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md
