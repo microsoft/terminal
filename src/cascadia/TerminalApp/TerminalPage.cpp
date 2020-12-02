@@ -599,6 +599,18 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton, options);
     }
 
+    fire_and_forget _OpenElevatedTab()
+    {
+        co_await winrt::resume_background();
+        ShellExecute(nullptr,
+                     L"runas",
+                     L"wt.exe",
+                     L"new-tab --tabColor #ff0000 ",
+                     nullptr,
+                     SW_SHOWNORMAL);
+        co_return;
+    }
+
     // Method Description:
     // - Open a new tab. This will create the TerminalControl hosting the
     //   terminal, and add a new Tab to our list of tabs. The method can
@@ -611,6 +623,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
+        if (newTerminalArgs.Elevated())
+        {
+            _OpenElevatedTab();
+            return;
+        }
+
         auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
         _CreateNewTabFromSettings(profileGuid, settings);
