@@ -644,12 +644,129 @@ namespace winrt::TerminalApp::implementation
         co_return;
     }
 
+    HRESULT _JustDoExactlyTheRaymondChenThingHesAlwaysRight()
+    {
+        HWND hwnd = GetShellWindow();
+
+        DWORD pid;
+        GetWindowThreadProcessId(hwnd, &pid);
+
+        HANDLE process =
+            OpenProcess(PROCESS_CREATE_PROCESS, FALSE, pid);
+
+        SIZE_T size;
+        InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
+        auto p = (PPROC_THREAD_ATTRIBUTE_LIST) new char[size];
+
+        InitializeProcThreadAttributeList(p, 1, 0, &size);
+        UpdateProcThreadAttribute(p, 0, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &process, sizeof(process), nullptr, nullptr);
+
+        wchar_t cmd[] = L"C:\\Windows\\System32\\cmd.exe";
+        STARTUPINFOEX siex = {};
+        siex.lpAttributeList = p;
+        siex.StartupInfo.cb = sizeof(siex);
+        PROCESS_INFORMATION pi;
+
+        CreateProcessW(cmd, cmd, nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE | EXTENDED_STARTUPINFO_PRESENT, nullptr, nullptr, &siex.StartupInfo, &pi);
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        delete[](char*) p;
+        CloseHandle(process);
+        return 0;
+    }
+
+    //     HRESULT _ActuallyOpenUnelevatedWindow(const NewTerminalArgs& newTerminalArgs)
+    //     {
+    //         wil::unique_hwnd hwnd{ GetShellWindow() };
+    //         RETURN_LAST_ERROR_IF(!hwnd);
+
+    //         // GetWindowThreadProcessId returns the identifier of the thread that
+    //         // created the window. We don't need that.
+    //         DWORD pid;
+    //         GetWindowThreadProcessId(hwnd.get(), &pid);
+
+    //         wil::unique_handle process{ OpenProcess(PROCESS_CREATE_PROCESS, FALSE, pid) };
+    //         RETURN_LAST_ERROR_IF(!process);
+
+    //         STARTUPINFOEX siEx{ 0 };
+    //         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
+
+    //         SIZE_T size;
+    //         InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
+
+    //         // auto p = (PPROC_THREAD_ATTRIBUTE_LIST)new char[size];
+    // #pragma warning(suppress : 26414) // We don't move/touch this smart pointer, but we have to allocate strangely for the adjustable size list.
+    //         auto attrList{ std::make_unique<std::byte[]>(size) };
+    // #pragma warning(suppress : 26490) // We have to use reinterpret_cast because we allocated a byte array as a proxy for the adjustable size list.
+    //         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList.get());
+
+    //         // InitializeProcThreadAttributeList(p, 1, 0, &size);
+    //         RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
+    //         auto cleanupAttributes = wil::scope_exit([&siEx]() {
+    //             DeleteProcThreadAttributeList(siEx.lpAttributeList);
+    //         });
+
+    //         RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
+    //                                                              0,
+    //                                                              PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
+    //                                                              process.get(),
+    //                                                              sizeof(HANDLE),
+    //                                                              nullptr,
+    //                                                              nullptr));
+
+    //         wchar_t cmd[] = L"C:\\Windows\\System32\\cmd.exe";
+    //         // STARTUPINFOEX siex = {};
+    //         // siex.lpAttributeList = p;
+    //         // siex.StartupInfo.cb = sizeof(siex);
+    //         wil::unique_process_information pi;
+
+    //         // winrt::hstring cmdline{ fmt::format(L"{} new-tab {}",
+    //         //                                     GetWtExePath().c_str(),
+    //         //                                     newTerminalArgs.ToCommandline().c_str()) };
+    //         auto wtExeCommandline{ fmt::format(L"{} new-tab {}",
+    //                                            GetWtExePath().c_str(),
+    //                                            newTerminalArgs.ToCommandline()) };
+    //         std::wstring cmdline{ wtExeCommandline }; // mutable copy -- required for CreateProcessW
+
+    //         // RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+    //         //                                           cmdline.data(),
+    //         //                                           nullptr,
+    //         //                                           nullptr,
+    //         //                                           FALSE, // bInheritHandles
+    //         //                                           EXTENDED_STARTUPINFO_PRESENT,
+    //         //                                           nullptr,
+    //         //                                           nullptr,
+    //         //                                           &siEx.StartupInfo,
+    //         //                                           &pi));
+
+    //         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(cmd,
+    //                                                   cmd,
+    //                                                   nullptr,
+    //                                                   nullptr,
+    //                                                   FALSE, // bInheritHandles
+    //                                                   EXTENDED_STARTUPINFO_PRESENT,
+    //                                                   nullptr,
+    //                                                   nullptr,
+    //                                                   &siEx.StartupInfo,
+    //                                                   &pi));
+
+    //         // CloseHandle(pi.hProcess);
+    //         // CloseHandle(pi.hThread);
+    //         // delete[](char*) p;
+    //         // DeleteProcThreadAttributeList(siEx.lpAttributeList);
+    //         // CloseHandle(process);
+    //         // return 0;
+    //         return S_OK;
+    //     }
+
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget _OpenUnElevatedWT(const NewTerminalArgs newTerminalArgs)
+    winrt::fire_and_forget _OpenUnElevatedWT(const NewTerminalArgs newTerminalArgs)
     {
         co_await winrt::resume_background();
-        // TODO:
+        // LOG_IF_FAILED(_ActuallyOpenUnelevatedWindow(newTerminalArgs));
+        LOG_IF_FAILED(_JustDoExactlyTheRaymondChenThingHesAlwaysRight());
         co_return;
     }
 
