@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-10-30
-last updated: 2020-11-02
+last updated: 2020-12-02
 issue id: #4472
 ---
 
@@ -37,7 +37,7 @@ Spec]. As a quick summary:
   The Monarch is picked randomly from the Terminal windows, and there is only
   ever one Monarch process at a time.
 * Peasants can communicate with the monarch when certain state changes (such as
-  their window being activated), and the monarch can send commands to any of hte
+  their window being activated), and the monarch can send commands to any of the
   peasants.
 
 This architecture will be used to enable each of the following scenarios.
@@ -157,9 +157,9 @@ command:
 Run these commands in the given Windows Terminal session. This enables opening
 new tabs, splits, etc. in already running Windows Terminal windows.
 * If `session-id` is `0`, run the given commands in _the  current window_
-* If `session-id` is not the ID of any exsiting window, then run the commands in
+* If `session-id` is not the ID of any existing window, then run the commands in
   a _new_ Terminal window.
-* If `session-id` is ommitted, then obey the value of `glomToLastWindow` when
+* If `session-id` is omitted, then obey the value of `glomToLastWindow` when
   determining which window to run the command in.
 
 _Whenever_ `wt.exe` is started, it must _always_ pass the provided commandline
@@ -362,8 +362,8 @@ One elevated, and the other unelevated.
 
 This does mean that single instance mode won't _really_ work for users in
 mixed-elevation scenarios. There'll be a monarch for the unelevated window, and
-a separatemonarch for the elevated one. This is acceptable, given the assumption
-that windows cannot mix elevation levels.
+a separate monarch for the elevated one. This is acceptable, given the
+assumption that windows cannot mix elevation levels.
 
 There will also be some edge cases when handling the commandline that will need
 special care. Say the user wanted to open a new tab in the elevated window, from
