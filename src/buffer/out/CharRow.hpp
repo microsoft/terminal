@@ -24,6 +24,7 @@ Revision History:
 #include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
 #include "UnicodeStorage.hpp"
+#include "boost/container/small_vector.hpp"
 
 class ROW;
 
@@ -49,8 +50,9 @@ class CharRow final
 public:
     using glyph_type = typename wchar_t;
     using value_type = typename CharRowCell;
-    using iterator = typename std::vector<value_type>::iterator;
-    using const_iterator = typename std::vector<value_type>::const_iterator;
+    using iterator = typename boost::container::small_vector_base<value_type>::iterator;
+    using const_iterator = typename boost::container::small_vector_base<value_type>::const_iterator;
+    using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
     using reference = typename CharRowCellReference;
 
     CharRow(size_t rowWidth, ROW* const pParent);
@@ -101,7 +103,7 @@ protected:
     bool _doubleBytePadded;
 
     // storage for glyph data and dbcs attributes
-    std::vector<value_type> _data;
+    boost::container::small_vector<value_type, 120> _data;
 
     // ROW that this CharRow belongs to
     ROW* _pParent;

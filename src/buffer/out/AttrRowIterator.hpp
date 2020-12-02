@@ -15,6 +15,7 @@ Author(s):
 
 #pragma once
 
+#include "boost/container/small_vector.hpp"
 #include "TextAttribute.hpp"
 #include "TextAttributeRun.hpp"
 
@@ -51,7 +52,7 @@ public:
     const TextAttribute& operator*() const;
 
 private:
-    std::vector<TextAttributeRun>::const_iterator _run;
+    boost::container::small_vector_base<TextAttributeRun>::const_iterator _run;
     const ATTR_ROW* _pAttrRow;
     size_t _currentAttributeIndex; // index of TextAttribute within the current TextAttributeRun
     bool _exceeded;
