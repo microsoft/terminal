@@ -28,6 +28,10 @@ void createExistingObjectApp(int /*argc*/, char** argv)
     }
 
     winrt::ScratchWinRTServer::HostClass host{ nullptr };
+
+    const bool doTheElevationThing = false;
+
+    if (doTheElevationThing)
     {
         HANDLE hProcessToken;
         auto processTokenCleanup = wil::scope_exit([&] { CloseHandle(hProcessToken); });
@@ -140,14 +144,14 @@ void createExistingObjectApp(int /*argc*/, char** argv)
         //     printf("ImpersonateLoggedOnUser() failed, error %u.\n", GetLastError());
         //     exit(-1);
         // }
-
-        printf("Calling create_instance...\n");
-
-        host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
-                                                                     // CLSCTX_LOCAL_SERVER);
-                                                                     CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING);
-        printf("Done\n");
     }
+
+    printf("Calling create_instance...\n");
+
+    host = create_instance<winrt::ScratchWinRTServer::HostClass>(guidFromCmdline,
+                                                                 // CLSCTX_LOCAL_SERVER);
+                                                                 CLSCTX_LOCAL_SERVER | CLSCTX_ENABLE_CLOAKING);
+    printf("Done\n");
 
     if (!host)
     {

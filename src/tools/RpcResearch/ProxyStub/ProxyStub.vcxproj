@@ -153,34 +153,42 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
-    <ClInclude Include="IScratch_h.h" />
-    <ClInclude Include="ICalculatorComponent_h.h" />
+    <ClInclude Include="ICalculatorComponent_h.h">
+      <DependentUpon>ICalculatorComponent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dlldata.c" />
+    <ClCompile Include="dlldata.c">
+      <DependentUpon>ICalculatorComponent.idl</DependentUpon>
+      <DependentUpon>CalculatorComponent.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="IScratch_i.c" />
-    <ClCompile Include="IScratch_p.c" />
-    <ClCompile Include="ICalculatorComponent_i.c" />
-    <ClCompile Include="ICalculatorComponent_p.c" />
-    <ClCompile Include="CalculatorComponent_i.c" />
+    <ClCompile Include="ICalculatorComponent_i.c">
+      <DependentUpon>ICalculatorComponent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ICalculatorComponent_p.c">
+      <DependentUpon>ICalculatorComponent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="CalculatorComponent_i.c">
+      <DependentUpon>CalculatorComponent.idl</DependentUpon>
+    </ClCompile>
     <!-- <ClCompile Include="WindowBroker_i.c" /> -->
     <!-- <ClCompile Include="CalculatorComponent_p.c" /> -->
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
+
   <ItemGroup>
-    <Midl Include="IScratch.idl" />
     <Midl Include="ICalculatorComponent.idl" />
     <Midl Include="CalculatorComponent.idl" />
   </ItemGroup>
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <!-- <PreprocessorDefinitions>PROXY_CLSID=CLSID_ProxyStubID;REGISTER_PROXY_DLL;$(PreprocessorDefinitions)</PreprocessorDefinitions> -->
-      <PreprocessorDefinitions>PROXY_CLSID=CLSID_ProxyStubID;$(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PROXY_CLSID=CLSID_ProxyStubID;REGISTER_PROXY_DLL;$(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- <PreprocessorDefinitions>PROXY_CLSID=CLSID_ProxyStubID;$(PreprocessorDefinitions)</PreprocessorDefinitions> -->
     </ClCompile>
     <Link>
       <AdditionalDependencies>Rpcrt4.lib;RuntimeObject.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>

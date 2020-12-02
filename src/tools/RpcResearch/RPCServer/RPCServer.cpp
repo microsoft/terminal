@@ -2,8 +2,7 @@
 #include "pch.h"
 
 #include <conio.h>
-#include "ScratchImpl.h"
-#include "CalculatorComponent.h"
+#include "WindowBroker.h"
 
 using namespace Microsoft::WRL;
 

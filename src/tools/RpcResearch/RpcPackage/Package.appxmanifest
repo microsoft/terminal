@@ -60,20 +60,36 @@
         <com:Extension Category="windows.comInterface">
             <com:ComInterface>
                 <com:ProxyStub Id="1111d2f1-1c69-4c91-949e-12345a85bdc5" DisplayName="ProxyStub" Path="ProxyStub.dll"/>
-                <com:Interface Id="BB64926F-1111-470D-BB8A-3D2CC4B035E4" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/> <!-- IScratch -->
-                <com:Interface Id="0DBABB94-CE99-42F7-ACBD-E698B2332C60" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/> <!-- ICalculatorComponent -->
-                <com:Interface Id="4df20d16-8082-4d1a-bb24-f636e4985cfd" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/> <!-- IContentProc -->
-                <com:Interface Id="378a1c59-570e-404f-93a9-eda91de865ff" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/> <!-- IWindowProc -->
-                <com:Interface Id="782fad04-badb-4021-a857-06abcaaa3d62" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/> <!-- IWindowBroker -->
+
+                <!-- IScratch -->
+                <!-- <com:Interface Id="BB64926F-1111-470D-BB8A-3D2CC4B035E4" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>  -->
+
+                <!-- ICalculatorComponent -->
+                <!-- <com:Interface Id="0DBABB94-CE99-42F7-ACBD-E698B2332C60" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>  -->
+
+                <!-- IContentProc -->
+                <com:Interface Id="4df20d16-8082-4d1a-bb24-f636e4985cfd" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>
+
+                <!-- IWindowProc -->
+                <com:Interface Id="378a1c59-570e-404f-93a9-eda91de865ff" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>
+
+                <!-- IWindowBroker -->
+                <com:Interface Id="782fad04-badb-4021-a857-06abcaaa3d62" ProxyStubClsid="1111d2f1-1c69-4c91-949e-12345a85bdc5"/>
             </com:ComInterface>
         </com:Extension>
 
         <com:Extension Category="windows.comServer">
             <com:ComServer>
                 <com:ExeServer DisplayName="RpcServerExe" Executable="RpcServer.exe">
-                    <com:Class Id="E68F5EDD-2222-4E72-A10B-4067ED8E85F2"/> <!-- ScratchImpl -->
-                    <com:Class Id="E68F5EDD-6257-4E72-A10B-4067ED8E85F2"/> <!-- CalculatorComponent -->
-                    <com:Class Id="c4e46d11-dd74-43e8-a4b9-d0f789ad3751"/> <!-- WindowBroker -->
+
+                    <!-- ScratchImpl -->
+                    <!-- <com:Class Id="E68F5EDD-2222-4E72-A10B-4067ED8E85F2"/>  -->
+
+                    <!-- CalculatorComponent -->
+                    <!-- <com:Class Id="E68F5EDD-6257-4E72-A10B-4067ED8E85F2"/>  -->
+
+                    <!-- WindowBroker -->
+                    <com:Class Id="c4e46d11-dd74-43e8-a4b9-d0f789ad3751"/>
                 </com:ExeServer>
             </com:ComServer>
         </com:Extension>
