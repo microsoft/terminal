@@ -59,7 +59,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 
-static const winrt::hstring DesktopWallpaperEnum{ L"DesktopWallpaper" };
+static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
 Profile::Profile()
 {
@@ -70,47 +70,98 @@ Profile::Profile(guid guid) :
 {
 }
 
-winrt::com_ptr<Profile> Profile::Copy() const
+winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };
-    profile->_Name = _Name;
-    profile->_Source = _Source;
-    profile->_Hidden = _Hidden;
-    profile->_Icon = _Icon;
-    profile->_CloseOnExit = _CloseOnExit;
-    profile->_TabTitle = _TabTitle;
-    profile->_TabColor = _TabColor;
-    profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
-    profile->_UseAcrylic = _UseAcrylic;
-    profile->_AcrylicOpacity = _AcrylicOpacity;
-    profile->_ScrollState = _ScrollState;
-    profile->_FontFace = _FontFace;
-    profile->_FontSize = _FontSize;
-    profile->_FontWeight = _FontWeight;
-    profile->_Padding = _Padding;
-    profile->_Commandline = _Commandline;
-    profile->_StartingDirectory = _StartingDirectory;
-    profile->_BackgroundImagePath = _BackgroundImagePath;
-    profile->_BackgroundImageOpacity = _BackgroundImageOpacity;
-    profile->_BackgroundImageStretchMode = _BackgroundImageStretchMode;
-    profile->_AntialiasingMode = _AntialiasingMode;
-    profile->_RetroTerminalEffect = _RetroTerminalEffect;
-    profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
-    profile->_SoftwareRendering = _SoftwareRendering;
-    profile->_ColorSchemeName = _ColorSchemeName;
-    profile->_Foreground = _Foreground;
-    profile->_Background = _Background;
-    profile->_SelectionBackground = _SelectionBackground;
-    profile->_CursorColor = _CursorColor;
-    profile->_HistorySize = _HistorySize;
-    profile->_SnapOnInput = _SnapOnInput;
-    profile->_AltGrAliasing = _AltGrAliasing;
-    profile->_CursorShape = _CursorShape;
-    profile->_CursorHeight = _CursorHeight;
-    profile->_Guid = _Guid;
-    profile->_ConnectionType = _ConnectionType;
-    profile->_BackgroundImageAlignment = _BackgroundImageAlignment;
+    profile->_Guid = source->_Guid;
+    profile->_Name = source->_Name;
+    profile->_Source = source->_Source;
+    profile->_Hidden = source->_Hidden;
+    profile->_Icon = source->_Icon;
+    profile->_CloseOnExit = source->_CloseOnExit;
+    profile->_TabTitle = source->_TabTitle;
+    profile->_TabColor = source->_TabColor;
+    profile->_SuppressApplicationTitle = source->_SuppressApplicationTitle;
+    profile->_UseAcrylic = source->_UseAcrylic;
+    profile->_AcrylicOpacity = source->_AcrylicOpacity;
+    profile->_ScrollState = source->_ScrollState;
+    profile->_FontFace = source->_FontFace;
+    profile->_FontSize = source->_FontSize;
+    profile->_FontWeight = source->_FontWeight;
+    profile->_Padding = source->_Padding;
+    profile->_Commandline = source->_Commandline;
+    profile->_StartingDirectory = source->_StartingDirectory;
+    profile->_BackgroundImagePath = source->_BackgroundImagePath;
+    profile->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
+    profile->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
+    profile->_AntialiasingMode = source->_AntialiasingMode;
+    profile->_RetroTerminalEffect = source->_RetroTerminalEffect;
+    profile->_ForceFullRepaintRendering = source->_ForceFullRepaintRendering;
+    profile->_SoftwareRendering = source->_SoftwareRendering;
+    profile->_ColorSchemeName = source->_ColorSchemeName;
+    profile->_Foreground = source->_Foreground;
+    profile->_Background = source->_Background;
+    profile->_SelectionBackground = source->_SelectionBackground;
+    profile->_CursorColor = source->_CursorColor;
+    profile->_HistorySize = source->_HistorySize;
+    profile->_SnapOnInput = source->_SnapOnInput;
+    profile->_AltGrAliasing = source->_AltGrAliasing;
+    profile->_CursorShape = source->_CursorShape;
+    profile->_CursorHeight = source->_CursorHeight;
+    profile->_BellStyle = source->_BellStyle;
+    profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
+    profile->_ConnectionType = source->_ConnectionType;
+
     return profile;
+}
+
+// Method Description:
+// - Creates a copy of the inheritance graph by performing a depth-first traversal recursively.
+//   Profiles are recorded as visited via the "visited" parameter.
+//   Unvisited Profiles are copied into the "cloneGraph" parameter, then marked as visited.
+// Arguments:
+// - sourceGraph - the graph of Profile's we're cloning
+// - cloneGraph - the clone of sourceGraph that is being constructed
+// - visited - a map of which Profiles have been visited, and, if so, a reference to the Profile's clone
+// Return Value:
+// - a clone in both inheritance structure and Profile values of sourceGraph
+winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> sourceGraph, winrt::com_ptr<Profile> cloneGraph, std::unordered_map<void*, winrt::com_ptr<Profile>>& visited)
+{
+    // If this is an unexplored Profile
+    //   and we have parents...
+    if (visited.find(sourceGraph.get()) == visited.end() && !sourceGraph->_parents.empty())
+    {
+        // iterate through all of our parents to copy them
+        for (const auto& sourceParent : sourceGraph->_parents)
+        {
+            // If we visited this Profile already...
+            auto kv{ visited.find(sourceParent.get()) };
+            if (kv != visited.end())
+            {
+                // add this Profile's clone as a parent
+                cloneGraph->InsertParent(kv->second);
+            }
+            else
+            {
+                // We have not visited this Profile yet,
+                // copy contents of sourceParent to clone
+                winrt::com_ptr<Profile> clone{ CopySettings(sourceParent) };
+
+                // add the new copy to the cloneGraph
+                cloneGraph->InsertParent(clone);
+
+                // copy the sub-graph at "clone"
+                CloneInheritanceGraph(sourceParent, clone, visited);
+
+                // mark clone as "visited"
+                // save it to the map in case somebody else references it
+                visited[sourceParent.get()] = clone;
+            }
+        }
+    }
+
+    // we have no more to explore down this path.
+    return cloneGraph;
 }
 
 // Method Description:
@@ -129,19 +180,17 @@ Json::Value Profile::GenerateStub() const
     Json::Value stub;
 
     ///// Profile-specific settings /////
-    if (_Guid.has_value())
+    stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(Guid()));
+
+    stub[JsonKey(NameKey)] = winrt::to_string(Name());
+
+    const auto source{ Source() };
+    if (!source.empty())
     {
-        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(*_Guid));
+        stub[JsonKey(SourceKey)] = winrt::to_string(source);
     }
 
-    stub[JsonKey(NameKey)] = winrt::to_string(_Name);
-
-    if (!_Source.empty())
-    {
-        stub[JsonKey(SourceKey)] = winrt::to_string(_Source);
-    }
-
-    stub[JsonKey(HiddenKey)] = _Hidden;
+    stub[JsonKey(HiddenKey)] = Hidden();
 
     return stub;
 }
@@ -169,40 +218,37 @@ winrt::com_ptr<winrt::Microsoft::Terminal::Settings::Model::implementation::Prof
 // - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
-    if (!_Guid.has_value())
-    {
-        return false;
-    }
-
     // First, check that GUIDs match. This is easy. If they don't match, they
     // should _definitely_ not layer.
-    if (const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) })
+    const auto otherGuid{ JsonUtils::GetValueForKey<std::optional<winrt::guid>>(json, GuidKey) };
+    const auto otherSource{ JsonUtils::GetValueForKey<std::optional<winrt::hstring>>(json, SourceKey) };
+    if (otherGuid)
     {
-        if (otherGuid.value() != *_Guid)
+        if (otherGuid.value() != Guid())
         {
             return false;
         }
     }
     else
     {
-        // If the other json object didn't have a GUID, we definitely don't want
-        // to layer. We technically might have the same name, and would
-        // auto-generate the same guid, but they should be treated as different
-        // profiles.
-        return false;
+        // If the other json object didn't have a GUID,
+        // check if we auto-generate the same guid using the name and source.
+        const auto otherName{ JsonUtils::GetValueForKey<std::optional<winrt::hstring>>(json, NameKey) };
+        if (Guid() != _GenerateGuidForProfile(otherName ? *otherName : L"Default", otherSource ? *otherSource : L""))
+        {
+            return false;
+        }
     }
-
-    std::optional<std::wstring> otherSource;
-    bool otherHadSource = JsonUtils::GetValueForKey(json, SourceKey, otherSource);
 
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
-    if (!_Source.empty())
+    const auto mySource{ Source() };
+    if (!mySource.empty())
     {
-        if (otherHadSource)
+        if (otherSource.has_value())
         {
             // If we have a source and the other has a source, compare them!
-            sourceMatches = *otherSource == _Source;
+            sourceMatches = *otherSource == mySource;
         }
         else
         {
@@ -210,9 +256,9 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
             // `this` is a dynamic profile with a source, and our _source is one
             // of the legacy DPG namespaces. We're looking to see if the other
             // json object has the same guid, but _no_ "source"
-            if (_Source == WslGeneratorNamespace ||
-                _Source == AzureGeneratorNamespace ||
-                _Source == PowershellCoreGeneratorNamespace)
+            if (mySource == WslGeneratorNamespace ||
+                mySource == AzureGeneratorNamespace ||
+                mySource == PowershellCoreGeneratorNamespace)
             {
                 sourceMatches = true;
             }
@@ -245,6 +291,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
@@ -274,10 +321,12 @@ void Profile::LayerJson(const Json::Value& json)
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::PermissiveStringConverter<std::wstring>{});
+    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
 
     JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
+
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
@@ -300,13 +349,14 @@ void Profile::LayerJson(const Json::Value& json)
 // - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring Profile::ExpandedBackgroundImagePath() const
 {
-    if (_BackgroundImagePath.empty())
+    const auto path{ BackgroundImagePath() };
+    if (path.empty())
     {
-        return _BackgroundImagePath;
+        return path;
     }
     // checks if the user would like to copy their desktop wallpaper
     // if so, replaces the path with the desktop wallpaper's path
-    else if (_BackgroundImagePath == to_hstring(DesktopWallpaperEnum))
+    else if (path == DesktopWallpaperEnum)
     {
         WCHAR desktopWallpaper[MAX_PATH];
 
@@ -322,13 +372,19 @@ winrt::hstring Profile::ExpandedBackgroundImagePath() const
     }
     else
     {
-        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(_BackgroundImagePath.c_str()) };
+        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
     }
 }
 
 winrt::hstring Profile::EvaluatedStartingDirectory() const
 {
-    return winrt::hstring{ Profile::EvaluateStartingDirectory(_StartingDirectory.c_str()) };
+    auto path{ StartingDirectory() };
+    if (!path.empty())
+    {
+        return winrt::hstring{ Profile::EvaluateStartingDirectory(path.c_str()) };
+    }
+    // treated as "inherit directory from parent process"
+    return path;
 }
 
 // Method Description:
@@ -359,27 +415,6 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
         THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
 
         return std::wstring(defaultPath.get(), numCharsDefault);
-    }
-}
-
-// Method Description:
-// - If this profile never had a GUID set for it, generate a runtime GUID for
-//   the profile. If a profile had their guid manually set to {0}, this method
-//   will _not_ change the profile's GUID.
-void Profile::GenerateGuidIfNecessary() noexcept
-{
-    if (!_Guid.has_value())
-    {
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        _Guid = Profile::_GenerateGuidForProfile(_Name, _Source);
-
-        TraceLoggingWrite(
-            g_hSettingsModelProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 }
 
@@ -438,54 +473,110 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
+#pragma region BackgroundImageAlignment
+bool Profile::HasBackgroundImageAlignment() const noexcept
+{
+    return _BackgroundImageAlignment.has_value();
+}
+
+void Profile::ClearBackgroundImageAlignment() noexcept
+{
+    _BackgroundImageAlignment = std::nullopt;
+}
+
 const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
 {
-    return std::get<HorizontalAlignment>(_BackgroundImageAlignment);
+    const auto val{ _getBackgroundImageAlignmentImpl() };
+    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
 }
 
 void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
 {
-    std::get<HorizontalAlignment>(_BackgroundImageAlignment) = value;
+    if (HasBackgroundImageAlignment())
+    {
+        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
+    }
+    else
+    {
+        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
+    }
 }
 
 const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
 {
-    return std::get<VerticalAlignment>(_BackgroundImageAlignment);
+    const auto val{ _getBackgroundImageAlignmentImpl() };
+    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
 }
 
 void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
 {
-    std::get<VerticalAlignment>(_BackgroundImageAlignment) = value;
+    if (HasBackgroundImageAlignment())
+    {
+        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
+    }
+    else
+    {
+        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
+    }
 }
+#pragma endregion
 
-bool Profile::HasGuid() const noexcept
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// - the JsonObject representing this instance
+Json::Value Profile::ToJson() const
 {
-    return _Guid.has_value();
-}
+    Json::Value json{ Json::ValueType::objectValue };
 
-winrt::guid Profile::Guid() const
-{
-    // This can throw if we never had our guid set to a legitimate value.
-    THROW_HR_IF_MSG(E_FAIL, !_Guid.has_value(), "Profile._guid always expected to have a value");
-    return *_Guid;
-}
+    // Profile-specific Settings
+    JsonUtils::SetValueForKey(json, NameKey, _Name);
+    JsonUtils::SetValueForKey(json, GuidKey, _Guid);
+    JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::SetValueForKey(json, SourceKey, _Source);
 
-void Profile::Guid(const winrt::guid& guid) noexcept
-{
-    _Guid = guid;
-}
+    // Core Settings
+    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
-bool Profile::HasConnectionType() const noexcept
-{
-    return _ConnectionType.has_value();
-}
+    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
+    JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
+    JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
+    JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
+    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
+    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
-winrt::guid Profile::ConnectionType() const noexcept
-{
-    return *_ConnectionType;
-}
+    // Control Settings
+    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
+    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
+    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
+    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
+    JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
+    JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
+    JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
+    JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
 
-void Profile::ConnectionType(const winrt::guid& conType) noexcept
-{
-    _ConnectionType = conType;
+    // PermissiveStringConverter is unnecessary for serialization
+    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+
+    JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
+    JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
+    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
+    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
+    JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
+    JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+    return json;
 }

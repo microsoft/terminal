@@ -526,8 +526,7 @@ CATCH_RETURN();
 // - the text that the UiaTextRange encompasses
 #pragma warning(push)
 #pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
-std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const noexcept
-try
+std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
@@ -539,6 +538,14 @@ try
     {
         const auto& buffer = _pData->GetTextBuffer();
         const auto bufferSize = buffer.GetSize();
+
+        // TODO GH#5406: create a different UIA parent object for each TextBuffer
+        // nvaccess/nvda#11428: Ensure our endpoints are in bounds
+        // otherwise, we'll FailFast catastrophically
+        if (!bufferSize.IsInBounds(_start, true) || !bufferSize.IsInBounds(_end, true))
+        {
+            THROW_HR(E_FAIL);
+        }
 
         // convert _end to be inclusive
         auto inclusiveEnd = _end;
@@ -563,11 +570,6 @@ try
     }
 
     return textData;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return {};
 }
 #pragma warning(pop)
 

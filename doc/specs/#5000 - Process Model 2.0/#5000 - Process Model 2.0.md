@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-10-30
+last updated: 2020-12-02
 issue id: #5000
 ---
 
@@ -9,12 +9,11 @@ issue id: #5000
 
 ## Abstract
 
-The Windows Terminal currently exists as a single process per window, with one
-connection per terminal pane (which could be an additional conpty process and
-associated client processes). This model has proven effective for the simple
-windowing we've done so far. However, in order to support scenarios like
-dragging tabs into other windows, or having one top-level window with different
-elevation levels within it, this single process model will not be sufficient.
+The Windows Terminal currently exists as a single process per window. It has one
+connection per terminal pan, which could be an additional conpty process and
+associated client processes. This model has proven effective for the simple
+windowing we've done so far. However, this single process model will not be
+enough for more complex scenarios, like dragging tabs into other windows.
 
 This spec outlines changes to the Terminal process model in order to enable the
 following scenarios:
@@ -23,19 +22,56 @@ following scenarios:
 * Run `wt` in the current window ([#4472])
 * Single Instance Mode ([#2227])
 * Quake Mode ([#653])
-* Mixed Elevation ([#1032] & [#632])
+
+Also discussed is "mixed elevation" ([#1032] & [#632]), which is closely related
+to the above scenarios, and was investigated as a part of this re-architecture.
 
 ## Inspiration
 
-Much of the design for this feature was inspired by (what I believe is) the web
-browser process model. For a web browser, there's often a separate process for
-each of the tabs within the browser, to help isolate the actual tabs from one
-another.
+Much of the design for this feature was inspired by an older web browser process
+model. For a time, web browsers, would use a separate process for each of the
+tabs within the browser, to help isolate the actual tabs from one another.
+(Nowadays, browsers will have multiple tabs all hosted in a single process, to
+attempt to reuse some resources between tabs. They do still break out the tab
+content from the actual window's process).
+
+The rxvt-unicode terminal emulator uses a similar client/server architecture. In
+this model, the terminal "content" is hosted by a server process, and windows
+act as a "client" for that content.
 
 ## Background
 
 In order to better understand some of the following technical solutions, it's
 important to understand some of the technical hurdles that need to be overcome.
+
+### Drag and drop tabs to create new windows
+
+An important scenario we're targeting is the ability to drag a tab out of the
+window, and create a new Terminal window. When we do this, we want the new
+window to be able to persist all the same state that the original window had for
+that tab. For us, that primarily means the buffer contents and connection state.
+
+However, _how_ do we move the terminal state to another window? The terminal
+state is all located in-memory of the thread that created the `TermControl`
+hosting the terminal buffer. It's fairly challenging to re-create this state in
+another process.
+
+Take a look at [this
+document](https://github.com/windows-toolkit/Sample-TabView-TearOff) for more
+background on how the scenario might work.
+
+There's really only a limited selection of things that a process could transfer
+to another with a drag and drop operation. If we wanted to use a string to
+transfer the data, we'd somehow need to serialize then entire state of the tab.
+That would mean turning its tree of panes, and the state of each of the buffers
+in the tab, into some sort of string. Then, we would have the new window
+deserialize that string to re-create the tab state. Consider that each buffer
+might include 32000 rows of 80+ characters each, each with RGB attributes.  You
+are looking at 30MB+ of raw data to serialize and de-serialize per buffer,
+minimum. This sounds extremely fragile, if not impossible to do robustly.
+
+What we need is a more effective way for separate Terminal windows to to be able
+to connect to and display content that's being hosted in another process.
 
 ### Mixed admin and unelevated clients in a single window
 
@@ -55,36 +91,6 @@ point, any other unelevated application could send input to the Terminal's
 `HWND`, making it possible for another unelevated process to "drive" the
 Terminal window and send commands to the elevated client application.
 
-### Drag and drop tabs to create new windows
-
-Another important scenario we're targeting is the ability to drag a tab out of
-the Terminal window and create a new Terminal window. Obviously, when we do
-this, we want the newly created window to be able to persist all the same state
-that the original window had for that tab. For us, that primarily means the
-buffer contents and connection state.
-
-However, _how_ do we move the terminal state to another window? The terminal
-state is all located in-memory of the thread that created the `TermControl`
-hosting the terminal buffer. It's fairly challenging to re-create this state in
-another process.
-
-Take a look at [this
-document](https://github.com/windows-toolkit/Sample-TabView-TearOff) for more
-background on how the scenario might work.
-
-There's really only a limited selection of things that a process could transfer
-to another with a drag and drop operation. If we wanted to use a string to
-transfer the data, we'd somehow need to serialize then entire state of the tab,
-it's tree of panes, and the state of each of the buffers in the tab, into some
-sort of string, and then have the new window deserialize that string to
-re-create the tab state. Consider that each buffer might include 32000 rows of
-80+ characters each, each with possibly RGB attributes, and you're looking at
-30MB+ of raw data to serialize and de-serialize per buffer, minimum. This sounds
-extremely fragile, if not impossible to do robustly.
-
-What we need is a more effective way for separate Terminal windows to to be able
-to connect to and display content that's being hosted in another process.
-
 ## Solution Design
 
 ### Window and Content Processes
@@ -95,10 +101,10 @@ process looks today:
 ![figure-001](figure-001.png)
 
 Currently, the entire Windows Terminal exists as a single process composed of
-many parts. it has a top Win32 layer responsible for the window, which includes
-a UWP XAML-like App layer, which embeds many `TermControl`s, each of which
-contains the buffer and renderer, and communicates with a connection to another
-process.
+many parts. It has a top Win32 layer responsible for the window. This window
+includes a UWP XAML-like App layer, which embeds many `TermControl`s. Each of
+these contains the buffer and renderer, and communicates with a connection to
+another process.
 
 The primary concept introduced by this spec is the idea of two types of process,
 which will work together to create a single Terminal window. These processes
@@ -107,14 +113,14 @@ will be referred to as the "Window Process" and the "Content Process".
   the desktop, and accepting input from the user. This is a window which hosts
   our XAML content, and the window which the user interacts with.
 * A **Content Process** is a process which hosts a single terminal instance.
-  This is the process that hosts the terminal buffer, state machine, connection,
-  and is also responsible for the `Renderer` and `DxEngine`.
+  This is the process that hosts the terminal buffer, state machine, and
+  connection. It is also responsible for the `Renderer` and `DxEngine`.
 
 These two types of processes will work together to present both the UI of the
 Windows Terminal app, as well as the contents of the terminal buffers. A single
-window process may be in communication with multiple content processes - one per
-terminal instance. That means that each and every `TermControl` in a window
-process will be hosted in a separate process.
+window process may be in communication with many content processes - one per
+terminal instance. That means that each `TermControl` in a window process will
+be hosted in a separate process.
 
 The window process will be full of "thin" `TermControl`s - controls which are
 only the XAML layer and a WinRT object which is hosted by the content process.
@@ -129,15 +135,16 @@ As a broad outline, whenever the window wants to create a terminal, the flow
 will be something like the following:
 
 1. A window process will spawn a new content process, with a unique ID.
-2. The window process will attach itself to the content process, indicating that
-   it (the window process) is the content process's hosting window.
-3. When the content process creates it's swap chain, it will raise an event
-   which the window process will use to connect that swap chain to the window
-   process's `SwapChainPanel`.
-4. The content process will read output from the connection and draw to the swap chain. The
-   contents that are rendered to the swap chain will be visible in the window
-   process's `SwapChainPanel`, because they share the same underlying kernel
-   object.
+2. The window process will attach itself to the content process. It will
+   indicate that it (the window process) is the content process's hosting
+   window.
+3. When the content process creates its swap chain, it will raise an event. The
+   window process will use to connect that swap chain to the window process's
+   `SwapChainPanel`.
+4. The content process will read output from the connection and draw to the swap
+   chain. The contents that are rendered to the swap chain will be visible in
+   the window process's `SwapChainPanel`. This is because they share the same
+   underlying kernel object.
 
 ![figure-003](figure-003.png)
 
@@ -185,48 +192,40 @@ auto myClass = create_instance<winrt::MyClass>(MyClassGUID, CLSCTX_LOCAL_SERVER)
 
 We're going to be using that system a little differently here. Instead of using
 a GUID to represent a single _Class_, we're going to use the GUID to uniquely
-identify _content processes_. Each content process will receive a unique GUID
-when it is created, and it will register as the server for that GUID. Then, any
-window process will be able to connect to that specific content process strictly
-by GUID. Because each GUID is unique to each content process, any time any
-client calls `create_instance<>(theGuid, ...)`, it will uniquely attempt to
-connect to the content process hosting `theGuid`.
+identify _content processes_. Each content process will receive a unique GUID on
+creation. It will register as the server for that GUID. Any window process will
+be able to connect to that specific content process strictly by GUID. Because
+each GUID is unique to each content process, any time any client calls
+`create_instance<>(theGuid, ...)`, it will uniquely attempt to connect to the
+content process hosting `theGuid`.
 
-This means that if we wanted to have a second window process connect to the
+If we wanted to have a second window process connect to the
 _same_ content process as another window, all it needs is the content process's
 GUID.
 
 Now that we have a WinRT object that the content process hosts, we can have the
 window and content process interact using that interface. The next important
 thing to communicate between these processes is the swapchain. The swapchain
-will need to be created by the content process, but also we need to be able to
-communicate the `HANDLE` to that swapchain out to the window process, so the
-window process can attach that swapchain to the `SwapChainPanel` in the window.
+will need to be created by the content process. We also need to be able to
+communicate the `HANDLE` to that swapchain out to the window process. The window process needs to be able to attach that swapchain to the `SwapChainPanel` in the window.
 
-This is a little tricky, because WinRT does not natively expose a `HANDLE` type
-which would allow us to easily pass the `HANDLE` between these processes.
-Instead we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT
-boundary, and cast it back to a `HANDLE` when we want to use it.
-
-We can't just have the content process duplicate the handle to the window
-process directly. If the content process is unelevated, and the window process
-is elevated (in a mixed elevation scenario), then the content process won't have
-permission to `DuplicateHandle` the `HANDLE` to the swapchain into the window's
-process. (more on mixed elevation below).
+This is tricky, because WinRT does not natively expose a `HANDLE` type. That
+would allow us to easily pass the `HANDLE` between these processes. Instead
+we'll need to manually cast the `HANDLE` to `uint64_t` at the winRT boundary,
+and cast it back to a `HANDLE` when we want to use it.
 
 Instead, the window will always need to be the one responsible for calling
 `DuplicateHandle`. Fortunately, the `DuplicateHandle` function does allow a
 caller to duplicate from another process into your own process.
 
-So when the content process needs to create a new swapchain, it'll raise an
-event that the window process can listen for to indicate that the swapchain
-changed. The window will then query for the content process's PID (which it will
-use to create a handle to the content process), and the window will query the
-current value of the content process's `HANDLE` to the swapchain. The window
-will then duplicate that `HANDLE` into it's own process space. Now that the
-window has a handle to the swapchain, it can use
-[`ISwapChainPanelNative2::SetSwapChainHandle`] to set the SwapChainPanel to use
-the same swapchain.
+When the content process needs to create a new swapchain, it'll raise an event.
+The window process can listen for that event to indicate that the swapchain
+changed. The window will then query for the content process's PID and create a
+handle to the content process. The window will query the current value of the
+content process's `HANDLE` to the swapchain. The window will then duplicate that
+`HANDLE` into it's own process space. Now that the window has a handle to the
+swapchain, it can use [`ISwapChainPanelNative2::SetSwapChainHandle`] to set the
+SwapChainPanel to use the same swapchain.
 
 This will allow the content process to draw to the swapchain, and the window
 process to render that same swapchain.
@@ -239,16 +238,21 @@ is the GUID of the content process, it becomes fairly trivial to be able to
 
 ![drop-tab-on-existing-window](drop-tab-on-existing-window.png)
 
-When a drag/drop operation happens, the payload of the event will simply contain
-the structure of the tree of panes, and the GUIDs of the content processes that
-make up the leaf nodes of the tree. The receiving window process will then be
-able to use that tree to be able to re-create a similar pane structure in its
-window, and use the GUIDs to be able to connect to the content processes for the
-terminals in that tab.
+When a drag/drop operation happens, the payload of the event will contain the
+structure of the tree of panes. This tree will contain the GUIDs of the content
+processes that make up the leaf nodes of the tree. The receiving window process
+will then be able to use that tree to be able to re-create a similar pane
+structure in its window. It will use the GUIDs to be able to connect to the
+content processes for the terminals in that tab.
 
-The terminal buffer never needs to move from one process to another - it always
-stays in just a single content process. The only thing that changes is the
-window process which is rendering the content process's swapchain.
+The terminal buffer never needs to move from one process to another.  It always
+stays in a single content process. The only thing that changes is which window
+process is rendering the content process's swapchain.
+
+When a new window is created from a torn-out tab in this manner, we will want to
+ensure that the created window maintains the same maximized state as the origin
+window. If the user tries to tera out a tab from a maximized window, the window
+we create should _also_ be maximized.
 
 Similar to dragging a tab from one window to another window, we can also detect
 when the tab was dropped somewhere outside the bounds of a tab strip. When that
@@ -265,63 +269,57 @@ it.
 
 #### Scenario: Mixed Elevation
 
-With the ability for window processes to connect to other pre-existing content
-processes, we can now also support mixed elevation scenarios as well.
+It was initially theorized that this window/content model architecture would
+also help enable "mixed elevation", where there are tabs running at different
+integrity levels (read: elevated and unelevated) within the same terminal
+window. However, after investigation and research, it has become apparent that
+this scenario is not possible to do safely after all. There are numerous
+technical difficulties involved, and each with their own security risks. At the
+end of the day, the team wouldn't be comfortable shipping a mixed-elevation
+solution, because there's simply no way for us to be confident that we haven't
+introduced an escalation-of-privilege vector utilizing the Terminal. No matter
+how small the attack surface might be, we wouldn't be confident that there are
+_no_ vectors for an attack.
 
-If a user requests a new elevated tab from an otherwise unelevated window, we
-can use UAC to create a new, elevated window process, and "move" all the current
-tabs to that window process, as well as the new elevated client. Now, the window
-process is elevated, preventing it from input injection, but still contains all
-the previously existing tabs. The original window process can now be discarded,
-as the new elevated window process will pretend to be the original window.
+For the time being we'll continue with the current model of having one window
+for unelevated processes, and another for elevated windows. We can revisit mixed
+elevation in the future if we can get the focus and attention from some security
+experts that could back up a technical solution.
 
-![mixed-elevation](mixed-elevation.png)
+Instead of supporting mixed elevation in a single window, we'll introduce a
+number of new properties to profiles and various actions, to improve the user
+experience of running elevated instances. These are detailed in the spec at
+[Elevation QOL Improvements].
 
-We would probably want to provide some additional configuration options here as
-well:
-* Users will most likely want to be able to specify that a given profile should
-  always run elevated.
-  - We should also provide some argument to the `NewTerminalArgs` (used by the
-    `new-tab` and `split-pane` actions) to allow a user to elevate an otherwise
-    unelevated profile.
-* We'll probably want to create new content processes in a medium-IL context by
-  default, unless the profile or launch args otherwise indicates launching
-  elevated. So a window process running elevated would still create unelevated
-  profiles by default.
-* Currently, if a user launches the terminal as an administrator, then _all_ of
-  their tabs run elevated. We'll probably want to provide a similar
-  configuration as well. Maybe if a window process is initially launched as
-  elevated (rather than inheriting from an existing session), then it could
-  either:
-  - default all future connections it creates to elevated connections
-  - assume the _first_ tab (or all the terminals created by the startup
-    commandline) should be elevated, but then subsequent connections would
-    default to unelevated processes.
+Some things we considered during this investigation:
 
-It's a long-standing platform bug that you cannot use drag-and-drop in elevated
-scenarios. This unfortunately means that elevated window processes will _not_ be
-able to tear tabs out into their own windows. Even tabs that only contain
-unelevated content processes in them will not be able to be torn out, because
-the drag-and-drop service is fundamentally incapable of connecting to elevated
-windows.
-
-We should probably have a discussion about what happens when the last elevated
-content process in an elevated window process is closed. If an elevated window
-process doesn't have any remaining elevated content processes, then it should be
-able to revert to an unelevated window process. Should we do this? There's
-likely some visual flickering that will happen as we re-create the new window
-process, so maybe it would be unappealing to users. However, there's also the
-negative side effect that come from elevated windows (the aforementioned lack of
-drag/drop), so maybe users will want to return to the more permissive unelevated
-window process.
-
-This is one section where unfortunately I don't have a working prototype yet.
-From my research, an elevated process cannot simply `create_instance` a class
-that's hosted by an unelevated process. However, after proposing this idea to
-the broad C++/WinRT discussion alias, no one on that thread immediately shot
-down the idea as being impossible or terrible from a security perspective, so I
-believe that it _will_ be possible. We still need to do some research on the
-actual mechanisms for some token impersonation.
+* If a user requests a new elevated tab from an otherwise unelevated window, we
+  could use UAC to create a new, elevated window process, and "move" all the
+  current tabs to that window process, as well as the new elevated client. Now,
+  the window process would be elevated, preventing it from input injection, and
+  it would still contains all the previously existing tabs. The original window
+  process could now be discarded, as the new elevated window process will
+  pretend to be the original window.
+  - However, it is unfortunately not possible with COM to have an elevated
+    client attach to an unelevated server that's registered at runtime. Even in
+    a packaged environment, the OS will reject the attempt to `CoCreateInstance`
+    the content process object. this will prevent elevated windows from
+    re-connecting to unelevated client processes.
+  - We could theoretically build an RPC tunnel between content and window
+    processes, and use the RPC connection to marshal the content process to the
+    elevated window. However, then _we_ would need to be responsible for
+    securing access the the RPC endpoint, and we feel even less confident doing
+    that.
+  - Attempts were also made to use a window-broker-content architecture, with
+    the broker process having a static CLSID in the registry, and having the
+    window and content processes at mixed elevation levels `CoCreateInstance`
+    that broker. This however _also_ did not work across elevation levels. This
+    may be due to a lack of Packaged COM support for mixed elevation levels.
+    Even if this approach did end up working, we would still need to be
+    responsible for securing the elevated windows so that an unelevated attacker
+    couldn't hijack a content process and trigger unexpected code in the window
+    process. We didn't feel confident that we could properly secure this channel
+    either.
 
 ### Monarch and Peasant Processes
 
@@ -928,69 +926,18 @@ spec.
 
 ### Mixed elevation & Monarch / Peasant issues
 
-Previously, we've mentioned that windows who wish to have a tab open elevated
-will re-open as an elevated process, connected to all the content processes the
-window was previously connected to. However, what happens when the window that
-needs to re-open as an elevated window is the monarch process? If the elevated
-window were to retain its monarch status, then all the other (unelevated) window
-processes would be unable to connect to it and call methods and trigger
-callbacks on it.
+Because we won't be able to `CoCreateInstance` across different elevation
+levels, we won't be able to have elevated window processes communicate with
+unelevated ones. This means that we'll end up having one monarch per elevation
+level. This may end up a little confusing, as window IDs will be tracked
+per-elevation level. That means there could be two different windows that share
+the same ID - one elevated window, and one unelevated window. Only the windows
+running at the same integrity level will be addressable via the commandline.
 
-So if the monarch is going to enter a mixed-elevation state, the new process for
-the elevated window shouldn't try to register as the monarch, and instead rely
-on another process being the monarch.
-
-This comes with a variety of other edge cases as well.
-
-When a process does re-open as an elevated window, it will need a mechanism to
-retain its original ID as assigned by the monarch. This is so that commands like
-`wt -s 2 split-pane` will continue to refer to the same logical window, even if
-there's a new process hosting it now.
-
-What if there's only one window, and it becomes elevated? In that case, there is
-no other monarch to rely on. We'll need a way for us to start `wt` as a
-"headless monarch". This headless monarch process will _not_ display its own
-window, but will act as the monarch. The old monarch (who's now a different
-process altogether, and is elevated), should treat that medium-IL headless
-monarch the same as the other monarchs, and attempt to find a new monarch as
-soon as it goes away. The headless monarch will attempt to register to be the
-monarch - if it turns out that another process is the current monarch, then the
-headless monarch will immediately kill itself, causing the old monarch to
-immediately attempt to find a new monarch. If the headless monarch dies
-unexpectedly, and the elevated process is unable to create a connection to the
-existing monarch, it'll need to spawn a new headless monarch.
-
-If there are only a bunch of elevated monarchs, then they'll each attempt to
-spawn a headless monarch. Only one will succeed - the others will all connect to
-the first headless monarch, and immediately die.
-
-We need to be especially careful about the commands that can be run in an
-existing window. Opening a new tab, split, these are relatively safe. The new
-terminal that's created in the elevated window will still be unelevated by
-default.
-
-What we _absolutely cannot do_, under any circumstance, is allow for the sending
-of input to another window across elevation boundary. I don't think it's
-entirely out of the realm of possibility to add a `send-input` command to write
-input to the terminal using the `SendInputAction`. However, we must absolutely
-make sure that the input isn't allowed to cross the elevation boundary. To make
-this easier, we should have the `send-input` command just fail if the targeted
-window is both:
-- Is elevated.
-- Is not this window. Sending input within the same window seems like it would
-  be safe enough - you're already inside the airtight hatch.
-
-### Duplicating `HANDLE`s from content process to elevated window process
-
-We can't just have the content process dupe the handle to the window process. If
-the content process is unelevated, and the window process is elevated (in a
-mixed elevation scenario), then the content process won't have permission to
-`DuplicateHandle` the `HANDLE` to the swapchain into the window's process.
-
-Instead, the window will always need to be the one responsible for calling
-duplicate handle. Fortunately, the `DuplicateHandle` function does allow a
-caller to duplicate from another process into your own process.
-
+This might be a little confusing to the end user, but is seen as an acceptable
+experience to the alternative of just completely disallowing running commands in
+other elevated windows. If a user is running in an elevated window, they
+probably will still want `wt -s 0 new-tab` to open in the current window.
 
 ### What happens to the content if the monarch dies unexpectedly?
 
@@ -1128,9 +1075,10 @@ of each other.
     isn't already elevated.
 18. (Dependent on 16, 17) Users can mark a profile as `"elevated": true`, to
     always force a new elevated window to be created for elevated profiles.
-19. (Dependent on 18, 13) When a user creates an elevated profile, we'll
-    automatically create an elevated version of the current window, and move all
-    the current tabs to that new window.
+19. (Dependent on 18) Add an `elevated` parameter to `NewTerminalArgs` that will
+    allow a newTab or splitPane action to use that value of `elevated`, rather
+    than the value from the profile.
+20. Add a UAC shield to elevated terminal windows
 
 ## Footnotes
 
@@ -1209,7 +1157,8 @@ prompt the user for permission, but that's an acceptable user experience.
 
 ## TODOs
 
-* [ ] Experimentally prove that a elevated window can host an unelevated content
+* [x] Experimentally prove that a elevated window can host an unelevated content
+  - Research proved the opposite actually.
 * [ ] Experimentally prove that I can toss content process IDs from one window
   to another
   - I don't have any doubt that this will work, but I want to have a
@@ -1253,8 +1202,10 @@ original draft. Please also refer to:
 [#4000]: https://github.com/microsoft/terminal/issues/4000
 [#7972]: https://github.com/microsoft/terminal/pull/7972
 [#961]: https://github.com/microsoft/terminal/issues/961
-[`30b8335`]: https://github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
+[`30b8335`]: https://www.github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
+[#8135]: https://github.com/microsoft/terminal/pull/8135
 
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
+[Elevation QOL Improvements]: https://www.github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md

@@ -10,12 +10,6 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -43,6 +37,7 @@
     <ClInclude Include="GlobalAppSettings.h">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="IInheritable.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="KeyChordSerialization.h">
@@ -146,24 +141,19 @@
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below -->
   </ItemGroup>
-  <PropertyGroup>
-    <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
-    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
-  </PropertyGroup>
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as
     private=false and CopyLocalSatelliteAssemblies=false, so that we don't
     propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
     <Reference Include="Microsoft.Terminal.TerminalConnection">
-      <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
     <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -208,4 +198,6 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
+
+  <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

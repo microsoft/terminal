@@ -27,6 +27,16 @@
     <ClCompile Include="TerminalSettings.cpp">
       <Filter>settings</Filter>
     </ClCompile>
+    <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="Tab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
+    <ClCompile Include="FilteredCommand.cpp">
+      <Filter>commandPalette</Filter>
+    </ClCompile>
+    <ClCompile Include="HighlightedText.cpp">
+      <Filter>highlightedText</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils.h" />
@@ -48,6 +58,16 @@
     <ClInclude Include="TerminalSettings.h">
       <Filter>settings</Filter>
     </ClInclude>
+      <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="Tab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
+    <ClInclude Include="FilteredCommand.h">
+      <Filter>commandPalette</Filter>
+    </ClInclude>
+    <ClInclude Include="HighlightedText.h">
+      <Filter>highlightedText</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
@@ -62,13 +82,18 @@
     <Midl Include="ShortcutActionDispatch.idl">
       <Filter>settings</Filter>
     </Midl>
-    <Midl Include="Tab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="CommandKeyChordVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl">
       <Filter>settings</Filter>
+    </Midl>
+    <Midl Include="TerminalTab.idl">
+      <Filter>tab</Filter>
+    </Midl>
+    <Midl Include="FilteredCommand.idl">
+      <Filter>commandPalette</Filter>
+    </Midl>
+    <Midl Include="HighlightedText.idl">
+      <Filter>highlightedText</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>
@@ -93,6 +118,9 @@
     <Page Include="CommandPalette.xaml">
       <Filter>commandPalette</Filter>
     </Page>
+    <Page Include="HighlightedTextControl.xaml">
+      <Filter>highlightedText</Filter>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="app">
@@ -112,6 +140,9 @@
     </Filter>
     <Filter Include="commandPalette">
       <UniqueIdentifier>{2ad498e1-d8ea-4381-9464-a74c141bd7dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="highlightedText">
+      <UniqueIdentifier>{e490f626-547d-4b5b-b22d-c6d33c9e3210}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
