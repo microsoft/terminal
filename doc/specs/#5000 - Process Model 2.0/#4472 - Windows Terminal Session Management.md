@@ -299,8 +299,11 @@ handle UIA access as it normally does.
 <td>
 
 Many security concerns have already be covered in greater detail in the parent
-spec, [Process Model 2.0 Spec]. I'd refer specifically to the section ["Mixed
-elevation & Monarch / Peasant issues"](#mixed-elevation--monarch--peasant-issues).
+spec, [Process Model 2.0 Spec].
+
+When attempting to instantiate the Monarch, COM will only return the object from
+a server running at the same elevation level. We don't need to worry about
+unelevated peasants connecting to the elevated Monarch, or vice-versa.
 
 </td>
 </tr>
@@ -349,62 +352,37 @@ communication between monarch and peasant processes.
 
 ## Potential Issues
 
-### Mixed elevation & Monarch / Peasant issues
+### Mixed Elevation Levels
 
-_This section was originally authored in the [Process Model 2.0 Spec]. Please
-refer to it there for its original context._
+As of December 2020, we're no longer pursuing a "mixed-elevation" scenario for
+the Terminal. This makes many of the cross-elevation scenarios simpler. Elevated
+and unelevated `wt` instances will always remain separate. The different
+elevation levels will maintain separate lists of window IDs. If the user is
+running both an elevated and unelevated window, then there will be two monarchs.
+One elevated, and the other unelevated.
 
-Previously, we have mentioned that windows who wish to have a tab open elevated
-will re-open as an elevated process, connected to all the content processes the
-window was previously connected to. However, what happens when the window that
-needs to re-open as an elevated window is the monarch process? If the elevated
-window were to retain its monarch status, then all the other (unelevated) window
-processes would be unable to connect to it and call methods and trigger
-callbacks on it.
+This does mean that single instance mode won't _really_ work for users in
+mixed-elevation scenarios. There'll be a monarch for the unelevated window, and
+a separatemonarch for the elevated one. This is acceptable, given the assumption
+that windows cannot mix elevation levels.
 
-So if the monarch is going to enter a mixed-elevation state, the new process for
-the elevated window shouldn't try to register as the monarch, and instead rely
-on another process being the monarch.
+There will also be some edge cases when handling the commandline that will need
+special care. Say the user wanted to open a new tab in the elevated window, from
+and unelevated `explorer.exe`. That would be a commandline like:
 
-This comes with a variety of other edge cases as well.
+```sh
+wt -s 0 new-tab -d . --elevated
+```
 
-When a process does re-open as an elevated window, it will need a mechanism to
-retain its original ID as assigned by the monarch. This is so that commands like
-`wt -s 2 split-pane` will continue to refer to the same logical window, even if
-there's a new process hosting it now.
+Typically we first determine which window the commandline is intended for, then
+dispatch it to that window. In this case, the `-s 0` will cause us to pass the
+commandline to the current unelevated window. Then, that window will try to open
+an elevated tab, fail, and create a new `wt.exe` process. This second `wt.exe`
+process will lose the `-s 0` context. It won't inform the elevated monarch that
+this commandline should be run in the active session.
 
-What if there's only one window, and it becomes elevated? In that case, there is
-no other monarch to rely on. We will need a way for us to start `wt` as a
-"headless monarch". This headless monarch process will _not_ display its own
-window, but will act as the monarch. The old monarch (who's now a different
-process altogether, and is elevated), should treat that medium-IL headless
-monarch the same as the other monarchs, and attempt to find a new monarch as
-soon as it goes away. The headless monarch will attempt to register to be the
-monarch - if it turns out that another process is the current monarch, then the
-headless monarch will immediately kill itself, causing the old monarch to
-immediately attempt to find a new monarch. If the headless monarch dies
-unexpectedly, and the elevated process is unable to create a connection to the
-existing monarch, it'll need to spawn a new headless monarch.
-
-If there are only a bunch of elevated monarchs, then they will each attempt to
-spawn a headless monarch. Only one will succeed - the others will all connect to
-the first headless monarch, and immediately die.
-
-We need to be especially careful about the commands that can be run in an
-existing window. Opening a new tab, split, these are relatively safe. The new
-terminal that's created in the elevated window will still be unelevated by
-default.
-
-What we _absolutely cannot do_, under any circumstance, is allow for the sending
-of input to another window across elevation boundary. I don't think it's
-entirely out of the realm of possibility to add a `send-input` command to write
-input to the terminal using the `SendInputAction`. However, we must absolutely
-make sure that the input isn't allowed to cross the elevation boundary. To make
-this easier, we should have the `send-input` command just fail if the targeted
-window is both:
-- Is elevated.
-- Is not this window. Sending input within the same window seems like it would
-  be safe enough - you're already inside the airtight hatch.
+We will need to make sure that special care is taken when creating elevated
+instances that we maintain the `--session-id` parameter passed to the Terminal.
 
 ## Implementation Plan
 
@@ -439,6 +417,9 @@ set of features, and later used to control tear out as well.
   it's creating? This is _not_ related to the current spec at hand, just
   something the author considered while writing the spec. This likely belongs
   over in [#492], or in its own spec.
+  - Or I suppose, with less confusion, someone could run `wt -s 0 split-pane --
+    man ping > cat`. That's certainly more sensible, and wouldn't require any
+    extra work.
 
 ## Resources
 
