@@ -14,8 +14,8 @@ Author(s):
 
 #pragma once
 
-#include "..\renderer\inc\IRenderData.hpp"
-#include "..\types\IUiaData.h"
+#include "../renderer/inc/IRenderData.hpp"
+#include "../types/IUiaData.h"
 
 class RenderData final :
     public Microsoft::Console::Render::IRenderData,

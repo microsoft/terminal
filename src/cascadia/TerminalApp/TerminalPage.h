@@ -41,6 +41,10 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
+        // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
+        // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
+        STDMETHODIMP Initialize(HWND hwnd);
+
         winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
@@ -56,7 +60,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring ThirdPartyNoticesLink();
 
-        void CloseWindow();
+        winrt::fire_and_forget CloseWindow();
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -90,6 +94,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
+        std::optional<HWND> _hostingHwnd;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
@@ -133,7 +138,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
-        void _ShowCloseWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
@@ -147,8 +152,6 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
-        void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
-        void _CloseWarningCloseButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
@@ -244,6 +247,8 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabSwitcherCommands(const bool mru);
         void _UpdateMRUTab(const uint32_t index);
 
+        void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -284,6 +289,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCloseOtherTabs(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleCloseTabsAfter(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

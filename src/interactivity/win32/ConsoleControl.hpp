@@ -13,7 +13,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IConsoleControl.hpp"
+#include "../inc/IConsoleControl.hpp"
 
 // Uncomment to build publicly targeted scenarios.
 //#define CON_USERPRIVAPI_INDIRECT

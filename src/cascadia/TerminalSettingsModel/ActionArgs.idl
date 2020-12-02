@@ -46,6 +46,13 @@ namespace Microsoft.Terminal.Settings.Model
         AllFiles
     };
 
+    enum MoveTabDirection
+    {
+        None = 0,
+        Forward,
+        Backward
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -54,6 +61,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Commandline;
         String StartingDirectory;
         String TabTitle;
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
@@ -130,7 +138,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
     {
-        Windows.Foundation.IReference<UInt32> TabColor { get; };
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
     [default_interface] runtimeclass RenameTabArgs : IActionArgs
@@ -154,6 +162,12 @@ namespace Microsoft.Terminal.Settings.Model
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    {
+        MoveTabArgs(MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
     };
 
     [default_interface] runtimeclass ScrollUpArgs : IActionArgs

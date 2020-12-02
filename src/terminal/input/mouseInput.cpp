@@ -9,7 +9,7 @@
 using namespace Microsoft::Console::VirtualTerminal;
 
 #ifdef BUILD_ONECORE_INTERACTIVITY
-#include "..\..\interactivity\inc\VtApiRedirection.hpp"
+#include "../../interactivity/inc/VtApiRedirection.hpp"
 #endif
 static const int s_MaxDefaultCoordinate = 94;
 
@@ -133,8 +133,8 @@ constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState 
 //      11 - released (none)
 //  Next three bits indicate modifier keys:
 //      0x04 - shift (This never makes it through, as our emulator is skipped when shift is pressed.)
-//      0x08 - ctrl
-//      0x10 - meta
+//      0x08 - meta
+//      0x10 - ctrl
 //  32 (x20) is added for "hover" events:
 //     "For example, motion into cell x,y with button 1 down is reported as `CSI M @ CxCy`.
 //          ( @  = 32 + 0 (button 1) + 32 (motion indicator) ).
@@ -146,7 +146,7 @@ constexpr unsigned int TerminalInput::s_GetPressedButton(const MouseButtonState 
 // Parameters:
 // - button - the message to decode.
 // - isHover - whether or not this is a hover event
-// - modifierKeyState - alt/ctrl/shift key hold state
+// - modifierKeyState - the modifier keys _in console format_
 // - delta - scroll wheel delta
 // Return value:
 // - the int representing the equivalent X button encoding.
@@ -188,12 +188,10 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
         xvalue += 0x20;
     }
 
-    // Shift will never pass through to us, because shift is used by the host to skip VT mouse and use the default handler.
-    // TODO: MSFT:8804719 Add an option to disable/remap shift as a bypass for VT mousemode handling
-    // xvalue += (modifierKeyState & MK_SHIFT) ? 0x04 : 0x00;
-    xvalue += (modifierKeyState & MK_CONTROL) ? 0x08 : 0x00;
-    // Unfortunately, we don't get meta/alt as a part of mouse events. Only Ctrl and Shift.
-    // xvalue += (modifierKeyState & MK_META) ? 0x10 : 0x00;
+    // Use Any here with the multi-flag constants -- they capture left/right key state
+    WI_UpdateFlag(xvalue, 0x04, WI_IsAnyFlagSet(modifierKeyState, SHIFT_PRESSED));
+    WI_UpdateFlag(xvalue, 0x08, WI_IsAnyFlagSet(modifierKeyState, ALT_PRESSED));
+    WI_UpdateFlag(xvalue, 0x10, WI_IsAnyFlagSet(modifierKeyState, CTRL_PRESSED));
 
     return xvalue;
 }
@@ -206,6 +204,7 @@ static constexpr int _windowsButtonToXEncoding(const unsigned int button,
 //  See MSFT:19461988 and https://github.com/Microsoft/console/issues/296
 // Parameters:
 // - button - the message to decode.
+// - modifierKeyState - the modifier keys _in console format_
 // Return value:
 // - the int representing the equivalent X button encoding.
 static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
@@ -247,12 +246,10 @@ static constexpr int _windowsButtonToSGREncoding(const unsigned int button,
         xvalue += 0x20;
     }
 
-    // Shift will never pass through to us, because shift is used by the host to skip VT mouse and use the default handler.
-    // TODO: MSFT:8804719 Add an option to disable/remap shift as a bypass for VT mousemode handling
-    // xvalue += (modifierKeyState & MK_SHIFT) ? 0x04 : 0x00;
-    xvalue += (modifierKeyState & MK_CONTROL) ? 0x08 : 0x00;
-    // Unfortunately, we don't get meta/alt as a part of mouse events. Only Ctrl and Shift.
-    // xvalue += (modifierKeyState & MK_META) ? 0x10 : 0x00;
+    // Use Any here with the multi-flag constants -- they capture left/right key state
+    WI_UpdateFlag(xvalue, 0x04, WI_IsAnyFlagSet(modifierKeyState, SHIFT_PRESSED));
+    WI_UpdateFlag(xvalue, 0x08, WI_IsAnyFlagSet(modifierKeyState, ALT_PRESSED));
+    WI_UpdateFlag(xvalue, 0x10, WI_IsAnyFlagSet(modifierKeyState, CTRL_PRESSED));
 
     return xvalue;
 }

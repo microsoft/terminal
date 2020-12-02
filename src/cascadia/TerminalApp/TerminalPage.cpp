@@ -44,9 +44,18 @@ namespace winrt::TerminalApp::implementation
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabActions{ winrt::single_threaded_vector<Command>() },
-        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
+        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
+        _hostingHwnd{}
     {
         InitializeComponent();
+    }
+
+    // Method Description:
+    // - implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT TerminalPage::Initialize(HWND hwnd)
+    {
+        _hostingHwnd = hwnd;
+        return S_OK;
     }
 
     // Function Description:
@@ -374,12 +383,13 @@ namespace winrt::TerminalApp::implementation
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    void TerminalPage::_ShowCloseWarningDialog()
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseWarningDialog()
     {
         if (auto presenter{ _dialogPresenter.get() })
         {
-            presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
+            co_return co_await presenter.ShowDialog(FindName(L"CloseAllDialog").try_as<WUX::Controls::ContentDialog>());
         }
+        co_return ContentDialogResult::None;
     }
 
     // Method Description:
@@ -919,6 +929,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
+        _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
     }
 
     // Method Description:
@@ -1465,17 +1476,21 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    void TerminalPage::CloseWindow()
+    fire_and_forget TerminalPage::CloseWindow()
     {
         if (_tabs.Size() > 1 && _settings.GlobalSettings().ConfirmCloseAllTabs() && !_displayingCloseDialog)
         {
             _displayingCloseDialog = true;
-            _ShowCloseWarningDialog();
+            ContentDialogResult warningResult = co_await _ShowCloseWarningDialog();
+            _displayingCloseDialog = false;
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return;
+            }
         }
-        else
-        {
-            _CloseAllTabs();
-        }
+
+        _CloseAllTabs();
     }
 
     // Method Description:
@@ -2190,34 +2205,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the primary button of the content dialog is clicked.
-    //   This calls _CloseAllTabs(), which closes all the tabs currently
-    //   opened and then the Terminal app. This method will be called if
-    //   the user confirms to close all the tabs.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningPrimaryButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                         WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        _CloseAllTabs();
-    }
-
-    // Method Description:
-    // - Called when the close button of the content dialog is clicked.
-    //   This resets the flag _displayingCloseDialog, which was set before
-    //   opening the dialog. Otherwise, the Terminal app would be closed
-    //   on the next close request without showing the warning dialog.
-    // Arguments:
-    // - sender: unused
-    // - ContentDialogButtonClickEventArgs: unused
-    void TerminalPage::_CloseWarningCloseButtonOnClick(WUX::Controls::ContentDialog /* sender */,
-                                                       WUX::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
-    {
-        _displayingCloseDialog = false;
-    }
-
-    // Method Description:
     // - Hook up keybindings, and refresh the UI of the terminal.
     //   This includes update the settings of all the tabs according
     //   to their profiles, update the title and icon of each tab, and
@@ -2862,6 +2849,30 @@ namespace winrt::TerminalApp::implementation
                     CommandPalette().SetTabActions(_mruTabActions, false);
                 }
             }
+        }
+    }
+
+    // Method Description:
+    // - Moves the tab to another index in the tabs row (if required).
+    // Arguments:
+    // - currentTabIndex: the current index of the tab to move
+    // - suggestedNewTabIndex: the new index of the tab, might get clamped to fit int the tabs row boundaries
+    // Return Value:
+    // - <none>
+    void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex)
+    {
+        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
+        if (currentTabIndex != newTabIndex)
+        {
+            auto tab = _tabs.GetAt(currentTabIndex);
+            auto tabViewItem = tab.TabViewItem();
+            _tabs.RemoveAt(currentTabIndex);
+            _tabs.InsertAt(newTabIndex, tab);
+            _UpdateTabIndices();
+
+            _tabView.TabItems().RemoveAt(currentTabIndex);
+            _tabView.TabItems().InsertAt(newTabIndex, tabViewItem);
+            _tabView.SelectedItem(tabViewItem);
         }
     }
 
