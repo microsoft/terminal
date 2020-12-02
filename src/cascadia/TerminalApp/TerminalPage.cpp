@@ -13,6 +13,8 @@
 #include <winrt/Windows.Storage.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include "../WinRTUtils/inc/WtExeUtils.h"
+
 #include "TabRowControl.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
@@ -635,7 +637,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring cmdline{ fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str()) };
         ShellExecute(nullptr,
                      L"runas",
-                     L"wtd.exe",
+                     GetWtExePath().c_str(),
                      cmdline.c_str(),
                      nullptr,
                      SW_SHOWNORMAL);
