@@ -269,6 +269,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _settings = newSettings;
         auto weakThis{ get_weak() };
 
+        UpdateAppearance(newSettings);
+
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
@@ -290,8 +292,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto lock = _terminal->LockForWriting();
 
             // Update DxEngine settings under the lock
-            _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
-
             _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
             _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
@@ -341,12 +341,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
 
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
+                // Check if the image brush is already pointing to the image
+                // in the modified settings; if it isn't (or isn't there),
+                // set a new image source for the brush
+                auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
+
+                if (imageSource == nullptr ||
+                    imageSource.UriSource() == nullptr ||
+                    imageSource.UriSource().RawUri() != imageUri.RawUri())
+                {
+                    // Note that BitmapImage handles the image load asynchronously,
+                    // which is especially important since the image
+                    // may well be both large and somewhere out on the
+                    // internet.
+                    Media::Imaging::BitmapImage image(imageUri);
+                    BackgroundImage().Source(image);
+                }
 
                 // Apply stretch, opacity and alignment settings
                 BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
@@ -363,6 +373,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             COLORREF bg = newAppearance.DefaultBackground();
             _BackgroundColorChanged(bg);
 
+            // Set TSF Foreground
             Media::SolidColorBrush foregroundBrush{};
             foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
             TSFInputControl().Foreground(foregroundBrush);
@@ -411,9 +422,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _InitializeBackgroundBrush();
 
-        COLORREF bg = _settings.DefaultBackground();
-        _BackgroundColorChanged(bg);
-
         // Apply padding as swapChainPanel's margin
         auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
         SwapChainPanel().Margin(newMargin);
@@ -431,10 +439,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
 
-        // set TSF Foreground
-        Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(_settings.DefaultForeground()));
-        TSFInputControl().Foreground(foregroundBrush);
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
@@ -522,38 +526,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _renderEngine->SetDefaultTextBackgroundOpacity(1.0f);
             }
-        }
-
-        if (!_settings.BackgroundImage().empty())
-        {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-
-            // Check if the image brush is already pointing to the image
-            // in the modified settings; if it isn't (or isn't there),
-            // set a new image source for the brush
-            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-            if (imageSource == nullptr ||
-                imageSource.UriSource() == nullptr ||
-                imageSource.UriSource().RawUri() != imageUri.RawUri())
-            {
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
-            }
-
-            // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
-            BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
-        }
-        else
-        {
-            BackgroundImage().Source(nullptr);
         }
     }
 
