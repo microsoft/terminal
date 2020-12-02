@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-07-31
-last updated: 2020-11-20
+last updated: 2020-12-02
 issue id: #5000
 ---
 
@@ -293,7 +293,7 @@ experts that could back up a technical solution.
 Instead of supporting mixed elevation in a single window, we'll introduce a
 number of new properties to profiles and various actions, to improve the user
 experience of running elevated instances. These are detailed in the spec at
-[TODO!](FILL THIS LINK IN!!!!                             !)
+[Elevation QOL Improvements].
 
 Some things we considered during this investigation:
 
@@ -1205,3 +1205,4 @@ prompt the user for permission, but that's an acceptable user experience.
 [Tab Tear-out in the community toolkit]: https://github.com/windows-toolkit/Sample-TabView-TearOff
 [Quake mode scenarios]: https://github.com/microsoft/terminal/issues/653#issuecomment-661370107
 [`ISwapChainPanelNative2::SetSwapChainHandle`]: https://docs.microsoft.com/en-us/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainpanelnative2-setswapchainhandle
+[Elevation QOL Improvements]: https://github.com/microsoft/terminal/blob/dev/migrie/s/1032-elevation-qol/doc/specs/%235000%20-%20Process%20Model%202.0/%231032%20-%20Elevation%20Quality%20of%20Life%20Improvements.md?rgh-link-date=2020-12-01T22%3A50%3A26Z
