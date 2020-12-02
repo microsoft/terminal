@@ -2973,6 +2973,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             CATCH_LOG();
         }
+        // StorageItem must be last. Some applications put hybrid data format items
+        // in a drop message and we'll eat a crash when we request them.
+        // Those applications usually include Text as well, so having storage items
+        // last makes sure we'll hit text before getting to them.
         else if (e.DataView().Contains(StandardDataFormats::StorageItems()))
         {
             Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
