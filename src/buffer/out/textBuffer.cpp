@@ -841,7 +841,7 @@ void TextBuffer::Reset()
         const ROW& newTopRow = _storage.at(TopRowIndex);
         while (&newTopRow != &_storage.front())
         {
-            _storage.push_back(std::move(_storage.front()));
+            _storage.emplace_back(std::move(_storage.front()));
             //AUSTINL_TODO: need to figure out what to do here with the vector version, and how to hit this code to confirm correctness.
             //_storage.pop_front();
         }
@@ -2411,7 +2411,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     // all the text into one string and find the patterns in that string
     for (auto i = firstRow; i <= lastRow; ++i)
     {
-        auto row = GetRowByOffset(i);
+        auto& row = GetRowByOffset(i);
         concatAll += row.GetCharRow().GetText();
     }
 
