@@ -378,7 +378,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
         success = _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-        success = _dispatch->SetPrivateMode(DispatchTypes::PrivateModeParams::DECANM_AnsiMode);
+        success = _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -478,14 +478,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetPrivateMode(mode);
+            return _dispatch->SetMode(DECPrivateMode(mode));
         });
         //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetPrivateMode(mode);
+            return _dispatch->ResetMode(DECPrivateMode(mode));
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
         break;
