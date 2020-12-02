@@ -22,7 +22,18 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(uint32_t, SelectionBackground, DEFAULT_FOREGROUND);
         GETSET_PROPERTY(uint32_t, CursorColor, DEFAULT_CURSOR_COLOR);
         GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::CursorStyle, CursorShape, Microsoft::Terminal::TerminalControl::CursorStyle::Vintage);
+
         GETSET_PROPERTY(hstring, BackgroundImage);
+        GETSET_PROPERTY(double, BackgroundImageOpacity, 1.0);
+        GETSET_PROPERTY(winrt::Windows::UI::Xaml::Media::Stretch,
+                        BackgroundImageStretchMode,
+                        winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        GETSET_PROPERTY(winrt::Windows::UI::Xaml::HorizontalAlignment,
+                        BackgroundImageHorizontalAlignment,
+                        winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
+        GETSET_PROPERTY(winrt::Windows::UI::Xaml::VerticalAlignment,
+                        BackgroundImageVerticalAlignment,
+                        winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};

@@ -9,6 +9,7 @@
 
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
@@ -18,6 +19,9 @@ static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
+static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
+static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
+static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 
 AppearanceConfig::AppearanceConfig()
 {
@@ -32,6 +36,9 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
     JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
+    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    //JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
 }
 
 // NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
@@ -63,3 +70,51 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
         return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
     }
 }
+
+#pragma region BackgroundImageAlignment
+bool AppearanceConfig::HasBackgroundImageAlignment() const noexcept
+{
+    return _BackgroundImageAlignment.has_value();
+}
+
+void AppearanceConfig::ClearBackgroundImageAlignment() noexcept
+{
+    _BackgroundImageAlignment = std::nullopt;
+}
+
+const VerticalAlignment AppearanceConfig::BackgroundImageVerticalAlignment() const noexcept
+{
+    const auto val{ _getBackgroundImageAlignmentImpl() };
+    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
+}
+
+void AppearanceConfig::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
+{
+    if (HasBackgroundImageAlignment())
+    {
+        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
+    }
+    else
+    {
+        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
+    }
+}
+
+const HorizontalAlignment AppearanceConfig::BackgroundImageHorizontalAlignment() const noexcept
+{
+    const auto val{ _getBackgroundImageAlignmentImpl() };
+    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
+}
+
+void AppearanceConfig::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
+{
+    if (HasBackgroundImageAlignment())
+    {
+        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
+    }
+    else
+    {
+        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
+    }
+}
+#pragma endregion

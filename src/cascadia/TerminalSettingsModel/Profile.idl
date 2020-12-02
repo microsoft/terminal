@@ -100,19 +100,6 @@ namespace Microsoft.Terminal.Settings.Model
         String StartingDirectory;
         String EvaluatedStartingDirectory { get; };
 
-        Boolean HasBackgroundImageOpacity();
-        void ClearBackgroundImageOpacity();
-        Double BackgroundImageOpacity;
-
-        Boolean HasBackgroundImageStretchMode();
-        void ClearBackgroundImageStretchMode();
-        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
-
-        Boolean HasBackgroundImageAlignment();
-        void ClearBackgroundImageAlignment();
-        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
-        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
-
         Boolean HasAntialiasingMode();
         void ClearAntialiasingMode();
         Microsoft.Terminal.TerminalControl.TextAntialiasingMode AntialiasingMode;

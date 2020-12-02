@@ -6,11 +6,6 @@ namespace Microsoft.Terminal.Settings.Model
     // [default_interface]
     interface IAppearanceConfig
     {
-        Boolean HasBackgroundImagePath();
-        void ClearBackgroundImagePath();
-        String BackgroundImagePath;
-        String ExpandedBackgroundImagePath { get; };
-
         Boolean HasColorSchemeName();
         void ClearColorSchemeName();
         String ColorSchemeName;
@@ -34,5 +29,23 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean HasCursorShape();
         void ClearCursorShape();
         Microsoft.Terminal.TerminalControl.CursorStyle CursorShape;
+
+        Boolean HasBackgroundImagePath();
+        void ClearBackgroundImagePath();
+        String BackgroundImagePath;
+        String ExpandedBackgroundImagePath { get; };
+
+        Boolean HasBackgroundImageOpacity();
+        void ClearBackgroundImageOpacity();
+        Double BackgroundImageOpacity;
+
+        Boolean HasBackgroundImageStretchMode();
+        void ClearBackgroundImageStretchMode();
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
+
+        Boolean HasBackgroundImageAlignment();
+        void ClearBackgroundImageAlignment();
+        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
+        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
     };
 }
