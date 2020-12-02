@@ -64,9 +64,9 @@ own window.
 
 ![auto-glom-wt-exe](auto-glom-wt-exe.png)
 
-If glomming is enabled, the monarch will dispatch the
-commandline to the appropriate window for them to handle instead. To the user,
-it'll seem as if the tab just opened in the most recent window.
+If glomming is enabled, the monarch will dispatch the commandline to the
+appropriate window for them to handle instead. To the user, it'll seem as if the
+tab just opened in the most recent window.
 
 Users should certainly be able to specify if they want new instances to glom
 onto the MRU window or not. You could imagine that currently, we default to the
@@ -130,14 +130,13 @@ directory.
 ### Scenario: Run `wt` in the current window
 
 One often requested scenario is the ability to run a `wt.exe` commandline in the
-current window, as opposed to always creating a new window. With the ability to
-communicate between different window processes, one could imagine a logical
-extension of this scenario being "run a `wt` commandline in _any_ given WT
-window".
+current window, as opposed to always creating a new window. Presume we have the
+ability to communicate between different window processes. The logical extension
+of this scenario would be "run a `wt` commandline in _any_ given WT window".
 
-Since each window process will have it's own unique ID assigned to it by the
-monarch, then running a command in a given window with ID `N` should be as easy
-as something like:
+Each window process will have it's own unique ID assigned to it by the monarch.
+Running a command in a given window with ID N should be as easy as something
+like:
 
 ```sh
 wt.exe --session N new-tab ; split-pane
@@ -311,15 +310,15 @@ unelevated peasants connecting to the elevated Monarch, or vice-versa.
 <td><strong>Reliability</strong></td>
 <td>
 
-Whenever we are working with an object that's hosted by another process, we will
-need to make sure that we work with it in a try/catch, because at _any_ time,
-the other process could be killed. At any point, a window process could be
-killed. Both the monarch and peasant code will need to be redundant to such a
-scenario, and if the other process is killed, make sure to display an
-appropriate error and either recover or exit gracefully.
+We will need to be careful when working with objects hosted by another process.
+Any work we do with it MUST be in a try/catch, because at _any_ time, the other
+process could be killed. At any point, a window process could be killed. Both
+the monarch and peasant code will need to be redundant to such a scenario, and
+if the other process is killed, make sure to display an appropriate error and
+either recover or exit gracefully.
 
-In any and all of these situations, we will want to try and be as verbose as
-possible in the logging, to try and make tracking which process had the error
+In any and all these situations, we will want to try and be as verbose as
+possible in the logging. This will make tracking which process had the error
 occur easier.
 
 </td>
@@ -384,6 +383,54 @@ this commandline should be run in the active session.
 We will need to make sure that special care is taken when creating elevated
 instances that we maintain the `--session-id` parameter passed to the Terminal.
 
+### `wt` Startup Commandline Options
+
+There are a few commandline options which can be provided to `wt.exe` which
+don't make sense to pass to another session. These options include (but are not
+limited to):
+
+* `--initialSize r,c`
+* `--initialPosition x,y`
+* `--fullscreen`, `--maximized`, etc.
+
+When we're passing a commandline to another instance to handle, these arguments
+will be ignored. they only apply to the initial creation of a window.
+`--initialSize 32, 120` doesn't make sense if the window already has a size.
+
+On startup of a new window, we currently assume that the first command is always
+`new-tab`. When passing commandlines to existing windows, we won't need to make
+that assumption anymore. There will already be existing tabs.
+
+### Monarch MRU Window Tracking
+
+As stated above, the monarch is responsible for tracking the MRU window stack.
+However, when the monarch is closed, this state will be lost. The new monarch
+will be elected, but it will be unable to ask the old monarch for the MRU
+order of the windows.
+
+We had previously considered an _acceptable_ UX when this would occur. We would
+randomize the order (with the new monarch becoming the MRU window). If someone
+noticed this bug and complained, then we had a theoretical solution prepared.
+The peasants could inform not only the monarch, but _all other peasants_ when
+they become activated. This would mean all peasants are simultaneously tracking
+the MRU stack. This would mean that any given peasant would be prepared always
+to become the monarch.
+
+A simpler solution though would be to not track the MRU stack in the Monarch at
+all. Instead, each peasant could just track internally when they were last
+activated. The Monarch wouldn't track any state itself. It would be distributed
+across all the peasants. The Monarch could then iterate over the list of
+peasants and find the one with the newest `LastActivated` timestamp.
+
+Now, when a Monarch dies, the new Peasant doesn't have to come up with the stack
+itself. All the other Peasants keep their state. The new Monarch can query them
+and get the same answer the old Monarch would have.
+
+We could further optimize this by having the Monarch also track the stack. Then,
+the monarch could query the MRU window quickly. The `LastActivated` timestamps
+would only be used by a new Monarch when it is elected, to reconstruct the MRU
+stack.
+
 ## Implementation Plan
 
 This is a list of actionable tasks generated as described by this spec:
@@ -420,6 +467,7 @@ set of features, and later used to control tear out as well.
   - Or I suppose, with less confusion, someone could run `wt -s 0 split-pane --
     man ping > cat`. That's certainly more sensible, and wouldn't require any
     extra work.
+*
 
 ## Resources
 
