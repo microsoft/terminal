@@ -65,6 +65,10 @@ namespace winrt::TerminalApp::implementation
             {
                 settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
+            if (newTerminalArgs.Elevated()) // Remember, Elevated is an optional value
+            {
+                settings.Elevated(newTerminalArgs.Elevated());
+            }
         }
 
         return { profileGuid, settings };
@@ -155,6 +159,8 @@ namespace winrt::TerminalApp::implementation
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<uint32_t>(colorRef);
         }
+
+        _Elevated = profile.Elevated();
     }
 
     // Method Description:

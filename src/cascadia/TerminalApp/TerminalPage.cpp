@@ -627,19 +627,24 @@ namespace winrt::TerminalApp::implementation
         return isElevated;
     }
 
-    fire_and_forget _OpenElevatedWT()
+    // Important: Don't take the param by reference, since we'll be doing work
+    // on another thread.
+    fire_and_forget _OpenElevatedWT(const NewTerminalArgs newTerminalArgs)
     {
         co_await winrt::resume_background();
+        winrt::hstring cmdline{ fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str()) };
         ShellExecute(nullptr,
                      L"runas",
-                     L"wt.exe",
-                     L"new-tab --tabColor #ff0000 ",
+                     L"wtd.exe",
+                     cmdline.c_str(),
                      nullptr,
                      SW_SHOWNORMAL);
         co_return;
     }
 
-    fire_and_forget _OpenUnElevatedWT()
+    // Important: Don't take the param by reference, since we'll be doing work
+    // on another thread.
+    fire_and_forget _OpenUnElevatedWT(const NewTerminalArgs newTerminalArgs)
     {
         co_await winrt::resume_background();
         // TODO:
@@ -658,26 +663,26 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
+        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+
         // If the elevated property was provided, then maybe
-        if (newTerminalArgs.Elevated())
+        if (settings.Elevated())
         {
-            const bool requestedElevation = newTerminalArgs.Elevated().Value();
+            const bool requestedElevation = settings.Elevated().Value();
             const bool currentlyElevated = IsElevated();
             if (requestedElevation && !currentlyElevated)
             {
                 // We aren't elevated, but we want to be
-                _OpenElevatedWT();
+                _OpenElevatedWT(newTerminalArgs);
                 return;
             }
             else if (!requestedElevation && currentlyElevated)
             {
                 // We are elevated, but we don't want to be
-                _OpenUnElevatedWT();
+                _OpenUnElevatedWT(newTerminalArgs);
                 return;
             }
         }
-
-        auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
         _CreateNewTabFromSettings(profileGuid, settings);
 

@@ -71,6 +71,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
+        String ToCommandline();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs

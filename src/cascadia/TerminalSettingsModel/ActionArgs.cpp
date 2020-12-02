@@ -74,6 +74,51 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ s.substr(0, s.size() - 2) };
     }
 
+    winrt::hstring NewTerminalArgs::ToCommandline() const
+    {
+        std::wstringstream ss;
+
+        if (!_Profile.empty())
+        {
+            ss << fmt::format(L"--profile \"{}\" ", _Profile);
+        }
+        // TODO
+        // else if (_ProfileIndex)
+        // {
+        //     ss << fmt::format(L"profile index: {}, ", _ProfileIndex.Value());
+        // }
+
+        if (!_StartingDirectory.empty())
+        {
+            ss << fmt::format(L"--directory \"{}\" ", _StartingDirectory);
+        }
+
+        if (!_TabTitle.empty())
+        {
+            ss << fmt::format(L"--title \"{}\" ", _TabTitle);
+        }
+
+        if (_TabColor)
+        {
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
+        }
+
+        if (!_Commandline.empty())
+        {
+            ss << fmt::format(L" -- \"{}\" ", _Commandline);
+        }
+
+        auto s = ss.str();
+        if (s.empty())
+        {
+            return L"";
+        }
+
+        // Chop off the last " "
+        return winrt::hstring{ s.substr(0, s.size() - 1) };
+    }
+
     winrt::hstring CopyTextArgs::GenerateName() const
     {
         std::wstringstream ss;

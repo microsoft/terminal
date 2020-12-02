@@ -77,6 +77,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         hstring GenerateName() const;
 
+        hstring ToCommandline() const;
+
         bool Equals(const Model::NewTerminalArgs& other)
         {
             return other.Commandline() == _Commandline &&
