@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, L"Profile_CursorShape", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageAlignment, BackgroundImageAlignment, winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment, L"Profile_BackgroundImageAlignment", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageAlignment, BackgroundImageAlignment, winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment, L"Profile_BackgroundImageAlignment", L"[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
