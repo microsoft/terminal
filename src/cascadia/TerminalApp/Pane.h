@@ -162,13 +162,15 @@ private:
     // - This is used for pane resizing (which will need a pane separator
     //   that's perpendicular to the direction to be able to move the separator
     //   in that direction).
+    // - Also used for moving focus between panes, which again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
     // - splitType: The winrt::TerminalApp::SplitState to compare
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
     //   winrt::TerminalApp::SplitState::None.
-    static constexpr bool DirectionMatchesSplit(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction,
+    template<typename T>
+    static constexpr bool DirectionMatchesSplit(const T& direction,
                                                 const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType)
     {
         if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::None)
@@ -177,42 +179,13 @@ private:
         }
         else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Horizontal)
         {
-            return direction == winrt::Microsoft::Terminal::Settings::Model::ResizeDirection::Up ||
-                   direction == winrt::Microsoft::Terminal::Settings::Model::ResizeDirection::Down;
+            return direction == T::Up ||
+                   direction == T::Down;
         }
         else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Vertical)
         {
-            return direction == winrt::Microsoft::Terminal::Settings::Model::ResizeDirection::Left ||
-                   direction == winrt::Microsoft::Terminal::Settings::Model::ResizeDirection::Right;
-        }
-        return false;
-    }
-
-    // Method Description
-    // - Exactly the same as the above DirectionMatchesSplit, but for FocusDirection instead of Resize
-    // - Used for moving focus between panes, which again happens _across_ a separator.
-    // Arguments:
-    // - direction: The Direction to compare
-    // - splitType: The winrt::TerminalApp::SplitState to compare
-    // Return Value:
-    // - true iff the direction is perpendicular to the splitType. False for
-    //   winrt::TerminalApp::SplitState::None.
-    static constexpr bool DirectionMatchesSplit(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
-                                                const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType)
-    {
-        if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::None)
-        {
-            return false;
-        }
-        else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Horizontal)
-        {
-            return direction == winrt::Microsoft::Terminal::Settings::Model::FocusDirection::Up ||
-                   direction == winrt::Microsoft::Terminal::Settings::Model::FocusDirection::Down;
-        }
-        else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Vertical)
-        {
-            return direction == winrt::Microsoft::Terminal::Settings::Model::FocusDirection::Left ||
-                   direction == winrt::Microsoft::Terminal::Settings::Model::FocusDirection::Right;
+            return direction == T::Left ||
+                   direction == T::Right;
         }
         return false;
     }
