@@ -22,5 +22,9 @@ namespace Microsoft.Terminal.TerminalControl
         UInt32 SelectionBackground { get; set; };
         CursorStyle CursorShape;
         String BackgroundImage { get; set; };
+        Double BackgroundImageOpacity;
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
+        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
+        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
     };
 }

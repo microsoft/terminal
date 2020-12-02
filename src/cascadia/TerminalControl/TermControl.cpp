@@ -359,10 +359,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 // Apply stretch, opacity and alignment settings
-                BackgroundImage().Stretch(_settings.BackgroundImageStretchMode());
-                BackgroundImage().Opacity(_settings.BackgroundImageOpacity());
-                BackgroundImage().HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
-                BackgroundImage().VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
+                BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+                BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+                BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+                BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
             }
             else
             {
