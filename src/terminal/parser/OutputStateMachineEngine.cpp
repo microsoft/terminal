@@ -478,14 +478,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetMode(DECPrivateMode(mode));
+            return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
         //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetMode(DECPrivateMode(mode));
+            return _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
         break;
