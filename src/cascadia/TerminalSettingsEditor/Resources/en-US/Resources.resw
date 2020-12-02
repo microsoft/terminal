@@ -229,20 +229,20 @@
   <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
   </data>
-  <data name="Globals_LaunchSize.Header" xml:space="preserve">
+  <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
   </data>
-  <data name="Globals_LaunchSize.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Globals_LaunchMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to "Focus" is equivalent to launching the terminal in the "Default" mode, but with the focus mode enabled. Similarly, setting this to "Maximized Focus" will result in launching the terminal in a maximized window with the focus mode enabled.</value>
-    <comment>"Focus", "Default", and "Maximized Focus" must match Globals_LaunchSizeFocus.Content, Globals_LaunchSizeDefault.Content, and Globals_LaunchSizeMaximizedFocus.Content values respectively.</comment>
+    <comment>"Focus", "Default", and "Maximized Focus" must match Globals_LaunchModeFocus.Content, Globals_LaunchModeDefault.Content, and Globals_LaunchModeMaximizedFocus.Content values respectively.</comment>
   </data>
-  <data name="Globals_LaunchSizeDefault.Content" xml:space="preserve">
+  <data name="Globals_LaunchModeDefault.Content" xml:space="preserve">
     <value>Default</value>
   </data>
-  <data name="Globals_LaunchSizeFullscreen.Content" xml:space="preserve">
+  <data name="Globals_LaunchModeFullscreen.Content" xml:space="preserve">
     <value>Full screen</value>
   </data>
-  <data name="Globals_LaunchSizeMaximized.Content" xml:space="preserve">
+  <data name="Globals_LaunchModeMaximized.Content" xml:space="preserve">
     <value>Maximized</value>
   </data>
   <data name="Globals_RenderingDisclaimer.Text" xml:space="preserve">
@@ -332,7 +332,7 @@
     <value>Open JSON file</value>
   </data>
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
-    <value>Base Layer</value>
+    <value>Base layer</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
@@ -635,10 +635,10 @@
   <data name="Nav_Profiles.Content" xml:space="preserve">
     <value>Profiles</value>
   </data>
-  <data name="Globals_LaunchSizeFocus.Content" xml:space="preserve">
+  <data name="Globals_LaunchModeFocus.Content" xml:space="preserve">
     <value>Focus</value>
   </data>
-  <data name="Globals_LaunchSizeMaximizedFocus.Content" xml:space="preserve">
+  <data name="Globals_LaunchModeMaximizedFocus.Content" xml:space="preserve">
     <value>Maximized Focus</value>
   </data>
   <data name="Profile_BellStyle.Header" xml:space="preserve">
@@ -710,7 +710,7 @@
     <value>Thin</value>
     <comment>This is the formal name for a font weight.</comment>
   </data>
-  <data name="Globals_InitialSize.Text" xml:space="preserve">
+  <data name="Globals_LaunchSize.Text" xml:space="preserve">
     <value>Launch size</value>
   </data>
   <data name="Profile_BellStyleAll.Content" xml:space="preserve">

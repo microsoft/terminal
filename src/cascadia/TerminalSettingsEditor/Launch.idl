@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentDefaultProfile;
 
-        IInspectable CurrentLaunchSize;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchSizeList { get; };
+        IInspectable CurrentLaunchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
     }
 }

@@ -68,11 +68,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </ComboBox.ItemTemplate>
                 </ComboBox>
                 <CheckBox x:Uid="Globals_StartOnUserLogin" IsChecked="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
-                <Controls:RadioButtons x:Uid="Globals_LaunchSize"
-                                       SelectedItem="{x:Bind CurrentLaunchSize}"
-                                       ItemsSource="{x:Bind LaunchSizeList}"
+                <Controls:RadioButtons x:Uid="Globals_LaunchMode"
+                                       SelectedItem="{x:Bind CurrentLaunchMode}"
+                                       ItemsSource="{x:Bind LaunchModeList}"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
 
+                <!--Launch Size-->
                 <Grid Margin="0,0,0,20">
                     <Grid.Resources>
                         <Style TargetType="TextBlock">
@@ -90,10 +91,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ColumnDefinition Width="auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock x:Uid="Globals_InitialSize"
+                    <!--Header-->
+                    <TextBlock x:Uid="Globals_LaunchSize"
                                Grid.Row="0" Grid.Column="0"
                                Grid.ColumnSpan="2"/>
-
+                    <!--Columns-->
                     <StackPanel Orientation="Horizontal"
                                 Grid.Row="1" Grid.Column="0"
                                 Margin="0,0,10,0">
@@ -104,6 +106,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                             Margin="0"/>
                     </StackPanel>
 
+                    <!--Rows-->
                     <StackPanel Orientation="Horizontal"
                                 Grid.Row="1" Grid.Column="1">
                         <TextBlock x:Uid="Globals_InitialRows"/>

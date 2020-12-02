@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(LaunchSize, LaunchMode, LaunchMode, L"Globals_LaunchSize", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
     }
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
