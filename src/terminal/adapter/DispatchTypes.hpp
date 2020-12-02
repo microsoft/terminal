@@ -205,14 +205,14 @@ namespace Microsoft::Console::VirtualTerminal
     class FlaggedEnumValue
     {
         template<T Value>
-        struct ZeroOrOneBitValidator
+        struct ZeroOrOneBitChecker
         {
             static_assert(Value == 0 || (((Value - 1) & Value) == 0), "zero or one flags expected");
             static constexpr T value = Value;
         };
 
     public:
-        static constexpr T mask{ ZeroOrOneBitValidator<Flag>::value };
+        static constexpr T mask{ ZeroOrOneBitChecker<Flag>::value };
         constexpr FlaggedEnumValue(const T value) :
             _value{ value }
         {
