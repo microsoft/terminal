@@ -260,6 +260,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
+        void _UpdateAppearanceFromUIThread(IAppearance newAppearance);
+
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
