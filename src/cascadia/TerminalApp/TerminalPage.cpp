@@ -1682,7 +1682,7 @@ namespace winrt::TerminalApp::implementation
 
         if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
         {
-            auto scrollDelta = _ComputeScrollDelta(scrollDirection, UINT16_MAX);
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
             terminalTab->Scroll(scrollDelta);
         }
     }
