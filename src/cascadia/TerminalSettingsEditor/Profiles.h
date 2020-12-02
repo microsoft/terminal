@@ -44,9 +44,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // manually bind FontWeight
-        winrt::Windows::Foundation::IInspectable CurrentFontWeight();
+        winrt::Windows::Foundation::IInspectable CurrentFontWeight() const;
         void CurrentFontWeight(const winrt::Windows::Foundation::IInspectable& enumEntry);
+        bool IsCustomFontWeight();
         GETSET_PROPERTY(winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         GETSET_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
@@ -60,8 +63,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         winrt::Windows::Foundation::Collections::IMap<uint16_t, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
         Editor::EnumEntry _CustomFontWeight{ nullptr };
-
-        static bool _IsCustomFontWeight(const Windows::UI::Text::FontWeight& weight);
     };
 }
 

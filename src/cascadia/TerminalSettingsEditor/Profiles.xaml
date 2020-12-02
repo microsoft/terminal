@@ -106,8 +106,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                   ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
                                   SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
                                   ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"/>
-                        <Grid x:Name="CustomFontWeightControl"
-                              Margin="0,10,0,0">
+
+                        <!--Custom Font Weight Control-->
+                        <Grid Margin="0,10,0,0"
+                              Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>

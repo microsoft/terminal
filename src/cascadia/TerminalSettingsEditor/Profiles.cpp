@@ -121,33 +121,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool Profiles::_IsCustomFontWeight(const Windows::UI::Text::FontWeight& weight)
+    IInspectable Profiles::CurrentFontWeight() const
     {
-        if (weight == FontWeights::Thin() ||
-            weight == FontWeights::ExtraLight() ||
-            weight == FontWeights::Light() ||
-            weight == FontWeights::SemiLight() ||
-            weight == FontWeights::Normal() ||
-            weight == FontWeights::Medium() ||
-            weight == FontWeights::SemiBold() ||
-            weight == FontWeights::Bold() ||
-            weight == FontWeights::ExtraBold() ||
-            weight == FontWeights::Black() ||
-            weight == FontWeights::ExtraBlack())
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    IInspectable Profiles::CurrentFontWeight()
-    {
-        // if no value was found, we have a custom value, and we show the slider.
+        // if no value was found, we have a custom value
         const auto maybeEnumEntry{ _FontWeightMap.TryLookup(_State.Profile().FontWeight().Weight) };
-        CustomFontWeightControl().Visibility(maybeEnumEntry ? Visibility::Collapsed : Visibility::Visible);
         return maybeEnumEntry ? maybeEnumEntry : _CustomFontWeight;
     }
 
@@ -155,21 +132,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (auto ee = enumEntry.try_as<Editor::EnumEntry>())
         {
-            const auto weight{ winrt::unbox_value<uint16_t>(ee.EnumValue()) };
-            const Windows::UI::Text::FontWeight setting{ weight };
-            if (_IsCustomFontWeight(setting))
+            if (ee != _CustomFontWeight)
             {
-                // Custom FontWeight is selected using the slider
-                // Initialize the value to what is currently set
-                CustomFontWeightControl().Visibility(Visibility::Visible);
-                FontWeightSlider().Value(_State.Profile().FontWeight().Weight);
-            }
-            else
-            {
-                // Otherwise, the selected ComboBox item has an associated fontWeight
-                CustomFontWeightControl().Visibility(Visibility::Collapsed);
+                const auto weight{ winrt::unbox_value<uint16_t>(ee.EnumValue()) };
+                const Windows::UI::Text::FontWeight setting{ weight };
                 _State.Profile().FontWeight(setting);
+
+                // Profile does not have observable properties
+                // So the TwoWay binding doesn't update on the State --> Slider direction
+                FontWeightSlider().Value(weight);
             }
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IsCustomFontWeight" });
         }
+    }
+
+    bool Profiles::IsCustomFontWeight()
+    {
+        // Use SelectedItem instead of CurrentFontWeight.
+        // CurrentFontWeight converts the Profile's value to the appropriate enum entry,
+        // whereas SelectedItem identifies which one was selected by the user.
+        return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
     }
 }
