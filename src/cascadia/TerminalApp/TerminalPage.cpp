@@ -599,7 +599,35 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton, options);
     }
 
-    fire_and_forget _OpenElevatedTab()
+    static bool IsElevated()
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+        static const bool isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            bool result = false;
+            wil::unique_handle hToken;
+            if (LOG_IF_WIN32_BOOL_FALSE(OpenProcessToken(GetCurrentProcess(),
+                                                         TOKEN_QUERY,
+                                                         hToken.addressof())))
+            {
+                TOKEN_ELEVATION Elevation;
+                DWORD cbSize = sizeof(TOKEN_ELEVATION);
+                if (LOG_IF_WIN32_BOOL_FALSE(GetTokenInformation(hToken.get(),
+                                                                TokenElevation,
+                                                                &Elevation,
+                                                                sizeof(Elevation),
+                                                                &cbSize)))
+                {
+                    result = Elevation.TokenIsElevated;
+                }
+            }
+            return result;
+        }();
+        return isElevated;
+    }
+
+    fire_and_forget _OpenElevatedWT()
     {
         co_await winrt::resume_background();
         ShellExecute(nullptr,
@@ -608,6 +636,13 @@ namespace winrt::TerminalApp::implementation
                      L"new-tab --tabColor #ff0000 ",
                      nullptr,
                      SW_SHOWNORMAL);
+        co_return;
+    }
+
+    fire_and_forget _OpenUnElevatedWT()
+    {
+        co_await winrt::resume_background();
+        // TODO:
         co_return;
     }
 
@@ -623,10 +658,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs)
     try
     {
+        // If the elevated property was provided, then maybe
         if (newTerminalArgs.Elevated())
         {
-            _OpenElevatedTab();
-            return;
+            const bool requestedElevation = newTerminalArgs.Elevated().Value();
+            const bool currentlyElevated = IsElevated();
+            if (requestedElevation && !currentlyElevated)
+            {
+                // We aren't elevated, but we want to be
+                _OpenElevatedWT();
+                return;
+            }
+            else if (!requestedElevation && currentlyElevated)
+            {
+                // We are elevated, but we don't want to be
+                _OpenUnElevatedWT();
+                return;
+            }
         }
 
         auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
