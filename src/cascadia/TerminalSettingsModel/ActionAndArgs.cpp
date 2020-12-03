@@ -95,7 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
         { ScrollupKey, ShortcutAction::ScrollUp },
         { ScrolluppageKey, ShortcutAction::ScrollUpPage },
-        { ScrollToTopKey, ShortcutAction::ScrollToTop},
+        { ScrollToTopKey, ShortcutAction::ScrollToTop },
         { ScrollToBottomKey, ShortcutAction::ScrollToBottom },
         { SendInputKey, ShortcutAction::SendInput },
         { SetColorSchemeKey, ShortcutAction::SetColorScheme },
