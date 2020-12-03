@@ -644,7 +644,7 @@ namespace winrt::TerminalApp::implementation
         co_return;
     }
 
-    HRESULT _JustDoExactlyTheRaymondChenThingHesAlwaysRight()
+    HRESULT _JustDoExactlyTheRaymondChenThingHesAlwaysRight(const NewTerminalArgs& newTerminalArgs)
     {
         HWND hwnd = GetShellWindow();
 
@@ -667,7 +667,33 @@ namespace winrt::TerminalApp::implementation
         siex.StartupInfo.cb = sizeof(siex);
         PROCESS_INFORMATION pi;
 
-        CreateProcessW(cmd, cmd, nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE | EXTENDED_STARTUPINFO_PRESENT, nullptr, nullptr, &siex.StartupInfo, &pi);
+        std::wstring exe{ GetWtExePath() };
+        std::wstring args{ fmt::format(L"new-tab {}",
+                                       // GetWtExePath().c_str(),
+                                       newTerminalArgs.ToCommandline()) };
+
+        std::wstring wtExeCommandline{ fmt::format(L"{} new-tab {}",
+                                                   GetWtExePath().c_str(),
+                                                   newTerminalArgs.ToCommandline()) };
+
+        std::wstring insaneCommandline{ fmt::format(L"{} /k {} new-tab {}",
+                                                    cmd,
+                                                    GetWtExePath().c_str(),
+                                                    newTerminalArgs.ToCommandline()) };
+        // std::wstring cmdline{ wtExeCommandline }; // mutable copy -- required for CreateProcessW
+        // DebugBreak();
+
+        CreateProcessW(cmd, // nullptr, // exe.data(),
+                       insaneCommandline.data(), // wtExeCommandline.data(), // args.data(),
+                       nullptr,
+                       nullptr,
+                       FALSE,
+                       CREATE_NEW_CONSOLE | EXTENDED_STARTUPINFO_PRESENT,
+                       // EXTENDED_STARTUPINFO_PRESENT,
+                       nullptr,
+                       nullptr,
+                       &siex.StartupInfo,
+                       &pi);
 
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -766,7 +792,7 @@ namespace winrt::TerminalApp::implementation
     {
         co_await winrt::resume_background();
         // LOG_IF_FAILED(_ActuallyOpenUnelevatedWindow(newTerminalArgs));
-        LOG_IF_FAILED(_JustDoExactlyTheRaymondChenThingHesAlwaysRight());
+        LOG_IF_FAILED(_JustDoExactlyTheRaymondChenThingHesAlwaysRight(newTerminalArgs));
         co_return;
     }
 
@@ -805,6 +831,8 @@ namespace winrt::TerminalApp::implementation
             }
             else if (!requestedElevation && currentlyElevated)
             {
+                DebugBreak();
+
                 // We are elevated, but we don't want to be
                 _OpenUnElevatedWT(newTerminalArgs);
                 return;
