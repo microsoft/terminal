@@ -19,13 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void LayerJson(const Json::Value& json);
         winrt::hstring ExpandedBackgroundImagePath();
 
-        // BackgroundImageAlignment is 1 setting saved as 2 separate values
-        bool HasBackgroundImageAlignment() const noexcept;
-        void ClearBackgroundImageAlignment() noexcept;
-        const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
-        void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
-        const Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
-        void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
+        GETSET_SETTING(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
         GETSET_SETTING(hstring, ColorSchemeName, L"Campbell");
         GETSET_NULLABLE_SETTING(Windows::UI::Color, Foreground, nullptr);
@@ -39,27 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
 
     private:
-        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };
-        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _getBackgroundImageAlignmentImpl() const
-        {
-            /*return user set value*/
-            if (_BackgroundImageAlignment)
-            {
-                return _BackgroundImageAlignment;
-            }
-
-            /*user set value was not set*/ /*iterate through parents to find a value*/
-            for (auto parent : _parents)
-            {
-                if (auto val{ parent->_getBackgroundImageAlignmentImpl() })
-                {
-                    return val;
-                }
-            }
-
-            /*no value was found*/
-            return std::nullopt;
-        };
     };
 }
 

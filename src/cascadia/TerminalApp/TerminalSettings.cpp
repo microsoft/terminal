@@ -196,11 +196,13 @@ namespace winrt::TerminalApp::implementation
         {
             auto unfocusedConfig = winrt::make_self<implementation::AppAppearanceConfig>();
 
+            auto backgroundImageAlignment = ConvertConvergedAlignment(profile.UnfocusedConfig().BackgroundImageAlignment());
+
             unfocusedConfig->CursorShape(profile.UnfocusedConfig().CursorShape());
             unfocusedConfig->BackgroundImageOpacity(profile.UnfocusedConfig().BackgroundImageOpacity());
             unfocusedConfig->BackgroundImageStretchMode(profile.UnfocusedConfig().BackgroundImageStretchMode());
-            unfocusedConfig->BackgroundImageHorizontalAlignment(profile.UnfocusedConfig().BackgroundImageHorizontalAlignment());
-            unfocusedConfig->BackgroundImageVerticalAlignment(profile.UnfocusedConfig().BackgroundImageVerticalAlignment());
+            unfocusedConfig->BackgroundImageHorizontalAlignment(std::get<0>(backgroundImageAlignment));
+            unfocusedConfig->BackgroundImageVerticalAlignment(std::get<1>(backgroundImageAlignment));
 
             if (!profile.UnfocusedConfig().ColorSchemeName().empty())
             {

@@ -38,7 +38,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
     JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
     JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    //JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
 }
 
 // NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
@@ -70,51 +70,3 @@ winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
         return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
     }
 }
-
-#pragma region BackgroundImageAlignment
-bool AppearanceConfig::HasBackgroundImageAlignment() const noexcept
-{
-    return _BackgroundImageAlignment.has_value();
-}
-
-void AppearanceConfig::ClearBackgroundImageAlignment() noexcept
-{
-    _BackgroundImageAlignment = std::nullopt;
-}
-
-const VerticalAlignment AppearanceConfig::BackgroundImageVerticalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
-}
-
-void AppearanceConfig::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
-    }
-}
-
-const HorizontalAlignment AppearanceConfig::BackgroundImageHorizontalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
-}
-
-void AppearanceConfig::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
-    }
-}
-#pragma endregion
