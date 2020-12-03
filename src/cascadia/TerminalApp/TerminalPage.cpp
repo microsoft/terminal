@@ -1673,17 +1673,13 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection)
     {
-        auto indexOpt = _GetFocusedTabIndex();
-        // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
-        if (!indexOpt)
+        if (const auto indexOpt = _GetFocusedTabIndex())
         {
-            return;
-        }
-
-        if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
-        {
-            auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
-            terminalTab->Scroll(scrollDelta);
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
+            {
+                auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
+                terminalTab->Scroll(scrollDelta);
+            }
         }
     }
 
