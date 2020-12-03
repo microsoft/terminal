@@ -25,23 +25,33 @@ pane is focused and which panes are unfocused. This change would grant us that f
 ## Solution Design
 
 We will add an new interface in the `TerminalControl` namespace, called `IAppearance`, which defines how
-`TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about (such as `FontFace`).
+`TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about (such as `CursorShape`).
 `TerminalApp` will implement this interface through a class called `AppAppearanceConfig`.
 
-On the Settings Model side, there will be a new class called `AppearanceConfig`. When we parse out the
-settings json file, each state-appearance will be stored in an object of this class. Later on, these values get
-piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the way we already pipe over information
-such as `FontFace` and `CursorStyle` from the settings model to the app.
+We will also have `IControlSettings` require `IAppearance`. That way, the control `settings` object can
+itself also be used as an object that implements `IAppearance`. We do this so we do not need a separate
+'focused' configuration object when we wish to switch back to the 'regular' appearance from the unfocused
+appearance - we can simply pass in the settings.
+
+On the Settings Model side, there will be a new interface called `IAppearanceConfig`, which is essentially a
+mirror of the `IAppearance` interface described earlier. A new class, `AppearanceConfig`, will implement this
+interface and so will `Profile` itself (for the same reason as earlier - so that no new configuration object is
+needed for the regular appearance).
+
+When we parse out the settings json file, each state-appearance will be stored in an object of the `AppearanceConfig`
+class. Later on, these values get piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the
+similar to the way we already pipe over information such as `FontFace` and `CursorStyle` from the settings
+model to the app.
 
 ### Allowed parameters
 
 For now, these states are meant to be entirely appearance-based. So, not all parameters which can be
 defined in a `Profile` can be defined in this new object (for example, we do not want parameters which
-would cause a resize in this object.) Here are the list of parameters we will allow:
+would cause a resize in this object.) Here is the list of parameters we will allow:
 
 - Anything regarding colors: `colorScheme`, `foreground`, `background`, `cursorColor` etc
+- Anything regarding background image: `path`, `opacity`, `alignment`, `stretchMode`
 - `cursorShape`
-- `backgroundImage`
 
 We may wish to allow further parameters in these objects in the future (like `bellStyle`?). The addition
 of further parameters can be discussed in the future and is out of scope for this spec.
@@ -56,9 +66,10 @@ the values from the profile itself. If the profile does not define an `unfocused
 for this profile.
 
 Thus, if a user wishes for the unfocused state to look the same as the focused state for a particular profile,
-while still having a global/default unfocused state appearance, they simply need to define an emplty `unfocusedState`
+while still having a global/default unfocused state appearance, they simply need to define an empty `unfocusedState`
 for that profile (similarly, they could define just 1 or 2 parameters if they wish for minimal changes between the focused
-and unfocused states for that profile).
+and unfocused states for that profile). If they do not define any `unfocusedState` for the profile, then
+the global/default one will be used.
 
 ## UI/UX Design
 
