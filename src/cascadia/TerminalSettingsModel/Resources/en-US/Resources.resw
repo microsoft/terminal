@@ -303,7 +303,7 @@
     <value>Scroll to the top of history</value>
   </data>
   <data name="ScrollEndCommandKey" xml:space="preserve">
-    <value>Scroll end</value>
+    <value>Scroll to the bottom of history</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
     <value>Send Input: "{0}"</value>
