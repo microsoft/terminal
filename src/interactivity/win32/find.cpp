@@ -7,11 +7,11 @@
 #include "resource.h"
 #include "window.hpp"
 
-#include "..\..\host\dbcs.h"
-#include "..\..\host\handle.h"
-#include "..\buffer\out\search.h"
+#include "../../host/dbcs.h"
+#include "../../host/handle.h"
+#include "../buffer/out/search.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

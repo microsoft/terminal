@@ -10,7 +10,7 @@
 #include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
-#include "..\..\types\inc\GlyphWidth.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -106,6 +106,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto pfnCopyToClipboard = std::bind(&TermControl::_CopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
+
+        _terminal->TaskbarProgressChangedCallback([&]() { TermControl::TaskbarProgressChanged(); });
 
         // This event is explicitly revoked in the destructor: does not need weak_ref
         auto onReceiveOutputFn = [this](const hstring str) {
@@ -2944,9 +2946,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
         {
-            auto items = co_await e.DataView().GetStorageItemsAsync();
+            try
+            {
+                Windows::Foundation::Uri link{ co_await e.DataView().GetApplicationLinkAsync() };
+                _SendPastedTextToConnection(std::wstring{ link.AbsoluteUri() });
+            }
+            CATCH_LOG();
+        }
+        else if (e.DataView().Contains(StandardDataFormats::WebLink()))
+        {
+            try
+            {
+                Windows::Foundation::Uri link{ co_await e.DataView().GetWebLinkAsync() };
+                _SendPastedTextToConnection(std::wstring{ link.AbsoluteUri() });
+            }
+            CATCH_LOG();
+        }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            try
+            {
+                std::wstring text{ co_await e.DataView().GetTextAsync() };
+                _SendPastedTextToConnection(text);
+            }
+            CATCH_LOG();
+        }
+        // StorageItem must be last. Some applications put hybrid data format items
+        // in a drop message and we'll eat a crash when we request them.
+        // Those applications usually include Text as well, so having storage items
+        // last makes sure we'll hit text before getting to them.
+        else if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
+            try
+            {
+                items = co_await e.DataView().GetStorageItemsAsync();
+            }
+            CATCH_LOG();
+
             if (items.Size() > 0)
             {
                 std::wstring allPaths;
@@ -2975,15 +3014,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 _SendInputToConnection(allPaths);
             }
-        }
-        else if (e.DataView().Contains(StandardDataFormats::Text()))
-        {
-            try
-            {
-                std::wstring text{ co_await e.DataView().GetTextAsync() };
-                _SendPastedTextToConnection(text);
-            }
-            CATCH_LOG();
         }
     }
 
@@ -3091,6 +3121,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return coreColor.has_value() ? Windows::Foundation::IReference<winrt::Windows::UI::Color>(coreColor.value()) : nullptr;
     }
 
+    // Method Description:
+    // - Sends an event (which will be caught by TerminalPage and forwarded to AppHost after)
+    //   to set the progress indicator on the taskbar
+    winrt::fire_and_forget TermControl::TaskbarProgressChanged()
+    {
+        co_await resume_foreground(Dispatcher(), CoreDispatcherPriority::High);
+        _setTaskbarProgressHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Gets the internal taskbar state value
+    // Return Value:
+    // - The taskbar state of this control
+    const size_t TermControl::TaskbarState() const noexcept
+    {
+        return _terminal->GetTaskbarState();
+    }
+
+    // Method Description:
+    // - Gets the internal taskbar progress value
+    // Return Value:
+    // - The taskbar progress of this control
+    const size_t TermControl::TaskbarProgress() const noexcept
+    {
+        return _terminal->GetTaskbarProgress();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
@@ -3101,6 +3158,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
     // clang-format on
 }

@@ -63,6 +63,8 @@ namespace Microsoft::Terminal::Core
         virtual bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept = 0;
         virtual bool EndHyperlink() noexcept = 0;
 
+        virtual bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept = 0;
+
     protected:
         ITerminalApi() = default;
     };

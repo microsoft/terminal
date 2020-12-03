@@ -5,7 +5,7 @@
 
 #include "ProcessPolicy.h"
 
-#include "..\inc\conint.h"
+#include "../inc/conint.h"
 
 // Routine Description:
 // - Constructs a new instance of the process policy class.

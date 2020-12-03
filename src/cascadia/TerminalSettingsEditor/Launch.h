@@ -29,6 +29,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void CurrentDefaultProfile(const IInspectable& value);
 
         GETSET_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
+
+        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
     };
 }
 

@@ -47,12 +47,33 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
-        pair_type{ "none", ValueType::None },
-        pair_type{ "audible", ValueType::Audible }
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "audible", ValueType::Audible },
+        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "all", AllSet },
     };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::BellStyle& bellStyle)
+    {
+        return BaseFlagMapper::ToJson(bellStyle);
+    }
 };
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
@@ -113,23 +134,23 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
 template<>
 struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight> :
     public ::Microsoft::Terminal::Settings::Model::JsonUtils::EnumMapper<
-        unsigned int,
+        uint16_t,
         ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winrt::Windows::UI::Text::FontWeight>>
 {
     // The original parser used the font weight getters Bold(), Normal(), etc.
     // They were both cumbersome and *not constant expressions*
     JSON_MAPPINGS(11) = {
-        pair_type{ "thin", 100u },
-        pair_type{ "extra-light", 200u },
-        pair_type{ "light", 300u },
-        pair_type{ "semi-light", 350u },
-        pair_type{ "normal", 400u },
-        pair_type{ "medium", 500u },
-        pair_type{ "semi-bold", 600u },
-        pair_type{ "bold", 700u },
-        pair_type{ "extra-bold", 800u },
-        pair_type{ "black", 900u },
-        pair_type{ "extra-black", 950u },
+        pair_type{ "thin", static_cast<uint16_t>(100u) },
+        pair_type{ "extra-light", static_cast<uint16_t>(200u) },
+        pair_type{ "light", static_cast<uint16_t>(300u) },
+        pair_type{ "semi-light", static_cast<uint16_t>(350u) },
+        pair_type{ "normal", static_cast<uint16_t>(400u) },
+        pair_type{ "medium", static_cast<uint16_t>(500u) },
+        pair_type{ "semi-bold", static_cast<uint16_t>(600u) },
+        pair_type{ "bold", static_cast<uint16_t>(700u) },
+        pair_type{ "extra-bold", static_cast<uint16_t>(800u) },
+        pair_type{ "black", static_cast<uint16_t>(900u) },
+        pair_type{ "extra-black", static_cast<uint16_t>(950u) },
     };
 
     // Override mapping parser to add boolean parsing
@@ -146,7 +167,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         }
 
         ::winrt::Windows::UI::Text::FontWeight weight{
-            static_cast<uint16_t>(std::clamp(value, 100u, 990u))
+            static_cast<uint16_t>(std::clamp(value, 1u, 999u))
         };
         return weight;
     }
@@ -375,4 +396,13 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
     {
         return BaseEnumMapper::CanConvert(json) || json.isBool();
     }
+};
+
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "forward", ValueType::Forward },
+        pair_type{ "backward", ValueType::Backward },
+    };
 };

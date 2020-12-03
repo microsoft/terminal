@@ -67,7 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, Hidden, false);
         GETSET_SETTING(guid, ConnectionType);
 
-        GETSET_SETTING(hstring, Icon);
+        // Default Icon: Segoe MDL2 CommandPrompt icon
+        GETSET_SETTING(hstring, Icon, L"\uE756");
 
         GETSET_SETTING(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         GETSET_SETTING(hstring, TabTitle);
@@ -89,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(hstring, BackgroundImagePath);
         GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
         GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
-        GETSET_SETTING(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center & ConvergedAlignment::Vertical_Center);
+        GETSET_SETTING(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_SETTING(bool, RetroTerminalEffect, false);

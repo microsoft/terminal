@@ -33,6 +33,7 @@ IMap
 IObject
 IStorage
 ITab
+ITaskbar
 llabs
 LCID
 llabs
@@ -44,7 +45,9 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOPROGRESS
 NOREDIRECTIONBITMAP
+ntprivapi
 oaidl
 ocidl
 otms
@@ -59,6 +62,7 @@ rx
 schandle
 semver
 serializer
+shobjidl
 SIZENS
 GETDESKWALLPAPER
 snprintf
@@ -70,6 +74,7 @@ Subheader
 Subpage
 UPDATEINIFILE
 syscall
+TBPF
 THEMECHANGED
 tmp
 tolower

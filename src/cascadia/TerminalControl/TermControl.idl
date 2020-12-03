@@ -74,6 +74,7 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
 
@@ -104,6 +105,10 @@ namespace Microsoft.Terminal.TerminalControl
 
         void SendInput(String input);
         void ToggleRetroEffect();
+
+        void TaskbarProgressChanged();
+        UInt64 TaskbarState { get; };
+        UInt64 TaskbarProgress { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
