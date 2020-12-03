@@ -1671,7 +1671,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_ScrollHome(ScrollDirection scrollDirection)
+    void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection)
     {
         auto indexOpt = _GetFocusedTabIndex();
         // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
