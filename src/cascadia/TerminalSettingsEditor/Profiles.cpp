@@ -59,8 +59,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _ColorSchemeList.Append(pair.Value());
         }
 
-        const auto biAlignmentVal{ static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()) };
-        for (auto biButton : _BIAlignmentButtons)
+        const auto& biAlignmentVal{ static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()) };
+        for (const auto& biButton : _BIAlignmentButtons)
         {
             biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
         }
@@ -173,15 +173,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
     {
-        if (auto button{ sender.try_as<Windows::UI::Xaml::Controls::Primitives::ToggleButton>() })
+        if (const auto& button{ sender.try_as<Windows::UI::Xaml::Controls::Primitives::ToggleButton>() })
         {
-            if (auto tag{ button.Tag().try_as<int32_t>() })
+            if (const auto& tag{ button.Tag().try_as<int32_t>() })
             {
                 // Update the Profile's value
                 _State.Profile().BackgroundImageAlignment(static_cast<ConvergedAlignment>(*tag));
 
                 // reset all of the buttons to unchecked, except for the one that was clicked
-                for (auto biButton : _BIAlignmentButtons)
+                for (const auto& biButton : _BIAlignmentButtons)
                 {
                     biButton.IsChecked(biButton == button);
                 }
