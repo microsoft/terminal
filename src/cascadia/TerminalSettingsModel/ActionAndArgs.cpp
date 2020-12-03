@@ -136,6 +136,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::ScrollUp, ScrollUpArgs::FromJson },
         { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
         { ShortcutAction::MoveTab, MoveTabArgs::FromJson },
+        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -296,7 +297,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
-                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, L"" },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },

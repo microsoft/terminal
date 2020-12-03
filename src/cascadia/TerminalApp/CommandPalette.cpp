@@ -809,9 +809,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void CommandPalette::EnableCommandPaletteMode()
+    void CommandPalette::EnableCommandPaletteMode(CommandPaletteLaunchMode const launchMode)
     {
-        _switchToMode(CommandPaletteMode::ActionMode);
+        const auto mode = (launchMode == CommandPaletteLaunchMode::CommandLine) ?
+                              CommandPaletteMode::CommandlineMode :
+                              CommandPaletteMode::ActionMode;
+
+        _switchToMode(mode);
         _updateFilteredActions();
     }
 
