@@ -1247,44 +1247,44 @@ public:
         return true;
     }
 
-    bool _PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
+    bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
         switch (param)
         {
-        case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+        case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
             // set - Enable Application Mode, reset - Numeric/normal mode
             fSuccess = SetVirtualTerminalInputMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        case DispatchTypes::ModeParams::DECANM_AnsiMode:
             fSuccess = SetAnsiMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
+        case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
-        case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
             fSuccess = SetScreenMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+        case DispatchTypes::ModeParams::DECOM_OriginMode:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
             break;
-        case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+        case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
             fSuccess = SetAutoWrapMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+        case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+        case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+        case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
             fSuccess = EnableDECCOLMSupport(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
+        case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
-        case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        case DispatchTypes::ModeParams::W32IM_Win32InputMode:
             fSuccess = EnableWin32InputMode(fEnable);
             break;
         default:
@@ -1295,14 +1295,14 @@ public:
         return fSuccess;
     }
 
-    bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
+    bool SetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _PrivateModeParamsHelper(param, true);
+        return _ModeParamsHelper(param, true);
     }
 
-    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
+    bool ResetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _PrivateModeParamsHelper(param, false);
+        return _ModeParamsHelper(param, false);
     }
 
     bool SetColumns(_In_ size_t const uiColumns) noexcept override
