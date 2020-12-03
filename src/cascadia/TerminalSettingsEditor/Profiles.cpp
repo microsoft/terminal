@@ -6,9 +6,13 @@
 #include "Profiles.g.cpp"
 #include "EnumEntry.h"
 
+#include <LibraryResources.h>
+
+using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
@@ -27,6 +31,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
+
+        // manually add Custom FontWeight option. Don't add it to the Map
+        INITIALIZE_BINDABLE_ENUM_SETTING(FontWeight, FontWeight, uint16_t, L"Profile_FontWeight", L"Content");
+        _CustomFontWeight = winrt::make<EnumEntry>(RS_(L"Profile_FontWeightCustom/Content"), winrt::box_value<uint16_t>(0u));
+        _FontWeightList.Append(_CustomFontWeight);
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -110,5 +119,38 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             StorageApplicationPermissions::FutureAccessList().AddOrReplace(L"PickedFolderToken", folder);
             StartingDirectory().Text(folder.Path());
         }
+    }
+
+    IInspectable Profiles::CurrentFontWeight() const
+    {
+        // if no value was found, we have a custom value
+        const auto maybeEnumEntry{ _FontWeightMap.TryLookup(_State.Profile().FontWeight().Weight) };
+        return maybeEnumEntry ? maybeEnumEntry : _CustomFontWeight;
+    }
+
+    void Profiles::CurrentFontWeight(const IInspectable& enumEntry)
+    {
+        if (auto ee = enumEntry.try_as<Editor::EnumEntry>())
+        {
+            if (ee != _CustomFontWeight)
+            {
+                const auto weight{ winrt::unbox_value<uint16_t>(ee.EnumValue()) };
+                const Windows::UI::Text::FontWeight setting{ weight };
+                _State.Profile().FontWeight(setting);
+
+                // Profile does not have observable properties
+                // So the TwoWay binding doesn't update on the State --> Slider direction
+                FontWeightSlider().Value(weight);
+            }
+            _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+        }
+    }
+
+    bool Profiles::IsCustomFontWeight()
+    {
+        // Use SelectedItem instead of CurrentFontWeight.
+        // CurrentFontWeight converts the Profile's value to the appropriate enum entry,
+        // whereas SelectedItem identifies which one was selected by the user.
+        return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
     }
 }

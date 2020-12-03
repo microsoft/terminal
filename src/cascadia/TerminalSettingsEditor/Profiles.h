@@ -43,6 +43,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget Commandline_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
+        // manually bind FontWeight
+        winrt::Windows::Foundation::IInspectable CurrentFontWeight() const;
+        void CurrentFontWeight(const winrt::Windows::Foundation::IInspectable& enumEntry);
+        bool IsCustomFontWeight();
+        GETSET_PROPERTY(winrt::Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::EnumEntry>, FontWeightList);
+
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
         GETSET_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(CursorShape, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, State().Profile, CursorShape);
@@ -51,6 +59,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
         GETSET_BINDABLE_ENUM_SETTING(BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, State().Profile, BellStyle);
         GETSET_BINDABLE_ENUM_SETTING(ScrollState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, State().Profile, ScrollState);
+
+    private:
+        winrt::Windows::Foundation::Collections::IMap<uint16_t, winrt::Microsoft::Terminal::Settings::Editor::EnumEntry> _FontWeightMap;
+        Editor::EnumEntry _CustomFontWeight{ nullptr };
     };
 }
 

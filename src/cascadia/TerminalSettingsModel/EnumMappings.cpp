@@ -41,4 +41,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, TextAntialiasingMode);
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::CursorStyle, CursorStyle);
     DEFINE_ENUM_MAP(Model::BellStyle, BellStyle);
+
+    winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> EnumMappings::FontWeight()
+    {
+        static IMap<winrt::hstring, uint16_t> enumMap = []() {
+            auto map = single_threaded_map<winrt::hstring, uint16_t>();
+            for (auto [enumStr, enumVal] : JsonUtils::ConversionTrait<Windows::UI::Text::FontWeight>::mappings)
+            {
+                map.Insert(winrt::to_hstring(enumStr), enumVal);
+            }
+            return map;
+        }();
+        return enumMap;
+    }
 }
