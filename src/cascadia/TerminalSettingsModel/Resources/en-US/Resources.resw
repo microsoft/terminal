@@ -300,7 +300,7 @@
     <value>Scroll up one page</value>
   </data>
   <data name="ScrollHomeCommandKey" xml:space="preserve">
-    <value>Scroll home</value>
+    <value>Scroll to the top of history</value>
   </data>
   <data name="ScrollEndCommandKey" xml:space="preserve">
     <value>Scroll end</value>
