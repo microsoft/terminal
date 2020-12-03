@@ -5,7 +5,7 @@
 
 #include "uiaTextRange.hpp"
 #include "screenInfoUiaProvider.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;

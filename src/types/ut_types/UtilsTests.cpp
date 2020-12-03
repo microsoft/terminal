@@ -3,10 +3,10 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include "..\inc\utils.hpp"
-#include "..\inc\colorTable.hpp"
+#include "../inc/utils.hpp"
+#include "../inc/colorTable.hpp"
 #include <conattrs.hpp>
 
 using namespace WEX::Common;

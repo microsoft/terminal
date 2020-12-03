@@ -10,7 +10,7 @@
 #include <windows.h>
 #include <winmeta.h>
 
-#include "..\host\conddkrefs.h"
+#include "../host/conddkrefs.h"
 #include <condrv.h>
 
 #include <cmath>

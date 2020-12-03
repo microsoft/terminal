@@ -45,9 +45,18 @@ namespace winrt::TerminalApp::implementation
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabActions{ winrt::single_threaded_vector<Command>() },
-        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() }
+        _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
+        _hostingHwnd{}
     {
         InitializeComponent();
+    }
+
+    // Method Description:
+    // - implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT TerminalPage::Initialize(HWND hwnd)
+    {
+        _hostingHwnd = hwnd;
+        return S_OK;
     }
 
     // Function Description:
@@ -921,6 +930,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->CloseOtherTabs({ this, &TerminalPage::_HandleCloseOtherTabs });
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
+        _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
     }
 
     // Method Description:
@@ -2253,6 +2263,10 @@ namespace winrt::TerminalApp::implementation
                 // Force the TerminalTab to re-grab its currently active control's title.
                 terminalTab->UpdateTitle();
             }
+            else if (auto settingsTab = tab.try_as<TerminalApp::SettingsTab>())
+            {
+                settingsTab.UpdateSettings(_settings);
+            }
         }
 
         auto weakThis{ get_weak() };
@@ -2738,6 +2752,11 @@ namespace winrt::TerminalApp::implementation
         if (!_switchToSettingsCommand)
         {
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
+            if (_hostingHwnd)
+            {
+                sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
+            }
+
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
                 {
@@ -2911,6 +2930,30 @@ namespace winrt::TerminalApp::implementation
                     CommandPalette().SetTabActions(_mruTabActions, false);
                 }
             }
+        }
+    }
+
+    // Method Description:
+    // - Moves the tab to another index in the tabs row (if required).
+    // Arguments:
+    // - currentTabIndex: the current index of the tab to move
+    // - suggestedNewTabIndex: the new index of the tab, might get clamped to fit int the tabs row boundaries
+    // Return Value:
+    // - <none>
+    void TerminalPage::_TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex)
+    {
+        auto newTabIndex = gsl::narrow_cast<uint32_t>(std::clamp<int32_t>(suggestedNewTabIndex, 0, _tabs.Size() - 1));
+        if (currentTabIndex != newTabIndex)
+        {
+            auto tab = _tabs.GetAt(currentTabIndex);
+            auto tabViewItem = tab.TabViewItem();
+            _tabs.RemoveAt(currentTabIndex);
+            _tabs.InsertAt(newTabIndex, tab);
+            _UpdateTabIndices();
+
+            _tabView.TabItems().RemoveAt(currentTabIndex);
+            _tabView.TabItems().InsertAt(newTabIndex, tabViewItem);
+            _tabView.SelectedItem(tabViewItem);
         }
     }
 

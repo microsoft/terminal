@@ -87,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::_UpdateColorSchemeList()
     {
-        auto colorSchemeMap = _State.Globals().ColorSchemes();
-        for (const auto& pair : _State.Globals().ColorSchemes())
+        const auto& colorSchemeMap{ _State.Globals().ColorSchemes() };
+        for (const auto& pair : colorSchemeMap)
         {
             _ColorSchemeList.Append(pair.Value());
         }

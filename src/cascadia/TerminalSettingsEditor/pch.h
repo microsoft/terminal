@@ -33,6 +33,7 @@
 
 #include <winrt/Windows.UI.h>
 #include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.Popups.h>
 #include <winrt/Windows.UI.Xaml.h>
@@ -50,6 +51,8 @@
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+
+#include "shobjidl_core.h"
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"

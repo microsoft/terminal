@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "EnumEntry.idl";
+import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -9,9 +10,10 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         Microsoft.Terminal.Settings.Model.Profile Profile;
+        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
     };
 
-    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Profiles();
         ProfilePageNavigationState State { get; };
@@ -33,5 +35,12 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
+
+        IInspectable CurrentFontWeight;
+        Boolean IsCustomFontWeight { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
+
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
     }
 }

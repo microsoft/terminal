@@ -11,14 +11,14 @@
 #include "consoleKeyInfo.hpp"
 #include "window.hpp"
 
-#include "..\..\host\ApiRoutines.h"
-#include "..\..\host\init.hpp"
-#include "..\..\host\input.h"
-#include "..\..\host\handle.h"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\output.h"
+#include "../../host/ApiRoutines.h"
+#include "../../host/init.hpp"
+#include "../../host/input.h"
+#include "../../host/handle.h"
+#include "../../host/scrolling.hpp"
+#include "../../host/output.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -651,8 +651,12 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
             sDelta = GET_WHEEL_DELTA_WPARAM(wParam);
         }
 
-        if (HandleTerminalMouseEvent(MousePosition, Message, GET_KEYSTATE_WPARAM(wParam), sDelta))
+        if (HandleTerminalMouseEvent(MousePosition, Message, LOWORD(GetControlKeyState(0)), sDelta))
         {
+            // Use GetControlKeyState here to get the control state in console event mode.
+            // This will ensure that we get ALT and SHIFT, the former of which is not available
+            // through MK_ constants. We only care about the bottom 16 bits.
+
             // GH#6401: Capturing the mouse ensures that we get drag/release events
             // even if the user moves outside the window.
             // HandleTerminalMouseEvent returns false if the terminal's not in VT mode,

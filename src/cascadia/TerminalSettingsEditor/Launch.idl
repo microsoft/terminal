@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "EnumEntry.idl"; 
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass LaunchPageNavigationState
@@ -14,5 +16,8 @@ namespace Microsoft.Terminal.Settings.Editor
         LaunchPageNavigationState State { get; };
 
         IInspectable CurrentDefaultProfile;
+
+        IInspectable CurrentLaunchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
     }
 }

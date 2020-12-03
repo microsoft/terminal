@@ -5,9 +5,9 @@
       `.../console/published/wincon.w` in the OS repo when you submit the PR.
       The branch won't build without it.
     * For now, you can update winconp.h with your consumable changes.
-    * define registry name (ex `CONSOLE_REGISTRY_CURSORCOLOR`)
-    * add the setting to `CONSOLE_STATE_INFO`
-    * define the property key ID and the property key itself
+    * Define registry name (ex `CONSOLE_REGISTRY_CURSORCOLOR`)
+    * Add the setting to `CONSOLE_STATE_INFO`
+    * Define the property key ID and the property key itself.
         - Yes, the large majority of the `DEFINE_PROPERTYKEY` defs are the same, it's only the last byte of the guid that changes
 
 2. Add matching fields to Settings.hpp
