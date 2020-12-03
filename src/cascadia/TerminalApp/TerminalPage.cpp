@@ -896,8 +896,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
-        _actionDispatch->ScrollHome({ this, &TerminalPage::_HandleScrollHome });
-        _actionDispatch->ScrollEnd({ this, &TerminalPage::_HandleScrollEnd });
+        _actionDispatch->ScrollToTop({ this, &TerminalPage::_HandleScrollToTop });
+        _actionDispatch->ScrollToBottom({ this, &TerminalPage::_HandleScrollToBottom });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
         _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });

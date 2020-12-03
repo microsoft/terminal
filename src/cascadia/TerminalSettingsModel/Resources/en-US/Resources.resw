@@ -299,10 +299,10 @@
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
     <value>Scroll up one page</value>
   </data>
-  <data name="ScrollHomeCommandKey" xml:space="preserve">
+  <data name="ScrollToTopCommandKey" xml:space="preserve">
     <value>Scroll to the top of history</value>
   </data>
-  <data name="ScrollEndCommandKey" xml:space="preserve">
+  <data name="ScrollToBottomCommandKey" xml:space="preserve">
     <value>Scroll to the bottom of history</value>
   </data>
   <data name="SendInputCommandKey" xml:space="preserve">
