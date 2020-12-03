@@ -84,10 +84,10 @@ std::vector<til::rectangle> GdiEngine::GetDirtyArea()
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     RECT rc;
-    RETURN_IF_FAILED(LongMult(psr->Left, coordFontSize.X, &rc.left));
-    RETURN_IF_FAILED(LongMult(psr->Right, coordFontSize.X, &rc.right));
-    RETURN_IF_FAILED(LongMult(psr->Top, coordFontSize.Y, &rc.top));
-    RETURN_IF_FAILED(LongMult(psr->Bottom, coordFontSize.Y, &rc.bottom));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(psr->Left, coordFontSize.X).AssignIfValid(&rc.left));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(psr->Right, coordFontSize.X).AssignIfValid(&rc.right));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(psr->Top, coordFontSize.Y).AssignIfValid(&rc.top));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(psr->Bottom, coordFontSize.Y).AssignIfValid(&rc.bottom));
 
     *prc = rc;
 
@@ -107,8 +107,8 @@ std::vector<til::rectangle> GdiEngine::GetDirtyArea()
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
 
     POINT pt;
-    RETURN_IF_FAILED(LongMult(pcoord->X, coordFontSize.X, &pt.x));
-    RETURN_IF_FAILED(LongMult(pcoord->Y, coordFontSize.Y, &pt.y));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(pcoord->X, coordFontSize.X).AssignIfValid(&pt.x));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(pcoord->Y, coordFontSize.Y).AssignIfValid(&pt.y));
 
     *pPoint = pt;
 
@@ -155,12 +155,12 @@ std::vector<til::rectangle> GdiEngine::GetDirtyArea()
     LONG lBottom = prc->bottom;
 
     // Add the width of a font (in pixels) to the rect
-    RETURN_IF_FAILED(LongAdd(lRight, coordFontSize.X, &lRight));
-    RETURN_IF_FAILED(LongAdd(lBottom, coordFontSize.Y, &lBottom));
+    RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(lRight, coordFontSize.X).AssignIfValid(&lRight));
+    RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(lBottom, coordFontSize.Y).AssignIfValid(&lBottom));
 
     // Subtract 1 to ensure that we round down.
-    RETURN_IF_FAILED(LongSub(lRight, 1, &lRight));
-    RETURN_IF_FAILED(LongSub(lBottom, 1, &lBottom));
+    RETURN_HR_IF(E_ABORT, !base::CheckSub<LONG>(lRight, 1).AssignIfValid(&lRight));
+    RETURN_HR_IF(E_ABORT, !base::CheckSub<LONG>(lBottom, 1).AssignIfValid(&lBottom));
 
     // Divide by font size to see how many rows/columns
     // note: no safe math for div.
@@ -172,8 +172,8 @@ std::vector<til::rectangle> GdiEngine::GetDirtyArea()
     RETURN_IF_FAILED(LongToShort(lBottom, &sr.Bottom));
 
     // Pixels are exclusive and character rects are inclusive. Subtract 1 to go from exclusive to inclusive rect.
-    RETURN_IF_FAILED(ShortSub(sr.Right, 1, &sr.Right));
-    RETURN_IF_FAILED(ShortSub(sr.Bottom, 1, &sr.Bottom));
+    RETURN_HR_IF(E_ABORT, !base::CheckSub<SHORT>(sr.Right, 1).AssignIfValid(&sr.Right));
+    RETURN_HR_IF(E_ABORT, !base::CheckSub<SHORT>(sr.Bottom, 1).AssignIfValid(&sr.Bottom));
 
     *psr = sr;
 

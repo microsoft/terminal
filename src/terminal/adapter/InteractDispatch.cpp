@@ -181,8 +181,8 @@ bool InteractDispatch::MoveCursor(const size_t row, const size_t col)
             if (success)
             {
                 // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
-                success = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                          SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+                success = base::CheckAdd<SHORT>(coordCursor.Y, csbiex.srWindow.Top).AssignIfValid(&coordCursor.Y) &&
+                          base::CheckAdd<SHORT>(coordCursor.X, csbiex.srWindow.Left).AssignIfValid(&coordCursor.X);
 
                 if (success)
                 {

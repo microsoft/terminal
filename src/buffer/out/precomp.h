@@ -29,7 +29,6 @@ Abstract:
 
 // Windows Header Files:
 #include <windows.h>
-#include <intsafe.h>
 
 // private dependencies
 #include "../inc/operators.hpp"

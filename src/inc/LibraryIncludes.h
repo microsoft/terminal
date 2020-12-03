@@ -74,10 +74,6 @@
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
 
-// IntSafe
-#define ENABLE_INTSAFE_SIGNED_FUNCTIONS
-#include <intsafe.h>
-
 // LibPopCnt - Fast C/C++ bit population count library (on bits in an array)
 #include <libpopcnt.h>
 

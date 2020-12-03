@@ -994,14 +994,14 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         {
             // We find the offset into the original buffer by the dimensions of the original request rectangle.
             ptrdiff_t rowOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTSub(target.Y, requestRectangle.Top(), &rowOffset));
-            RETURN_IF_FAILED(PtrdiffTMult(rowOffset, requestRectangle.Width(), &rowOffset));
+            RETURN_HR_IF(E_ABORT, !base::CheckSub<LONGLONG>(target.Y, requestRectangle.Top()).AssignIfValid(&rowOffset));
+            RETURN_HR_IF(E_ABORT, !base::CheckMul<LONGLONG>(rowOffset, requestRectangle.Width()).AssignIfValid(&rowOffset));
 
             ptrdiff_t colOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTSub(target.X, requestRectangle.Left(), &colOffset));
+            RETURN_HR_IF(E_ABORT, !base::CheckSub<LONGLONG>(target.X, requestRectangle.Left()).AssignIfValid(&colOffset));
 
             ptrdiff_t totalOffset = 0;
-            RETURN_IF_FAILED(PtrdiffTAdd(rowOffset, colOffset, &totalOffset));
+            RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONGLONG>(rowOffset, colOffset).AssignIfValid(&totalOffset));
 
             // Now we make a subspan starting from that offset for as much of the original request as would fit
             const auto subspan = buffer.subspan(totalOffset, writeRectangle.Width());

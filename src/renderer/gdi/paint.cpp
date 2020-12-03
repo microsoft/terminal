@@ -91,8 +91,8 @@ using namespace Microsoft::Console::Render;
     szGutter.cy = _szMemorySurface.cy % coordFontSize.Y;
 
     RECT rcScrollLimit = { 0 };
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cx, szGutter.cx, &rcScrollLimit.right));
-    RETURN_IF_FAILED(LongSub(_szMemorySurface.cy, szGutter.cy, &rcScrollLimit.bottom));
+    RETURN_HR_IF(E_ABORT, !base::CheckSub<LONG>(_szMemorySurface.cx, szGutter.cx).AssignIfValid(&rcScrollLimit.right));
+    RETURN_HR_IF(E_ABORT, !base::CheckSub<LONG>(_szMemorySurface.cy, szGutter.cy).AssignIfValid(&rcScrollLimit.bottom));
 
     // Scroll real window and memory buffer in-sync.
     LOG_LAST_ERROR_IF(!ScrollWindowEx(_hwndTargetWindow,
@@ -549,15 +549,15 @@ using namespace Microsoft::Console::Render;
 
     // First set up a block cursor the size of the font.
     RECT rcBoundaries;
-    RETURN_IF_FAILED(LongMult(options.coordCursor.X, coordFontSize.X, &rcBoundaries.left));
-    RETURN_IF_FAILED(LongMult(options.coordCursor.Y, coordFontSize.Y, &rcBoundaries.top));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.left, coordFontSize.X, &rcBoundaries.right));
-    RETURN_IF_FAILED(LongAdd(rcBoundaries.top, coordFontSize.Y, &rcBoundaries.bottom));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(options.coordCursor.X, coordFontSize.X).AssignIfValid(&rcBoundaries.left));
+    RETURN_HR_IF(E_ABORT, !base::CheckMul<LONG>(options.coordCursor.Y, coordFontSize.Y).AssignIfValid(&rcBoundaries.top));
+    RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(rcBoundaries.left, coordFontSize.X).AssignIfValid(&rcBoundaries.right));
+    RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(rcBoundaries.top, coordFontSize.Y).AssignIfValid(&rcBoundaries.bottom));
 
     // If we're double-width cursor, make it an extra font wider.
     if (options.fIsDoubleWidth)
     {
-        RETURN_IF_FAILED(LongAdd(rcBoundaries.right, coordFontSize.X, &rcBoundaries.right));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(rcBoundaries.right, coordFontSize.X).AssignIfValid(&rcBoundaries.right));
     }
 
     // Make a set of RECTs to paint.
@@ -578,7 +578,7 @@ using namespace Microsoft::Console::Render;
         ulHeight = MulDiv(coordFontSize.Y, ulHeight, 100); // divide by 100 because percent.
 
         // Reduce the height of the top to be relative to the bottom by the height we want.
-        RETURN_IF_FAILED(LongSub(rcInvert.bottom, ulHeight, &rcInvert.top));
+        RETURN_HR_IF(E_ABORT, !base::CheckSub<LONG>(rcInvert.bottom, ulHeight).AssignIfValid(&rcInvert.top));
 
         cursorInvertRects.push_back(rcInvert);
     }
@@ -586,7 +586,7 @@ using namespace Microsoft::Console::Render;
 
     case CursorType::VerticalBar:
         LONG proposedWidth;
-        RETURN_IF_FAILED(LongAdd(rcInvert.left, options.cursorPixelWidth, &proposedWidth));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(rcInvert.left, options.cursorPixelWidth).AssignIfValid(&proposedWidth));
         // It can't be wider than one cell or we'll have problems in invalidation, so restrict here.
         // It's either the left + the proposed width from the ease of access setting, or
         // it's the right edge of the block cursor as a maximum.
@@ -595,7 +595,7 @@ using namespace Microsoft::Console::Render;
         break;
 
     case CursorType::Underscore:
-        RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(rcInvert.bottom, -1).AssignIfValid(&rcInvert.top));
         cursorInvertRects.push_back(rcInvert);
         break;
 
@@ -603,15 +603,15 @@ using namespace Microsoft::Console::Render;
     {
         RECT top, left, right, bottom;
         top = left = right = bottom = rcBoundaries;
-        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
-        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
-        RETURN_IF_FAILED(LongAdd(left.left, 1, &left.right));
-        RETURN_IF_FAILED(LongAdd(right.right, -1, &right.left));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(top.top, 1).AssignIfValid(&top.bottom));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(bottom.bottom, -1).AssignIfValid(&bottom.top));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(left.left, 1).AssignIfValid(&left.right));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(right.right, -1).AssignIfValid(&right.left));
 
-        RETURN_IF_FAILED(LongAdd(top.left, 1, &top.left));
-        RETURN_IF_FAILED(LongAdd(bottom.left, 1, &bottom.left));
-        RETURN_IF_FAILED(LongAdd(top.right, -1, &top.right));
-        RETURN_IF_FAILED(LongAdd(bottom.right, -1, &bottom.right));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(top.left, 1).AssignIfValid(&top.left));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(bottom.left, 1).AssignIfValid(&bottom.left));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(top.right, -1).AssignIfValid(&top.right));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(bottom.right, -1).AssignIfValid(&bottom.right));
 
         cursorInvertRects.push_back(top);
         cursorInvertRects.push_back(left);

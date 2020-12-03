@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include <intsafe.h>
 #include <propvarutil.h>
 #include <shlwapi.h>
 

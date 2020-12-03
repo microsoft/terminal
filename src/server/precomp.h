@@ -62,7 +62,6 @@ __inline NTSTATUS_FROM_WIN32(long x)
 //#include <ntstatus.h>
 
 #include <winioctl.h>
-#include <intsafe.h>
 
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"

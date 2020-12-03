@@ -848,10 +848,10 @@ Viewport Viewport::ToOrigin() const noexcept
     SHORT newRight = original._sr.Right;
     SHORT newBottom = original._sr.Bottom;
 
-    THROW_IF_FAILED(ShortAdd(newLeft, delta.X, &newLeft));
-    THROW_IF_FAILED(ShortAdd(newRight, delta.X, &newRight));
-    THROW_IF_FAILED(ShortAdd(newTop, delta.Y, &newTop));
-    THROW_IF_FAILED(ShortAdd(newBottom, delta.Y, &newBottom));
+    THROW_HR_IF(E_ABORT, !base::CheckAdd(newLeft, delta.X).AssignIfValid(&newLeft));
+    THROW_HR_IF(E_ABORT, !base::CheckAdd(newRight, delta.X).AssignIfValid(&newRight));
+    THROW_HR_IF(E_ABORT, !base::CheckAdd(newTop, delta.Y).AssignIfValid(&newTop));
+    THROW_HR_IF(E_ABORT, !base::CheckAdd(newBottom, delta.Y).AssignIfValid(&newBottom));
 
     return Viewport({ newLeft, newTop, newRight, newBottom });
 }

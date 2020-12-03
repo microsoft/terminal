@@ -43,8 +43,8 @@ try
     RETURN_BOOL_IF_FALSE(SUCCEEDED(SizeTToShort(column, &x)) &&
                          SUCCEEDED(SizeTToShort(line, &y)));
 
-    RETURN_BOOL_IF_FALSE(SUCCEEDED(ShortSub(x, 1, &x)) &&
-                         SUCCEEDED(ShortSub(y, 1, &y)));
+    RETURN_BOOL_IF_FALSE(base::CheckSub<SHORT>(x, 1).AssignIfValid(&x) &&
+                         base::CheckSub<SHORT>(y, 1).AssignIfValid(&y));
 
     return _terminalApi.SetCursorPosition(x, y);
 }

@@ -23,7 +23,6 @@ Revision History:
 #include "precomp.h"
 #include <shlwapi.h>
 #include <strsafe.h>
-#include <intsafe.h>
 #include "../inc/conattrs.hpp"
 #pragma hdrstop
 

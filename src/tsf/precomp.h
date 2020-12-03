@@ -29,7 +29,6 @@ extern "C" {
 #include <winuser.h>
 
 #include <ime.h>
-#include <intsafe.h>
 #include <strsafe.h>
 }
 

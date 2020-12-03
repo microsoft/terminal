@@ -3,8 +3,6 @@
 
 #include "precomp.h"
 
-#include <intsafe.h>
-
 #include "ApiMessage.h"
 #include "DeviceComm.h"
 

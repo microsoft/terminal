@@ -448,12 +448,12 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
     if (isInsert)
     {
         // Insert makes space by moving characters out to the right. So move the destination of the cut/paste region.
-        success = SUCCEEDED(ShortAdd(coordDestination.X, distance, &coordDestination.X));
+        success = base::CheckAdd<SHORT>(coordDestination.X, distance).AssignIfValid(&coordDestination.X);
     }
     else
     {
         // Delete scrolls the affected region to the left, relying on the clipping rect to actually delete the characters.
-        success = SUCCEEDED(ShortSub(coordDestination.X, distance, &coordDestination.X));
+        success = base::CheckSub<SHORT>(coordDestination.X, distance).AssignIfValid(&coordDestination.X);
     }
 
     if (success)

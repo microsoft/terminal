@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 
-#include <Intsafe.h>
 #include "Shlwapi.h"
 #include "telemetry.hpp"
 #include <ctime>

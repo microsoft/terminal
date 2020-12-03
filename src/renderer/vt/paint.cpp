@@ -351,7 +351,7 @@ using namespace Microsoft::Console::Types;
         for (const auto& cluster : clusters)
         {
             _bufferLine.append(cluster.GetText());
-            RETURN_IF_FAILED(ShortAdd(totalWidth, gsl::narrow<short>(cluster.GetColumns()), &totalWidth));
+            RETURN_HR_IF(E_ABORT, !base::CheckAdd<SHORT>(totalWidth, gsl::narrow<short>(cluster.GetColumns())).AssignIfValid(&totalWidth));
         }
 
         RETURN_IF_FAILED(VtEngine::_WriteTerminalAscii(_bufferLine));
@@ -387,7 +387,7 @@ using namespace Microsoft::Console::Types;
     for (const auto& cluster : clusters)
     {
         _bufferLine.append(cluster.GetText());
-        RETURN_IF_FAILED(ShortAdd(totalWidth, static_cast<short>(cluster.GetColumns()), &totalWidth));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<SHORT>(totalWidth, static_cast<short>(cluster.GetColumns())).AssignIfValid(&totalWidth));
     }
     const size_t cchLine = _bufferLine.size();
 

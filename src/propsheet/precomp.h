@@ -42,7 +42,6 @@
 #include "dialogs.h"
 
 #include <strsafe.h>
-#include <intsafe.h>
 #include <cwchar>
 #include <shellapi.h>
 

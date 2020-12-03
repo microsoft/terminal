@@ -38,8 +38,8 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
         RETURN_IF_FAILED(_InvalidOffset(&ptDelta));
 
         SIZE szInvalidScrollNew;
-        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cx, ptDelta.x, &szInvalidScrollNew.cx));
-        RETURN_IF_FAILED(LongAdd(_szInvalidScroll.cy, ptDelta.y, &szInvalidScrollNew.cy));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(_szInvalidScroll.cx, ptDelta.x).AssignIfValid(&szInvalidScrollNew.cx));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(_szInvalidScroll.cy, ptDelta.y).AssignIfValid(&szInvalidScrollNew.cy));
 
         // Store if safemath succeeded
         _szInvalidScroll = szInvalidScrollNew;
@@ -176,10 +176,10 @@ HRESULT GdiEngine::_InvalidOffset(const POINT* const ppt) noexcept
     {
         RECT rcInvalidNew;
 
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.left, ppt->x, &rcInvalidNew.left));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.right, ppt->x, &rcInvalidNew.right));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.top, ppt->y, &rcInvalidNew.top));
-        RETURN_IF_FAILED(LongAdd(_rcInvalid.bottom, ppt->y, &rcInvalidNew.bottom));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(_rcInvalid.left, ppt->x).AssignIfValid(&rcInvalidNew.left));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(_rcInvalid.right, ppt->x).AssignIfValid(&rcInvalidNew.right));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(_rcInvalid.top, ppt->y).AssignIfValid(&rcInvalidNew.top));
+        RETURN_HR_IF(E_ABORT, !base::CheckAdd<LONG>(_rcInvalid.bottom, ppt->y).AssignIfValid(&rcInvalidNew.bottom));
 
         // Add the scrolled invalid rectangle to what was left behind to get the new invalid area.
         // This is the equivalent of adding in the "update rectangle" that we would get out of ScrollWindowEx/ScrollDC.
