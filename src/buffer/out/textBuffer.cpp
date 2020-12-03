@@ -838,12 +838,10 @@ void TextBuffer::Reset()
         const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
         // rotate rows until the top row is at index 0
-        const ROW& newTopRow = _storage.at(TopRowIndex);
-        while (&newTopRow != &_storage.front())
+        for (int i = 0; i < TopRowIndex; i++)
         {
             _storage.emplace_back(std::move(_storage.front()));
-            //AUSTINL_TODO: need to figure out what to do here with the vector version, and how to hit this code to confirm correctness.
-            //_storage.pop_front();
+            _storage.erase(_storage.begin());
         }
 
         _SetFirstRowIndex(0);

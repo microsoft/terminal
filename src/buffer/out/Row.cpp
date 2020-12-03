@@ -16,7 +16,7 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
+ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) noexcept :
     _id{ rowId },
     _rowWidth{ rowWidth },
     _charRow{ rowWidth, this },

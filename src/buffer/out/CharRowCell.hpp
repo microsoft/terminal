@@ -17,7 +17,7 @@ Author(s):
 #pragma once
 
 #include "DbcsAttribute.hpp"
-#include <type_traits>
+#include "unicode.hpp"
 
 #if (defined(_M_IX86) || defined(_M_AMD64))
 // currently CharRowCell's fields use 3 bytes of memory, leaving the 4th byte in unused. this leads
@@ -28,7 +28,7 @@ Author(s):
 class CharRowCell final
 {
 public:
-    CharRowCell() = default;
+    CharRowCell() noexcept = default;
 
     void EraseChars() noexcept;
     void Reset() noexcept;
@@ -43,16 +43,9 @@ public:
 
     friend constexpr bool operator==(const CharRowCell& a, const CharRowCell& b) noexcept;
 
-    wchar_t _wch;
-    DbcsAttribute _attr;
+    wchar_t _wch{ UNICODE_SPACE };
+    DbcsAttribute _attr{};
 };
-
-// assert that CharRowCell is as simple as possible, since this allows more optimizations on this very hot type
-static_assert(std::is_standard_layout_v<CharRowCell>);
-static_assert(std::is_trivially_copyable_v<CharRowCell>);
-static_assert(std::is_trivial_v<CharRowCell>);
-static_assert(std::is_trivially_constructible_v<CharRowCell>);
-static_assert(std::is_pod_v<CharRowCell>);
 
 #if (defined(_M_IX86) || defined(_M_AMD64))
 #pragma pack(pop)

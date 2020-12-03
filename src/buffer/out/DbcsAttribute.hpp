@@ -16,8 +16,6 @@ Revision History:
 
 #pragma once
 
-#include <type_traits>
-
 class DbcsAttribute final
 {
 public:
@@ -28,7 +26,11 @@ public:
         Trailing = 0x02
     };
 
-    DbcsAttribute() = default;
+    DbcsAttribute() noexcept :
+        _attribute{ Attribute::Single },
+        _glyphStored{ false }
+    {
+    }
 
     DbcsAttribute(const Attribute attribute) noexcept :
         _attribute{ attribute },
@@ -140,8 +142,3 @@ constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexce
 static_assert(sizeof(DbcsAttribute) == sizeof(BYTE), "DbcsAttribute should be one byte big. if this changes then it needs "
                                                      "either an implicit conversion to a BYTE or an update to all places "
                                                      "that assume it's a byte big");
-
-static_assert(std::is_trivial_v<DbcsAttribute>);
-static_assert(std::is_trivially_constructible_v<DbcsAttribute>);
-static_assert(std::is_standard_layout_v<DbcsAttribute>);
-static_assert(std::is_pod_v<DbcsAttribute>);

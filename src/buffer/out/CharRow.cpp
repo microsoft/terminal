@@ -15,7 +15,7 @@
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
+CharRow::CharRow(size_t rowWidth, ROW* const pParent) noexcept :
     _wrapForced{ false },
     _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
@@ -105,7 +105,7 @@ void CharRow::Reset() noexcept
 {
     try
     {
-        const value_type insertVals{ UNICODE_SPACE, DbcsAttribute() };
+        const value_type insertVals;
         _data.resize(newSize, insertVals);
     }
     CATCH_RETURN();

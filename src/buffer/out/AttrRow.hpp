@@ -32,6 +32,11 @@ public:
     ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
     noexcept;
 
+    ATTR_ROW(ATTR_ROW&) = delete;
+    ATTR_ROW& operator=(ATTR_ROW&) = delete;
+    ATTR_ROW(ATTR_ROW&&) = default;
+    ATTR_ROW& operator=(ATTR_ROW&&) = default;
+
     void Reset(const TextAttribute attr);
 
     TextAttribute GetAttrByColumn(const unsigned int column) const;

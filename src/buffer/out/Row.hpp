@@ -32,7 +32,8 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
+    ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent)
+    noexcept;
 
     unsigned short size() const noexcept { return _rowWidth; }
 

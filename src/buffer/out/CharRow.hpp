@@ -55,7 +55,7 @@ public:
     using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
     using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth, ROW* const pParent);
+    CharRow(size_t rowWidth, ROW* const pParent) noexcept;
 
     void SetWrapForced(const bool wrap) noexcept;
     bool WasWrapForced() const noexcept;
