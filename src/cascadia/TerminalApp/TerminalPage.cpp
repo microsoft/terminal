@@ -667,13 +667,16 @@ namespace winrt::TerminalApp::implementation
         siex.StartupInfo.cb = sizeof(siex);
         PROCESS_INFORMATION pi;
 
+        std::wstring windowsTerminalExe;
+        RETURN_IF_FAILED(wil::GetModuleFileNameW(nullptr, windowsTerminalExe));
         std::wstring exe{ GetWtExePath() };
         std::wstring args{ fmt::format(L"new-tab {}",
                                        // GetWtExePath().c_str(),
                                        newTerminalArgs.ToCommandline()) };
 
         std::wstring wtExeCommandline{ fmt::format(L"{} new-tab {}",
-                                                   GetWtExePath().c_str(),
+                                                   // GetWtExePath().c_str(),
+                                                   windowsTerminalExe.c_str(),
                                                    newTerminalArgs.ToCommandline()) };
 
         std::wstring insaneCommandline{ fmt::format(L"{} /k {} new-tab {}",
@@ -683,12 +686,23 @@ namespace winrt::TerminalApp::implementation
         // std::wstring cmdline{ wtExeCommandline }; // mutable copy -- required for CreateProcessW
         // DebugBreak();
 
-        CreateProcessW(cmd, // nullptr, // exe.data(),
-                       insaneCommandline.data(), // wtExeCommandline.data(), // args.data(),
+        // Get ready for insanity:
+        // * If you pass `wtd.exe` as the commandline, we'll launch as elevated
+        //   again (bad).
+        // * If you pass `cmd.exe /k wtd.exe`, it'll launch unelevated, but with
+        //   a console window too (not great)
+        // * If you pass `windowsterminal.exe` (the unpackaged exe), it'll
+        //   launch the terminal _WITHOUT PACKAGE IDENTITY_, unelevated (W A T)
+
+        CreateProcessW(nullptr, // exe.data(),
+                       // insaneCommandline.data(),
+                       wtExeCommandline.data(),
+                       // args.data(),
                        nullptr,
                        nullptr,
                        FALSE,
-                       CREATE_NEW_CONSOLE | EXTENDED_STARTUPINFO_PRESENT,
+                       EXTENDED_STARTUPINFO_PRESENT,
+                       // CREATE_NEW_CONSOLE | EXTENDED_STARTUPINFO_PRESENT,
                        // EXTENDED_STARTUPINFO_PRESENT,
                        nullptr,
                        nullptr,
