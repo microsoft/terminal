@@ -430,6 +430,16 @@ namespace winrt::TerminalApp::implementation
                 tab->_RecalculateAndApplyTabColor();
             }
         });
+
+        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
+            {
+                // The progress of the control changed, but not necessarily the progress of the tab.
+                // Set the tab's progress ring to the active pane's progress
+                
+            }
+        });
     }
 
     // Method Description:
