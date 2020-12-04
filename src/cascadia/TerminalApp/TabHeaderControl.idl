@@ -9,6 +9,7 @@ namespace TerminalApp
     {
         String Title { get; set; };
         Boolean IsPaneZoomed { get; set; };
+        Boolean IsProgressRingActive { get; set; };
 
         TabHeaderControl();
         void BeginRename();

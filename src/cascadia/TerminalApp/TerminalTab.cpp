@@ -437,7 +437,14 @@ namespace winrt::TerminalApp::implementation
             {
                 // The progress of the control changed, but not necessarily the progress of the tab.
                 // Set the tab's progress ring to the active pane's progress
-                
+                if (tab->GetActiveTerminalControl().TaskbarState() > 0)
+                {
+                    tab->_headerControl.IsProgressRingActive(true);
+                }
+                else
+                {
+                    tab->_headerControl.IsProgressRingActive(false);
+                }
             }
         });
     }
