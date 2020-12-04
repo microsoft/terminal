@@ -38,7 +38,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Style>
 
             <Style TargetType="Button">
-                <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
                 <Setter Property="FontSize" Value="15" />
                 <Setter Property="CornerRadius" Value="2"/>
             </Style>

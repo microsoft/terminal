@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (static_cast<uint32_t>(removedSchemeIndex) < _ColorSchemeList.Size() - 1)
         {
             // select same index
-            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex);
+            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex + 1);
         }
         else
         {

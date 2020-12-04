@@ -57,5 +57,4 @@
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="SpinButtonPlacementMode" Value="Compact"/>
     </Style>
-
 </ResourceDictionary>
