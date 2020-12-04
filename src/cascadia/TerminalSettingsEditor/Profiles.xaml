@@ -82,10 +82,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBox x:Uid="Profile_TabTitle"
                              Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
                              HorizontalAlignment="Left"/>
-                    <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                           ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                           SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
@@ -131,6 +127,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </StackPanel>
                     <TextBox x:Uid="Profile_Padding"
                              Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"/>
+                    <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                           ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                     <Controls:RadioButtons x:Uid="Profile_CursorShape"
                                            ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
