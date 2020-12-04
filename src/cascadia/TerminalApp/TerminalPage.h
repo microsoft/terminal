@@ -237,8 +237,6 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenSettingsUI();
 
-        void _ReapplyCompactTabSize();
-
         void _MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index);
 
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
