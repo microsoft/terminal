@@ -1,11 +1,11 @@
 ---
 author: <Pankaj> <Bhojwani> <pabhojwa@microsoft.com>
 created on: <2020-11-20>
-last updated: <2020-11-20>
+last updated: <2020-12-4>
 issue id: <#8345>
 ---
 
-# Configuration object for profiles
+# Appearance configuration objects for profiles
 
 ## Abstract
 
@@ -21,6 +21,13 @@ Reference: [#3062](https://github.com/microsoft/terminal/issues/3062)
 
 Users want there to be a more visible indicator than the one we have currently for which
 pane is focused and which panes are unfocused. This change would grant us that feature.
+
+## Note: this is going to be an experimental change
+
+Upon discussion we realized that this feature might cause scaling problems in the future. Thus, we
+have decided to make this an experimental change for now - meaning that we are not (at this point) committed
+to supporting this feature in the long term. We will decide on the longevity of this feature after obtaining
+user feedback from the initial experimental phase.
 
 ## Solution Design
 
@@ -58,8 +65,8 @@ of further parameters can be discussed in the future and is out of scope for thi
 
 ### Inheritance
 
-We have to decide how we want to deal with the case(s) where not all parameters are defined - i.e. what
-values should we use for undefined parameters? The current proposal is as follows:
+In the case that not all of the allowed parameters are defined in an appearance object, we will obtain the
+values for those parameters in the following matter:
 
 If the profile defines an `unfocusedState`, any parameters not explicitly defined within it will adopt
 the values from the profile itself. If the profile does not define an `unfocusedState`, then the global/default `unfocusedState` is used
@@ -71,12 +78,21 @@ for that profile (similarly, they could define just 1 or 2 parameters if they wi
 and unfocused states for that profile). If they do not define any `unfocusedState` for the profile, then
 the global/default one will be used.
 
+### Multiple states
+
+At the time of writing this, we have noted two possible 'appearance states' that we should allow: unfocused and elevated.
+The question then is, in the case of an unfocused and elevated control, which appearance should we use?
+
+For now, we will solve this problem by allowing a third state "unfocused elevated". This solution style of combining states
+is of course not going to be feasible if we add more states in the future - hence why this feature is going to remain
+experimental for now.
+
 ## UI/UX Design
 
 Users will be able to add a new setting to their profiles that will look like this:
 
 ```
-"unfocusedState": 
+"experimental.state.unfocused": 
 {
     "colorScheme": "Campbell",
     "cursorColor": "#888",
