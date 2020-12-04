@@ -153,4 +153,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // whereas SelectedItem identifies which one was selected by the user.
         return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
     }
+
+    void Profiles::CursorShape_Changed(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IsVintageCursor" });
+    }
+
+    bool Profiles::IsVintageCursor() const
+    {
+        return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
+    }
 }

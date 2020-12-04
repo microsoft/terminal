@@ -134,9 +134,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Controls:RadioButtons x:Uid="Profile_CursorShape"
                                            ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                           SelectionChanged="CursorShape_Changed"/>
                     <Controls:NumberBox x:Uid="Profile_CursorHeight"
-                                        Value="100"
+                                        Visibility="{x:Bind IsVintageCursor, Mode=OneWay}"
+                                        Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"
                                         SmallChange="1"
                                         LargeChange="10"/>
                     <ComboBox x:Uid="Profile_ColorScheme"
