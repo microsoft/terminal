@@ -8,7 +8,6 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
-#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -429,16 +428,6 @@ namespace winrt::TerminalApp::implementation
                 // active control in this tab. We'll just recalculate the
                 // current color anyways.
                 tab->_RecalculateAndApplyTabColor();
-            }
-        });
-
-        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
-            // Check if Tab's lifetime has expired
-            if (auto tab{ weakThis.get() })
-            {
-                // The progress of the control changed, but not necessarily the progress of the tab.
-                // Set the tab's progress ring to the active pane's progress
-                tab->_UpdateTabHeader();
             }
         });
     }

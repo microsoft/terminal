@@ -189,10 +189,6 @@ namespace Microsoft::Console::VirtualTerminal
                              std::wstring& params,
                              std::wstring& uri) const;
 
-        bool _GetTaskbarProgress(const std::wstring_view string,
-                                 size_t& state,
-                                 size_t& progress) const;
-
         void _ClearLastChar() noexcept;
     };
 }
