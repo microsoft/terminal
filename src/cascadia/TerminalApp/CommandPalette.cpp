@@ -275,7 +275,8 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Process keystrokes in the input box. This is used for moving focus up
     //   and down the list of commands in Action mode, and for executing
-    //   commands in both Action mode and Commandline mode.
+    //   commands in both Action mode and Commandline mode. This would also
+    //   enable users to perform action using shortcuts when command palette is open.
     // Arguments:
     // - e: the KeyRoutedEventArgs containing info about the keystroke.
     // Return Value:
@@ -289,7 +290,7 @@ namespace winrt::TerminalApp::implementation
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        auto setting = ::winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings();
+        auto setting = AppLogic::CurrentAppSettings();
         auto keymap = setting.GlobalSettings().KeyMap();
         const auto action = keymap.TryLookup(kc);
 
@@ -300,9 +301,8 @@ namespace winrt::TerminalApp::implementation
                 _close();
             }
             _dispatch.DoAction(action);
-            return;
         }
-        if (key == VirtualKey::Up)
+        else if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
             SelectNextItem(false);
@@ -367,10 +367,6 @@ namespace winrt::TerminalApp::implementation
             // In the interest of not telling all modes to check for keybindings, limit to TabSwitch mode for now.
             if (_currentMode == CommandPaletteMode::TabSwitchMode)
             {
-                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
                 auto success = _bindings.TryKeyChord({
                     ctrlDown,
                     altDown,
