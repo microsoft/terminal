@@ -189,8 +189,8 @@
   <data name="DirectionUp" xml:space="preserve">
     <value>up</value>
   </data>
-  <data name="DirectionPrev" xml:space="preserve">
-    <value>prev</value>
+  <data name="DirectionPrevious" xml:space="preserve">
+    <value>previous</value>
   </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
     <value>Duplicate pane</value>
