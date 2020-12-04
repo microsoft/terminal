@@ -74,7 +74,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_Icon"
-                                 Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"/>
+                                 Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
+                                 FontFamily="Segoe UI, Segoe MDL2 Assets"/>
                         <Button x:Uid="Profile_IconBrowse"
                                 Margin="10,0,0,0"/>
                     </StackPanel>
