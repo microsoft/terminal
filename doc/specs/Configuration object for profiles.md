@@ -31,19 +31,20 @@ user feedback from the initial experimental phase.
 
 ## Solution Design
 
-We will add an new interface in the `TerminalControl` namespace, called `IAppearance`, which defines how
-`TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about (such as `CursorShape`).
-`TerminalApp` will implement this interface through a class called `AppAppearanceConfig`.
+We will add new interfaces in the `TerminalControl` namespace, called `IControlAppearance` and `ICoreAppearance`,
+which defines how `TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about
+(such as `CursorShape`). `TerminalApp` will implement this interface through a class called `AppAppearanceConfig`.
 
-We will also have `IControlSettings` require `IAppearance`. That way, the control `settings` object can
-itself also be used as an object that implements `IAppearance`. We do this so we do not need a separate
-'focused' configuration object when we wish to switch back to the 'regular' appearance from the unfocused
+We will also have `IControlSettings` require `IControlAppearance`, and `ICoreSettings` will require `ICoreAppearance`.
+That way, the control's `settings` object can itself also be used as an object that implements both appearance interfaces. We do this so we
+do not need a separate 'regular' configuration object when we wish to switch back to the 'regular' appearance from the unfocused
 appearance - we can simply pass in the settings.
 
 On the Settings Model side, there will be a new interface called `IAppearanceConfig`, which is essentially a
-mirror of the `IAppearance` interface described earlier. A new class, `AppearanceConfig`, will implement this
+combination/mirror of the appearance interfaces described earlier. A new class, `AppearanceConfig`, will implement this
 interface and so will `Profile` itself (for the same reason as earlier - so that no new configuration object is
-needed for the regular appearance).
+needed for the regular appearance). We are choosing to have a separate interface on the settings model side to maintain
+its separation from the rest of the terminal.
 
 When we parse out the settings json file, each state-appearance will be stored in an object of the `AppearanceConfig`
 class. Later on, these values get piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the
