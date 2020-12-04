@@ -551,4 +551,15 @@ namespace winrt::TerminalApp::implementation
             actionArgs.Handled(true);
         }
     }
+
+    void TerminalPage::_HandleBreakIntoDebugger(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& actionArgs)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            actionArgs.Handled(true);
+            DebugBreak();
+        }
+    }
+
 }
