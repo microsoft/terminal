@@ -631,11 +631,6 @@
           "description": "When set to `true`, visual animations will be disabled across the application.",
           "type": "boolean"
         },
-        "disableProgressRing": {
-          "default": false,
-          "description": "When set to `true`, the progress ring will no longer appear in the tab.",
-          "type": "boolean"
-        }
         "largePasteWarning": {
           "default": true,
           "description": "When set to true, trying to paste text with more than 5 KiB of characters will display a warning asking you whether to continue or not with the paste.",
