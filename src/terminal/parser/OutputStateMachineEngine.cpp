@@ -936,66 +936,6 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 #pragma warning(pop)
 
 // Routine Description:
-// - OSC 9 ; 4 ; state ; progress ST
-//       state: the state to set the taskbar progress indicator to
-//       progress: the progress value to set the taskbar progress indicator with
-// - Parses out the 'state' and 'progress' parameters from the OSC string so
-//   that we can use them to set the taskbar progress indicator
-// - This follows the ConEmu style, more details here:
-//   https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC
-// Arguments:
-// - string: the string to parse
-// - state: where to store the state value once we parse it
-// - progress: where to store the progress value once we parse it
-// Return Value:
-// - true if we successfully parsed the string, false otherwise
-bool OutputStateMachineEngine::_GetTaskbarProgress(const std::wstring_view string,
-                                                   size_t& state,
-                                                   size_t& progress) const
-{
-    const auto parts = Utils::SplitString(string, L';');
-
-    unsigned int subParam = 0;
-    const auto subParamSuccess = Utils::StringToUint(til::at(parts, 0), subParam);
-
-    if (parts.size() < 1 || !subParamSuccess || subParam != 4)
-    {
-        return false;
-    }
-
-    if (parts.size() == 1)
-    {
-        state = 0;
-        progress = 0;
-    }
-    else if (parts.size() == 2)
-    {
-        unsigned int localState = 0;
-        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), localState);
-        if (!stateSuccess)
-        {
-            return false;
-        }
-        state = localState;
-        progress = 0;
-    }
-    else
-    {
-        unsigned int localState = 0;
-        unsigned int localProgress = 0;
-        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), localState);
-        const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), localProgress);
-        if (!stateSuccess || !progressSuccess)
-        {
-            return false;
-        }
-        state = localState;
-        progress = localProgress;
-    }
-    return true;
-}
-
-// Routine Description:
 // - OSC 10, 11, 12 ; spec ST
 //      spec: The colors are specified by name or RGB specification as per XParseColor
 //

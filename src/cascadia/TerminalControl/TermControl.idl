@@ -107,7 +107,6 @@ namespace Microsoft.Terminal.TerminalControl
         void ToggleRetroEffect();
 
         void TaskbarProgressChanged();
-
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
 

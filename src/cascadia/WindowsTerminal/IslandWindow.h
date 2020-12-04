@@ -78,13 +78,9 @@ protected:
     LONG _getDesiredWindowStyle() const;
 
     wil::com_ptr<ITaskbarList3> _taskbar;
-<<<<<<< HEAD
-    bool _taskbarInitialized{ false };
-=======
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
->>>>>>> 2a2f6b32a2f46d8029259676d7e93782c8477685
 
 private:
     // This minimum width allows for width the tabs fit
