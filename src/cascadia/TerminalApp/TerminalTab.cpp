@@ -71,6 +71,17 @@ namespace winrt::TerminalApp::implementation
         _RecalculateAndApplyTabColor();
     }
 
+    void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
+    {
+        auto toolTip = WUX::Controls::ToolTip{};
+        auto newTabRun = WUX::Documents::Run();
+        newTabRun.Text(tabTitle);
+        auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.Inlines().Append(newTabRun);
+        toolTip.Content(textBlock);
+        WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
+    }
+
     // Method Description:
     // - Returns nullptr if no children of this tab were the last control to be
     //   focused, or the TermControl that _was_ the last control to be focused (if
@@ -231,6 +242,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            _SetToolTip(_GetActiveTitle());
         }
     }
 
