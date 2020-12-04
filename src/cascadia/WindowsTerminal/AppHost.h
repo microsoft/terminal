@@ -40,5 +40,7 @@ private:
                             const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
+    void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
+                          const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
 };

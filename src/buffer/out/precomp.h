@@ -32,8 +32,8 @@ Abstract:
 #include <intsafe.h>
 
 // private dependencies
-#include "..\inc\operators.hpp"
-#include "..\inc\unicode.hpp"
+#include "../inc/operators.hpp"
+#include "../inc/unicode.hpp"
 #pragma warning(pop)
 
 // clang-format on

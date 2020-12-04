@@ -60,10 +60,11 @@
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
 #include <shellapi.h>
+#include <shobjidl_core.h>
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>

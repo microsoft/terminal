@@ -26,6 +26,11 @@ namespace TerminalApp
         // that there's only one application-global dialog visible at a time,
         // and because of GH#5224.
         IDialogPresenter DialogPresenter;
+        void ShowKeyboardServiceWarning();
+        String KeyboardServiceDisabledText { get; };
+
+        UInt64 GetLastActiveControlTaskbarState();
+        UInt64 GetLastActiveControlTaskbarProgress();
 
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();

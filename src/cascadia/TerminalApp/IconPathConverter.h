@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IconPathConverter.g.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {

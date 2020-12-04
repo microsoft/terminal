@@ -64,11 +64,11 @@ Abstract:
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
-#include <telemetry\ProjectTelemetry.h>
+#include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
 // For commandline argument processing
 #include <shellapi.h>
 #include <processenv.h>
-
+#include <WinUser.h>
 #include "til.h"

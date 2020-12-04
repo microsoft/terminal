@@ -35,6 +35,7 @@ public:
     void FullscreenChanged(const bool fullscreen);
     void SetAlwaysOnTop(const bool alwaysOnTop);
 
+    void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
 #pragma endregion
@@ -77,9 +78,20 @@ protected:
     LONG _getDesiredWindowStyle() const;
 
     wil::com_ptr<ITaskbarList3> _taskbar;
+<<<<<<< HEAD
     bool _taskbarInitialized{ false };
+=======
+
+    void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
+    long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);
+>>>>>>> 2a2f6b32a2f46d8029259676d7e93782c8477685
 
 private:
     // This minimum width allows for width the tabs fit
     static constexpr long minimumWidth = 460L;
+
+    // We run with no height requirement for client area,
+    // though the total height will take into account the non-client area
+    // and the requirements of components hosted in the client area
+    static constexpr long minimumHeight = 0L;
 };

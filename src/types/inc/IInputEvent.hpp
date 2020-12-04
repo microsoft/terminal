@@ -13,12 +13,12 @@ Author:
 
 #pragma once
 
-#include <wil\common.h>
-#include <wil\resource.h>
+#include <wil/common.h>
+#include <wil/resource.h>
 
 #ifndef ALTNUMPAD_BIT
 // from winconp.h
-#define ALTNUMPAD_BIT 0x04000000 // AltNumpad OEM char (copied from ntuser\inc\kbd.h)
+#define ALTNUMPAD_BIT 0x04000000 // AltNumpad OEM char (copied from ntuser/inc/kbd.h)
 #endif
 
 #include <wtypes.h>

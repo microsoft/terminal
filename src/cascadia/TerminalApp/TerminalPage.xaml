@@ -50,8 +50,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Load="False"
             x:Name="CloseAllDialog"
             x:Uid="CloseAllDialog"
-            DefaultButton="Primary"
-            PrimaryButtonClick="_CloseWarningPrimaryButtonOnClick">
+            DefaultButton="Primary">
         </ContentDialog>
 
         <ContentDialog
@@ -70,6 +69,16 @@ the MIT License. See LICENSE in the project root for license information. -->
 
         <ContentDialog
             x:Load="False"
+            x:Name="ControlNoticeDialog"
+            x:Uid="ControlNoticeDialog"
+            DefaultButton="Primary">
+            <TextBlock IsTextSelectionEnabled="True" TextWrapping="WrapWholeWords">
+                <Run x:Name="NoticeMessage"/>
+            </TextBlock>
+        </ContentDialog>
+
+        <ContentDialog
+            x:Load="False"
             x:Name="CouldNotOpenUriDialog"
             x:Uid="CouldNotOpenUriDialog"
             DefaultButton="Primary">
@@ -80,6 +89,20 @@ the MIT License. See LICENSE in the project root for license information. -->
                     FontFamily="Cascadia Mono">
                 </Run>
             </TextBlock>
+        </ContentDialog>
+
+
+        <ContentDialog
+            x:Load="False"
+            x:Name="KeyboardServiceDisabledDialog"
+            x:Uid="KeyboardServiceDisabledDialog"
+            DefaultButton="Primary">
+
+            <TextBlock
+                Foreground="{ThemeResource ErrorTextBrush}"
+                IsTextSelectionEnabled="True"
+                TextWrapping="WrapWholeWords"
+                Text="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}" />
         </ContentDialog>
 
         <local:CommandPalette

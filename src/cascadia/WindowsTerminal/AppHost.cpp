@@ -58,7 +58,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
-    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
+    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 }
 
@@ -90,7 +90,9 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
 {
     if (_logic)
     {
-        _window->SetTaskbarProgress(_logic.GetLastActiveControlTaskbarState(), _logic.GetLastActiveControlTaskbarProgress());
+        const auto state = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarState());
+        const auto progress = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarProgress());
+        _window->SetTaskbarProgress(state, progress);
     }
 }
 
@@ -161,6 +163,11 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
+    if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
+    {
+        withWindow->Initialize(_window->GetHandle());
+    }
+
     if (_useNonClientArea)
     {
         // Register our callback for when the app's non-client content changes.
@@ -181,6 +188,7 @@ void AppHost::Initialize()
     _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
+    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
 
     _logic.Create();
 
@@ -393,6 +401,17 @@ void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable
                                   const winrt::Windows::Foundation::IInspectable&)
 {
     _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
+}
+
+// Method Description
+// - Called when the app wants to flash the taskbar, indicating to the user that
+//   something needs their attention
+// Arguments
+// - <unused>
+void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
+                               const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->FlashTaskbar();
 }
 
 // Method Description:

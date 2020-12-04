@@ -7,6 +7,7 @@
 #include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include "OpenHyperlinkEventArgs.g.h"
+#include "NoticeEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
@@ -81,6 +82,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring _uri;
     };
 
+    struct NoticeEventArgs :
+        public NoticeEventArgsT<NoticeEventArgs>
+    {
+    public:
+        NoticeEventArgs(const NoticeLevel level, const hstring& message) :
+            _level(level),
+            _message(message) {}
+
+        NoticeLevel Level() { return _level; };
+        hstring Message() { return _message; };
+
+    private:
+        const NoticeLevel _level;
+        const hstring _message;
+    };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -142,8 +159,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
 
         winrt::fire_and_forget TaskbarProgressChanged();
-        const size_t GetTaskbarState() const noexcept;
-        const size_t GetTaskbarProgress() const noexcept;
+
+        const size_t TaskbarState() const noexcept;
+        const size_t TaskbarProgress() const noexcept;
 
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
@@ -155,6 +173,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(OpenHyperlink, _openHyperlinkHandlers, TerminalControl::TermControl, TerminalControl::OpenHyperlinkEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTaskbarProgress, _setTaskbarProgressHandlers, TerminalControl::TermControl, IInspectable);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RaiseNotice, _raiseNoticeHandlers, TerminalControl::TermControl, TerminalControl::NoticeEventArgs);
 
         TYPED_EVENT(WarningBell, IInspectable, IInspectable);
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);

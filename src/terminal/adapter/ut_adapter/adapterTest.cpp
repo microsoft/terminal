@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "adaptDispatch.hpp"
 
