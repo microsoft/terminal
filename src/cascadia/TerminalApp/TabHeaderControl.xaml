@@ -25,6 +25,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                  MinHeight="0"
                  Padding="4,0,4,0"
                  Margin="0,-8,0,-8"
+                 MaxLength="1024"
                  LostFocus="RenameBoxLostFocusHandler"/>
     </StackPanel>
 </UserControl>

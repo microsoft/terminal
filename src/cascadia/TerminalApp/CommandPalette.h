@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
         void SetTabs(Windows::Foundation::Collections::IVector<winrt::TerminalApp::TabBase> const& tabs, const bool clearList);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
-        void EnableCommandPaletteMode();
+        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
