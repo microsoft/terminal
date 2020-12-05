@@ -34,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         void SetMRUTabs(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& tabs);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
-        void EnableCommandPaletteMode();
+        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 

@@ -732,7 +732,8 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
 {
     // If `profiles` was an object, then look for the `defaults` object
     // underneath it for the default profile settings.
-    auto defaultSettings{ Json::Value::null };
+    // If there isn't one, we still want to add an empty "default" profile to the inheritance tree.
+    Json::Value defaultSettings{ Json::ValueType::objectValue };
     if (const auto profiles{ _userSettings[JsonKey(ProfilesKey)] })
     {
         if (profiles.isObject() && !profiles[JsonKey(DefaultSettingsKey)].empty())
@@ -741,31 +742,26 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         }
     }
 
-    // cache and apply default profile settings
-    // from user settings file
-    if (defaultSettings)
+    // Remove the `guid` member from the default settings. That'll
+    // hyper-explode, so just don't let them do that.
+    defaultSettings.removeMember({ "guid" });
+
+    _userDefaultProfileSettings = winrt::make_self<Profile>();
+    _userDefaultProfileSettings->LayerJson(defaultSettings);
+
+    const auto numOfProfiles{ _allProfiles.Size() };
+    for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
     {
-        // Remove the `guid` member from the default settings. That'll
-        // hyper-explode, so just don't let them do that.
-        defaultSettings.removeMember({ "guid" });
+        // create a child, so we inherit from the defaults.json layer
+        auto parentProj{ _allProfiles.GetAt(profileIndex) };
+        auto parentImpl{ winrt::get_self<Profile>(parentProj) };
+        auto childImpl{ parentImpl->CreateChild() };
 
-        _userDefaultProfileSettings = winrt::make_self<Profile>();
-        _userDefaultProfileSettings->LayerJson(defaultSettings);
+        // Add profile.defaults as the _first_ parent to the child
+        childImpl->InsertParent(0, _userDefaultProfileSettings);
 
-        const auto numOfProfiles{ _allProfiles.Size() };
-        for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
-        {
-            // create a child, so we inherit from the defaults.json layer
-            auto parentProj{ _allProfiles.GetAt(profileIndex) };
-            auto parentImpl{ winrt::get_self<Profile>(parentProj) };
-            auto childImpl{ parentImpl->CreateChild() };
-
-            // Add profile.defaults as the _first_ parent to the child
-            childImpl->InsertParent(0, _userDefaultProfileSettings);
-
-            // replace parent in _profiles with child
-            _allProfiles.SetAt(profileIndex, *childImpl);
-        }
+        // replace parent in _profiles with child
+        _allProfiles.SetAt(profileIndex, *childImpl);
     }
 }
 

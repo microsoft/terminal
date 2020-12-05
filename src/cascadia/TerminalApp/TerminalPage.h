@@ -41,6 +41,10 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
+        // This implements shobjidl's IInitializeWithWindow, but due to a XAML Compiler bug we cannot
+        // put it in our inheritance graph. https://github.com/microsoft/microsoft-ui-xaml/issues/3331
+        STDMETHODIMP Initialize(HWND hwnd);
+
         winrt::fire_and_forget SetSettings(Microsoft::Terminal::Settings::Model::CascadiaSettings settings, bool needRefreshUI);
 
         void Create();
@@ -90,6 +94,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
+        std::optional<HWND> _hostingHwnd;
 
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
@@ -236,8 +241,6 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenSettingsUI();
 
-        void _ReapplyCompactTabSize();
-
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
         static uint32_t _ReadSystemRowsToScroll();
 
@@ -287,6 +290,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleCloseTabsAfter(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleBreakIntoDebugger(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

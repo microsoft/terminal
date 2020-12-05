@@ -167,6 +167,13 @@
       ],
       "type": "string"
     },
+    "CommandPaletteLaunchMode": {
+      "enum": [
+        "action",
+        "commandLine"
+      ],
+      "type": "string"
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -522,6 +529,22 @@
       ],
       "required": [ "direction" ]
     },
+    "CommandPaletteAction": {
+      "description": "Arguments for a commandPalette action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "commandPalette" },
+            "launchMode": {
+              "$ref": "#/definitions/CommandPaletteLaunchMode",
+              "default": "action",
+              "description": "Toggle command palette in either action or command line mode. If no value is provided, the palette will launch in action mode."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -674,7 +697,7 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
           "maximum": 999,
           "minimum": 0,
           "type": [ "integer", "string" ],

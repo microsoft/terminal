@@ -24,6 +24,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(VerifyHighlighting);
         TEST_METHOD(VerifyWeight);
         TEST_METHOD(VerifyCompare);
+        TEST_METHOD(VerifyCompareIgnoreCase);
     };
 
     void FilteredCommandTests::VerifyHighlighting()
@@ -196,6 +197,19 @@ namespace TerminalAppLocalTests
 
             VERIFY_IS_TRUE(filteredCommand->Weight() < filteredCommand2->Weight()); // Second command gets more points due to the beginning of the word
             VERIFY_IS_FALSE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
+        }
+    }
+
+    void FilteredCommandTests::VerifyCompareIgnoreCase()
+    {
+        const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"a") };
+        const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"B") };
+        {
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
+
+            VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
+            VERIFY_IS_TRUE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
         }
     }
 }

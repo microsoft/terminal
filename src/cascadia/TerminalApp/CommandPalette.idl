@@ -26,7 +26,7 @@ namespace TerminalApp
         void SetMRUTabs(Windows.Foundation.Collections.IObservableVector<TabBase> tabs);
 
         void SetKeyBindings(Microsoft.Terminal.TerminalControl.IKeyBindings bindings);
-        void EnableCommandPaletteMode();
+        void EnableCommandPaletteMode(Microsoft.Terminal.Settings.Model.CommandPaletteLaunchMode launchMode);
 
         void SelectNextItem(Boolean moveDown);
 

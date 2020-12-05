@@ -15,6 +15,5 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, KeyChordText, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, FilterableValue, _PropertyChangedHandlers);
     };
 }

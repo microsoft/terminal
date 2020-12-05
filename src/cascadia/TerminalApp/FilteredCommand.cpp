@@ -231,7 +231,7 @@ namespace winrt::TerminalApp::implementation
         {
             std::wstring_view firstName{ first.Item().Name() };
             std::wstring_view secondName{ second.Item().Name() };
-            return firstName.compare(secondName) < 0;
+            return lstrcmpi(firstName.data(), secondName.data()) < 0;
         }
 
         return firstWeight > secondWeight;
