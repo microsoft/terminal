@@ -271,7 +271,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
         _UpdateSettingsFromUIThread(newSettings);
-        auto appearance = newSettings.try_as<IAppearance>();
+        auto appearance = newSettings.try_as<IControlAppearance>();
         if (!_focused)
         {
             appearance = newSettings.UnfocusedConfig();
@@ -279,7 +279,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _UpdateAppearanceFromUIThread(appearance);
     }
 
-    winrt::fire_and_forget TermControl::UpdateAppearance(IAppearance newAppearance)
+    winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::_UpdateAppearanceFromUIThread(IAppearance newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
     {
         if (_closing)
         {

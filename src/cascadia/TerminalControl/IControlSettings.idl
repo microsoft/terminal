@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IKeyBindings.idl";
+import "IControlAppearance.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {
@@ -23,7 +24,7 @@ namespace Microsoft.Terminal.TerminalControl
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires ICoreSettings, IAppearance
+    interface IControlSettings requires ICoreSettings, IControlAppearance
     {
         String ProfileName;
 
@@ -49,5 +50,7 @@ namespace Microsoft.Terminal.TerminalControl
         Boolean RetroTerminalEffect;
         Boolean ForceFullRepaintRendering;
         Boolean SoftwareRendering;
+
+        Microsoft.Terminal.TerminalControl.IControlAppearance UnfocusedConfig;
     };
 }

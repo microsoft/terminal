@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings(IControlSettings newSettings);
-        winrt::fire_and_forget UpdateAppearance(IAppearance newAppearance);
+        winrt::fire_and_forget UpdateAppearance(IControlAppearance newAppearance);
 
         hstring Title();
         hstring GetProfileName() const;
@@ -261,7 +261,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         void _UpdateSettingsFromUIThread(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThread(IAppearance newAppearance);
+        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
 
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;

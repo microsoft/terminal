@@ -3,7 +3,7 @@
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass AppAppearanceConfig : Microsoft.Terminal.TerminalControl.IAppearance
+    [default_interface] runtimeclass AppAppearanceConfig : Microsoft.Terminal.TerminalControl.IControlAppearance
     {
         AppAppearanceConfig();
     }

@@ -59,7 +59,7 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
-static constexpr std::string_view UnfocusedConfigKey{ "unfocusedConfig" };
+static constexpr std::string_view UnfocusedConfigKey{ "experimental.state.unfocused" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 

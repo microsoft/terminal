@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "..\IAppearance.idl";
+import "..\ICoreAppearance.idl";
 
 namespace Microsoft.Terminal.TerminalControl
 {
-    interface ICoreSettings requires IAppearance
+    interface ICoreSettings requires ICoreAppearance
     {
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback
         Int32 HistorySize;
@@ -24,8 +24,6 @@ namespace Microsoft.Terminal.TerminalControl
 
         Windows.Foundation.IReference<UInt32> TabColor;
         Windows.Foundation.IReference<UInt32> StartingTabColor;
-
-        Microsoft.Terminal.TerminalControl.IAppearance UnfocusedConfig;
     };
 
 }
