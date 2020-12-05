@@ -301,6 +301,7 @@ namespace winrt::TerminalApp::implementation
                 _close();
             }
             _dispatch.DoAction(action);
+            e.Handled(true);
         }
         else if (key == VirtualKey::Up)
         {
