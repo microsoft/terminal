@@ -202,32 +202,11 @@ namespace TerminalAppLocalTests
 
     void FilteredCommandTests::VerifyCompareIgnoreCase()
     {
-        const std::string settingsJson{ R"(
+        const auto paletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"a") };
+        const auto paletteItem2{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(L"B") };
         {
-            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1,
-                    "commandline": "cmd.exe"
-                }
-            ],
-            "keybindings": [
-                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" }, "name": "a" },
-                { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "horizontal" }, "name": "B" }
-            ]
-        })" };
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
-        const auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(2u, commands.Size());
-
-        const auto command = commands.Lookup(L"a");
-        const auto command2 = commands.Lookup(L"B");
-        {
-            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command);
-            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(command2);
+            const auto filteredCommand = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem);
+            const auto filteredCommand2 = winrt::make_self<winrt::TerminalApp::implementation::FilteredCommand>(paletteItem2);
 
             VERIFY_ARE_EQUAL(filteredCommand->Weight(), filteredCommand2->Weight());
             VERIFY_IS_TRUE(winrt::TerminalApp::implementation::FilteredCommand::Compare(*filteredCommand, *filteredCommand2));
