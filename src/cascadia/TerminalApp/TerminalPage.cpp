@@ -2783,8 +2783,6 @@ namespace winrt::TerminalApp::implementation
             auto tabViewItem = newTabImpl->TabViewItem();
             _tabView.TabItems().Append(tabViewItem);
 
-            _ReapplyCompactTabSize();
-
             tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
 
             // When the tab is closed, remove it from our list of tabs.
