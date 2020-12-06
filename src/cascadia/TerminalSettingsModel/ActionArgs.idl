@@ -53,6 +53,12 @@ namespace Microsoft.Terminal.Settings.Model
         Backward
     };
 
+    enum CommandPaletteLaunchMode
+    {
+        Action = 0,
+        CommandLine
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -178,5 +184,10 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ScrollDownArgs : IActionArgs
     {
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
+    {
+        CommandPaletteLaunchMode LaunchMode { get; };
     };
 }

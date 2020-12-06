@@ -23,6 +23,7 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "ToggleCommandPaletteArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -411,5 +412,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"MoveTabCommandKey")),
                         directionString)
         };
+    }
+
+    winrt::hstring ToggleCommandPaletteArgs::GenerateName() const
+    {
+        if (_LaunchMode == CommandPaletteLaunchMode::CommandLine)
+        {
+            return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
+        }
+        return RS_(L"ToggleCommandPaletteCommandKey");
     }
 }
