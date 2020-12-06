@@ -203,6 +203,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
+
+                // If a text is selected inside terminal, use it to populate the search box.
+                // If the search box already contains a value, it will be overridden.
+                if (_terminal->IsSelectionActive())
+                {
+                    // Currently we populate the search box only if a single line is selected.
+                    // Empirically, multi-line selection works as well on sample scenarios,
+                    // but since code paths differ, extra work is required to ensure correctness.
+                    const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(true);
+                    if (bufferData.text.size() == 1)
+                    {
+                        const auto selectedLine{ til::at(bufferData.text, 0) };
+                        _searchBox->PopulateTextbox(selectedLine.data());
+                    }
+                }
+
                 _searchBox->SetFocusOnTextbox();
             }
         }
