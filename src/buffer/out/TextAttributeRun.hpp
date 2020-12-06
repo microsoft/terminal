@@ -26,14 +26,14 @@ class TextAttributeRun final
 {
 public:
     TextAttributeRun() = default;
-    TextAttributeRun(const unsigned int cchLength, const TextAttribute attr) noexcept :
-        _cchLength(cchLength)
+    TextAttributeRun(const size_t cchLength, const TextAttribute attr) noexcept :
+        _cchLength(gsl::narrow<unsigned int>(cchLength))
     {
         SetAttributes(attr);
     }
 
-    unsigned int GetLength() const noexcept { return _cchLength; }
-    void SetLength(const unsigned int cchLength) noexcept { _cchLength = cchLength; }
+    size_t GetLength() const noexcept { return _cchLength; }
+    void SetLength(const size_t cchLength) noexcept { _cchLength = gsl::narrow<unsigned int>(cchLength); }
     void IncrementLength() noexcept { _cchLength++; }
     void DecrementLength() noexcept { _cchLength--; }
 

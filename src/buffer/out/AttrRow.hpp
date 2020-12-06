@@ -39,26 +39,26 @@ public:
 
     void Reset(const TextAttribute attr);
 
-    TextAttribute GetAttrByColumn(const unsigned int column) const;
-    TextAttribute GetAttrByColumn(const unsigned int column,
-                                  unsigned int* const pApplies) const;
+    TextAttribute GetAttrByColumn(const size_t column) const;
+    TextAttribute GetAttrByColumn(const size_t column,
+                                  size_t* const pApplies) const;
 
     size_t GetNumberOfRuns() const noexcept;
 
-    size_t FindAttrIndex(const unsigned int index,
-                         unsigned int* const pApplies) const;
+    size_t FindAttrIndex(const size_t index,
+                         size_t* const pApplies) const;
 
     std::unordered_set<uint16_t> GetHyperlinks();
 
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
 
-    void Resize(const unsigned int newWidth);
+    void Resize(const size_t newWidth);
 
     [[nodiscard]] HRESULT InsertAttrRuns(const gsl::span<const TextAttributeRun> newAttrs,
-                                         const unsigned int iStart,
-                                         const unsigned int iEnd,
-                                         const unsigned int cBufferWidth);
+                                         const size_t iStart,
+                                         const size_t iEnd,
+                                         const size_t cBufferWidth);
 
     static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
 
@@ -73,7 +73,7 @@ public:
 
 private:
     boost::container::small_vector<TextAttributeRun, 1> _list;
-    unsigned int _cchRowWidth;
+    size_t _cchRowWidth;
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;
