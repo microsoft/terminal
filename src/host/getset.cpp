@@ -704,13 +704,18 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                buffer.GetViewport().ToInclusive();
         COORD delta{ 0 };
         {
-            if (currentViewport.Left > position.X)
+            // When evaluating the X offset, we must convert the buffer position to
+            // equivalent screen coordinates, taking line rendition into account.
+            const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.Y);
+            const auto screenPosition = BufferToScreenLine({ position.X, position.Y, position.X, position.Y }, lineRendition);
+
+            if (currentViewport.Left > screenPosition.Left)
             {
-                delta.X = position.X - currentViewport.Left;
+                delta.X = screenPosition.Left - currentViewport.Left;
             }
-            else if (currentViewport.Right < position.X)
+            else if (currentViewport.Right < screenPosition.Right)
             {
-                delta.X = position.X - currentViewport.Right;
+                delta.X = screenPosition.Right - currentViewport.Right;
             }
 
             if (currentViewport.Top > position.Y)
