@@ -39,7 +39,7 @@ bool RowCellIterator::operator!=(const RowCellIterator& it) const noexcept
 
 RowCellIterator& RowCellIterator::operator+=(const ptrdiff_t& movement) noexcept
 {
-    _pos += gsl::narrow<unsigned int>(movement);
+    _pos += movement;
 
     return (*this);
 }
