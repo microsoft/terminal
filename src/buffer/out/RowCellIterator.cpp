@@ -9,7 +9,7 @@
 #include "../../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
 
-RowCellIterator::RowCellIterator(const ROW& row, const unsigned int start, const unsigned int length) :
+RowCellIterator::RowCellIterator(const ROW& row, const size_t start, const size_t length) :
     _row(row),
     _start(start),
     _length(length),
@@ -96,7 +96,7 @@ void RowCellIterator::_RefreshView()
 // Return Value:
 // - Object representing the view into this cell
 OutputCellView RowCellIterator::s_GenerateView(const ROW& row,
-                                               const unsigned int pos)
+                                               const size_t pos)
 {
     const auto& charRow = row.GetCharRow();
 

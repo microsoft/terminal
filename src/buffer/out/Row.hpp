@@ -35,7 +35,7 @@ public:
     ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent)
     noexcept;
 
-    unsigned short size() const noexcept { return _rowWidth; }
+    size_t size() const noexcept { return _rowWidth; }
 
     const CharRow& GetCharRow() const noexcept { return _charRow; }
     CharRow& GetCharRow() noexcept { return _charRow; }
@@ -52,13 +52,13 @@ public:
     void ClearColumn(const size_t column);
     std::wstring GetText() const { return _charRow.GetText(); }
 
-    RowCellIterator AsCellIter(const unsigned int startIndex) const { return AsCellIter(startIndex, size() - startIndex); }
-    RowCellIterator AsCellIter(const unsigned int startIndex, const unsigned int count) const { return RowCellIterator(*this, startIndex, count); }
+    RowCellIterator AsCellIter(const size_t startIndex) const { return AsCellIter(startIndex, size() - startIndex); }
+    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const { return RowCellIterator(*this, startIndex, count); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const unsigned int index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
+    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
 
     friend bool operator==(const ROW& a, const ROW& b) noexcept;
 
