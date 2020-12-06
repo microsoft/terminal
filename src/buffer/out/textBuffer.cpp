@@ -496,7 +496,7 @@ bool TextBuffer::IncrementCursor()
     // Cursor position is stored as logical array indices (starts at 0) for the window
     // Buffer Size is specified as the "length" of the array. It would say 80 for valid values of 0-79.
     // So subtract 1 from buffer size in each direction to find the index of the final column in the buffer
-    const short iFinalColumnIndex = GetSize().RightInclusive();
+    const short iFinalColumnIndex = GetLineWidth(GetCursor().GetPosition().Y) - 1;
 
     // Move the cursor one position to the right
     GetCursor().IncrementXPosition(1);
@@ -2101,7 +2101,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     const COORD cOldLastChar = oldBuffer.GetLastNonSpaceCharacter(lastCharacterViewport);
 
     const short cOldRowsTotal = cOldLastChar.Y + 1;
-    const short cOldColsTotal = oldBuffer.GetSize().Width();
 
     COORD cNewCursorPos = { 0 };
     bool fFoundCursorPos = false;
@@ -2113,8 +2112,18 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     {
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
+        const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
         const CharRow& charRow = row.GetCharRow();
         short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+
+        // If we're starting a new row, try and preserve the line rendition
+        // from the row in the original buffer.
+        const auto newBufferPos = newBuffer.GetCursor().GetPosition();
+        if (newBufferPos.X == 0)
+        {
+            auto& newRow = newBuffer.GetRowByOffset(newBufferPos.Y);
+            newRow.SetLineRendition(row.GetLineRendition());
+        }
 
         // There is a special case here. If the row has a "wrap"
         // flag on it, but the right isn't equal to the width (one
