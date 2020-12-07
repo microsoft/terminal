@@ -2633,6 +2633,26 @@ namespace winrt::TerminalApp::implementation
         // TODO GH#3327: Look at what to do with the NC area when we have XAML theming
     }
 
+    // Function Description:
+    // - This is a helper method to get the commandline out of a
+    //   ExecuteCommandline action, break it into subcommands, and attempt to
+    //   parse it into actions. This is used by _HandleExecuteCommandline for
+    //   processing commandlines in the current WT window.
+    // Arguments:
+    // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
+    // Return Value:
+    // - an empty list if we failed to parse, otherwise a list of actions to execute.
+    std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        if (appArgs.ParseArgs(args) == 0)
+        {
+            return appArgs.GetStartupActions();
+        }
+
+        return {};
+    }
+
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {

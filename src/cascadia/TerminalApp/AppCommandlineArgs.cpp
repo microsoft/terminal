@@ -721,21 +721,26 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
     return 0;
 }
 
-// Function Description:
-// - This is a helper method to get the commandline out of a
-//   ExecuteCommandline action, break it into subcommands, and attempt to
-//   parse it into actions. This is used by _HandleExecuteCommandline for
-//   processing commandlines in the current WT window.
+// Method Description:
+// - Attempts to parse an array of commandline args into a list of
+//   commands to execute, and then parses these commands. As commands are
+//   successfully parsed, they will generate ShortcutActions for us to be
+//   able to execute. If we fail to parse any commands, we'll return the
+//   error code from the failure to parse that command, and stop processing
+//   additional commands.
+// - The first arg in args should be the program name "wt" (or some variant). It
+//   will be ignored during parsing.
 // Arguments:
-// - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
+// - args: ExecuteCommandlineArgs describing the command line to parse
 // Return Value:
-// - an empty list if we failed to parse, otherwise a list of actions to execute.
-std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> AppCommandlineArgs::ConvertExecuteCommandlineToActions(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args)
+// - 0 if the commandline was successfully parsed
+int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args)
 {
     if (!args || args.Commandline().empty())
     {
-        return {};
+        return 0;
     }
+
     // Convert the commandline into an array of args with
     // CommandLineToArgvW, similar to how the app typically does when
     // called from the commandline.
@@ -754,12 +759,19 @@ std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> AppComma
             args.emplace_back(elem);
         }
         winrt::array_view<const winrt::hstring> argsView{ args };
-
-        ::TerminalApp::AppCommandlineArgs appArgs;
-        if (appArgs.ParseArgs(argsView) == 0)
-        {
-            return appArgs.GetStartupActions();
-        }
+        return ParseArgs(argsView);
     }
-    return {};
+    return 0;
+}
+
+// Method Description:
+// - Allows disabling addition of help-related info in the exit message
+// Arguments:
+// - none
+// Return Value:
+// - none
+void AppCommandlineArgs::DisableHelpInExitMessage()
+{
+    _app.set_help_flag();
+    _app.set_help_all_flag();
 }

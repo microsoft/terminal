@@ -736,29 +736,32 @@ namespace winrt::TerminalApp::implementation
 
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
+            ParsedCommandLineText(L"");
+
             const auto commandLine = _getTrimmedInput();
-            if (commandLine.empty())
-            {
-                ParsedCommandLineText(L"");
-            }
-            else
+            if (!commandLine.empty())
             {
                 ExecuteCommandlineArgs args{ commandLine };
-                const auto commands = ::TerminalApp::AppCommandlineArgs::ConvertExecuteCommandlineToActions(args);
-                if (commands.size() == 0)
+                ::TerminalApp::AppCommandlineArgs appArgs;
+                appArgs.DisableHelpInExitMessage();
+
+                if (appArgs.ParseArgs(args) == 0)
                 {
-                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine"));
+                    const auto& commands = appArgs.GetStartupActions();
+                    if (commands.size() > 0)
+                    {
+                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") + L":" };
+                        for (const auto& command : commands)
+                        {
+                            commandDescription += L"\n\t" + command.Args().GenerateName();
+                        }
+                        ParsedCommandLineText(commandDescription.data());
+                    }
                 }
                 else
                 {
-                    std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
-                    for (const auto& command : commands)
-                    {
-                        commandDescription += L"\n\t" + command.Args().GenerateName();
-                    }
-                    ParsedCommandLineText(commandDescription.data());
+                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L":\n\t" + til::u8u16(appArgs.GetExitMessage()));
                 }
-
                 _noMatchesText().Visibility(Visibility::Visible);
             }
         }
