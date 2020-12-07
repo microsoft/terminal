@@ -345,6 +345,7 @@ void Profile::LayerJson(const Json::Value& json)
     {
         auto unfocusedConfig{ winrt::make_self<implementation::AppearanceConfig>() };
         unfocusedConfig->LayerJson(json[JsonKey(UnfocusedConfigKey)]);
+        unfocusedConfig->InsertParent(winrt::com_ptr<Profile>(get_strong()));
         _UnfocusedConfig = *unfocusedConfig;
     }
 }

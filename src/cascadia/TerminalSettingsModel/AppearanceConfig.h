@@ -8,10 +8,11 @@
 #include "JsonUtils.h"
 #include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
+#include "Profile.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
+    struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<Profile>
     {
     public:
         AppearanceConfig();
