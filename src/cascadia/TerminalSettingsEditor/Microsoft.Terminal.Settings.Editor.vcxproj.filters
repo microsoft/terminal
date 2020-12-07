@@ -22,6 +22,12 @@
     <Midl Include="ColorToHexConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
+    <Midl Include="FontWeightConverter.idl">
+      <Filter>Converters</Filter>
+    </Midl>
+    <Midl Include="PercentageConverter.idl">
+      <Filter>Converters</Filter>
+    </Midl>
     <Midl Include="EnumEntry.idl" />
   </ItemGroup>
   <ItemGroup>

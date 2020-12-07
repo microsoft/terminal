@@ -242,6 +242,11 @@ namespace winrt::TerminalApp::implementation
             _TabSearchHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::BreakIntoDebugger:
+        {
+            _BreakIntoDebuggerHandlers(*this, eventArgs);
+            break;
+        }
         default:
             return false;
         }

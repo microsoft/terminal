@@ -41,6 +41,12 @@
     <ClInclude Include="ColorToHexConverter.h">
       <DependentUpon>ColorToHexConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FontWeightConverter.h">
+      <DependentUpon>FontWeightConverter.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PercentageConverter.h">
+      <DependentUpon>PercentageConverter.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
     </ClInclude>
@@ -105,6 +111,12 @@
     <ClCompile Include="ColorToHexConverter.cpp">
       <DependentUpon>ColorToHexConverter.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="FontWeightConverter.cpp">
+      <DependentUpon>FontWeightConverter.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PercentageConverter.cpp">
+      <DependentUpon>PercentageConverter.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
@@ -138,6 +150,8 @@
   <ItemGroup>
     <Midl Include="ColorToBrushConverter.idl" />
     <Midl Include="ColorToHexConverter.idl" />
+    <Midl Include="FontWeightConverter.idl" />
+    <Midl Include="PercentageConverter.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -202,12 +216,12 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
