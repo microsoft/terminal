@@ -34,10 +34,10 @@ public:
 
     AttrRowIterator(const ATTR_ROW* const attrRow) noexcept;
 
-    operator bool() const;
+    operator bool() const noexcept;
 
-    bool operator==(const AttrRowIterator& it) const;
-    bool operator!=(const AttrRowIterator& it) const;
+    bool operator==(const AttrRowIterator& it) const noexcept;
+    bool operator!=(const AttrRowIterator& it) const noexcept;
 
     AttrRowIterator& operator++();
     AttrRowIterator operator++(int);
@@ -57,7 +57,7 @@ private:
     size_t _currentAttributeIndex; // index of TextAttribute within the current TextAttributeRun
     bool _exceeded;
 
-    void _increment(size_t count);
-    void _decrement(size_t count);
+    void _increment(size_t count) noexcept;
+    void _decrement(size_t count) noexcept;
     void _setToEnd() noexcept;
 };

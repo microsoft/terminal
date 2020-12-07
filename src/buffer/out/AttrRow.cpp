@@ -13,7 +13,14 @@
 // - constructed object
 ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) noexcept
 {
-    _list.push_back(TextAttributeRun(cchRowWidth, attr));
+    try
+    {
+        _list.push_back(TextAttributeRun(cchRowWidth, attr));
+    }
+    catch (...)
+    {
+        FAIL_FAST_CAUGHT_EXCEPTION();
+    }
     _cchRowWidth = cchRowWidth;
 }
 

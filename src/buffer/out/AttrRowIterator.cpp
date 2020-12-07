@@ -21,12 +21,12 @@ AttrRowIterator::AttrRowIterator(const ATTR_ROW* const attrRow) noexcept :
 {
 }
 
-AttrRowIterator::operator bool() const
+AttrRowIterator::operator bool() const noexcept
 {
     return !_exceeded && _run < _pAttrRow->_list.cend();
 }
 
-bool AttrRowIterator::operator==(const AttrRowIterator& it) const
+bool AttrRowIterator::operator==(const AttrRowIterator& it) const noexcept
 {
     return (_pAttrRow == it._pAttrRow &&
             _run == it._run &&
@@ -34,7 +34,7 @@ bool AttrRowIterator::operator==(const AttrRowIterator& it) const
             _exceeded == it._exceeded);
 }
 
-bool AttrRowIterator::operator!=(const AttrRowIterator& it) const
+bool AttrRowIterator::operator!=(const AttrRowIterator& it) const noexcept
 {
     return !(*this == it);
 }
@@ -103,7 +103,7 @@ const TextAttribute& AttrRowIterator::operator*() const
 // - increments the index the iterator points to
 // Arguments:
 // - count - the amount to increment by
-void AttrRowIterator::_increment(size_t count)
+void AttrRowIterator::_increment(size_t count) noexcept
 {
     while (count > 0)
     {
@@ -126,7 +126,7 @@ void AttrRowIterator::_increment(size_t count)
 // - decrements the index the iterator points to
 // Arguments:
 // - count - the amount to decrement by
-void AttrRowIterator::_decrement(size_t count)
+void AttrRowIterator::_decrement(size_t count) noexcept
 {
     while (count > 0)
     {
