@@ -176,6 +176,13 @@ namespace winrt::TerminalApp::implementation
 
         _lastIconPath = iconPath;
 
+        // If the icon is currently hidden, just return here (but only after setting _lastIconPath to the new path
+        // for when we show the icon again)
+        if (_iconHidden)
+        {
+            return;
+        }
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(TabViewItem().Dispatcher());
@@ -188,6 +195,34 @@ namespace winrt::TerminalApp::implementation
 
             // Update SwitchToTab command's icon
             SwitchToTabCommand().Icon(_lastIconPath);
+        }
+    }
+
+    // Method Description:
+    // - Hide or show the tab icon for this tab
+    // - Used when we want to show the progress ring, which should replace the icon
+    // Arguments:
+    // - hide: if true, we hide the icon; if false, we show the icon
+    winrt::fire_and_forget TerminalTab::HideIcon(const bool hide)
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            if (hide)
+            {
+                Icon({});
+                TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                tab->_iconHidden = true;
+            }
+            else
+            {
+                Icon(_lastIconPath);
+                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                tab->_iconHidden = false;
+            }
         }
     }
 
@@ -439,10 +474,12 @@ namespace winrt::TerminalApp::implementation
                 // Set the tab's progress ring to the active pane's progress
                 if (tab->GetActiveTerminalControl().TaskbarState() > 0)
                 {
+                    tab->HideIcon(true);
                     tab->_headerControl.IsProgressRingActive(true);
                 }
                 else
                 {
+                    tab->HideIcon(false);
                     tab->_headerControl.IsProgressRingActive(false);
                 }
             }

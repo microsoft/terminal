@@ -11,12 +11,6 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
-        <FontIcon x:Name="HeaderZoomIcon"
-                  FontFamily="Segoe MDL2 Assets"
-                  Visibility="{x:Bind IsPaneZoomed, Mode=OneWay}"
-                  Glyph="&#xE8A3;"
-                  FontSize="12"
-                  Margin="0,0,8,0"/>
         <ProgressRing x:Name="HeaderProgressRing"
                       IsActive="{x:Bind IsProgressRingActive, Mode=OneWay}"
                       Visibility="{x:Bind IsProgressRingActive, Mode=OneWay}"
@@ -24,7 +18,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                       MinWidth="0"
                       Height="15"
                       Width="15"
-                      Margin="0,0,8,0"/>
+                      Margin="-7.5,0,8,0"/>
+        <FontIcon x:Name="HeaderZoomIcon"
+                  FontFamily="Segoe MDL2 Assets"
+                  Visibility="{x:Bind IsPaneZoomed, Mode=OneWay}"
+                  Glyph="&#xE8A3;"
+                  FontSize="12"
+                  Margin="0,0,8,0"/>
         <TextBlock x:Name="HeaderTextBlock"
                    Visibility="Visible"
                    Text="{x:Bind Title, Mode=OneWay}"/>
