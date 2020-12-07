@@ -639,7 +639,7 @@
     <value>Focus</value>
   </data>
   <data name="Globals_LaunchModeMaximizedFocus.Content" xml:space="preserve">
-    <value>Maximized Focus</value>
+    <value>Maximized focus</value>
   </data>
   <data name="Profile_BellStyle.Header" xml:space="preserve">
     <value>Bell notification style</value>
