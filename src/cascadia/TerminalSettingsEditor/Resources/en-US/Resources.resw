@@ -338,7 +338,7 @@
     <value>Open JSON file</value>
   </data>
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
-    <value>Base Layer</value>
+    <value>Base layer</value>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
@@ -674,5 +674,20 @@
   </data>
   <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
     <value>Visual (Flash Taskbar)</value>
+  </data>
+  <data name="Profile_Acrylic.Text" xml:space="preserve">
+    <value>Acrylic</value>
+  </data>
+  <data name="Profile_Background.Text" xml:space="preserve">
+    <value>Background image</value>
+  </data>
+  <data name="Profile_Cursor.Text" xml:space="preserve">
+    <value>Cursor</value>
+  </data>
+  <data name="Profile_Text.Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="Profile_Window.Text" xml:space="preserve">
+    <value>Window</value>
   </data>
 </root>

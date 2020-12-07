@@ -21,6 +21,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="Margin" Value="0,10,0,0"/>
             </Style>
 
+            <Style TargetType="TextBlock">
+                <Setter Property="Margin" Value="0,20,0,10"/>
+                <Setter Property="FontSize" Value="20"/>
+            </Style>
+
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
@@ -59,10 +64,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBox x:Uid="Profile_TabTitle"
                              Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
                              HorizontalAlignment="Left"/>
-                    <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                           ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                           SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
@@ -71,23 +72,15 @@ the MIT License. See LICENSE in the project root for license information. -->
         <PivotItem x:Uid="Profile_Appearance">
             <ScrollViewer>
                 <StackPanel HorizontalAlignment="Left">
-                    <TextBox x:Uid="Profile_FontFace"
-                             Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"/>
-                    <Controls:NumberBox x:Uid="Profile_FontSize"
-                                        Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
-                                        SmallChange="1"
-                                        LargeChange="10"/>
-                    <TextBox x:Uid="Profile_FontWeight"/>
+                    <TextBlock x:Uid="Profile_Window" Margin="0,0,0,10"/>
                     <TextBox x:Uid="Profile_Padding"
                              Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"/>
-                    <Controls:RadioButtons x:Uid="Profile_CursorShape"
-                                           ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
-                                           SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                    <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                           ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <Controls:NumberBox x:Uid="Profile_CursorHeight"
-                                        Value="100"
-                                        SmallChange="1"
-                                        LargeChange="10"/>
+                    
+                    <TextBlock x:Uid="Profile_Text"/>
                     <ComboBox x:Uid="Profile_ColorScheme"
                               ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}">
@@ -97,7 +90,27 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
+                    <TextBox x:Uid="Profile_FontFace"
+                             Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"/>
+                    <Controls:NumberBox x:Uid="Profile_FontSize"
+                                        Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
+                                        SmallChange="1"
+                                        LargeChange="10"/>
+                    <TextBox x:Uid="Profile_FontWeight"/>
+                    <CheckBox x:Uid="Profile_RetroTerminalEffect"
+                              IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
+                    
+                    <TextBlock x:Uid="Profile_Cursor"/>
+                    <Controls:RadioButtons x:Uid="Profile_CursorShape"
+                                           ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                    <Controls:NumberBox x:Uid="Profile_CursorHeight"
+                                        Value="100"
+                                        SmallChange="1"
+                                        LargeChange="10"/>
 
+                    <TextBlock x:Uid="Profile_Background"/>
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_BackgroundImage"
                                  x:Name="BackgroundImage"
@@ -127,14 +140,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         Value="{x:Bind State.Profile.BackgroundImageOpacity, Mode=TwoWay}"
                                         SmallChange="10"
                                         LargeChange="25"/>
+
+                    <TextBlock x:Uid="Profile_Acrylic"/>
                     <CheckBox x:Uid="Profile_UseAcrylic"
                               IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
                     <Controls:NumberBox x:Uid="Profile_AcrylicOpacity"
                                         Value="{x:Bind State.Profile.AcrylicOpacity, Mode=TwoWay}"
                                         SmallChange="0.1"
                                         LargeChange="0.25"/>
-                    <CheckBox x:Uid="Profile_RetroTerminalEffect"
-                              IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
