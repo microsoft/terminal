@@ -24,13 +24,12 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control) :
-        _mruPanes{ winrt::single_threaded_vector<uint16_t>() }
+    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
         _rootPane->Id(_nextPaneId);
-        _mruPanes.InsertAt(0, _nextPaneId);
+        _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
         ++_nextPaneId;
 
         _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
@@ -347,7 +346,7 @@ namespace winrt::TerminalApp::implementation
         if (direction == FocusDirection::Previous)
         {
             // To get to the previous pane, get the id of the previous pane and focus to that
-            _rootPane->FocusPane(_mruPanes.GetAt(1));
+            _rootPane->FocusPane(_mruPanes.at(1));
         }
         else
         {
@@ -470,14 +469,16 @@ namespace winrt::TerminalApp::implementation
 
         // We need to move the pane to the top of our mru list
         // If its already somewhere in the list, remove it first
-        uint32_t mruPaneIndex;
         const auto paneId = pane->Id();
-        if (_mruPanes.IndexOf(paneId, mruPaneIndex))
+        for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
         {
-            _mruPanes.RemoveAt(mruPaneIndex);
+            if (*i == paneId)
+            {
+                _mruPanes.erase(i);
+                break;
+            }
         }
-        _mruPanes.InsertAt(0, paneId);
-
+        _mruPanes.insert(_mruPanes.begin(), paneId);
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -522,11 +523,15 @@ namespace winrt::TerminalApp::implementation
                 }
                 if (auto pane = weakPane.lock())
                 {
-                    uint32_t mruIndex;
-                    if (tab->_mruPanes.IndexOf(pane->Id(), mruIndex))
+                    for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {
-                        tab->_mruPanes.RemoveAt(mruIndex);
+                        if (*i == pane->Id())
+                        {
+                            tab->_mruPanes.erase(i);
+                            break;
+                        }
                     }
+
                 }
             }
         });

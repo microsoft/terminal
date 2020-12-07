@@ -83,7 +83,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
 
-        Windows::Foundation::Collections::IVector<uint16_t> _mruPanes;
+        std::vector<uint16_t> _mruPanes;
         uint16_t _nextPaneId{ 0 };
 
         bool _receivedKeyDown{ false };
