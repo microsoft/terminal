@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-11-20
-last updated: 2020-12-01
+last updated: 2020-12-07
 issue id: #1032
 ---
 
@@ -48,7 +48,7 @@ point, **any other unelevated application could send input to the Terminal's
 the Terminal window, and send commands to the elevated client application.
 
 It was initially theorized that the window/content model architecture would also
-help enable "mixed elevation"With mixed elevation, tabs could run at different
+help enable "mixed elevation". With mixed elevation, tabs could run at different
 integrity levels within the same terminal window. However, after investigation
 and research, it has become apparent that this scenario is not possible to do
 safely after all. There are numerous technical difficulties involved, and each
@@ -246,6 +246,9 @@ ShellExecute(nullptr,
 This will ask the shell to perform a UAC prompt before spawning `wt.exe` as an
 elevated process.
 
+> 👉 NOTE: This mechanism won't always work on non-Desktop SKUs of Windows. FOr
+> more discussion, see [Elevation on OneCore SKUs](#Elevation-on-OneCore-SKUs).
+
 ### Starting an unelevated process from an elevated process
 
 As always, there's a blog post by Raymond Chen that describes in detail how we
@@ -348,6 +351,28 @@ auto-elevate the profile. In this scenario, however, we can't do that. The
 Terminal is being invoked on behalf of the client app launching, instead of the
 Terminal invoking the client application.
 
+### Elevation on OneCore SKUs
+
+This spec proposes using `ShellExecute` to elevate the Terminal window. However,
+not all Windows SKUs have support for `ShellExecute`. Notably, the non-Desktop
+SKUs, which are often referred to as "OneCore" SKUs. On these platforms, we
+won't be able to use `ShellExecute` to elevate the Terminal. There might not
+even be the concept of multiple elevation levels, or different users, depending
+on the SKU.
+
+Fortunately, this is a mostly hypothetical concern for the moment. Desktop is
+the only publicly supported SKU for the Terminal currently. If the Terminal ever
+does become available on those SKUs, we can use these proposals as mitigations.
+
+* If elevation is supported, there must be some other way of elevating a
+  process. We could always use that mechanism instead.
+* If elevation isn't supported (I'm thinking 10X is one of these), then we could
+  instead display a warning dialog whenever a user tries to open an elevated
+  profile.
+  - We could take the warning a step further. We could add another settings
+    validation step. This would warn the user if they try to mark any profiles
+    or actions as `"elevate":true`
+
 ## Future considerations
 
 * If we wanted to go even further down the visual differentiation route, we
@@ -355,8 +380,11 @@ Terminal invoking the client application.
   based on the elevation state. Something like `elevatedTheme`, to pick another
   theme from the set of themes. This would allow them to force elevated windows
   to have a red titlebar, for example.
+* Over the course of discussion concerning appearance objects ([#8345]), it
+  became clear that having seaparte "elevated" appearances defined for
+  `profile`s was overly complicated. This is left as a consideration for a
+  possible future extension that could handle this scenario in a cleaner way.
 
-## Resources
 
 <!-- Footnotes -->
 
