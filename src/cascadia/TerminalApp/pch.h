@@ -8,6 +8,10 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOKERNEL
+#define NOSOUND
+#define NOMCX
+#define NOMB
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL

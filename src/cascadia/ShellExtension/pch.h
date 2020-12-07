@@ -8,6 +8,13 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOKERNEL
+#define NOSERVICE
+#define NOSOUND
+#define NOMCX
+#define NOMB
+#define NOHELP
+#define NOCOMM
 
 #include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
