@@ -58,9 +58,8 @@
         <Setter Property="SpinButtonPlacementMode" Value="Compact"/>
     </Style>
 
-    <Style x:Key="GroupingHeader" TargetType="TextBlock">
+    <Style x:Key="GroupingHeader" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}">
         <Setter Property="Margin" Value="0,20,0,10"/>
-        <Setter Property="FontSize" Value="20"/>
     </Style>
 
 </ResourceDictionary>
