@@ -1234,6 +1234,11 @@ void Renderer::ResetErrorStateAndResume()
     EnablePainting();
 }
 
+void Renderer::TriggerPaintSelection(_In_ IRenderEngine* const pEngine)
+{
+    _PaintSelection(pEngine);
+}
+
 void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)
 {
     _hoveredInterval = newInterval;

@@ -184,6 +184,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSelectAll(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        _SelectAll();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
                                      const ActionEventArgs& args)
     {

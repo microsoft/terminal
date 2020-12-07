@@ -208,6 +208,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::CallChooseEverySingleLine()
+    {
+        _terminal->ChooseEverySingleLine();
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -2202,7 +2207,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->TriggerSelection();
         _selectionNeedsToBeCopied = true;
     }
-
+    
     // Method Description:
     // - Perform a resize for the current size of the swapchainpanel. If the
     //   font size changed, we'll need to resize the buffer to fit the existing

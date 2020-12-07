@@ -34,6 +34,7 @@ static constexpr std::string_view ScrolldownKey{ "scrollDown" };
 static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
 static constexpr std::string_view ScrollupKey{ "scrollUp" };
 static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
+static constexpr std::string_view SelectAllKey{ "selectAll" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
@@ -94,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
         { ScrollupKey, ShortcutAction::ScrollUp },
         { ScrolluppageKey, ShortcutAction::ScrollUpPage },
+        { SelectAllKey, ShortcutAction::SelectAll },
         { SendInputKey, ShortcutAction::SendInput },
         { SetColorSchemeKey, ShortcutAction::SetColorScheme },
         { SetTabColorKey, ShortcutAction::SetTabColor },
@@ -292,6 +294,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
                 { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
                 { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::SelectAll, RS_(L"SelectAllCommandKey") },
                 { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },

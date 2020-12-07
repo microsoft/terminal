@@ -299,6 +299,9 @@
   <data name="ScrollUpPageCommandKey" xml:space="preserve">
     <value>Scroll up one page</value>
   </data>
+  <data name="SelectAllCommandKey" xml:space="preserve">
+    <value>Select all</value>
+  </data>
   <data name="SendInputCommandKey" xml:space="preserve">
     <value>Send Input: "{0}"</value>
     <comment>{0} will be replaced with a string of input as defined by the user</comment>

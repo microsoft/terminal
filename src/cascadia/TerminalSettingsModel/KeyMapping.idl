@@ -40,6 +40,7 @@ namespace Microsoft.Terminal.Settings.Model
         ToggleAlwaysOnTop,
         OpenSettings,
         SetColorScheme,
+        SelectAll,
         SetTabColor,
         OpenTabColorPicker,
         RenameTab,

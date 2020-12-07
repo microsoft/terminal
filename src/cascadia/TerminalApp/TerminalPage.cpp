@@ -906,6 +906,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
+        _actionDispatch->SelectAll({ this, &TerminalPage::_HandleSelectAll });
         _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
         _actionDispatch->SwitchToTab({ this, &TerminalPage::_HandleSwitchToTab });
         _actionDispatch->ResizePane({ this, &TerminalPage::_HandleResizePane });
@@ -1296,6 +1297,12 @@ namespace winrt::TerminalApp::implementation
         {
             _SelectTab(newTabIndex);
         }
+    }
+
+    void TerminalPage::_SelectAll()
+    {
+        const auto control = _GetActiveControl();
+        control.CallChooseEverySingleLine();
     }
 
     // Method Description:

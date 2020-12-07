@@ -197,6 +197,11 @@ namespace winrt::TerminalApp::implementation
             _SetColorSchemeHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::SelectAll:
+        {
+            _SelectAllHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::SetTabColor:
         {
             _SetTabColorHandlers(*this, eventArgs);
