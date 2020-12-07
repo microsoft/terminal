@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "CommandPalette.h"
-
+#include "AppCommandlineArgs.h"
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
@@ -733,6 +733,35 @@ namespace winrt::TerminalApp::implementation
         {
             _noMatchesText().Visibility(Visibility::Collapsed);
         }
+
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            const auto commandLine = _getTrimmedInput();
+            if (commandLine.empty())
+            {
+                ParsedCommandLineText(L"");
+            }
+            else
+            {
+                ExecuteCommandlineArgs args{ commandLine };
+                const auto commands = ::TerminalApp::AppCommandlineArgs::ConvertExecuteCommandlineToActions(args);
+                if (commands.size() == 0)
+                {
+                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine"));
+                }
+                else
+                {
+                    std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
+                    for (const auto& command : commands)
+                    {
+                        commandDescription += L"\n\t" + command.Args().GenerateName();
+                    }
+                    ParsedCommandLineText(commandDescription.data());
+                }
+
+                _noMatchesText().Visibility(Visibility::Visible);
+            }
+        }
     }
 
     void CommandPalette::_evaluatePrefix()
@@ -837,6 +866,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
         // Leaving this block of code outside the above if-statement

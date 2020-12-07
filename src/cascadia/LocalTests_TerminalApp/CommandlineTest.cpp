@@ -1124,7 +1124,7 @@ namespace TerminalAppLocalTests
     void CommandlineTest::TestSimpleExecuteCommandlineAction()
     {
         ExecuteCommandlineArgs args{ L"new-tab" };
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        auto actions = AppCommandlineArgs::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(1u, actions.size());
         auto actionAndArgs = actions.at(0);
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1143,7 +1143,7 @@ namespace TerminalAppLocalTests
     void CommandlineTest::TestMultipleCommandExecuteCommandlineAction()
     {
         ExecuteCommandlineArgs args{ L"new-tab ; split-pane" };
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        auto actions = AppCommandlineArgs::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(2u, actions.size());
         {
             auto actionAndArgs = actions.at(0);
@@ -1179,7 +1179,7 @@ namespace TerminalAppLocalTests
     {
         // -H and -V cannot be combined.
         ExecuteCommandlineArgs args{ L"split-pane -H -V" };
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
+        auto actions = AppCommandlineArgs::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(0u, actions.size());
     }
 

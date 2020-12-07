@@ -17,6 +17,7 @@ namespace TerminalApp
         String PrefixCharacter { get; };
         String ControlName { get; };
         String ParentCommandName { get; };
+        String ParsedCommandLineText { get; };
 
         Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 

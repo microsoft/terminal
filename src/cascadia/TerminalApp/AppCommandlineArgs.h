@@ -40,6 +40,8 @@ public:
 
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
 
+    static std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
+
 private:
     static const std::wregex _commandDelimiterRegex;
 
