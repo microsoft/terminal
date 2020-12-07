@@ -67,7 +67,9 @@ namespace Microsoft.Terminal.Settings.Model
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
 
-        Windows.Foundation.IReference<Boolean> Elevated { get; };
+        // This needs to be an optional so that the default value (null) does
+        // not modifiy whatever the profile's value is (either true or false)
+        Windows.Foundation.IReference<Boolean> Elevate { get; };
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();

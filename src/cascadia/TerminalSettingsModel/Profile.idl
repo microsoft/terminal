@@ -175,8 +175,8 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearBellStyle();
         BellStyle BellStyle;
 
-        Boolean HasElevated();
-        void ClearElevated();
-        Windows.Foundation.IReference<Boolean> Elevated;
+        Boolean HasElevate();
+        void ClearElevate();
+        Boolean Elevate;
     }
 }

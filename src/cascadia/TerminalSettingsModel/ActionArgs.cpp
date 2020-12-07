@@ -82,7 +82,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             ss << fmt::format(L"--profile \"{}\" ", _Profile);
         }
-        // TODO
+        // The caller is always expected to provide the evaluated profile in the
+        // NewTerminalArgs, not the index
+        //
         // else if (_ProfileIndex)
         // {
         //     ss << fmt::format(L"profile index: {}, ", _ProfileIndex.Value());
@@ -90,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!_StartingDirectory.empty())
         {
-            ss << fmt::format(L"--directory \"{}\" ", _StartingDirectory);
+            ss << fmt::format(L"--startingDirectory \"{}\" ", _StartingDirectory);
         }
 
         if (!_TabTitle.empty())

@@ -113,6 +113,29 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    static bool IsElevated()
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+
+        static const bool isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isElevated;
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -123,19 +146,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#2455 - Make sure to try/catch calls to Application::Current,
-        // because that _won't_ be an instance of TerminalApp::App in the
-        // LocalTests
-        auto isElevated = false;
-        try
-        {
-            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-            // but that process is running at a different IL than us.
-            // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-        }
-        CATCH_LOG();
+        auto isElevated = IsElevated();
 
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
@@ -601,212 +612,36 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout().ShowAt(_newTabButton, options);
     }
 
-    static bool IsElevated()
-    {
-        // use C++11 magic statics to make sure we only do this once.
-        // This won't change over the lifetime of the application
-        static const bool isElevated = []() {
-            // *** THIS IS A SINGLETON ***
-            bool result = false;
-            wil::unique_handle hToken;
-            if (LOG_IF_WIN32_BOOL_FALSE(OpenProcessToken(GetCurrentProcess(),
-                                                         TOKEN_QUERY,
-                                                         hToken.addressof())))
-            {
-                TOKEN_ELEVATION Elevation;
-                DWORD cbSize = sizeof(TOKEN_ELEVATION);
-                if (LOG_IF_WIN32_BOOL_FALSE(GetTokenInformation(hToken.get(),
-                                                                TokenElevation,
-                                                                &Elevation,
-                                                                sizeof(Elevation),
-                                                                &cbSize)))
-                {
-                    result = Elevation.TokenIsElevated;
-                }
-            }
-            return result;
-        }();
-        return isElevated;
-    }
-
+    // Function Description:
+    // - Helper to launch a new WT instance elevated. It'll do this by asking
+    //   the shell to elevate the process for us. This might cause a UAC prompt.
+    //   The elevation is performed on a background thread, as to not block the
+    //   UI thread.
+    // Arguments:
+    // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
+    //   that should be spawned. The Profile should be filled in with the GUID
+    //   of the profile we want to launch.
+    // Return Value:
+    // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
     fire_and_forget _OpenElevatedWT(const NewTerminalArgs newTerminalArgs)
     {
+        // Hop to the BG thread
         co_await winrt::resume_background();
-        winrt::hstring cmdline{ fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str()) };
+
+        // Build the commandline to pass to wt for this set of NewTerminalArgs
+        winrt::hstring cmdline{
+            fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str())
+        };
+
         ShellExecute(nullptr,
                      L"runas",
-                     GetWtExePath().c_str(),
+                     GetWtExePath().c_str(), // This will get us the correct exe for dev/preview/release
                      cmdline.c_str(),
                      nullptr,
                      SW_SHOWNORMAL);
-        co_return;
-    }
 
-    HRESULT _JustDoExactlyTheRaymondChenThingHesAlwaysRight(const NewTerminalArgs& newTerminalArgs)
-    {
-        HWND hwnd = GetShellWindow();
-
-        DWORD pid;
-        GetWindowThreadProcessId(hwnd, &pid);
-
-        HANDLE process =
-            OpenProcess(PROCESS_CREATE_PROCESS, FALSE, pid);
-
-        SIZE_T size;
-        InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
-        auto p = (PPROC_THREAD_ATTRIBUTE_LIST) new char[size];
-
-        InitializeProcThreadAttributeList(p, 1, 0, &size);
-        UpdateProcThreadAttribute(p, 0, PROC_THREAD_ATTRIBUTE_PARENT_PROCESS, &process, sizeof(process), nullptr, nullptr);
-
-        wchar_t cmd[] = L"C:\\Windows\\System32\\cmd.exe";
-        STARTUPINFOEX siex = {};
-        siex.lpAttributeList = p;
-        siex.StartupInfo.cb = sizeof(siex);
-        PROCESS_INFORMATION pi;
-
-        std::wstring windowsTerminalExe;
-        RETURN_IF_FAILED(wil::GetModuleFileNameW(nullptr, windowsTerminalExe));
-        std::wstring exe{ GetWtExePath() };
-        std::wstring args{ fmt::format(L"new-tab {}",
-                                       // GetWtExePath().c_str(),
-                                       newTerminalArgs.ToCommandline()) };
-
-        std::wstring wtExeCommandline{ fmt::format(L"{} new-tab {}",
-                                                   // GetWtExePath().c_str(),
-                                                   windowsTerminalExe.c_str(),
-                                                   newTerminalArgs.ToCommandline()) };
-
-        std::wstring insaneCommandline{ fmt::format(L"{} /k {} new-tab {}",
-                                                    cmd,
-                                                    GetWtExePath().c_str(),
-                                                    newTerminalArgs.ToCommandline()) };
-        // std::wstring cmdline{ wtExeCommandline }; // mutable copy -- required for CreateProcessW
-        // DebugBreak();
-
-        // Get ready for insanity:
-        // * If you pass `wtd.exe` as the commandline, we'll launch as elevated
-        //   again (bad).
-        // * If you pass `cmd.exe /k wtd.exe`, it'll launch unelevated, but with
-        //   a console window too (not great)
-        // * If you pass `windowsterminal.exe` (the unpackaged exe), it'll
-        //   launch the terminal _WITHOUT PACKAGE IDENTITY_, unelevated (W A T)
-
-        CreateProcessW(nullptr, // exe.data(),
-                       // insaneCommandline.data(),
-                       wtExeCommandline.data(),
-                       // args.data(),
-                       nullptr,
-                       nullptr,
-                       FALSE,
-                       EXTENDED_STARTUPINFO_PRESENT,
-                       // CREATE_NEW_CONSOLE | EXTENDED_STARTUPINFO_PRESENT,
-                       // EXTENDED_STARTUPINFO_PRESENT,
-                       nullptr,
-                       nullptr,
-                       &siex.StartupInfo,
-                       &pi);
-
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        delete[](char*) p;
-        CloseHandle(process);
-        return 0;
-    }
-
-    //     HRESULT _ActuallyOpenUnelevatedWindow(const NewTerminalArgs& newTerminalArgs)
-    //     {
-    //         wil::unique_hwnd hwnd{ GetShellWindow() };
-    //         RETURN_LAST_ERROR_IF(!hwnd);
-
-    //         // GetWindowThreadProcessId returns the identifier of the thread that
-    //         // created the window. We don't need that.
-    //         DWORD pid;
-    //         GetWindowThreadProcessId(hwnd.get(), &pid);
-
-    //         wil::unique_handle process{ OpenProcess(PROCESS_CREATE_PROCESS, FALSE, pid) };
-    //         RETURN_LAST_ERROR_IF(!process);
-
-    //         STARTUPINFOEX siEx{ 0 };
-    //         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
-
-    //         SIZE_T size;
-    //         InitializeProcThreadAttributeList(nullptr, 1, 0, &size);
-
-    //         // auto p = (PPROC_THREAD_ATTRIBUTE_LIST)new char[size];
-    // #pragma warning(suppress : 26414) // We don't move/touch this smart pointer, but we have to allocate strangely for the adjustable size list.
-    //         auto attrList{ std::make_unique<std::byte[]>(size) };
-    // #pragma warning(suppress : 26490) // We have to use reinterpret_cast because we allocated a byte array as a proxy for the adjustable size list.
-    //         siEx.lpAttributeList = reinterpret_cast<PPROC_THREAD_ATTRIBUTE_LIST>(attrList.get());
-
-    //         // InitializeProcThreadAttributeList(p, 1, 0, &size);
-    //         RETURN_IF_WIN32_BOOL_FALSE(InitializeProcThreadAttributeList(siEx.lpAttributeList, 1, 0, &size));
-    //         auto cleanupAttributes = wil::scope_exit([&siEx]() {
-    //             DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    //         });
-
-    //         RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(siEx.lpAttributeList,
-    //                                                              0,
-    //                                                              PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
-    //                                                              process.get(),
-    //                                                              sizeof(HANDLE),
-    //                                                              nullptr,
-    //                                                              nullptr));
-
-    //         wchar_t cmd[] = L"C:\\Windows\\System32\\cmd.exe";
-    //         // STARTUPINFOEX siex = {};
-    //         // siex.lpAttributeList = p;
-    //         // siex.StartupInfo.cb = sizeof(siex);
-    //         wil::unique_process_information pi;
-
-    //         // winrt::hstring cmdline{ fmt::format(L"{} new-tab {}",
-    //         //                                     GetWtExePath().c_str(),
-    //         //                                     newTerminalArgs.ToCommandline().c_str()) };
-    //         auto wtExeCommandline{ fmt::format(L"{} new-tab {}",
-    //                                            GetWtExePath().c_str(),
-    //                                            newTerminalArgs.ToCommandline()) };
-    //         std::wstring cmdline{ wtExeCommandline }; // mutable copy -- required for CreateProcessW
-
-    //         // RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-    //         //                                           cmdline.data(),
-    //         //                                           nullptr,
-    //         //                                           nullptr,
-    //         //                                           FALSE, // bInheritHandles
-    //         //                                           EXTENDED_STARTUPINFO_PRESENT,
-    //         //                                           nullptr,
-    //         //                                           nullptr,
-    //         //                                           &siEx.StartupInfo,
-    //         //                                           &pi));
-
-    //         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(cmd,
-    //                                                   cmd,
-    //                                                   nullptr,
-    //                                                   nullptr,
-    //                                                   FALSE, // bInheritHandles
-    //                                                   EXTENDED_STARTUPINFO_PRESENT,
-    //                                                   nullptr,
-    //                                                   nullptr,
-    //                                                   &siEx.StartupInfo,
-    //                                                   &pi));
-
-    //         // CloseHandle(pi.hProcess);
-    //         // CloseHandle(pi.hThread);
-    //         // delete[](char*) p;
-    //         // DeleteProcThreadAttributeList(siEx.lpAttributeList);
-    //         // CloseHandle(process);
-    //         // return 0;
-    //         return S_OK;
-    //     }
-
-    // Important: Don't take the param by reference, since we'll be doing work
-    // on another thread.
-    winrt::fire_and_forget _OpenUnElevatedWT(const NewTerminalArgs newTerminalArgs)
-    {
-        co_await winrt::resume_background();
-        // LOG_IF_FAILED(_ActuallyOpenUnelevatedWindow(newTerminalArgs));
-        LOG_IF_FAILED(_JustDoExactlyTheRaymondChenThingHesAlwaysRight(newTerminalArgs));
         co_return;
     }
 
@@ -824,35 +659,25 @@ namespace winrt::TerminalApp::implementation
     {
         auto [profileGuid, settings] = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
 
-        // If the elevated property was provided, we might need to spawn this
-        // tab in another window.
-        if (settings.Elevated())
-        {
-            const bool requestedElevation = settings.Elevated().Value();
-            const bool currentlyElevated = IsElevated();
+        // Try to handle auto-elevation
+        const bool requestedElevation = settings.Elevate();
+        const bool currentlyElevated = IsElevated();
 
+        // We aren't elevated, but we want to be.
+        if (requestedElevation && !currentlyElevated)
+        {
             // Manually set the Profile of the NewTerminalArgs to the guid we've
             // resolved to. If there was a profile in the NewTerminalArgs, this
             // will be that profile's GUID. If there wasn't, then we'll use
             // whatever the default profile's GUID is.
+
             newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
-
-            if (requestedElevation && !currentlyElevated)
-            {
-                // We aren't elevated, but we want to be
-                _OpenElevatedWT(newTerminalArgs);
-                return;
-            }
-            else if (!requestedElevation && currentlyElevated)
-            {
-                DebugBreak();
-
-                // We are elevated, but we don't want to be
-                _OpenUnElevatedWT(newTerminalArgs);
-                return;
-            }
-            // else: the requested elevation level matched our own.
+            _OpenElevatedWT(newTerminalArgs);
+            return;
         }
+        // We can't go in the other direction (elevated->unelevated)
+        // unfortunately. This seems to be due to Centennial quirks. It works
+        // unpackaged, but not packaged.
 
         _CreateNewTabFromSettings(profileGuid, settings);
 
@@ -1844,6 +1669,23 @@ namespace winrt::TerminalApp::implementation
             if (!profileFound)
             {
                 std::tie(realGuid, controlSettings) = TerminalSettings::BuildSettings(_settings, newTerminalArgs, *_bindings);
+            }
+
+            // Try to handle auto-elevation
+            const bool requestedElevation = controlSettings.Elevate();
+            const bool currentlyElevated = IsElevated();
+
+            // We aren't elevated, but we want to be.
+            if (requestedElevation && !currentlyElevated)
+            {
+                // Manually set the Profile of the NewTerminalArgs to the guid we've
+                // resolved to. If there was a profile in the NewTerminalArgs, this
+                // will be that profile's GUID. If there wasn't, then we'll use
+                // whatever the default profile's GUID is.
+
+                newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(realGuid));
+                _OpenElevatedWT(newTerminalArgs);
+                return;
             }
 
             const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);

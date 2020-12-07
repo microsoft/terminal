@@ -65,9 +65,13 @@ namespace winrt::TerminalApp::implementation
             {
                 settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
-            if (newTerminalArgs.Elevated()) // Remember, Elevated is an optional value
+            // Elevate on NewTerminalArgs is an optional value, so the default
+            // value (null) doesn't override a profile's value. Note that
+            // elevate:false in an already elevated terminal does nothing - the
+            // profile will still be launched elevated.
+            if (newTerminalArgs.Elevate())
             {
-                settings.Elevated(newTerminalArgs.Elevated());
+                settings.Elevate(newTerminalArgs.Elevate().Value());
             }
         }
 
@@ -160,7 +164,7 @@ namespace winrt::TerminalApp::implementation
             _TabColor = static_cast<uint32_t>(colorRef);
         }
 
-        _Elevated = profile.Elevated();
+        _Elevate = profile.Elevate();
     }
 
     // Method Description:

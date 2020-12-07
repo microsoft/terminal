@@ -17,7 +17,7 @@ namespace TerminalApp
     {
         TerminalSettings();
 
-        Windows.Foundation.IReference<Boolean> Elevated;
+        Boolean Elevate;
     };
 
 }

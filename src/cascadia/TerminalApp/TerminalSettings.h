@@ -121,7 +121,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, SoftwareRendering, false);
         GETSET_PROPERTY(bool, ForceVTInput, false);
 
-        GETSET_PROPERTY(Windows::Foundation::IReference<bool>, Elevated, nullptr);
+        GETSET_PROPERTY(bool, Elevate, nullptr);
 
 #pragma warning(pop)
 
