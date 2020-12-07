@@ -345,7 +345,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
 // Possible ResizeDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ResizeDirection)
 {
-    JSON_MAPPINGS(6) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "left", ValueType::Left },
         pair_type{ "right", ValueType::Right },
         pair_type{ "up", ValueType::Up },
