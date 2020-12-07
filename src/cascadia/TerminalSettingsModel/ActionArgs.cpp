@@ -24,6 +24,7 @@
 #include "CloseTabsAfterArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "FindArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -421,5 +422,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring FindArgs::GenerateName() const
+    {
+        switch (_SelectionMode)
+        {
+        case FindSelectionMode::SingleLine:
+            return RS_(L"FindSelectionSingleLineCommandKey");
+        case FindSelectionMode::MultiLine:
+            return RS_(L"FindSelectionMultiLineCommandKey");
+        default:
+            return RS_(L"FindCommandKey");
+        }
     }
 }

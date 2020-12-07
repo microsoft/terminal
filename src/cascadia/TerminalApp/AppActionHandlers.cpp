@@ -269,8 +269,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleFind(const IInspectable& /*sender*/,
                                    const ActionEventArgs& args)
     {
-        _Find();
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<FindArgs>())
+        {
+            _Find(realArgs.SelectionMode());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,

@@ -414,3 +414,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
         pair_type{ "commandLine", ValueType::CommandLine },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindSelectionMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "none", ValueType::None },
+        pair_type{ "singleLine", ValueType::SingleLine },
+        pair_type{ "multiLine", ValueType::MultiLine },
+    };
+};

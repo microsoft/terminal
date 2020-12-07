@@ -2435,10 +2435,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_Find()
+    void TerminalPage::_Find(winrt::Microsoft::Terminal::Settings::Model::FindSelectionMode selectionMode)
     {
         const auto termControl = _GetActiveControl();
-        termControl.CreateSearchBoxControl();
+
+        const auto populateFromSelection = selectionMode != winrt::Microsoft::Terminal::Settings::Model::FindSelectionMode::None;
+        const auto allowMultiSelection = selectionMode == winrt::Microsoft::Terminal::Settings::Model::FindSelectionMode::MultiLine;
+
+        termControl.CreateSearchBoxControl(populateFromSelection, allowMultiSelection);
     }
 
     // Method Description:

@@ -212,6 +212,12 @@
   <data name="FindCommandKey" xml:space="preserve">
     <value>Find</value>
   </data>
+  <data name="FindSelectionSingleLineCommandKey" xml:space="preserve">
+    <value>Find selected text (single-line)</value>
+  </data>
+  <data name="FindSelectionMultiLineCommandKey" xml:space="preserve">
+    <value>Find selected text</value>
+  </data>
   <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
     <value>Increase font size</value>
   </data>

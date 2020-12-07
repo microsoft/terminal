@@ -193,7 +193,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Loads the search box from the xaml UI and focuses it.
-    void TermControl::CreateSearchBoxControl()
+    // Arguments:
+    // - populateFromSelection: if this flag set to true and there is a text is selected inside terminal,
+    // we should try to use the selected text to populate the search box.
+    // - allowMultiLineSelection: if this flag set to true and multiple lines are selected,
+    // we should use all the lines to populate the search box.
+    // If the flag is set to false and multiple lines are selected,
+    // we should not use the selected text to populate the search box.
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    void TermControl::CreateSearchBoxControl(bool populateFromSelection, bool allowMultiLineSelection)
     {
         // Lazy load the search box control.
         if (auto loadedSearchBox{ FindName(L"SearchBox") })
@@ -204,18 +212,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
 
-                // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
-                if (_terminal->IsSelectionActive())
+                if (populateFromSelection && _terminal->IsSelectionActive())
                 {
-                    // Currently we populate the search box only if a single line is selected.
-                    // Empirically, multi-line selection works as well on sample scenarios,
-                    // but since code paths differ, extra work is required to ensure correctness.
                     const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(true);
-                    if (bufferData.text.size() == 1)
+                    if (allowMultiLineSelection || bufferData.text.size() == 1)
                     {
-                        const auto selectedLine{ til::at(bufferData.text, 0) };
-                        _searchBox->PopulateTextbox(selectedLine.data());
+                        std::wstring textData;
+                        for (const auto& text : bufferData.text)
+                        {
+                            textData += text;
+                        }
+
+                        _searchBox->PopulateTextbox(textData.data());
                     }
                 }
 

@@ -220,7 +220,7 @@ namespace winrt::TerminalApp::implementation
         void _OnFirstLayout(const IInspectable& sender, const IInspectable& eventArgs);
         void _UpdatedSelectedTab(const int32_t index);
 
-        void _Find();
+        void _Find(winrt::Microsoft::Terminal::Settings::Model::FindSelectionMode selectionMode);
 
         winrt::fire_and_forget _RefreshUIForSettingsReload();
 

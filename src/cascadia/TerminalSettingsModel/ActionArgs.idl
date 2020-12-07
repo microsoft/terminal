@@ -59,6 +59,13 @@ namespace Microsoft.Terminal.Settings.Model
         CommandLine
     };
 
+    enum FindSelectionMode
+    {
+        None = 0,
+        SingleLine,
+        MultiLine
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -189,5 +196,10 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass FindArgs : IActionArgs
+    {
+        FindSelectionMode SelectionMode { get; };
     };
 }

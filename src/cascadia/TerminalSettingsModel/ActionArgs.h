@@ -26,6 +26,7 @@
 #include "ScrollDownArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
+#include "FindArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -820,6 +821,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<ToggleCommandPaletteArgs>() };
             copy->_LaunchMode = _LaunchMode;
+            return *copy;
+        }
+    };
+
+    struct FindArgs : public FindArgsT<FindArgs>
+    {
+        FindArgs() = default;
+
+        // To preserve backward compatibility the default is Action.
+        GETSET_PROPERTY(FindSelectionMode, SelectionMode, FindSelectionMode::None);
+
+        static constexpr std::string_view SelectionModeKey{ "selectionMode" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<FindArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_SelectionMode == _SelectionMode;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<FindArgs>();
+            JsonUtils::GetValueForKey(json, SelectionModeKey, args->_SelectionMode);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<FindArgs>() };
+            copy->_SelectionMode = _SelectionMode;
             return *copy;
         }
     };

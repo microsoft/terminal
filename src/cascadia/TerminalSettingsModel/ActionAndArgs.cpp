@@ -139,6 +139,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
         { ShortcutAction::MoveTab, MoveTabArgs::FromJson },
         { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::FromJson },
+        { ShortcutAction::Find, FindArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
