@@ -85,7 +85,7 @@ Some things we considered during this investigation:
     may be due to a lack of Packaged COM support for mixed elevation levels.
     Even if this approach did end up working, we would still need to be
     responsible for securing the elevated windows so that an unelevated attacker
-    couldn't hijack a content process and trigger unexepected code in the window
+    couldn't hijack a content process and trigger unexpected code in the window
     process. We didn't feel confident that we could properly secure this channel
     either.
 
@@ -110,7 +110,7 @@ tabs for elevated windows. This shield could be configured by the theme (see
   behavior.
 
 ![UAC-shield-in-titlebar](UAC-shield-in-titlebar.png)
-_figure 1: a monochrome UAC shield in the titlebar of the window, courtesy of @mdtuak_
+_figure 1: a monochrome UAC shield in the titlebar of the window, courtesy of @mdtauk_
 
 ### Change profile appearance for elevated windows
 
@@ -126,18 +126,21 @@ The more specific details of this implementation are left to the spec
 
 ### Configuring a profile to always run elevated
 
-Oftentimes, users might have a particular toolchain that only works when running
-elevated. In these scenarios, it would be convenient for the user to be able to
-identify that the profile should _always_ run elevated. That way, they could
-open the profile from the dropdown menu of an otherwise unelevated window and
-have the elevated window open with the profile automatically.
+Oftentimes, users might have a particular tool chain that only works when
+running elevated. In these scenarios, it would be convenient for the user to be
+able to identify that the profile should _always_ run elevated. That way, they
+could open the profile from the dropdown menu of an otherwise unelevated window
+and have the elevated window open with the profile automatically.
 
-We'll be adding the `"elevated": true|false` setting as an _optional_
-per-profile setting, with a default value of _not being set_. When set to `true`
-or `false`, we'll check to see if this window is elevated before creating the
-connection for this profile. If the window has a different elevation level than
-requested in the profile, then we'll create a new window with the requested
-elevation level to handle the new connection.
+We'll be adding the `"elevate": true|false` setting as a per-profile setting,
+with a default value of `false`. When set to `true`, we'll try to auto-elevate
+the profile whenever it's launched. We'll check to see if this window is
+elevated before creating the connection for this profile. If the window is not
+elevated, then we'll create a new window with the requested elevation level to
+handle the new connection.
+
+`"elevate": false` will do nothing. If the window is already elevated, then the
+profile won't open an un-elevated window.
 
 If the user tries to open an `"elevated": true` profile in a window that's
 already elevated, then a new tab/split will open in the existing window, rather
@@ -149,11 +152,10 @@ also exposed in the `wt` commandline as subcommands. We can convert from the
 commandline arguments into these actions already. Therefore, it shouldn't be too
 challenging to convert these actions back into the equal commandline arguments.
 
-
 For the following examples, let's assume the user is currently in an unelevated
 Terminal window.
 
-When the user tries to create a new elevated tab, we'll need to create a new
+When the user tries to create a new elevated **tab**, we'll need to create a new
 process, elevated, with the following commandline:
 
 ```
@@ -164,15 +166,15 @@ When we create this new `wt` instance, it will obey the glomming rules as
 specified in [Session Management Spec]. It might end up glomming to another
 existing window at that elevation level, or possibly create its own window.
 
-Similarly, for a new elevated window, we can make sure to pass the `-s -1` arguments
-to `wt`. These parameters indicate that we definitely want this command to run in a
-new window, regardless of the current glomming settings.
+Similarly, for a new elevated **window**, we can make sure to pass the `-s -1`
+arguments to `wt`. These parameters indicate that we definitely want this
+command to run in a new window, regardless of the current glomming settings.
 
 ```
 wt -s -1 new-tab [args...]
 ```
 
-However, creating a new **split pane** is a little trickier. Invoking the `wt
+However, creating a new **pane** is a little trickier. Invoking the `wt
 split-pane [args...]` is straightforward enough.
 
 ⚠ **TODO**: For discussion:
@@ -190,22 +192,41 @@ would be in the current window)? That would sure make it seem like nothing
 happened, silently.
 
 We could alternatively have cross-elevation splits default to always opening a
-new tab. That might mitigate some of the odd
+new tab. That might mitigate some of the odd behaviors. Until we actually have
+support for running commands in existing windows, we'll always need to make a
+new window when running elevated. We'll need to make the new window for new tabs
+and splits, because there's no way to invoke another existing window.
+
+A third proposal is to pop a warning dialog at the user when they try to open an elevated split from and unelevated window. This dialog could be something like
+
+> What you requested couldn't be completed as non-sense do you want to:
+> A. Make me a new tab instead.
+> B. Forget it and cancel. I'll go fix my config.
+
+I'm certainly leaning towards proposal 2 - always create a new tab. This is how
+it's implemented in [#8514]. In that PR, this seems to work resonably sensibly.
 
 #### Configure the Terminal to _always_ run elevated
 
-`elevated` is a per-profile property, not a global property. If a user
+`elevate` is a per-profile property, not a global property. If a user
 wants to always have all instances of the Terminal run elevated, they
-could set `"elevated": true` in their profile defaults. That would cause _all_
+could set `"elevate": true` in their profile defaults. That would cause _all_
 profiles they launch to always spawn as elevated windows.
 
-#### `elevated` in Actions
+#### `elevate` in Actions
 
-
-Additionally, we'll add the `elevated` property to the `NewTerminalArgs` used in
+Additionally, we'll add the `elevate` property to the `NewTerminalArgs` used in
 the `newTab`, `splitPane`, and `newWindow` actions. This is similar to how other
-properties of profiles can be overriden at launch time. This will allow windows,
-tabs and panes to all be created specifically as elevated windows.
+properties of profiles can be overridden at launch time. This will allow
+windows, tabs and panes to all be created specifically as elevated windows.
+
+In the `NewTerminalArgs`, `elevate` will be an optional boolean, with the
+following behavior:
+* `null` (_default_): Don't modify the `elevate` property for this profile
+* `true`: This launch should act like the profile had `"elevate": true` in its
+  properties.
+* `false`: This launch should act like the profile had `"elevate": false` in its
+  properties.
 
 We'll also add an iterable command for opening a profile in an
 elevated tab, with the following json:
@@ -224,6 +245,14 @@ elevated tab, with the following json:
     ]
 },
 ```
+
+#### Elevation from the dropdown
+
+Currently, the new tab dropdown supports opening a new pane by
+<kbd>Alt+click</kbd>ing on a profile. We could similarly add support to open a
+tab elevated with <kbd>Ctrl+click</kbd>. This is similar to the behavior of the
+Windows taskbar. It supports creating an elevated instance of a program by
+<kbd>Ctrl+click</kbd>ing on entries as well.
 
 ## Implementation Details
 
@@ -246,15 +275,8 @@ ShellExecute(nullptr,
 This will ask the shell to perform a UAC prompt before spawning `wt.exe` as an
 elevated process.
 
-> 👉 NOTE: This mechanism won't always work on non-Desktop SKUs of Windows. FOr
+> 👉 NOTE: This mechanism won't always work on non-Desktop SKUs of Windows. For
 > more discussion, see [Elevation on OneCore SKUs](#Elevation-on-OneCore-SKUs).
-
-### Starting an unelevated process from an elevated process
-
-As always, there's a blog post by Raymond Chen that describes in detail how we
-could go about launching a process _unelevated_ when we're currently elevated.
-For more details, please refer to [The Old New Thing: How can I launch an
-unelevated process from my elevated process, redux].
 
 ## Potential Issues
 
@@ -334,7 +356,7 @@ elevated context (even after entering the Admin's credentials in the UAC
 prompt).
 
 This spec proposes no new mitigations for dealing with these issues. It may in
-fact make them more prevalant, by making elevated contexts more easily
+fact make them more prevalent, by making elevated contexts more easily
 accessible.
 
 Unfortunately, these issues are OS bugs that are largely out of our own control.
@@ -346,7 +368,7 @@ encounter these issues. They are are team best equipped to resolve these issues.
 In the future, when we supporting setting the Terminal as the "default terminal
 emulator" on Windows. When that lands, we will use the `profiles.defaults`
 settings to create the tab we'll hosting the commandline client. If the user has
-`"elevated": true` in their `profiles.defaults`, we'd usually try to
+`"elevate": true` in their `profiles.defaults`, we'd usually try to
 auto-elevate the profile. In this scenario, however, we can't do that. The
 Terminal is being invoked on behalf of the client app launching, instead of the
 Terminal invoking the client application.
@@ -381,10 +403,33 @@ does become available on those SKUs, we can use these proposals as mitigations.
   theme from the set of themes. This would allow them to force elevated windows
   to have a red titlebar, for example.
 * Over the course of discussion concerning appearance objects ([#8345]), it
-  became clear that having seaparte "elevated" appearances defined for
+  became clear that having separate "elevated" appearances defined for
   `profile`s was overly complicated. This is left as a consideration for a
   possible future extension that could handle this scenario in a cleaner way.
 
+### De-elevating a Terminal
+
+the original version of this spec proposed that `"elevated":false` from an
+elevated Terminal window should create a new unelevated Terminal instance. The
+mechanism for doing this is described in [The Old New Thing: How can I launch an
+unelevated process from my elevated process, redux].
+
+This works well when the Terminal is running unpackaged. However, de-elevating a
+process does not play well with packaged centennial applications. When asking
+the OS to run the packaged application from an elevated context, the system will
+still create the child process _elevated_. This means the packaged version of
+the Terminal won't be able to create a new unelevated Terminal instance.
+
+If this is fixed in the future, we could theoretically re-introduce de-elevating
+a profile. The original spec propsed a `"elevated": bool?` setting, with the
+following behaviors:
+* `null` (_default_): Don't modify the elevation level when running this profile
+* `true`: If the current window is unelevated, try to create a new elevated
+  window to host this connection.
+* `false`: If the current window is elevated, try to create a new unelevated
+  window to host this connection.
+
+We could always re-introduce this setting, to superceed `elevate`.
 
 <!-- Footnotes -->
 
@@ -394,18 +439,10 @@ does become available on those SKUs, we can use these proposals as mitigations.
 [#8345]: https://github.com/microsoft/terminal/issues/8345
 [#3327]: https://github.com/microsoft/terminal/issues/3327
 [#5000]: https://github.com/microsoft/terminal/issues/5000
-[#1256]: https://github.com/microsoft/terminal/issues/1256
 [#4472]: https://github.com/microsoft/terminal/issues/4472
-[#2227]: https://github.com/microsoft/terminal/issues/2227
-[#653]: https://github.com/microsoft/terminal/issues/653
 [#1032]: https://github.com/microsoft/terminal/issues/1032
 [#632]: https://github.com/microsoft/terminal/issues/632
-[#492]: https://github.com/microsoft/terminal/issues/492
-[#4000]: https://github.com/microsoft/terminal/issues/4000
-[#7972]: https://github.com/microsoft/terminal/pull/7972
-[#961]: https://github.com/microsoft/terminal/issues/961
-[`30b8335`]: https://github.com/microsoft/terminal/commit/30b833547928d6dcbf88d49df0dbd5b3f6a7c879
-[#8135]: https://github.com/microsoft/terminal/pull/8135
+[#8514]: https://github.com/microsoft/terminal/issues/8514
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
 [Configuration object for profiles]: https://github.com/microsoft/terminal/blob/main/doc/specs/Configuration%20object%20for%20profiles.md
 [Session Management Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234472%20-%20Windows%20Terminal%20Session%20Management.md

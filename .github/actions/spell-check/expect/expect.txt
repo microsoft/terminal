@@ -2413,6 +2413,7 @@ typename
 typeof
 typeparam
 TYUI
+UAC
 uap
 uapadmin
 UAX
