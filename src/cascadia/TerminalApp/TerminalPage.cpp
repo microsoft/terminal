@@ -2862,10 +2862,6 @@ namespace winrt::TerminalApp::implementation
     //   Service" is disabled.
     void TerminalPage::ShowKeyboardServiceWarning()
     {
-        // if (auto presenter{ _dialogPresenter.get() })
-        // {
-        //     presenter.ShowDialog(FindName(L"KeyboardServiceDisabledDialog").try_as<WUX::Controls::ContentDialog>());
-        // }
         KeyboardWarningInfoBar().IsOpen(true);
     }
 
@@ -2914,9 +2910,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Return the fully-formed warning message for the
-    //   "KeyboardServiceDisabled" dialog. This dialog is used to warn the user
+    //   "KeyboardServiceDisabled" InfoBar. This InfoBar is used to warn the user
     //   if the keyboard service is disabled, and uses the OS localization for
-    //   the service's actual name. It's bound to the dialog in XAML.
+    //   the service's actual name. It's bound to the bar in XAML.
     // Return Value:
     // - The warning message, including the OS-localized service name.
     winrt::hstring TerminalPage::KeyboardServiceDisabledText()
