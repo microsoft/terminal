@@ -2862,10 +2862,11 @@ namespace winrt::TerminalApp::implementation
     //   Service" is disabled.
     void TerminalPage::ShowKeyboardServiceWarning()
     {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            presenter.ShowDialog(FindName(L"KeyboardServiceDisabledDialog").try_as<WUX::Controls::ContentDialog>());
-        }
+        // if (auto presenter{ _dialogPresenter.get() })
+        // {
+        //     presenter.ShowDialog(FindName(L"KeyboardServiceDisabledDialog").try_as<WUX::Controls::ContentDialog>());
+        // }
+        KeyboardWarningInfoBar().IsOpen(true);
     }
 
     // Function Description:

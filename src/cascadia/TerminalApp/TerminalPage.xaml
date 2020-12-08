@@ -110,5 +110,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             Grid.Row="1"
             Visibility="Collapsed"
             VerticalAlignment="Stretch" />
+
+        <mux:InfoBar x:Name="KeyboardWarningInfoBar" IsOpen="False" IsIconVisible="True" IsClosable="True" Severity="Warning" Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"></mux:InfoBar>
     </Grid>
 </Page>
