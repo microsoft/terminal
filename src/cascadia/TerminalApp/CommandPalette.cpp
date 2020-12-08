@@ -447,7 +447,7 @@ namespace winrt::TerminalApp::implementation
     // Right now this is achieved by explicitly registering on the root on the highlighted text controls.
     // Few notes:
     // - found no way to entirely disable focus on list-view elements in single-item-selection mode without breaking list behavior
-    // - TODO: the explicit implementation can be generalized by checking if the focused element is a descendant of palette
+    // - TODO GH#5400: the explicit implementation can be generalized by checking if the focused element is a descendant of palette
     //         by iterating from it to the root of the Xaml tree using VisualTreeHelper::GetParent.
     //         If this element is a descendant of palette register lost-focus-handler on it as well
     // Arguments:
