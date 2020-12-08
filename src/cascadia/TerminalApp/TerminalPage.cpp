@@ -2673,7 +2673,7 @@ namespace winrt::TerminalApp::implementation
                                              const RoutedEventArgs& /*eventArgs*/)
     {
         // We don't want to set focus on the tab if fly-out is open as it will be closed
-        // TODO: consider checking we are not in the opening state, by hooking both Opening and Open events
+        // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
         if (!_newTabButton.Flyout().IsOpen())
         {
             // Return focus to the active control
