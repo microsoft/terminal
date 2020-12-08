@@ -16,6 +16,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         <mux:ProgressRing x:Name="HeaderProgressRing"
                           IsActive="{x:Bind IsProgressRingActive, Mode=OneWay}"
                           Visibility="{x:Bind IsProgressRingActive, Mode=OneWay}"
+                          IsIndeterminate="{x:Bind IsProgressRingIndeterminate, Mode=OneWay}"
+                          Value="{x:Bind ProgressValue, Mode=OneWay}"
                           MinHeight="0"
                           MinWidth="0"
                           Height="15"
