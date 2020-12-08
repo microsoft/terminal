@@ -208,9 +208,6 @@
   <data name="Globals_DefaultProfile.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Profile that opens when clicking the '+' icon or by typing the key binding assigned to 'newTab'.</value>
   </data>
-  <data name="Globals_DisableDynamicProfiles.Content" xml:space="preserve">
-    <value>Automatically create new profiles when new shells are installed</value>
-  </data>
   <data name="Globals_ForceFullRepaint.Content" xml:space="preserve">
     <value>Redraw entire screen when display updates</value>
   </data>
@@ -659,9 +656,6 @@
   </data>
   <data name="Globals_DisableAnimations.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, visual animations will be disabled across the application.</value>
-  </data>
-  <data name="Globals_DisableDynamicProfiles.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Enables all of the dynamic profile generators, adding their profiles to the list of profiles on startup.</value>
   </data>
   <data name="Profile_FontWeightBlack.Content" xml:space="preserve">
     <value>Black</value>
