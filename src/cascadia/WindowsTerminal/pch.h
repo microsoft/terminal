@@ -19,9 +19,6 @@ Abstract:
 #define NOMINMAX
 
 #define WIN32_LEAN_AND_MEAN
-#define NOKERNEL
-#define NOSERVICE
-#define NOSOUND
 #define NOMCX
 #define NOHELP
 #define NOCOMM
