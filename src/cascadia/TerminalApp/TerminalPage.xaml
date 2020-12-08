@@ -98,6 +98,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             VerticalAlignment="Stretch" />
 
         <mux:InfoBar x:Name="KeyboardWarningInfoBar"
+                     x:Load="False"
                      IsClosable="True"
                      IsIconVisible="True"
                      IsOpen="False"
