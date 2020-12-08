@@ -183,6 +183,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case FocusDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
+        case FocusDirection::Previous:
+            return RS_(L"MoveFocusToLastUsedPane");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
