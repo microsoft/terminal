@@ -726,7 +726,6 @@ namespace winrt::TerminalApp::implementation
 
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
-        _ReapplyCompactTabSize();
 
         // Set this tab's icon to the icon from the user's profile
         const auto profile = _settings.FindProfile(profileGuid);
@@ -905,6 +904,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch->ScrollToTop({ this, &TerminalPage::_HandleScrollToTop });
+        _actionDispatch->ScrollToBottom({ this, &TerminalPage::_HandleScrollToBottom });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
         _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
@@ -930,6 +931,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->CloseTabsAfter({ this, &TerminalPage::_HandleCloseTabsAfter });
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
+        _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
     }
 
     // Method Description:
@@ -1675,6 +1677,18 @@ namespace winrt::TerminalApp::implementation
             const auto termHeight = control.GetViewHeight();
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
             terminalTab->Scroll(scrollDelta);
+        }
+    }
+
+    void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection)
+    {
+        if (const auto indexOpt = _GetFocusedTabIndex())
+        {
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
+            {
+                auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
+                terminalTab->Scroll(scrollDelta);
+            }
         }
     }
 
@@ -2746,25 +2760,6 @@ namespace winrt::TerminalApp::implementation
         else
         {
             return nullptr;
-        }
-    }
-
-    // Method Description:
-    // - The TabView does not apply compact sizing to items added after Compact is enabled.
-    //   By forcibly reapplying compact sizing every time we add a new tab, we'll make sure
-    //   that it works.
-    //   Workaround from https://github.com/microsoft/microsoft-ui-xaml/issues/2711
-    //   TODO: Remove this function and its calls when ingesting the above changes.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_ReapplyCompactTabSize()
-    {
-        if (_tabView.TabWidthMode() == MUX::Controls::TabViewWidthMode::Compact)
-        {
-            _tabView.UpdateLayout();
-            _tabView.TabWidthMode(MUX::Controls::TabViewWidthMode::Compact);
         }
     }
 

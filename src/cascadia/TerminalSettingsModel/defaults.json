@@ -347,6 +347,8 @@
         { "command": "scrollDownPage", "keys": "ctrl+shift+pgdn" },
         { "command": "scrollUp", "keys": "ctrl+shift+up" },
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
+        { "command": "scrollToTop", "keys": "ctrl+shift+home" },
+        { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
