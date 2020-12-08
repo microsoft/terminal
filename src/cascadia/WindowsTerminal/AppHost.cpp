@@ -66,8 +66,15 @@ AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
     _window = nullptr;
-    _app.Close();
-    _app = nullptr;
+    try
+    {
+        if (_app)
+        {
+            _app.Close();
+            _app = nullptr;
+        }
+    }
+    CATCH_LOG();
 }
 
 bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
