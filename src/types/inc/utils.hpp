@@ -50,7 +50,7 @@ namespace Microsoft::Console::Utils
 
     bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
     bool StringToUint(const std::wstring_view wstr, unsigned int& value);
-    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter);
+    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {

@@ -104,6 +104,8 @@ void UtilsTests::TestSplitString()
     VERIFY_ARE_EQUAL(0u, result.size());
     result = SplitString(L"1", L';');
     VERIFY_ARE_EQUAL(1u, result.size());
+    result = SplitString(L";", L';');
+    VERIFY_ARE_EQUAL(2u, result.size());
     result = SplitString(L"123", L';');
     VERIFY_ARE_EQUAL(1u, result.size());
 

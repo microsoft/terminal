@@ -407,3 +407,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection
         pair_type{ "backward", ValueType::Backward },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "action", ValueType::Action },
+        pair_type{ "commandLine", ValueType::CommandLine },
+    };
+};
