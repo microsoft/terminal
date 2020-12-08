@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-11-20
-last updated: 2020-12-07
+last updated: 2020-12-08
 issue id: #1032
 ---
 
@@ -58,7 +58,6 @@ for us to be confident that we haven't introduced an escalation-of-privilege
 vector utilizing the Terminal. No matter how small the attack surface might be,
 we wouldn't be confident that there are _no_ vectors for an attack.
 
-
 Some things we considered during this investigation:
 
 * If a user requests a new elevated tab from an otherwise unelevated window, we
@@ -83,11 +82,37 @@ Some things we considered during this investigation:
     window and content processes at mixed elevation levels `CoCreateInstance`
     that broker. This however _also_ did not work across elevation levels. This
     may be due to a lack of Packaged COM support for mixed elevation levels.
+
+    It's also possible that the author forgot that packaged WinRT doesn't play
+    nicely with creating objects in an elevated context. The Terminal has
+    previously needed to manually manifest all its classes in a SxS manifest for
+    Unpackaged WinRT to allow the classes to be activated, rather than relying
+    on the packaged catalog. It's theoretically possible that doing that would
+    have allowed the broker to be activated acreoss integrity levels.
+
     Even if this approach did end up working, we would still need to be
     responsible for securing the elevated windows so that an unelevated attacker
     couldn't hijack a content process and trigger unexpected code in the window
     process. We didn't feel confident that we could properly secure this channel
     either.
+
+We also considered allowing mixed content in windows that were _originally_
+elevated. If the window is already elevated, then it can launch new unelevated
+processes. We could allow elevated windows to still create unelevated
+connections. However, we'd want to indicate per-pane what the elevation state
+of each connection is. The user would then need to keep track themselves of
+which terminal instances are elevated, and which are not.
+
+This also marks a departure from the current behavior, where everything in an
+elevated window would be elevated by default. The user would need to specify for
+each thing in the elevated window that they'd want to create it elevated. Or the
+Terminal would need to provide some setting like
+`"autoElevateEverythnigInAnElevatedWindow"`.
+
+We cannot support mixed elevation when starting in a unelevated window.
+Therefore, it doesn't make a lot of UX sense to support it in the other
+direction. It's a cleaner UX story to just have everything in a single window at
+the same elevation level.
 
 ## Solution Design
 
@@ -197,7 +222,8 @@ support for running commands in existing windows, we'll always need to make a
 new window when running elevated. We'll need to make the new window for new tabs
 and splits, because there's no way to invoke another existing window.
 
-A third proposal is to pop a warning dialog at the user when they try to open an elevated split from and unelevated window. This dialog could be something like
+A third proposal is to pop a warning dialog at the user when they try to open an
+elevated split from and unelevated window. This dialog could be something like
 
 > What you requested couldn't be completed as non-sense do you want to:
 > A. Make me a new tab instead.
@@ -419,6 +445,14 @@ process does not play well with packaged centennial applications. When asking
 the OS to run the packaged application from an elevated context, the system will
 still create the child process _elevated_. This means the packaged version of
 the Terminal won't be able to create a new unelevated Terminal instance.
+
+From an internal mail thread:
+
+> App model intercepts the `CreateProcess` call and redirects it to a COM
+> service. The parent of a packaged app is not the launching app, it’s some COM
+> service. So none of the parent process nonsense will work because the
+> parameters you passed to `CreateProcess` aren’t being used to create the
+> process.
 
 If this is fixed in the future, we could theoretically re-introduce de-elevating
 a profile. The original spec propsed a `"elevated": bool?` setting, with the
