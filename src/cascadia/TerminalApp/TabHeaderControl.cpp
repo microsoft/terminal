@@ -81,7 +81,7 @@ namespace winrt::TerminalApp::implementation
 
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabRenamerOpened",
+            "TabRenamerClosed",
             TraceLoggingDescription("Event emitted when the tab renamer is closed"),
             TraceLoggingBoolean(_renameCancelled, "CancelledRename", "True if the user cancelled the rename, false if they committed."),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
