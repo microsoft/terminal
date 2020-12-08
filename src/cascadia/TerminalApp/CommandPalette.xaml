@@ -267,7 +267,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                         Converter={StaticResource IconSourceConverter}}"/>
 
                                 <local:HighlightedTextControl
-                                    x:Name="_highlightedTextControl"
                                     Grid.Column="1"
                                     HorizontalAlignment="Left"
                                     Text="{x:Bind HighlightedName, Mode=OneWay}"/>
