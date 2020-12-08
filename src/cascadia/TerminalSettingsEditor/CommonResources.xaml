@@ -5,76 +5,100 @@
 
     <x:Double x:Key="StandardFontSize">15.0</x:Double>
     <Thickness x:Key="StandardIndentMargin">20,0,0,0</Thickness>
+    <x:Double x:Key="StandardBoxMinWidth">300</x:Double>
 
     <!-- TODO GH#XXXX: This is for easier transition to the SettingsContainer control.
                        The SettingsContainer will wrap a setting with inheritance UI.-->
     <Style x:Key="SettingContainerStyle" TargetType="ContentPresenter">
-        <Setter Property="Margin" Value="0,0,0,20"/>
+        <Setter Property="Padding" Value="0,0,0,20"/>
     </Style>
 
-    <Style x:Key="GridViewItemStyle" TargetType="GridViewItem">
-        <Setter Property="Margin" Value="0,0,12,12" />
-    </Style>
-    <Style x:Key="IndentedGridViewItemStyle" TargetType="GridViewItem">
-        <Setter Property="Margin" Value="12,0,0,12" />
-    </Style>
-    <Style x:Key="GridViewItemStyleSmall" TargetType="GridViewItem">
-        <Setter Property="Margin" Value="0,0,0,12" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-    </Style>
-    <Style x:Key="IndentedGridViewItemStyleSmall" TargetType="GridViewItem">
-        <Setter Property="Margin" Value="12,0,12,12" />
-        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <!--Used to stack a group of settings-->
+    <Style x:Key="SettingsStackStyle" TargetType="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="Margin" Value="{StaticResource StandardIndentMargin}"/>
     </Style>
 
+    <!--Radio Button-->
     <Style x:Key="RadioButtonsSettingStyle" TargetType="muxc:RadioButtons">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
-    <Style x:Key="RadioButtonSettingStyle" TargetType="RadioButton">
+    <Style x:Key="RadioButtonSettingStyle" TargetType="RadioButton" BasedOn="{StaticResource DefaultRadioButtonStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
-    <Style x:Key="CheckBoxSettingStyle" TargetType="CheckBox">
+    <!--Check Box-->
+    <Style x:Key="CheckBoxSettingStyle" TargetType="CheckBox" BasedOn="{StaticResource DefaultCheckBoxStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
-    <Style x:Key="SliderSettingStyle" TargetType="Slider">
+    <!--Combo Box-->
+    <Style x:Key="ComboBoxSettingStyle" TargetType="ComboBox" BasedOn="{StaticResource DefaultComboBoxStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+        <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}"/>
     </Style>
 
-    <Style x:Key="ComboBoxSettingStyle" TargetType="ComboBox">
+    <!--Text Box-->
+    <Style x:Key="TextBoxSettingStyle" TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-        <Setter Property="CornerRadius" Value="2"/>
-    </Style>
-
-    <Style x:Key="TextBoxSettingStyle" TargetType="TextBox">
-        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-        <Setter Property="Width" Value="300"/>
+        <Setter Property="Width" Value="{StaticResource StandardBoxMinWidth}"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
 
+    <!--Used to create a header for a control-->
     <Style x:Key="CustomSettingHeaderStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
 
+    <!--Number Box-->
     <Style x:Key="NumberBoxSettingStyle" TargetType="muxc:NumberBox">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="SpinButtonPlacementMode" Value="Compact"/>
-        <Setter Property="CornerRadius" Value="2"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
 
-    <Style x:Key="BaseButtonStyle" TargetType="Button">
+    <!--Button-Related Styling-->
+    <Style x:Key="BaseButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
-        <Setter Property="CornerRadius" Value="2"/>
+    </Style>
+
+    <Style x:Key="BrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+
+    <!--Slider-Related Styling-->
+    <Style x:Key="SliderSettingStyle" TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}">
+        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+    </Style>
+    
+    <Style x:Key="SliderValueLabelStyle" TargetType="TextBlock">
+        <Setter Property="Width" Value="35"/>
+        <Setter Property="Margin" Value="10,0,0,20"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+    </Style>
+
+    <Style x:Key="SliderHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource CustomSettingHeaderStyle}">
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+    </Style>
+
+    <Style x:Key="CustomSliderControlGridStyle" TargetType="Grid">
+        <Setter Property="Width" Value="300"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
 
 </ResourceDictionary>

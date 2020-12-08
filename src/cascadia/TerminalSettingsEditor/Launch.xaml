@@ -25,8 +25,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer Margin="{StaticResource StandardIndentMargin}">
-        <StackPanel>
+    <ScrollViewer>
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Default Profile-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ComboBox x:Uid="Globals_DefaultProfile"

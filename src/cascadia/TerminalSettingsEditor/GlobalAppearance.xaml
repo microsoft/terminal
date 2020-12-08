@@ -23,8 +23,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer Margin="{StaticResource StandardIndentMargin}">
-        <StackPanel>
+    <ScrollViewer>
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Theme-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <muxc:RadioButtons x:Uid="Globals_Theme"

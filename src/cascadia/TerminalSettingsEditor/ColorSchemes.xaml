@@ -45,7 +45,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer Margin="{StaticResource StandardIndentMargin}">
+    <ScrollViewer>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -65,7 +65,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                       ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                       SelectionChanged="ColorSchemeSelectionChanged"
                       Style="{StaticResource ComboBoxSettingStyle}"
-                      MinWidth="200"
                       Margin="{StaticResource ColorSchemesStandardControlMargin}"/>
 
             <!-- Color Table -->

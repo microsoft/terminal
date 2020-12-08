@@ -8,7 +8,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:model="using:Microsoft.Terminal.Settings.Model"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -17,32 +17,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <Style x:Key="SliderValueLabel" TargetType="TextBlock">
-                <Setter Property="Width" Value="35"/>
-                <Setter Property="Margin" Value="10,0,0,20"/>
-                <Setter Property="FontSize" Value="15"/>
-                <Setter Property="HorizontalAlignment" Value="Left"/>
-                <Setter Property="VerticalAlignment" Value="Center"/>
-                <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-            </Style>
-
-            <Style x:Key="SliderHeader" TargetType="TextBlock">
-                <Setter Property="Margin" Value="0,0,0,0"/>
-                <Setter Property="FontSize" Value="15"/>
-                <Setter Property="HorizontalAlignment" Value="Left"/>
-                <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-            </Style>
-
-            <Style TargetType="ScrollViewer">
-                <Setter Property="Margin" Value="0,10,0,0"/>
-            </Style>
-
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
+                             Style="{StaticResource RadioButtonSettingStyle}"/>
             </DataTemplate>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumComboBoxItemTemplate">
-                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}"/>
+                <TextBlock Text="{x:Bind EnumName, Mode=OneWay}" FontSize="{StaticResource StandardFontSize}"/>
             </DataTemplate>
 
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
@@ -51,37 +32,55 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </Page.Resources>
 
-    <Pivot>
+    <Pivot Margin="{StaticResource StandardIndentMargin}" HorizontalAlignment="Left">
         <!-- General Tab -->
         <PivotItem x:Uid="Profile_General">
             <ScrollViewer>
-                <StackPanel HorizontalAlignment="Left">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_Commandline"
-                             x:Name="Commandline"
-                             Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_CommandlineBrowse"
-                            Click="Commandline_Click"
-                            Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_StartingDirectory"
-                                 x:Name="StartingDirectory"
-                                 Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_StartingDirectoryBrowse"
-                                Click="StartingDirectory_Click"
-                                Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_Icon"
-                                 Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
-                                 FontFamily="Segoe UI, Segoe MDL2 Assets"/>
-                        <Button x:Uid="Profile_IconBrowse"
-                                Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <TextBox x:Uid="Profile_TabTitle"
-                             Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
-                             HorizontalAlignment="Left"/>
+                <StackPanel>
+                    <!--Commandline-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Uid="Profile_Commandline"
+                                     x:Name="Commandline"
+                                     Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                            <Button x:Uid="Profile_CommandlineBrowse"
+                                    Click="Commandline_Click"
+                                    Style="{StaticResource BrowseButtonStyle}"/>
+                        </StackPanel>
+                    </ContentPresenter>
+                    
+                    <!--Starting Directory-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Uid="Profile_StartingDirectory"
+                                     x:Name="StartingDirectory"
+                                     Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                            <Button x:Uid="Profile_StartingDirectoryBrowse"
+                                    Click="StartingDirectory_Click"
+                                    Style="{StaticResource BrowseButtonStyle}"/>
+                        </StackPanel>
+                     </ContentPresenter>
+
+                    <!--Icon-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Uid="Profile_Icon"
+                                     Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
+                                     FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                            <Button x:Uid="Profile_IconBrowse"
+                                    Style="{StaticResource BrowseButtonStyle}"/>
+                        </StackPanel>
+                     </ContentPresenter>
+
+                    <!--Tab Title-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <TextBox x:Uid="Profile_TabTitle"
+                                 Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}"
+                                 Style="{StaticResource TextBoxSettingStyle}"/>
+                    </ContentPresenter>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
@@ -89,130 +88,200 @@ the MIT License. See LICENSE in the project root for license information. -->
         <!-- Appearance Tab -->
         <PivotItem x:Uid="Profile_Appearance">
             <ScrollViewer>
-                <StackPanel HorizontalAlignment="Left">
-                    <TextBox x:Uid="Profile_FontFace"
-                             Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"/>
-                    <Controls:NumberBox x:Uid="Profile_FontSize"
+                <StackPanel>
+                    <!--Font Face-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <TextBox x:Uid="Profile_FontFace"
+                                 Text="{x:Bind State.Profile.FontFace, Mode=TwoWay}"
+                                 Style="{StaticResource TextBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Font Size-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:NumberBox x:Uid="Profile_FontSize"
                                         Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
                                         SmallChange="1"
                                         LargeChange="10"/>
-                    <StackPanel Margin="0,0,0,20">
-                        <ComboBox x:Uid="Profile_FontWeight"
-                                  x:Name="FontWeightComboBox"
-                                  Margin="0"
-                                  ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
-                                  ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"/>
+                    </ContentPresenter>
 
-                        <!--Custom Font Weight Control-->
-                        <Grid Margin="0,10,0,0"
-                              Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Slider x:Name="FontWeightSlider"
-                                    Grid.Column="0"
-                                    Minimum="0" Maximum="1000"
-                                    TickFrequency="50" TickPlacement="Outside"
-                                    Margin="0"
-                                    Value="{x:Bind State.Profile.FontWeight,
-                                            Converter={StaticResource FontWeightConverter},
-                                            Mode=TwoWay}"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}"
-                                       Style="{StaticResource SliderValueLabel}"
-                                       Margin="10,0,0,0"/>
-                        </Grid>
-                    </StackPanel>
-                    <TextBox x:Uid="Profile_Padding"
-                             Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"/>
-                    <Controls:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                    <!--Font Weight-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <StackPanel>
+                            <ComboBox x:Uid="Profile_FontWeight"
+                                      x:Name="FontWeightComboBox"
+                                      ItemsSource="{x:Bind FontWeightList, Mode=OneWay}"
+                                      SelectedItem="{x:Bind CurrentFontWeight, Mode=TwoWay}"
+                                      ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
+                                      Style="{StaticResource ComboBoxSettingStyle}"/>
+
+                            <!--Custom Font Weight Control-->
+                            <Grid Margin="0,10,0,0"
+                                  Visibility="{x:Bind IsCustomFontWeight, Mode=OneWay}"
+                                  Style="{StaticResource CustomSliderControlGridStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="FontWeightSlider"
+                                        Grid.Column="0"
+                                        Minimum="0" Maximum="1000"
+                                        TickFrequency="50" TickPlacement="Outside"
+                                        Value="{x:Bind State.Profile.FontWeight,
+                                                Converter={StaticResource FontWeightConverter},
+                                                Mode=TwoWay}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ElementName=FontWeightSlider, Path=Value, Mode=OneWay}"
+                                           Style="{StaticResource SliderValueLabelStyle}"
+                                           Margin="10,0,0,0"/>
+                            </Grid>
+                        </StackPanel>
+                     </ContentPresenter>
+
+                    <!--Padding-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <TextBox x:Uid="Profile_Padding"
+                                 Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
+                                 Style="{StaticResource TextBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Scrollbar Visibility-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
                                            ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <Controls:RadioButtons x:Uid="Profile_CursorShape"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                           Style="{StaticResource RadioButtonsSettingStyle}"/>
+                    </ContentPresenter>
+    
+                    <!--Cursor Shape-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:RadioButtons x:Uid="Profile_CursorShape"
                                            ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                           SelectionChanged="CursorShape_Changed"/>
-                    <Controls:NumberBox x:Uid="Profile_CursorHeight"
-                                        Visibility="{x:Bind IsVintageCursor, Mode=OneWay}"
+                                           SelectionChanged="CursorShape_Changed"
+                                           Style="{StaticResource RadioButtonsSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Cursor Height-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                      Visibility="{x:Bind IsVintageCursor, Mode=OneWay}">
+                        <muxc:NumberBox x:Uid="Profile_CursorHeight"
                                         Value="{x:Bind State.Profile.CursorHeight, Mode=TwoWay}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
                                         SmallChange="1"
                                         LargeChange="10"/>
-                    <ComboBox x:Uid="Profile_ColorScheme"
-                              ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                              SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="model:ColorScheme">
-                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBox x:Uid="Profile_BackgroundImage"
-                                 x:Name="BackgroundImage"
-                                 Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"/>
-                        <Button x:Uid="Profile_BackgroundImageBrowse"
-                                Click="BackgroundImage_Click"
-                                Margin="10,0,0,0"/>
-                    </StackPanel>
-                    <Controls:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
+                    </ContentPresenter>
+
+                    <!--Color Scheme-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ComboBox x:Uid="Profile_ColorScheme"
+                                  ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:ColorScheme">
+                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </ContentPresenter>
+
+                    <!--Background Image-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Uid="Profile_BackgroundImage"
+                                     x:Name="BackgroundImage"
+                                     Text="{x:Bind State.Profile.BackgroundImagePath, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                            <Button x:Uid="Profile_BackgroundImageBrowse"
+                                    Click="BackgroundImage_Click"
+                                    Style="{StaticResource BrowseButtonStyle}"/>
+                        </StackPanel>
+                    </ContentPresenter>
+
+                    <!--Background Image Stretch Mode-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
                                            ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <ComboBox x:Uid="Profile_BackgroundImageAlignment">
-                        <ComboBox.Items>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
-                            <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
-                        </ComboBox.Items>
-                    </ComboBox>
-                    <StackPanel>
-                        <TextBlock x:Uid="Profile_BackgroundImageOpacity"
-                                   Style="{StaticResource SliderHeader}"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Slider x:Name="BIOpacitySlider"
-                                    Grid.Column="0"
-                                    Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}"
-                                       Style="{StaticResource SliderValueLabel}"/>
-                        </Grid>
-                    </StackPanel>
-                    <CheckBox x:Uid="Profile_UseAcrylic"
-                              x:Name="UseAcrylicCheckBox"
-                              IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
-                    <StackPanel x:Name="AcrylicOpacityControl"
-                                Visibility="{Binding ElementName=UseAcrylicCheckBox, Path=IsChecked, Mode=OneWay}">
-                        <TextBlock x:Uid="Profile_AcrylicOpacity"
-                                   Style="{StaticResource SliderHeader}"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Slider x:Name="AcrylicOpacitySlider"
-                                    Grid.Column="0"
-                                    Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}"
-                                       Style="{StaticResource SliderValueLabel}"/>
-                        </Grid>
-                    </StackPanel>
-                    <CheckBox x:Uid="Profile_RetroTerminalEffect"
-                              IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                           Style="{StaticResource RadioButtonsSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Background Image Alignment-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ComboBox x:Uid="Profile_BackgroundImageAlignment">
+                            <ComboBox.Items>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
+                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
+                            </ComboBox.Items>
+                        </ComboBox>
+                    </ContentPresenter>
+
+                    <!--Background Image Opacity-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <StackPanel>
+                            <TextBlock x:Uid="Profile_BackgroundImageOpacity"
+                                       Style="{StaticResource SliderHeaderStyle}"/>
+                            <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="BIOpacitySlider"
+                                        Grid.Column="0"
+                                        Value="{x:Bind State.Profile.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay}"
+                                           Style="{StaticResource SliderValueLabelStyle}"/>
+                            </Grid>
+                        </StackPanel>
+                    </ContentPresenter>
+
+                    <!--Use Acrylic-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_UseAcrylic"
+                                  x:Name="UseAcrylicCheckBox"
+                                  IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Acrylic Opacity-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                      Visibility="{Binding ElementName=UseAcrylicCheckBox, Path=IsChecked, Mode=OneWay}">
+                        <StackPanel x:Name="AcrylicOpacityControl">
+                            <TextBlock x:Uid="Profile_AcrylicOpacity"
+                                       Style="{StaticResource SliderHeaderStyle}"/>
+                            <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Slider x:Name="AcrylicOpacitySlider"
+                                        Grid.Column="0"
+                                        Value="{x:Bind State.Profile.AcrylicOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ElementName=AcrylicOpacitySlider, Path=Value, Mode=OneWay}"
+                                           Style="{StaticResource SliderValueLabelStyle}"/>
+                            </Grid>
+                        </StackPanel>
+                    </ContentPresenter>
+
+                    <!--Retro Terminal Effects-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_RetroTerminalEffect"
+                                  IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
@@ -220,31 +289,70 @@ the MIT License. See LICENSE in the project root for license information. -->
         <!-- Advanced Tab -->
         <PivotItem x:Uid="Profile_Advanced">
             <ScrollViewer>
-                <StackPanel HorizontalAlignment="Left">
-                    <CheckBox x:Uid="Profile_Hidden"
-                              IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"/>
-                    <CheckBox x:Uid="Profile_SuppressApplicationTitle"
-                              IsChecked="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
-                    <Controls:RadioButtons x:Uid="Profile_AntialiasingMode"
-                                               ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <CheckBox x:Uid="Profile_AltGrAliasing"
-                              IsChecked="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}" />
-                    <CheckBox x:Uid="Profile_SnapOnInput"
-                              IsChecked="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
-                    <Controls:NumberBox x:Uid="Profile_HistorySize"
+                <StackPanel>
+                    <!--Hidden-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_Hidden"
+                                  IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Suppress Application Title-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_SuppressApplicationTitle"
+                                  IsChecked="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Antialiasing Mode-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:RadioButtons x:Uid="Profile_AntialiasingMode"
+                                           ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
+                                           SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                           Style="{StaticResource RadioButtonsSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--AltGr Aliasing-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_AltGrAliasing"
+                                  IsChecked="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Snap On Input-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_SnapOnInput"
+                                  IsChecked="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--History Size-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:NumberBox x:Uid="Profile_HistorySize"
                                         Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}"
+                                        Style="{StaticResource NumberBoxSettingStyle}"
                                         SmallChange="10"
                                         LargeChange="100"/>
-                    <Controls:RadioButtons x:Uid="Profile_CloseOnExit"
+                    </ContentPresenter>
+
+                    <!--Close On Exit-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:RadioButtons x:Uid="Profile_CloseOnExit"
                                            ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
-                    <Controls:RadioButtons x:Uid="Profile_BellStyle"
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                           Style="{StaticResource RadioButtonsSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Bell Style-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <muxc:RadioButtons x:Uid="Profile_BellStyle"
                                            ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
                                            SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
-                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                                           ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                           Style="{StaticResource RadioButtonsSettingStyle}"/>
+                    </ContentPresenter>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
