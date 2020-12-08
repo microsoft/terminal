@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-10-30
-last updated: 2020-12-02
+last updated: 2020-12-08
 issue id: #4472
 ---
 
@@ -135,31 +135,32 @@ ability to communicate between different window processes. The logical extension
 of this scenario would be "run a `wt` commandline in _any_ given WT window".
 
 Each window process will have it's own unique ID assigned to it by the monarch.
-Running a command in a given window with ID N should be as easy as something
-like:
+This ID will be a positive number. Windows can also have names assigned to them.
+These names are strings that the user specifies. A window will always have an
+ID, but not necessarily a name. Running a command in a given window with ID N
+should be as easy as something like:
 
 ```sh
-wt.exe --session N new-tab ; split-pane
+wt.exe --window N new-tab ; split-pane
 ```
 
-(or for shorthand, `wt -s N new-tab ; split-pane`).
-
-> ❗ TODO for discussion: In the remainder of this spec, I'll continue to use the
-> parameters `--session,-s session-id` as the parameter to identify the window
-> that a command should be run in. These arguments could just as easily be
-> `--window,-w window-id`, and mean the same thing. I leave it as an exercise
-> for the reviewers to pick one naming that they like best.
+(or for shorthand, `wt -w N new-tab ; split-pane`).
 
 More formally, we will add the following parameter to the top-level `wt`
 command:
 
-#### `--session,-s session-id`
+#### `--window,-w window-id`
 Run these commands in the given Windows Terminal session. This enables opening
 new tabs, splits, etc. in already running Windows Terminal windows.
-* If `session-id` is `0`, run the given commands in _the  current window_
-* If `session-id` is not the ID of any existing window, then run the commands in
-  a _new_ Terminal window.
-* If `session-id` is omitted, then obey the value of `glomToLastWindow` when
+* If `window-id` is `0`, run the given commands in _the current window_
+* If `window-id` is a negative number, or the reserved name `new`, run the
+  commands in a _new_ Terminal window.
+* If `window-id` is the ID or name of an existing window, then run the
+  commandline in that window.
+* If `window-id` is _not_ the ID or name of an existing window, create a new
+  window. That window will be assigned the ID or name provided in the
+  commandline. The provided subcommands will be run in that new window.
+* If `window-id` is omitted, then obey the value of `glomToLastWindow` when
   determining which window to run the command in.
 
 _Whenever_ `wt.exe` is started, it must _always_ pass the provided commandline
@@ -168,44 +169,42 @@ scenarios (as noted above). The monarch will parse the commandline, determine
 which window the commandline is destined for, then call `ExecuteCommandline` on
 that peasant, who will then run the command.
 
-#### Running commands in the current window:`wt --session 0`
+#### Running commands in the current window:`wt --window 0`
 
-If `wt -s 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
+If `wt -w 0 <commands>` is run _outside_ a WT instance, it could attempt to glom
 onto _the most recent WT window_ instead. This seems more logical than something
-like `wt --session last` or some other special value indicating "run this in the
-MRU window".
+like `wt --window last` or some other special value indicating "run this in the
+MRU window".<sup>[[2]](#footnote-2)</sup>
 
 That might be a simple, but **wrong**, implementation for "the current window".
 If the peasants always raise an event when their window is focused, and the
 monarch keeps track of the MRU order for peasants, then one could naively assume
-that the execution of `wt -s 0 <commands>` would always return the window the
+that the execution of `wt -w 0 <commands>` would always return the window the
 user was typing in, the current one. However, if someone were to do something
-like `sleep 10 ; wt -s 0 <commands>`, then the user could easily focus another
+like `sleep 10 ; wt -w 0 <commands>`, then the user could easily focus another
 WT window during the sleep, which would cause the MRU window to not be the same
 as the window executing the command.
 
-I'm not sure that there is a better solution for the `-s 0` scenario other than
+I'm not sure that there is a better solution for the `-w 0` scenario other than
 attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process
 is spawned and that's in it's environment variables, it could try and ask the
 monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
 
-In Single-Instance mode, running `wt -s 0` outside a WT window will still cause
+In Single-Instance mode, running `wt -w 0` outside a WT window will still cause
 the commandline to glom to the existing single terminal instance, if there is
 one.
 
-#### Running commands in a new window:`wt --session -1`
+#### Running commands in a new window:`wt --window -1` / `wt --window new`
 
-If the user passes an invalid ID to the `--session` parameter, then we will
-always create a new window for that commandline, regardless of the value of
-`glomToLastWindow`. This will allow users to do something like `wt -s -1
-new-tab` to _always_ create a new window. Since window IDs are only ever
-positive integers, then `-1` would be a convenient value for something that's
-_never_ an existing window ID.
+If the user passes a negative number, or the reserved name `new` to the
+`--window` parameter, then we will always create a new window for that
+commandline, regardless of the value of `glomToLastWindow`. This will allow
+users to do something like `wt -w -1 new-tab` to _always_ create a new window.
 
-#### `--session` in subcommands
+#### `--window` in subcommands
 
-The `--session` parameter is a setting to `wt.exe` itself, not to one of its
+The `--window` parameter is a setting to `wt.exe` itself, not to one of its
 subcommands (like `new-tab` or `split-pane`). This means that all of the
 subcommands in a particular `wt` commandline will all be handled by the same
 session. For example, let us consider a user who wants to open a new tab in
@@ -213,14 +212,14 @@ window 2, and split a new pane in window 3, all at once. The user _cannot_ do
 something like:
 
 ```cmd
-wt -s 2 new-tab ; -s 3 split-pane
+wt -w 2 new-tab ; -w 3 split-pane
 ```
 
 Instead, the user will need to separate the commands (by whatever their shell's
 own command delimiter is) and run two different `wt.exe` instances:
 
 ```cmd
-wt -s 2 new-tab & wt -s 3 split-pane
+wt -w 2 new-tab & wt -w 3 split-pane
 ```
 
 This is done to make the parsing of the subcommands easier, and for the internal
@@ -236,26 +235,18 @@ source to dispatch the next part of the commandline.
 Overall, this is seen as unnecessarily complex, and dispatching whole sets of
 commands as a simpler solution.
 
-### Scenario: Single Instance Mode
+### Naming Windows
 
-"Single Instance Mode" is a scenario in which there is only ever one single WT
-window. A user might want this functionality to only ever allow a single
-terminal window to be open on their desktop. This is especially frequently
-requested in combination with "quake mode", as discussed in
-[#653]. When Single Instance Mode is active, and the user
-runs a new `wt.exe` commandline, it will always end up running in the existing
-window, if there is one.
+It's not user-friendly to rely on automatically generated, invisible numbers to
+identify windows. There's not a great way of identifying which window is which.
+The user would need to track the IDs in their head manually. Instead, we'll
+allow the user to provide a string name for the window. This name can be used to
+address a window in addition to the ID.
 
-In "Single Instance Mode", the monarch _is_ the single instance. When `wt` is
-run, and it determines that it is not the monarch, it'll pass the commandline to
-the monarch. At this point, the monarch will determine that it is in Single
-Instance Mode, and consume the commands itself.
-
-Single instance mode is enabled with the `"glomToLastWindow": "always"` setting.
-This value disables tab tear out<sup>[[1]](#footnote-1)</sup> , as well as the
-ability for `newWindow` and `wt -s -1` to create new windows. In those cases,
-the commandline will _always_ be handled by the current window, the monarch
-window.
+Names can be provided on the commandline, in the original commandline. For
+example, `wt -w foo nt` would name the new window "foo". Names can also be set
+with a new action, `NameWindow`. `name-window` could also be used as a
+subcommand. For example, `wt -w 4 name-window bar` would name window 4 "bar".
 
 ## UI/UX Design
 
@@ -264,22 +255,17 @@ window.
 The following list gives greater breakdown of the values of `glomToLastWindow`,
 and how they operate:
 
-* `"glomToLastWindow": "lastWindow", "sameDesktop"|true`: Browser-like glomming
+* `"glomToLastWindow": "lastWindow", "sameDesktop"|true`: **Browser-like glomming**
   - New instances open in the current window by default.
   - `newWindow` opens a new window.
   - Tabs can be torn out to create new windows.
-  - `wt -s -1` opens a new window.
-* `"glomToLastWindow": "always"`: Single Instance Mode.
-  - New instances open in the current window by default.
-  - `newWindow` opens in the existing window.
-  - Tabs cannot be torn out to create new windows.
-  - `wt -s -1` opens in the existing window.
-* `"glomToLastWindow": "never"`: No auto-glomming. This is the current behavior
+  - `wt -w -1` opens a new window.
+* `"glomToLastWindow": "never"|false`: No auto-glomming. This is **the current behavior**
   of the Terminal.
   - New instances open in new windows by default
   - `newWindow` opens a new window
   - Tabs can be torn out to create new windows.
-  - `wt -s -1` opens a new window.
+  - `wt -w -1` opens a new window.
 
 ## Concerns
 
@@ -327,13 +313,22 @@ occur easier.
 <td><strong>Compatibility</strong></td>
 <td>
 
-There are not any serious compatibility concerns with this specific set of
-features.
-
 We will be changing the default behavior of the Terminal to auto-glom to the
 most-recently used window on the same desktop in the course of this work, which
 will be a breaking UX change. This is behavior that can be reverted with the
 `"glomToLastWindow": "never"` setting.
+
+We acknowledge that this is a pretty massive change to the default experience of
+the Terminal. We're planning on doing some polling of users to determine which
+behavior they want by default. Additionally, we'll be staging the rollout of
+this feature, using the Preview builds of the Terminal. The release notes that
+first include it will call extra attention to this feature. We'll ask that users
+provide their feedback in a dedicated thread, so we have time to collect
+opinions from users before rolling the change out to all users.
+
+We may choose to only change the default to `sameDesktop` once tab tear out is
+available, so users who are particularily unhappy about this change can still
+tear out the tab (if they can't be bothered to change the setting).
 
 </td>
 </tr>
@@ -370,18 +365,18 @@ special care. Say the user wanted to open a new tab in the elevated window, from
 and unelevated `explorer.exe`. That would be a commandline like:
 
 ```sh
-wt -s 0 new-tab -d . --elevated
+wt -w 0 new-tab -d . --elevated
 ```
 
 Typically we first determine which window the commandline is intended for, then
-dispatch it to that window. In this case, the `-s 0` will cause us to pass the
+dispatch it to that window. In this case, the `-w 0` will cause us to pass the
 commandline to the current unelevated window. Then, that window will try to open
 an elevated tab, fail, and create a new `wt.exe` process. This second `wt.exe`
-process will lose the `-s 0` context. It won't inform the elevated monarch that
+process will lose the `-w 0` context. It won't inform the elevated monarch that
 this commandline should be run in the active session.
 
 We will need to make sure that special care is taken when creating elevated
-instances that we maintain the `--session-id` parameter passed to the Terminal.
+instances that we maintain the `--window` parameter passed to the Terminal.
 
 ### `wt` Startup Commandline Options
 
@@ -443,10 +438,58 @@ This is a list of actionable tasks generated as described by this spec:
 * [ ] Add support for per-desktop `glomToLastWindow`, by adding the support for
   the enum values `"lastWindow"`, `"sameDesktop"` and `"never"`.
 * [ ] Add support for `wt.exe` to pass commandlines intended for another window
-  to the monarch, then to the intended window, with the `--session,-s
-  session-id` commandline parameter.
-* [ ] Add support for single instance mode, by adding the enum value `"always"`
-  to `"glomToLastWindow"`
+  to the monarch, then to the intended window, with the `--window,-w
+  window-id` commandline parameter.
+* [ ] Add support for targeting and naming windows via the `-w` parameter on the
+  commandline
+* [ ] Add a `NameWindow` action, subcommand that allows the user to set the name
+  for the window.
+* [ ] Add an action that will cause all windows to breifly display a overlay
+  with the current window ID and name
+
+## Future considerations
+
+* What if the user wanted to pipe a command to a pane in an existing window?
+  ```sh
+  man ping > wt -w 0 split-pane cat
+  ```
+  Is there some way for WT to pass it's stdin/out handles to the child process
+  it's creating? This is _not_ related to the current spec at hand, just
+  something the author considered while writing the spec. This likely belongs
+  over in [#492], or in its own spec.
+  - Or I suppose, with less confusion, someone could run `wt -w 0 split-pane --
+    man ping > cat`. That's certainly more sensible, and wouldn't require any
+    extra work.
+* "Single Instance Mode" is a scenario in which there is only ever one single WT
+  window. A user might want this functionality to only ever allow a single
+  terminal window to be open on their desktop. This is especially frequently
+  requested in combination with "quake mode", as discussed in [#653]. When Single
+  Instance Mode is active, and the user runs a new `wt.exe` commandline, it will
+  always end up running in the existing window, if there is one.
+
+  An earlier version of this spec proposed a new value of `glomToLastWindow`. The
+  `always` value would disable tab tear out<sup>[[1]](#footnote-1)</sup>. It would
+  additionally disable the `newWindow` action, and prevent `wt -w new` from
+  opening a new window.
+
+  In discussion, it was concluded that this setting didn't make sense. Why did the
+  `glomToLastWindow` setting change the behavior of tear out? Single Instance Mode
+  is most frequently requested in regards to quake mode. We're leaving the
+  implementation of true single instance mode to that spec.
+* It was suggested in review that we could auto-generate names for windows, from
+  some list of words. Prior art could be the URLS for gyfcat.com, which use
+  three random words. I believe `docker` also assigns names from a random
+  selection of `adjective`+`name`. This is an interesting idea, and something
+  that could be pursued in the future.
+* We will _need_ to provide a commandline tool to list windows and their IDs &
+  names. We're thinking a list of windows, their IDs, names, PIDs, and the title
+  of the window.
+
+  Currently we're stuck with `wt.exe` which is a GUI application, and cannot
+  print to the console. Our need is now fairly high for the ability to print
+  info to the console. To remedy this, we'll need to ship another helper exe as
+  a commandline tool for working with the terminal. The design for this is left
+  for the future.
 
 ## Footnotes
 
@@ -454,20 +497,9 @@ This is a list of actionable tasks generated as described by this spec:
 session management in general, this setting could be implemented along with this
 set of features, and later used to control tear out as well.
 
-## Future considerations
-
-* What if the user wanted to pipe a command to a pane in an existing window?
-  ```sh
-  man ping > wt -s 0 split-pane cat
-  ```
-  Is there some way for WT to pass it's stdin/out handles to the child process
-  it's creating? This is _not_ related to the current spec at hand, just
-  something the author considered while writing the spec. This likely belongs
-  over in [#492], or in its own spec.
-  - Or I suppose, with less confusion, someone could run `wt -s 0 split-pane --
-    man ping > cat`. That's certainly more sensible, and wouldn't require any
-    extra work.
-*
+<a name="footnote-2"><a>[2]: Since we're reserving the keyword `new` to mean "a
+new window", then we could also reserve `last` or `current` as an alias for "the
+current window".
 
 ## Resources
 
