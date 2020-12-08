@@ -270,7 +270,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     x:Name="_highlightedTextControl"
                                     Grid.Column="1"
                                     HorizontalAlignment="Left"
-                                    LostFocus="_lostFocusHandler"
                                     Text="{x:Bind HighlightedName, Mode=OneWay}"/>
 
                                 <!-- The block for the key chord is only visible
