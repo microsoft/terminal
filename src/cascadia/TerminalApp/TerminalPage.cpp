@@ -904,6 +904,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TogglePaneZoom({ this, &TerminalPage::_HandleTogglePaneZoom });
         _actionDispatch->ScrollUpPage({ this, &TerminalPage::_HandleScrollUpPage });
         _actionDispatch->ScrollDownPage({ this, &TerminalPage::_HandleScrollDownPage });
+        _actionDispatch->ScrollToTop({ this, &TerminalPage::_HandleScrollToTop });
+        _actionDispatch->ScrollToBottom({ this, &TerminalPage::_HandleScrollToBottom });
         _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
         _actionDispatch->PasteText({ this, &TerminalPage::_HandlePasteText });
         _actionDispatch->NewTab({ this, &TerminalPage::_HandleNewTab });
@@ -1675,6 +1677,18 @@ namespace winrt::TerminalApp::implementation
             const auto termHeight = control.GetViewHeight();
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, termHeight);
             terminalTab->Scroll(scrollDelta);
+        }
+    }
+
+    void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection)
+    {
+        if (const auto indexOpt = _GetFocusedTabIndex())
+        {
+            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
+            {
+                auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
+                terminalTab->Scroll(scrollDelta);
+            }
         }
     }
 
