@@ -283,7 +283,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
         // Select and navigate to the new profile
-        // TODO: Setting SelectedItem here doesn't update the NavigationView's selected visual indicator
         SettingsNav().SelectedItem(navItem);
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
     }

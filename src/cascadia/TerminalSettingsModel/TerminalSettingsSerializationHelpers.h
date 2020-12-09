@@ -78,7 +78,6 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
-    // reduce repetition
     static constexpr std::array<pair_type, 9> mappings = {
         pair_type{ "center", ValueType::Horizontal_Center | ValueType::Vertical_Center },
         pair_type{ "topLeft", ValueType::Horizontal_Left | ValueType::Vertical_Top },
@@ -405,5 +404,13 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection
     JSON_MAPPINGS(2) = {
         pair_type{ "forward", ValueType::Forward },
         pair_type{ "backward", ValueType::Backward },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "action", ValueType::Action },
+        pair_type{ "commandLine", ValueType::CommandLine },
     };
 };

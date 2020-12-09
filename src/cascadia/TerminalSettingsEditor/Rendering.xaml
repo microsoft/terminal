@@ -4,10 +4,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     x:Class="Microsoft.Terminal.Settings.Editor.Rendering"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:Controls="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -19,14 +17,25 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
     
     <ScrollViewer>
-        <StackPanel>
+        <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_RenderingDisclaimer"
-                       Style="{StaticResource BodyTextBlockStyle}"
-                       Margin="0,0,0,20" />
-            <CheckBox x:Uid="Globals_ForceFullRepaint"
-                      IsChecked="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"/>
-            <CheckBox x:Uid="Globals_SoftwareRendering"
-                      IsChecked="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"/>
+                       FontSize="{StaticResource StandardFontSize}"
+                       FontStyle="Italic"
+                       Margin="0,0,0,20"/>
+
+            <!--Force Full Repaint-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <CheckBox x:Uid="Globals_ForceFullRepaint"
+                          IsChecked="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"
+                          Style="{StaticResource CheckBoxSettingStyle}"/>
+            </ContentPresenter>
+
+            <!--Software Rendering-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <CheckBox x:Uid="Globals_SoftwareRendering"
+                          IsChecked="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"
+                          Style="{StaticResource CheckBoxSettingStyle}"/>
+            </ContentPresenter>
         </StackPanel>
     </ScrollViewer>
 </Page>

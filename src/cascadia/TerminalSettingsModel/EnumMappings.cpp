@@ -42,6 +42,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     DEFINE_ENUM_MAP(Microsoft::Terminal::TerminalControl::CursorStyle, CursorStyle);
     DEFINE_ENUM_MAP(Model::BellStyle, BellStyle);
 
+    // FontWeight is special because the JsonUtils::ConversionTrait for it
+    // creates a FontWeight object, but we need to use the uint16_t value.
     winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint16_t> EnumMappings::FontWeight()
     {
         static IMap<winrt::hstring, uint16_t> enumMap = []() {
