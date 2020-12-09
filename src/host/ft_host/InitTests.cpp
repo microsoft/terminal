@@ -243,6 +243,7 @@ MODULE_SETUP(ModuleSetup)
     while (!setupConsole && tries < 5)
     {
         tries++;
+        Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
 
         // Replace CRT handles
         // These need to be reopened as read/write or they can affect some of the tests.
