@@ -556,7 +556,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Set the default background as transparent to prevent the
             // DX layer from overwriting the background image or acrylic effect
-            _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
+            if (!control->_focused && _settings.UnfocusedConfig())
+            {
+                _settings.UnfocusedConfig().DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
+            }
+            else
+            {
+                _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
+            }
         }
     }
 
