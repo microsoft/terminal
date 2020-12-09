@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-10-30
-last updated: 2020-12-08
+last updated: 2020-12-09
 issue id: #4472
 ---
 
@@ -70,7 +70,7 @@ tab just opened in the most recent window.
 
 Users should certainly be able to specify if they want new instances to glom
 onto the MRU window or not. You could imagine that currently, we default to the
-hypothetical value `"glomToLastWindow": false`, meaning that each new wt gets
+hypothetical value `"windowingBehavior": "useNew"`, meaning that each new wt gets
 it's own new window.
 
 If glomming is disabled, then the Monarch will call back to the peasant and tell
@@ -89,19 +89,15 @@ is open on. We could use that information to have the monarch track the last
 active window _per-desktop_, and only glom when there's one on the current
 desktop.
 
-We could make the `glomToLastWindow` property even more powerful by accepting a
-combined `bool`/enum value:
-- `"always"`: always glom to the most recent window, regardless of desktop. This
-  also suppresses the creation of new windows, including tearing out tabs, or
-  windows created by `newWindow` actions. See [Single Instance
-  Mode](#scenario-single-instance-mode) for more details.
-- `"lastWindow"`: always glom to the most recent window, regardless of
-  desktop.
-- `true` or `"sameDesktop"`: Only glom if there's an existing window on this
+We could make the `windowingBehavior` property accept a variety of
+configurations:
+
+- `"useExisting"`: always glom to the most recent window, regardless of desktop.
+- `"useExistingOnSameDesktop"`: Only glom if there's an existing window on this
   virtual desktop, otherwise create a new window. This will be the new default
   value.
-- `false` or `"never"`: Never glom, always create a new window. This is
-  technically the current behavior of the Terminal.
+- `"useNew"`: Never glom, always create a new window. This is technically the
+  current behavior of the Terminal.
 
 ### Handling the current working directory
 
@@ -223,7 +219,7 @@ wt -w 2 new-tab & wt -w 3 split-pane
 ```
 
 This is done to make the parsing of the subcommands easier, and for the internal
-passing of arguments simpler. If the `--session` parameter were a part of each
+passing of arguments simpler. If the `--window` parameter were a part of each
 subcommand, then each individual subcommand's parser would need to be
 enlightened about that parameter, and then it would need to be possible for any
 single part of the commandline to call out to another process. It would be
@@ -250,22 +246,27 @@ subcommand. For example, `wt -w 4 name-window bar` would name window 4 "bar".
 
 ## UI/UX Design
 
-### `glomToLastWindow` details
+### `windowingBehavior` details
 
-The following list gives greater breakdown of the values of `glomToLastWindow`,
+The following list gives greater breakdown of the values of `windowingBehavior`,
 and how they operate:
 
-* `"glomToLastWindow": "lastWindow", "sameDesktop"|true`: **Browser-like glomming**
+* `"windowingBehavior": "useExisting", "useExistingOnSameDesktop"`:
+  **Browser-like glomming**
   - New instances open in the current window by default.
   - `newWindow` opens a new window.
   - Tabs can be torn out to create new windows.
   - `wt -w -1` opens a new window.
-* `"glomToLastWindow": "never"|false`: No auto-glomming. This is **the current behavior**
-  of the Terminal.
+* `"windowingBehavior": "useNew"`: No auto-glomming. This is **the current
+  behavior** of the Terminal.
   - New instances open in new windows by default
   - `newWindow` opens a new window
   - Tabs can be torn out to create new windows.
   - `wt -w -1` opens a new window.
+
+We'll be changing the default behavior from `useNew` to
+`useExistingOnSameDesktop`. This will be more consistent with other tabbed
+applications.
 
 ## Concerns
 
@@ -316,7 +317,7 @@ occur easier.
 We will be changing the default behavior of the Terminal to auto-glom to the
 most-recently used window on the same desktop in the course of this work, which
 will be a breaking UX change. This is behavior that can be reverted with the
-`"glomToLastWindow": "never"` setting.
+`"windowingBehavior": "useNew"` setting.
 
 We acknowledge that this is a pretty massive change to the default experience of
 the Terminal. We're planning on doing some polling of users to determine which
@@ -326,9 +327,9 @@ first include it will call extra attention to this feature. We'll ask that users
 provide their feedback in a dedicated thread, so we have time to collect
 opinions from users before rolling the change out to all users.
 
-We may choose to only change the default to `sameDesktop` once tab tear out is
-available, so users who are particularily unhappy about this change can still
-tear out the tab (if they can't be bothered to change the setting).
+We may choose to only change the default to `useExistingOnSameDesktop` once tab
+tear out is available, so users who are particularily unhappy about this change
+can still tear out the tab (if they can't be bothered to change the setting).
 
 </td>
 </tr>
@@ -433,10 +434,10 @@ This is a list of actionable tasks generated as described by this spec:
 * [ ] Add support for `wt.exe` processes to be Monarchs and Peasants, and
   communicate that state between themselves. This task does not otherwise add
   any user-facing features, merely an architectural update.
-* [ ] Add support for the `glomToLastWindow` setting as a boolean. Opening new
+* [ ] Add support for the `windowingBehavior` setting as a boolean. Opening new
   WT windows will conditionally glom to existing windows.
-* [ ] Add support for per-desktop `glomToLastWindow`, by adding the support for
-  the enum values `"lastWindow"`, `"sameDesktop"` and `"never"`.
+* [ ] Add support for per-desktop `windowingBehavior`, by adding the support for
+  the enum values `"useExisting"`, `"useExistingOnSameDesktop"` and `"useNew"`.
 * [ ] Add support for `wt.exe` to pass commandlines intended for another window
   to the monarch, then to the intended window, with the `--window,-w
   window-id` commandline parameter.
@@ -467,10 +468,11 @@ This is a list of actionable tasks generated as described by this spec:
   Instance Mode is active, and the user runs a new `wt.exe` commandline, it will
   always end up running in the existing window, if there is one.
 
-  An earlier version of this spec proposed a new value of `glomToLastWindow`. The
-  `always` value would disable tab tear out<sup>[[1]](#footnote-1)</sup>. It would
-  additionally disable the `newWindow` action, and prevent `wt -w new` from
-  opening a new window.
+  An earlier version of this spec proposed a new value of `glomToLastWindow`.
+  (`glomToLastWindow` was later renamed `windowingBehavior`). The `always` value
+  would disable tab tear out<sup>[[1]](#footnote-1)</sup>. It would additionally
+  disable the `newWindow` action, and prevent `wt -w new` from opening a new
+  window.
 
   In discussion, it was concluded that this setting didn't make sense. Why did the
   `glomToLastWindow` setting change the behavior of tear out? Single Instance Mode
