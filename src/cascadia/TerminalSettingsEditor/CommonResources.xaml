@@ -58,6 +58,11 @@
         <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
 
+    <!-- Used to create a header for a group of settings -->
+    <Style x:Key="GroupingHeader" TargetType="TextBlock" BasedOn="{StaticResource SubtitleTextBlockStyle}">
+        <Setter Property="Margin" Value="0,20,0,10"/>
+    </Style>
+
     <!--Number Box-->
     <Style x:Key="NumberBoxSettingStyle" TargetType="muxc:NumberBox">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
@@ -81,7 +86,7 @@
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
-    
+
     <Style x:Key="SliderValueLabelStyle" TargetType="TextBlock">
         <Setter Property="Width" Value="35"/>
         <Setter Property="Margin" Value="10,0,0,20"/>

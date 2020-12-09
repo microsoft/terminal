@@ -49,7 +49,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Style="{StaticResource BrowseButtonStyle}"/>
                         </StackPanel>
                     </ContentPresenter>
-                    
+
                     <!--Starting Directory-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                         <StackPanel Orientation="Horizontal">
@@ -89,6 +89,24 @@ the MIT License. See LICENSE in the project root for license information. -->
         <PivotItem x:Uid="Profile_Appearance">
             <ScrollViewer>
                 <StackPanel>
+
+                    <!--Grouping: Text-->
+                    <TextBlock x:Uid="Profile_TextHeader" Style="{StaticResource GroupingHeader}" Margin="0,0,0,10"/>
+
+                    <!--Color Scheme-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ComboBox x:Uid="Profile_ColorScheme"
+                                  ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                                  SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
+                                  Style="{StaticResource ComboBoxSettingStyle}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:ColorScheme">
+                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </ContentPresenter>
+
                     <!--Font Face-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                         <TextBox x:Uid="Profile_FontFace"
@@ -138,6 +156,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
                      </ContentPresenter>
 
+                    <!--Retro Terminal Effect-->
+                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <CheckBox x:Uid="Profile_RetroTerminalEffect"
+                                  IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
+                                  Style="{StaticResource CheckBoxSettingStyle}"/>
+                    </ContentPresenter>
+
+                    <!--Grouping: Window-->
+                    <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
+
                     <!--Padding-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                         <TextBox x:Uid="Profile_Padding"
@@ -153,7 +181,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                            Style="{StaticResource RadioButtonsSettingStyle}"/>
                     </ContentPresenter>
-    
+
+                    <!--Grouping: Cursor-->
+                    <TextBlock x:Uid="Profile_CursorHeader" Style="{StaticResource GroupingHeader}"/>
+
                     <!--Cursor Shape-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                         <muxc:RadioButtons x:Uid="Profile_CursorShape"
@@ -174,19 +205,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         LargeChange="10"/>
                     </ContentPresenter>
 
-                    <!--Color Scheme-->
-                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                        <ComboBox x:Uid="Profile_ColorScheme"
-                                  ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                                  SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
-                                  Style="{StaticResource ComboBoxSettingStyle}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="model:ColorScheme">
-                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </ContentPresenter>
+                    <!--Grouping: Background-->
+                    <TextBlock x:Uid="Profile_BackgroundHeader" Style="{StaticResource GroupingHeader}"/>
 
                     <!--Background Image-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
@@ -247,6 +267,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </StackPanel>
                     </ContentPresenter>
 
+                    <!--Grouping: Acrylic-->
+                    <TextBlock x:Uid="Profile_AcrylicHeader" Style="{StaticResource GroupingHeader}"/>
+
                     <!--Use Acrylic-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                         <CheckBox x:Uid="Profile_UseAcrylic"
@@ -274,13 +297,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            Style="{StaticResource SliderValueLabelStyle}"/>
                             </Grid>
                         </StackPanel>
-                    </ContentPresenter>
-
-                    <!--Retro Terminal Effects-->
-                    <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                        <CheckBox x:Uid="Profile_RetroTerminalEffect"
-                                  IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
-                                  Style="{StaticResource CheckBoxSettingStyle}"/>
                     </ContentPresenter>
                 </StackPanel>
             </ScrollViewer>
