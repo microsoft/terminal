@@ -2843,7 +2843,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabs.RemoveAt(mruIndex);
                 _mruTabs.InsertAt(0, tab);
-                    CommandPalette().SetTabActions(_mruTabActions, false);
             }
         }
     }
