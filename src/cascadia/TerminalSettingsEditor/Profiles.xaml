@@ -232,19 +232,158 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                     <!--Background Image Alignment-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                        <ComboBox x:Uid="Profile_BackgroundImageAlignment">
-                            <ComboBox.Items>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentCenter"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentLeft"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTop"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentRight"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottom"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopLeft"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentTopRight"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomLeft"/>
-                                <ComboBoxItem x:Uid="Profile_BackgroundImageAlignmentBottomRight"/>
-                            </ComboBox.Items>
-                        </ComboBox>
+                        <StackPanel HorizontalAlignment="Left">
+                            <TextBlock x:Uid="Profile_BackgroundImageAlignment"
+                                       Style="{StaticResource CustomSettingHeaderStyle}"
+                                       ToolTipService.Placement="Mouse"/>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid.Resources>
+                                    <Style TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}">
+                                        <Setter Property="Margin" Value="2"/>
+                                        <Setter Property="Width" Value="40"/>
+                                        <Setter Property="Height" Value="40"/>
+                                        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+                                    </Style>
+                                </Grid.Resources>
+
+                                <!--Top Row-->
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopLeft"
+                                              x:Name="BIAlign_TopLeft"
+                                              Grid.Row="0" Grid.Column="0"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Left (0x01)-->
+                                        <x:Int32>17</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE744;" RenderTransformOrigin="0.5,0.5">
+                                            <FontIcon.RenderTransform>
+                                                <RotateTransform Angle="90"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTop"
+                                              x:Name="BIAlign_Top"
+                                              Grid.Row="0" Grid.Column="1"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Center (0x00)-->
+                                        <x:Int32>16</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE745;" RenderTransformOrigin="0.5,0.5">
+                                            <FontIcon.RenderTransform>
+                                                <RotateTransform Angle="180"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentTopRight"
+                                              x:Name="BIAlign_TopRight"
+                                              Grid.Row="0" Grid.Column="2"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Top (0x10) | Horizontal_Right (0x02)-->
+                                        <x:Int32>18</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA5F;" RenderTransformOrigin="0.5,0.5">
+                                            <FontIcon.RenderTransform>
+                                                <RotateTransform Angle="270"/>
+                                            </FontIcon.RenderTransform>
+                                        </FontIcon>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+
+                                <!--Middle Row-->
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentLeft"
+                                              x:Name="BIAlign_Left"
+                                              Grid.Row="1" Grid.Column="0"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Left (0x01)-->
+                                        <x:Int32>1</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE746;"/>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentCenter"
+                                              x:Name="BIAlign_Center"
+                                              Grid.Row="1" Grid.Column="1"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Center (0x00)-->
+                                        <x:Int32>0</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xF16E;"/>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentRight"
+                                              x:Name="BIAlign_Right"
+                                              Grid.Row="1" Grid.Column="2"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Center (0x00) | Horizontal_Right (0x02)-->
+                                        <x:Int32>2</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA61;"/>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+
+                                <!--Bottom Row-->
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomLeft"
+                                              x:Name="BIAlign_BottomLeft"
+                                              Grid.Row="2" Grid.Column="0"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Left (0x01)-->
+                                        <x:Int32>33</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE744;"/>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottom"
+                                              x:Name="BIAlign_Bottom"
+                                              Grid.Row="2" Grid.Column="1"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Bottom (0x20) | Horizontal_Center (0x00)-->
+                                        <x:Int32>32</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE745;"/>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                                <ToggleButton x:Uid="Profile_BackgroundImageAlignmentBottomRight"
+                                              x:Name="BIAlign_BottomRight"
+                                              Grid.Row="2" Grid.Column="2"
+                                              Click="BIAlignment_Click">
+                                    <ToggleButton.Tag>
+                                        <!--ConvergedAlignment: Vertical_Top (0x20) | Horizontal_Right (0x02)-->
+                                        <x:Int32>34</x:Int32>
+                                    </ToggleButton.Tag>
+                                    <ToggleButton.Content>
+                                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xEA5F;"/>
+                                    </ToggleButton.Content>
+                                </ToggleButton>
+                            </Grid>
+                        </StackPanel>
                     </ContentPresenter>
 
                     <!--Background Image Opacity-->

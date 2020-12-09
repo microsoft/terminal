@@ -78,7 +78,6 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
-    // reduce repetition
     static constexpr std::array<pair_type, 9> mappings = {
         pair_type{ "center", ValueType::Horizontal_Center | ValueType::Vertical_Center },
         pair_type{ "topLeft", ValueType::Horizontal_Left | ValueType::Vertical_Top },

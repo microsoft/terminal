@@ -36,6 +36,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(FontWeight, FontWeight, uint16_t, L"Profile_FontWeight", L"Content");
         _CustomFontWeight = winrt::make<EnumEntry>(RS_(L"Profile_FontWeightCustom/Content"), winrt::box_value<uint16_t>(0u));
         _FontWeightList.Append(_CustomFontWeight);
+
+        // manually keep track of all the Background Image Alignment buttons
+        _BIAlignmentButtons.at(0) = BIAlign_TopLeft();
+        _BIAlignmentButtons.at(1) = BIAlign_Top();
+        _BIAlignmentButtons.at(2) = BIAlign_TopRight();
+        _BIAlignmentButtons.at(3) = BIAlign_Left();
+        _BIAlignmentButtons.at(4) = BIAlign_Center();
+        _BIAlignmentButtons.at(5) = BIAlign_Right();
+        _BIAlignmentButtons.at(6) = BIAlign_BottomLeft();
+        _BIAlignmentButtons.at(7) = BIAlign_Bottom();
+        _BIAlignmentButtons.at(8) = BIAlign_BottomRight();
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
@@ -46,6 +57,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& pair : colorSchemeMap)
         {
             _ColorSchemeList.Append(pair.Value());
+        }
+
+        const auto& biAlignmentVal{ static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()) };
+        for (const auto& biButton : _BIAlignmentButtons)
+        {
+            biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
         }
     }
 
@@ -151,6 +168,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CurrentFontWeight converts the Profile's value to the appropriate enum entry,
         // whereas SelectedItem identifies which one was selected by the user.
         return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
+    }
+
+    void Profiles::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    {
+        if (const auto& button{ sender.try_as<Windows::UI::Xaml::Controls::Primitives::ToggleButton>() })
+        {
+            if (const auto& tag{ button.Tag().try_as<int32_t>() })
+            {
+                // Update the Profile's value
+                _State.Profile().BackgroundImageAlignment(static_cast<ConvergedAlignment>(*tag));
+
+                // reset all of the buttons to unchecked, except for the one that was clicked
+                for (const auto& biButton : _BIAlignmentButtons)
+                {
+                    biButton.IsChecked(biButton == button);
+                }
+            }
+        }
     }
 
     void Profiles::CursorShape_Changed(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
