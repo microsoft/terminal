@@ -290,7 +290,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
     {
-        uint32_t index;
+        uint32_t index{};
         if (_tabs.IndexOf(tab, index))
         {
             _SelectTab(index);
@@ -1120,8 +1120,7 @@ namespace winrt::TerminalApp::implementation
         const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
         if (commandPaletteIsVisible)
         {
-            auto tabs = tabSwitchMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabs : _tabs;
-            CommandPalette().SetTabs(tabs, true);
+            CommandPalette().SetTabs(tabSwitchMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabs : _tabs, true);
         }
 
         // To close the window here, we need to close the hosting window.
@@ -1304,10 +1303,7 @@ namespace winrt::TerminalApp::implementation
 
         if (useTabSwitcher)
         {
-            auto tabs = useInOrderTabIndex ? _tabs : _mruTabs;
-            // Set up the list of in-order tabs
-            // Set up the list of MRU tabs
-            CommandPalette().SetTabs(tabs, true);
+            CommandPalette().SetTabs(useInOrderTabIndex ? _tabs : _mruTabs, true);
 
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
