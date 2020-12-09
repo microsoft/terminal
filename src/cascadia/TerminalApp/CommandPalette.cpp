@@ -443,6 +443,14 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - The purpose of this event handler is to hide the palette if it loses focus.
+    // We say we lost focus if our root element and all its descendants lost focus.
+    // This handler is invoked when our root element or some descendant loses focus.
+    // At this point we need to learn if the newly focused element belongs to this palette.
+    // To achieve this we:
+    // - We start with the newly focused element to and traverse its visual hierarchy up to the Xaml root.
+    // - If on the path we meet this CommandPalette, then by our definition the focus is not lost
+    // - If we reach the Xaml root without meeting this CommandPalette,
+    // then the focus is not contained in it anymore and it should be dismissed
     // Arguments:
     // - <unused>
     // Return Value:
@@ -450,17 +458,21 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_lostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                            Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
-        auto focusedElement = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
-        while (focusedElement)
+        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
+        while (focusedElementOrAncestor)
         {
-            if (focusedElement == *this)
+            if (focusedElementOrAncestor == *this)
             {
+                // This palette is the focused element or an ancestor of the focused element. No need to dismiss.
                 return;
             }
 
-            focusedElement = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElement);
+            // Go up to the next ancestor
+            focusedElementOrAncestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElementOrAncestor);
         }
 
+        // We got to the root (the element with no parent) and didn't meet this palette on the path.
+        // It means that it lost the focus and needs to be dismissed.
         _dismissPalette();
     }
 
