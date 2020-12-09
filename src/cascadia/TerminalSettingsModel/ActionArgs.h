@@ -25,6 +25,7 @@
 #include "ScrollUpArgs.g.h"
 #include "ScrollDownArgs.g.h"
 #include "MoveTabArgs.g.h"
+#include "ToggleCommandPaletteArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -783,6 +784,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto copy{ winrt::make_self<ScrollDownArgs>() };
             copy->_RowsToScroll = _RowsToScroll;
+            return *copy;
+        }
+    };
+
+    struct ToggleCommandPaletteArgs : public ToggleCommandPaletteArgsT<ToggleCommandPaletteArgs>
+    {
+        ToggleCommandPaletteArgs() = default;
+
+        // To preserve backward compatibility the default is Action.
+        GETSET_PROPERTY(CommandPaletteLaunchMode, LaunchMode, CommandPaletteLaunchMode::Action);
+
+        static constexpr std::string_view LaunchModeKey{ "launchMode" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ToggleCommandPaletteArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_LaunchMode == _LaunchMode;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ToggleCommandPaletteArgs>();
+            JsonUtils::GetValueForKey(json, LaunchModeKey, args->_LaunchMode);
+            return { *args, {} };
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ToggleCommandPaletteArgs>() };
+            copy->_LaunchMode = _LaunchMode;
             return *copy;
         }
     };

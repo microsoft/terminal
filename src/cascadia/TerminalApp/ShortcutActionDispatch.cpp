@@ -102,7 +102,16 @@ namespace winrt::TerminalApp::implementation
             _ScrollDownPageHandlers(*this, eventArgs);
             break;
         }
-
+        case ShortcutAction::ScrollToTop:
+        {
+            _ScrollToTopHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::ScrollToBottom:
+        {
+            _ScrollToBottomHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::NextTab:
         {
             _NextTabHandlers(*this, eventArgs);
@@ -240,6 +249,11 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::TabSearch:
         {
             _TabSearchHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::BreakIntoDebugger:
+        {
+            _BreakIntoDebuggerHandlers(*this, eventArgs);
             break;
         }
         default:

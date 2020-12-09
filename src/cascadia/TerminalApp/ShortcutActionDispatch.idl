@@ -29,6 +29,8 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollDown;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollUpPage;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollDownPage;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollToTop;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ScrollToBottom;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> OpenSettings;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> ResizePane;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> Find;
@@ -48,5 +50,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> CloseTabsAfter;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> TabSearch;
         event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> MoveTab;
+        event Windows.Foundation.TypedEventHandler<ShortcutActionDispatch, Microsoft.Terminal.Settings.Model.ActionEventArgs> BreakIntoDebugger;
     }
 }

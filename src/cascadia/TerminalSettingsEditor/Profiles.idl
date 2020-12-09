@@ -19,6 +19,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfilePageNavigationState State { get; };
 
         IInspectable CurrentCursorShape;
+        Boolean IsVintageCursor { get; };
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
 
         IInspectable CurrentBackgroundImageStretchMode;

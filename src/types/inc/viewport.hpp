@@ -57,6 +57,7 @@ namespace Microsoft::Console::Types
         SHORT Height() const noexcept;
         SHORT Width() const noexcept;
         COORD Origin() const noexcept;
+        COORD BottomRightExclusive() const noexcept;
         COORD EndExclusive() const noexcept;
         COORD Dimensions() const noexcept;
 

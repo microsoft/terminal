@@ -43,6 +43,8 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(ScrollDown,           TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ScrollUpPage,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ScrollDownPage,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(ScrollToTop,          TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(ScrollToBottom,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(OpenSettings,         TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(ResizePane,           TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(Find,                 TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
@@ -62,6 +64,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseTabsAfter,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(TabSearch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(MoveTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(BreakIntoDebugger,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         // clang-format on
 
     private:
