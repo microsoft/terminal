@@ -31,6 +31,8 @@ namespace Microsoft.Terminal.Settings.Model
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ScrollToTop,
+        ScrollToBottom,
         ResizePane,
         MoveFocus,
         Find,
