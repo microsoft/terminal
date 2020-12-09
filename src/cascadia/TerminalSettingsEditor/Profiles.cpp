@@ -93,11 +93,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         FileOpenPicker picker;
 
-        //TODO: SETTINGS UI Commandline handling should be robust and intelligent
         _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
         picker.ViewMode(PickerViewMode::Thumbnail);
         picker.SuggestedStartLocation(PickerLocationId::ComputerFolder);
-        picker.FileTypeFilter().ReplaceAll({ L".bat", L".exe" });
+        picker.FileTypeFilter().ReplaceAll({ L".bat", L".exe", L".cmd" });
 
         StorageFile file = co_await picker.PickSingleFileAsync();
         if (file != nullptr)
@@ -152,5 +151,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // CurrentFontWeight converts the Profile's value to the appropriate enum entry,
         // whereas SelectedItem identifies which one was selected by the user.
         return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
+    }
+
+    void Profiles::CursorShape_Changed(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"IsVintageCursor" });
+    }
+
+    bool Profiles::IsVintageCursor() const
+    {
+        return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
 }
