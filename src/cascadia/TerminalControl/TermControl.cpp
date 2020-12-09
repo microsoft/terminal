@@ -1902,11 +1902,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _UpdateSystemParameterSettings();
 
-        if (_settings.UnfocusedConfig())
-        {
-
-            UpdateAppearance(_settings);
-        }
+        UpdateAppearance(_settings);
     }
 
     // Method Description
