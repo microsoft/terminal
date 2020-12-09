@@ -42,6 +42,8 @@ constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    struct AppearanceConfig;
+
     struct Profile : ProfileT<Profile>, IInheritable<Profile>
     {
     public:
@@ -112,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
 
-        GETSET_SETTING(AppearanceConfig, UnfocusedConfig, nullptr);
+        GETSET_SETTING(Model::AppearanceConfig, UnfocusedConfig, nullptr);
 
     private:
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
@@ -125,6 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
         friend class TerminalAppUnitTests::JsonTests;
+        friend struct implementation::AppearanceConfig;
     };
 }
 

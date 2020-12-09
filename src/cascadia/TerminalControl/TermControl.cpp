@@ -272,7 +272,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         co_await winrt::resume_foreground(Dispatcher());
         _UpdateSettingsFromUIThread(newSettings);
         auto appearance = newSettings.try_as<IControlAppearance>();
-        if (!_focused)
+        if (!_focused && newSettings.UnfocusedConfig())
         {
             appearance = newSettings.UnfocusedConfig();
         }
@@ -1902,7 +1902,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _UpdateSystemParameterSettings();
 
-        UpdateAppearance(_settings);
+        if (_settings.UnfocusedConfig())
+        {
+
+            UpdateAppearance(_settings);
+        }
     }
 
     // Method Description
@@ -1953,7 +1957,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _blinkTimer.value().Stop();
         }
 
-        UpdateAppearance(_settings.UnfocusedConfig());
+        if (_settings.UnfocusedConfig())
+        {
+            UpdateAppearance(_settings.UnfocusedConfig());
+        }
     }
 
     // Method Description:
