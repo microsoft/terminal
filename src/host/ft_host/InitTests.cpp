@@ -5,6 +5,7 @@
 
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+using namespace WEX::Logging;
 
 const DWORD _dwMaxMillisecondsToWaitOnStartup = 120 * 1000;
 const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
