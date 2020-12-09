@@ -95,12 +95,36 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
         picker.ViewMode(PickerViewMode::Thumbnail);
         picker.SuggestedStartLocation(PickerLocationId::PicturesLibrary);
-        picker.FileTypeFilter().ReplaceAll({ L".jpg", L".jpeg", L".png", L".gif" });
+
+        // Converted into a BitmapImage. This list of supported image file formats is from BitmapImage documentation
+        // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Xaml.Media.Imaging.BitmapImage?view=winrt-19041#remarks
+        picker.FileTypeFilter().ReplaceAll({ L".jpg", L".jpeg", L".png", L".bmp", L".gif", L".tiff", L".ico" });
 
         StorageFile file = co_await picker.PickSingleFileAsync();
         if (file != nullptr)
         {
             BackgroundImage().Text(file.Path());
+        }
+    }
+
+    fire_and_forget Profiles::Icon_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        auto lifetime = get_strong();
+
+        FileOpenPicker picker;
+
+        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
+        picker.ViewMode(PickerViewMode::Thumbnail);
+        picker.SuggestedStartLocation(PickerLocationId::PicturesLibrary);
+
+        // Converted into a BitmapIconSource. This list of supported image file formats is from BitmapImage documentation
+        // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Xaml.Media.Imaging.BitmapImage?view=winrt-19041#remarks
+        picker.FileTypeFilter().ReplaceAll({ L".jpg", L".jpeg", L".png", L".bmp", L".gif", L".tiff", L".ico" });
+
+        StorageFile file = co_await picker.PickSingleFileAsync();
+        if (file != nullptr)
+        {
+            Icon().Text(file.Path());
         }
     }
 

@@ -67,10 +67,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                         <StackPanel Orientation="Horizontal">
                             <TextBox x:Uid="Profile_Icon"
+                                     x:Name="Icon"
                                      Text="{x:Bind State.Profile.Icon, Mode=TwoWay}"
                                      FontFamily="Segoe UI, Segoe MDL2 Assets"
                                      Style="{StaticResource TextBoxSettingStyle}"/>
                             <Button x:Uid="Profile_IconBrowse"
+                                    Click="Icon_Click"
                                     Style="{StaticResource BrowseButtonStyle}"/>
                         </StackPanel>
                      </ContentPresenter>

@@ -87,6 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - <none>
     void ColorSchemes::_UpdateColorSchemeList()
     {
+        // Surprisingly, though this is called every time we navigate to the page,
+        // the list does not keep growing on each navigation.
         const auto& colorSchemeMap{ _State.Globals().ColorSchemes() };
         for (const auto& pair : colorSchemeMap)
         {
