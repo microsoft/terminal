@@ -341,13 +341,19 @@ void Profile::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 
+    auto unfocusedConfig{ winrt::make_self<implementation::AppearanceConfig>() };
+
     if (json.isMember(JsonKey(UnfocusedConfigKey)))
     {
-        auto unfocusedConfig{ winrt::make_self<implementation::AppearanceConfig>() };
-        unfocusedConfig->LayerJson(json[JsonKey(UnfocusedConfigKey)]);
         unfocusedConfig->InsertParent(winrt::com_ptr<Profile>(get_strong()));
-        _UnfocusedConfig = *unfocusedConfig;
+        unfocusedConfig->LayerJson(json[JsonKey(UnfocusedConfigKey)]);
     }
+    else
+    {
+
+    }
+
+    _UnfocusedConfig = *unfocusedConfig;
 }
 
 // Method Description:

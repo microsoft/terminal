@@ -111,7 +111,7 @@ public:                                                                     \
         _##name = std::nullopt;                                             \
     }                                                                       \
                                                                             \
-private:                                                                    \
+public:                                                                     \
     std::optional<type> _##name{ std::nullopt };                            \
     std::optional<type> _get##name##Impl() const                            \
     {                                                                       \
@@ -183,7 +183,7 @@ public:                                                                     \
         _##name = std::nullopt;                                             \
     }                                                                       \
                                                                             \
-private:                                                                    \
+public:                                                                     \
     NullableSetting<type> _##name{};                                        \
     NullableSetting<type> _get##name##Impl() const                          \
     {                                                                       \
