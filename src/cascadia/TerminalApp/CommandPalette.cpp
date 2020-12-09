@@ -446,7 +446,7 @@ namespace winrt::TerminalApp::implementation
     // We say we lost focus if our root element and all its descendants lost focus.
     // This handler is invoked when our root element or some descendant loses focus.
     // At this point we need to learn if the newly focused element belongs to this palette.
-    // To achieve this we:
+    // To achieve this:
     // - We start with the newly focused element to and traverse its visual hierarchy up to the Xaml root.
     // - If on the path we meet this CommandPalette, then by our definition the focus is not lost
     // - If we reach the Xaml root without meeting this CommandPalette,
