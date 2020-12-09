@@ -11,9 +11,7 @@ issue id: <#8345>
 
 This spec outlines how we can support 'configuration objects' in our profiles, which
 will allow us to render differently depending on the state of the control. For example, a
-control can be rendered differently if it's focused as compared to when it's unfocused. Another
-example is that an elevated state control can be rendered differently as compared to a
-non-elevated one.
+control can be rendered differently if it's focused as compared to when it's unfocused.
 
 ## Inspiration
 
@@ -21,13 +19,6 @@ Reference: [#3062](https://github.com/microsoft/terminal/issues/3062)
 
 Users want there to be a more visible indicator than the one we have currently for which
 pane is focused and which panes are unfocused. This change would grant us that feature.
-
-## Note: this is going to be an experimental change
-
-Upon discussion we realized that this feature might cause scaling problems in the future. Thus, we
-have decided to make this an experimental change for now - meaning that we are not (at this point) committed
-to supporting this feature in the long term. We will decide on the longevity of this feature after obtaining
-user feedback from the initial experimental phase.
 
 ## Solution Design
 
@@ -79,21 +70,12 @@ for that profile (similarly, they could define just 1 or 2 parameters if they wi
 and unfocused states for that profile). If they do not define any `unfocusedState` for the profile, then
 the global/default one will be used.
 
-### Multiple states
-
-At the time of writing this, we have noted two possible 'appearance states' that we should allow: unfocused and elevated.
-The question then is, in the case of an unfocused and elevated control, which appearance should we use?
-
-For now, we will solve this problem by allowing a third state "unfocused elevated". This solution style of combining states
-is of course not going to be feasible if we add more states in the future - hence why this feature is going to remain
-experimental for now.
-
 ## UI/UX Design
 
 Users will be able to add a new setting to their profiles that will look like this:
 
 ```
-"experimental.state.unfocused": 
+"unfocusedConfig":
 {
     "colorScheme": "Campbell",
     "cursorColor": "#888",
@@ -133,6 +115,9 @@ does not cause the window to flash/show a jarring indicator that the rendering v
 ## Future considerations
 
 We will need to decide how this will look in the settings UI.
+
+We may wish to add more states in the future (like 'elevated'). When that happens, we will need to deal with how
+these appearance objects can scale/layer over each other.
 
 ## Resources
 
