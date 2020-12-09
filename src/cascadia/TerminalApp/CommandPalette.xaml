@@ -17,6 +17,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     PreviewKeyDown="_previewKeyDownHandler"
     KeyDown="_keyDownHandler"
     PreviewKeyUp="_keyUpHandler"
+    LostFocus="_lostFocusHandler"
     mc:Ignorable="d"
     AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}">
 
@@ -245,8 +246,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Command.Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind Command.KeyChordText, Mode=OneWay}">
+                                      IsTabStop="False"
+                                      AutomationProperties.Name="{x:Bind Command.Name, Mode=OneWay}"
+                                      AutomationProperties.AcceleratorKey="{x:Bind Command.KeyChordText, Mode=OneWay}">
 
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
                                 <Grid.ColumnDefinitions>

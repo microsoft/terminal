@@ -585,6 +585,21 @@ namespace winrt::TerminalApp::implementation
             newTabFlyout.Items().Append(aboutFlyout);
         }
 
+        // Before opening the fly-out set focus on the current tab
+        // so no matter how fly-out is closed later on the focus will return to some tab.
+        // We cannot do it on closing because if the window loses focus (alt+tab)
+        // the closing event is not fired.
+        // It is important to set the focus on the tab
+        // Since the previous focus location might be discarded in the background,
+        // e.g., the command palette will be dismissed by the menu,
+        // and then closing the fly-out will move the focus to wrong location.
+        newTabFlyout.Opening([this](auto&&, auto&&) {
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
+        });
         _newTabButton.Flyout(newTabFlyout);
     }
 
@@ -1071,19 +1086,6 @@ namespace winrt::TerminalApp::implementation
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
-
-        // If the tab switcher is currently open, update it to reflect the
-        // current list of tabs.
-        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-        const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
-        if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
-        {
-            CommandPalette().SetTabActions(_mruTabActions, false);
-        }
-        else if (commandPaletteIsVisible)
-        {
-            _UpdatePaletteWithInOrderTabs();
-        }
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
@@ -2107,6 +2109,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        CommandPalette().Visibility(Visibility::Collapsed);
         _UpdateTabView();
     }
 
@@ -2693,11 +2696,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {
-        // Return focus to the active control
-        if (auto index{ _GetFocusedTabIndex() })
+        // We don't want to set focus on the tab if fly-out is open as it will be closed
+        // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
+        if (!_newTabButton.Flyout().IsOpen())
         {
-            _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-            _UpdateMRUTab(index.value());
+            // Return focus to the active control
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
         }
     }
 
@@ -2834,15 +2842,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _mruTabActions.RemoveAt(mruIndex);
                 _mruTabActions.InsertAt(0, command);
-
-                // If the tab switcher is currently open, AND we're using it in
-                // MRU mode, then update it to reflect the current list of tabs.
-                const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-                const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
-                if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
-                {
-                    CommandPalette().SetTabActions(_mruTabActions, false);
-                }
             }
         }
     }
