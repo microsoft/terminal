@@ -259,60 +259,57 @@ void DxEngine::ToggleTerminalEffects()
 // - Pixel shader source code
 std::string DxEngine::_LoadPixelShaderFile() const
 {
-    try
+    // If the user specified the new pixel shader, it has precedence
+    if (!_pixelShaderPath.empty())
     {
-        // If the user specified the legacy option retroTerminalEffect it has precendence
-        if (_retroTerminalEffect)
+        try
         {
-            return std::string{ retroPixelShaderString };
-        }
+            wil::unique_hfile hFile{ CreateFileW(_pixelShaderPath.c_str(),
+                                                 GENERIC_READ,
+                                                 FILE_SHARE_READ,
+                                                 nullptr,
+                                                 OPEN_EXISTING,
+                                                 FILE_ATTRIBUTE_NORMAL,
+                                                 nullptr) };
 
-        // If no pixel shader effect is specified this function shouldn't end up being called.
-        //  If it happens anyway return the error shader
-        if (_pixelShaderPath.empty())
+            THROW_LAST_ERROR_IF(!hFile); // This will be caught below.
+
+            // fileSize is in bytes
+            const auto fileSize = GetFileSize(hFile.get(), nullptr);
+            THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
+
+            auto utf8buffer = std::vector<char>(fileSize);
+
+            DWORD bytesRead = 0;
+            THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.data(), fileSize, &bytesRead, nullptr));
+
+            // convert buffer to UTF-8 string
+            std::string utf8string(utf8buffer.data(), fileSize);
+
+            return utf8string;
+        }
+        catch (...)
         {
+            // If we ran into any problems during loading pixel shader let's revert to
+            //  the error pixel shader which should "always" be able to load and indicates
+            //  to the user something went wrong
+            auto exceptionHr = LOG_CAUGHT_EXCEPTION();
+
+            // Call to the warning callback to surface the file not found error
+            if (_pfnWarningCallback)
+            {
+                _pfnWarningCallback(exceptionHr);
+            }
+
             return std::string{};
         }
-
-        wil::unique_hfile hFile{ CreateFileW(_pixelShaderPath.c_str(),
-                                             GENERIC_READ,
-                                             FILE_SHARE_READ,
-                                             nullptr,
-                                             OPEN_EXISTING,
-                                             FILE_ATTRIBUTE_NORMAL,
-                                             nullptr) };
-
-        THROW_LAST_ERROR_IF(!hFile); // This will be caught below.
-
-        // fileSize is in bytes
-        const auto fileSize = GetFileSize(hFile.get(), nullptr);
-        THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
-
-        auto utf8buffer = std::vector<char>(fileSize);
-
-        DWORD bytesRead = 0;
-        THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.data(), fileSize, &bytesRead, nullptr));
-
-        // convert buffer to UTF-8 string
-        std::string utf8string(utf8buffer.data(), fileSize);
-
-        return utf8string;
     }
-    catch (...)
+    else if (_retroTerminalEffect)
     {
-        // If we ran into any problems during loading pixel shader let's revert to
-        //  the error pixel shader which should "always" be able to load and indicates
-        //  to the user something went wrong
-        auto exceptionHr = LOG_CAUGHT_EXCEPTION();
-
-        // Call to the warning callback to surface the file not found error
-        if (_pfnWarningCallback)
-        {
-            _pfnWarningCallback(exceptionHr);
-        }
-
-        return std::string{};
+        return std::string{ retroPixelShaderString };
     }
+
+    return std::string{};
 }
 
 // Routine Description:
