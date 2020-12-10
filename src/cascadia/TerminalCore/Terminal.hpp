@@ -73,7 +73,6 @@ public:
 
     int ViewStartIndex() const noexcept;
     int ViewEndIndex() const noexcept;
-    void ChooseEverySingleLine() noexcept;
 
 #pragma region ITerminalApi
     // These methods are defined in TerminalApi.cpp

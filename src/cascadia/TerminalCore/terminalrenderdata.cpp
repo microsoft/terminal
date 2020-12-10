@@ -212,7 +212,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Line);
+    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
 }
 
 const std::wstring Terminal::GetConsoleTitle() const noexcept

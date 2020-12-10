@@ -846,13 +846,6 @@ int Terminal::ViewEndIndex() const noexcept
     return _mutableViewport.BottomInclusive();
 }
 
-void Terminal::ChooseEverySingleLine() noexcept
-{
-    const COORD leftTop{ 0, 0};
-    const COORD rightBottom{ 120, 25};
-    SelectNewRegion(leftTop, rightBottom);
-}
-
 // _VisibleStartIndex is the first visible line of the buffer
 int Terminal::_VisibleStartIndex() const noexcept
 {

@@ -124,7 +124,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
-    _multiClickSelectionMode = SelectionExpansionMode::Line;
+    _multiClickSelectionMode = SelectionExpansionMode::Cell;
     SetSelectionEnd(viewportPos);
 
     _selection->start = _selection->pivot;

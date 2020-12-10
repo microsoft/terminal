@@ -210,7 +210,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::CallChooseEverySingleLine()
     {
-        _terminal->ChooseEverySingleLine();
+        // Lazy load the search box control.
+        if (auto loadedSearchBox{ FindName(L"SearchBox") })
+        {
+            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::TerminalControl::SearchBoxControl>() })
+            {
+                // get at its private implementation
+                _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
+                _searchBox->Visibility(Visibility::Visible);
+                _searchBox->SetFocusOnTextbox();
+            }
+        }
     }
 
     // Method Description:
