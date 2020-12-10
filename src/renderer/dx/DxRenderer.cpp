@@ -303,9 +303,13 @@ std::string DxEngine::_LoadPixelShaderFile() const
         // If we ran into any problems during loading pixel shader let's revert to
         //  the error pixel shader which should "always" be able to load and indicates
         //  to the user something went wrong
-        LOG_CAUGHT_EXCEPTION();
+        auto exceptionHr = LOG_CAUGHT_EXCEPTION();
 
-        // TODOMIKE: Display dialog
+        // Call to the warning callback to surface the file not found error
+        if (_pfnWarningCallback)
+        {
+            _pfnWarningCallback(exceptionHr);
+        }
 
         return std::string{};
     }
@@ -360,11 +364,17 @@ HRESULT DxEngine::_SetupTerminalEffects()
     }
     catch (...)
     {
-        // TODOMIKE: Display a dialog here
-
+        // Call to the warning callback to surface the shader compile error
+        auto exceptionHr = LOG_CAUGHT_EXCEPTION();
+        if (_pfnWarningCallback)
+        {
+            // D2DERR_SHADER_COMPILE_FAILED isn't technically an HRESULT, but
+            // it's more specific than E_FAIL.
+            _pfnWarningCallback(D2DERR_SHADER_COMPILE_FAILED);
+        }
         pixelBlob = nullptr;
         _pixelShaderLoaded = false;
-        RETURN_CAUGHT_EXCEPTION();
+        return exceptionHr;
     }
 
     RETURN_IF_FAILED(_d3dDevice->CreateVertexShader(
@@ -933,6 +943,11 @@ CATCH_RETURN();
 void DxEngine::SetCallback(std::function<void()> pfn)
 {
     _pfn = pfn;
+}
+
+void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn)
+{
+    _pfnWarningCallback = pfn;
 }
 
 bool DxEngine::GetRetroTerminalEffect() const noexcept

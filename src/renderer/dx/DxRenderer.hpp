@@ -56,6 +56,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept;
 
         void SetCallback(std::function<void()> pfn);
+        void SetWarningCallback(std::function<void(const HRESULT)> pfn);
 
         void ToggleTerminalEffects();
 
@@ -147,6 +148,7 @@ namespace Microsoft::Console::Render
         float _prevScale;
 
         std::function<void()> _pfn;
+        std::function<void(const HRESULT)> _pfnWarningCallback;
 
         bool _isEnabled;
         bool _isPainting;

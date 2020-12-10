@@ -38,23 +38,10 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-// MIKETODO ---------------------------------------
-// TODO:GH#7013 Where is a good place to put this common function?
-static std::optional<std::wstring> _HStringToOptionalString(const winrt::hstring& s)
-{
-    std::wstring_view v = s;
-    if (v.empty())
-    {
-        return std::nullopt;
-    }
-    else
-    {
-        return std::wstring(v);
-    }
-}
-// /MIKETODO --------------------------------------
-
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
+
+// This is usually defined in wpc.h, but we don't need that. Surprisingly, there isn't a better HRESULT version of ERROR_FILE_NOT_FOUND
+#define E_FILE_NOT_FOUND 0x80070002
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -639,6 +626,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    winrt::fire_and_forget TermControl::_RendererWarning(const HRESULT hr)
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            winrt::hstring message;
+
+            if (E_FILE_NOT_FOUND == hr)
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, _settings.PixelShaderPath()) };
+            }
+            else if (D2DERR_SHADER_COMPILE_FAILED == hr)
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            }
+            else
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") }, hr) };
+                // message{ fmt::format(L"Renderer encountered an unexpected error: {}", hr) };
+            }
+
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
+    }
+
     void TermControl::_AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain)
     {
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
@@ -717,6 +732,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _settings.InitialRows(height);
 
             _terminal->CreateFromSettings(_settings, renderTarget);
+
+            dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
             dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
             std::wstring_view shaderPath{ _settings.PixelShaderPath().data(), _settings.PixelShaderPath().size() };

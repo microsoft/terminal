@@ -129,6 +129,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
         winrt::fire_and_forget _RendererEnteredErrorState();
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
+        winrt::fire_and_forget _RendererWarning(const HRESULT hr);
 
         void CreateSearchBoxControl();
 
