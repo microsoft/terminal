@@ -16,7 +16,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <Thickness x:Key="ColorSchemesStandardControlMargin">10,0,0,20</Thickness>
+            <Thickness x:Key="ColorSchemesStandardControlMargin">0,0,10,20</Thickness>
 
             <Style x:Key="ColorStackPanelStyle" TargetType="StackPanel">
                 <Setter Property="Margin" Value="{StaticResource ColorSchemesStandardControlMargin}"/>
@@ -47,7 +47,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <ScrollViewer>
-        <Grid>
+        <Grid Margin="{StaticResource StandardIndentMargin}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -63,7 +63,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Grid.Row="0"
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
-                        Margin="10,0,0,20">
+                        Margin="{StaticResource StandardControlSpacing}">
                 <ComboBox x:Name="ColorSchemeComboBox"
                           Grid.Row="0"
                           Grid.Column="0"
@@ -71,8 +71,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                           SelectedIndex="0"
                           ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                           SelectionChanged="ColorSchemeSelectionChanged"
-                          Style="{StaticResource ComboBoxSettingStyle}"
-                          Margin="{StaticResource ColorSchemesStandardControlMargin}">
+                          Style="{StaticResource ComboBoxSettingStyle}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:ColorScheme">
                             <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
@@ -82,13 +81,13 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <!--Rename Button-->
                 <Button x:Uid="ColorScheme_Rename"
-                        Style="{StaticResource BaseButtonStyle}">
+                        Style="{StaticResource BrowseButtonStyle}">
                     <FontIcon Glyph="&#xE8AC;"/>
                 </Button>
 
                 <!--Add new button-->
                 <Button Click="AddNew_Click"
-                        Style="{StaticResource BaseButtonStyle}">
+                        Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE710;"
                                   FontSize="15"/>
@@ -186,7 +185,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <Button Grid.Row="2"
                     Grid.Column="0"
                     Click="Delete_Click"
-                    Style="{StaticResource BaseButtonStyle}">
+                    Style="{StaticResource BaseButtonStyle}"
+                    Margin="{StaticResource StandardControlSpacing}">
                 <Button.Resources>
                     <ResourceDictionary>
                         <ResourceDictionary.ThemeDictionaries>
@@ -220,10 +220,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Button.Content>
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE74D;"
-                              FontSize="{StaticResource StandardFontSize}"/>
+                                  FontSize="{StaticResource StandardFontSize}"/>
                         <TextBlock x:Uid="ColorScheme_DeleteButton"
-                               FontSize="{StaticResource StandardFontSize}"
-                               Margin="10,0,0,0"/>
+                                   FontSize="{StaticResource StandardFontSize}"
+                                   Margin="10,0,0,0"/>
                     </StackPanel>
                 </Button.Content>
             </Button>
