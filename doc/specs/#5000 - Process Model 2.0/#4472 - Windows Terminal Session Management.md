@@ -355,7 +355,7 @@ provide their feedback in a dedicated thread, so we have time to collect
 opinions from users before rolling the change out to all users.
 
 We may choose to only change the default to `useExistingOnSameDesktop` once tab
-tear out is available, so users who are particularily unhappy about this change
+tear out is available, so users who are particularly unhappy about this change
 can still tear out the tab (if they can't be bothered to change the setting).
 
 </td>
@@ -467,7 +467,7 @@ This is a list of actionable tasks generated as described by this spec:
   commandline
 * [ ] Add a `NameWindow` action, subcommand that allows the user to set the name
   for the window.
-* [ ] Add an action that will cause all windows to breifly display a overlay
+* [ ] Add an action that will cause all windows to briefly display a overlay
   with the current window ID and name. This would be something like the
   "identify" feature of the Windows "Display" settings.
 
