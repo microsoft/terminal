@@ -19,6 +19,7 @@ Hashtable
 HIGHCONTRASTON
 HIGHCONTRASTW
 href
+IAppearance
 IAsync
 IBind
 IBox

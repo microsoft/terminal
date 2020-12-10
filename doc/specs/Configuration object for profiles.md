@@ -60,15 +60,18 @@ of further parameters can be discussed in the future and is out of scope for thi
 In the case that not all of the allowed parameters are defined in an appearance object, we will obtain the
 values for those parameters in the following matter:
 
-If the profile defines an `unfocusedState`, any parameters not explicitly defined within it will adopt
-the values from the profile itself. If the profile does not define an `unfocusedState`, then the global/default `unfocusedState` is used
+If the profile defines an `unfocusedConfig`, any parameters not explicitly defined within it will adopt
+the values from the profile itself. If the profile does not define an `unfocusedConfig`, then the global/default `unfocusedConfig` is used
 for this profile.
 
 Thus, if a user wishes for the unfocused state to look the same as the focused state for a particular profile,
-while still having a global/default unfocused state appearance, they simply need to define an empty `unfocusedState`
+while still having a global/default unfocused state appearance, they simply need to define an empty `unfocusedConfig`
 for that profile (similarly, they could define just 1 or 2 parameters if they wish for minimal changes between the focused
-and unfocused states for that profile). If they do not define any `unfocusedState` for the profile, then
+and unfocused states for that profile). If they do not define any `unfocusedConfig` for the profile, then
 the global/default one will be used.
+
+If neither the profile nor the global settings have defined an `unfocusedConfig`, then there will be no
+appearance change when switching between focused and unfocused states.
 
 ## UI/UX Design
 
@@ -111,6 +114,11 @@ Should not affect compatibility.
 Inactive tabs will be 'rendered' in the background with the `UnfocusedRenderingParams` object, we need to make
 sure that switching to an inactive tab (and so causing the renderer to update with the 'normal' parameters)
 does not cause the window to flash/show a jarring indicator that the rendering values changed.
+
+When certain appearance settings are changed via OSC sequences (such as the background color), only the focused/regular
+appearance will change and the unfocused one will remain unchanged. This means that even if no unfocused configuration was set
+(i.e. the user simply wants the unfocused configuration to look like the regular appearance), there will end up being
+a difference between both appearances.
 
 ## Future considerations
 
