@@ -63,7 +63,7 @@ The Add new profile button in the navigation menu would take you to a new page. 
 
 ### Reset Profile button
 
-On the Advanced pivot of a profile's page, there will be a button at the bottom for resetting a profile called "Reset to default settings". This button will remove the user's custom settings inside this profile's object and reset it to defaults.
+On the Advanced pivot of a profile's page, there will be a button at the bottom for resetting a profile called "Reset to default settings". This button will remove the user's custom settings inside this profile's object and reset it to defaults, prioritizing profile.defaults then defaults.json.
 
 ### "Apply to all profiles" button
 
