@@ -55,29 +55,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // reconstruct our list of profiles
         auto menuItems{ SettingsNav().MenuItems() };
-        unsigned int i = 0;
-        while (i < menuItems.Size())
+
+        for (auto i = menuItems.Size() - 1; i > 0; --i)
         {
             if (const auto navViewItem{ menuItems.GetAt(i).try_as<MUX::Controls::NavigationViewItem>() })
             {
-                const auto tag{ navViewItem.Tag() };
-                if (tag.try_as<Model::Profile>())
+                if (const auto tag{ navViewItem.Tag() })
                 {
-                    // remove NavViewItem pointing to a Profile
-                    menuItems.RemoveAt(i);
-                    continue;
-                }
-                else if (const auto stringTag{ tag.try_as<hstring>() })
-                {
-                    if (stringTag == addProfileTag)
+                    if (tag.try_as<Model::Profile>())
                     {
-                        // remove NavViewItem pointing to "Add Profile"
-                        menuItems.RemoveAt(i);
-                        continue;
+                        // remove NavViewItem pointing to a Profile
+                        navViewItem.Visibility(Visibility::Collapsed);
+                    }
+                    else if (const auto stringTag{ tag.try_as<hstring>() })
+                    {
+                        if (stringTag == globalProfileTag || stringTag == addProfileTag)
+                        {
+                            // remove NavViewItem pointing to "Add Profile" or "Base Layer"
+                            navViewItem.Visibility(Visibility::Collapsed);
+                        }
                     }
                 }
             }
-            ++i;
         }
         _InitializeProfilesList();
 
