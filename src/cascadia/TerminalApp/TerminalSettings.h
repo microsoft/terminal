@@ -120,7 +120,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, ForceFullRepaintRendering, false);
         GETSET_PROPERTY(bool, SoftwareRendering, false);
         GETSET_PROPERTY(bool, ForceVTInput, false);
-        GETSET_PROPERTY(bool, DisableProgressRing, false);
 
 #pragma warning(pop)
 

@@ -8,6 +8,7 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -155,7 +156,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
     }
@@ -472,7 +473,8 @@ namespace winrt::TerminalApp::implementation
             {
                 // The progress of the control changed, but not necessarily the progress of the tab.
                 // Set the tab's progress ring to the active pane's progress
-                if (!tab->GetActiveTerminalControl().Settings().DisableProgressRing())
+                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+                if (!settings.GlobalSettings().DisableProgressRing())
                 {
                     if (tab->GetActiveTerminalControl().TaskbarState() > 0)
                     {
