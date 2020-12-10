@@ -42,7 +42,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
     USES_RESOURCE(L"FailedToWriteToSettings"),
-    USES_RESOURCE(L"InvalidColorSchemeInCmd")
+    USES_RESOURCE(L"InvalidColorSchemeInCmd"),
+    USES_RESOURCE(L"InvalidSplitSize")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),

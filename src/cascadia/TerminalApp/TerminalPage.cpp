@@ -208,6 +208,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     page->_SplitPane(SplitState::Automatic,
                                      SplitType::Manual,
+                                     0.5f,
                                      nullptr);
                 }
                 else
@@ -559,6 +560,7 @@ namespace winrt::TerminalApp::implementation
                     {
                         page->_SplitPane(SplitState::Automatic,
                                          SplitType::Manual,
+                                         0.5f,
                                          newTerminalArgs);
                     }
                     else
@@ -808,7 +810,7 @@ namespace winrt::TerminalApp::implementation
             TermControl newControl{ settings, debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
-            newTabImpl->SplitPane(SplitState::Automatic, profileGuid, newControl);
+            newTabImpl->SplitPane(SplitState::Automatic, .5f, profileGuid, newControl);
         }
 
         // This kicks off TabView::SelectionChanged, in response to which
@@ -1574,6 +1576,7 @@ namespace winrt::TerminalApp::implementation
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(const SplitState splitType,
                                   const SplitType splitMode,
+                                  const float splitSize,
                                   const NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
@@ -1656,7 +1659,7 @@ namespace winrt::TerminalApp::implementation
 
             _UnZoomIfNeeded();
 
-            focusedTab->SplitPane(realSplitType, realGuid, newControl);
+            focusedTab->SplitPane(realSplitType, splitSize, realGuid, newControl);
         }
         CATCH_LOG();
     }

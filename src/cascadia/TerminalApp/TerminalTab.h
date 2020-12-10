@@ -31,7 +31,10 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget Scroll(const int delta);
 
         bool CanSplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
-        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                       const float splitSize,
+                       const GUID& profile,
+                       winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
 

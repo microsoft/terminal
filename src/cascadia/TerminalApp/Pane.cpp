@@ -1270,6 +1270,7 @@ bool Pane::CanSplit(SplitState splitType)
 // Note:
 // - This method is highly similar to Pane::PreCalculateAutoSplit
 std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                               // TODO: const float splitSize
                                                SplitState splitType,
                                                const winrt::Windows::Foundation::Size availableSpace) const
 {
@@ -1347,23 +1348,26 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
+                                                                    const float splitSize,
+                                                                    const GUID& profile,
+                                                                    const TermControl& control)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            return _firstChild->Split(splitType, profile, control);
+            return _firstChild->Split(splitType, splitSize, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            return _secondChild->Split(splitType, profile, control);
+            return _secondChild->Split(splitType, splitSize, profile, control);
         }
 
         return { nullptr, nullptr };
     }
 
-    return _Split(splitType, profile, control);
+    return _Split(splitType, splitSize, profile, control);
 }
 
 // Method Description:
@@ -1439,7 +1443,10 @@ bool Pane::_CanSplit(SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
+                                                                     const float splitSize,
+                                                                     const GUID& profile,
+                                                                     const TermControl& control)
 {
     if (splitType == SplitState::None)
     {
@@ -1464,7 +1471,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _gotFocusRevoker.revoke();
 
     _splitState = actualSplitType;
-    _desiredSplitPosition = Half;
+    _desiredSplitPosition = 1.0f - splitSize;
 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.

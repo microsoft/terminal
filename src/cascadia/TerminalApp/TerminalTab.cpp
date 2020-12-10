@@ -266,9 +266,12 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
+    void TerminalTab::SplitPane(SplitState splitType,
+                                const float splitSize,
+                                const GUID& profile,
+                                TermControl& control)
     {
-        auto [first, second] = _activePane->Split(splitType, profile, control);
+        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
         _activePane = first;
         _AttachEventHandlersToControl(control);
 

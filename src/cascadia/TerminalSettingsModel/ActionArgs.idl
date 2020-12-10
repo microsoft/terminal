@@ -130,6 +130,7 @@ namespace Microsoft.Terminal.Settings.Model
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
+        Double SplitSize { get; };
     };
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs

@@ -60,6 +60,7 @@ public:
 
     bool CanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                  const float splitSize,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
@@ -116,6 +117,7 @@ private:
 
     bool _CanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                   const float splitSize,
                                                                    const GUID& profile,
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
