@@ -29,7 +29,7 @@ namespace Microsoft::Console::Render
     class IRenderEngine
     {
     public:
-        enum GridLines
+        enum class GridLines
         {
             None = 0x0,
             Top = 0x1,
