@@ -536,7 +536,7 @@ namespace winrt::TerminalApp::implementation
                                             const ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        _UpdatePaletteWithInOrderTabs();
+        CommandPalette().SetTabs(_tabs, true);
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);

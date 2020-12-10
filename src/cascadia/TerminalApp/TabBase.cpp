@@ -138,7 +138,6 @@ namespace winrt::TerminalApp::implementation
         TabViewIndex(idx);
         TabViewNumTabs(numTabs);
         _EnableCloseMenuItems();
-        SwitchToTabCommand().Action().Args().as<SwitchToTabArgs>().TabIndex(idx);
     }
 
     void TabBase::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
