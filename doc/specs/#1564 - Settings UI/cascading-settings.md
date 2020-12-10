@@ -51,7 +51,7 @@ The proposals below will be used in combination with each other.
 
 ### 1: Text under a setting control
 
-This design renames the "Global" page under Profiles to "Base layer". Settings that override those in profile.defaults will get text under the control saying "Overrides Base layer.". Next to the titles of controls that override the base layer is a reset button.
+This design renames the "Global" page under Profiles to "Base layer". Settings that override those in profile.defaults will get text under the control saying "Overrides Base layer.". Next to the titles of controls that override the base layer is a reset button with a tooltip that says "Reset".
 
 ![Text inheritance](./inheritance-text.png)
 
@@ -134,6 +134,8 @@ These changes will not impact reliability.
 The partial parity with JSON route will give the settings UI a different compatibility from the JSON file itself. This is not necessarily a bad thing. The settings UI is intended to be a simplistic way for people to successfully edit their settings. If too many options are added to give it fully parity with JSON, it could compromise the simplistic benefit the settings UI provides.
 
 ### Performance, Power, and Efficiency
+
+These changes will not impact performance, power, nor efficiency.
 
 ## Potential Issues
 
