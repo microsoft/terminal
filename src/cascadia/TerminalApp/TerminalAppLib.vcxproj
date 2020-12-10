@@ -150,13 +150,10 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
-<<<<<<< HEAD
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
-=======
     <ClCompile Include="PaletteItem.cpp" />
->>>>>>> main
     <ClCompile Include="TabBase.cpp">
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
