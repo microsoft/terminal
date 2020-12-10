@@ -2793,7 +2793,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenSettingsUI()
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
-        if (!_switchToSettingsCommand)
+        if (!_settingsTab)
         {
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
             if (_hostingHwnd)
@@ -2809,11 +2809,10 @@ namespace winrt::TerminalApp::implementation
             });
 
             auto newTabImpl = winrt::make_self<SettingsTab>(sui);
-            _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
             // Add the new tab to the list of our tabs.
             _tabs.Append(*newTabImpl);
-            _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
+            _mruTabs.Append(*newTabImpl);
 
             newTabImpl->SetDispatch(*_actionDispatch);
 
@@ -2833,12 +2832,12 @@ namespace winrt::TerminalApp::implementation
             newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
                 if (auto page{ weakThis.get() })
                 {
-                    page->_switchToSettingsCommand = nullptr;
+                    page->_settingsTab = nullptr;
                     page->_RemoveOnCloseRoutine(tabViewItem, page);
                 }
             });
 
-            _switchToSettingsCommand = newTabImpl->SwitchToTabCommand();
+            _settingsTab = *newTabImpl;
 
             // This kicks off TabView::SelectionChanged, in response to which
             // we'll attach the terminal's Xaml control to the Xaml root.
@@ -2846,7 +2845,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            _actionDispatch->DoAction(_switchToSettingsCommand.Action());
+            _tabView.SelectedItem(_settingsTab.TabViewItem());
         }
     }
 
