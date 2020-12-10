@@ -185,9 +185,6 @@ namespace winrt::TerminalApp::implementation
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(_lastIconPath);
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
-
-            // Update SwitchToTab command's icon
-            SwitchToTabCommand().Icon(_lastIconPath);
         }
     }
 
@@ -225,9 +222,6 @@ namespace winrt::TerminalApp::implementation
             const auto activeTitle = _GetActiveTitle();
             // Bubble our current tab text to anyone who's listening for changes.
             Title(activeTitle);
-
-            // Update SwitchToTab command's name
-            SwitchToTabCommand().Name(Title());
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);

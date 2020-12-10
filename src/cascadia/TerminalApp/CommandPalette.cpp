@@ -2,6 +2,9 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "ActionPaletteItem.h"
+#include "TabPaletteItem.h"
+#include "CommandLinePaletteItem.h"
 #include "CommandPalette.h"
 
 #include <LibraryResources.h>
@@ -224,11 +227,8 @@ namespace winrt::TerminalApp::implementation
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
             const auto selectedCommand = _filteredActionsView().SelectedItem();
-            if (const auto filteredCommand = selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>())
-            {
-                const auto& actionAndArgs = filteredCommand.Command().Action();
-                _dispatch.DoAction(actionAndArgs);
-            }
+            const auto filteredCommand{ selectedCommand.try_as<winrt::TerminalApp::FilteredCommand>() };
+            _switchToTab(filteredCommand);
         }
     }
 
@@ -600,48 +600,56 @@ namespace winrt::TerminalApp::implementation
         {
             _dispatchCommandline(filteredCommand);
         }
+        else if (_currentMode == CommandPaletteMode::TabSwitchMode || _currentMode == CommandPaletteMode::TabSearchMode)
+        {
+            _switchToTab(filteredCommand);
+            _close();
+        }
         else if (filteredCommand)
         {
-            if (filteredCommand.Command().HasNestedCommands())
+            if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
             {
-                // If this Command had subcommands, then don't dispatch the
-                // action. Instead, display a new list of commands for the user
-                // to pick from.
-                _nestedActionStack.Append(filteredCommand);
-                ParentCommandName(filteredCommand.Command().Name());
-                _currentNestedCommands.Clear();
-                for (const auto& nameAndCommand : filteredCommand.Command().NestedCommands())
+                if (actionPaletteItem.Command().HasNestedCommands())
                 {
-                    const auto action = nameAndCommand.Value();
-                    auto nestedFilteredCommand{ winrt::make<FilteredCommand>(action) };
-                    _currentNestedCommands.Append(nestedFilteredCommand);
+                    // If this Command had subcommands, then don't dispatch the
+                    // action. Instead, display a new list of commands for the user
+                    // to pick from.
+                    _nestedActionStack.Append(filteredCommand);
+                    ParentCommandName(actionPaletteItem.Command().Name());
+                    _currentNestedCommands.Clear();
+                    for (const auto& nameAndCommand : actionPaletteItem.Command().NestedCommands())
+                    {
+                        const auto action = nameAndCommand.Value();
+                        auto nestedActionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+                        auto nestedFilteredCommand{ winrt::make<FilteredCommand>(nestedActionPaletteItem) };
+                        _currentNestedCommands.Append(nestedFilteredCommand);
+                    }
+
+                    _updateUIForStackChange();
                 }
+                else
+                {
+                    // First stash the search text length, because _close will clear this.
+                    const auto searchTextLength = _searchBox().Text().size();
 
-                _updateUIForStackChange();
-            }
-            else
-            {
-                // First stash the search text length, because _close will clear this.
-                const auto searchTextLength = _searchBox().Text().size();
+                    // An action from the root command list has depth=0
+                    const auto nestedCommandDepth = _nestedActionStack.Size();
 
-                // An action from the root command list has depth=0
-                const auto nestedCommandDepth = _nestedActionStack.Size();
+                    // Close before we dispatch so that actions that open the command
+                    // palette like the Tab Switcher will be able to have the last laugh.
+                    _close();
 
-                // Close before we dispatch so that actions that open the command
-                // palette like the Tab Switcher will be able to have the last laugh.
-                _close();
+                    _DispatchCommandRequestedHandlers(*this, actionPaletteItem.Command());
 
-                const auto actionAndArgs = filteredCommand.Command().Action();
-                _dispatch.DoAction(actionAndArgs);
-
-                TraceLoggingWrite(
-                    g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-                    "CommandPaletteDispatchedAction",
-                    TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
-                    TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
-                    TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                    TraceLoggingWrite(
+                        g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                        "CommandPaletteDispatchedAction",
+                        TraceLoggingDescription("Event emitted when the user selects an action in the Command Palette"),
+                        TraceLoggingUInt32(searchTextLength, "SearchTextLength", "Number of characters in the search string"),
+                        TraceLoggingUInt32(nestedCommandDepth, "NestedCommandDepth", "the depth in the tree of commands for the dispatched action"),
+                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                }
             }
         }
     }
@@ -671,6 +679,23 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Dispatch switch to tab action.
+    // Arguments:
+    // - filteredCommand - Selected filtered command - might be null
+    // Return Value:
+    // - <none>
+    void CommandPalette::_switchToTab(winrt::TerminalApp::FilteredCommand const& filteredCommand)
+    {
+        if (filteredCommand)
+        {
+            if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>() })
+            {
+                _SwitchToTabRequestedHandlers(*this, tabPaletteItem.Tab());
+            }
+        }
+    }
+
+    // Method Description:
     // - Dispatch the current search text as a ExecuteCommandline action.
     // Arguments:
     // - filteredCommand - Selected filtered command - might be null
@@ -694,8 +719,9 @@ namespace winrt::TerminalApp::implementation
                 TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                 TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-            if (_dispatch.DoAction(filteredCommand.value().Command().Action()))
+            if (const auto commandLinePaletteItem{ filteredCommand.value().Item().try_as<winrt::TerminalApp::CommandLinePaletteItem>() })
             {
+                _CommandLineExecutionRequestedHandlers(*this, commandLinePaletteItem.CommandLine());
                 _close();
             }
         }
@@ -708,13 +734,9 @@ namespace winrt::TerminalApp::implementation
             return std::nullopt;
         }
 
-        // Build the ExecuteCommandline action from the values we've parsed on the commandline.
-        ExecuteCommandlineArgs args{ commandLine };
-        ActionAndArgs executeActionAndArgs{ ShortcutAction::ExecuteCommandline, args };
-        Command command{};
-        command.Action(executeActionAndArgs);
-        command.Name(commandLine);
-        return winrt::make<FilteredCommand>(command);
+        winrt::hstring cl{ commandLine };
+        auto commandLinePaletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(cl) };
+        return winrt::make<FilteredCommand>(commandLinePaletteItem);
     }
 
     // Method Description:
@@ -808,13 +830,27 @@ namespace winrt::TerminalApp::implementation
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
-        _populateFilteredActions(_allCommands, actions);
+        _allCommands.Clear();
+        for (const auto& action : actions)
+        {
+            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+            auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
+            _allCommands.Append(filteredCommand);
+        }
+
         _updateFilteredActions();
     }
 
-    void CommandPalette::SetTabActions(Collections::IVector<Command> const& tabs, const bool clearList)
+    void CommandPalette::SetTabs(Collections::IVector<TabBase> const& tabs, const bool clearList)
     {
-        _populateFilteredActions(_tabActions, tabs);
+        _tabActions.Clear();
+        for (const auto& tab : tabs)
+        {
+            auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(tab) };
+            auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
+            _tabActions.Append(filteredCommand);
+        }
+
         // The smooth remove/add animations that happen during
         // UpdateFilteredActions don't work very well with changing the tab
         // order, because of the sheer amount of remove/adds. So, let's just
@@ -827,24 +863,6 @@ namespace winrt::TerminalApp::implementation
             _filteredActions.Clear();
         }
         _updateFilteredActions();
-    }
-
-    // Method Description:
-    // - This helper function is responsible to update a collection of filtered commands (e.g., tab switcher commands)
-    // with the new values
-    // Arguments:
-    // - vectorToPopulate - the vector of filtered commands to populate
-    // - actions - the raw commands to use
-    // Return Value:
-    // - <none>
-    void CommandPalette::_populateFilteredActions(Collections::IVector<winrt::TerminalApp::FilteredCommand> const& vectorToPopulate, Collections::IVector<Command> const& actions)
-    {
-        vectorToPopulate.Clear();
-        for (const auto& action : actions)
-        {
-            auto filteredCommand{ winrt::make<FilteredCommand>(action) };
-            vectorToPopulate.Append(filteredCommand);
-        }
     }
 
     void CommandPalette::EnableCommandPaletteMode(CommandPaletteLaunchMode const launchMode)
@@ -962,7 +980,7 @@ namespace winrt::TerminalApp::implementation
         {
             for (uint32_t j = i; j < _filteredActions.Size(); j++)
             {
-                if (_filteredActions.GetAt(j).Command() == actions[i].Command())
+                if (_filteredActions.GetAt(j).Item() == actions[i].Item())
                 {
                     for (uint32_t k = i; k < j; k++)
                     {
@@ -972,7 +990,7 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            if (_filteredActions.GetAt(i).Command() != actions[i].Command())
+            if (_filteredActions.GetAt(i).Item() != actions[i].Item())
             {
                 _filteredActions.InsertAt(i, actions[i]);
             }
@@ -989,11 +1007,6 @@ namespace winrt::TerminalApp::implementation
         {
             _filteredActions.Append(actions[_filteredActions.Size()]);
         }
-    }
-
-    void CommandPalette::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
-    {
-        _dispatch = dispatch;
     }
 
     // Method Description:
