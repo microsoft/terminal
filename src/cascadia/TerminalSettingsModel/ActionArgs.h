@@ -379,6 +379,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
+        SplitPaneArgs(SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitStyle{ style },
+            _SplitSize{ size },
+            _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _TerminalArgs{ terminalArgs } {};

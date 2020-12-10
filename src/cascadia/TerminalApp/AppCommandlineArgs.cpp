@@ -247,6 +247,10 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                                                                      _splitVertical,
                                                                      RS_A(L"CmdSplitPaneVerticalArgDesc"));
         subcommand._verticalOption->excludes(subcommand._horizontalOption);
+        auto* sizeOpt = subcommand.subcommand->add_option("-s,--size",
+                                                          _splitPaneSize,
+                                                          RS_A(L"CmdSplitPaneSizeArgDesc"));
+        sizeOpt->check(CLI::Range(0.01f, 0.99f));
 
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -274,7 +278,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                     style = SplitState::Vertical;
                 }
             }
-            SplitPaneArgs args{ style, terminalArgs };
+            SplitPaneArgs args{ style, _splitPaneSize, terminalArgs };
             splitPaneActionAndArgs.Args(args);
             _startupActions.push_back(splitPaneActionAndArgs);
         });

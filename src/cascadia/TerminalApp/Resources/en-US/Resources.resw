@@ -272,6 +272,9 @@
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
   </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Specify the size as a percentage of the parent pane. Valid values are between (0,1), exclusive.</value>
+  </data>
   <data name="CmdNewTabDesc" xml:space="preserve">
     <value>Create a new tab</value>
   </data>
