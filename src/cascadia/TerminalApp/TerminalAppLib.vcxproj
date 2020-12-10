@@ -228,11 +228,8 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
-<<<<<<< HEAD
     <Midl Include="SettingsTab.idl" />
-=======
     <Midl Include="PaletteItem.idl" />
->>>>>>> main
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
