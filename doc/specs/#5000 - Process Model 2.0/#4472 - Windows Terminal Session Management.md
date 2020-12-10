@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-10-30
-last updated: 2020-12-09
+last updated: 2020-12-10
 issue id: #4472
 ---
 
@@ -148,7 +148,7 @@ command:
 #### `--window,-w window-id`
 Run these commands in the given Windows Terminal session. This enables opening
 new tabs, splits, etc. in already running Windows Terminal windows.
-* If `window-id` is `0`, run the given commands in _the current window_
+* If `window-id` is `0`, run the given commands in _the current window_.
 * If `window-id` is a negative number, or the reserved name `new`, run the
   commands in a _new_ Terminal window.
 * If `window-id` is the ID or name of an existing window, then run the
@@ -156,7 +156,7 @@ new tabs, splits, etc. in already running Windows Terminal windows.
 * If `window-id` is _not_ the ID or name of an existing window, create a new
   window. That window will be assigned the ID or name provided in the
   commandline. The provided subcommands will be run in that new window.
-* If `window-id` is omitted, then obey the value of `glomToLastWindow` when
+* If `window-id` is omitted, then obey the value of `windowingBehavior` when
   determining which window to run the command in.
 
 _Whenever_ `wt.exe` is started, it must _always_ pass the provided commandline
@@ -181,21 +181,30 @@ like `sleep 10 ; wt -w 0 <commands>`, then the user could easily focus another
 WT window during the sleep, which would cause the MRU window to not be the same
 as the window executing the command.
 
-I'm not sure that there is a better solution for the `-w 0` scenario other than
+To solve this issue, we'll  other than
 attempting to use the `WT_SESSION` environment variable. If a `wt.exe` process
 is spawned and that's in it's environment variables, it could try and ask the
 monarch for the peasant who's hosting the session corresponding to that GUID.
 This is more of a theoretical solution than anything else.
 
-In Single-Instance mode, running `wt -w 0` outside a WT window will still cause
-the commandline to glom to the existing single terminal instance, if there is
-one.
+In the past we've been reluctant to rely too heavily on `WT_SESSION`. However,
+an environment variable does seem to be the only reliable way to be confident
+where the window was created from. We could introduce another environment
+variable instead - `WT_WINDOW_ID`. That would allow us to shortcut the session
+ID lookup. However, I worry about exposing the window ID as an environment
+variable. If we do that, users will inevetably use that instead of the `wt -0`
+alias, which should take care of the work for them.
+
+Both solutions are prone to the user changing the value of the variable to some
+garbage value. If they do that, this lookup will most certainly not work as
+expected. Using the session ID (a GUID) instead of the window ID (an int) makes
+it less likely that they guess the ID of an existing instance.
 
 #### Running commands in a new window:`wt --window -1` / `wt --window new`
 
 If the user passes a negative number, or the reserved name `new` to the
 `--window` parameter, then we will always create a new window for that
-commandline, regardless of the value of `glomToLastWindow`. This will allow
+commandline, regardless of the value of `windowingBehavior`. This will allow
 users to do something like `wt -w -1 new-tab` to _always_ create a new window.
 
 #### `--window` in subcommands
@@ -241,8 +250,24 @@ address a window in addition to the ID.
 
 Names can be provided on the commandline, in the original commandline. For
 example, `wt -w foo nt` would name the new window "foo". Names can also be set
-with a new action, `NameWindow`. `name-window` could also be used as a
-subcommand. For example, `wt -w 4 name-window bar` would name window 4 "bar".
+with a new action, `NameWindow`<sup>[[3]](#footnote-3)</sup>. `name-window`
+could also be used as a subcommand. For example, `wt -w 4 name-window bar` would
+name window 4 "bar".
+
+To keep identities mentally distinct, we will disallow names that are integers
+(positive or negative). This will prevent users from renaming a window to `2`,
+then having `wt -w 2` be ambiguous as to which window it refers to.
+
+Names must also be unique. If a user attempts to set the name of the window to
+an already-used name, we'll need to ignore the name change. We could also
+display a "toast" or some other type of low-impact message to the user. That
+message would have some text like: "Unable to rename window. Another window with
+that name already exists".
+
+The Terminal will reserve the name `new`. It will also reserve any names
+starting with the character `_`. The user will not be allowed to set the window
+name to any of these reserved names. Reserving `_*` allows us to add other
+keywords in the future, without introducing a breaking change.
 
 ## UI/UX Design
 
@@ -277,6 +302,8 @@ applications.
 
 There is no expected accessibility impact from this feature. Each window will
 handle UIA access as it normally does.
+
+In the future, we could consider exposing the window IDs and/or names via UIA.
 
 </td>
 </tr>
@@ -355,11 +382,6 @@ and unelevated `wt` instances will always remain separate. The different
 elevation levels will maintain separate lists of window IDs. If the user is
 running both an elevated and unelevated window, then there will be two monarchs.
 One elevated, and the other unelevated.
-
-This does mean that single instance mode won't _really_ work for users in
-mixed-elevation scenarios. There'll be a monarch for the unelevated window, and
-a separate monarch for the elevated one. This is acceptable, given the
-assumption that windows cannot mix elevation levels.
 
 There will also be some edge cases when handling the commandline that will need
 special care. Say the user wanted to open a new tab in the elevated window, from
@@ -446,7 +468,8 @@ This is a list of actionable tasks generated as described by this spec:
 * [ ] Add a `NameWindow` action, subcommand that allows the user to set the name
   for the window.
 * [ ] Add an action that will cause all windows to breifly display a overlay
-  with the current window ID and name
+  with the current window ID and name. This would be something like the
+  "identify" feature of the Windows "Display" settings.
 
 ## Future considerations
 
@@ -479,10 +502,12 @@ This is a list of actionable tasks generated as described by this spec:
   is most frequently requested in regards to quake mode. We're leaving the
   implementation of true single instance mode to that spec.
 * It was suggested in review that we could auto-generate names for windows, from
-  some list of words. Prior art could be the URLS for gyfcat.com, which use
-  three random words. I believe `docker` also assigns names from a random
-  selection of `adjective`+`name`. This is an interesting idea, and something
-  that could be pursued in the future.
+  some list of words. Prior art could be the URLS for gfycat.com or
+  what3words.com, which use three random words. I believe `docker` also assigns
+  names from a random selection of `adjective`+`name`. This is an interesting
+  idea, and something that could be pursued in the future.
+    - This would be a massive pain to localize though, hence why this is left as
+      a future consideration.
 * We will _need_ to provide a commandline tool to list windows and their IDs &
   names. We're thinking a list of windows, their IDs, names, PIDs, and the title
   of the window.
@@ -502,6 +527,13 @@ set of features, and later used to control tear out as well.
 <a name="footnote-2"><a>[2]: Since we're reserving the keyword `new` to mean "a
 new window", then we could also reserve `last` or `current` as an alias for "the
 current window".
+
+<a name="footnote-3"><a>[3]: We currently have two actions for renaming _tabs_
+in the Terminal: `renameTab(name)`, and `openTabRenamer()`. We will likely
+similarly need `nameWindow(name)` and `openWindowNamer()`. `openWindowNamer`
+could display a dialog to allow the user to rename the current window at
+runtime.
+
 
 ## Resources
 
