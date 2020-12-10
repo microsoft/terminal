@@ -44,7 +44,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabActions{ winrt::single_threaded_vector<Command>() },
+        _mruTabs{ winrt::single_threaded_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{}
     {
@@ -227,7 +227,6 @@ namespace winrt::TerminalApp::implementation
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
 
-        CommandPalette().SetDispatch(*_actionDispatch);
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active
         // control.
@@ -237,6 +236,9 @@ namespace winrt::TerminalApp::implementation
                 _CommandPaletteClosed(nullptr, nullptr);
             }
         });
+        CommandPalette().DispatchCommandRequested({ this, &TerminalPage::_OnDispatchCommandRequested });
+        CommandPalette().CommandLineExecutionRequested({ this, &TerminalPage::_OnCommandLineExecutionRequested });
+        CommandPalette().SwitchToTabRequested({ this, &TerminalPage::_OnSwitchToTabRequested });
 
         // Settings AllowDependentAnimations will affect whether animations are
         // enabled application-wide, so we don't need to check it each time we
@@ -251,6 +253,49 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+    }
+
+    // Method Description:
+    // - This method is called once command palette action was chosen for dispatching
+    //   We'll use this event to dispatch this command.
+    // Arguments:
+    // - command - command to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnDispatchCommandRequested(const IInspectable& /*sender*/, const Microsoft::Terminal::Settings::Model::Command& command)
+    {
+        const auto& actionAndArgs = command.Action();
+        _actionDispatch->DoAction(actionAndArgs);
+    }
+
+    // Method Description:
+    // - This method is called once command palette command line was chosen for execution
+    //   We'll use this event to create a command line execution command and dispatch it.
+    // Arguments:
+    // - command - command to dispatch
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnCommandLineExecutionRequested(const IInspectable& /*sender*/, const winrt::hstring& commandLine)
+    {
+        ExecuteCommandlineArgs args{ commandLine };
+        ActionAndArgs actionAndArgs{ ShortcutAction::ExecuteCommandline, args };
+        _actionDispatch->DoAction(actionAndArgs);
+    }
+
+    // Method Description:
+    // - This method is called once a tab was selected in tab switcher
+    //   We'll use this event to select the relevant tab
+    // Arguments:
+    // - tab - tab to select
+    // Return Value:
+    // - <none>
+    void TerminalPage::_OnSwitchToTabRequested(const IInspectable& /*sender*/, const winrt::TerminalApp::TabBase& tab)
+    {
+        uint32_t index{};
+        if (_tabs.IndexOf(tab, index))
+        {
+            _SelectTab(index);
+        }
     }
 
     // Method Description:
@@ -586,6 +631,21 @@ namespace winrt::TerminalApp::implementation
             newTabFlyout.Items().Append(aboutFlyout);
         }
 
+        // Before opening the fly-out set focus on the current tab
+        // so no matter how fly-out is closed later on the focus will return to some tab.
+        // We cannot do it on closing because if the window loses focus (alt+tab)
+        // the closing event is not fired.
+        // It is important to set the focus on the tab
+        // Since the previous focus location might be discarded in the background,
+        // e.g., the command palette will be dismissed by the menu,
+        // and then closing the fly-out will move the focus to wrong location.
+        newTabFlyout.Opening([this](auto&&, auto&&) {
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
+        });
         _newTabButton.Flyout(newTabFlyout);
     }
 
@@ -680,11 +740,10 @@ namespace winrt::TerminalApp::implementation
         TermControl term{ settings, connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
-        _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
         // Add the new tab to the list of our tabs.
         _tabs.Append(*newTabImpl);
-        _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
+        _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
 
@@ -1064,27 +1123,14 @@ namespace winrt::TerminalApp::implementation
         tab.Shutdown();
 
         uint32_t mruIndex;
-        if (_mruTabActions.IndexOf(_tabs.GetAt(tabIndex).SwitchToTabCommand(), mruIndex))
+        if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), mruIndex))
         {
-            _mruTabActions.RemoveAt(mruIndex);
+            _mruTabs.RemoveAt(mruIndex);
         }
 
         _tabs.RemoveAt(tabIndex);
         _tabView.TabItems().RemoveAt(tabIndex);
         _UpdateTabIndices();
-
-        // If the tab switcher is currently open, update it to reflect the
-        // current list of tabs.
-        const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-        const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
-        if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
-        {
-            CommandPalette().SetTabActions(_mruTabActions, false);
-        }
-        else if (commandPaletteIsVisible)
-        {
-            _UpdatePaletteWithInOrderTabs();
-        }
 
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
@@ -1222,19 +1268,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Updates the command palette (tab switcher) with a list of actions
-    //   reflecting the current in-order list of tabs.
-    void TerminalPage::_UpdatePaletteWithInOrderTabs()
-    {
-        auto tabCommands = winrt::single_threaded_vector<Command>();
-        for (const auto& tab : _tabs)
-        {
-            tabCommands.Append(tab.SwitchToTabCommand());
-        }
-        CommandPalette().SetTabActions(tabCommands, true);
-    }
-
-    // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
@@ -1271,7 +1304,7 @@ namespace winrt::TerminalApp::implementation
             // In this case, our focused tab index (in the MRU ordering) is
             // always 0. So, going next should go to index 1, and going prev
             // should wrap to the end.
-            uint32_t tabCount = _mruTabActions.Size();
+            uint32_t tabCount = _mruTabs.Size();
             newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
         }
 
@@ -1279,16 +1312,7 @@ namespace winrt::TerminalApp::implementation
 
         if (useTabSwitcher)
         {
-            if (useInOrderTabIndex)
-            {
-                // Set up the list of in-order tabs
-                _UpdatePaletteWithInOrderTabs();
-            }
-            else
-            {
-                // Set up the list of MRU tabs
-                CommandPalette().SetTabActions(_mruTabActions, true);
-            }
+            CommandPalette().SetTabs(useInOrderTabIndex ? _tabs : _mruTabs, true);
 
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
@@ -2115,6 +2139,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        CommandPalette().Visibility(Visibility::Collapsed);
         _UpdateTabView();
     }
 
@@ -2705,11 +2730,16 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CommandPaletteClosed(const IInspectable& /*sender*/,
                                              const RoutedEventArgs& /*eventArgs*/)
     {
-        // Return focus to the active control
-        if (auto index{ _GetFocusedTabIndex() })
+        // We don't want to set focus on the tab if fly-out is open as it will be closed
+        // TODO GH#5400: consider checking we are not in the opening state, by hooking both Opening and Open events
+        if (!_newTabButton.Flyout().IsOpen())
         {
-            _tabs.GetAt(*index).Focus(FocusState::Programmatic);
-            _UpdateMRUTab(index.value());
+            // Return focus to the active control
+            if (auto index{ _GetFocusedTabIndex() })
+            {
+                _tabs.GetAt(*index).Focus(FocusState::Programmatic);
+                _UpdateMRUTab(index.value());
+            }
         }
     }
 
@@ -2763,7 +2793,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenSettingsUI()
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
-        if (!_switchToSettingsCommand)
+        if (!_settingsTab)
         {
             winrt::Microsoft::Terminal::Settings::Editor::MainPage sui{ _settings };
             if (_hostingHwnd)
@@ -2779,11 +2809,10 @@ namespace winrt::TerminalApp::implementation
             });
 
             auto newTabImpl = winrt::make_self<SettingsTab>(sui);
-            _MakeSwitchToTabCommand(*newTabImpl, _tabs.Size());
 
             // Add the new tab to the list of our tabs.
             _tabs.Append(*newTabImpl);
-            _mruTabActions.Append(newTabImpl->SwitchToTabCommand());
+            _mruTabs.Append(*newTabImpl);
 
             newTabImpl->SetDispatch(*_actionDispatch);
 
@@ -2803,12 +2832,12 @@ namespace winrt::TerminalApp::implementation
             newTabImpl->Closed([tabViewItem, weakThis{ get_weak() }](auto&& /*s*/, auto&& /*e*/) {
                 if (auto page{ weakThis.get() })
                 {
-                    page->_switchToSettingsCommand = nullptr;
+                    page->_settingsTab = nullptr;
                     page->_RemoveOnCloseRoutine(tabViewItem, page);
                 }
             });
 
-            _switchToSettingsCommand = newTabImpl->SwitchToTabCommand();
+            _settingsTab = *newTabImpl;
 
             // This kicks off TabView::SelectionChanged, in response to which
             // we'll attach the terminal's Xaml control to the Xaml root.
@@ -2816,7 +2845,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            _actionDispatch->DoAction(_switchToSettingsCommand.Action());
+            _tabView.SelectedItem(_settingsTab.TabViewItem());
         }
     }
 
@@ -2843,27 +2872,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Initializes a SwitchToTab command object for this Tab instance.
-    //   This should be done before the tab is added to the _tabs vector so that
-    //   controls like the CmdPal that observe the vector changes can always expect
-    //   a SwitchToTab command to be available.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_MakeSwitchToTabCommand(const TerminalApp::TabBase& tab, const uint32_t index)
-    {
-        SwitchToTabArgs args{ index };
-        ActionAndArgs focusTabAction{ ShortcutAction::SwitchToTab, args };
-
-        Command command;
-        command.Action(focusTabAction);
-        command.Name(tab.Title());
-        command.Icon(tab.Icon());
-
-        tab.SwitchToTabCommand(command);
-    }
-
     // Method Description:
     // - Computes the delta for scrolling the tab's viewport.
     // Arguments:
@@ -2906,22 +2914,13 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateMRUTab(const uint32_t index)
     {
         uint32_t mruIndex;
-        auto command = _tabs.GetAt(index).SwitchToTabCommand();
-        if (_mruTabActions.IndexOf(command, mruIndex))
+        const auto tab = _tabs.GetAt(index);
+        if (_mruTabs.IndexOf(tab, mruIndex))
         {
             if (mruIndex > 0)
             {
-                _mruTabActions.RemoveAt(mruIndex);
-                _mruTabActions.InsertAt(0, command);
-
-                // If the tab switcher is currently open, AND we're using it in
-                // MRU mode, then update it to reflect the current list of tabs.
-                const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-                const bool commandPaletteIsVisible = CommandPalette().Visibility() == Visibility::Visible;
-                if (tabSwitchMode == TabSwitcherMode::MostRecentlyUsed && commandPaletteIsVisible)
-                {
-                    CommandPalette().SetTabActions(_mruTabActions, false);
-                }
+                _mruTabs.RemoveAt(mruIndex);
+                _mruTabs.InsertAt(0, tab);
             }
         }
     }
