@@ -46,6 +46,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
     }
 
+    // Method Description:
+    // - Update the Settings UI with a new CascadiaSettings to bind to
+    // Arguments:
+    // - settings - the new settings source
+    // Return value:
+    // - <none>
     fire_and_forget MainPage::UpdateSettings(Model::CascadiaSettings settings)
     {
         _settingsSource = settings;
@@ -53,9 +59,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        // reconstruct our list of profiles
+        // "remove" all profile-related NavViewItems
+        // LOAD-BEARING: use Visibility here, instead of menuItems.Remove().
+        //               Remove() works fine on NavViewItems with an hstring tag,
+        //               but causes an out-of-bounds error with Profile tagged items.
+        //               The cause of this error is unknown.
         auto menuItems{ SettingsNav().MenuItems() };
-
         for (auto i = menuItems.Size() - 1; i > 0; --i)
         {
             if (const auto navViewItem{ menuItems.GetAt(i).try_as<MUX::Controls::NavigationViewItem>() })
@@ -64,14 +73,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (tag.try_as<Model::Profile>())
                     {
-                        // remove NavViewItem pointing to a Profile
+                        // hide NavViewItem pointing to a Profile
                         navViewItem.Visibility(Visibility::Collapsed);
                     }
                     else if (const auto stringTag{ tag.try_as<hstring>() })
                     {
                         if (stringTag == globalProfileTag || stringTag == addProfileTag)
                         {
-                            // remove NavViewItem pointing to "Add Profile" or "Base Layer"
+                            // hide NavViewItem pointing to "Add Profile" or "Base Layer"
                             navViewItem.Visibility(Visibility::Collapsed);
                         }
                     }
