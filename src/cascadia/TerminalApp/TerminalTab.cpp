@@ -473,30 +473,28 @@ namespace winrt::TerminalApp::implementation
             {
                 // The progress of the control changed, but not necessarily the progress of the tab.
                 // Set the tab's progress ring to the active pane's progress
-                const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-                if (!settings.GlobalSettings().DisableProgressRing())
+                if (tab->GetActiveTerminalControl().TaskbarState() > 0)
                 {
-                    if (tab->GetActiveTerminalControl().TaskbarState() > 0)
+                    if (tab->GetActiveTerminalControl().TaskbarState() == 3)
                     {
-                        if (tab->GetActiveTerminalControl().TaskbarState() == 3)
-                        {
-                            // 3 is the indeterminate state, set the progress ring as such
-                            tab->_headerControl.IsProgressRingIndeterminate(true);
-                        }
-                        else
-                        {
-                            // any non-indeterminate state has a value, set the progress ring as such
-                            tab->_headerControl.IsProgressRingIndeterminate(false);
-                            tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
-                        }
-                        tab->HideIcon(true);
-                        tab->_headerControl.IsProgressRingActive(true);
+                        // 3 is the indeterminate state, set the progress ring as such
+                        tab->_headerControl.IsProgressRingIndeterminate(true);
                     }
                     else
                     {
-                        tab->HideIcon(false);
-                        tab->_headerControl.IsProgressRingActive(false);
+                        // any non-indeterminate state has a value, set the progress ring as such
+                        tab->_headerControl.IsProgressRingIndeterminate(false);
+                        tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
                     }
+                    // Hide the tab icon (the progress ring is placed over it)
+                    tab->HideIcon(true);
+                    tab->_headerControl.IsProgressRingActive(true);
+                }
+                else
+                {
+                    // Show the tab icon
+                    tab->HideIcon(false);
+                    tab->_headerControl.IsProgressRingActive(false);
                 }
             }
         });

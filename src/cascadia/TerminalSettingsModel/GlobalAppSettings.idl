@@ -135,10 +135,6 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearDisableAnimations();
         Boolean DisableAnimations;
 
-        Boolean HasDisableProgressRing();
-        void ClearDisableProgressRing();
-        Boolean DisableProgressRing;
-
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 

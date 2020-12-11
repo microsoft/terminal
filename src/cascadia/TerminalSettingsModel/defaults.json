@@ -26,7 +26,6 @@
     "theme": "system",
     "snapToGridOnResize": true,
     "disableAnimations": false,
-    "disableProgressRing": false,
 
     "profiles":
     [
