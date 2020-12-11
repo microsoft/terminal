@@ -1136,12 +1136,15 @@ namespace winrt::TerminalApp::implementation
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-        else if (_isFullscreen || _rearranging)
+        else if (_isFullscreen || _rearranging || _isInFocusMode)
         {
             // GH#5799 - If we're fullscreen, the TabView isn't visible. If it's
             // not Visible, it's _not_ going to raise a SelectionChanged event,
             // which is what we usually use to focus another tab. Instead, we'll
             // have to do it manually here.
+            //
+            // GH#7916 - Similarly, TabView isn't visible in focus mode.
+            // We need to focus another tab manually from the same considerations as above.
             //
             // GH#5559 Similarly, we suppress _OnTabItemsChanged events during a
             // rearrange, so if a tab is closed while we're rearranging tabs, do
