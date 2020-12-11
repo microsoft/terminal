@@ -15,7 +15,7 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

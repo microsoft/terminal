@@ -52,7 +52,20 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
+
+#if defined(WT_BRANDING_RELEASE)
 IDI_APPICON             ICON                    "..\\..\\..\\res\\terminal.ico"
+IDI_APPICON_HC_BLACK    ICON                    "..\\..\\..\\res\\terminal\\images\\terminal_contrast-black.ico"
+IDI_APPICON_HC_WHITE    ICON                    "..\\..\\..\\res\\terminal\\images\\terminal_contrast-white.ico"
+#elif defined(WT_BRANDING_PREVIEW)
+IDI_APPICON             ICON                    "..\\..\\..\\res\\terminal\\images-Pre\\terminal.ico"
+IDI_APPICON_HC_BLACK    ICON                    "..\\..\\..\\res\\terminal\\images-Pre\\terminal_contrast-black.ico"
+IDI_APPICON_HC_WHITE    ICON                    "..\\..\\..\\res\\terminal\\images-Pre\\terminal_contrast-white.ico"
+#else
+IDI_APPICON             ICON                    "..\\..\\..\\res\\terminal\\images-Dev\\terminal.ico"
+IDI_APPICON_HC_BLACK    ICON                    "..\\..\\..\\res\\terminal\\images-Dev\\terminal_contrast-black.ico"
+IDI_APPICON_HC_WHITE    ICON                    "..\\..\\..\\res\\terminal\\images-Dev\\terminal_contrast-white.ico"
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

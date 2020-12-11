@@ -10,6 +10,8 @@
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
+
 static constexpr auto maxRetriesForRenderEngine = 3;
 // The renderer will wait this number of milliseconds * how many tries have elapsed before trying again.
 static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
@@ -693,6 +695,8 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
         // Retrieve the first color.
         auto color = it->TextAttr();
+        // Retrieve the first pattern id
+        auto patternIds = _pData->GetPatternId(target);
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -705,6 +709,9 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             // when a run changes, but we will still need to know this color at the bottom
             // when we go to draw gridlines for the length of the run.
             const auto currentRunColor = color;
+
+            // Hold onto the current pattern id as well
+            const auto currentPatternId = patternIds;
 
             // Update the drawing brushes with our color.
             THROW_IF_FAILED(_UpdateDrawingBrushes(pEngine, currentRunColor, false));
@@ -731,16 +738,20 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
 
             // This inner loop will accumulate clusters until the color changes.
             // When the color changes, it will save the new color off and break.
+            // We also accumulate clusters according to regex patterns
             do
             {
-                if (color != it->TextAttr())
+                COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
+                const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
+                if (color != it->TextAttr() || patternIds != thisPointPatterns)
                 {
                     auto newAttr{ it->TextAttr() };
                     // foreground doesn't matter for runs of spaces (!)
                     // if we trick it . . . we call Paint far fewer times for cmatrix
-                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert))
+                    if (!_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, globalInvert) || patternIds != thisPointPatterns)
                     {
                         color = newAttr;
+                        patternIds = thisPointPatterns;
                         break; // vend this run
                     }
                 }
@@ -753,23 +764,13 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // (a.k.a. the right half of a two column character), then we need some special handling.
                 if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
                 {
-                    // If we have room to move to the left to start drawing...
-                    if (screenPoint.X > 0)
-                    {
-                        // Move left to the one so the whole character can be struck correctly.
-                        --screenPoint.X;
-                        // And tell the next function to trim off the left half of it.
-                        trimLeft = true;
-                        // And add one to the number of columns we expect it to take as we insert it.
-                        columnCount = it->Columns() + 1;
-                        _clusterBuffer.emplace_back(it->Chars(), columnCount);
-                    }
-                    else
-                    {
-                        // If we didn't have room, move to the right one and just skip this one.
-                        screenPoint.X++;
-                        continue;
-                    }
+                    // Move left to the one so the whole character can be struck correctly.
+                    --screenPoint.X;
+                    // And tell the next function to trim off the left half of it.
+                    trimLeft = true;
+                    // And add one to the number of columns we expect it to take as we insert it.
+                    columnCount = it->Columns() + 1;
+                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
                 }
                 // Otherwise if it's not a special case, just insert it as is.
                 else
@@ -784,7 +785,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Advance the cluster and column counts.
-                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                it += std::max<size_t>(it->Columns(), 1); // prevent infinite loop for no visible columns
                 cols += columnCount;
 
             } while (it);
@@ -900,6 +901,23 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
 {
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
+
+    // For now, we dash underline patterns and switch to regular underline on hover
+    // Since we're only rendering pattern links on *hover*, there's no point in checking
+    // the pattern range if we aren't currently hovering.
+    if (_hoveredInterval.has_value())
+    {
+        const til::point coordTargetTil{ coordTarget };
+        if (_hoveredInterval->start <= coordTargetTil &&
+            coordTargetTil <= _hoveredInterval->stop)
+        {
+            if (_pData->GetPatternId(coordTarget).size() > 0)
+            {
+                lines |= IRenderEngine::GridLines::Underline;
+            }
+        }
+    }
+
     // Return early if there are no lines to paint.
     if (lines != IRenderEngine::GridLines::None)
     {
@@ -1214,6 +1232,11 @@ void Renderer::ResetErrorStateAndResume()
 {
     // because we're not stateful (we could be in the future), all we want to do is reenable painting.
     EnablePainting();
+}
+
+void Renderer::UpdateLastHoveredInterval(const std::optional<PointTree::interval>& newInterval)
+{
+    _hoveredInterval = newInterval;
 }
 
 // Method Description:

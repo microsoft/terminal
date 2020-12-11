@@ -47,7 +47,7 @@
 #include <shellapi.h>
 
 #include "strid.h"
-#include "..\propslib\conpropsp.hpp"
+#include "../propslib/conpropsp.hpp"
 
 #include <new>
 

@@ -4,8 +4,8 @@
 #include "precomp.h"
 #include "settings.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "../types/inc/utils.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../types/inc/colorTable.hpp"
 
 #pragma hdrstop
 

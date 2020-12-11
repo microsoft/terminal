@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
@@ -390,7 +390,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
             // shift + pgup/pgdn extends selection up or down one full screen
         case VK_NEXT:
         {
-            coordSelPoint.Y += sWindowHeight; // TODO: potential overflow
+            coordSelPoint.Y = base::CheckAdd(coordSelPoint.Y, sWindowHeight).ValueOrDefault(bufferSize.BottomInclusive());
             if (coordSelPoint.Y > bufferSize.BottomInclusive())
             {
                 coordSelPoint.Y = bufferSize.BottomInclusive();
@@ -399,7 +399,7 @@ bool Selection::HandleKeyboardLineSelectionEvent(const INPUT_KEY_INFO* const pIn
         }
         case VK_PRIOR:
         {
-            coordSelPoint.Y -= sWindowHeight; // TODO: potential underflow
+            coordSelPoint.Y = base::CheckSub(coordSelPoint.Y, sWindowHeight).ValueOrDefault(bufferSize.Top());
             if (coordSelPoint.Y < bufferSize.Top())
             {
                 coordSelPoint.Y = bufferSize.Top();

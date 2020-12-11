@@ -4,14 +4,15 @@
 #include "pch.h"
 #include <WexTestClass.h>
 
+#include "../types/inc/utils.hpp"
 #include "../TerminalApp/TerminalPage.h"
 #include "../TerminalApp/AppCommandlineArgs.h"
-#include "../TerminalApp/ActionArgs.h"
 
 using namespace WEX::Logging;
 using namespace WEX::Common;
 using namespace WEX::TestExecution;
 
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
 using namespace ::TerminalApp;
 
@@ -58,6 +59,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestSimpleExecuteCommandlineAction);
         TEST_METHOD(TestMultipleCommandExecuteCommandlineAction);
         TEST_METHOD(TestInvalidExecuteCommandlineAction);
+        TEST_METHOD(TestLaunchMode);
+        TEST_METHOD(TestLaunchModeWithNoCommand);
 
     private:
         void _buildCommandlinesHelper(AppCommandlineArgs& appArgs,
@@ -351,7 +354,8 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+                VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+                VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
                 auto myCommand = myArgs.TerminalArgs().Commandline();
                 VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg \"", myCommand);
@@ -366,7 +370,8 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+                VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+                VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
                 auto myCommand = myArgs.TerminalArgs().Commandline();
                 VERIFY_ARE_EQUAL(L"\" with spaces\"", myCommand);
@@ -389,7 +394,8 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-                VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+                VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+                VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
                 VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
                 auto myCommand = myArgs.TerminalArgs().Commandline();
                 VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg ; with spaces\"", myCommand);
@@ -435,7 +441,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
         }
         {
@@ -454,7 +461,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"cmd", myArgs.TerminalArgs().Profile());
         }
@@ -474,7 +482,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"c:\\Foo", myArgs.TerminalArgs().StartingDirectory());
         }
@@ -494,7 +503,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"powershell.exe", myArgs.TerminalArgs().Commandline());
         }
@@ -514,7 +524,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             auto myCommand = myArgs.TerminalArgs().Commandline();
             VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myCommand);
@@ -535,7 +546,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             auto myCommand = myArgs.TerminalArgs().Commandline();
             VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\" another-arg \"more spaces in this one\"", myCommand);
@@ -556,7 +568,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"Windows PowerShell", myArgs.TerminalArgs().Profile());
         }
@@ -576,7 +589,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"wsl -d Alpine", myArgs.TerminalArgs().Commandline());
         }
@@ -596,10 +609,34 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"wsl -d Alpine", myArgs.TerminalArgs().Commandline());
             VERIFY_ARE_EQUAL(L"1", myArgs.TerminalArgs().Profile());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--tabColor", L"#009999" };
+            const auto expectedColor = Microsoft::Console::Utils::ColorFromHexString("#009999");
+
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_ARE_EQUAL(til::color(myArgs.TerminalArgs().TabColor().Value()), expectedColor);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
         }
     }
 
@@ -693,7 +730,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"wsl -d Alpine", myArgs.TerminalArgs().Commandline());
             VERIFY_ARE_EQUAL(L"1", myArgs.TerminalArgs().Profile());
@@ -720,7 +758,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"wsl -d Alpine", myArgs.TerminalArgs().Commandline());
             VERIFY_ARE_EQUAL(L"1", myArgs.TerminalArgs().Profile());
@@ -747,7 +786,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"wsl -d Alpine -H", myArgs.TerminalArgs().Commandline());
             VERIFY_ARE_EQUAL(L"1", myArgs.TerminalArgs().Profile());
@@ -795,7 +835,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
         }
         {
@@ -814,7 +855,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"cmd", myArgs.TerminalArgs().Profile());
         }
@@ -834,7 +876,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_FALSE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"c:\\Foo", myArgs.TerminalArgs().StartingDirectory());
         }
@@ -854,7 +897,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"powershell.exe", myArgs.TerminalArgs().Commandline());
         }
@@ -874,7 +918,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"powershell.exe \"This is an arg with spaces\"", myArgs.TerminalArgs().Commandline());
         }
@@ -1122,7 +1167,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
 
             actionAndArgs = appArgs._startupActions.at(1);
@@ -1134,7 +1180,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"slpit-pane", myArgs.TerminalArgs().Commandline());
         }
@@ -1212,9 +1259,8 @@ namespace TerminalAppLocalTests
 
     void CommandlineTest::TestSimpleExecuteCommandlineAction()
     {
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
-        args->Commandline(L"new-tab");
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        ExecuteCommandlineArgs args{ L"new-tab" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(1u, actions.size());
         auto actionAndArgs = actions.at(0);
         VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1225,15 +1271,15 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
         VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
         VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-        VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+        VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+        VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
         VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
     }
 
     void CommandlineTest::TestMultipleCommandExecuteCommandlineAction()
     {
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
-        args->Commandline(L"new-tab ; split-pane");
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        ExecuteCommandlineArgs args{ L"new-tab ; split-pane" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(2u, actions.size());
         {
             auto actionAndArgs = actions.at(0);
@@ -1245,7 +1291,8 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
         }
         {
@@ -1258,17 +1305,160 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
             VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
         }
     }
 
     void CommandlineTest::TestInvalidExecuteCommandlineAction()
     {
-        auto args = winrt::make_self<implementation::ExecuteCommandlineArgs>();
         // -H and -V cannot be combined.
-        args->Commandline(L"split-pane -H -V");
-        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(*args);
+        ExecuteCommandlineArgs args{ L"split-pane -H -V" };
+        auto actions = implementation::TerminalPage::ConvertExecuteCommandlineToActions(args);
         VERIFY_ARE_EQUAL(0u, actions.size());
+    }
+
+    void CommandlineTest::TestLaunchMode()
+    {
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_FALSE(appArgs.GetLaunchMode().has_value());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-F" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FullscreenMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--fullscreen" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FullscreenMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-M" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-f" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--focus" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::FocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-fM" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized", L"--focus" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized", L"--focus", L"--focus" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"--maximized", L"--focus", L"--maximized" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedFocusMode);
+        }
+    }
+
+    void CommandlineTest::TestLaunchModeWithNoCommand()
+    {
+        {
+            Log::Comment(NoThrowString().Format(L"Pass a launch mode and profile"));
+
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-M", L"--profile", L"cmd" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedMode);
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"cmd", myArgs.TerminalArgs().Profile());
+        }
+        {
+            Log::Comment(NoThrowString().Format(L"Pass a launch mode and command line"));
+
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", L"-M", L"powershell.exe" };
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_IS_TRUE(appArgs.GetLaunchMode().has_value());
+            VERIFY_ARE_EQUAL(appArgs.GetLaunchMode().value(), LaunchMode::MaximizedMode);
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ProfileIndex() == nullptr);
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_ARE_EQUAL(L"powershell.exe", myArgs.TerminalArgs().Commandline());
+        }
     }
 }

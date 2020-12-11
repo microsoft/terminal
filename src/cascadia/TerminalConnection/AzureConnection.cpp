@@ -3,10 +3,6 @@
 
 #include "pch.h"
 
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
-
 #include "AzureConnection.h"
 #include "AzureClientID.h"
 #include <sstream>
@@ -35,6 +31,8 @@ static constexpr auto HttpUserAgent = L"Terminal/0.0";
 static constexpr int USER_INPUT_COLOR = 93; // yellow - the color of something the user can type
 static constexpr int USER_INFO_COLOR = 97; // white - the color of clarifying information
 
+static constexpr winrt::guid AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+
 static inline std::wstring _colorize(const unsigned int colorCode, const std::wstring_view text)
 {
     return fmt::format(L"\x1b[{0}m{1}\x1b[m", colorCode, text);
@@ -60,6 +58,11 @@ static inline std::wstring _formatTenant(int tenantNumber, const Tenant& tenant)
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
+    winrt::guid AzureConnection::ConnectionType() noexcept
+    {
+        return AzureConnectionType;
+    }
+
     // This function exists because the clientID only gets added by the release pipelines
     // and is not available on local builds, so we want to be able to make sure we don't
     // try to make an Azure connection if its a local build
@@ -685,6 +688,25 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
+    // - Helper function to parse the preferred shell type from user settings returned by cloud console API.
+    // We need this function because the field might be missing in the settings
+    // created with old versions of cloud console API.
+    std::optional<utility::string_t> AzureConnection::_ParsePreferredShellType(const web::json::value& settingsResponse)
+    {
+        if (settingsResponse.has_object_field(L"properties"))
+        {
+            const auto userSettings = settingsResponse.at(L"properties");
+            if (userSettings.has_string_field(L"preferredShellType"))
+            {
+                const auto preferredShellTypeValue = userSettings.at(L"preferredShellType");
+                return preferredShellTypeValue.as_string();
+            }
+        }
+
+        return std::nullopt;
+    }
+
+    // Method description:
     // - helper function to connect the user to the Azure cloud shell
     void AzureConnection::_RunConnectState()
     {
@@ -703,9 +725,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _WriteStringWithNewline(RS_(L"AzureSuccess"));
 
         // Request for a terminal for said cloud shell
-        const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
+        const auto shellType = _ParsePreferredShellType(settingsResponse);
         _WriteStringWithNewline(RS_(L"AzureRequestingTerminal"));
-        const auto socketUri = _GetTerminal(shellType);
+        const auto socketUri = _GetTerminal(shellType.value_or(L"pwsh"));
         _TerminalOutputHandlers(L"\r\n");
 
         // Step 8: connecting to said terminal

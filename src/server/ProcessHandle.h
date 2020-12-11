@@ -23,7 +23,7 @@ Revision History:
 #include "ConsoleShimPolicy.h"
 
 #include <memory>
-#include <wil\resource.h>
+#include <wil/resource.h>
 
 class ConsoleProcessHandle
 {

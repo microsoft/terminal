@@ -2,8 +2,6 @@
 // Licensed under the MIT license.
 #pragma once
 
-#include "ActionAndArgs.h"
-
 #include "Commandline.h"
 
 #ifdef UNIT_TESTING
@@ -36,11 +34,11 @@ public:
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
 
     void ValidateStartupCommands();
-    std::vector<winrt::TerminalApp::ActionAndArgs>& GetStartupActions();
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>& GetStartupActions();
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
-    std::optional<winrt::TerminalApp::LaunchMode> GetLaunchMode() const noexcept;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
 
 private:
     static const std::wregex _commandDelimiterRegex;
@@ -56,6 +54,7 @@ private:
         CLI::Option* profileNameOption;
         CLI::Option* startingDirectoryOption;
         CLI::Option* titleOption;
+        CLI::Option* tabColorOption;
     };
 
     struct NewPaneSubcommand : public NewTerminalSubcommand
@@ -79,7 +78,9 @@ private:
     std::string _profileName;
     std::string _startingDirectory;
     std::string _startingTitle;
-    winrt::TerminalApp::Direction _moveFocusDirection{ winrt::TerminalApp::Direction::None };
+    std::string _startingTabColor;
+
+    winrt::Microsoft::Terminal::Settings::Model::Direction _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::Direction::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
@@ -93,14 +94,14 @@ private:
     bool _focusNextTab{ false };
     bool _focusPrevTab{ false };
 
-    std::optional<winrt::TerminalApp::LaunchMode> _launchMode{ std::nullopt };
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> _launchMode{ std::nullopt };
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
-    std::vector<winrt::TerminalApp::ActionAndArgs> _startupActions;
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
 
-    winrt::TerminalApp::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
     void _buildNewTabParser();

@@ -5,6 +5,7 @@
 #include "AppHost.h"
 #include "resource.h"
 #include "../types/inc/User32Utils.hpp"
+#include <WilErrorReporting.h>
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
@@ -91,6 +92,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         TraceLoggingDescription("Event emitted immediately on startup"),
         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    ::Microsoft::Console::ErrorReporting::EnableFallbackFailureReporting(g_hWindowsTerminalProvider);
 
     // If Terminal is spawned by a shortcut that requests that it run in a new process group
     // while attached to a console session, that request is nonsense. That request will, however,

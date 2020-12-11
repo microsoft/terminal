@@ -9,6 +9,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Windows10version1903="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 8)"
+    xmlns:SettingsModel="using:Microsoft.Terminal.Settings.Model"
     TabNavigation="Cycle"
     IsTabStop="True"
     AllowFocusOnInteraction="True"
@@ -16,6 +17,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     PreviewKeyDown="_previewKeyDownHandler"
     KeyDown="_keyDownHandler"
     PreviewKeyUp="_keyUpHandler"
+    LostFocus="_lostFocusHandler"
     mc:Ignorable="d"
     AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}">
 
@@ -30,6 +32,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
+            <local:IconPathConverter x:Key="IconSourceConverter"/>
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -58,7 +61,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Key="KeyChordBorderStyle" TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
-                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
@@ -89,7 +92,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Key="KeyChordBorderStyle" TargetType="Border">
                         <Setter Property="BorderThickness" Value="1" />
                         <Setter Property="CornerRadius" Value="1" />
-                        <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock">
@@ -112,7 +115,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     </UserControl.Resources>
 
     <Grid>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="6*" />
@@ -133,27 +135,27 @@ the MIT License. See LICENSE in the project root for license information. -->
         to receive clicks _anywhere_ in its bounds. -->
 
         <Grid
-        x:Name="_shadowBackdrop"
-        Background="Transparent"
-        Grid.Column="0"
-        Grid.Row="0"
-        Grid.ColumnSpan="3"
-        Grid.RowSpan="2"
-        HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch">
+            x:Name="_shadowBackdrop"
+            Background="Transparent"
+            Grid.Column="0"
+            Grid.Row="0"
+            Grid.ColumnSpan="3"
+            Grid.RowSpan="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
         </Grid>
 
         <Grid
-        x:Name="_backdrop"
-        Style="{ThemeResource CommandPaletteBackground}"
-        CornerRadius="{ThemeResource ControlCornerRadius}"
-        PointerPressed="_backdropPointerPressed"
-        Margin="8"
-        Grid.Column="1"
-        Grid.Row="0"
-        Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
-        HorizontalAlignment="Stretch"
-        VerticalAlignment="Top">
+            x:Name="_backdrop"
+            Style="{ThemeResource CommandPaletteBackground}"
+            CornerRadius="{ThemeResource ControlCornerRadius}"
+            PointerPressed="_backdropPointerPressed"
+            Margin="8"
+            Grid.Column="1"
+            Grid.Row="0"
+            Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -162,25 +164,59 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Grid.RowDefinitions>
 
             <TextBox
-            Grid.Row="0"
-            x:Name="_searchBox"
-            Margin="8"
-            IsSpellCheckEnabled="False"
-            TextChanged="_filterTextChanged"
-            PlaceholderText="{x:Bind SearchBoxText, Mode=OneWay}"
-            Text="">
+                Grid.Row="0"
+                x:Name="_searchBox"
+                Margin="8"
+                Padding="18,8,8,8"
+                IsSpellCheckEnabled="False"
+                TextChanged="_filterTextChanged"
+                PlaceholderText="{x:Bind SearchBoxPlaceholderText, Mode=OneWay}"
+                Text="">
             </TextBox>
 
             <TextBlock
-                Padding="16, 0, 16, 4"
-                x:Name="_parentCommandText"
-                FontStyle="Italic"
-                Visibility="{x:Bind ParentCommandName,
+                Grid.Row="0"
+                x:Name="_prefixCharacter"
+                Margin="16,16,0,-8"
+                FontSize="14"
+                HorizontalAlignment="Left"
+                Visibility="{x:Bind PrefixCharacter,
                              Mode=OneWay,
                              Converter={StaticResource ParentCommandVisibilityConverter}}"
-                Grid.Row="1"
-                Text="{x:Bind ParentCommandName, Mode=OneWay}">
+                Text="{x:Bind PrefixCharacter, Mode=OneWay}"
+                >
             </TextBlock>
+
+            <StackPanel Orientation="Horizontal"
+                    Padding="16, 0, 16, 4"
+                    Grid.Row="1"
+                    Visibility="{x:Bind ParentCommandName,
+                                 Mode=OneWay,
+                                 Converter={StaticResource ParentCommandVisibilityConverter}}">
+
+                <Button
+                    Background="Transparent"
+                    x:Name="_parentCommandBackButton"
+                    x:Uid="ParentCommandBackButton"
+                    Click="_moveBackButtonClicked"
+                    ClickMode="Press"
+                    VerticalAlignment="Center">
+                    <FontIcon
+                        FontSize="12"
+                        FontFamily="Segoe MDL2 Assets"
+                        Glyph="&#xE76b;">
+                    </FontIcon>
+                </Button>
+
+                <TextBlock
+                    Padding="16, 0, 16, 4"
+                    x:Name="_parentCommandText"
+                    FontStyle="Italic"
+                    Grid.Row="1"
+                    Text="{x:Bind ParentCommandName, Mode=OneWay}"
+                    VerticalAlignment="Center">
+                </TextBlock>
+            </StackPanel>
 
             <TextBlock
                 Padding="16"
@@ -192,29 +228,29 @@ the MIT License. See LICENSE in the project root for license information. -->
             </TextBlock>
 
             <ListView
-            Grid.Row="2"
-            x:Name="_filteredActionsView"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch"
-            SelectionMode="Single"
-            CanReorderItems="False"
-            AllowDrop="False"
-            IsItemClickEnabled="True"
-            ItemClick="_listItemClicked"
-            PreviewKeyDown="_keyDownHandler"
-            ItemsSource="{x:Bind FilteredActions}">
+                Grid.Row="2"
+                x:Name="_filteredActionsView"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                SelectionMode="Single"
+                CanReorderItems="False"
+                AllowDrop="False"
+                IsItemClickEnabled="True"
+                ItemClick="_listItemClicked"
+                PreviewKeyDown="_keyDownHandler"
+                ItemsSource="{x:Bind FilteredActions}">
 
                 <ItemsControl.ItemTemplate >
-                    <DataTemplate x:DataType="local:Command">
+                    <DataTemplate x:DataType="local:FilteredCommand">
 
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+                                  IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
 
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="16"/>   <!-- icon -->
                                     <ColumnDefinition Width="Auto"/> <!-- command label -->
@@ -226,18 +262,21 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
-                                    IconSource="{x:Bind IconSource, Mode=OneWay}"/>
+                                    IconSource="{x:Bind Item.Icon,
+                                                        Mode=OneWay,
+                                                        Converter={StaticResource IconSourceConverter}}"/>
 
-                                <TextBlock Grid.Column="1"
-                                       HorizontalAlignment="Left"
-                                       Text="{x:Bind Name, Mode=OneWay}" />
+                                <local:HighlightedTextControl
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
 
                                 <!-- The block for the key chord is only visible
                                 when there's actual text set as the label. See
                                 CommandKeyChordVisibilityConverter for details. -->
                                 <Border
                                     Grid.Column="2"
-                                    Visibility="{x:Bind KeyChordText,
+                                    Visibility="{x:Bind Item.KeyChordText,
                                                  Mode=OneWay,
                                                  Converter={StaticResource CommandKeyChordVisibilityConverter}}"
                                     Style="{ThemeResource KeyChordBorderStyle}"
@@ -248,7 +287,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <TextBlock
                                         Style="{ThemeResource KeyChordTextBlockStyle}"
                                         FontSize="12"
-                                        Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
                                 </Border>
 
                                 <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
@@ -256,7 +295,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     FontFamily="Segoe MDL2 Assets"
                                     Glyph="&#xE70E;"
                                     HorizontalAlignment="Right"
-                                    Visibility="{x:Bind HasNestedCommands,
+                                    Visibility="{x:Bind Item,
                                                  Mode=OneWay,
                                                  Converter={StaticResource HasNestedCommandsVisibilityConverter}}"
                                     Grid.Column="2">
