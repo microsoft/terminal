@@ -39,14 +39,32 @@ public:
     bool operator==(const AttrRowIterator& it) const noexcept;
     bool operator!=(const AttrRowIterator& it) const noexcept;
 
-    AttrRowIterator& operator++();
-    AttrRowIterator operator++(int);
+    AttrRowIterator& operator++() noexcept
+    {
+        _increment(1);
+        return *this;
+    }
+    AttrRowIterator operator++(int) noexcept
+    {
+        auto copy = *this;
+        _increment(1);
+        return copy;
+    }
 
     AttrRowIterator& operator+=(const ptrdiff_t& movement);
     AttrRowIterator& operator-=(const ptrdiff_t& movement);
 
-    AttrRowIterator& operator--();
-    AttrRowIterator operator--(int);
+    AttrRowIterator& operator--() noexcept
+    {
+        _decrement(1);
+        return *this;
+    }
+    AttrRowIterator operator--(int) noexcept
+    {
+        auto copy = *this;
+        _decrement(1);
+        return copy;
+    }
 
     const TextAttribute* operator->() const;
     const TextAttribute& operator*() const;

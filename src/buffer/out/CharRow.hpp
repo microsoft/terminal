@@ -64,8 +64,8 @@ public:
     size_t size() const noexcept;
     void Reset() noexcept;
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
-    size_t MeasureLeft() const;
-    size_t MeasureRight() const noexcept;
+    size_t MeasureLeft() const noexcept;
+    size_t MeasureRight() const;
     void ClearCell(const size_t column);
     bool ContainsText() const noexcept;
     const DbcsAttribute& DbcsAttrAt(const size_t column) const;
