@@ -62,7 +62,7 @@ values for those parameters in the following matter:
 
 If the profile defines an `unfocusedConfig`, any parameters not explicitly defined within it will adopt
 the values from the profile itself. If the profile does not define an `unfocusedConfig`, then the global/default `unfocusedConfig` is used
-for this profile.
+for this profile (and any undefined parameters within *that* will be set to default values).
 
 Thus, if a user wishes for the unfocused state to look the same as the focused state for a particular profile,
 while still having a global/default unfocused state appearance, they simply need to define an empty `unfocusedConfig`
@@ -125,7 +125,12 @@ a difference between both appearances.
 We will need to decide how this will look in the settings UI.
 
 We may wish to add more states in the future (like 'elevated'). When that happens, we will need to deal with how
-these appearance objects can scale/layer over each other.
+these appearance objects can scale/layer over each other. We had a lot of dicussion about this and could not find
+a suitable solution to the problem of multiple states being valid at the same time (like unfocused and elevated).
+This, along with the fact that it is uncertain if there even will be more states we would want to add led us to
+the conclusion that we should only support the unfocused state for now, and come back to this issue later. If there
+are no more states other than unfocused and elevated, we could allow combining them (like having an 'unfocused elevated' state).
+If there are more states, we could do the implementation as an extension rather than inherently supporting it.
 
 ## Resources
 
