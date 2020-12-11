@@ -167,6 +167,20 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleScrollToTop(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollUp);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToBottom(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollDown);
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
@@ -214,14 +228,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ResizePaneArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.ResizeDirection() == ResizeDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _ResizePane(realArgs.Direction());
+                _ResizePane(realArgs.ResizeDirection());
                 args.Handled(true);
             }
         }
@@ -232,14 +246,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<MoveFocusArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.FocusDirection() == FocusDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _MoveFocus(realArgs.Direction());
+                _MoveFocus(realArgs.FocusDirection());
                 args.Handled(true);
             }
         }
@@ -522,7 +536,7 @@ namespace winrt::TerminalApp::implementation
                                             const ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        _UpdatePaletteWithInOrderTabs();
+        CommandPalette().SetTabs(_tabs, true);
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);

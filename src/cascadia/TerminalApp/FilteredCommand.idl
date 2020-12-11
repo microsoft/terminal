@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "IDirectKeyListener.idl";
-import "ShortcutActionDispatch.idl";
+import "PaletteItem.idl";
 import "HighlightedTextControl.idl";
 
 namespace TerminalApp
@@ -10,9 +9,9 @@ namespace TerminalApp
     [default_interface] runtimeclass FilteredCommand : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         FilteredCommand();
-        FilteredCommand(Microsoft.Terminal.Settings.Model.Command command);
+        FilteredCommand(PaletteItem item);
 
-        Microsoft.Terminal.Settings.Model.Command Command { get; };
+        PaletteItem Item { get; };
         String Filter;
         HighlightedText HighlightedName { get; };
         Int32 Weight;
