@@ -6,7 +6,6 @@
 #include "TabPaletteItem.h"
 #include "CommandLinePaletteItem.h"
 #include "CommandPalette.h"
-#include "AppCommandlineArgs.h"
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
@@ -99,6 +98,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
+
+        _appArgs.DisableHelpInExitMessage();
     }
 
     // Method Description:
@@ -802,15 +803,13 @@ namespace winrt::TerminalApp::implementation
             if (!commandLine.empty())
             {
                 ExecuteCommandlineArgs args{ commandLine };
-                ::TerminalApp::AppCommandlineArgs appArgs;
-                appArgs.DisableHelpInExitMessage();
-
-                if (appArgs.ParseArgs(args) == 0)
+                _appArgs.FullResetState();
+                if (_appArgs.ParseArgs(args) == 0)
                 {
-                    const auto& commands = appArgs.GetStartupActions();
+                    const auto& commands = _appArgs.GetStartupActions();
                     if (commands.size() > 0)
                     {
-                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") + L":" };
+                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
                         for (const auto& command : commands)
                         {
                             commandDescription += L"\n\t" + command.Args().GenerateName();
@@ -820,7 +819,7 @@ namespace winrt::TerminalApp::implementation
                 }
                 else
                 {
-                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L":\n\t" + til::u8u16(appArgs.GetExitMessage()));
+                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L"\n\t" + til::u8u16(_appArgs.GetExitMessage()));
                 }
                 _noMatchesText().Visibility(Visibility::Visible);
             }

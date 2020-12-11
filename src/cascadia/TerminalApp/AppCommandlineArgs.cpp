@@ -767,11 +767,28 @@ int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Mo
 // Method Description:
 // - Allows disabling addition of help-related info in the exit message
 // Arguments:
-// - none
+// - <none>
 // Return Value:
-// - none
+// - <none>
 void AppCommandlineArgs::DisableHelpInExitMessage()
 {
     _app.set_help_flag();
     _app.set_help_all_flag();
+}
+
+// Method Description:
+// - Resets the state to allow external consumers to reuse this instance
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::FullResetState()
+{
+    _resetStateToDefault();
+
+    _currentCommandline = nullptr;
+    _launchMode = std::nullopt;
+    _startupActions.clear();
+    _exitMessage = "";
+    _shouldExitEarly = false;
 }
