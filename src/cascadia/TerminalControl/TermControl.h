@@ -258,6 +258,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // from firing when the pointer _just happens_ to be released over the
         // terminal.
         bool _selectionNeedsToBeCopied;
+        bool _selectingAll = false;
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 

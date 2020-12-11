@@ -210,17 +210,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::CallChooseEverySingleLine()
     {
-        // Lazy load the search box control.
-        if (auto loadedSearchBox{ FindName(L"SearchBox") })
-        {
-            if (auto searchBox{ loadedSearchBox.try_as<::winrt::Microsoft::Terminal::TerminalControl::SearchBoxControl>() })
-            {
-                // get at its private implementation
-                _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
-                _searchBox->Visibility(Visibility::Visible);
-                _searchBox->SetFocusOnTextbox();
-            }
-        }
+        auto bottom = _terminal->GetViewport().BottomExclusive();
+        auto bufferHeight = bottom;
+
+        _selectingAll = true;
+        const auto uiaData = GetUiaData();
+        const COORD leftTop = { 0, 0 };
+        const COORD rightBottom = { SHORT_MAX, bufferHeight };
+        //_terminal->MultiClickSelection({ 120, 200 }, ::Terminal::SelectionExpansionMode::Line);
+        uiaData->SelectNewRegion(leftTop, rightBottom);
+        _renderer->TriggerSelection();
     }
 
     // Method Description:
@@ -873,6 +872,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
     {
+        if (_selectingAll)
+        {
+            _selectingAll = false;
+            return;
+        }
+
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
         if (_searchBox && _searchBox->ContainsFocus())
@@ -1846,6 +1851,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        if (_selectingAll)
+        {
+            _selectingAll = false;
+            return;
+        }
+
         if (_closing)
         {
             return;
