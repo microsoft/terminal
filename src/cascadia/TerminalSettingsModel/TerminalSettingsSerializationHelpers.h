@@ -58,19 +58,11 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 
     auto FromJson(const Json::Value& json)
     {
-        try
+        if (json.isBool())
         {
-            if (json.isBool())
-            {
-                return json.asBool() ? AllSet : AllClear;
-            }
-            return BaseFlagMapper::FromJson(json);
+            return json.asBool() ? AllSet : AllClear;
         }
-        catch (DeserializationError& e)
-        {
-            e.expectedType = TypeDescription();
-            throw e;
-        }
+        return BaseFlagMapper::FromJson(json);
     }
 
     bool CanConvert(const Json::Value& json)
@@ -81,11 +73,6 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
     Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::BellStyle& bellStyle)
     {
         return BaseFlagMapper::ToJson(bellStyle);
-    }
-
-    std::string TypeDescription() const
-    {
-        return EnumMapper::TypeDescription() + " or flag";
     }
 };
 
@@ -127,19 +114,11 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
     // Override mapping parser to add boolean parsing
     ::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode FromJson(const Json::Value& json)
     {
-        try
+        if (json.isBool())
         {
-            if (json.isBool())
-            {
-                return json.asBool() ? ValueType::Graceful : ValueType::Never;
-            }
-            return EnumMapper::FromJson(json);
+            return json.asBool() ? ValueType::Graceful : ValueType::Never;
         }
-        catch (DeserializationError& e)
-        {
-            e.expectedType = TypeDescription();
-            throw e;
-        }
+        return EnumMapper::FromJson(json);
     }
 
     bool CanConvert(const Json::Value& json)
@@ -147,10 +126,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode)
         return EnumMapper::CanConvert(json) || json.isBool();
     }
 
-    std::string TypeDescription() const
-    {
-        return EnumMapper::TypeDescription() + " or flag";
-    }
+    using EnumMapper::TypeDescription;
 };
 
 // This specialization isn't using JSON_ENUM_MAPPER because we need to have a different
@@ -182,21 +158,13 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     auto FromJson(const Json::Value& json)
     {
         unsigned int value{ 400 };
-        try
+        if (json.isUInt())
         {
-            if (json.isUInt())
-            {
-                value = json.asUInt();
-            }
-            else
-            {
-                value = BaseEnumMapper::FromJson(json);
-            }
+            value = json.asUInt();
         }
-        catch (DeserializationError& e)
+        else
         {
-            e.expectedType = TypeDescription();
-            throw e;
+            value = BaseEnumMapper::FromJson(json);
         }
 
         ::winrt::Windows::UI::Text::FontWeight weight{
@@ -277,29 +245,16 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 
     auto FromJson(const Json::Value& json)
     {
-        try
+        if (json.isBool())
         {
-            if (json.isBool())
-            {
-                return json.asBool() ? AllSet : AllClear;
-            }
-            return BaseFlagMapper::FromJson(json);
+            return json.asBool() ? AllSet : AllClear;
         }
-        catch (DeserializationError& e)
-        {
-            e.expectedType = TypeDescription();
-            throw e;
-        }
+        return BaseFlagMapper::FromJson(json);
     }
 
     bool CanConvert(const Json::Value& json)
     {
         return BaseFlagMapper::CanConvert(json) || json.isBool();
-    }
-
-    std::string TypeDescription() const
-    {
-        return EnumMapper::TypeDescription() + " or flag";
     }
 };
 
@@ -433,29 +388,16 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
 
     auto FromJson(const Json::Value& json)
     {
-        try
+        if (json.isBool())
         {
-            if (json.isBool())
-            {
-                return json.asBool() ? ValueType::MostRecentlyUsed : ValueType::Disabled;
-            }
-            return BaseEnumMapper::FromJson(json);
+            return json.asBool() ? ValueType::MostRecentlyUsed : ValueType::Disabled;
         }
-        catch (DeserializationError& e)
-        {
-            e.expectedType = TypeDescription();
-            throw e;
-        }
+        return BaseEnumMapper::FromJson(json);
     }
 
     bool CanConvert(const Json::Value& json)
     {
         return BaseEnumMapper::CanConvert(json) || json.isBool();
-    }
-
-    std::string TypeDescription() const
-    {
-        return EnumMapper::TypeDescription() + " or flag";
     }
 };
 
