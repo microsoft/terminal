@@ -586,7 +586,7 @@ void Pane::_FocusFirstChild()
     {
         if (_root.ActualWidth() == 0 && _root.ActualHeight() == 0)
         {
-            // When these sizes are 0, then the pane might sitll be in startup,
+            // When these sizes are 0, then the pane might still be in startup,
             // and doesn't yet have a real size. In that case, the control.Focus
             // event won't be handled until _after_ the startup events are all
             // processed. THis will lead to the Tab not being notified that the

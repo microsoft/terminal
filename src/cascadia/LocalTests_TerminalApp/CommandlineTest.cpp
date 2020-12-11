@@ -1100,7 +1100,7 @@ namespace TerminalAppLocalTests
         }
         {
             AppCommandlineArgs appArgs{};
-            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"thisIsNotADirection" };
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"badDirection" };
             Log::Comment(NoThrowString().Format(
                 L"move-focus with an invalid direction should fail."));
             _buildCommandlinesExpectFailureHelper(appArgs, 1u, rawCommands);
