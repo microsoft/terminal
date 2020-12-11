@@ -192,6 +192,7 @@ namespace winrt::TerminalApp::implementation
             _TabColor = static_cast<uint32_t>(colorRef);
         }
 
+        // For the UnfocusedConfig object, basically do the same as what we did for the profile above
         if (profile.UnfocusedConfig())
         {
             auto unfocusedConfig = winrt::make_self<implementation::AppAppearanceConfig>();

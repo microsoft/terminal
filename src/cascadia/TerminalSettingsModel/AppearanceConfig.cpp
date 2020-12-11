@@ -27,6 +27,17 @@ AppearanceConfig::AppearanceConfig()
 {
 }
 
+// Method Description:
+// - Layer values from the given json object on top of the existing properties
+//   of this object. For any keys we're expecting to be able to parse in the
+//   given object, we'll parse them and replace our settings with values from
+//   the new json object. Properties that _aren't_ in the json object will _not_
+//   be replaced.
+// - Optional values that are set to `null` in the json object
+//   will be set to nullopt.
+// - This is similar to Profile::LayerJson but for AppearanceConfig
+// Arguments:
+// - json: an object which should be a partial serialization of an AppearanceConfig object.
 void AppearanceConfig::LayerJson(const Json::Value& json)
 {
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
@@ -41,7 +52,14 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
 }
 
-// NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
+// Method Description:
+// - Returns this AppearanceConfig's background image path, if one is set, expanding
+//   any environment variables in the path, if there are any.
+// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
+// - This is the same as Profile::ExpandedBackgroundImagePath, but for AppearanceConfig
+// - NOTE: This is just placeholder for now, eventually the path will no longer be expanded in the settings model
+// Return Value:
+// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
 winrt::hstring AppearanceConfig::ExpandedBackgroundImagePath()
 {
     const auto path{ BackgroundImagePath() };

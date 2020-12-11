@@ -279,6 +279,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _UpdateAppearanceFromUIThread(appearance);
     }
 
+    // Method Description:
+    // - Dispatches a call to the UI thread and updates the appearance
+    // Arguments:
+    // - newAppearance: the new appearance to set
     winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
@@ -303,6 +307,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
     }
 
+    // Method Description:
+    // - Updates the settings
+    // - This should only be called from the UI thread
+    // Arguments:
+    // - newSettings: the new settings to set
     void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
     {
         if (_closing)
@@ -347,6 +356,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Updates the appearance
+    // - This should only be called from the UI thread
+    // Arguments:
+    // - newAppearance: the new appearance to set
     void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
     {
         if (_closing)
@@ -803,6 +817,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
 
+            // Now that the renderer is set up, update the appearance for initialization
             UpdateAppearance(_settings);
 
             _initializedTerminal = true;
@@ -1911,6 +1926,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _UpdateSystemParameterSettings();
 
+        // Only update the appearance here if an unfocused config exists -
+        // if an unfocused config does not exist then we never would have switched
+        // appearances anyway so there's no need to switch back upon gaining focus
         if (_settings.UnfocusedConfig())
         {
             UpdateAppearance(_settings);
@@ -1965,6 +1983,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _blinkTimer.value().Stop();
         }
 
+        // Check if there is an unfocused config we should set the appearance to
+        // upon losing focus
         if (_settings.UnfocusedConfig())
         {
             UpdateAppearance(_settings.UnfocusedConfig());

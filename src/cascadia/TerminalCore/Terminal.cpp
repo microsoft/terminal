@@ -178,6 +178,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     // remains at the bottom of the buffer.
 }
 
+// Method Description:
+// - Update our internal properties to match the new values in the provided
+//   CoreAppearance object.
+// Arguments:
+// - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(ICoreAppearance appearance)
 {
     _defaultFg = appearance.DefaultForeground();

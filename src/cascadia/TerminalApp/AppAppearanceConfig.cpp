@@ -12,6 +12,12 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace winrt::TerminalApp::implementation
 {
+    // Method Description:
+    // - Apply a given ColorScheme's values to the AppAppearanceConfig object.
+    //      Sets the foreground, background, and color table of the settings object.
+    // - This is the same as TerminalSettings::ApplyColorScheme, but for AppAppearanceConfig
+    // Arguments:
+    // - scheme: the ColorScheme we are applying to the TerminalSettings object
     void AppAppearanceConfig::ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme)
     {
         _DefaultForeground = til::color{ scheme.Foreground() };
