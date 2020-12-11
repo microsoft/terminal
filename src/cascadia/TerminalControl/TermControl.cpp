@@ -353,15 +353,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _SendInputToConnection(wstr);
     }
 
-    void TermControl::ToggleRetroEffect()
-    {
-        ToggleTerminalEffects();
-    }
-
-    void TermControl::ToggleTerminalEffects()
+    void TermControl::ToggleShaderEffects()
     {
         auto lock = _terminal->LockForWriting();
-        _renderEngine->ToggleTerminalEffects();
+        _renderEngine->ToggleShaderEffects();
     }
 
     // Method Description:

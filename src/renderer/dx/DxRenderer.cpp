@@ -246,7 +246,7 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 // Arguments:
 // Return Value:
 // - Void
-void DxEngine::ToggleTerminalEffects()
+void DxEngine::ToggleShaderEffects()
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
     LOG_IF_FAILED(InvalidateAll());

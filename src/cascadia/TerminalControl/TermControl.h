@@ -122,8 +122,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ResetFontSize();
 
         void SendInput(const winrt::hstring& input);
-        void ToggleRetroEffect();
-        void ToggleTerminalEffects();
+        void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);

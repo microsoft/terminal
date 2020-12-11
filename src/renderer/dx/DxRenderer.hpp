@@ -58,7 +58,7 @@ namespace Microsoft::Console::Render
         void SetCallback(std::function<void()> pfn);
         void SetWarningCallback(std::function<void(const HRESULT)> pfn);
 
-        void ToggleTerminalEffects();
+        void ToggleShaderEffects();
 
         bool GetRetroTerminalEffect() const noexcept;
         void SetRetroTerminalEffect(bool enable) noexcept;
