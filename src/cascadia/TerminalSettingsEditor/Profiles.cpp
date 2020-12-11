@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         StorageFile file = co_await picker.PickSingleFileAsync();
         if (file != nullptr)
         {
-            BackgroundImage().Text(file.Path());
+            _State.Profile().BackgroundImagePath(file.Path());
         }
     }
 
@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         StorageFile file = co_await picker.PickSingleFileAsync();
         if (file != nullptr)
         {
-            Icon().Text(file.Path());
+            _State.Profile().Icon(file.Path());
         }
     }
 
@@ -142,7 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         StorageFile file = co_await picker.PickSingleFileAsync();
         if (file != nullptr)
         {
-            Commandline().Text(file.Path());
+            _State.Profile().Commandline(file.Path());
         }
     }
 
@@ -157,7 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (folder != nullptr)
         {
             StorageApplicationPermissions::FutureAccessList().AddOrReplace(L"PickedFolderToken", folder);
-            StartingDirectory().Text(folder.Path());
+            _State.Profile().StartingDirectory(folder.Path());
         }
     }
 

@@ -5,15 +5,66 @@
 
 #include "Profiles.g.h"
 #include "ProfilePageNavigationState.g.h"
+#include "ProfileViewModel.g.h"
 #include "Utils.h"
+#include "ViewModelHelpers.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
+    {
+    public:
+        ProfileViewModel(const Model::Profile& profile) :
+            _profile{ profile } {}
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Name);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Source);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Hidden);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Icon);
+        OBSERVABLE_PROJECTED_SETTING(_profile, CloseOnExit);
+        OBSERVABLE_PROJECTED_SETTING(_profile, TabTitle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, TabColor);
+        OBSERVABLE_PROJECTED_SETTING(_profile, SuppressApplicationTitle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, UseAcrylic);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AcrylicOpacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ScrollState);
+        OBSERVABLE_PROJECTED_SETTING(_profile, FontFace);
+        OBSERVABLE_PROJECTED_SETTING(_profile, FontSize);
+        OBSERVABLE_PROJECTED_SETTING(_profile, FontWeight);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Padding);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
+        OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
+        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImagePath);
+        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_SETTING(_profile, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
+        OBSERVABLE_PROJECTED_SETTING(_profile, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
+        OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
+        OBSERVABLE_PROJECTED_SETTING(_profile, ColorSchemeName);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Foreground);
+        OBSERVABLE_PROJECTED_SETTING(_profile, Background);
+        OBSERVABLE_PROJECTED_SETTING(_profile, SelectionBackground);
+        OBSERVABLE_PROJECTED_SETTING(_profile, CursorColor);
+        OBSERVABLE_PROJECTED_SETTING(_profile, HistorySize);
+        OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
+        OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
+        OBSERVABLE_PROJECTED_SETTING(_profile, CursorShape);
+        OBSERVABLE_PROJECTED_SETTING(_profile, CursorHeight);
+        OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
+
+    private:
+        Model::Profile _profile;
+    };
+
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-        ProfilePageNavigationState(const Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot) :
-            _Profile{ profile },
+        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot) :
+            _Profile{ viewModel },
             _Schemes{ schemes },
             _WindowRoot{ windowRoot }
         {
@@ -22,8 +73,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
-        GETSET_PROPERTY(Model::Profile, Profile, nullptr);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
+        GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
