@@ -803,6 +803,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      becomes a no-op.
             this->Focus(FocusState::Programmatic);
 
+            UpdateAppearance(_settings);
+
             _initializedTerminal = true;
         } // scope for TerminalLock
 
@@ -1909,7 +1911,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _UpdateSystemParameterSettings();
 
-        UpdateAppearance(_settings);
+        if (_settings.UnfocusedConfig())
+        {
+            UpdateAppearance(_settings);
+        }
     }
 
     // Method Description
