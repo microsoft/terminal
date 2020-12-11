@@ -2322,7 +2322,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
 //   user defined id from the custom id map (if there is one)
 // Arguments:
 // - The ID of the hyperlink to be removed
-void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
+void TextBuffer::RemoveHyperlinkFromMap(uint16_t id) noexcept
 {
     _hyperlinkMap.erase(id);
     for (const auto& customIdPair : _hyperlinkCustomIdMap)

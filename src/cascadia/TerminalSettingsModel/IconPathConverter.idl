@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-namespace TerminalApp
+namespace Microsoft.Terminal.Settings.Model
 {
     // See https://docs.microsoft.com/en-us/windows/uwp/data-binding/data-binding-quickstart
 

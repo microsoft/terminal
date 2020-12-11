@@ -67,7 +67,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, Hidden, false);
         GETSET_SETTING(guid, ConnectionType);
 
-        GETSET_SETTING(hstring, Icon);
+        // Default Icon: Segoe MDL2 CommandPrompt icon
+        GETSET_SETTING(hstring, Icon, L"\uE756");
 
         GETSET_SETTING(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
         GETSET_SETTING(hstring, TabTitle);
