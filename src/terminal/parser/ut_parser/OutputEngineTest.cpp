@@ -1026,6 +1026,8 @@ public:
         _secondaryDeviceAttributes{ false },
         _tertiaryDeviceAttributes{ false },
         _vt52DeviceAttributes{ false },
+        _requestTerminalParameters{ false },
+        _reportingPermission{ (DispatchTypes::ReportingPermission)-1 },
         _isAltBuffer{ false },
         _cursorKeysMode{ false },
         _cursorBlinking{ true },
@@ -1237,44 +1239,52 @@ public:
         return true;
     }
 
-    bool _PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
+    bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) noexcept override
+    {
+        _requestTerminalParameters = true;
+        _reportingPermission = permission;
+
+        return true;
+    }
+
+    bool _ModeParamsHelper(_In_ DispatchTypes::ModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
         switch (param)
         {
-        case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+        case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
             // set - Enable Application Mode, reset - Numeric/normal mode
             fSuccess = SetVirtualTerminalInputMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+        case DispatchTypes::ModeParams::DECANM_AnsiMode:
             fSuccess = SetAnsiMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
+        case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<size_t>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
-        case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+        case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
             fSuccess = SetScreenMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+        case DispatchTypes::ModeParams::DECOM_OriginMode:
             // The cursor is also moved to the new home position when the origin mode is set or reset.
             fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
             break;
-        case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+        case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
             fSuccess = SetAutoWrapMode(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+        case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+        case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+        case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
             fSuccess = EnableDECCOLMSupport(fEnable);
             break;
-        case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
+        case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
-        case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+        case DispatchTypes::ModeParams::W32IM_Win32InputMode:
             fSuccess = EnableWin32InputMode(fEnable);
             break;
         default:
@@ -1285,14 +1295,14 @@ public:
         return fSuccess;
     }
 
-    bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
+    bool SetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _PrivateModeParamsHelper(param, true);
+        return _ModeParamsHelper(param, true);
     }
 
-    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) noexcept override
+    bool ResetMode(const DispatchTypes::ModeParams param) noexcept override
     {
-        return _PrivateModeParamsHelper(param, false);
+        return _ModeParamsHelper(param, false);
     }
 
     bool SetColumns(_In_ size_t const uiColumns) noexcept override
@@ -1446,6 +1456,11 @@ public:
         return true;
     }
 
+    bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override
+    {
+        return true;
+    }
+
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -1476,6 +1491,8 @@ public:
     bool _secondaryDeviceAttributes;
     bool _tertiaryDeviceAttributes;
     bool _vt52DeviceAttributes;
+    bool _requestTerminalParameters;
+    DispatchTypes::ReportingPermission _reportingPermission;
     bool _isAltBuffer;
     bool _cursorKeysMode;
     bool _cursorBlinking;
@@ -2434,6 +2451,44 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestRequestTerminalParameters)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Test 1: Check default case, no params.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'x');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalParameters);
+        VERIFY_ARE_EQUAL(DispatchTypes::ReportingPermission::Unsolicited, pDispatch->_reportingPermission);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Test 2: Check unsolicited permission, 0 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'0');
+        mach.ProcessCharacter(L'x');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalParameters);
+        VERIFY_ARE_EQUAL(DispatchTypes::ReportingPermission::Unsolicited, pDispatch->_reportingPermission);
+
+        Log::Comment(L"Test 3: Check solicited permission, 1 param.");
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'[');
+        mach.ProcessCharacter(L'1');
+        mach.ProcessCharacter(L'x');
+
+        VERIFY_IS_TRUE(pDispatch->_requestTerminalParameters);
+        VERIFY_ARE_EQUAL(DispatchTypes::ReportingPermission::Solicited, pDispatch->_reportingPermission);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestStrings)
     {
         auto dispatch = std::make_unique<StatefulDispatch>();
@@ -3089,6 +3144,21 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Passing an empty `Pc` param and a base64-encoded multibyte text `Pd` works.
+        // U+306b U+307b U+3093 U+3054 U+6c49 U+8bed U+d55c U+ad6d
+        mach.ProcessString(L"\x1b]52;;44Gr44G744KT44GU5rGJ6K+t7ZWc6rWt\x07");
+        VERIFY_ARE_EQUAL(L"にほんご汉语한국", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
+        // Passing an empty `Pc` param and a base64-encoded multibyte text w/ emoji sequences `Pd` works.
+        // U+d83d U+dc4d U+d83d U+dc4d U+d83c U+dffb U+d83d U+dc4d U+d83c U+dffc U+d83d
+        // U+dc4d U+d83c U+dffd U+d83d U+dc4d U+d83c U+dffe U+d83d U+dc4d U+d83c U+dfff
+        mach.ProcessString(L"\x1b]52;;8J+RjfCfkY3wn4+78J+RjfCfj7zwn5GN8J+PvfCfkY3wn4++8J+RjfCfj78=\x07");
+        VERIFY_ARE_EQUAL(L"👍👍🏻👍🏼👍🏽👍🏾👍🏿", pDispatch->_copyContent);
+
+        pDispatch->ClearState();
+
         // Passing a non-empty `Pc` param (`s0` is ignored) and a valid `Pd` param works.
         mach.ProcessString(L"\x1b]52;s0;Zm9v\x07");
         VERIFY_ARE_EQUAL(L"foo", pDispatch->_copyContent);
@@ -3165,6 +3235,54 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
         // Process the closing osc 8 sequence
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // Let's try more complicated params and URLs
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // Multiple params
+        mach.ProcessString(L"\x1b]8;id=testId:foo=bar;https://example.com\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        mach.ProcessString(L"\x1b]8;foo=bar:id=testId;https://example.com\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        // URIs with query strings
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
+        mach.ProcessString(L"\x1b]8;;\x9c");
+        VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
+        VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1;value2;value3\x9c");
+        VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
+        VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1;value2;value3");
+        VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
+
         mach.ProcessString(L"\x1b]8;;\x9c");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());

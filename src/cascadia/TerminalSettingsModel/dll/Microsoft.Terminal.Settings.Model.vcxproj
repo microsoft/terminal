@@ -10,12 +10,6 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
@@ -36,6 +30,7 @@
     <ClInclude Include="../KeyMapping.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IconPathConverter.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <!-- Don't put source files in here - put them in the lib's vcxproj instead! -->
@@ -76,12 +71,12 @@
     </ProjectReference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
 
   <ItemDefinitionGroup>

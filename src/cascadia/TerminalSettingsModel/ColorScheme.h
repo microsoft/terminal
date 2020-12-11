@@ -34,12 +34,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     public:
         ColorScheme();
         ColorScheme(hstring name, Windows::UI::Color defaultFg, Windows::UI::Color defaultBg, Windows::UI::Color cursorColor);
+        com_ptr<ColorScheme> Copy() const;
 
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
 
-        Json::Value ToJson();
+        Json::Value ToJson() const;
 
         static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
 

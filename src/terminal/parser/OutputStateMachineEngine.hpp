@@ -127,6 +127,7 @@ namespace Microsoft::Console::VirtualTerminal
             ANSISYSSC_CursorSave = VTID("s"), // NOTE: Overlaps with DECLRMM/DECSLRM. Fix when/if implemented.
             DTTERM_WindowManipulation = VTID("t"), // NOTE: Overlaps with DECSLPP. Fix when/if implemented.
             ANSISYSRC_CursorRestore = VTID("u"),
+            DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
             DECSCPP_SetColumnsPerPage = VTID("$|")
@@ -159,6 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
             Hyperlink = 8,
+            ConEmuAction = 9,
             SetForegroundColor = 10,
             SetBackgroundColor = 11,
             SetCursorColor = 12,

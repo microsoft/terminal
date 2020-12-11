@@ -61,13 +61,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool SecondaryDeviceAttributes() override; // DA2
         bool TertiaryDeviceAttributes() override; // DA3
         bool Vt52DeviceAttributes() override; // VT52 Identify
+        bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) override; // DECREQTPARM
         bool ScrollUp(const size_t distance) override; // SU
         bool ScrollDown(const size_t distance) override; // SD
         bool InsertLine(const size_t distance) override; // IL
         bool DeleteLine(const size_t distance) override; // DL
         bool SetColumns(const size_t columns) override; // DECCOLM
-        bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECSET
-        bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) override; // DECRST
+        bool SetMode(const DispatchTypes::ModeParams param) override; // DECSET
+        bool ResetMode(const DispatchTypes::ModeParams param) override; // DECRST
         bool SetCursorKeysMode(const bool applicationMode) override; // DECCKM
         bool SetKeypadMode(const bool applicationMode) override; // DECKPAM, DECKPNM
         bool EnableWin32InputMode(const bool win32InputMode) override; // win32-input-mode
@@ -122,6 +123,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 
+        bool DoConEmuAction(const std::wstring_view string) noexcept override;
+
     private:
         enum class ScrollDirection
         {
@@ -163,7 +166,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorPositionReport() const;
 
         bool _WriteResponse(const std::wstring_view reply) const;
-        bool _PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable);
+        bool _ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable);
         bool _DoDECCOLMHelper(const size_t columns);
 
         bool _ClearSingleTabStop();

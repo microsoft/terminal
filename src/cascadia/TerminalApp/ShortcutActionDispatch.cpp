@@ -102,7 +102,16 @@ namespace winrt::TerminalApp::implementation
             _ScrollDownPageHandlers(*this, eventArgs);
             break;
         }
-
+        case ShortcutAction::ScrollToTop:
+        {
+            _ScrollToTopHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::ScrollToBottom:
+        {
+            _ScrollToBottomHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::NextTab:
         {
             _NextTabHandlers(*this, eventArgs);
@@ -212,6 +221,11 @@ namespace winrt::TerminalApp::implementation
             _RenameTabHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::OpenTabRenamer:
+        {
+            _OpenTabRenamerHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::ExecuteCommandline:
         {
             _ExecuteCommandlineHandlers(*this, eventArgs);
@@ -227,9 +241,19 @@ namespace winrt::TerminalApp::implementation
             _CloseTabsAfterHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::MoveTab:
+        {
+            _MoveTabHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::TabSearch:
         {
             _TabSearchHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::BreakIntoDebugger:
+        {
+            _BreakIntoDebuggerHandlers(*this, eventArgs);
             break;
         }
         default:

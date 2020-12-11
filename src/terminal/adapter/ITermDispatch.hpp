@@ -88,15 +88,16 @@ public:
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
-    virtual bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECSET
+    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 
-    virtual bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECRST
+    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
     virtual bool SecondaryDeviceAttributes() = 0; // DA2
     virtual bool TertiaryDeviceAttributes() = 0; // DA3
     virtual bool Vt52DeviceAttributes() = 0; // VT52 Identify
+    virtual bool RequestTerminalParameters(const DispatchTypes::ReportingPermission permission) = 0; // DECREQTPARM
 
     virtual bool DesignateCodingSystem(const VTID codingSystem) = 0; // DOCS
     virtual bool Designate94Charset(const size_t gsetNumber, const VTID charset) = 0; // SCS
@@ -121,6 +122,8 @@ public:
 
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;
+
+    virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

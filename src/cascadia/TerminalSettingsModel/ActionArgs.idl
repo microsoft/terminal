@@ -7,6 +7,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         Boolean Equals(IActionArgs other);
         String GenerateName();
+        IActionArgs Copy();
     };
 
     interface IActionEventArgs
@@ -15,13 +16,23 @@ namespace Microsoft.Terminal.Settings.Model
         IActionArgs ActionArgs { get; };
     };
 
-    enum Direction
+    enum ResizeDirection
     {
         None = 0,
         Left,
         Right,
         Up,
         Down
+    };
+
+    enum FocusDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down,
+        Previous
     };
 
     enum SplitState
@@ -42,16 +53,32 @@ namespace Microsoft.Terminal.Settings.Model
     {
         SettingsFile = 0,
         DefaultsFile,
-        AllFiles
+        AllFiles,
+        SettingsUI
+    };
+
+    enum MoveTabDirection
+    {
+        None = 0,
+        Forward,
+        Backward
+    };
+
+    enum CommandPaletteLaunchMode
+    {
+        Action = 0,
+        CommandLine
     };
 
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
+        NewTerminalArgs Copy();
 
         String Commandline;
         String StartingDirectory;
         String TabTitle;
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
@@ -87,12 +114,13 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
     {
-        Direction Direction { get; };
+        ResizeDirection ResizeDirection { get; };
     };
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
-        Direction Direction { get; };
+        MoveFocusArgs(FocusDirection direction);
+        FocusDirection FocusDirection { get; };
     };
 
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
@@ -107,7 +135,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitState style, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode);
+
         SplitState SplitStyle { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
@@ -125,7 +155,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
     {
-        Windows.Foundation.IReference<UInt32> TabColor { get; };
+        Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
     [default_interface] runtimeclass RenameTabArgs : IActionArgs
@@ -149,5 +179,26 @@ namespace Microsoft.Terminal.Settings.Model
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    {
+        MoveTabArgs(MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass ScrollUpArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ScrollDownArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
+    {
+        CommandPaletteLaunchMode LaunchMode { get; };
     };
 }

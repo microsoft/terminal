@@ -4,15 +4,13 @@
 #pragma once
 
 #include "AppLogic.g.h"
-
-#include "Tab.h"
 #include "TerminalPage.h"
 #include "Jumplist.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct AppLogic : AppLogicT<AppLogic>
+    struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
     public:
         static AppLogic* Current() noexcept;
@@ -20,6 +18,8 @@ namespace winrt::TerminalApp::implementation
 
         AppLogic();
         ~AppLogic() = default;
+
+        STDMETHODIMP Initialize(HWND hwnd);
 
         void Create();
         bool IsUwp() const noexcept;
@@ -41,6 +41,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
+        bool GetInitialAlwaysOnTop();
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
@@ -50,6 +51,9 @@ namespace winrt::TerminalApp::implementation
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         void WindowCloseButtonClicked();
+
+        size_t GetLastActiveControlTaskbarState();
+        size_t GetLastActiveControlTaskbarProgress();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
@@ -85,6 +89,8 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
+        bool _IsKeyboardServiceEnabled();
+        void _ShowKeyboardServiceDisabledDialog();
 
         fire_and_forget _LoadErrorsDialogRoutine();
         fire_and_forget _ShowLoadWarningsDialogRoutine();
@@ -109,6 +115,8 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
         FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
+        FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
+        FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
     };
 }
 

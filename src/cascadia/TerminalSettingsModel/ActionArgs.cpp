@@ -22,6 +22,8 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "MoveTabArgs.g.cpp"
+#include "ToggleCommandPaletteArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -56,6 +58,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             ss << fmt::format(L"title: {}, ", _TabTitle);
         }
+
+        if (_TabColor)
+        {
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -138,18 +147,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ResizePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_ResizeDirection)
         {
-        case Direction::Left:
+        case ResizeDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case ResizeDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case ResizeDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case ResizeDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
         }
@@ -162,20 +171,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_FocusDirection)
         {
-        case Direction::Left:
+        case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case FocusDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case FocusDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case FocusDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
+        case FocusDirection::Previous:
+            return RS_(L"MoveFocusToLastUsedPane");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
@@ -300,10 +311,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // "Reset tab color"
         if (_TabColor)
         {
-            til::color c{ _TabColor.Value() };
+            til::color tabColor{ _TabColor.Value() };
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"SetTabColorCommandKey")),
-                            c.ToHexString(true))
+                            tabColor.ToHexString(true))
             };
         }
 
@@ -361,5 +372,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"CloseTabsAfterDefaultCommandKey");
+    }
+
+    winrt::hstring ScrollUpArgs::GenerateName() const
+    {
+        if (_RowsToScroll)
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ScrollUpSeveralRowsCommandKey")),
+                            _RowsToScroll.Value())
+            };
+        }
+        return RS_(L"ScrollUpCommandKey");
+    }
+
+    winrt::hstring ScrollDownArgs::GenerateName() const
+    {
+        if (_RowsToScroll)
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"ScrollDownSeveralRowsCommandKey")),
+                            _RowsToScroll.Value())
+            };
+        }
+        return RS_(L"ScrollDownCommandKey");
+    }
+
+    winrt::hstring MoveTabArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (_Direction)
+        {
+        case MoveTabDirection::Forward:
+            directionString = RS_(L"MoveTabDirectionForward");
+            break;
+        case MoveTabDirection::Backward:
+            directionString = RS_(L"MoveTabDirectionBackward");
+            break;
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"MoveTabCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring ToggleCommandPaletteArgs::GenerateName() const
+    {
+        if (_LaunchMode == CommandPaletteLaunchMode::CommandLine)
+        {
+            return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
+        }
+        return RS_(L"ToggleCommandPaletteCommandKey");
     }
 }

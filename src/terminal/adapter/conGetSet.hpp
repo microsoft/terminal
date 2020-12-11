@@ -15,9 +15,9 @@ Author(s):
 
 #pragma once
 
-#include "..\..\types\inc\IInputEvent.hpp"
-#include "..\..\buffer\out\TextAttribute.hpp"
-#include "..\..\inc\conattrs.hpp"
+#include "../../types/inc/IInputEvent.hpp"
+#include "../../buffer/out/TextAttribute.hpp"
+#include "../../inc/conattrs.hpp"
 
 #include <deque>
 #include <memory>

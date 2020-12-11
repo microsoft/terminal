@@ -31,6 +31,8 @@ namespace Microsoft.Terminal.Settings.Model
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ScrollToTop,
+        ScrollToBottom,
         ResizePane,
         MoveFocus,
         Find,
@@ -43,11 +45,14 @@ namespace Microsoft.Terminal.Settings.Model
         SetTabColor,
         OpenTabColorPicker,
         RenameTab,
+        OpenTabRenamer,
         ExecuteCommandline,
         ToggleCommandPalette,
         CloseOtherTabs,
         CloseTabsAfter,
-        TabSearch
+        TabSearch,
+        MoveTab,
+        BreakIntoDebugger
     };
 
     [default_interface] runtimeclass ActionAndArgs {

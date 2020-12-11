@@ -57,6 +57,18 @@ ColorScheme::ColorScheme(winrt::hstring name, Color defaultFg, Color defaultBg, 
 {
 }
 
+winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
+{
+    auto scheme{ winrt::make_self<ColorScheme>() };
+    scheme->_Name = _Name;
+    scheme->_Foreground = _Foreground;
+    scheme->_Background = _Background;
+    scheme->_SelectionBackground = _SelectionBackground;
+    scheme->_CursorColor = _CursorColor;
+    scheme->_table = _table;
+    return scheme;
+}
+
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
@@ -117,8 +129,8 @@ void ColorScheme::LayerJson(const Json::Value& json)
 // Arguments:
 // - <none>
 // Return Value:
-// <none>
-Json::Value ColorScheme::ToJson()
+// - the JsonObject representing this instance
+Json::Value ColorScheme::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 

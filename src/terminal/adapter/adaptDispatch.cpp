@@ -774,6 +774,40 @@ bool AdaptDispatch::Vt52DeviceAttributes()
 }
 
 // Routine Description:
+// - DECREQTPARM - This sequence was originally used on the VT100 terminal to
+//   report the serial communication parameters (baud rate, data bits, parity,
+//   etc.). On modern terminal emulators, the response is simply hardcoded.
+// Arguments:
+// - permission - This would originally have determined whether the terminal
+//   was allowed to send unsolicited reports or not.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::RequestTerminalParameters(const DispatchTypes::ReportingPermission permission)
+{
+    // We don't care whether unsolicited reports are allowed or not, but the
+    // requested permission does determine the value of the first response
+    // parameter. The remaining parameters are just hardcoded to indicate a
+    // 38400 baud connection, which matches the XTerm response. The full
+    // parameter sequence is as follows:
+    // - response type:    2 or 3 (unsolicited or solicited)
+    // - parity:           1 (no parity)
+    // - data bits:        1 (8 bits per character)
+    // - transmit speed:   128 (38400 baud)
+    // - receive speed:    128 (38400 baud)
+    // - clock multiplier: 1
+    // - flags:            0
+    switch (permission)
+    {
+    case DispatchTypes::ReportingPermission::Unsolicited:
+        return _WriteResponse(L"\x1b[2;1;1;128;128;1;0x");
+    case DispatchTypes::ReportingPermission::Solicited:
+        return _WriteResponse(L"\x1b[3;1;1;128;128;1;0x");
+    default:
+        return false;
+    }
+}
+
+// Routine Description:
 // - DSR-OS - Reports the operating status back to the input channel
 // Arguments:
 // - <none>
@@ -1010,62 +1044,62 @@ bool AdaptDispatch::_DoDECCOLMHelper(const size_t columns)
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable)
+bool AdaptDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable)
 {
     bool success = false;
     switch (param)
     {
-    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECANM_AnsiMode:
+    case DispatchTypes::ModeParams::DECANM_AnsiMode:
         success = SetAnsiMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
+    case DispatchTypes::ModeParams::DECCOLM_SetNumberOfColumns:
         success = _DoDECCOLMHelper(enable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
-    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         success = SetScreenMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+    case DispatchTypes::ModeParams::DECOM_OriginMode:
         // The cursor is also moved to the new home position when the origin mode is set or reset.
         success = SetOriginMode(enable) && CursorPosition(1, 1);
         break;
-    case DispatchTypes::PrivateModeParams::DECAWM_AutoWrapMode:
+    case DispatchTypes::ModeParams::DECAWM_AutoWrapMode:
         success = SetAutoWrapMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         success = CursorVisibility(enable);
         break;
-    case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+    case DispatchTypes::ModeParams::XTERM_EnableDECCOLMSupport:
         success = EnableDECCOLMSupport(enable);
         break;
-    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         success = EnableAnyEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         success = EnableUTF8ExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
+    case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
         success = enable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
-    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
     default:
@@ -1082,9 +1116,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModePar
 // - param - mode parameter to set
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param)
+bool AdaptDispatch::SetMode(const DispatchTypes::ModeParams param)
 {
-    return _PrivateModeParamsHelper(param, true);
+    return _ModeParamsHelper(param, true);
 }
 
 // Routine Description:
@@ -1093,9 +1127,9 @@ bool AdaptDispatch::SetPrivateMode(const DispatchTypes::PrivateModeParams param)
 // - param - mode parameter to reset
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::ResetPrivateMode(const DispatchTypes::PrivateModeParams param)
+bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 {
-    return _PrivateModeParamsHelper(param, false);
+    return _ModeParamsHelper(param, false);
 }
 
 // - DECKPAM, DECKPNM - Sets the keypad input mode to either Application mode or Numeric mode (true, false respectively)
@@ -2347,6 +2381,16 @@ bool AdaptDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring
 bool AdaptDispatch::EndHyperlink()
 {
     return _pConApi->PrivateEndHyperlink();
+}
+
+// Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
+{
+    return false;
 }
 
 // Routine Description:

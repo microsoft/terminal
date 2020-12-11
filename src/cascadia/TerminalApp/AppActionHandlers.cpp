@@ -65,15 +65,23 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleScrollUp(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        _Scroll(-1);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<ScrollUpArgs>();
+        if (realArgs)
+        {
+            _Scroll(ScrollUp, realArgs.RowsToScroll());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleScrollDown(const IInspectable& /*sender*/,
                                          const ActionEventArgs& args)
     {
-        _Scroll(1);
-        args.Handled(true);
+        const auto& realArgs = args.ActionArgs().try_as<ScrollDownArgs>();
+        if (realArgs)
+        {
+            _Scroll(ScrollDown, realArgs.RowsToScroll());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
@@ -122,36 +130,54 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        auto activeTab = _GetFocusedTab();
-
-        // Don't do anything if there's only one pane. It's already zoomed.
-        if (activeTab && activeTab->GetLeafPaneCount() > 1)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            // First thing's first, remove the current content from the UI
-            // tree. This is important, because we might be leaving zoom, and if
-            // a pane is zoomed, then it's currently in the UI tree, and should
-            // be removed before it's re-added in Pane::Restore
-            _tabContent.Children().Clear();
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            {
+                // Don't do anything if there's only one pane. It's already zoomed.
+                if (activeTab && activeTab->GetLeafPaneCount() > 1)
+                {
+                    // First thing's first, remove the current content from the UI
+                    // tree. This is important, because we might be leaving zoom, and if
+                    // a pane is zoomed, then it's currently in the UI tree, and should
+                    // be removed before it's re-added in Pane::Restore
+                    _tabContent.Children().Clear();
 
-            activeTab->ToggleZoom();
-
-            // Update the selected tab, to trigger us to re-add the tab's GetRootElement to the UI tree
-            _UpdatedSelectedTab(_tabView.SelectedIndex());
+                    // Togging the zoom on the tab will cause the tab to inform us of
+                    // the new root Content for this tab.
+                    activeTab->ToggleZoom();
+                }
+            }
         }
+
         args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
-        _ScrollPage(-1);
+        _ScrollPage(ScrollUp);
         args.Handled(true);
     }
 
     void TerminalPage::_HandleScrollDownPage(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
-        _ScrollPage(1);
+        _ScrollPage(ScrollDown);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToTop(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollUp);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToBottom(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollDown);
         args.Handled(true);
     }
 
@@ -202,14 +228,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ResizePaneArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.ResizeDirection() == ResizeDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _ResizePane(realArgs.Direction());
+                _ResizePane(realArgs.ResizeDirection());
                 args.Handled(true);
             }
         }
@@ -220,14 +246,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<MoveFocusArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.FocusDirection() == FocusDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _MoveFocus(realArgs.Direction());
+                _MoveFocus(realArgs.FocusDirection());
                 args.Handled(true);
             }
         }
@@ -301,13 +327,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const ActionEventArgs& args)
     {
-        // TODO GH#6677: When we add support for commandline mode, first set the
-        // mode that the command palette should be in, before making it visible.
-        CommandPalette().EnableCommandPaletteMode();
-        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                        Visibility::Collapsed :
-                                        Visibility::Visible);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
+        {
+            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
@@ -316,16 +343,19 @@ namespace winrt::TerminalApp::implementation
         args.Handled(false);
         if (const auto& realArgs = args.ActionArgs().try_as<SetColorSchemeArgs>())
         {
-            if (auto activeTab = _GetFocusedTab())
+            if (auto focusedTab = _GetFocusedTab())
             {
-                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                if (auto activeTab = _GetTerminalTabImpl(focusedTab))
                 {
-                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
+                    if (auto activeControl = activeTab->GetActiveTerminalControl())
                     {
-                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        controlSettings->ApplyColorScheme(scheme);
-                        activeControl.UpdateSettings(*controlSettings);
-                        args.Handled(true);
+                        if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
+                        {
+                            auto controlSettings = activeControl.Settings().as<TerminalSettings>();
+                            controlSettings->ApplyColorScheme(scheme);
+                            activeControl.UpdateSettings(*controlSettings);
+                            args.Handled(true);
+                        }
                     }
                 }
             }
@@ -335,26 +365,25 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        std::optional<til::color> tabColor;
+        Windows::Foundation::IReference<Windows::UI::Color> tabColor;
 
         if (const auto& realArgs = args.ActionArgs().try_as<SetTabColorArgs>())
         {
-            if (realArgs.TabColor() != nullptr)
-            {
-                tabColor = realArgs.TabColor().Value();
-            }
+            tabColor = realArgs.TabColor();
         }
 
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            if (tabColor.has_value())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                activeTab->SetRuntimeTabColor(tabColor.value());
-            }
-            else
-            {
-                activeTab->ResetRuntimeTabColor();
+                if (tabColor)
+                {
+                    activeTab->SetRuntimeTabColor(tabColor.Value());
+                }
+                else
+                {
+                    activeTab->ResetRuntimeTabColor();
+                }
             }
         }
         args.Handled(true);
@@ -363,10 +392,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabColorPicker(const IInspectable& /*sender*/,
                                                  const ActionEventArgs& args)
     {
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            activeTab->ActivateColorPicker();
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            {
+                activeTab->ActivateColorPicker();
+            }
         }
         args.Handled(true);
     }
@@ -381,16 +412,31 @@ namespace winrt::TerminalApp::implementation
             title = realArgs.Title();
         }
 
-        auto activeTab = _GetFocusedTab();
-        if (activeTab)
+        if (auto focusedTab = _GetFocusedTab())
         {
-            if (title.has_value())
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                activeTab->SetTabText(title.value());
+                if (title.has_value())
+                {
+                    activeTab->SetTabText(title.value());
+                }
+                else
+                {
+                    activeTab->ResetTabText();
+                }
             }
-            else
+        }
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleOpenTabRenamer(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        if (auto focusedTab = _GetFocusedTab())
+        {
+            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                activeTab->ResetTabText();
+                activeTab->ActivateTabRenamer();
             }
         }
         args.Handled(true);
@@ -489,6 +535,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
+        // Tab search is always in-order.
+        CommandPalette().SetTabs(_tabs, true);
+
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
 
@@ -497,4 +546,34 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleMoveTab(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
+        {
+            auto direction = realArgs.Direction();
+            if (direction != MoveTabDirection::None)
+            {
+                if (auto focusedTabIndex = _GetFocusedTabIndex())
+                {
+                    auto currentTabIndex = focusedTabIndex.value();
+                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+                }
+            }
+            actionArgs.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleBreakIntoDebugger(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& actionArgs)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            actionArgs.Handled(true);
+            DebugBreak();
+        }
+    }
+
 }

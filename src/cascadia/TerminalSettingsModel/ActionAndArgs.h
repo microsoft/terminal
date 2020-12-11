@@ -5,7 +5,7 @@
 
 #include "ActionAndArgs.g.h"
 #include "TerminalWarnings.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -19,6 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ActionAndArgs(ShortcutAction action, IActionArgs args) :
             _Action{ action },
             _Args{ args } {};
+        com_ptr<ActionAndArgs> Copy() const;
 
         hstring GenerateName() const;
 

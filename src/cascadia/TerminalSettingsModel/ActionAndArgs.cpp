@@ -27,12 +27,15 @@ static constexpr std::string_view OpenTabColorPickerKey{ "openTabColorPicker" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
 static constexpr std::string_view RenameTabKey{ "renameTab" };
+static constexpr std::string_view OpenTabRenamerKey{ "openTabRenamer" };
 static constexpr std::string_view ResetFontSizeKey{ "resetFontSize" };
 static constexpr std::string_view ResizePaneKey{ "resizePane" };
 static constexpr std::string_view ScrolldownKey{ "scrollDown" };
 static constexpr std::string_view ScrolldownpageKey{ "scrollDownPage" };
 static constexpr std::string_view ScrollupKey{ "scrollUp" };
 static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
+static constexpr std::string_view ScrollToTopKey{ "scrollToTop" };
+static constexpr std::string_view ScrollToBottomKey{ "scrollToBottom" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
@@ -45,6 +48,8 @@ static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
 static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
 static constexpr std::string_view ToggleRetroEffectKey{ "toggleRetroEffect" };
+static constexpr std::string_view MoveTabKey{ "moveTab" };
+static constexpr std::string_view BreakIntoDebuggerKey{ "breakIntoDebugger" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
@@ -84,12 +89,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { PasteTextKey, ShortcutAction::PasteText },
         { PrevTabKey, ShortcutAction::PrevTab },
         { RenameTabKey, ShortcutAction::RenameTab },
+        { OpenTabRenamerKey, ShortcutAction::OpenTabRenamer },
         { ResetFontSizeKey, ShortcutAction::ResetFontSize },
         { ResizePaneKey, ShortcutAction::ResizePane },
         { ScrolldownKey, ShortcutAction::ScrollDown },
         { ScrolldownpageKey, ShortcutAction::ScrollDownPage },
         { ScrollupKey, ShortcutAction::ScrollUp },
         { ScrolluppageKey, ShortcutAction::ScrollUpPage },
+        { ScrollToTopKey, ShortcutAction::ScrollToTop },
+        { ScrollToBottomKey, ShortcutAction::ScrollToBottom },
         { SendInputKey, ShortcutAction::SendInput },
         { SetColorSchemeKey, ShortcutAction::SetColorScheme },
         { SetTabColorKey, ShortcutAction::SetTabColor },
@@ -102,6 +110,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ToggleFullscreenKey, ShortcutAction::ToggleFullscreen },
         { TogglePaneZoomKey, ShortcutAction::TogglePaneZoom },
         { ToggleRetroEffectKey, ShortcutAction::ToggleRetroEffect },
+        { MoveTabKey, ShortcutAction::MoveTab },
+        { BreakIntoDebuggerKey, ShortcutAction::BreakIntoDebugger },
         { UnboundKey, ShortcutAction::Invalid },
     };
 
@@ -129,6 +139,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         { ShortcutAction::SetTabColor, SetTabColorArgs::FromJson },
         { ShortcutAction::SplitPane, SplitPaneArgs::FromJson },
         { ShortcutAction::SwitchToTab, SwitchToTabArgs::FromJson },
+        { ShortcutAction::ScrollUp, ScrollUpArgs::FromJson },
+        { ShortcutAction::ScrollDown, ScrollDownArgs::FromJson },
+        { ShortcutAction::MoveTab, MoveTabArgs::FromJson },
+        { ShortcutAction::ToggleCommandPalette, ToggleCommandPaletteArgs::FromJson },
 
         { ShortcutAction::Invalid, nullptr },
     };
@@ -240,6 +254,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     }
 
+    com_ptr<ActionAndArgs> ActionAndArgs::Copy() const
+    {
+        auto copy{ winrt::make_self<ActionAndArgs>() };
+        copy->_Action = _Action;
+        copy->_Args = _Args ? _Args.Copy() : IActionArgs{ nullptr };
+        return copy;
+    }
+
     winrt::hstring ActionAndArgs::GenerateName() const
     {
         // Use a magic static to initialize this map, because we won't be able
@@ -267,12 +289,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::PasteText, RS_(L"PasteTextCommandKey") },
                 { ShortcutAction::PrevTab, RS_(L"PrevTabCommandKey") },
                 { ShortcutAction::RenameTab, RS_(L"ResetTabNameCommandKey") },
+                { ShortcutAction::OpenTabRenamer, RS_(L"OpenTabRenamerCommandKey") },
                 { ShortcutAction::ResetFontSize, RS_(L"ResetFontSizeCommandKey") },
                 { ShortcutAction::ResizePane, RS_(L"ResizePaneCommandKey") },
                 { ShortcutAction::ScrollDown, RS_(L"ScrollDownCommandKey") },
                 { ShortcutAction::ScrollDownPage, RS_(L"ScrollDownPageCommandKey") },
                 { ShortcutAction::ScrollUp, RS_(L"ScrollUpCommandKey") },
                 { ShortcutAction::ScrollUpPage, RS_(L"ScrollUpPageCommandKey") },
+                { ShortcutAction::ScrollToTop, RS_(L"ScrollToTopCommandKey") },
+                { ShortcutAction::ScrollToBottom, RS_(L"ScrollToBottomCommandKey") },
                 { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
@@ -280,11 +305,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
-                { ShortcutAction::ToggleCommandPalette, RS_(L"ToggleCommandPaletteCommandKey") },
+                { ShortcutAction::ToggleCommandPalette, L"" },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
                 { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::ToggleRetroEffect, RS_(L"ToggleRetroEffectCommandKey") },
+                { ShortcutAction::MoveTab, L"" }, // Intentionally omitted, must be generated by GenerateName
+                { ShortcutAction::BreakIntoDebugger, RS_(L"BreakIntoDebuggerCommandKey") },
             };
         }();
 
