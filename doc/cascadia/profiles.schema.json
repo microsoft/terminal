@@ -109,7 +109,17 @@
       ],
       "type": "string"
     },
-    "Direction": {
+    "FocusDirection": {
+      "enum": [
+        "left",
+        "right",
+        "up",
+        "down",
+        "previous"
+      ],
+      "type": "string"
+    },
+    "ResizeDirection": {
       "enum": [
         "left",
         "right",
@@ -298,9 +308,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "moveFocus" },
             "direction": {
-              "$ref": "#/definitions/Direction",
+              "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes"
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
             }
           }
         }
@@ -315,9 +325,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "resizePane" },
             "direction": {
-              "$ref": "#/definitions/Direction",
+              "$ref": "#/definitions/ResizeDirection",
               "default": "left",
-              "description": "The direction to move the pane separator in"
+              "description": "The direction to move the pane separator in."
             }
           }
         }
@@ -332,10 +342,7 @@
         },
         {
           "properties": {
-            "action": {
-              "type": "string",
-              "pattern": "sendInput"
-            },
+            "action": { "type": "string", "pattern": "sendInput" },
             "input": {
               "type": "string",
               "default": "",
@@ -375,10 +382,7 @@
         },
         {
           "properties": {
-            "action": {
-              "type": "string",
-              "pattern": "openSettings"
-            },
+            "action": { "type": "string", "pattern": "openSettings" },
             "target": {
               "type": "string",
               "default": "settingsFile",
@@ -834,7 +838,8 @@
                 "desktopWallpaper"
               ]
             }
-          ]
+          ],
+          "type": [ "string", "null" ]
         },
         "backgroundImageAlignment": {
           "default": "center",

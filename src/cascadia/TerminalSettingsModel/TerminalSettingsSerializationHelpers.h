@@ -328,14 +328,26 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
-// Possible Direction values
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::Direction)
+// Possible FocusDirection values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
+{
+    JSON_MAPPINGS(5) = {
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "right", ValueType::Right },
+        pair_type{ "up", ValueType::Up },
+        pair_type{ "down", ValueType::Down },
+        pair_type{ "previous", ValueType::Previous },
+    };
+};
+
+// Possible ResizeDirection values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ResizeDirection)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "left", ValueType::Left },
         pair_type{ "right", ValueType::Right },
         pair_type{ "up", ValueType::Up },
-        pair_type{ "down", ValueType::Down },
+        pair_type{ "down", ValueType::Down }
     };
 };
 
