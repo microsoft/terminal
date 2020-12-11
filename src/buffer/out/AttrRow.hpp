@@ -34,11 +34,10 @@ public:
 
     ~ATTR_ROW() = default;
 
-    ATTR_ROW(ATTR_ROW&) = delete;
-    ATTR_ROW& operator=(ATTR_ROW&) = delete;
+    ATTR_ROW(const ATTR_ROW&) = default;
+    ATTR_ROW& operator=(const ATTR_ROW&) = default;
     ATTR_ROW(ATTR_ROW&&)
     noexcept = default;
-
     ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
     void Reset(const TextAttribute attr);
