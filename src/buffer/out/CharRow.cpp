@@ -16,7 +16,7 @@
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
 #pragma warning(push)
-#pragma warning(disable: 26447) // small_vector's constructor says it can throw but it should not given how we use it.  This suppresses this error for the AuditMode build.
+#pragma warning(disable : 26447) // small_vector's constructor says it can throw but it should not given how we use it.  This suppresses this error for the AuditMode build.
 CharRow::CharRow(size_t rowWidth, ROW* const pParent) noexcept :
     _wrapForced{ false },
     _doubleBytePadded{ false },
