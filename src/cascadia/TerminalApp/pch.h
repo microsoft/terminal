@@ -71,7 +71,9 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+
 #include <winrt/Windows.UI.Popups.h>
 
 #include <CLI11/CLI11.hpp>

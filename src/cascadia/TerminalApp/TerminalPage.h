@@ -115,6 +115,8 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateTabIndices();
 
+        TerminalApp::SettingsTab _settingsTab{ nullptr };
+
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isAlwaysOnTop{ false };
