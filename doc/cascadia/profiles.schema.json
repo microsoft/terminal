@@ -453,9 +453,9 @@
             "index": {
               "oneOf": [
                 { "type": "integer" },
-                { "type": null }
+                { "type": "null" }
               ],
-              "default": "",
+              "default": null,
               "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
             }
           }
@@ -472,9 +472,9 @@
             "index": {
               "oneOf": [
                 { "type": "integer" },
-                { "type": null }
+                { "type": "null" }
               ],
-              "default": "",
+              "default": null,
               "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
