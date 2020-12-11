@@ -125,7 +125,7 @@ a difference between both appearances.
 We will need to decide how this will look in the settings UI.
 
 We may wish to add more states in the future (like 'elevated'). When that happens, we will need to deal with how
-these appearance objects can scale/layer over each other. We had a lot of dicussion about this and could not find
+these appearance objects can scale/layer over each other. We had a lot of discussion about this and could not find
 a suitable solution to the problem of multiple states being valid at the same time (like unfocused and elevated).
 This, along with the fact that it is uncertain if there even will be more states we would want to add led us to
 the conclusion that we should only support the unfocused state for now, and come back to this issue later. If there
