@@ -621,6 +621,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Called when the renderer triggers a warning. It might do this when it
+    //   fails to find a shader file, or fails to compile a shader. We'll take
+    //   that renderer warning, and display a dialog to the user with and
+    //   appropriate error message. WE'll display the dialog with our
+    //   RaiseNotice event.
+    // Arguments:
+    // - hr: an  HRESULT describing the warning
+    // Return Value:
+    // - <none>
     winrt::fire_and_forget TermControl::_RendererWarning(const HRESULT hr)
     {
         auto weakThis{ get_weak() };
@@ -632,7 +642,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (E_FILE_NOT_FOUND == hr)
             {
-                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") }, _settings.PixelShaderPath()) };
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
+                                        _settings.PixelShaderPath()) };
             }
             else if (D2DERR_SHADER_COMPILE_FAILED == hr)
             {
@@ -640,8 +651,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else
             {
-                message = { fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") }, hr) };
-                // message{ fmt::format(L"Renderer encountered an unexpected error: {}", hr) };
+                message = { fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
+                                        hr) };
             }
 
             auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
@@ -728,6 +739,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
+            // IMPORTANT! Set this callback up sooner than later. If we do it
+            // after Enable, then it'll be possible to paint the frame once
+            // _before_ the warning handler is set up, and then warnings from
+            // the first paint will be ignored!
             dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
             dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());

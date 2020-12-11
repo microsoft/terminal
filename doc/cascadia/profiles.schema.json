@@ -103,7 +103,7 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
-        "toggleRetroEffect",
+        "toggleShaderEffects",
         "wt",
         "unbound"
       ],
@@ -931,8 +931,8 @@
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
         },
-        "experimental.pixelShaderEffect": {
-          "description": "If set to a file name or preset, compiles the pixel shader effect and applies it the terminal view. Currently 2 presets are supported `RETRO` and `RETROII`. This is an experimental feature, and its continued existence is not guaranteed.",
+        "experimental.pixelShaderPath": {
+          "description": "Use to set a path to a pixel shader to use with the Terminal. Overrides `experimental.retroTerminalEffect`. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "string"
         },
         "fontFace": {
