@@ -29,6 +29,12 @@ class CharRowCell final
 {
 public:
     CharRowCell() noexcept = default;
+    CharRowCell(const wchar_t wch, const DbcsAttribute attr) noexcept
+        :
+        _wch(wch),
+        _attr(attr)
+    {
+    }
 
     void EraseChars() noexcept;
     void Reset() noexcept;
@@ -43,6 +49,7 @@ public:
 
     friend constexpr bool operator==(const CharRowCell& a, const CharRowCell& b) noexcept;
 
+private:
     wchar_t _wch{ UNICODE_SPACE };
     DbcsAttribute _attr{};
 };

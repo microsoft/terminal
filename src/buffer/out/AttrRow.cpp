@@ -15,7 +15,7 @@ ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) noexcept
 {
     try
     {
-        _list.push_back(TextAttributeRun(cchRowWidth, attr));
+        _list.emplace_back(TextAttributeRun(cchRowWidth, attr));
     }
     catch (...)
     {
@@ -31,7 +31,7 @@ ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) noexcept
 void ATTR_ROW::Reset(const TextAttribute attr)
 {
     _list.clear();
-    _list.push_back(TextAttributeRun(_cchRowWidth, attr));
+    _list.emplace_back(TextAttributeRun(_cchRowWidth, attr));
 }
 
 // Routine Description:
@@ -601,8 +601,7 @@ std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribut
     {
         if (runs.empty() || runs.back().GetAttributes() != attr)
         {
-            const TextAttributeRun run(1, attr);
-            runs.push_back(run);
+            runs.emplace_back(TextAttributeRun(1, attr));
         }
         else
         {
