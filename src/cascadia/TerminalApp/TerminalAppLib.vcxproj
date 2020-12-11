@@ -78,6 +78,9 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsTab.h">
+      <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
@@ -146,6 +149,9 @@
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsTab.cpp">
+      <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
@@ -222,6 +228,7 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
@@ -308,6 +315,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.TerminalControl">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Settings.Editor">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Editor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

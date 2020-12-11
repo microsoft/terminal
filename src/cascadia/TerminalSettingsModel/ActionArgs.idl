@@ -53,7 +53,8 @@ namespace Microsoft.Terminal.Settings.Model
     {
         SettingsFile = 0,
         DefaultsFile,
-        AllFiles
+        AllFiles,
+        SettingsUI
     };
 
     enum MoveTabDirection
