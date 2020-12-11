@@ -2862,7 +2862,10 @@ namespace winrt::TerminalApp::implementation
     //   Service" is disabled.
     void TerminalPage::ShowKeyboardServiceWarning()
     {
-        KeyboardWarningInfoBar().IsOpen(true);
+        if (auto keyboardWarningInfoBar = FindName(L"KeyboardWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            keyboardWarningInfoBar.IsOpen(true);
+        }
     }
 
     // Function Description:
