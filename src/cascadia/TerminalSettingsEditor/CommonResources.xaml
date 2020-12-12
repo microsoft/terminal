@@ -8,8 +8,8 @@
     <Thickness x:Key="StandardControlSpacing">0,0,0,20</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">300</x:Double>
 
-    <!-- TODO GH#XXXX: This is for easier transition to the SettingsContainer control.
-                       The SettingsContainer will wrap a setting with inheritance UI.-->
+    <!-- This is for easier transition to the SettingsContainer control.
+         The SettingsContainer will wrap a setting with inheritance UI.-->
     <Style x:Key="SettingContainerStyle" TargetType="ContentPresenter">
         <Setter Property="Padding" Value="{StaticResource StandardControlSpacing}"/>
     </Style>

@@ -199,6 +199,9 @@
   <data name="DirectionUp" xml:space="preserve">
     <value>up</value>
   </data>
+  <data name="DirectionPrevious" xml:space="preserve">
+    <value>previous</value>
+  </data>
   <data name="DuplicatePaneCommandKey" xml:space="preserve">
     <value>Duplicate pane</value>
   </data>
@@ -224,7 +227,10 @@
   </data>
   <data name="MoveFocusWithArgCommandKey" xml:space="preserve">
     <value>Move focus {0}</value>
-    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", or "DirectionDown"</comment>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="MoveFocusToLastUsedPane" xml:space="preserve">
+    <value>Move focus to the last used pane</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>

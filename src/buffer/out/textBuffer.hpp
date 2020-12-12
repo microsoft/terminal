@@ -144,7 +144,7 @@ public:
     void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
     std::wstring GetHyperlinkUriFromId(uint16_t id) const;
     uint16_t GetHyperlinkId(std::wstring_view uri, std::wstring_view id);
-    void RemoveHyperlinkFromMap(uint16_t id);
+    void RemoveHyperlinkFromMap(uint16_t id) noexcept;
     std::wstring GetCustomIdFromId(uint16_t id) const;
     void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 

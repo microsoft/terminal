@@ -36,16 +36,26 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile)
+    {
+        return winrt::make<implementation::ProfileViewModel>(profile);
+    }
+
     MainPage::MainPage(const CascadiaSettings& settings) :
         _settingsSource{ settings },
-        _settingsClone{ settings.Copy() },
-        _profileToNavItemMap{ winrt::single_threaded_map<Model::Profile, MUX::Controls::NavigationViewItem>() }
+        _settingsClone{ settings.Copy() }
     {
         InitializeComponent();
 
         _InitializeProfilesList();
     }
 
+    // Method Description:
+    // - Update the Settings UI with a new CascadiaSettings to bind to
+    // Arguments:
+    // - settings - the new settings source
+    // Return value:
+    // - <none>
     fire_and_forget MainPage::UpdateSettings(Model::CascadiaSettings settings)
     {
         _settingsSource = settings;
@@ -53,9 +63,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        // reconstruct our list of profiles
+        // "remove" all profile-related NavViewItems
+        // LOAD-BEARING: use Visibility here, instead of menuItems.Remove().
+        //               Remove() works fine on NavViewItems with an hstring tag,
+        //               but causes an out-of-bounds error with Profile tagged items.
+        //               The cause of this error is unknown.
         auto menuItems{ SettingsNav().MenuItems() };
-
         for (auto i = menuItems.Size() - 1; i > 0; --i)
         {
             if (const auto navViewItem{ menuItems.GetAt(i).try_as<MUX::Controls::NavigationViewItem>() })
@@ -64,14 +77,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 {
                     if (tag.try_as<Model::Profile>())
                     {
-                        // remove NavViewItem pointing to a Profile
+                        // hide NavViewItem pointing to a Profile
                         navViewItem.Visibility(Visibility::Collapsed);
                     }
                     else if (const auto stringTag{ tag.try_as<hstring>() })
                     {
-                        if (stringTag == globalProfileTag || stringTag == addProfileTag)
+                        if (stringTag == addProfileTag)
                         {
-                            // remove NavViewItem pointing to "Add Profile" or "Base Layer"
+                            // hide NavViewItem pointing to "Add Profile"
                             navViewItem.Visibility(Visibility::Collapsed);
                         }
                     }
@@ -96,7 +109,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     if (_settingsClone.FindProfile(profile.Guid()))
                     {
                         // Navigate to the page with the given profile
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_viewModelForProfile(profile), _settingsClone.GlobalSettings().ColorSchemes(), *this));
                         return;
                     }
                 }
@@ -181,7 +194,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _Navigate(*navString);
                 }
             }
-            else if (const auto profile = clickedItemContainer.Tag().try_as<Model::Profile>())
+            else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
             {
                 // Navigate to a page with the given profile
                 contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
@@ -205,7 +218,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_settingsClone.ProfileDefaults(), _settingsClone.GlobalSettings().ColorSchemes(), *this));
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_viewModelForProfile(_settingsClone.ProfileDefaults()), _settingsClone.GlobalSettings().ColorSchemes(), *this));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -257,7 +270,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
-            auto navItem = _CreateProfileNavViewItem(profile);
+            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile));
             SettingsNav().MenuItems().Append(navItem);
         }
 
@@ -278,26 +291,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index)
     {
         const auto newProfile{ _settingsClone.CreateNewProfile() };
-        const auto navItem{ _CreateProfileNavViewItem(newProfile) };
+        const auto profileViewModel{ _viewModelForProfile(newProfile) };
+        const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
         // Select and navigate to the new profile
         SettingsNav().SelectedItem(navItem);
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(newProfile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profileViewModel, _settingsClone.GlobalSettings().ColorSchemes(), *this));
     }
 
-    MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Profile& profile)
+    MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Editor::ProfileViewModel& profile)
     {
         MUX::Controls::NavigationViewItem profileNavItem;
         profileNavItem.Content(box_value(profile.Name()));
-        profileNavItem.Tag(box_value<Model::Profile>(profile));
+        profileNavItem.Tag(box_value<Editor::ProfileViewModel>(profile));
 
         const auto iconSource{ IconPathConverter::IconSourceWUX(profile.Icon()) };
         WUX::Controls::IconSourceElement icon;
         icon.IconSource(iconSource);
         profileNavItem.Icon(icon);
-
-        _profileToNavItemMap.Insert(profile, profileNavItem);
 
         return profileNavItem;
     }

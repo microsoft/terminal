@@ -30,13 +30,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
-        winrt::Windows::Foundation::Collections::IMap<Model::Profile, winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem> _profileToNavItemMap;
 
         std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index);
-        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Model::Profile& profile);
+        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const ProfileViewModel& profile);
 
         void _Navigate(hstring clickedItemTag);
         void _RefreshCurrentPage();
