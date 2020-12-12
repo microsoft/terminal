@@ -129,6 +129,8 @@ public:
 
     SHORT GetLineWidth(const size_t row) const;
     COORD ClampPositionWithinLine(const COORD position) const;
+    COORD ScreenToBufferPosition(const COORD position) const;
+    COORD BufferToScreenPosition(const COORD position) const;
 
     void Reset();
 
@@ -149,7 +151,7 @@ public:
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
     bool MoveToPreviousGlyph(til::point& pos) const;
 
-    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false, bool bufferCoordinates = false) const;
 
     void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
     std::wstring GetHyperlinkUriFromId(uint16_t id) const;

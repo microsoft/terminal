@@ -858,6 +858,18 @@ COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
     return { std::min(position.X, rightmostColumn), position.Y };
 }
 
+COORD TextBuffer::ScreenToBufferPosition(const COORD position) const
+{
+    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    return { position.X >> scale, position.Y };
+}
+
+COORD TextBuffer::BufferToScreenPosition(const COORD position) const
+{
+    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    return { position.X << scale, position.Y };
+}
+
 // Routine Description:
 // - Resets the text contents of this buffer with the default character
 //   and the default current color attributes
@@ -1482,9 +1494,11 @@ bool TextBuffer::MoveToPreviousGlyph(til::point& pos) const
 // - blockSelection: when enabled, only get the rectangular text region,
 //                   as opposed to the text extending to the left/right
 //                   buffer margins
+// - bufferCoordinates: when enabled, treat the coordinates as relative to
+//                      the buffer rather than the screen.
 // Return Value:
 // - the delimiter class for the given char
-const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection) const
+const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const
 {
     std::vector<SMALL_RECT> textRects;
 
@@ -1516,6 +1530,13 @@ const std::vector<SMALL_RECT> TextBuffer::GetTextRects(COORD start, COORD end, b
         {
             textRow.Left = (row == higherCoord.Y) ? higherCoord.X : bufferSize.Left();
             textRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferSize.RightInclusive();
+        }
+
+        // If we were passed screen coordinates, convert the given range into
+        // equivalent buffer offsets, taking line rendition into account.
+        if (!bufferCoordinates)
+        {
+            textRow = ScreenToBufferLine(textRow, GetLineRendition(row));
         }
 
         _ExpandTextRow(textRow);

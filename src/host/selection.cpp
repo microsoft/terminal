@@ -417,7 +417,7 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd);
+        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd, false, true);
         for (const auto& rect : rectangles)
         {
             ColorSelection(rect, attr);

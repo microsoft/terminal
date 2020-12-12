@@ -1215,14 +1215,20 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 // - A vector of rectangles representing the regions to select, line by line.
 std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
 {
+    const auto& buffer = _pData->GetTextBuffer();
     auto rects = _pData->GetSelectionRects();
     // Adjust rectangles to viewport
     Viewport view = _pData->GetViewport();
 
     std::vector<SMALL_RECT> result;
 
-    for (auto& rect : rects)
+    for (auto rect : rects)
     {
+        // Convert buffer offsets to the equivalent range of screen cells
+        // expected by callers, taking line rendition into account.
+        const auto lineRendition = buffer.GetLineRendition(rect.Top());
+        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
+
         auto sr = view.ConvertToOrigin(rect).ToInclusive();
 
         // hopefully temporary, we should be receiving the right selection sizes without correction.
