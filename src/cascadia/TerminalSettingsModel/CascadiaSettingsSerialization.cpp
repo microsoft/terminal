@@ -10,6 +10,7 @@
 #include <appmodel.h>
 #include <shlobj.h>
 #include <fmt/chrono.h>
+#include "DefaultProfileUtils.h"
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
@@ -585,19 +586,12 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                     // (it must have at least a name)
                     if (profileStub.isMember(JsonKey(NameKey)))
                     {
-                        auto newProfile = winrt::make_self<Profile>();
-                        if (_userDefaultProfileSettings)
-                        {
-                            newProfile->LayerJson(_userDefaultProfileSettings);
-                        }
-
+                        auto newProfile = Profile::FromJson(profileStub);
                         // Make sure to give the new profile a source, then we add it to our list of profiles
                         // We don't make modifications to the user's settings file yet, that will happen when
                         // _AppendDynamicProfilesToUserSettings() is called later
-                        newProfile->LayerJson(profileStub);
                         newProfile->Source(source);
-                        newProfile->GenerateGuidIfNecessary();
-                        _profiles.Append(*newProfile);
+                        _allProfiles.Append(*newProfile);
                     }
                 }
             }
