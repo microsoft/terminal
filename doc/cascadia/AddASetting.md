@@ -256,7 +256,7 @@ _actionDispatch->OpenSettings({ this, &TerminalPage::_HandleOpenSettings });
 void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
 {
-    // NOTE: this if-statement can be ommitted if the action does not support arguments
+    // NOTE: this if-statement can be omitted if the action does not support arguments
     if (const auto& realArgs = args.ActionArgs().try_as<OpenSettingsArgs>())
     {
         _LaunchSettings(realArgs.Target());
