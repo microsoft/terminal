@@ -166,6 +166,7 @@ namespace Microsoft::Console::Render
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
         D2D1_COLOR_F _selectionBackground;
+        boolean _fontIsItalic;
 
         uint16_t _hyperlinkHoveredId;
 
@@ -188,9 +189,12 @@ namespace Microsoft::Console::Render
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormatItalic;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFaceItalic;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
+        ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayoutItalic;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
         ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _dashStrokeStyle;
@@ -287,8 +291,10 @@ namespace Microsoft::Console::Render
                                                FontInfo& actual,
                                                const int dpi,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
+                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
                                                LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;

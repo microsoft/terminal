@@ -81,6 +81,7 @@ DxEngine::DxEngine() :
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
+    _fontIsItalic{ false },
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
@@ -99,6 +100,7 @@ DxEngine::DxEngine() :
     _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
+    _customLayoutItalic{},
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
     _drawingContext{}
 {
@@ -1468,12 +1470,15 @@ try
     // Calculate positioning of our origin.
     const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
+    // Pick the appropriate layout for the current font style.
+    const auto& layout = _fontIsItalic ? _customLayoutItalic : _customLayout;
+
     // Create the text layout
-    RETURN_IF_FAILED(_customLayout->Reset());
-    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
+    RETURN_IF_FAILED(layout->Reset());
+    RETURN_IF_FAILED(layout->AppendClusters(clusters));
 
     // Layout then render the text
-    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+    RETURN_IF_FAILED(layout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
@@ -1733,6 +1738,9 @@ CATCH_RETURN()
         }*/
     }
 
+    // Record the fact that we need to render the text with an italic font.
+    _fontIsItalic = textAttributes.IsItalic();
+
     // If we have a drawing context, it may be choosing its antialiasing based
     // on the colors. Update it if it exists.
     // We only need to do this here because this is called all the time on painting frames
@@ -1766,8 +1774,10 @@ try
                                       fiFontInfo,
                                       _dpi,
                                       _dwriteTextFormat,
+                                      _dwriteTextFormatItalic,
                                       _dwriteTextAnalyzer,
                                       _dwriteFontFace,
+                                      _dwriteFontFaceItalic,
                                       _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
@@ -1775,8 +1785,9 @@ try
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
 
-    // Prepare the text layout
+    // Prepare the text layouts - one for regular text and one for italics.
     _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
+    _customLayoutItalic = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormatItalic.Get(), _dwriteFontFaceItalic.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
 
     return S_OK;
 }
@@ -1863,16 +1874,20 @@ float DxEngine::GetScaling() const noexcept
                                                 int const iDpi) noexcept
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> faceItalic;
     LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
+                            formatItalic,
                             analyzer,
                             face,
+                            faceItalic,
                             lineMetrics);
 }
 
@@ -2141,8 +2156,10 @@ CATCH_RETURN();
                                                  FontInfo& actual,
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                  Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
                                                  LineMetrics& lineMetrics) const noexcept
 {
     try
@@ -2277,11 +2294,33 @@ CATCH_RETURN();
 
         THROW_IF_FAILED(format.As(&textFormat));
 
+        // We also need to create an italic variant of the font face and text
+        // format, based on the same parameters, but using an italic style.
+        std::wstring fontNameItalic = fontName;
+        DWRITE_FONT_WEIGHT weightItalic = weight;
+        DWRITE_FONT_STYLE styleItalic = DWRITE_FONT_STYLE_ITALIC;
+        DWRITE_FONT_STRETCH stretchItalic = stretch;
+
+        const auto faceItalic = _ResolveFontFaceWithFallback(fontNameItalic, weightItalic, stretchItalic, styleItalic, fontLocaleName);
+
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
+        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontNameItalic.data(),
+                                                         nullptr,
+                                                         weightItalic,
+                                                         styleItalic,
+                                                         stretchItalic,
+                                                         fontSize,
+                                                         localeName.data(),
+                                                         &formatItalic));
+
+        THROW_IF_FAILED(formatItalic.As(&textFormatItalic));
+
         Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
         THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
         THROW_IF_FAILED(analyzer.As(&textAnalyzer));
 
         fontFace = face;
+        fontFaceItalic = faceItalic;
 
         THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
