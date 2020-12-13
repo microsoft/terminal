@@ -717,7 +717,11 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
         }
         else
         {
-            ColorSelection(_srSelectionRect, selectionAttr);
+            const auto selectionRects = GetSelectionRects();
+            for (const auto& selectionRect : selectionRects)
+            {
+                ColorSelection(selectionRect, selectionAttr);
+            }
             ClearSelection();
         }
 
