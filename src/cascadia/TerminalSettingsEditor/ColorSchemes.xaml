@@ -81,7 +81,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <!--Rename Button-->
                 <Button x:Uid="ColorScheme_Rename"
-                        Style="{StaticResource BrowseButtonStyle}">
+                        Style="{StaticResource BrowseButtonStyle}"
+                        Click="Rename_Click">
                     <FontIcon Glyph="&#xE8AC;"/>
                 </Button>
 
@@ -227,6 +228,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </StackPanel>
                 </Button.Content>
             </Button>
+
+            <ContentDialog x:Load="False"
+                           x:Uid="ColorScheme_RenameDialog"
+                           x:Name="RenameDialog"
+                           DefaultButton="Primary"
+                           PrimaryButtonClick="RenameConfirm_Click">
+                <TextBox x:Uid="ColorScheme_Name"
+                         x:Name="NameBox"
+                         Style="{StaticResource TextBoxSettingStyle}"/>
+            </ContentDialog>
         </Grid>
     </ScrollViewer>
 </Page>

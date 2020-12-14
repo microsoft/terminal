@@ -153,6 +153,24 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemeComboBox().SelectedItem(scheme);
     }
 
+    void ColorSchemes::Rename_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    {
+        const auto schemeName{ CurrentColorScheme().Name() };
+        const hstring title{ fmt::format(std::wstring_view{ RS_(L"ColorScheme_RenameDialog/Title") }, schemeName) };
+
+        auto dialog{ FindName(L"RenameDialog").try_as<ContentDialog>() };
+        dialog.Title(winrt::box_value(title));
+        dialog.XamlRoot(sender.as<UIElement>().XamlRoot());
+
+        NameBox().Text(schemeName);
+        dialog.ShowAsync(ContentDialogPlacement::Popup);
+    }
+
+    void ColorSchemes::RenameConfirm_Click(IInspectable const& /*sender*/, ContentDialogButtonClickEventArgs const& /*e*/)
+    {
+        CurrentColorScheme().Name(NameBox().Text());
+    }
+
     // Function Description:
     // - Updates the currently modifiable color table based on the given current color scheme.
     // Arguments:

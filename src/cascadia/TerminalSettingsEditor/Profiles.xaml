@@ -85,7 +85,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </ContentPresenter>
 
                     <!--Delete Button-->
-                    <Button Click="Delete_Click">
+                    <Button Click="Delete_Click"
+                            Style="{StaticResource BaseButtonStyle}"
+                            Margin="{StaticResource StandardControlSpacing}">
                         <Button.Resources>
                             <ResourceDictionary>
                                 <ResourceDictionary.ThemeDictionaries>
