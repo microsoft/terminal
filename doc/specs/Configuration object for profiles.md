@@ -73,6 +73,11 @@ the global/default one will be used.
 If neither the profile nor the global settings have defined an `unfocusedConfig`, then there will be no
 appearance change when switching between focused and unfocused states.
 
+This inheritance model can be thought of as an 'all-or-nothing' approach in the sense that the `unfocusedConfig` object
+is considered as a *single* setting instead of an object with many settings. We have chosen this model because it is cleaner
+and easier to understand than the alternative, where each setting within an `unfocusedConfig` object has a parent from which
+it obtains its value.
+
 ## UI/UX Design
 
 Users will be able to add a new setting to their profiles that will look like this:
@@ -87,6 +92,9 @@ Users will be able to add a new setting to their profiles that will look like th
     "background": "#000000"
 }
 ```
+
+When certain appearance settings are changed via OSC sequences (such as the background color), only the focused/regular
+appearance will change and the unfocused one will remain unchanged.
 
 ## Capabilities
 
@@ -114,11 +122,6 @@ Should not affect compatibility.
 Inactive tabs will be 'rendered' in the background with the `UnfocusedRenderingParams` object, we need to make
 sure that switching to an inactive tab (and so causing the renderer to update with the 'normal' parameters)
 does not cause the window to flash/show a jarring indicator that the rendering values changed.
-
-When certain appearance settings are changed via OSC sequences (such as the background color), only the focused/regular
-appearance will change and the unfocused one will remain unchanged. This means that even if no unfocused configuration was set
-(i.e. the user simply wants the unfocused configuration to look like the regular appearance), there will end up being
-a difference between both appearances.
 
 ## Future considerations
 
