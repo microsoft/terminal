@@ -72,7 +72,17 @@
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MonarchPeasantSample\MonarchPeasantSample.vcxproj" />
+    <ProjectReference Include="..\MonarchPeasantSample\MonarchPeasantSample.vcxproj" >
+      <!--
+      THESE PROPERTIES ARE LOAD BEARING!
+
+      We need them so the MonarchPeasantSample.winmd will be placed in the
+      package root. If it's not there, then we won't be able to activate our
+      WinRT classes!
+      -->
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
 </Project>
