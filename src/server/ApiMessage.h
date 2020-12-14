@@ -52,6 +52,7 @@ typedef struct _CONSOLE_API_MSG
                 CONSOLE_MSG_BODY_L1 consoleMsgL1;
                 CONSOLE_MSG_BODY_L2 consoleMsgL2;
                 CONSOLE_MSG_BODY_L3 consoleMsgL3;
+                CONSOLE_MSG_BODY_L9 consoleMsgL9;
             } u;
         };
     };

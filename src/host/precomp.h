@@ -37,6 +37,7 @@ Abstract:
 #include <conmsgl1.h>
 #include <conmsgl2.h>
 #include <conmsgl3.h>
+#include <conmsgl9.h>
 
 #include <propvarutil.h>
 #include <UIAutomation.h>

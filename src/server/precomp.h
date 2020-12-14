@@ -73,6 +73,7 @@ __inline NTSTATUS_FROM_WIN32(long x)
 #include <conmsgl1.h>
 #include <conmsgl2.h>
 #include <conmsgl3.h>
+#include <conmsgl9.h>
 #include <condrv.h>
 #include <ntcon.h>
 

@@ -126,10 +126,28 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer3[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServerSetConsoleCurrentFont, CONSOLE_CURRENTFONT_MSG, "SetConsoleCurrentFont")
 };
 
+[[nodiscard]] HRESULT TestL9Message(_Inout_ CONSOLE_API_MSG* const m,
+                                    _Inout_ BOOL* const /*pbReplyPending*/)
+{
+    CONSOLE_L9_TEST_API* const a = &m->u.consoleMsgL9.TestApi;
+    a->ReplyValue = a->TestValue * 16;
+    return S_OK;
+}
+
+const CONSOLE_API_DESCRIPTOR ConsoleApiLayer9[] = {
+    CONSOLE_API_STRUCT(TestL9Message, CONSOLE_L9_TEST_API, "L9"),
+};
+
 const CONSOLE_API_LAYER_DESCRIPTOR ConsoleApiLayerTable[] = {
     { ConsoleApiLayer1, RTL_NUMBER_OF(ConsoleApiLayer1) },
     { ConsoleApiLayer2, RTL_NUMBER_OF(ConsoleApiLayer2) },
     { ConsoleApiLayer3, RTL_NUMBER_OF(ConsoleApiLayer3) },
+    { nullptr, 0 },
+    { nullptr, 0 },
+    { nullptr, 0 },
+    { nullptr, 0 },
+    { nullptr, 0 },
+    { ConsoleApiLayer9, RTL_NUMBER_OF(ConsoleApiLayer9) },
 };
 
 // Routine Description:
