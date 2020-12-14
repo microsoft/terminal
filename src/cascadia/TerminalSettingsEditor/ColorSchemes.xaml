@@ -187,7 +187,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                     Grid.Column="0"
                     Click="Delete_Click"
                     Style="{StaticResource BaseButtonStyle}"
-                    Margin="{StaticResource StandardControlSpacing}">
+                    Margin="{StaticResource StandardControlSpacing}"
+                    IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
                 <Button.Resources>
                     <ResourceDictionary>
                         <ResourceDictionary.ThemeDictionaries>

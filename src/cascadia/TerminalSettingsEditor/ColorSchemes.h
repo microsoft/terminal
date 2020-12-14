@@ -32,6 +32,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void Rename_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void RenameConfirm_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs const& e);
 
+        bool CanDeleteCurrentScheme() const;
+
         GETSET_PROPERTY(Editor::ColorSchemesPageNavigationState, State, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<winrt::Microsoft::Terminal::Settings::Editor::ColorTableEntry>, CurrentColorTable, nullptr);
         GETSET_PROPERTY(Windows::Foundation::Collections::IObservableVector<Model::ColorScheme>, ColorSchemeList, nullptr);

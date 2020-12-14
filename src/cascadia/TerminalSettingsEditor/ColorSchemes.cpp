@@ -39,6 +39,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         RS_(L"ColorScheme_BrightWhite/Header")
     };
 
+    static const std::set<std::wstring> InBoxSchemes = {
+        L"Campbell",
+        L"Campbell Powershell",
+        L"Vintage",
+        L"One Half Dark",
+        L"One Half Light",
+        L"Solarized Dark",
+        L"Solarized Light",
+        L"Tango Dark",
+        L"Tango Light"
+    };
+
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
@@ -77,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
     }
 
     // Function Description:
@@ -118,6 +131,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentColorTable.GetAt(index).Color(args.NewColor());
             }
         }
+    }
+
+    bool ColorSchemes::CanDeleteCurrentScheme() const
+    {
+        if (const auto scheme{ CurrentColorScheme() })
+        {
+            // Only allow this color scheme to be deleted if it's not provided in-box
+            const std::wstring myName{ scheme.Name() };
+            return InBoxSchemes.find(myName) == InBoxSchemes.end();
+        }
+        return false;
     }
 
     void ColorSchemes::Delete_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
