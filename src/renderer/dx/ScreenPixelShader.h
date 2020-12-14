@@ -1,9 +1,9 @@
 #pragma once
 
 #ifdef __INSIDE_WINDOWS
-constexpr char retroPixelShaderString[] = "";
+constexpr std::string_view retroPixelShaderString{ "" };
 #else
-constexpr char retroPixelShaderString[] = R"(
+constexpr std::string_view retroPixelShaderString{ R"(
 // The original retro pixel shader
 Texture2D shaderTexture;
 SamplerState samplerState;
@@ -87,5 +87,5 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 
     return color;
 }
-)";
+)" };
 #endif

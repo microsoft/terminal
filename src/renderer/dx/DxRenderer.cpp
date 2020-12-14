@@ -290,12 +290,9 @@ std::string DxEngine::_LoadPixelShaderFile() const
         }
         catch (...)
         {
-            // If we ran into any problems during loading pixel shader let's revert to
-            //  the error pixel shader which should "always" be able to load and indicates
-            //  to the user something went wrong
-            auto exceptionHr = LOG_CAUGHT_EXCEPTION();
-
-            // Call to the warning callback to surface the file not found error
+            // If we ran into any problems during loading pixel shader, call to
+            // the warning callback to surface the file not found error
+            const auto exceptionHr = LOG_CAUGHT_EXCEPTION();
             if (_pfnWarningCallback)
             {
                 _pfnWarningCallback(exceptionHr);
@@ -362,7 +359,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     catch (...)
     {
         // Call to the warning callback to surface the shader compile error
-        auto exceptionHr = LOG_CAUGHT_EXCEPTION();
+        const auto exceptionHr = LOG_CAUGHT_EXCEPTION();
         if (_pfnWarningCallback)
         {
             // D2DERR_SHADER_COMPILE_FAILED isn't technically an HRESULT, but
