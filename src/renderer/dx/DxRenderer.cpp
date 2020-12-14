@@ -949,15 +949,12 @@ bool DxEngine::GetRetroTerminalEffect() const noexcept
     return _retroTerminalEffect;
 }
 
-void DxEngine::SetRetroTerminalEffect(bool enable /*,
-                                      const bool enableShaderEffects*/
-                                      ) noexcept
+void DxEngine::SetRetroTerminalEffect(bool enable) noexcept
 try
 {
     if (_retroTerminalEffect != enable)
     {
         // The caller might want to leave the shader
-        // _terminalEffectsEnabled = enableShaderEffects? true : _terminalEffectsEnabled;
         _terminalEffectsEnabled = true;
         _retroTerminalEffect = enable;
         _recreateDeviceRequested = true;
