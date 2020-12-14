@@ -197,7 +197,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
             {
                 // Navigate to a page with the given profile
-                contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this));
+                _Navigate(profile);
             }
         }
     }
@@ -228,6 +228,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
         }
+    }
+
+    void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
+    {
+        auto state{ winrt::make_self<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
+
+        auto pfnDeleteProfile{ std::bind(&MainPage::_DeleteProfile, this, profile) };
+        state->SetDeleteProfileCallback(pfnDeleteProfile);
+
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), *state);
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
@@ -297,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Select and navigate to the new profile
         SettingsNav().SelectedItem(navItem);
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profileViewModel, _settingsClone.GlobalSettings().ColorSchemes(), *this));
+        _Navigate(profileViewModel);
     }
 
     MUX::Controls::NavigationViewItem MainPage::_CreateProfileNavViewItem(const Editor::ProfileViewModel& profile)
@@ -312,5 +322,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         profileNavItem.Icon(icon);
 
         return profileNavItem;
+    }
+
+    void MainPage::_DeleteProfile(Editor::ProfileViewModel& profile)
+    {
+        // Delete profile from settings model
+        const auto guid{ profile.Guid() };
+        auto profileList{ _settingsClone.AllProfiles() };
+        for (uint32_t i = 0; i < profileList.Size(); ++i)
+        {
+            if (profileList.GetAt(i).Guid() == guid)
+            {
+                profileList.RemoveAt(i);
+                break;
+            }
+        }
+
+        // remove selected item
+        uint32_t index;
+        auto selectedItem{ SettingsNav().SelectedItem() };
+        auto menuItems{ SettingsNav().MenuItems() };
+        menuItems.IndexOf(selectedItem, index);
+        menuItems.RemoveAt(index);
+
+        // navigate to the profile next to this one
+        const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
+        SettingsNav().SelectedItem(newSelectedItem);
+        _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
     }
 }

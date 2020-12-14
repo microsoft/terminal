@@ -88,7 +88,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles::Delete_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        return;
+        auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
+        state->DeleteProfile();
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
