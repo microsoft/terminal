@@ -594,7 +594,7 @@ namespace winrt::TerminalApp::implementation
             // For whatever reason, there's about 6px of unaccounted-for space
             // in the application. I couldn't tell you where these 6px are
             // coming from, but they need to be included in this math.
-            proposedSize.Width += (tabControl.DesiredSize().Height + 6) * scale;
+            proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
         }
 
         return proposedSize;
