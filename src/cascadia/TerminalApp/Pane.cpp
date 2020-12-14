@@ -130,7 +130,7 @@ void Pane::Relayout()
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_Resize(const Direction& direction)
+bool Pane::_Resize(const ResizeDirection& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
@@ -138,7 +138,7 @@ bool Pane::_Resize(const Direction& direction)
     }
 
     float amount = .05f;
-    if (direction == Direction::Right || direction == Direction::Down)
+    if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
     }
@@ -171,7 +171,7 @@ bool Pane::_Resize(const Direction& direction)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - true if we or a child handled this resize request.
-bool Pane::ResizePane(const Direction& direction)
+bool Pane::ResizePane(const ResizeDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -223,14 +223,14 @@ bool Pane::ResizePane(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we handled this focus move request.
-bool Pane::_NavigateFocus(const Direction& direction)
+bool Pane::_NavigateFocus(const FocusDirection& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
         return false;
     }
 
-    const bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
+    const bool focusSecond = (direction == FocusDirection::Right) || (direction == FocusDirection::Down);
 
     const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
 
@@ -261,7 +261,7 @@ bool Pane::_NavigateFocus(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we or a child handled this focus move request.
-bool Pane::NavigateFocus(const Direction& direction)
+bool Pane::NavigateFocus(const FocusDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -353,6 +353,8 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
 // - Plays a warning note when triggered by the BEL control character,
 //   using the sound configured for the "Critical Stop" system event.`
 //   This matches the behavior of the Windows Console host.
+// - Will also flash the taskbar if the bellStyle setting for this profile
+//   has the 'visual' flag set
 // Arguments:
 // - <unused>
 void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -366,10 +368,15 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        if (paneProfile.BellStyle() == winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible)
+        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
         {
             const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
             PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+        }
+        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
+        {
+            // Bubble this event up to app host, starting with bubbling to the hosting tab
+            _PaneRaiseVisualBellHandlers(nullptr);
         }
     }
 }
@@ -648,9 +655,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // inherited from us, so the flag will be set for both children.
         _borders = _firstChild->_borders & _secondChild->_borders;
 
-        // take the control and profile of the pane that _wasn't_ closed.
+        // take the control, profile and id of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
+        _id = remainingChild->Id();
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
@@ -1093,13 +1101,14 @@ void Pane::_SetupEntranceAnimation()
     // Windows" setting in the OS
     winrt::Windows::UI::ViewManagement::UISettings uiSettings;
     const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+    const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
     const bool splitWidth = _splitState == SplitState::Vertical;
     const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
     // If we don't have a size yet, it's likely that we're in startup, or we're
     // being executed as a sequence of actions. In that case, just skip the
     // animation.
-    if (totalSize <= 0 || !animationsEnabledInOS)
+    if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
     {
         return;
     }
@@ -1168,6 +1177,15 @@ void Pane::_SetupEntranceAnimation()
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
             control.HorizontalAlignment(HorizontalAlignment::Left);
             control.Width(isFirstChild ? totalSize : size);
+
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control](auto&&, auto&&) {
+                control.Width(NAN);
+                childGrid.Width(NAN);
+                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                control.HorizontalAlignment(HorizontalAlignment::Stretch);
+            });
         }
         else
         {
@@ -1177,38 +1195,19 @@ void Pane::_SetupEntranceAnimation()
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
             control.VerticalAlignment(VerticalAlignment::Top);
             control.Height(isFirstChild ? totalSize : size);
+
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control](auto&&, auto&&) {
+                control.Height(NAN);
+                childGrid.Height(NAN);
+                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                control.VerticalAlignment(VerticalAlignment::Stretch);
+            });
         }
 
         // Start the animation.
         s.Begin();
-
-        std::weak_ptr<Pane> weakThis{ shared_from_this() };
-        // When the animation is completed, undo the trickiness from before, to
-        // restore the controls to the behavior they'd usually have.
-        animation.Completed([weakThis, isFirstChild, splitWidth](auto&&, auto&&) {
-            if (auto pane{ weakThis.lock() })
-            {
-                auto child = isFirstChild ? pane->_firstChild : pane->_secondChild;
-                auto childGrid = child->_root;
-                if (auto control = child->_control)
-                {
-                    if (splitWidth)
-                    {
-                        control.Width(NAN);
-                        childGrid.Width(NAN);
-                        childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                        control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                    }
-                    else
-                    {
-                        control.Height(NAN);
-                        childGrid.Height(NAN);
-                        childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                        control.VerticalAlignment(VerticalAlignment::Stretch);
-                    }
-                }
-            }
-        });
     };
 
     // TODO: GH#7365 - animating the first child right now doesn't _really_ do
@@ -1495,6 +1494,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _SetupEntranceAnimation();
 
+    // Clear out our ID, only leaves should have IDs
+    _id = {};
+
     return { _firstChild, _secondChild };
 }
 
@@ -1565,6 +1567,47 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
         // our direct children, we'll still want to update it's borders.
         _firstChild->Restore(zoomedPane);
         _secondChild->Restore(zoomedPane);
+    }
+}
+
+// Method Description:
+// - Retrieves the ID of this pane
+// - NOTE: The caller should make sure that this pane is a leaf,
+//   otherwise the ID value will not make sense (leaves have IDs, parents do not)
+// Return Value:
+// - The ID of this pane
+uint16_t Pane::Id() noexcept
+{
+    return _id.value();
+}
+
+// Method Description:
+// - Sets this pane's ID
+// - Panes are given IDs upon creation by TerminalTab
+// Arguments:
+// - The number to set this pane's ID to
+void Pane::Id(uint16_t id) noexcept
+{
+    _id = id;
+}
+
+// Method Description:
+// - Recursive function that focuses a pane with the given ID
+// Arguments:
+// - The ID of the pane we want to focus
+void Pane::FocusPane(const uint16_t id)
+{
+    if (_IsLeaf() && id == _id)
+    {
+        _control.Focus(FocusState::Programmatic);
+    }
+    else
+    {
+        if (_firstChild && _secondChild)
+        {
+            _firstChild->FocusPane(id);
+            _secondChild->FocusPane(id);
+        }
     }
 }
 
@@ -2069,3 +2112,4 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);

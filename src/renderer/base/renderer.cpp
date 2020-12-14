@@ -764,23 +764,13 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 // (a.k.a. the right half of a two column character), then we need some special handling.
                 if (_clusterBuffer.empty() && it->DbcsAttr().IsTrailing())
                 {
-                    // If we have room to move to the left to start drawing...
-                    if (screenPoint.X > 0)
-                    {
-                        // Move left to the one so the whole character can be struck correctly.
-                        --screenPoint.X;
-                        // And tell the next function to trim off the left half of it.
-                        trimLeft = true;
-                        // And add one to the number of columns we expect it to take as we insert it.
-                        columnCount = it->Columns() + 1;
-                        _clusterBuffer.emplace_back(it->Chars(), columnCount);
-                    }
-                    else
-                    {
-                        // If we didn't have room, move to the right one and just skip this one.
-                        screenPoint.X++;
-                        continue;
-                    }
+                    // Move left to the one so the whole character can be struck correctly.
+                    --screenPoint.X;
+                    // And tell the next function to trim off the left half of it.
+                    trimLeft = true;
+                    // And add one to the number of columns we expect it to take as we insert it.
+                    columnCount = it->Columns() + 1;
+                    _clusterBuffer.emplace_back(it->Chars(), columnCount);
                 }
                 // Otherwise if it's not a special case, just insert it as is.
                 else
@@ -795,7 +785,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                 }
 
                 // Advance the cluster and column counts.
-                it += columnCount > 0 ? columnCount : 1; // prevent infinite loop for no visible columns
+                it += std::max<size_t>(it->Columns(), 1); // prevent infinite loop for no visible columns
                 cols += columnCount;
 
             } while (it);
@@ -913,17 +903,18 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     IRenderEngine::GridLines lines = Renderer::s_GetGridlines(textAttribute);
 
     // For now, we dash underline patterns and switch to regular underline on hover
-    if (_pData->GetPatternId(coordTarget).size() > 0)
+    // Since we're only rendering pattern links on *hover*, there's no point in checking
+    // the pattern range if we aren't currently hovering.
+    if (_hoveredInterval.has_value())
     {
-        if (_hoveredInterval.has_value() &&
-            _hoveredInterval.value().start <= til::point{ coordTarget } &&
-            til::point{ coordTarget } <= _hoveredInterval.value().stop)
+        const til::point coordTargetTil{ coordTarget };
+        if (_hoveredInterval->start <= coordTargetTil &&
+            coordTargetTil <= _hoveredInterval->stop)
         {
-            lines |= IRenderEngine::GridLines::Underline;
-        }
-        else
-        {
-            lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+            if (_pData->GetPatternId(coordTarget).size() > 0)
+            {
+                lines |= IRenderEngine::GridLines::Underline;
+            }
         }
     }
 

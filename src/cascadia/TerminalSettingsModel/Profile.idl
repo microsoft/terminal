@@ -10,10 +10,25 @@ namespace Microsoft.Terminal.Settings.Model
         Always
     };
 
+    [flags]
     enum BellStyle
     {
-        None,
-        Audible
+        Audible = 0x1,
+        Visual = 0x2,
+        All = 0xffffffff
+    };
+
+    [flags]
+    enum ConvergedAlignment {
+        // low 4 bits are the horizontal
+        Horizontal_Center = 0x00,
+        Horizontal_Left = 0x01,
+        Horizontal_Right = 0x02,
+
+        // high 4 bits are the vertical
+        Vertical_Center = 0x00,
+        Vertical_Top = 0x10,
+        Vertical_Bottom = 0x20
     };
 
     [default_interface] runtimeclass Profile {
@@ -110,8 +125,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasBackgroundImageAlignment();
         void ClearBackgroundImageAlignment();
-        Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
-        Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+        ConvergedAlignment BackgroundImageAlignment;
 
         Boolean HasAntialiasingMode();
         void ClearAntialiasingMode();

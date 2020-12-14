@@ -88,9 +88,9 @@ public:
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
-    virtual bool SetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECSET
+    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 
-    virtual bool ResetPrivateMode(const DispatchTypes::PrivateModeParams param) = 0; // DECRST
+    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1
@@ -122,6 +122,8 @@ public:
 
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;
+
+    virtual bool DoConEmuAction(const std::wstring_view string) = 0;
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

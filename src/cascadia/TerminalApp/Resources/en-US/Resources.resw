@@ -149,6 +149,16 @@
   <data name="SettingsValidateErrorTitle" xml:space="preserve">
     <value>Encountered errors while loading user settings</value>
   </data>
+  <data name="KeyboardServiceDisabledDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="KeyboardServiceDisabledDialog.Title" xml:space="preserve">
+    <value>Warning:</value>
+  </data>
+  <data name="KeyboardServiceWarningText" xml:space="preserve">
+    <value>The "{0}" isn't running on your machine. This can prevent the Terminal from receiving keyboard input.</value>
+    <comment>{0} will be replaced with the OS-localized name of the TabletInputService</comment>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>OK</value>
   </data>
@@ -235,6 +245,10 @@
     <value>Failed to expand a command with "iterateOn" set. This command will be ignored.</value>
     <comment>{Locked="\"iterateOn\""} </comment>
   </data>
+  <data name="InvalidColorSchemeInCmd" xml:space="preserve">
+    <value>Found a command with an invalid "colorScheme". This command will be ignored. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
+    <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
@@ -284,6 +298,9 @@
   <data name="CmdTitleArgDesc" xml:space="preserve">
     <value>Open the terminal with the provided title instead of the profile's set "title"</value>
     <comment>{Locked="\"title\""}</comment>
+  </data>
+  <data name="CmdTabColorArgDesc" xml:space="preserve">
+    <value>Open the tab with the specified color, in #rrggbb format</value>
   </data>
   <data name="CmdVersionDesc" xml:space="preserve">
     <value>Display the application version</value>
@@ -469,7 +486,31 @@
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="FailedToWriteToSettings" xml:space="preserve">
     <value>We could not write to your settings file. Check the permissions on that file to ensure that the read-only flag is not set and that write access is granted.</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="ParentCommandBackButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="ControlNoticeDialog.PrimaryButtonText" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="NoticeDebug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="NoticeError" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="NoticeInfo" xml:space="preserve">
+    <value>Information</value>
+  </data>
+  <data name="NoticeWarning" xml:space="preserve">
+    <value>Warning</value>
   </data>
 </root>

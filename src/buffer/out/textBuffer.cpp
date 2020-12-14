@@ -8,6 +8,7 @@
 
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 
 #pragma hdrstop
 
@@ -2321,7 +2322,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
 //   user defined id from the custom id map (if there is one)
 // Arguments:
 // - The ID of the hyperlink to be removed
-void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
+void TextBuffer::RemoveHyperlinkFromMap(uint16_t id) noexcept
 {
     _hyperlinkMap.erase(id);
     for (const auto& customIdPair : _hyperlinkCustomIdMap)
@@ -2428,9 +2429,19 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             // when we find a match, the prefix is text that is between this
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
-            const auto prefixSize = i->prefix().str().size();
+            size_t prefixSize = 0;
+
+            for (const auto ch : i->prefix().str())
+            {
+                prefixSize += IsGlyphFullWidth(ch) ? 2 : 1;
+            }
             const auto start = lenUpToThis + prefixSize;
-            const auto end = start + i->str().size();
+            size_t matchSize = 0;
+            for (const auto ch : i->str())
+            {
+                matchSize += IsGlyphFullWidth(ch) ? 2 : 1;
+            }
+            const auto end = start + matchSize;
             lenUpToThis = end;
 
             const til::point startCoord{ gsl::narrow<SHORT>(start % rowSize), gsl::narrow<SHORT>(start / rowSize) };

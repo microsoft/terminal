@@ -82,9 +82,9 @@ public:
 
     bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECSET
+    bool SetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECRST
+    bool ResetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1
@@ -116,4 +116,6 @@ public:
 
     bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
     bool EndHyperlink() noexcept override { return false; }
+
+    bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override { return false; }
 };

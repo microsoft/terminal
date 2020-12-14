@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 
-#include "..\inc\VtApiRedirection.hpp"
+#include "../inc/VtApiRedirection.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

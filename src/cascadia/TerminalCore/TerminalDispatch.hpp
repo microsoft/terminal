@@ -4,6 +4,9 @@
 #include "../../terminal/adapter/termDispatch.hpp"
 #include "ITerminalApi.hpp"
 
+static constexpr size_t TaskbarMaxState{ 4 };
+static constexpr size_t TaskbarMaxProgress{ 100 };
+
 class TerminalDispatch : public Microsoft::Console::VirtualTerminal::TermDispatch
 {
 public:
@@ -61,11 +64,13 @@ public:
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override; // ?1003
     bool EnableAlternateScroll(const bool enabled) noexcept override; // ?1007
 
-    bool SetPrivateMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams /*param*/) noexcept override; // DECSET
-    bool ResetPrivateMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams /*param*/) noexcept override; // DECRST
+    bool SetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECSET
+    bool ResetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECRST
 
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+
+    bool DoConEmuAction(const std::wstring_view string) noexcept override;
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
@@ -74,5 +79,5 @@ private:
                                TextAttribute& attr,
                                const bool isForeground) noexcept;
 
-    bool _PrivateModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams param, const bool enable) noexcept;
+    bool _ModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams param, const bool enable) noexcept;
 };

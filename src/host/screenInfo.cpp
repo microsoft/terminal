@@ -2146,7 +2146,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     }
 
     // do adjustments on a copy that's easily manipulated.
-    SMALL_RECT srCorrected = newViewport.ToInclusive();
+    SMALL_RECT srCorrected = newViewport.ToExclusive();
 
     if (srCorrected.Left < 0)
     {
@@ -2160,16 +2160,16 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     }
 
     const COORD coordScreenBufferSize = GetBufferSize().Dimensions();
-    if (srCorrected.Right >= coordScreenBufferSize.X)
+    if (srCorrected.Right > coordScreenBufferSize.X)
     {
         srCorrected.Right = coordScreenBufferSize.X;
     }
-    if (srCorrected.Bottom >= coordScreenBufferSize.Y)
+    if (srCorrected.Bottom > coordScreenBufferSize.Y)
     {
         srCorrected.Bottom = coordScreenBufferSize.Y;
     }
 
-    _viewport = Viewport::FromInclusive(srCorrected);
+    _viewport = Viewport::FromExclusive(srCorrected);
     if (updateBottom)
     {
         UpdateBottom();
@@ -2573,7 +2573,7 @@ void SCREEN_INFORMATION::MoveToBottom()
 Viewport SCREEN_INFORMATION::GetVirtualViewport() const noexcept
 {
     const short newTop = _virtualBottom - _viewport.Height() + 1;
-    return Viewport::FromDimensions({ 0, newTop }, _viewport.Dimensions());
+    return Viewport::FromDimensions({ _viewport.Left(), newTop }, _viewport.Dimensions());
 }
 
 // Method Description:

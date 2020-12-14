@@ -5,6 +5,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:TerminalApp"
+    xmlns:model="using:Microsoft.Terminal.Settings.Model"
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -17,6 +18,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     PreviewKeyDown="_previewKeyDownHandler"
     KeyDown="_keyDownHandler"
     PreviewKeyUp="_keyUpHandler"
+    LostFocus="_lostFocusHandler"
     mc:Ignorable="d"
     AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}">
 
@@ -31,7 +33,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
-            <local:IconPathConverter x:Key="IconSourceConverter"/>
+            <model:IconPathConverter x:Key="IconSourceConverter"/>
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -114,7 +116,6 @@ the MIT License. See LICENSE in the project root for license information. -->
     </UserControl.Resources>
 
     <Grid>
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="6*" />
@@ -179,6 +180,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 x:Name="_prefixCharacter"
                 Margin="16,16,0,-8"
                 FontSize="14"
+                HorizontalAlignment="Left"
                 Visibility="{x:Bind PrefixCharacter,
                              Mode=OneWay,
                              Converter={StaticResource ParentCommandVisibilityConverter}}"
@@ -186,16 +188,36 @@ the MIT License. See LICENSE in the project root for license information. -->
                 >
             </TextBlock>
 
-            <TextBlock
-                Padding="16, 0, 16, 4"
-                x:Name="_parentCommandText"
-                FontStyle="Italic"
-                Visibility="{x:Bind ParentCommandName,
-                             Mode=OneWay,
-                             Converter={StaticResource ParentCommandVisibilityConverter}}"
-                Grid.Row="1"
-                Text="{x:Bind ParentCommandName, Mode=OneWay}">
-            </TextBlock>
+            <StackPanel Orientation="Horizontal"
+                    Padding="16, 0, 16, 4"
+                    Grid.Row="1"
+                    Visibility="{x:Bind ParentCommandName,
+                                 Mode=OneWay,
+                                 Converter={StaticResource ParentCommandVisibilityConverter}}">
+
+                <Button
+                    Background="Transparent"
+                    x:Name="_parentCommandBackButton"
+                    x:Uid="ParentCommandBackButton"
+                    Click="_moveBackButtonClicked"
+                    ClickMode="Press"
+                    VerticalAlignment="Center">
+                    <FontIcon
+                        FontSize="12"
+                        FontFamily="Segoe MDL2 Assets"
+                        Glyph="&#xE76b;">
+                    </FontIcon>
+                </Button>
+
+                <TextBlock
+                    Padding="16, 0, 16, 4"
+                    x:Name="_parentCommandText"
+                    FontStyle="Italic"
+                    Grid.Row="1"
+                    Text="{x:Bind ParentCommandName, Mode=OneWay}"
+                    VerticalAlignment="Center">
+                </TextBlock>
+            </StackPanel>
 
             <TextBlock
                 Padding="16"
@@ -220,16 +242,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                 ItemsSource="{x:Bind FilteredActions}">
 
                 <ItemsControl.ItemTemplate >
-                    <DataTemplate x:DataType="SettingsModel:Command">
+                    <DataTemplate x:DataType="local:FilteredCommand">
 
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind KeyChordText, Mode=OneWay}">
+                                  IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
 
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
-
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="16"/>   <!-- icon -->
                                     <ColumnDefinition Width="Auto"/> <!-- command label -->
@@ -241,20 +263,21 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
-                                    IconSource="{x:Bind Icon,
+                                    IconSource="{x:Bind Item.Icon,
                                                         Mode=OneWay,
                                                         Converter={StaticResource IconSourceConverter}}"/>
 
-                                <TextBlock Grid.Column="1"
-                                       HorizontalAlignment="Left"
-                                       Text="{x:Bind Name, Mode=OneWay}" />
+                                <local:HighlightedTextControl
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    Text="{x:Bind HighlightedName, Mode=OneWay}"/>
 
                                 <!-- The block for the key chord is only visible
                                 when there's actual text set as the label. See
                                 CommandKeyChordVisibilityConverter for details. -->
                                 <Border
                                     Grid.Column="2"
-                                    Visibility="{x:Bind KeyChordText,
+                                    Visibility="{x:Bind Item.KeyChordText,
                                                  Mode=OneWay,
                                                  Converter={StaticResource CommandKeyChordVisibilityConverter}}"
                                     Style="{ThemeResource KeyChordBorderStyle}"
@@ -265,7 +288,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <TextBlock
                                         Style="{ThemeResource KeyChordTextBlockStyle}"
                                         FontSize="12"
-                                        Text="{x:Bind KeyChordText, Mode=OneWay}" />
+                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
                                 </Border>
 
                                 <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
@@ -273,7 +296,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     FontFamily="Segoe MDL2 Assets"
                                     Glyph="&#xE70E;"
                                     HorizontalAlignment="Right"
-                                    Visibility="{x:Bind HasNestedCommands,
+                                    Visibility="{x:Bind Item,
                                                  Mode=OneWay,
                                                  Converter={StaticResource HasNestedCommandsVisibilityConverter}}"
                                     Grid.Column="2">

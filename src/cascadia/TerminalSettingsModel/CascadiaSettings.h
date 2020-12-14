@@ -29,6 +29,7 @@ Author(s):
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
 {
+    class SerializationTests;
     class DeserializationTests;
     class ProfileTests;
     class ColorSchemeTests;
@@ -74,12 +75,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
+        void WriteSettingsToDisk() const;
+        Json::Value ToJson() const;
+
         static hstring SettingsPath();
         static hstring DefaultSettingsPath();
+        Model::Profile ProfileDefaults() const;
 
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
 
+        Model::Profile CreateNewProfile();
         Model::Profile FindProfile(guid profileGuid) const noexcept;
         Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 
@@ -124,7 +130,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _LoadDynamicProfiles();
 
         static bool _IsPackaged();
-        static void _WriteSettings(const std::string_view content);
+        static void _WriteSettings(std::string_view content, const hstring filepath);
         static std::optional<std::string> _ReadUserSettings();
         static std::optional<std::string> _ReadFile(HANDLE hFile);
 
@@ -133,7 +139,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _ValidateSettings();
         void _ValidateProfilesExist();
-        void _ValidateProfilesHaveGuid();
         void _ValidateDefaultProfileExists();
         void _ValidateNoDuplicateProfiles();
         void _ResolveDefaultProfile();
@@ -142,8 +147,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _ValidateAllSchemesExist();
         void _ValidateMediaResources();
         void _ValidateKeybindings();
+        void _ValidateColorSchemesInCommands();
         void _ValidateNoGlobalsKey();
 
+        bool _HasInvalidColorScheme(const Model::Command& command);
+
+        friend class SettingsModelLocalTests::SerializationTests;
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;

@@ -139,7 +139,7 @@ typename CharRow::const_iterator CharRow::cend() const noexcept
 // - <none>
 // Return Value:
 // - The calculated left boundary of the internal string.
-size_t CharRow::MeasureLeft() const
+size_t CharRow::MeasureLeft() const noexcept
 {
     std::vector<value_type>::const_iterator it = _data.cbegin();
     while (it != _data.cend() && it->IsSpace())

@@ -41,7 +41,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"MissingRequiredParameter"),
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
-    USES_RESOURCE(L"FailedToWriteToSettings")
+    USES_RESOURCE(L"FailedToWriteToSettings"),
+    USES_RESOURCE(L"InvalidColorSchemeInCmd")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -194,6 +195,13 @@ namespace winrt::TerminalApp::implementation
         // SetTitleBarContent
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
+    }
+
+    // Method Description:
+    // - Implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT AppLogic::Initialize(HWND hwnd)
+    {
+        return _root->Initialize(hwnd);
     }
 
     // Method Description:
@@ -470,6 +478,11 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_OnLoaded(const IInspectable& /*sender*/,
                              const RoutedEventArgs& /*eventArgs*/)
     {
+        const auto keyboardServiceIsDisabled = !_IsKeyboardServiceEnabled();
+        if (keyboardServiceIsDisabled)
+        {
+            _root->ShowKeyboardServiceWarning();
+        }
         if (FAILED(_settingsLoadedResult))
         {
             const winrt::hstring titleKey = USES_RESOURCE(L"InitialJsonParseErrorTitle");
@@ -480,6 +493,51 @@ namespace winrt::TerminalApp::implementation
         {
             _ShowLoadWarningsDialog();
         }
+    }
+
+    // Method Description:
+    // - Helper for determining if the "Touch Keyboard and Handwriting Panel
+    //   Service" is enabled. If it isn't, we want to be able to display a
+    //   warning to the user, because they won't be able to type in the
+    //   Terminal.
+    // Return Value:
+    // - true if the service is enabled, or if we fail to query the service. We
+    //   return true in that case, to be less noisy (though, that is unexpected)
+    bool AppLogic::_IsKeyboardServiceEnabled()
+    {
+        if (IsUwp())
+        {
+            return true;
+        }
+
+        // If at any point we fail to open the service manager, the service,
+        // etc, then just quick return true to disable the dialog. We'd rather
+        // not be noisy with this dialog if we failed for some reason.
+
+        // Open the service manager. This will return 0 if it failed.
+        wil::unique_schandle hManager{ OpenSCManager(nullptr, nullptr, 0) };
+
+        if (LOG_LAST_ERROR_IF(!hManager.is_valid()))
+        {
+            return true;
+        }
+
+        // Get a handle to the keyboard service
+        wil::unique_schandle hService{ OpenService(hManager.get(), TabletInputServiceKey.data(), SERVICE_QUERY_STATUS) };
+        if (LOG_LAST_ERROR_IF(!hService.is_valid()))
+        {
+            return true;
+        }
+
+        // Get the current state of the service
+        SERVICE_STATUS status{ 0 };
+        if (!LOG_IF_WIN32_BOOL_FALSE(QueryServiceStatus(hService.get(), &status)))
+        {
+            return true;
+        }
+
+        const auto state = status.dwCurrentState;
+        return (state == SERVICE_RUNNING || state == SERVICE_START_PENDING);
     }
 
     // Method Description:
@@ -999,6 +1057,32 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarState()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarState();
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarProgress()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarProgress();
+        }
+        return {};
     }
 
     // Method Description:
