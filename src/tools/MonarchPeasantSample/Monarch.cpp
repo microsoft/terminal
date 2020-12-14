@@ -76,10 +76,18 @@ namespace winrt::MonarchPeasantSample::implementation
     void Monarch::SetSelfID(const uint64_t selfID)
     {
         this->_thisPeasantID = selfID;
-        // TODO: Right now, the monarch assumes the role of the most recent
+        // Right now, the monarch assumes the role of the most recent
         // window. If the monarch dies, and a new monarch takes over, then the
         // entire stack of MRU windows will go with it. That's not what you
         // want!
+        //
+        // In the real app, we'll have each window also track the timestamp it
+        // was activated at, and the monarch will cache these. So a new monarch
+        // could re-query these last activated timestamps, and reconstruct the
+        // MRU stack.
+        //
+        // This is a sample though, and we're not too worried about complete
+        // correctness here.
         _setMostRecentPeasant(_thisPeasantID);
     }
 
@@ -97,18 +105,6 @@ namespace winrt::MonarchPeasantSample::implementation
         wprintf(L"\"\n");
 
         bool createNewWindow = true;
-
-        if (_windowingBehavior == GlomToLastWindow::Always)
-        {
-            // This is "single instance mode". We should always eat the commandline.
-
-            if (auto thisPeasant = _getPeasant(_thisPeasantID))
-            {
-                thisPeasant.ExecuteCommandline(args, cwd);
-                createNewWindow = false;
-                return createNewWindow;
-            }
-        }
 
         if (args.size() >= 3)
         {
@@ -147,7 +143,7 @@ namespace winrt::MonarchPeasantSample::implementation
                 }
             }
         }
-        else if (_windowingBehavior == GlomToLastWindow::LastActive)
+        else if (_windowingBehavior == WindowingBehavior::UseExisting)
         {
             if (auto mruPeasant = _getPeasant(_mostRecentPeasant))
             {
@@ -166,28 +162,22 @@ namespace winrt::MonarchPeasantSample::implementation
     {
         switch (_windowingBehavior)
         {
-        case GlomToLastWindow::Never:
-            _windowingBehavior = GlomToLastWindow::LastActive;
+        case WindowingBehavior::UseNew:
+            _windowingBehavior = WindowingBehavior::UseExisting;
             break;
-        case GlomToLastWindow::LastActive:
-            _windowingBehavior = GlomToLastWindow::Always;
-            break;
-        case GlomToLastWindow::Always:
-            _windowingBehavior = GlomToLastWindow::Never;
+        case WindowingBehavior::UseExisting:
+            _windowingBehavior = WindowingBehavior::UseNew;
             break;
         }
 
-        printf("glomToLastWindow: ");
+        printf("windowingBehavior: ");
         switch (_windowingBehavior)
         {
-        case GlomToLastWindow::Never:
-            printf("never");
+        case WindowingBehavior::UseNew:
+            printf("useNew");
             break;
-        case GlomToLastWindow::LastActive:
-            printf("lastActive");
-            break;
-        case GlomToLastWindow::Always:
-            printf("always");
+        case WindowingBehavior::UseExisting:
+            printf("useExisting");
             break;
         }
         printf("\n");

@@ -64,7 +64,40 @@ void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant&
 
 winrt::MonarchPeasantSample::Monarch AppState::instantiateMonarch()
 {
-    auto monarch = create_instance<winrt::MonarchPeasantSample::Monarch>(Monarch_clsid, CLSCTX_LOCAL_SERVER);
+    auto something = create_instance<winrt::Windows::Foundation::IUnknown>(Monarch_clsid,
+                                                                           CLSCTX_LOCAL_SERVER);
+    if (something)
+    {
+        printf("Was able get something\n");
+        auto somethingAsMonarch = something.try_as<winrt::MonarchPeasantSample::Monarch>();
+        if (somethingAsMonarch)
+        {
+            printf("Was able to convert something into a Monarch\n");
+            return somethingAsMonarch;
+        }
+        else
+        {
+            printf("Was NOT able to convert something into a Monarch\n");
+            // auto another = winrt::get_abi(something);
+            // auto thenAnother = winrt::from_abi<winrt::MonarchPeasantSample::IMonarch>(another);
+            // winrt::MonarchPeasantSample::Monarch to{ nullptr };
+            // winrt::com_ptr<winrt::Windows::Foundation::IUnknown> ptr{ something.as<winrt::Windows::Foundation::IUnknown>() };
+            // if (thenAnother)
+            // {
+            //     printf("I did not seriously expect this to work\n");
+            // }
+            // else
+            // {
+            //     printf("That's mode like it\n");
+            // }
+        }
+    }
+    else
+    {
+        printf("Was NOT able get something\n");
+    }
+    auto monarch = create_instance<winrt::MonarchPeasantSample::Monarch>(Monarch_clsid,
+                                                                         CLSCTX_LOCAL_SERVER);
     return monarch;
 }
 

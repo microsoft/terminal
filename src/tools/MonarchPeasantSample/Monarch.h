@@ -12,11 +12,10 @@ constexpr GUID Monarch_clsid{
     { 0x83, 0x63, 0x5e, 0x06, 0xf5, 0xd0, 0x08, 0x2c }
 };
 
-enum class GlomToLastWindow : uint64_t
+enum class WindowingBehavior : uint64_t
 {
-    Never = 0,
-    LastActive = 1,
-    Always = 2
+    UseNew = 0,
+    UseExisting = 1,
 };
 
 namespace winrt::MonarchPeasantSample::implementation
@@ -39,7 +38,7 @@ namespace winrt::MonarchPeasantSample::implementation
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
         uint64_t _mostRecentPeasant{ 0 };
-        GlomToLastWindow _windowingBehavior{ GlomToLastWindow::Never };
+        WindowingBehavior _windowingBehavior{ WindowingBehavior::UseNew };
         std::unordered_map<uint64_t, winrt::MonarchPeasantSample::IPeasant> _peasants;
 
         winrt::MonarchPeasantSample::IPeasant _getPeasant(uint64_t peasantID);
