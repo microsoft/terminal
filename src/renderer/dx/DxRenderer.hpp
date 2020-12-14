@@ -61,7 +61,9 @@ namespace Microsoft::Console::Render
         void ToggleShaderEffects();
 
         bool GetRetroTerminalEffect() const noexcept;
-        void SetRetroTerminalEffect(bool enable) noexcept;
+        void SetRetroTerminalEffect(bool enable /*,
+                                    const bool enableShaderEffects = true*/
+                                    ) noexcept;
 
         void SetPixelShaderPath(std::wstring_view value) noexcept;
 

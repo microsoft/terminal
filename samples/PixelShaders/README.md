@@ -9,7 +9,7 @@ Windows Terminal allows user to provide a pixel shader which will be applied to 
 ```
 > **Note**: if you specify a shader with `experimental.pixelShaderPath`, the Terminal will use that instead of the `experimental.retroTerminalEffect`.
 
-To get started using pixel shaders in the Terminal, start with the following sample shader. This is `Invert.hlsl` in this direcotry:
+To get started using pixel shaders in the Terminal, start with the following sample shader. This is `Invert.hlsl` in this directory:
 
 ```hlsl
 // A minimal pixel shader that inverts the colors

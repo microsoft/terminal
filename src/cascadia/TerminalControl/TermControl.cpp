@@ -357,7 +357,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::ToggleShaderEffects()
     {
         auto lock = _terminal->LockForWriting();
-        _renderEngine->ToggleShaderEffects();
+        // Originally, this action could be used to enable the retro effects
+        // even when they're set to `false` in the settings. If the user didn't
+        // specify a custom pixel shader, manually enable the legacy retro
+        // effect first. This will ensure that a toggle off->on will still work,
+        // even if they currently have retro effect off.
+        if (_settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        {
+            // SetRetroTerminalEffect to true will enable the effect. In this
+            // case, the shader effect will already be disabled (because neither
+            // a pixel shader nor the retro effects were originally requested).
+            // So we _don't_ want to toggle it again below, because that would
+            // toggle it back off.
+            _renderEngine->SetRetroTerminalEffect(true);
+        }
+        else
+        {
+            _renderEngine->ToggleShaderEffects();
+        }
     }
 
     // Method Description:
