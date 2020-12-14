@@ -178,6 +178,10 @@
   <data name="HowToOpenRun.Text" xml:space="preserve">
     <value>Ctrl+Click to follow link</value>
   </data>
+  <data name="TermControl_NoMatch" xml:space="preserve">
+    <value>No results</value>
+    <comment>Will be presented near the search box when Find operation returned no results.</comment>
+  </data>
   <data name="NoticeFontNotFound" xml:space="preserve">
     <value>Unable to find the selected font "{0}". 
 

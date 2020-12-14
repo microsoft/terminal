@@ -31,12 +31,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SetFocusOnTextbox();
         void PopulateTextbox(winrt::hstring const& text);
         bool ContainsFocus();
+        void SetStatus(winrt::hstring const& text);
+        void SetStatusVisible(bool isVisible);
 
         void GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         WINRT_CALLBACK(Search, SearchHandler);
+        WINRT_CALLBACK(SearchChanged, SearchChangedHandler);
         TYPED_EVENT(Closed, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:

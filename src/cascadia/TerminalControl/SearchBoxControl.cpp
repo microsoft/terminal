@@ -209,4 +209,53 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         e.Handled(true);
     }
+
+    // Method Description:
+    // - Handler for changing the text. Triggers SearchChanged event
+    // Arguments:
+    // - sender: not used
+    // - e: event data
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    {
+        _SearchChangedHandlers(TextBox().Text(), _CaseSensitive());
+    }
+
+    // Method Description:
+    // - Handler for clicking the case sensitivity toggle. Triggers SearchChanged event
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    {
+        _SearchChangedHandlers(TextBox().Text(), _CaseSensitive());
+    }
+
+    // Method Description:
+    // - Allows to set the value of the search status
+    // Arguments:
+    // - status: string value to populate in the StatusBox
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::SetStatus(winrt::hstring const& status)
+    {
+        if (StatusBox())
+        {
+            StatusBox().Text(status);
+        }
+    }
+
+    // Method Description:
+    // - Allows to set the visibility of the search status
+    // Arguments:
+    // - isVisible: if true, the status is visible
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::SetStatusVisible(bool isVisible)
+    {
+        StatusBox().Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+    }
 }

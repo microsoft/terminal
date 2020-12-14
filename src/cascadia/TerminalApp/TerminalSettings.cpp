@@ -208,6 +208,7 @@ namespace winrt::TerminalApp::implementation
         _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
         _SoftwareRendering = globalSettings.SoftwareRendering();
         _ForceVTInput = globalSettings.ForceVTInput();
+        _LiveSearch = globalSettings.LiveSearch();
     }
 
     // Method Description:

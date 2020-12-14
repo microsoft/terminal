@@ -104,6 +104,8 @@ namespace SettingsModelLocalTests
                 "largePasteWarning": true,
                 "multiLinePasteWarning": true,
 
+                "liveSearch": false,
+
                 "experimental.input.forceVT": false,
                 "experimental.rendering.forceFullRepaint": false,
                 "experimental.rendering.software": false

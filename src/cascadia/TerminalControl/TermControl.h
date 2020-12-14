@@ -259,6 +259,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        bool _isLiveSearchEnabled{ false };
+        std::vector<std::pair<COORD, COORD>> _liveSearchMatches;
+        int32_t _liveSearchIndex{ -1 };
+        void _SetLiveSearchEnabled(bool isLiveSearchEnabled);
+
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
@@ -325,6 +330,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
+        void _SearchChanged(const winrt::hstring& text, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         // TSFInputControl Handlers

@@ -188,6 +188,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
+        _SetLiveSearch(_settings.LiveSearch());
         _ApplyUISettings();
     }
 
@@ -203,6 +204,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
+                _searchBox->SetStatus(RS_(L"TermControl_NoMatch"));
+                _searchBox->SetStatusVisible(_isLiveSearchEnabled);
 
                 // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
@@ -235,26 +238,108 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
-        if (text.size() == 0 || _closing)
+        if (_closing)
         {
             return;
         }
 
-        const Search::Direction direction = goForward ?
-                                                Search::Direction::Forward :
-                                                Search::Direction::Backward;
+        std::wstring searchStatus{ RS_(L"TermControl_NoMatch") };
 
-        const Search::Sensitivity sensitivity = caseSensitive ?
-                                                    Search::Sensitivity::CaseSensitive :
-                                                    Search::Sensitivity::CaseInsensitive;
-
-        Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-        auto lock = _terminal->LockForWriting();
-        if (search.FindNext())
+        if (!text.empty())
         {
-            _terminal->SetBlockSelection(false);
-            search.Select();
+            if (_isLiveSearchEnabled)
+            {
+                const int numMatches = ::base::saturated_cast<int>(_liveSearchMatches.size());
+                if (numMatches > 0)
+                {
+                    _liveSearchIndex = (numMatches + _liveSearchIndex + (goForward ? 1 : -1)) % numMatches;
+                    searchStatus = fmt::format(L"{}/{}", _liveSearchIndex + 1, numMatches);
+                    _terminal->SetBlockSelection(false);
+
+                    const auto& selectionCoords = til::at(_liveSearchMatches, _liveSearchIndex);
+                    _terminal->SelectNewRegion(selectionCoords.first, selectionCoords.second);
+                    _renderer->TriggerSelection();
+                }
+            }
+            else
+            {
+                const Search::Direction direction = goForward ?
+                                                        Search::Direction::Forward :
+                                                        Search::Direction::Backward;
+
+                const Search::Sensitivity sensitivity = caseSensitive ?
+                                                            Search::Sensitivity::CaseSensitive :
+                                                            Search::Sensitivity::CaseInsensitive;
+
+                Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+                auto lock = _terminal->LockForWriting();
+                if (search.FindNext())
+                {
+                    searchStatus = L"";
+                    _terminal->SetBlockSelection(false);
+                    search.Select();
+                    _renderer->TriggerSelection();
+                }
+            }
+        }
+
+        if (_searchBox)
+        {
+            _searchBox->SetStatus(searchStatus.data());
+        }
+    }
+
+    // Method Description:
+    // - If live search is enabled in settings, searches the buffer forward
+    // Arguments:
+    // - text: the text to search
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // Return Value:
+    // - <none>
+    void TermControl::_SearchChanged(const winrt::hstring& text, const bool caseSensitive)
+    {
+        if (_isLiveSearchEnabled)
+        {
+            // Clear the selection reset the anchor
+            _terminal->ClearSelection();
             _renderer->TriggerSelection();
+
+            const Search::Sensitivity sensitivity = caseSensitive ?
+                                                        Search::Sensitivity::CaseSensitive :
+                                                        Search::Sensitivity::CaseInsensitive;
+
+            Search search(*GetUiaData(), text.c_str(), Search::Direction::Forward, sensitivity);
+            auto lock = _terminal->LockForWriting();
+
+            _liveSearchMatches.clear();
+            _liveSearchIndex = -1;
+            while (search.FindNext())
+            {
+                _liveSearchMatches.push_back(search.GetFoundLocation());
+            }
+
+            _Search(text, true, caseSensitive);
+        }
+    }
+
+    // Method Description:
+    // - The goal of this method is to reset search in the case search mode is switched.
+    // We need this to avoid inconsistencies, when the mode is changed in the middle of
+    // navigation through results.
+    // Arguments:
+    // - isLiveSearchEnabled: true if live search mode is enabled
+    // Return Value:
+    // - <none>
+    void TermControl::_SetLiveSearch(bool isLiveSearchEnabled)
+    {
+        if (_isLiveSearchEnabled != isLiveSearchEnabled)
+        {
+            _isLiveSearchEnabled = isLiveSearchEnabled;
+            if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
+            {
+                _searchBox->SetStatusVisible(_isLiveSearchEnabled);
+                _searchBox->PopulateTextbox(L"");
+            }
         }
     }
 
@@ -334,6 +419,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _RefreshSizeUnderLock();
             }
+
+            _SetLiveSearch(_settings.LiveSearch());
         }
     }
 

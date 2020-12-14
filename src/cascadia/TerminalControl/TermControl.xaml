@@ -76,6 +76,7 @@
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
                                         Search="_Search"
+                                        SearchChanged="_SearchChanged"
                                         Closed="_CloseSearchBoxControl" />
             </Grid>
 
