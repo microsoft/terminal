@@ -10,6 +10,7 @@
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
+#include "..\types\inc\utils.hpp"
 
 #include <LibraryResources.h>
 
@@ -234,8 +235,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto state{ winrt::make_self<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
 
-        auto pfnDeleteProfile{ std::bind(&MainPage::_DeleteProfile, this, profile) };
-        state->SetDeleteProfileCallback(pfnDeleteProfile);
+        // You cannot delete the Windows Powershell and CMD profiles
+        const auto myGuid{ profile.Guid() };
+        const winrt::guid pwshGuid{ ::Microsoft::Console::Utils::GuidFromString(L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}") };
+        const winrt::guid cmdGuid{ ::Microsoft::Console::Utils::GuidFromString(L"{0caa0dad-35be-5f56-a8ff-afceeeaa6101}") };
+        if (myGuid != pwshGuid && myGuid != cmdGuid)
+        {
+            auto pfnDeleteProfile{ std::bind(&MainPage::_DeleteProfile, this, profile) };
+            state->SetDeleteProfileCallback(pfnDeleteProfile);
+        }
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), *state);
     }

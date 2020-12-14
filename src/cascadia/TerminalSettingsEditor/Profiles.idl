@@ -56,6 +56,8 @@ namespace Microsoft.Terminal.Settings.Editor
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         ProfileViewModel Profile { get; };
+
+        Boolean CanDeleteProfile { get; };
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged

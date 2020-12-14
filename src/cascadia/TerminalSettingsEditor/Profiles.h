@@ -70,6 +70,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
         }
 
+        bool CanDeleteProfile() { return _pfnDeleteProfile != nullptr; };
+        void SetDeleteProfileCallback(std::function<void(Editor::ProfileViewModel&)> pfn) { _pfnDeleteProfile.swap(pfn); }
         void DeleteProfile()
         {
             if (!_pfnDeleteProfile)
@@ -79,8 +81,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _pfnDeleteProfile(_Profile);
         }
 
-        void SetDeleteProfileCallback(std::function<void(Editor::ProfileViewModel&)> pfn) { _pfnDeleteProfile.swap(pfn); }
-
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
-        std::function<void(Editor::ProfileViewModel&)> _pfnDeleteProfile;
+        std::function<void(Editor::ProfileViewModel&)> _pfnDeleteProfile{ nullptr };
     };
 
     struct Profiles : ProfilesT<Profiles>
