@@ -486,6 +486,9 @@
   <data name="CouldNotOpenUriDialog.PrimaryButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
+  <data name="SettingsTab" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="FailedToWriteToSettings" xml:space="preserve">
     <value>We could not write to your settings file. Check the permissions on that file to ensure that the read-only flag is not set and that write access is granted.</value>
   </data>

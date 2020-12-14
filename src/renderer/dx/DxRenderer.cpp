@@ -1671,13 +1671,13 @@ try
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
 
-    if (lines & (GridLines::Left | GridLines::Right))
+    if (WI_IsAnyFlagSet(lines, (GridLines::Left | GridLines::Right)))
     {
         const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
         const auto startY = target.y + halfGridlineWidth;
         const auto endY = target.y + font.height - halfGridlineWidth;
 
-        if (lines & GridLines::Left)
+        if (WI_IsFlagSet(lines, GridLines::Left))
         {
             auto x = target.x + halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1686,7 +1686,7 @@ try
             }
         }
 
-        if (lines & GridLines::Right)
+        if (WI_IsFlagSet(lines, GridLines::Right))
         {
             auto x = target.x + font.width - halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1696,19 +1696,19 @@ try
         }
     }
 
-    if (lines & (GridLines::Top | GridLines::Bottom))
+    if (WI_IsAnyFlagSet(lines, GridLines::Top | GridLines::Bottom))
     {
         const auto halfGridlineWidth = _lineMetrics.gridlineWidth / 2.0f;
         const auto startX = target.x + halfGridlineWidth;
         const auto endX = target.x + fullRunWidth - halfGridlineWidth;
 
-        if (lines & GridLines::Top)
+        if (WI_IsFlagSet(lines, GridLines::Top))
         {
             const auto y = target.y + halfGridlineWidth;
             DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
         }
 
-        if (lines & GridLines::Bottom)
+        if (WI_IsFlagSet(lines, GridLines::Bottom))
         {
             const auto y = target.y + font.height - halfGridlineWidth;
             DrawLine(startX, y, endX, y, _lineMetrics.gridlineWidth);
@@ -1718,24 +1718,24 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
+    if (WI_IsAnyFlagSet(lines, GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = _lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + _lineMetrics.underlineOffset;
 
-        if (lines & GridLines::Underline)
+        if (WI_IsFlagSet(lines, GridLines::Underline))
         {
             DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
         }
 
-        if (lines & GridLines::HyperlinkUnderline)
+        if (WI_IsFlagSet(lines, GridLines::HyperlinkUnderline))
         {
             DrawHyperlinkLine(startX, y, endX, y, _lineMetrics.underlineWidth);
         }
 
-        if (lines & GridLines::DoubleUnderline)
+        if (WI_IsFlagSet(lines, GridLines::DoubleUnderline))
         {
             DrawLine(startX, y, endX, y, _lineMetrics.underlineWidth);
             const auto y2 = target.y + _lineMetrics.underlineOffset2;
@@ -1743,7 +1743,7 @@ try
         }
     }
 
-    if (lines & GridLines::Strikethrough)
+    if (WI_IsFlagSet(lines, GridLines::Strikethrough))
     {
         const auto halfStrikethroughWidth = _lineMetrics.strikethroughWidth / 2.0f;
         const auto startX = target.x + halfStrikethroughWidth;

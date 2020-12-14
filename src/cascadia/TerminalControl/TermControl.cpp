@@ -40,7 +40,8 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
-// This is usually defined in wpc.h, but we don't need that. Surprisingly, there isn't a better HRESULT version of ERROR_FILE_NOT_FOUND
+// This is usually defined in wpc.h, but we don't need that. Surprisingly, there
+// isn't a better HRESULT version of ERROR_FILE_NOT_FOUND
 #define E_FILE_NOT_FOUND 0x80070002
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation

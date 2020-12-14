@@ -59,6 +59,13 @@ namespace winrt::TerminalApp::implementation
         HeaderRenamerTextBox().Text(Title());
         HeaderRenamerTextBox().SelectAll();
         HeaderRenamerTextBox().Focus(Windows::UI::Xaml::FocusState::Programmatic);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "TabRenamerOpened",
+            TraceLoggingDescription("Event emitted when the tab renamer is opened"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     // Method Description:
@@ -68,6 +75,18 @@ namespace winrt::TerminalApp::implementation
     void TabHeaderControl::RenameBoxLostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                                      Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
+        // Log the data here, rather than in _CloseRenameBox. If we do it there,
+        // it'll get fired twice, once when the key is pressed to commit/cancel,
+        // and then again when the focus is lost
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "TabRenamerClosed",
+            TraceLoggingDescription("Event emitted when the tab renamer is closed"),
+            TraceLoggingBoolean(_renameCancelled, "CancelledRename", "True if the user cancelled the rename, false if they committed."),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
         _CloseRenameBox();
         if (!_renameCancelled)
         {

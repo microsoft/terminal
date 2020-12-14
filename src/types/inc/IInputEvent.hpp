@@ -297,7 +297,7 @@ public:
     void SetActiveModifierKeys(const DWORD activeModifierKeys) noexcept;
     void DeactivateModifierKey(const ModifierKeyState modifierKey) noexcept;
     void ActivateModifierKey(const ModifierKeyState modifierKey) noexcept;
-    bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const;
+    bool DoActiveModifierKeysMatch(const std::unordered_set<ModifierKeyState>& consoleModifiers) const noexcept;
     bool IsCommandLineEditingKey() const noexcept;
     bool IsPopupKey() const noexcept;
 
