@@ -8,11 +8,11 @@
 bool peasantReadInput(AppState& state)
 {
     DWORD cNumRead, i;
-    INPUT_RECORD irInBuf[128];
+    std::array<INPUT_RECORD, 128> irInBuf;
 
     if (!ReadConsoleInput(state.hInput, // input buffer handle
-                          irInBuf, // buffer to read into
-                          128, // size of read buffer
+                          irInBuf.data(), // buffer to read into
+                          static_cast<DWORD>(irInBuf.size()), // size of read buffer
                           &cNumRead)) // number of records read
     {
         printf("\x1b[31mReadConsoleInput failed\x1b[m\n");
@@ -59,10 +59,17 @@ bool peasantReadInput(AppState& state)
     return false;
 }
 
+// Returns true if we want to just exit the application.
+// Returns false if the monarch dies, and we need to elect a new one.
 bool peasantAppLoop(AppState& state)
 {
     wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(state.monarch.GetPID())) };
-    // printf("handle for the monarch process is %d\n", hMonarch.get());
+    if (hMonarch.get() == nullptr)
+    {
+        const auto gle = GetLastError();
+        printf("\x1b[31mFailed to open the monarch process, error was %d\x1b[m\n", gle);
+        return false;
+    }
 
     HANDLE handlesToWaitOn[2]{ hMonarch.get(), state.hInput };
 
@@ -71,7 +78,6 @@ bool peasantAppLoop(AppState& state)
 
     while (!exitRequested)
     {
-        // printf("Beginning wait...\n");
         auto waitResult = WaitForMultipleObjects(2, handlesToWaitOn, false, INFINITE);
 
         switch (waitResult)

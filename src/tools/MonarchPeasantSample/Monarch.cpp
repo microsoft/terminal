@@ -157,7 +157,7 @@ namespace winrt::MonarchPeasantSample::implementation
         }
         else
         {
-            // printf("They definitely weren't an existing process. They should make a new window.\n");
+            printf("They definitely weren't an existing process. They should make a new window.\n");
         }
 
         return createNewWindow;

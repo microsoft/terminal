@@ -3,14 +3,6 @@
 #include "Peasant.g.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 
-// {50dba6cd-1111-4b12-8363-5e06f5d0082c}
-constexpr GUID Peasant_clsid{
-    0x50dba6cd,
-    0x1111,
-    0x4b12,
-    { 0x83, 0x63, 0x5e, 0x06, 0xf5, 0xd0, 0x08, 0x2c }
-};
-
 namespace winrt::MonarchPeasantSample::implementation
 {
     struct Peasant : public PeasantT<Peasant>

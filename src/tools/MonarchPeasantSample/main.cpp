@@ -24,8 +24,7 @@ winrt::weak_ref<MonarchPeasantSample::implementation::Monarch> g_weak{ nullptr }
 
 struct MonarchFactory : implements<MonarchFactory, IClassFactory>
 {
-    MonarchFactory() :
-        _guid{ Monarch_clsid } {};
+    MonarchFactory() = default;
 
     HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept final
     {
@@ -55,9 +54,6 @@ struct MonarchFactory : implements<MonarchFactory, IClassFactory>
     {
         return S_OK;
     }
-
-private:
-    winrt::guid _guid;
 };
 ////////////////////////////////////////////////////////////////////////////////
 

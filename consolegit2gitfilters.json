@@ -22,7 +22,7 @@
     "/doc/specs/",
     "/doc/cascadia/",
     "/doc/user-docs/",
-    "/src/tools/MonarchPeasantSample",
+    "/src/tools/MonarchPeasantSample/",
   ],
   "SuffixFilters": [
     ".dbb",

@@ -20,9 +20,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 
-#include <winrt/Windows.UI.Xaml.Controls.h>
-#include <winrt/Windows.UI.Xaml.Media.h>
-#include <windows.ui.xaml.media.dxinterop.h>
-
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <conio.h>

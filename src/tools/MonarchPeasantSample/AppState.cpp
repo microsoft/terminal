@@ -1,5 +1,4 @@
 #include "pch.h"
-#include <conio.h>
 #include "Monarch.h"
 #include "Peasant.h"
 #include "AppState.h"
@@ -59,7 +58,7 @@ void AppState::remindKingWhoTheyAre(const winrt::MonarchPeasantSample::IPeasant&
     }
     else
     {
-        // printf("Shoot, we wanted to be able to get the impl here but couldnt\n");
+        printf("Shoot, we wanted to be able to get the monarchImpl here but couldnt\n");
     }
 }
 
