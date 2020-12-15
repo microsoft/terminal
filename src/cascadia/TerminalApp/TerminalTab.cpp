@@ -8,6 +8,7 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -50,6 +51,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        _UpdateHeaderControlMaxWidth();
+
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -73,6 +76,26 @@ namespace winrt::TerminalApp::implementation
 
         UpdateTitle();
         _RecalculateAndApplyTabColor();
+    }
+
+    winrt::fire_and_forget TerminalTab::_UpdateHeaderControlMaxWidth()
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            {
+                tab->_headerControl.MaximumWidth(HeaderRenameBoxWidthTitleLength);
+            }
+            else
+            {
+                tab->_headerControl.MaximumWidth(HeaderRenameBoxWidthDefault);
+            }
+        }
     }
 
     // Method Description:
@@ -159,9 +182,12 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
+
+        // The tabWidthMode may have changed, update the header control accordingly
+        _UpdateHeaderControlMaxWidth();
     }
 
     // Method Description:
