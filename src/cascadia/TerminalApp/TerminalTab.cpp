@@ -47,7 +47,6 @@ namespace winrt::TerminalApp::implementation
         });
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
-        _SetToolTip(_GetActiveTitle());
     }
 
     // Method Description:
@@ -238,6 +237,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            _SetToolTip(activeTitle);
         }
     }
 
@@ -295,7 +295,6 @@ namespace winrt::TerminalApp::implementation
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
         _UpdateActivePane(second);
-        _SetToolTip(_GetActiveTitle());
     }
 
     // Method Description:
