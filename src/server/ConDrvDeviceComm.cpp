@@ -151,6 +151,12 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
     return S_OK;
 }
 
+// Routine Description:
+// - Implements IDeviceComm handle exchange for ConDrv.
+// - "Translates" a pointer to an object into a handle value
+//   that the driver can use to identify objects in a console
+//   session.
+// - The opposite of GetHandle
 [[nodiscard]] ULONG_PTR ConDrvDeviceComm::PutHandle(const void* handle)
 {
     // ConDrv will pass back whatever large integer we send it, as an opaque data blob
@@ -158,6 +164,11 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
     return reinterpret_cast<ULONG_PTR>(handle);
 }
 
+// Routine Description:
+// - Implements IDeviceComm handle exchange for ConDrv.
+// - "Translates" an object handle from ConDrv into
+//   a pointer to an object
+// - The opposite of PutHandle
 [[nodiscard]] void* ConDrvDeviceComm::GetHandle(ULONG_PTR handleId) const
 {
     return reinterpret_cast<void*>(handleId);

@@ -35,6 +35,12 @@ ConsoleProcessHandle::ConsoleProcessHandle(const DWORD dwProcessId,
     }
 }
 
+// Routine Description:
+// - Creates a CD_CONNECTION_INFORMATION (packet) that communicates the
+//   process, input and output handles to the driver as transformed by the
+//   DeviceComm's handle exchanger.
+// Arguments:
+// - deviceComm: IDeviceComm implementation with which to exchange handles.
 CD_CONNECTION_INFORMATION ConsoleProcessHandle::GetConnectionInformation(IDeviceComm* deviceComm) const
 {
     CD_CONNECTION_INFORMATION result = { 0 };
