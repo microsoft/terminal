@@ -5,6 +5,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:TerminalApp"
+    xmlns:model="using:Microsoft.Terminal.Settings.Model"
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -32,7 +33,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
-            <local:IconPathConverter x:Key="IconSourceConverter"/>
+            <model:IconPathConverter x:Key="IconSourceConverter"/>
 
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">

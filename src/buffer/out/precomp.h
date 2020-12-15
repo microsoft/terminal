@@ -25,6 +25,9 @@ Abstract:
 #pragma warning(push)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 #endif
 
 // Windows Header Files:

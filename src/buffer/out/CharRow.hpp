@@ -62,7 +62,7 @@ public:
     size_t size() const noexcept;
     void Reset() noexcept;
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
-    size_t MeasureLeft() const;
+    size_t MeasureLeft() const noexcept;
     size_t MeasureRight() const noexcept;
     void ClearCell(const size_t column);
     bool ContainsText() const noexcept;

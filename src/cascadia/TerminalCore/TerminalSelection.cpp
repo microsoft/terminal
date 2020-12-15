@@ -255,10 +255,15 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool sin
 
     const auto GetAttributeColors = std::bind(&Terminal::GetAttributeColors, this, std::placeholders::_1);
 
-    return _buffer->GetText(!singleLine,
-                            !singleLine,
+    // GH#6740: Block selection should preserve the text block as is:
+    // - No trailing white-spaces should be removed.
+    // - CRLFs need to be added - so the lines structure is preserved
+    // - We should apply formatting above to wrapped rows as well (newline should be added).
+    return _buffer->GetText(!singleLine || _blockSelection,
+                            !singleLine && !_blockSelection,
                             selectionRects,
-                            GetAttributeColors);
+                            GetAttributeColors,
+                            _blockSelection);
 }
 
 // Method Description:

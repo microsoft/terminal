@@ -147,18 +147,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ResizePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_ResizeDirection)
         {
-        case Direction::Left:
+        case ResizeDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case ResizeDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case ResizeDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case ResizeDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
         }
@@ -171,20 +171,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_FocusDirection)
         {
-        case Direction::Left:
+        case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case FocusDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case FocusDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case FocusDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
+        case FocusDirection::Previous:
+            return RS_(L"MoveFocusToLastUsedPane");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
