@@ -591,8 +591,8 @@ namespace winrt::TerminalApp::implementation
             auto tabControl = TabRowControl();
             tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-            // For whatever reason, there's about 6px of unaccounted-for space
-            // in the application. I couldn't tell you where these 6px are
+            // For whatever reason, there's about 10px of unaccounted-for space
+            // in the application. I couldn't tell you where these 10px are
             // coming from, but they need to be included in this math.
             proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
         }
