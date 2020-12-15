@@ -7,7 +7,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:local="using:TerminalApp"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    MinHeight="16">
 
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
@@ -26,6 +27,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                  Padding="4,0,4,0"
                  Margin="0,-8,0,-8"
                  MaxLength="1024"
-                 LostFocus="RenameBoxLostFocusHandler"/>
+                 LostFocus="RenameBoxLostFocusHandler"
+                 Height="16"
+                 FontSize="12"/>
     </StackPanel>
 </UserControl>
