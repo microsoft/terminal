@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-11-23
-last updated: 2020-12-01
+last updated: 2020-12-15
 issue id: #2871
 ---
 
@@ -83,7 +83,7 @@ they've created with the startup commandline, and build the tree of panes
 however they see fit.
 
 Scenario 2 is more complicated, because MRU switching is always more
-complicated. Without a UI of some sort, there's no way to switch to another mane
+complicated. Without a UI of some sort, there's no way to switch to another pane
 in the MRU order without also updating the MRU order as you go. So this would
 almost certainly necessitate a "pane switcher", like the tab switcher.
 
@@ -206,6 +206,8 @@ so choose.
 * **Cons**:
   - Three separate actions for similar behavior
 
+❌ This proposal is no longer being considered.
+
 ### Proposal F: It's literally just tmux
 
 _Also known as the "one action to rule them all" proposal_
@@ -243,6 +245,8 @@ So `focusPane(target=1, direction=up)` will attempt to focus the pane above pane
 > there shouldn't be a separate "open the tab switcher with the panes expanded
 > to the pane I'm currently on, and the panes listed in MRU order" action.
 
+❌ This proposal is no longer being considered.
+
 ## Conclusion
 
 After much discussion as a team, we decided that **Proposal D** would be the
@@ -273,7 +277,7 @@ changing the meaning of any of the existing values, we do not expect any
 compatibility issues there. Additionally, we're not changing the default value
 of the `direction` param of the `moveFocus` action, so there are no further
 compatibility concerns there. Furthermore, no additional parameters are being
-added to the `moveFocus` action that would potentially gibe it a different
+added to the `moveFocus` action that would potentially give it a different
 meaning.
 
 </td>
