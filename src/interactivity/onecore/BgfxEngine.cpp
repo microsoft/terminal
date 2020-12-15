@@ -6,7 +6,7 @@
 #include "BgfxEngine.hpp"
 
 #include "ConIoSrvComm.hpp"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

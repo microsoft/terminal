@@ -163,6 +163,11 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
+    if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
+    {
+        withWindow->Initialize(_window->GetHandle());
+    }
+
     if (_useNonClientArea)
     {
         // Register our callback for when the app's non-client content changes.

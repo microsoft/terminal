@@ -17,6 +17,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     PreviewKeyDown="_previewKeyDownHandler"
     KeyDown="_keyDownHandler"
     PreviewKeyUp="_keyUpHandler"
+    LostFocus="_lostFocusHandler"
     mc:Ignorable="d"
     AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}">
 
@@ -245,8 +246,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!-- This HorizontalContentAlignment="Stretch" is important
                         to make sure it takes the entire width of the line -->
                         <ListViewItem HorizontalContentAlignment="Stretch"
-                                  AutomationProperties.Name="{x:Bind Command.Name, Mode=OneWay}"
-                                  AutomationProperties.AcceleratorKey="{x:Bind Command.KeyChordText, Mode=OneWay}">
+                                  IsTabStop="False"
+                                  AutomationProperties.Name="{x:Bind Item.Name, Mode=OneWay}"
+                                  AutomationProperties.AcceleratorKey="{x:Bind Item.KeyChordText, Mode=OneWay}">
 
                             <Grid HorizontalAlignment="Stretch" ColumnSpacing="8" >
                                 <Grid.ColumnDefinitions>
@@ -260,7 +262,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
-                                    IconSource="{x:Bind Command.Icon,
+                                    IconSource="{x:Bind Item.Icon,
                                                         Mode=OneWay,
                                                         Converter={StaticResource IconSourceConverter}}"/>
 
@@ -274,7 +276,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 CommandKeyChordVisibilityConverter for details. -->
                                 <Border
                                     Grid.Column="2"
-                                    Visibility="{x:Bind Command.KeyChordText,
+                                    Visibility="{x:Bind Item.KeyChordText,
                                                  Mode=OneWay,
                                                  Converter={StaticResource CommandKeyChordVisibilityConverter}}"
                                     Style="{ThemeResource KeyChordBorderStyle}"
@@ -285,7 +287,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <TextBlock
                                         Style="{ThemeResource KeyChordTextBlockStyle}"
                                         FontSize="12"
-                                        Text="{x:Bind Command.KeyChordText, Mode=OneWay}" />
+                                        Text="{x:Bind Item.KeyChordText, Mode=OneWay}" />
                                 </Border>
 
                                 <!-- xE70E is ChevronUp. Rotated 90 degrees, it's _ChevronRight_ -->
@@ -293,7 +295,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     FontFamily="Segoe MDL2 Assets"
                                     Glyph="&#xE70E;"
                                     HorizontalAlignment="Right"
-                                    Visibility="{x:Bind Command.HasNestedCommands,
+                                    Visibility="{x:Bind Item,
                                                  Mode=OneWay,
                                                  Converter={StaticResource HasNestedCommandsVisibilityConverter}}"
                                     Grid.Column="2">

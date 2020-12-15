@@ -22,6 +22,8 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "MoveTabArgs.g.cpp"
+#include "ToggleCommandPaletteArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -392,5 +394,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ScrollDownCommandKey");
+    }
+
+    winrt::hstring MoveTabArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (_Direction)
+        {
+        case MoveTabDirection::Forward:
+            directionString = RS_(L"MoveTabDirectionForward");
+            break;
+        case MoveTabDirection::Backward:
+            directionString = RS_(L"MoveTabDirectionBackward");
+            break;
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"MoveTabCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring ToggleCommandPaletteArgs::GenerateName() const
+    {
+        if (_LaunchMode == CommandPaletteLaunchMode::CommandLine)
+        {
+            return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
+        }
+        return RS_(L"ToggleCommandPaletteCommandKey");
     }
 }

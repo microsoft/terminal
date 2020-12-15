@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\RenderEngineBase.hpp"
+#include "../inc/RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {

@@ -14,9 +14,9 @@ Author:
 
 #pragma once
 
-#include "..\terminal\adapter\adaptDefaults.hpp"
-#include "..\types\inc\IInputEvent.hpp"
-#include "..\inc\conattrs.hpp"
+#include "../terminal/adapter/adaptDefaults.hpp"
+#include "../types/inc/IInputEvent.hpp"
+#include "../inc/conattrs.hpp"
 #include "IIoProvider.hpp"
 
 class SCREEN_INFORMATION;
@@ -42,7 +42,7 @@ private:
     NTSTATUS _ntstatus;
 };
 
-#include "..\terminal\adapter\conGetSet.hpp"
+#include "../terminal/adapter/conGetSet.hpp"
 
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through

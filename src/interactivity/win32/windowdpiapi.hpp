@@ -13,7 +13,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IHighDpiApi.hpp"
+#include "../inc/IHighDpiApi.hpp"
 
 // Uncomment to build ConFans or other down-level build scenarios.
 // #define CON_DPIAPI_INDIRECT

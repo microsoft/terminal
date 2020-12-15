@@ -307,7 +307,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAzBridge", "src\cas
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fmt", "src\dep\fmt\fmt.vcxproj", "{6BAE5851-50D5-4934-8D5E-30361A8A40F3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalTestNetCore", "src\cascadia\WpfTerminalTestNetCore\WpfTerminalTestNetCore\WpfTerminalTestNetCore.csproj", "{1588FD7C-241E-4E7D-9113-43735F3E6BAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalTestNetCore", "src\cascadia\WpfTerminalTestNetCore\WpfTerminalTestNetCore.csproj", "{1588FD7C-241E-4E7D-9113-43735F3E6BAD}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A22EC5F6-7851-4B88-AC52-47249D437A52} = {A22EC5F6-7851-4B88-AC52-47249D437A52}
 		{84848BFA-931D-42CE-9ADF-01EE54DE7890} = {84848BFA-931D-42CE-9ADF-01EE54DE7890}
