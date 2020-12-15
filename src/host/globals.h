@@ -22,13 +22,13 @@ Revision History:
 #include "ConsoleArguments.hpp"
 #include "ApiRoutines.h"
 
-#include "..\renderer\inc\IRenderData.hpp"
-#include "..\renderer\inc\IRenderEngine.hpp"
-#include "..\renderer\inc\IRenderer.hpp"
-#include "..\renderer\inc\IFontDefaultList.hpp"
+#include "../renderer/inc/IRenderData.hpp"
+#include "../renderer/inc/IRenderEngine.hpp"
+#include "../renderer/inc/IRenderer.hpp"
+#include "../renderer/inc/IFontDefaultList.hpp"
 
-#include "..\server\DeviceComm.h"
-#include "..\server\ConDrvDeviceComm.h"
+#include "../server/DeviceComm.h"
+#include "../server/ConDrvDeviceComm.h"
 
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>

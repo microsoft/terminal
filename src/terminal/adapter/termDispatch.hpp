@@ -82,9 +82,9 @@ public:
 
     bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
 
-    bool SetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECSET
+    bool SetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECSET
 
-    bool ResetPrivateMode(const DispatchTypes::PrivateModeParams /*param*/) noexcept override { return false; } // DECRST
+    bool ResetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) noexcept override { return false; } // DSR, DSR-OS, DSR-CPR
     bool DeviceAttributes() noexcept override { return false; } // DA1

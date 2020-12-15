@@ -7,14 +7,14 @@
 
 #include "ApiSorter.h"
 
-#include "..\host\conserv.h"
-#include "..\host\conwinuserrefs.h"
-#include "..\host\directio.h"
-#include "..\host\handle.h"
-#include "..\host\srvinit.h"
-#include "..\host\telemetry.hpp"
+#include "../host/conserv.h"
+#include "../host/conwinuserrefs.h"
+#include "../host/directio.h"
+#include "../host/handle.h"
+#include "../host/srvinit.h"
+#include "../host/telemetry.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 

@@ -6,9 +6,9 @@
 #include "WindowMetrics.hpp"
 #include "ConIoSrvComm.hpp"
 
-#include "..\..\renderer\wddmcon\wddmconrenderer.hpp"
+#include "../../renderer/wddmcon/wddmconrenderer.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

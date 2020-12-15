@@ -28,6 +28,10 @@ namespace winrt::TerminalApp::implementation
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
+        _rootPane->Id(_nextPaneId);
+        _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
+        ++_nextPaneId;
+
         _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
             _ClosedHandlers(nullptr, nullptr);
         });
@@ -185,9 +189,6 @@ namespace winrt::TerminalApp::implementation
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(_lastIconPath);
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
-
-            // Update SwitchToTab command's icon
-            SwitchToTabCommand().Icon(_lastIconPath);
         }
     }
 
@@ -225,9 +226,6 @@ namespace winrt::TerminalApp::implementation
             const auto activeTitle = _GetActiveTitle();
             // Bubble our current tab text to anyone who's listening for changes.
             Title(activeTitle);
-
-            // Update SwitchToTab command's name
-            SwitchToTabCommand().Name(Title());
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
@@ -274,7 +272,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
     {
+        // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
+        const auto activePaneId = _activePane->Id();
         auto [first, second] = _activePane->Split(splitType, profile, control);
+        first->Id(activePaneId);
+        second->Id(_nextPaneId);
+        ++_nextPaneId;
         _activePane = first;
         _AttachEventHandlersToControl(control);
 
@@ -318,7 +321,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the separator in.
     // Return Value:
     // - <none>
-    void TerminalTab::ResizePane(const Direction& direction)
+    void TerminalTab::ResizePane(const ResizeDirection& direction)
     {
         // NOTE: This _must_ be called on the root pane, so that it can propagate
         // throughout the entire tree.
@@ -332,11 +335,19 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focus in.
     // Return Value:
     // - <none>
-    void TerminalTab::NavigateFocus(const Direction& direction)
+    void TerminalTab::NavigateFocus(const FocusDirection& direction)
     {
-        // NOTE: This _must_ be called on the root pane, so that it can propagate
-        // throughout the entire tree.
-        _rootPane->NavigateFocus(direction);
+        if (direction == FocusDirection::Previous)
+        {
+            // To get to the previous pane, get the id of the previous pane and focus to that
+            _rootPane->FocusPane(_mruPanes.at(1));
+        }
+        else
+        {
+            // NOTE: This _must_ be called on the root pane, so that it can propagate
+            // throughout the entire tree.
+            _rootPane->NavigateFocus(direction);
+        }
     }
 
     // Method Description:
@@ -450,6 +461,18 @@ namespace winrt::TerminalApp::implementation
         // Update our own title text to match the newly-active pane.
         UpdateTitle();
 
+        // We need to move the pane to the top of our mru list
+        // If its already somewhere in the list, remove it first
+        const auto paneId = pane->Id();
+        for (auto i = _mruPanes.begin(); i != _mruPanes.end(); ++i)
+        {
+            if (*i == paneId)
+            {
+                _mruPanes.erase(i);
+                break;
+            }
+        }
+        _mruPanes.insert(_mruPanes.begin(), paneId);
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -466,6 +489,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_AttachEventHandlersToPane(std::shared_ptr<Pane> pane)
     {
         auto weakThis{ get_weak() };
+        std::weak_ptr<Pane> weakPane{ pane };
 
         pane->GotFocus([weakThis](std::shared_ptr<Pane> sender) {
             // Do nothing if the Tab's lifetime is expired or pane isn't new.
@@ -481,7 +505,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        pane->Closed([weakThis](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+        pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
@@ -490,6 +514,17 @@ namespace winrt::TerminalApp::implementation
 
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
+                }
+                if (auto pane = weakPane.lock())
+                {
+                    for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
+                    {
+                        if (*i == pane->Id())
+                        {
+                            tab->_mruPanes.erase(i);
+                            break;
+                        }
+                    }
                 }
             }
         });
@@ -521,7 +556,7 @@ namespace winrt::TerminalApp::implementation
         Controls::MenuFlyoutItem closeTabMenuItem;
         Controls::FontIcon closeSymbol;
         closeSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-        closeSymbol.Glyph(L"\xE8BB");
+        closeSymbol.Glyph(L"\xE711");
 
         closeTabMenuItem.Click([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
@@ -567,7 +602,7 @@ namespace winrt::TerminalApp::implementation
             // "Rename Tab"
             Controls::FontIcon renameTabSymbol;
             renameTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            renameTabSymbol.Glyph(L"\xE932"); // Label
+            renameTabSymbol.Glyph(L"\xE8AC"); // Rename
 
             renameTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })

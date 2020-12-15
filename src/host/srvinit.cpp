@@ -14,11 +14,11 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\server\Entrypoints.h"
-#include "..\server\IoSorter.h"
+#include "../server/Entrypoints.h"
+#include "../server/IoSorter.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\interactivity\base\ApiDetector.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../interactivity/base/ApiDetector.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"

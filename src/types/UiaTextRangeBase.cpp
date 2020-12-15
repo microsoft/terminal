@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "UiaTextRangeBase.hpp"
 #include "ScreenInfoUiaProviderBase.h"
-#include "..\buffer\out\search.h"
+#include "../buffer/out/search.h"
 #include "UiaTracing.h"
 
 using namespace Microsoft::Console::Types;

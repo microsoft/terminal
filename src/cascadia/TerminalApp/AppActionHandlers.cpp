@@ -167,6 +167,20 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleScrollToTop(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollUp);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToBottom(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollDown);
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {
@@ -214,14 +228,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ResizePaneArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.ResizeDirection() == ResizeDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _ResizePane(realArgs.Direction());
+                _ResizePane(realArgs.ResizeDirection());
                 args.Handled(true);
             }
         }
@@ -232,14 +246,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<MoveFocusArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.FocusDirection() == FocusDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _MoveFocus(realArgs.Direction());
+                _MoveFocus(realArgs.FocusDirection());
                 args.Handled(true);
             }
         }
@@ -313,13 +327,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const ActionEventArgs& args)
     {
-        // TODO GH#6677: When we add support for commandline mode, first set the
-        // mode that the command palette should be in, before making it visible.
-        CommandPalette().EnableCommandPaletteMode();
-        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                        Visibility::Collapsed :
-                                        Visibility::Visible);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
+        {
+            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
@@ -521,7 +536,7 @@ namespace winrt::TerminalApp::implementation
                                             const ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        _UpdatePaletteWithInOrderTabs();
+        CommandPalette().SetTabs(_tabs, true);
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
@@ -531,4 +546,34 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleMoveTab(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
+        {
+            auto direction = realArgs.Direction();
+            if (direction != MoveTabDirection::None)
+            {
+                if (auto focusedTabIndex = _GetFocusedTabIndex())
+                {
+                    auto currentTabIndex = focusedTabIndex.value();
+                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+                }
+            }
+            actionArgs.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleBreakIntoDebugger(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& actionArgs)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            actionArgs.Handled(true);
+            DebugBreak();
+        }
+    }
+
 }

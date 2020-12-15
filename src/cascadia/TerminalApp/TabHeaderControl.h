@@ -26,6 +26,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         bool _receivedKeyDown{ false };
+        bool _renameCancelled{ false };
 
         void _CloseRenameBox();
     };

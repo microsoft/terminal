@@ -16,7 +16,7 @@ Revision History:
 
 #pragma once
 
-#include "..\host\conapi.h"
+#include "../host/conapi.h"
 
 class IDeviceComm
 {

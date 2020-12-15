@@ -10,7 +10,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    struct AppLogic : AppLogicT<AppLogic>
+    struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
     public:
         static AppLogic* Current() noexcept;
@@ -18,6 +18,8 @@ namespace winrt::TerminalApp::implementation
 
         AppLogic();
         ~AppLogic() = default;
+
+        STDMETHODIMP Initialize(HWND hwnd);
 
         void Create();
         bool IsUwp() const noexcept;

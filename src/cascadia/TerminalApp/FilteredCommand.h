@@ -18,14 +18,14 @@ namespace winrt::TerminalApp::implementation
     struct FilteredCommand : FilteredCommandT<FilteredCommand>
     {
         FilteredCommand() = default;
-        FilteredCommand(Microsoft::Terminal::Settings::Model::Command const& command);
+        FilteredCommand(winrt::TerminalApp::PaletteItem const& item);
 
         void UpdateFilter(winrt::hstring const& filter);
 
         static int Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        OBSERVABLE_GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::PaletteItem, Item, _PropertyChangedHandlers, nullptr);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Filter, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::TerminalApp::HighlightedText, HighlightedName, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(int, Weight, _PropertyChangedHandlers);
@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
     private:
         winrt::TerminalApp::HighlightedText _computeHighlightedName();
         int _computeWeight();
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _itemChangedRevoker;
 
         friend class TerminalAppLocalTests::FilteredCommandTests;
     };

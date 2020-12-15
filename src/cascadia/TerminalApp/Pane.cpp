@@ -130,7 +130,7 @@ void Pane::Relayout()
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_Resize(const Direction& direction)
+bool Pane::_Resize(const ResizeDirection& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
@@ -138,7 +138,7 @@ bool Pane::_Resize(const Direction& direction)
     }
 
     float amount = .05f;
-    if (direction == Direction::Right || direction == Direction::Down)
+    if (direction == ResizeDirection::Right || direction == ResizeDirection::Down)
     {
         amount = -amount;
     }
@@ -171,7 +171,7 @@ bool Pane::_Resize(const Direction& direction)
 // - direction: The direction to move the separator in.
 // Return Value:
 // - true if we or a child handled this resize request.
-bool Pane::ResizePane(const Direction& direction)
+bool Pane::ResizePane(const ResizeDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -223,14 +223,14 @@ bool Pane::ResizePane(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we handled this focus move request.
-bool Pane::_NavigateFocus(const Direction& direction)
+bool Pane::_NavigateFocus(const FocusDirection& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
         return false;
     }
 
-    const bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
+    const bool focusSecond = (direction == FocusDirection::Right) || (direction == FocusDirection::Down);
 
     const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
 
@@ -261,7 +261,7 @@ bool Pane::_NavigateFocus(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we or a child handled this focus move request.
-bool Pane::NavigateFocus(const Direction& direction)
+bool Pane::NavigateFocus(const FocusDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
@@ -655,9 +655,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // inherited from us, so the flag will be set for both children.
         _borders = _firstChild->_borders & _secondChild->_borders;
 
-        // take the control and profile of the pane that _wasn't_ closed.
+        // take the control, profile and id of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
+        _id = remainingChild->Id();
 
         // Add our new event handler before revoking the old one.
         _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
@@ -1493,6 +1494,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     _SetupEntranceAnimation();
 
+    // Clear out our ID, only leaves should have IDs
+    _id = {};
+
     return { _firstChild, _secondChild };
 }
 
@@ -1563,6 +1567,47 @@ void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
         // our direct children, we'll still want to update it's borders.
         _firstChild->Restore(zoomedPane);
         _secondChild->Restore(zoomedPane);
+    }
+}
+
+// Method Description:
+// - Retrieves the ID of this pane
+// - NOTE: The caller should make sure that this pane is a leaf,
+//   otherwise the ID value will not make sense (leaves have IDs, parents do not)
+// Return Value:
+// - The ID of this pane
+uint16_t Pane::Id() noexcept
+{
+    return _id.value();
+}
+
+// Method Description:
+// - Sets this pane's ID
+// - Panes are given IDs upon creation by TerminalTab
+// Arguments:
+// - The number to set this pane's ID to
+void Pane::Id(uint16_t id) noexcept
+{
+    _id = id;
+}
+
+// Method Description:
+// - Recursive function that focuses a pane with the given ID
+// Arguments:
+// - The ID of the pane we want to focus
+void Pane::FocusPane(const uint16_t id)
+{
+    if (_IsLeaf() && id == _id)
+    {
+        _control.Focus(FocusState::Programmatic);
+    }
+    else
+    {
+        if (_firstChild && _secondChild)
+        {
+            _firstChild->FocusPane(id);
+            _secondChild->FocusPane(id);
+        }
     }
 }
 

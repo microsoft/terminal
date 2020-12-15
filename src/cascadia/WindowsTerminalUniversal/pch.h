@@ -20,4 +20,4 @@
 #include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.Xaml.h>
 
-#include "..\..\inc\LibraryIncludes.h"
+#include "../../inc/LibraryIncludes.h"
