@@ -78,6 +78,9 @@
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="SettingsTab.h">
+      <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
@@ -116,9 +119,6 @@
     <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="IconPathConverter.h">
-      <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="TerminalSettings.h">
@@ -149,6 +149,9 @@
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SettingsTab.cpp">
+      <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
@@ -188,9 +191,6 @@
     <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
       <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="IconPathConverter.cpp">
-      <DependentUpon>IconPathConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
@@ -228,6 +228,7 @@
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
+    <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
@@ -271,7 +272,6 @@
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="IconPathConverter.idl" />
     <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
@@ -315,6 +315,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.TerminalControl">
       <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Settings.Editor">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Editor\Microsoft.Terminal.Settings.Editor.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

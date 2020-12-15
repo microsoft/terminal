@@ -12,6 +12,7 @@ LKG
 mfcribbon
 microsoft
 microsoftonline
+muxc
 netcore
 osgvsowi
 pgc

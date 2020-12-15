@@ -1,13 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
-#include "IconPathConverter.g.h"
-#include "../inc/cppwinrt_utils.h"
+#include "FontWeightConverter.g.h"
+#include "Utils.h"
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct IconPathConverter : IconPathConverterT<IconPathConverter>
+    struct FontWeightConverter : FontWeightConverterT<FontWeightConverter>
     {
-        IconPathConverter() = default;
+        FontWeightConverter() = default;
 
         Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value,
                                                   Windows::UI::Xaml::Interop::TypeName const& targetType,
@@ -18,13 +21,10 @@ namespace winrt::TerminalApp::implementation
                                                       Windows::UI::Xaml::Interop::TypeName const& targetType,
                                                       Windows::Foundation::IInspectable const& parameter,
                                                       hstring const& language);
-
-        static Windows::UI::Xaml::Controls::IconSource IconSourceWUX(hstring path);
-        static Microsoft::UI::Xaml::Controls::IconSource IconSourceMUX(hstring path);
     };
 }
 
-namespace winrt::TerminalApp::factory_implementation
+namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
-    BASIC_FACTORY(IconPathConverter);
+    BASIC_FACTORY(FontWeightConverter);
 }
