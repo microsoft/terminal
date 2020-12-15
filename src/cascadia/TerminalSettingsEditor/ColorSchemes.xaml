@@ -80,9 +80,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ComboBox>
 
                 <!--Rename Button-->
+                <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
                 <Button x:Uid="ColorScheme_Rename"
                         Style="{StaticResource BrowseButtonStyle}"
-                        Click="Rename_Click">
+                        Click="Rename_Click"
+                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
                     <FontIcon Glyph="&#xE8AC;"/>
                 </Button>
 
@@ -233,8 +235,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ContentDialog x:Load="False"
                            x:Uid="ColorScheme_RenameDialog"
                            x:Name="RenameDialog"
-                           DefaultButton="Primary"
-                           PrimaryButtonClick="RenameConfirm_Click">
+                           DefaultButton="Primary">
                 <TextBox x:Uid="ColorScheme_Name"
                          x:Name="NameBox"
                          Style="{StaticResource TextBoxSettingStyle}"/>

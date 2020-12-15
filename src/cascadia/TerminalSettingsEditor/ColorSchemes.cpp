@@ -177,7 +177,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemeComboBox().SelectedItem(scheme);
     }
 
-    void ColorSchemes::Rename_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    winrt::fire_and_forget ColorSchemes::Rename_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
     {
         const auto schemeName{ CurrentColorScheme().Name() };
         const hstring title{ fmt::format(std::wstring_view{ RS_(L"ColorScheme_RenameDialog/Title") }, schemeName) };
@@ -187,12 +187,37 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         dialog.XamlRoot(sender.as<UIElement>().XamlRoot());
 
         NameBox().Text(schemeName);
-        dialog.ShowAsync(ContentDialogPlacement::Popup);
-    }
 
-    void ColorSchemes::RenameConfirm_Click(IInspectable const& /*sender*/, ContentDialogButtonClickEventArgs const& /*e*/)
-    {
-        CurrentColorScheme().Name(NameBox().Text());
+        // IMPORTANT: Set the requested theme of the dialog, because the
+        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
+        // won't inherit our RequestedTheme automagically.
+        // GH#5195, GH#3654 Because we cannot set RequestedTheme at the application level,
+        // we occasionally run into issues where parts of our UI end up themed incorrectly.
+        // Dialogs, for example, live under a different Xaml root element than the rest of
+        // our application. This makes our popup menus and buttons "disappear" when the
+        // user wants Terminal to be in a different theme than the rest of the system.
+        // This hack---and it _is_ a hack--walks up a dialog's ancestry and forces the
+        // theme on each element up to the root. We're relying a bit on Xaml's implementation
+        // details here, but it does have the desired effect.
+        // It's not enough to set the theme on the dialog alone.
+        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
+            auto theme{ _State.Theme() };
+            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
+            while (element)
+            {
+                element.RequestedTheme(theme);
+                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+            }
+        } };
+
+        themingLambda(dialog, nullptr); // if it's already in the tree
+        auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
+
+        auto dialogResult{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
+        if (ContentDialogResult::Primary == dialogResult)
+        {
+            CurrentColorScheme().Name(NameBox().Text());
+        }
     }
 
     // Function Description:

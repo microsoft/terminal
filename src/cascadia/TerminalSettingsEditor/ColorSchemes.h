@@ -13,10 +13,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
     {
     public:
-        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings) :
-            _Globals{ settings } {}
+        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings, Windows::UI::Xaml::ElementTheme theme) :
+            _Globals{ settings },
+            _Theme{ theme } {}
 
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
+        GETSET_PROPERTY(Windows::UI::Xaml::ElementTheme, Theme, Windows::UI::Xaml::ElementTheme::Default);
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
@@ -29,8 +31,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ColorPickerChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ColorChangedEventArgs const& args);
         void Delete_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void AddNew_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Rename_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void RenameConfirm_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs const& e);
+        fire_and_forget Rename_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         bool CanDeleteCurrentScheme() const;
 
