@@ -40,10 +40,6 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::TerminalControl::CopyFormat);
 
-// This is usually defined in wpc.h, but we don't need that. Surprisingly, there
-// isn't a better HRESULT version of ERROR_FILE_NOT_FOUND
-#define E_FILE_NOT_FOUND 0x80070002
-
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -313,8 +309,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
             _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            std::wstring_view shaderPath{ _settings.PixelShaderPath().data(), _settings.PixelShaderPath().size() };
-            _renderEngine->SetPixelShaderPath(shaderPath);
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -657,8 +652,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (auto control{ weakThis.get() })
         {
             winrt::hstring message;
-
-            if (E_FILE_NOT_FOUND == hr)
+            if (HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) == hr ||
+                HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
             {
                 message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
                                         _settings.PixelShaderPath()) };
@@ -764,8 +759,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
 
             dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            std::wstring_view shaderPath{ _settings.PixelShaderPath().data(), _settings.PixelShaderPath().size() };
-            dxEngine->SetPixelShaderPath(shaderPath);
+            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 

@@ -278,7 +278,8 @@ std::string DxEngine::_LoadPixelShaderFile() const
             const auto fileSize = GetFileSize(hFile.get(), nullptr);
             THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
 
-            auto utf8buffer = std::vector<char>(fileSize);
+            std::vector<char> utf8buffer;
+            utf8buffer.reserve(fileSize);
 
             DWORD bytesRead = 0;
             THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.data(), fileSize, &bytesRead, nullptr));
@@ -321,6 +322,11 @@ HRESULT DxEngine::_SetupTerminalEffects()
     const auto pixelShaderSource = _LoadPixelShaderFile();
     if (pixelShaderSource.empty())
     {
+        // There's no shader to compile. This might be due to failing to load,
+        // or becuase there's just no shader enabled at all.
+        // Turn the effects off for now.
+        _terminalEffectsEnabled = false;
+
         return S_FALSE;
     }
 
@@ -362,12 +368,10 @@ HRESULT DxEngine::_SetupTerminalEffects()
         const auto exceptionHr = LOG_CAUGHT_EXCEPTION();
         if (_pfnWarningCallback)
         {
-            // D2DERR_SHADER_COMPILE_FAILED isn't technically an HRESULT, but
-            // it's more specific than E_FAIL.
+            // If this fails, it'll return E_FAIL, which is terribly
+            // uninformative. Instead, raise something more useful.
             _pfnWarningCallback(D2DERR_SHADER_COMPILE_FAILED);
         }
-        pixelBlob = nullptr;
-        _pixelShaderLoaded = false;
         return exceptionHr;
     }
 
@@ -655,6 +659,7 @@ try
             if (FAILED(hr))
             {
                 LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
+                _terminalEffectsEnabled = false;
             }
         }
 
@@ -954,8 +959,8 @@ try
 {
     if (_retroTerminalEffect != enable)
     {
-        // The caller might want to leave the shader
-        _terminalEffectsEnabled = true;
+        // Enable shader effects if the path isn't empty. Otherwise leave it untouched.
+        _terminalEffectsEnabled = enable ? true : _terminalEffectsEnabled;
         _retroTerminalEffect = enable;
         _recreateDeviceRequested = true;
         LOG_IF_FAILED(InvalidateAll());
@@ -968,7 +973,8 @@ try
 {
     if (_pixelShaderPath != value)
     {
-        _terminalEffectsEnabled = true;
+        // Enable shader effects if the path isn't empty. Otherwise leave it untouched.
+        _terminalEffectsEnabled = value.empty() ? _terminalEffectsEnabled : true;
         _pixelShaderPath = { value };
         _recreateDeviceRequested = true;
         LOG_IF_FAILED(InvalidateAll());
