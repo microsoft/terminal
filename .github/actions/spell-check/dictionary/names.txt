@@ -3,6 +3,7 @@ austdi
 Ballmer
 bhoj
 Bhojwani
+dgnuff
 carlos
 dhowett
 Diviness
@@ -12,6 +13,7 @@ ekg
 ethanschoonover
 Firefox
 Gatta
+Goodenough
 Grie
 Griese
 Hernan
