@@ -323,7 +323,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     if (pixelShaderSource.empty())
     {
         // There's no shader to compile. This might be due to failing to load,
-        // or becuase there's just no shader enabled at all.
+        // or because there's just no shader enabled at all.
         // Turn the effects off for now.
         _terminalEffectsEnabled = false;
 
