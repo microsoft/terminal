@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
         {
             _SplitPane(realArgs.SplitStyle(),
                        realArgs.SplitMode(),
-                       // This is safe, we're alrady filtering so the value is (0, 1)
+                       // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
                        realArgs.TerminalArgs());
             args.Handled(true);
