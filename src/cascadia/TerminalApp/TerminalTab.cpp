@@ -89,11 +89,11 @@ namespace winrt::TerminalApp::implementation
             const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
             if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
             {
-                tab->_headerControl.MaximumWidth(HeaderRenameBoxWidthTitleLength);
+                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
             }
             else
             {
-                tab->_headerControl.MaximumWidth(HeaderRenameBoxWidthDefault);
+                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
             }
         }
     }

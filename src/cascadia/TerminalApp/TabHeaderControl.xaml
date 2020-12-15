@@ -30,6 +30,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                  LostFocus="RenameBoxLostFocusHandler"
                  Height="16"
                  FontSize="12"
-                 MaxWidth="{x:Bind MaximumWidth, Mode=OneWay}"/>
+                 MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"/>
     </StackPanel>
 </UserControl>
