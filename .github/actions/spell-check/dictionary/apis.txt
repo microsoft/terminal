@@ -8,9 +8,12 @@ cmdletbinding
 COLORPROPERTY
 CXICON
 CYICON
+D2DERR_SHADER_COMPILE_FAILED
+DERR
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+frac
 fullkbd
 futex
 GETDESKWALLPAPER
@@ -34,7 +37,6 @@ IObject
 IStorage
 ITab
 ITaskbar
-llabs
 LCID
 llabs
 localtime
@@ -64,6 +66,7 @@ semver
 serializer
 shobjidl
 SIZENS
+smoothstep
 GETDESKWALLPAPER
 snprintf
 spsc
@@ -83,6 +86,7 @@ UPDATEINIFILE
 userenv
 wcsstr
 wcstoui
+wpc
 wsregex
 XDocument
 XElement

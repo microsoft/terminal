@@ -135,6 +135,10 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearRetroTerminalEffect();
         Boolean RetroTerminalEffect;
 
+        Boolean HasPixelShaderPath();
+        void ClearPixelShaderPath();
+        String PixelShaderPath;
+
         Boolean HasForceFullRepaintRendering();
         void ClearForceFullRepaintRendering();
         Boolean ForceFullRepaintRendering;
