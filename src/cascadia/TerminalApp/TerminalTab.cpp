@@ -48,6 +48,7 @@ namespace winrt::TerminalApp::implementation
 
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
+        
     }
 
     // Method Description:
@@ -74,11 +75,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
     {
         auto toolTip = WUX::Controls::ToolTip{};
-        auto newTabRun = WUX::Documents::Run();
-        newTabRun.Text(tabTitle);
-        auto textBlock = WUX::Controls::TextBlock{};
-        textBlock.Inlines().Append(newTabRun);
-        toolTip.Content(textBlock);
+        toolTip.Content(winrt::box_value(tabTitle));
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 
