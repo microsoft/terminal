@@ -46,6 +46,19 @@ namespace Microsoft.Terminal.Settings.Model
         AllFiles
     };
 
+    enum MoveTabDirection
+    {
+        None = 0,
+        Forward,
+        Backward
+    };
+
+    enum CommandPaletteLaunchMode
+    {
+        Action = 0,
+        CommandLine
+    };
+
     [default_interface] runtimeclass NewTerminalArgs {
         NewTerminalArgs();
         NewTerminalArgs(Int32 profileIndex);
@@ -157,6 +170,12 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
+    [default_interface] runtimeclass MoveTabArgs : IActionArgs
+    {
+        MoveTabArgs(MoveTabDirection direction);
+        MoveTabDirection Direction { get; };
+    };
+
     [default_interface] runtimeclass ScrollUpArgs : IActionArgs
     {
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
@@ -165,5 +184,10 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ScrollDownArgs : IActionArgs
     {
         Windows.Foundation.IReference<UInt32> RowsToScroll { get; };
+    };
+
+    [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
+    {
+        CommandPaletteLaunchMode LaunchMode { get; };
     };
 }

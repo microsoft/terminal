@@ -19,17 +19,17 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
-    // This is a view model class that extends the Command model,
-    // by managing a highlighted text that is computed by matching search filter characters to command name
-    FilteredCommand::FilteredCommand(Microsoft::Terminal::Settings::Model::Command const& command) :
-        _Command(command),
+    // This class is a wrapper of PaletteItem, that is used as an item of a filterable list in CommandPalette.
+    // It manages a highlighted text that is computed by matching search filter characters to item name
+    FilteredCommand::FilteredCommand(winrt::TerminalApp::PaletteItem const& item) :
+        _Item(item),
         _Filter(L""),
         _Weight(0)
     {
         _HighlightedName = _computeHighlightedName();
 
-        // Recompute the highlighted name if the command name changes
-        _commandChangedRevoker = _Command.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](Windows::Foundation::IInspectable const& /*sender*/, Data::PropertyChangedEventArgs const& e) {
+        // Recompute the highlighted name if the item name changes
+        _itemChangedRevoker = _Item.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& e) {
             auto filteredCommand{ weakThis.get() };
             if (filteredCommand && e.PropertyName() == L"Name")
             {
@@ -52,13 +52,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Looks up the filter characters within the command name.
-    // Iterating through the filter and the command name it tries to associate the next filter character
-    // with the first appearance of this character in the command name suffix.
+    // - Looks up the filter characters within the item name.
+    // Iterating through the filter and the item name it tries to associate the next filter character
+    // with the first appearance of this character in the item name suffix.
     //
     // E.g., for filter="c l t s" and name="close all tabs after this", the match will be "CLose TabS after this".
     //
-    // The command name is then split into segments (groupings of matched and non matched characters).
+    // The item name is then split into segments (groupings of matched and non matched characters).
     //
     // E.g., the segments were the example above will be "CL", "ose ", "T", "ab", "S", "after this".
     //
@@ -73,7 +73,7 @@ namespace winrt::TerminalApp::implementation
     winrt::TerminalApp::HighlightedText FilteredCommand::_computeHighlightedName()
     {
         const auto segments = winrt::single_threaded_observable_vector<winrt::TerminalApp::HighlightedTextSegment>();
-        auto commandName = _Command.Name();
+        auto commandName = _Item.Name();
         bool isProcessingMatchedSegment = false;
         uint32_t nextOffsetToReport = 0;
         uint32_t currentOffset = 0;
@@ -86,7 +86,7 @@ namespace winrt::TerminalApp::implementation
                 if (currentOffset == commandName.size())
                 {
                     // There are still unmatched filter characters but we finished scanning the name.
-                    // In this case we return the entire command name as unmatched
+                    // In this case we return the entire item name as unmatched
                     auto entireNameSegment{ winrt::make<HighlightedTextSegment>(commandName, false) };
                     segments.Clear();
                     segments.Append(entireNameSegment);
@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Either the filter or the command name were fully processed.
+        // Either the filter or the item name were fully processed.
         // If we were in the middle of the matched segment - add it.
         if (isProcessingMatchedSegment)
         {
@@ -135,7 +135,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Now create a segment for all remaining characters.
-        // We will have remaining characters as long as the filter is shorter than the command name.
+        // We will have remaining characters as long as the filter is shorter than the item name.
         auto sizeToReport = commandName.size() - nextOffsetToReport;
         if (sizeToReport > 0)
         {
@@ -148,7 +148,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Calculates a "weighting" by which should be used to order a command
+    // - Calculates a "weighting" by which should be used to order a item
     //   name relative to other names, given a specific search string.
     //   Currently, this is based off of two factors:
     //   * The weight is incremented once for each matched character of the
@@ -159,7 +159,7 @@ namespace winrt::TerminalApp::implementation
     //       appear in the list before "Close Pane"
     //   * Consecutive matches will be weighted higher than matches with
     //     characters in between the search characters.
-    // - This will return 0 if the command should not be shown. If all the
+    // - This will return 0 if the item should not be shown. If all the
     //   characters of search text appear in order in `name`, then this function
     //   will return a positive number. There can be any number of characters
     //   separating consecutive characters in searchText.
@@ -216,10 +216,10 @@ namespace winrt::TerminalApp::implementation
 
     // Function Description:
     // - Implementation of Compare for FilteredCommand interface.
-    // Compares firs command with the second command, first by weight, then by name.
-    // In the case of a tie prefers the first command
+    // Compares first instance of the interface with the second instance, first by weight, then by name.
+    // In the case of a tie prefers the first instance.
     // Arguments:
-    // - other: another instance of Filtered Command interface
+    // - other: another instance of FilteredCommand interface
     // Return Value:
     // - Returns true if the first is "bigger" (aka should appear first)
     int FilteredCommand::Compare(winrt::TerminalApp::FilteredCommand const& first, winrt::TerminalApp::FilteredCommand const& second)
@@ -229,9 +229,9 @@ namespace winrt::TerminalApp::implementation
 
         if (firstWeight == secondWeight)
         {
-            std::wstring_view firstName{ first.Command().Name() };
-            std::wstring_view secondName{ second.Command().Name() };
-            return firstName.compare(secondName) < 0;
+            std::wstring_view firstName{ first.Item().Name() };
+            std::wstring_view secondName{ second.Item().Name() };
+            return lstrcmpi(firstName.data(), secondName.data()) < 0;
         }
 
         return firstWeight > secondWeight;

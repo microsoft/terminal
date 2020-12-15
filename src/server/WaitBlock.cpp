@@ -8,10 +8,10 @@
 
 #include "ApiSorter.h"
 
-#include "..\host\globals.h"
-#include "..\host\utils.hpp"
+#include "../host/globals.h"
+#include "../host/utils.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Initializes a ConsoleWaitBlock

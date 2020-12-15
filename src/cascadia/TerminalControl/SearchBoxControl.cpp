@@ -111,6 +111,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Allows to set the value of the text to search
+    // Arguments:
+    // - text: string value to populate in the TextBox
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::PopulateTextbox(winrt::hstring const& text)
+    {
+        if (TextBox())
+        {
+            TextBox().Text(text);
+        }
+    }
+
+    // Method Description:
     // - Check if the current focus is on any element within the
     //   search box
     // Arguments:

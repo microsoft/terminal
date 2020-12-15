@@ -3,7 +3,7 @@
 
 #include <windows.h>
 #include <windowsx.h>
-#include <wil\result.h>
+#include <wil/result.h>
 
 int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nFontType, LPARAM lParam);
 int AddFont(

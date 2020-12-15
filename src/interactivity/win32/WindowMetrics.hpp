@@ -12,7 +12,7 @@ Author(s):
 - Hernan Gatta (HeGatta) 29-Mar-2017
 --*/
 
-#include "..\inc\IWindowMetrics.hpp"
+#include "../inc/IWindowMetrics.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {

@@ -10,7 +10,7 @@
 #include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
-#include "..\..\types\inc\GlyphWidth.hpp"
+#include "../../types/inc/GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
@@ -203,6 +203,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
+
+                // If a text is selected inside terminal, use it to populate the search box.
+                // If the search box already contains a value, it will be overridden.
+                if (_terminal->IsSelectionActive())
+                {
+                    // Currently we populate the search box only if a single line is selected.
+                    // Empirically, multi-line selection works as well on sample scenarios,
+                    // but since code paths differ, extra work is required to ensure correctness.
+                    const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(true);
+                    if (bufferData.text.size() == 1)
+                    {
+                        const auto selectedLine{ til::at(bufferData.text, 0) };
+                        _searchBox->PopulateTextbox(selectedLine.data());
+                    }
+                }
+
                 _searchBox->SetFocusOnTextbox();
             }
         }
@@ -2946,9 +2962,46 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        if (e.DataView().Contains(StandardDataFormats::ApplicationLink()))
         {
-            auto items = co_await e.DataView().GetStorageItemsAsync();
+            try
+            {
+                Windows::Foundation::Uri link{ co_await e.DataView().GetApplicationLinkAsync() };
+                _SendPastedTextToConnection(std::wstring{ link.AbsoluteUri() });
+            }
+            CATCH_LOG();
+        }
+        else if (e.DataView().Contains(StandardDataFormats::WebLink()))
+        {
+            try
+            {
+                Windows::Foundation::Uri link{ co_await e.DataView().GetWebLinkAsync() };
+                _SendPastedTextToConnection(std::wstring{ link.AbsoluteUri() });
+            }
+            CATCH_LOG();
+        }
+        else if (e.DataView().Contains(StandardDataFormats::Text()))
+        {
+            try
+            {
+                std::wstring text{ co_await e.DataView().GetTextAsync() };
+                _SendPastedTextToConnection(text);
+            }
+            CATCH_LOG();
+        }
+        // StorageItem must be last. Some applications put hybrid data format items
+        // in a drop message and we'll eat a crash when we request them.
+        // Those applications usually include Text as well, so having storage items
+        // last makes sure we'll hit text before getting to them.
+        else if (e.DataView().Contains(StandardDataFormats::StorageItems()))
+        {
+            Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
+            try
+            {
+                items = co_await e.DataView().GetStorageItemsAsync();
+            }
+            CATCH_LOG();
+
             if (items.Size() > 0)
             {
                 std::wstring allPaths;
@@ -2977,15 +3030,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
                 _SendInputToConnection(allPaths);
             }
-        }
-        else if (e.DataView().Contains(StandardDataFormats::Text()))
-        {
-            try
-            {
-                std::wstring text{ co_await e.DataView().GetTextAsync() };
-                _SendPastedTextToConnection(text);
-            }
-            CATCH_LOG();
         }
     }
 

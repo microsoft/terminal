@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\inc\conint.h"
+#include "../inc/conint.h"
 
 using namespace Microsoft::Console::Internal;
 
