@@ -80,10 +80,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static hstring SettingsPath();
         static hstring DefaultSettingsPath();
+        Model::Profile ProfileDefaults() const;
 
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
 
+        Model::Profile CreateNewProfile();
         Model::Profile FindProfile(guid profileGuid) const noexcept;
         Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
 

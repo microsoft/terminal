@@ -161,6 +161,7 @@ void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexce
 {
     _validDefaultProfile = true;
     _defaultProfile = defaultProfile;
+    _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
