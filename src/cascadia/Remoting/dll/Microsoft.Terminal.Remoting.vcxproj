@@ -48,7 +48,7 @@
     <!-- Reference Microsoft.Terminal.RemotingLib here, so we can use it's winmd as
     our winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\Microsoft.Terminal.RemotingLib.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\Microsoft.Terminal.RemotingLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>

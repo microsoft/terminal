@@ -1,0 +1,12 @@
+import "Peasant.idl";
+
+namespace Microsoft.Terminal.Remoting
+{
+    [default_interface] runtimeclass Monarch {
+        Monarch();
+
+        UInt64 GetPID();
+        UInt64 AddPeasant(IPeasant peasant);
+        Boolean ProposeCommandline(String[] args, String cwd);
+    };
+}
