@@ -68,6 +68,8 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(ValidateKeybindingsWarnings);
 
+        TEST_METHOD(ValidateColorSchemeInCommands);
+
         TEST_METHOD(ValidateExecuteCommandlineWarning);
 
         TEST_METHOD(ValidateLegacyGlobalsWarning);
@@ -884,7 +886,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
     }
 
     void DeserializationTests::TestReorderWithNullGuids()
@@ -935,7 +937,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
         VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
@@ -1036,7 +1038,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(4u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings->_allProfiles.GetAt(0).Name());
@@ -1190,8 +1192,8 @@ namespace SettingsModelLocalTests
 
         VERIFY_ARE_EQUAL(5u, settings->_allProfiles.Size());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(1).HasGuid());
+        VERIFY_IS_FALSE(settings->_allProfiles.GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
         VERIFY_IS_TRUE(settings->_allProfiles.GetAt(4).HasGuid());
         VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings->_allProfiles.GetAt(0).Name());
@@ -1323,6 +1325,140 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"schemeOne", settings->_allProfiles.GetAt(0).ColorSchemeName());
         VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(1).ColorSchemeName());
         VERIFY_ARE_EQUAL(L"Campbell", settings->_allProfiles.GetAt(2).ColorSchemeName());
+    }
+
+    void DeserializationTests::ValidateColorSchemeInCommands()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"Ensure that setting a command's color scheme to a non-existent scheme causes a warning."));
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                }
+            ],
+            "actions": [
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "schemeOne" }
+                },
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
+                }
+            ]
+        })" };
+
+        const std::string settings1String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                }
+            ],
+            "actions": [
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "schemeOne" }
+                },
+                {
+                    "name": "parent",
+                    "commands": [                        
+                        { "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" } }
+                    ]
+                }
+            ]
+        })" };
+
+        const std::string settings2String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "colorScheme": "schemeOne"
+                }
+            ],
+            "schemes": [
+                {
+                    "name": "schemeOne",
+                    "foreground": "#111111"
+                }
+            ],
+            "actions": [
+                {
+                    "command": { "action": "setColorScheme", "colorScheme": "schemeOne" }
+                },
+                {
+                    "name": "grandparent",
+                    "commands": [                        
+                        {
+                            "name": "parent",
+                            "commands": [
+                                { 
+                                    "command": { "action": "setColorScheme", "colorScheme": "invalidScheme" }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        })" };
+
+        {
+            // Case 1: setColorScheme command with invalid scheme
+            Log::Comment(NoThrowString().Format(
+                L"Testing a simple command with invalid scheme"));
+            VerifyParseSucceeded(settings0String);
+
+            auto settings = winrt::make_self<implementation::CascadiaSettings>();
+            settings->_ParseJsonString(settings0String, false);
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateColorSchemesInCommands();
+
+            VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
+            VERIFY_ARE_EQUAL(SettingsLoadWarnings::InvalidColorSchemeInCmd, settings->_warnings.GetAt(0));
+        }
+        {
+            // Case 2: nested setColorScheme command with invalid scheme
+            Log::Comment(NoThrowString().Format(
+                L"Testing a nested command with invalid scheme"));
+            VerifyParseSucceeded(settings1String);
+
+            auto settings = winrt::make_self<implementation::CascadiaSettings>();
+            settings->_ParseJsonString(settings1String, false);
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateColorSchemesInCommands();
+
+            VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
+            VERIFY_ARE_EQUAL(SettingsLoadWarnings::InvalidColorSchemeInCmd, settings->_warnings.GetAt(0));
+        }
+        {
+            // Case 3: nested-in-nested setColorScheme command with invalid scheme
+            Log::Comment(NoThrowString().Format(
+                L"Testing a nested-in-nested command with invalid scheme"));
+            VerifyParseSucceeded(settings2String);
+
+            auto settings = winrt::make_self<implementation::CascadiaSettings>();
+            settings->_ParseJsonString(settings2String, false);
+            settings->LayerJson(settings->_userSettings);
+            settings->_ValidateColorSchemesInCommands();
+
+            VERIFY_ARE_EQUAL(1u, settings->_warnings.Size());
+            VERIFY_ARE_EQUAL(SettingsLoadWarnings::InvalidColorSchemeInCmd, settings->_warnings.GetAt(0));
+        }
     }
 
     void DeserializationTests::TestHelperFunctions()
@@ -2568,9 +2704,9 @@ namespace SettingsModelLocalTests
             const auto copy{ settings->Copy() };
             const auto copyImpl{ winrt::get_self<implementation::CascadiaSettings>(copy) };
 
-            // test optimization: if we don't have profiles.defaults, don't add it to the tree
-            VERIFY_IS_NULL(settings->_userDefaultProfileSettings);
-            VERIFY_ARE_EQUAL(settings->_userDefaultProfileSettings, copyImpl->_userDefaultProfileSettings);
+            // if we don't have profiles.defaults, it should still be in the tree
+            VERIFY_IS_NOT_NULL(settings->_userDefaultProfileSettings);
+            VERIFY_IS_NOT_NULL(copyImpl->_userDefaultProfileSettings);
 
             VERIFY_ARE_EQUAL(settings->ActiveProfiles().Size(), 1u);
             VERIFY_ARE_EQUAL(settings->ActiveProfiles().Size(), copyImpl->ActiveProfiles().Size());
@@ -2578,7 +2714,7 @@ namespace SettingsModelLocalTests
             // so we should only have one parent, instead of two
             auto srcProfile{ winrt::get_self<implementation::Profile>(settings->ActiveProfiles().GetAt(0)) };
             auto copyProfile{ winrt::get_self<implementation::Profile>(copyImpl->ActiveProfiles().GetAt(0)) };
-            VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 0u);
+            VERIFY_ARE_EQUAL(srcProfile->Parents().size(), 1u);
             VERIFY_ARE_EQUAL(srcProfile->Parents().size(), copyProfile->Parents().size());
         };
 

@@ -291,6 +291,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // Core Settings
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
@@ -417,27 +418,6 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     }
 }
 
-// Method Description:
-// - If this profile never had a GUID set for it, generate a runtime GUID for
-//   the profile. If a profile had their guid manually set to {0}, this method
-//   will _not_ change the profile's GUID.
-void Profile::GenerateGuidIfNecessary() noexcept
-{
-    if (!_getGuidImpl().has_value())
-    {
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        _Guid = Profile::_GenerateGuidForProfile(Name(), Source());
-
-        TraceLoggingWrite(
-            g_hSettingsModelProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-    }
-}
-
 // Function Description:
 // - Returns true if the given JSON object represents a dynamic profile object.
 //   If it is a dynamic profile object, we should make sure to only layer the
@@ -493,50 +473,62 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
-#pragma region BackgroundImageAlignment
-bool Profile::HasBackgroundImageAlignment() const noexcept
+// Method Description:
+// - Create a new serialized JsonObject from an instance of this class
+// Arguments:
+// - <none>
+// Return Value:
+// - the JsonObject representing this instance
+Json::Value Profile::ToJson() const
 {
-    return _BackgroundImageAlignment.has_value();
-}
+    Json::Value json{ Json::ValueType::objectValue };
 
-void Profile::ClearBackgroundImageAlignment() noexcept
-{
-    _BackgroundImageAlignment = std::nullopt;
-}
+    // Profile-specific Settings
+    JsonUtils::SetValueForKey(json, NameKey, _Name);
+    JsonUtils::SetValueForKey(json, GuidKey, _Guid);
+    JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::SetValueForKey(json, SourceKey, _Source);
 
-const HorizontalAlignment Profile::BackgroundImageHorizontalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<HorizontalAlignment>(*val) : HorizontalAlignment::Center;
-}
+    // Core Settings
+    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
+    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
+    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
+    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
 
-void Profile::BackgroundImageHorizontalAlignment(const HorizontalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<HorizontalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { value, VerticalAlignment::Center };
-    }
-}
+    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
+    JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
+    JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
+    JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
+    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
+    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
+    JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
-const VerticalAlignment Profile::BackgroundImageVerticalAlignment() const noexcept
-{
-    const auto val{ _getBackgroundImageAlignmentImpl() };
-    return val ? std::get<VerticalAlignment>(*val) : VerticalAlignment::Center;
-}
+    // Control Settings
+    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
+    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
+    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
+    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
+    JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
+    JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
+    JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
+    JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
 
-void Profile::BackgroundImageVerticalAlignment(const VerticalAlignment& value) noexcept
-{
-    if (HasBackgroundImageAlignment())
-    {
-        std::get<VerticalAlignment>(*_BackgroundImageAlignment) = value;
-    }
-    else
-    {
-        _BackgroundImageAlignment = { HorizontalAlignment::Center, value };
-    }
+    // PermissiveStringConverter is unnecessary for serialization
+    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+
+    JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
+    JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
+    JsonUtils::SetValueForKey(json, IconKey, _Icon);
+    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
+    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
+    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
+    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
+    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
+    JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
+    JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
+    JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+    return json;
 }
-#pragma endregion

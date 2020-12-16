@@ -313,13 +313,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const ActionEventArgs& args)
     {
-        // TODO GH#6677: When we add support for commandline mode, first set the
-        // mode that the command palette should be in, before making it visible.
-        CommandPalette().EnableCommandPaletteMode();
-        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                        Visibility::Collapsed :
-                                        Visibility::Visible);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
+        {
+            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
@@ -350,23 +351,20 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleSetTabColor(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        std::optional<til::color> tabColor;
+        Windows::Foundation::IReference<Windows::UI::Color> tabColor;
 
         if (const auto& realArgs = args.ActionArgs().try_as<SetTabColorArgs>())
         {
-            if (realArgs.TabColor() != nullptr)
-            {
-                tabColor = realArgs.TabColor().Value();
-            }
+            tabColor = realArgs.TabColor();
         }
 
         if (auto focusedTab = _GetFocusedTab())
         {
             if (auto activeTab = _GetTerminalTabImpl(focusedTab))
             {
-                if (tabColor.has_value())
+                if (tabColor)
                 {
-                    activeTab->SetRuntimeTabColor(tabColor.value());
+                    activeTab->SetRuntimeTabColor(tabColor.Value());
                 }
                 else
                 {
@@ -534,4 +532,34 @@ namespace winrt::TerminalApp::implementation
 
         args.Handled(true);
     }
+
+    void TerminalPage::_HandleMoveTab(const IInspectable& /*sender*/,
+                                      const ActionEventArgs& actionArgs)
+    {
+        if (const auto& realArgs = actionArgs.ActionArgs().try_as<MoveTabArgs>())
+        {
+            auto direction = realArgs.Direction();
+            if (direction != MoveTabDirection::None)
+            {
+                if (auto focusedTabIndex = _GetFocusedTabIndex())
+                {
+                    auto currentTabIndex = focusedTabIndex.value();
+                    auto delta = direction == MoveTabDirection::Forward ? 1 : -1;
+                    _TryMoveTab(currentTabIndex, currentTabIndex + delta);
+                }
+            }
+            actionArgs.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleBreakIntoDebugger(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& actionArgs)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            actionArgs.Handled(true);
+            DebugBreak();
+        }
+    }
+
 }

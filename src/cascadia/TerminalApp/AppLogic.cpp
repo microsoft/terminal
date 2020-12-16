@@ -41,7 +41,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"MissingRequiredParameter"),
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
-    USES_RESOURCE(L"FailedToWriteToSettings")
+    USES_RESOURCE(L"FailedToWriteToSettings"),
+    USES_RESOURCE(L"InvalidColorSchemeInCmd")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -194,6 +195,13 @@ namespace winrt::TerminalApp::implementation
         // SetTitleBarContent
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
+    }
+
+    // Method Description:
+    // - Implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT AppLogic::Initialize(HWND hwnd)
+    {
+        return _root->Initialize(hwnd);
     }
 
     // Method Description:
@@ -1049,6 +1057,32 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
+    }
+
+    // Method Description:
+    // - Gets the taskbar state value from the last active control
+    // Return Value:
+    // - The taskbar state of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarState()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarState();
+        }
+        return {};
+    }
+
+    // Method Description:
+    // - Gets the taskbar progress value from the last active control
+    // Return Value:
+    // - The taskbar progress of the last active control
+    size_t AppLogic::GetLastActiveControlTaskbarProgress()
+    {
+        if (_root)
+        {
+            return _root->GetLastActiveControlTaskbarProgress();
+        }
+        return {};
     }
 
     // Method Description:

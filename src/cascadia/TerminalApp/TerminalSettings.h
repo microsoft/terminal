@@ -70,6 +70,16 @@ namespace winrt::TerminalApp::implementation
 
         GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
+        // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
+        // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
+        // Due to this prioritization, the tab color will be preserved upon settings reload
+        // (even if the profile's tab color gets altered or removed).
+        // This property is expected to be passed only once upon terminal creation.
+        // TODO: to ensure that this property is not populated during settings reload,
+        // we should consider moving this property to a separate interface,
+        // passed to the terminal only upon creation.
+        GETSET_PROPERTY(Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
+
         // ------------------------ End of Core Settings -----------------------
 
         GETSET_PROPERTY(hstring, ProfileName);

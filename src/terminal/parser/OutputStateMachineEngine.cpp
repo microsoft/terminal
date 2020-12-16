@@ -378,7 +378,7 @@ bool OutputStateMachineEngine::ActionVt52EscDispatch(const VTID id, const VTPara
         success = _dispatch->SetKeypadMode(false);
         break;
     case Vt52ActionCodes::ExitVt52Mode:
-        success = _dispatch->SetPrivateMode(DispatchTypes::PrivateModeParams::DECANM_AnsiMode);
+        success = _dispatch->SetMode(DispatchTypes::ModeParams::DECANM_AnsiMode);
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -478,14 +478,14 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         break;
     case CsiActionCodes::DECSET_PrivateModeSet:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->SetPrivateMode(mode);
+            return _dispatch->SetMode(DispatchTypes::DECPrivateMode(mode));
         });
         //TODO: MSFT:6367459 Add specific logging for each of the DECSET/DECRST codes
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSET);
         break;
     case CsiActionCodes::DECRST_PrivateModeReset:
         success = parameters.for_each([&](const auto mode) {
-            return _dispatch->ResetPrivateMode(mode);
+            return _dispatch->ResetMode(DispatchTypes::DECPrivateMode(mode));
         });
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECRST);
         break;
@@ -733,6 +733,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         }
         break;
     }
+    case OscActionCodes::ConEmuAction:
+    {
+        success = _dispatch->DoConEmuAction(string);
+        break;
+    }
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
@@ -879,11 +884,16 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+#pragma warning(push)
+#pragma warning(disable : 26445) // Suppress lifetime check for a reference to gsl::span or std::string_view
+
 // Routine Description:
 // - Given a hyperlink string, attempts to parse the URI encoded. An 'id' parameter
 //   may be provided.
 //   If there is a URI, the well formatted string looks like:
 //          "<params>;<URI>"
+//   To be specific, params is an optional list of key=value assignments, separated by the ':'. Example:
+//          "id=xyz123:foo=bar:baz=value"
 //   If there is no URI, we need to close the hyperlink and the string looks like:
 //          ";"
 // Arguments:
@@ -898,24 +908,32 @@ bool OutputStateMachineEngine::_ParseHyperlink(const std::wstring_view string,
 {
     params.clear();
     uri.clear();
-    const auto len = string.size();
+
+    if (string == L";")
+    {
+        return true;
+    }
+
     const size_t midPos = string.find(';');
     if (midPos != std::wstring::npos)
     {
-        if (len != 1)
+        uri = string.substr(midPos + 1);
+        const auto paramStr = string.substr(0, midPos);
+        const auto paramParts = Utils::SplitString(paramStr, ':');
+        for (const auto& part : paramParts)
         {
-            uri = string.substr(midPos + 1);
-            const auto paramStr = string.substr(0, midPos);
-            const auto idPos = paramStr.find(hyperlinkIDParameter);
+            const auto idPos = part.find(hyperlinkIDParameter);
             if (idPos != std::wstring::npos)
             {
-                params = paramStr.substr(idPos + hyperlinkIDParameter.size());
+                params = part.substr(idPos + hyperlinkIDParameter.size());
             }
         }
         return true;
     }
     return false;
 }
+
+#pragma warning(pop)
 
 // Routine Description:
 // - OSC 10, 11, 12 ; spec ST

@@ -18,6 +18,7 @@ public:
     void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
     bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
+    void SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
 
 private:
     bool _useNonClientArea;
@@ -39,5 +40,7 @@ private:
                             const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
+    void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
+                          const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
 };

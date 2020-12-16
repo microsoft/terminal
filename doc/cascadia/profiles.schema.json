@@ -27,11 +27,30 @@
       "type": "string"
     },
     "BellStyle": {
-      "enum": [
-        "none",
-        "audible"
-      ],
-      "type": "string"
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "audible",
+              "visual"
+            ]
+          }
+        },
+        {
+          "type": "string",
+          "enum": [
+            "audible",
+            "visual",
+            "all",
+            "none"
+          ]
+        }
+      ]
     },
     "ProfileGuid": {
       "default": "{}",
@@ -58,6 +77,7 @@
         "duplicateTab",
         "find",
         "moveFocus",
+        "moveTab",
         "newTab",
         "nextTab",
         "openNewTabDropdown",
@@ -95,6 +115,13 @@
         "right",
         "up",
         "down"
+      ],
+      "type": "string"
+    },
+    "MoveTabDirection": {
+      "enum": [
+        "forward",
+        "backward"
       ],
       "type": "string"
     },
@@ -140,6 +167,13 @@
       ],
       "type": "string"
     },
+    "CommandPaletteLaunchMode": {
+      "enum": [
+        "action",
+        "commandLine"
+      ],
+      "type": "string"
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -161,6 +195,11 @@
         "index": {
           "type": "integer",
           "description": "The index of the profile in the new tab dropdown (starting at 0)"
+        },
+        "tabColor": {
+          "$ref": "#/definitions/Color",
+          "default": null,
+          "description": "If provided, will set the tab's color to the given value"
         }
       },
       "type": "object"
@@ -474,6 +513,38 @@
         }
       ]
     },
+    "MoveTabAction": {
+      "description": "Arguments for moving a tab",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "moveTab" },
+            "direction": {
+              "$ref": "#/definitions/MoveTabDirection",
+              "description": "The direction to move the tab"
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "CommandPaletteAction": {
+      "description": "Arguments for a commandPalette action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "commandPalette" },
+            "launchMode": {
+              "$ref": "#/definitions/CommandPaletteLaunchMode",
+              "default": "action",
+              "description": "Toggle command palette in either action or command line mode. If no value is provided, the palette will launch in action mode."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -497,6 +568,7 @@
               { "$ref": "#/definitions/CloseTabsAfterAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
+              { "$ref": "#/definitions/MoveTabAction" },
               { "type": "null" }
             ]
         },
@@ -625,7 +697,7 @@
         },
         "rowsToScroll": {
           "default": "system",
-          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so.",
+          "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
           "maximum": 999,
           "minimum": 0,
           "type": [ "integer", "string" ],
@@ -694,7 +766,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -702,7 +774,7 @@
           "deprecated": true
         },
         "tabSwitcherMode": {
-          "default": true,
+          "default": "inOrder",
           "description": "When set to \"true\" or \"mru\", the \"nextTab\" and \"prevTab\" commands will use the tab switcher UI, with most-recently-used ordering. When set to \"inOrder\", these actions will switch tabs in their current ordering. Set to \"false\" to disable the tab switcher.",
           "oneOf": [
             {
@@ -712,7 +784,7 @@
               "enum": [
                 "mru",
                 "inOrder",
-                "disabled",
+                "disabled"
               ],
               "type": "string"
             }
@@ -800,7 +872,7 @@
         },
         "bellStyle": {
           "default": "audible",
-          "description": "Controls what happens when the application emits a BEL character. When set to \"audible\", the Terminal will play a sound. When set to \"none\", nothing will happen.",
+          "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound and flash the taskbar icon. An array of specific behaviors can also be used. Supported array values include `audible` and `visual`. When set to \"none\", nothing will happen.",
           "$ref": "#/definitions/BellStyle"
         },
         "closeOnExit": {

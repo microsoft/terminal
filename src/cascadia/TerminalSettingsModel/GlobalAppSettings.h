@@ -46,6 +46,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
 
+        Json::Value ToJson() const;
+
         std::vector<SettingsLoadWarnings> KeybindingsWarnings() const;
 
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> Commands() noexcept;
@@ -78,10 +80,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(bool, ForceFullRepaintRendering, false);
         GETSET_SETTING(bool, SoftwareRendering, false);
         GETSET_SETTING(bool, ForceVTInput, false);
-        GETSET_SETTING(bool, DebugFeaturesEnabled); // default value set in constructor
+        GETSET_SETTING(bool, DebugFeaturesEnabled, _getDefaultDebugFeaturesValue());
         GETSET_SETTING(bool, StartOnUserLogin, false);
         GETSET_SETTING(bool, AlwaysOnTop, false);
-        GETSET_SETTING(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::MostRecentlyUsed);
+        GETSET_SETTING(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
         GETSET_SETTING(bool, DisableAnimations, false);
 
     private:
@@ -96,6 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
         std::optional<hstring> _getUnparsedDefaultProfileImpl() const;
+        static bool _getDefaultDebugFeaturesValue();
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ColorSchemeTests;

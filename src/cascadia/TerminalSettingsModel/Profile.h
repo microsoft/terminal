@@ -55,19 +55,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
         static bool IsDynamicProfileObject(const Json::Value& json);
+        Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
         hstring ExpandedBackgroundImagePath() const;
-        void GenerateGuidIfNecessary() noexcept;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
-
-        // BackgroundImageAlignment is 1 setting saved as 2 separate values
-        bool HasBackgroundImageAlignment() const noexcept;
-        void ClearBackgroundImageAlignment() noexcept;
-        const Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment() const noexcept;
-        void BackgroundImageHorizontalAlignment(const Windows::UI::Xaml::HorizontalAlignment& value) noexcept;
-        const Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment() const noexcept;
-        void BackgroundImageVerticalAlignment(const Windows::UI::Xaml::VerticalAlignment& value) noexcept;
 
         GETSET_SETTING(guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         GETSET_SETTING(hstring, Name, L"Default");
@@ -96,7 +88,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(hstring, BackgroundImagePath);
         GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
-        GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::Fill);
+        GETSET_SETTING(Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch::UniformToFill);
+        GETSET_SETTING(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_SETTING(bool, RetroTerminalEffect, false);
@@ -120,28 +113,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_SETTING(Model::BellStyle, BellStyle, BellStyle::Audible);
 
     private:
-        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _BackgroundImageAlignment{ std::nullopt };
-        std::optional<std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment>> _getBackgroundImageAlignmentImpl() const
-        {
-            /*return user set value*/
-            if (_BackgroundImageAlignment)
-            {
-                return _BackgroundImageAlignment;
-            }
-
-            /*user set value was not set*/ /*iterate through parents to find a value*/
-            for (auto parent : _parents)
-            {
-                if (auto val{ parent->_getBackgroundImageAlignmentImpl() })
-                {
-                    return val;
-                }
-            }
-
-            /*no value was found*/
-            return std::nullopt;
-        };
-
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;

@@ -110,8 +110,7 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::TestGenGuidsForProfiles()
     {
-        // We'll generate GUIDs during
-        // CascadiaSettings::_ValidateProfilesHaveGuid. We should make sure that
+        // We'll generate GUIDs in the Profile::Guid getter. We should make sure that
         // the GUID generated for a dynamic profile (with a source) is different
         // than that of a profile without a source.
 
@@ -166,14 +165,6 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(L"profile1", settings->_allProfiles.GetAt(4).Name());
         VERIFY_IS_FALSE(settings->_allProfiles.GetAt(4).HasGuid());
         VERIFY_IS_FALSE(settings->_allProfiles.GetAt(4).Source().empty());
-
-        settings->_ValidateProfilesHaveGuid();
-
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(0).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(1).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(2).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(3).HasGuid());
-        VERIFY_IS_TRUE(settings->_allProfiles.GetAt(4).HasGuid());
 
         VERIFY_ARE_NOT_EQUAL(settings->_allProfiles.GetAt(0).Guid(),
                              settings->_allProfiles.GetAt(1).Guid());

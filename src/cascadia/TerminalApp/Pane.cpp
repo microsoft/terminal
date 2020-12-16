@@ -353,6 +353,8 @@ void Pane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
 // - Plays a warning note when triggered by the BEL control character,
 //   using the sound configured for the "Critical Stop" system event.`
 //   This matches the behavior of the Windows Console host.
+// - Will also flash the taskbar if the bellStyle setting for this profile
+//   has the 'visual' flag set
 // Arguments:
 // - <unused>
 void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
@@ -366,10 +368,15 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        if (paneProfile.BellStyle() == winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible)
+        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
         {
             const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
             PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+        }
+        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
+        {
+            // Bubble this event up to app host, starting with bubbling to the hosting tab
+            _PaneRaiseVisualBellHandlers(nullptr);
         }
     }
 }
@@ -1093,13 +1100,14 @@ void Pane::_SetupEntranceAnimation()
     // Windows" setting in the OS
     winrt::Windows::UI::ViewManagement::UISettings uiSettings;
     const auto animationsEnabledInOS = uiSettings.AnimationsEnabled();
+    const auto animationsEnabledInApp = Media::Animation::Timeline::AllowDependentAnimations();
 
     const bool splitWidth = _splitState == SplitState::Vertical;
     const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
     // If we don't have a size yet, it's likely that we're in startup, or we're
     // being executed as a sequence of actions. In that case, just skip the
     // animation.
-    if (totalSize <= 0 || !animationsEnabledInOS)
+    if (totalSize <= 0 || !animationsEnabledInOS || !animationsEnabledInApp)
     {
         return;
     }
@@ -1168,6 +1176,15 @@ void Pane::_SetupEntranceAnimation()
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
             control.HorizontalAlignment(HorizontalAlignment::Left);
             control.Width(isFirstChild ? totalSize : size);
+
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control](auto&&, auto&&) {
+                control.Width(NAN);
+                childGrid.Width(NAN);
+                childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
+                control.HorizontalAlignment(HorizontalAlignment::Stretch);
+            });
         }
         else
         {
@@ -1177,43 +1194,19 @@ void Pane::_SetupEntranceAnimation()
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
             control.VerticalAlignment(VerticalAlignment::Top);
             control.Height(isFirstChild ? totalSize : size);
+
+            // When the animation is completed, undo the trickiness from before, to
+            // restore the controls to the behavior they'd usually have.
+            animation.Completed([childGrid, control](auto&&, auto&&) {
+                control.Height(NAN);
+                childGrid.Height(NAN);
+                childGrid.VerticalAlignment(VerticalAlignment::Stretch);
+                control.VerticalAlignment(VerticalAlignment::Stretch);
+            });
         }
 
         // Start the animation.
         s.Begin();
-
-        std::weak_ptr<Pane> weakThis{ shared_from_this() };
-        // When the animation is completed, undo the trickiness from before, to
-        // restore the controls to the behavior they'd usually have.
-        animation.Completed([weakThis, isFirstChild, splitWidth](auto&&, auto&&) {
-            if (auto pane{ weakThis.lock() })
-            {
-                auto child = isFirstChild ? pane->_firstChild : pane->_secondChild;
-
-                // ensure the child was not release in meanwhile
-                if (child)
-                {
-                    auto childGrid = child->_root;
-                    if (auto control = child->_control)
-                    {
-                        if (splitWidth)
-                        {
-                            control.Width(NAN);
-                            childGrid.Width(NAN);
-                            childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                            control.HorizontalAlignment(HorizontalAlignment::Stretch);
-                        }
-                        else
-                        {
-                            control.Height(NAN);
-                            childGrid.Height(NAN);
-                            childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                            control.VerticalAlignment(VerticalAlignment::Stretch);
-                        }
-                    }
-                }
-            }
-        });
     };
 
     // TODO: GH#7365 - animating the first child right now doesn't _really_ do
@@ -2074,3 +2067,4 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);

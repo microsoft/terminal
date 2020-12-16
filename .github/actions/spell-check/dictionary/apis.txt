@@ -4,6 +4,7 @@ alignof
 bitfield
 bitfields
 CLASSNOTAVAILABLE
+cmdletbinding
 COLORPROPERTY
 CXICON
 CYICON
@@ -31,8 +32,11 @@ IInheritable
 IMap
 IObject
 IStorage
+ITaskbar
+llabs
 LCID
 llabs
+localtime
 lround
 LSHIFT
 msappx
@@ -40,7 +44,9 @@ NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
 NOAGGREGATION
+NOPROGRESS
 NOREDIRECTIONBITMAP
+ntprivapi
 oaidl
 ocidl
 otms
@@ -53,13 +59,16 @@ roundf
 RSHIFT
 rx
 schandle
+semver
 serializer
+shobjidl
 SIZENS
 spsc
 sregex
 STDCPP
 strchr
 syscall
+TBPF
 THEMECHANGED
 tmp
 tx

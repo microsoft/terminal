@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
         void SetTabActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& tabs, const bool clearList);
         void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
 
-        void EnableCommandPaletteMode();
+        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
 
@@ -117,11 +117,16 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
 
         void _dispatchCommand(winrt::TerminalApp::FilteredCommand const& command);
-        void _dispatchCommandline();
+        void _dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command);
+        std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(std::wstring const& commandLine);
+
         void _dismissPalette();
 
         void _scrollToIndex(uint32_t index);
         uint32_t _getNumVisibleItems();
+
+        static constexpr int CommandLineHistoryLength = 10;
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
 
         friend class TerminalAppLocalTests::TabTests;
     };

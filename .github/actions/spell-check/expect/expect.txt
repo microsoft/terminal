@@ -355,6 +355,7 @@ consoleapi
 CONSOLECONTROL
 CONSOLEENDTASK
 consolegit
+consolehost
 CONSOLEIME
 consoleinternal
 Consoleroot
@@ -636,6 +637,7 @@ dpiy
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
+drcs
 dropdown
 DROPDOWNLIST
 DROPFILES
@@ -1060,7 +1062,9 @@ IFont
 ifstream
 IGNOREEND
 IHigh
+IHosted
 iid
+IInitialize
 IInput
 IInspectable
 IInteract
@@ -2421,6 +2425,7 @@ ucdxml
 uch
 UCHAR
 ucs
+UDK
 UDKs
 UDM
 uer
@@ -2830,3 +2835,6 @@ AAAAABBBBBBCCC
 AAAAA
 BBBBBCCC
 abcd
+LPMINMAXINFO
+MINMAXINFO
+lstrcmpi

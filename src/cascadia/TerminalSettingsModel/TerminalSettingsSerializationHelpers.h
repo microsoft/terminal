@@ -47,29 +47,48 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 2> mappings = {
-        pair_type{ "none", ValueType::None },
-        pair_type{ "audible", ValueType::Audible }
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "audible", ValueType::Audible },
+        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "all", AllSet },
     };
+
+    auto FromJson(const Json::Value& json)
+    {
+        if (json.isBool())
+        {
+            return json.asBool() ? AllSet : AllClear;
+        }
+        return BaseFlagMapper::FromJson(json);
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        return BaseFlagMapper::CanConvert(json) || json.isBool();
+    }
+
+    Json::Value ToJson(const ::winrt::Microsoft::Terminal::Settings::Model::BellStyle& bellStyle)
+    {
+        return BaseFlagMapper::ToJson(bellStyle);
+    }
 };
 
-JSON_ENUM_MAPPER(std::tuple<::winrt::Windows::UI::Xaml::HorizontalAlignment, ::winrt::Windows::UI::Xaml::VerticalAlignment>)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
     // reduce repetition
-    using HA = ::winrt::Windows::UI::Xaml::HorizontalAlignment;
-    using VA = ::winrt::Windows::UI::Xaml::VerticalAlignment;
     static constexpr std::array<pair_type, 9> mappings = {
-        pair_type{ "center", std::make_tuple(HA::Center, VA::Center) },
-        pair_type{ "topLeft", std::make_tuple(HA::Left, VA::Top) },
-        pair_type{ "bottomLeft", std::make_tuple(HA::Left, VA::Bottom) },
-        pair_type{ "left", std::make_tuple(HA::Left, VA::Center) },
-        pair_type{ "topRight", std::make_tuple(HA::Right, VA::Top) },
-        pair_type{ "bottomRight", std::make_tuple(HA::Right, VA::Bottom) },
-        pair_type{ "right", std::make_tuple(HA::Right, VA::Center) },
-        pair_type{ "top", std::make_tuple(HA::Center, VA::Top) },
-        pair_type{ "bottom", std::make_tuple(HA::Center, VA::Bottom) }
+        pair_type{ "center", ValueType::Horizontal_Center | ValueType::Vertical_Center },
+        pair_type{ "topLeft", ValueType::Horizontal_Left | ValueType::Vertical_Top },
+        pair_type{ "bottomLeft", ValueType::Horizontal_Left | ValueType::Vertical_Bottom },
+        pair_type{ "left", ValueType::Horizontal_Left | ValueType::Vertical_Center },
+        pair_type{ "topRight", ValueType::Horizontal_Right | ValueType::Vertical_Top },
+        pair_type{ "bottomRight", ValueType::Horizontal_Right | ValueType::Vertical_Bottom },
+        pair_type{ "right", ValueType::Horizontal_Right | ValueType::Vertical_Center },
+        pair_type{ "top", ValueType::Horizontal_Center | ValueType::Vertical_Top },
+        pair_type{ "bottom", ValueType::Horizontal_Center | ValueType::Vertical_Bottom }
     };
 };
 
@@ -152,6 +171,19 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
             static_cast<uint16_t>(std::clamp(value, 100u, 990u))
         };
         return weight;
+    }
+
+    Json::Value ToJson(const ::winrt::Windows::UI::Text::FontWeight& val)
+    {
+        const auto weight{ val.Weight };
+        try
+        {
+            return BaseEnumMapper::ToJson(weight);
+        }
+        catch (SerializationError&)
+        {
+            return weight;
+        }
     }
 
     bool CanConvert(const Json::Value& json)
@@ -364,4 +396,21 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::TabSwitcherMode)
     {
         return BaseEnumMapper::CanConvert(json) || json.isBool();
     }
+};
+
+// Possible Direction values
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MoveTabDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "forward", ValueType::Forward },
+        pair_type{ "backward", ValueType::Backward },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "action", ValueType::Action },
+        pair_type{ "commandLine", ValueType::CommandLine },
+    };
 };

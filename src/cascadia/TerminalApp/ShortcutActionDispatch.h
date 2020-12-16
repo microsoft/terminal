@@ -4,7 +4,7 @@
 #pragma once
 
 #include "ShortcutActionDispatch.g.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -61,6 +61,8 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseOtherTabs,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(CloseTabsAfter,       TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         TYPED_EVENT(TabSearch,            TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(MoveTab,              TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
+        TYPED_EVENT(BreakIntoDebugger,    TerminalApp::ShortcutActionDispatch, Microsoft::Terminal::Settings::Model::ActionEventArgs);
         // clang-format on
 
     private:

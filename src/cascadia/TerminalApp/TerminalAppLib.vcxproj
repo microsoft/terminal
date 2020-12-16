@@ -54,6 +54,9 @@
     <Page Include="TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+        <Page Include="TabHeaderControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="HighlightedTextControl.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -88,6 +91,9 @@
     </ClInclude>
     <ClInclude Include="TabRowControl.h">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TabHeaderControl.h">
+      <DependentUpon>TabHeaderControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="HighlightedTextControl.h">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
@@ -153,6 +159,9 @@
     </ClCompile>
     <ClCompile Include="TabRowControl.cpp">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TabHeaderControl.cpp">
+      <DependentUpon>TabHeaderControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="HighlightedTextControl.cpp">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
@@ -228,6 +237,10 @@
     </Midl>
     <Midl Include="TabRowControl.idl">
       <DependentUpon>TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TabHeaderControl.idl">
+      <DependentUpon>TabHeaderControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="HighlightedTextControl.idl">
@@ -316,13 +329,13 @@
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
 
