@@ -61,7 +61,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Click="StartingDirectory_Click"
                                     Style="{StaticResource BrowseButtonStyle}"/>
                         </StackPanel>
-                     </ContentPresenter>
+                    </ContentPresenter>
 
                     <!--Icon-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
@@ -75,7 +75,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     Click="Icon_Click"
                                     Style="{StaticResource BrowseButtonStyle}"/>
                         </StackPanel>
-                     </ContentPresenter>
+                    </ContentPresenter>
 
                     <!--Tab Title-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">
@@ -85,50 +85,56 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </ContentPresenter>
 
                     <!--Delete Button-->
-                    <Button Click="Delete_Click"
-                            Style="{StaticResource BaseButtonStyle}"
-                            Margin="{StaticResource StandardControlSpacing}"
-                            IsEnabled="{x:Bind State.CanDeleteProfile}">
-                        <Button.Resources>
-                            <ResourceDictionary>
-                                <ResourceDictionary.ThemeDictionaries>
-                                    <ResourceDictionary x:Key="Light">
-                                        <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
-                                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
-                                        <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
-                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
-                                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="Dark">
-                                        <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
-                                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
-                                        <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
-                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
-                                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
-                                    </ResourceDictionary>
-                                    <ResourceDictionary x:Key="HighContrast">
-                                        <SolidColorBrush x:Key="ButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
-                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
-                                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
-                                        <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource SystemColorButtonTextColor}"/>
-                                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
-                                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
-                                    </ResourceDictionary>
-                                </ResourceDictionary.ThemeDictionaries>
-                            </ResourceDictionary>
-                        </Button.Resources>
-                        <Button.Content>
-                            <StackPanel Orientation="Horizontal">
-                                <FontIcon Glyph="&#xE74D;"
-                                          FontSize="{StaticResource StandardFontSize}"/>
-                                <TextBlock x:Uid="Profile_DeleteButton"
-                                           FontSize="{StaticResource StandardFontSize}"
-                                           Margin="10,0,0,0"/>
-                            </StackPanel>
-                        </Button.Content>
-                    </Button>
+                    <StackPanel Orientation="Horizontal"
+                                Margin="{StaticResource StandardControlSpacing}">
+                        <Button Click="Delete_Click"
+                                Style="{StaticResource BaseButtonStyle}"
+                                IsEnabled="{x:Bind State.CanDeleteProfile}">
+                            <Button.Resources>
+                                <ResourceDictionary>
+                                    <ResourceDictionary.ThemeDictionaries>
+                                        <ResourceDictionary x:Key="Light">
+                                            <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
+                                            <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                        </ResourceDictionary>
+                                        <ResourceDictionary x:Key="Dark">
+                                            <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
+                                            <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                        </ResourceDictionary>
+                                        <ResourceDictionary x:Key="HighContrast">
+                                            <SolidColorBrush x:Key="ButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
+                                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
+                                            <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource SystemColorButtonTextColor}"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                                            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                                        </ResourceDictionary>
+                                    </ResourceDictionary.ThemeDictionaries>
+                                </ResourceDictionary>
+                            </Button.Resources>
+                            <Button.Content>
+                                <StackPanel Orientation="Horizontal">
+                                    <FontIcon Glyph="&#xE74D;"
+                                              FontSize="{StaticResource StandardFontSize}"/>
+                                    <TextBlock x:Uid="Profile_DeleteButton"
+                                               FontSize="{StaticResource StandardFontSize}"
+                                               Margin="10,0,0,0"/>
+                                </StackPanel>
+                            </Button.Content>
+                        </Button>
+                        <TextBlock x:Name="DeleteButtonDisclaimer"
+                                   Style="{StaticResource DisclaimerStyle}"
+                                   Margin="10,0,0,0"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </PivotItem>
@@ -202,7 +208,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                            Margin="10,0,0,0"/>
                             </Grid>
                         </StackPanel>
-                     </ContentPresenter>
+                    </ContentPresenter>
 
                     <!--Retro Terminal Effect-->
                     <ContentPresenter Style="{StaticResource SettingContainerStyle}">

@@ -64,6 +64,12 @@
         <Setter Property="Margin" Value="0,20,0,10"/>
     </Style>
 
+    <!--Used for disclaimers-->
+    <Style x:Key="DisclaimerStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="FontStyle" Value="Italic"/>
+    </Style>
+
     <!--Number Box-->
     <Style x:Key="NumberBoxSettingStyle" TargetType="muxc:NumberBox">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
@@ -75,6 +81,7 @@
     <!--Button-Related Styling-->
     <Style x:Key="BaseButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
     <Style x:Key="BrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">

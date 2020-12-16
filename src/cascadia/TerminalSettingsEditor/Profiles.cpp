@@ -18,6 +18,25 @@ using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+static const std::set<winrt::guid> InBoxProfileGuids{
+    { 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } }, // Windows Powershell
+    { 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
+};
+
+static const std::set<winrt::guid> LegacyDynamicProfileGuids{
+    { 0x574e775e, 0x4f2a, 0x5b96, { 0xac, 0x1e, 0xa2, 0x96, 0x2a, 0x40, 0x23, 0x36 } }, // Powershell Core
+    { 0x58ad8b0c, 0x3ef8, 0x5f4d, { 0xbc, 0x6f, 0x13, 0xe4, 0xc0, 0x0f, 0x25, 0x30 } }, // Debian
+    { 0x2c4de342, 0x38b7, 0x51cf, { 0xb9, 0x40, 0x23, 0x09, 0xa0, 0x97, 0xf5, 0x18 } }, // Ubuntu
+    { 0x1777cdf0, 0xb2c4, 0x5a63, { 0xa2, 0x04, 0xeb, 0x60, 0xf3, 0x49, 0xea, 0x7c } }, // Alpine
+    { 0xc6eaf9f4, 0x32a7, 0x5fdc, { 0xb5, 0xcf, 0x06, 0x6e, 0x8a, 0x4b, 0x1e, 0x40 } } // Ubuntu-18.04
+};
+
+static const std::set<std::wstring_view> ProfileGeneratorNamespaces{
+    L"Windows.Terminal.Wsl",
+    L"Windows.Terminal.Azure",
+    L"Windows.Terminal.PowershellCore"
+};
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Profiles::Profiles() :
@@ -64,6 +83,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
         }
+
+        // Set the text disclaimer for the text box
+        // For an unknown reason, data-binding the text does not compile (using x:Bind)
+        // or is completely ignored (using Binding).
+        hstring disclaimer{};
+        const auto guid{ _State.Profile().Guid() };
+        const std::wstring_view source{ _State.Profile().Source() };
+        if (InBoxProfileGuids.find(guid) != InBoxProfileGuids.end())
+        {
+            // load disclaimer for in-box profiles
+            disclaimer = RS_(L"Profile_DeleteButtonDisclaimerInBox");
+        }
+        else if (LegacyDynamicProfileGuids.find(guid) != LegacyDynamicProfileGuids.end() ||
+                 ProfileGeneratorNamespaces.find(source) != ProfileGeneratorNamespaces.end())
+        {
+            // load disclaimer for dynamic profiles
+            disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
+        }
+        DeleteButtonDisclaimer().Text(disclaimer);
     }
 
     ColorScheme Profiles::CurrentColorScheme()

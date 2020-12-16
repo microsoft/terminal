@@ -743,9 +743,6 @@
   <data name="Profile_Name.Header" xml:space="preserve">
     <value>Name</value>
   </data>
-  <data name="ColorScheme_Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>Rename</value>
-  </data>
   <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
     <value>Acrylic</value>
   </data>
@@ -774,5 +771,20 @@
   <data name="ColorScheme_RenameDialog.Title" xml:space="preserve">
     <value>Rename "{}"</value>
     <comment>Use '{}' to denote placement for the color scheme name to be renamed</comment>
+  </data>
+  <data name="ColorScheme_DeleteButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Delete the current color scheme.</value>
+  </data>
+  <data name="ColorScheme_Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="Profile_DeleteButtonDisclaimerInBox" xml:space="preserve">
+    <value>This profile cannot be deleted because it is shipped in-box.</value>
+  </data>
+  <data name="Profile_DeleteButtonDisclaimerDynamic" xml:space="preserve">
+    <value>This profile cannot be deleted because it is a dynamic profile.</value>
+  </data>
+  <data name="ColorScheme_DeleteButtonDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be deleted or renamed because it is shipped in-box.</value>
   </data>
 </root>

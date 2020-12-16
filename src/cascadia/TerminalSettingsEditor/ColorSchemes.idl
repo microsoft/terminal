@@ -19,6 +19,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ColorSchemesPageNavigationState State { get; };
 
         Boolean CanDeleteCurrentScheme { get; };
+
         Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme { get; };
         Windows.Foundation.Collections.IObservableVector<ColorTableEntry> CurrentColorTable;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };

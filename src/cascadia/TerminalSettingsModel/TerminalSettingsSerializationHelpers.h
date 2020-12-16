@@ -78,6 +78,7 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignment)
 {
+    // reduce repetition
     static constexpr std::array<pair_type, 9> mappings = {
         pair_type{ "center", ValueType::Horizontal_Center | ValueType::Vertical_Center },
         pair_type{ "topLeft", ValueType::Horizontal_Left | ValueType::Vertical_Top },
@@ -167,7 +168,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         }
 
         ::winrt::Windows::UI::Text::FontWeight weight{
-            static_cast<uint16_t>(std::clamp(value, 1u, 999u))
+            static_cast<uint16_t>(std::clamp(value, 100u, 990u))
         };
         return weight;
     }

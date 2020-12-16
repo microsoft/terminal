@@ -89,6 +89,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
+
+        // Set the text disclaimer for the text box
+        hstring disclaimer{};
+        const std::wstring schemeName{ colorScheme.Name() };
+        if (InBoxSchemes.find(schemeName) != InBoxSchemes.end())
+        {
+            // load disclaimer for in-box profiles
+            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
+        }
+        DeleteButtonDisclaimer().Text(disclaimer);
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
     }
 
