@@ -234,4 +234,92 @@ namespace winrt::TerminalApp::implementation
     {
         return _colorTable.at(index);
     }
+
+    //std::optional<hstring> TerminalSettings::_getBackgroundImageImpl() const
+    //{ /*return user set value*/
+    //    if (_BackgroundImage)
+    //    {
+    //        return _BackgroundImage;
+    //    }
+
+    //    /*user set value was not set*/ /*iterate through parents to find a value*/
+    //    for (auto parent : _parents)
+    //    {
+    //        if (auto val{ parent->_getBackgroundImageImpl() })
+    //        {
+    //            return val;
+    //        }
+    //    }
+
+    //    /*no value was found*/
+    //    return std::nullopt;
+    //}
+
+    //bool TerminalSettings::HasBackgroundImage() const
+    //{
+    //    return _BackgroundImage.has_value();
+    //}
+
+    ///* Returns the resolved value for this setting */ /* fallback: user set value --> inherited value --> system set value */
+    //hstring TerminalSettings::BackgroundImage() const
+    //{
+    //    const auto val{ _getBackgroundImageImpl() };
+    //    return val ? *val : hstring{};
+    //}
+
+    ///* Overwrite the user set value */
+    //void TerminalSettings::BackgroundImage(const hstring& value)
+    //{
+    //    _BackgroundImage = value;
+    //}
+
+    ///* Clear the user set value */
+    //void TerminalSettings::ClearBackgroundImage()
+    //{
+    //    _BackgroundImage = std::nullopt;
+    //}
+
+    //std::optional<double> TerminalSettings::_getBackgroundImageOpacityImpl() const
+    //{ /*return user set value*/
+    //    if (_BackgroundImageOpacity)
+    //    {
+    //        return _BackgroundImageOpacity;
+    //    }
+
+    //    /*user set value was not set*/ /*iterate through parents to find a value*/
+    //    for (auto parent : _parents)
+    //    {
+    //        if (auto val{ parent->_getBackgroundImageOpacityImpl() })
+    //        {
+    //            return val;
+    //        }
+    //    }
+
+    //    /*no value was found*/
+    //    return std::nullopt;
+    //}
+
+    //bool TerminalSettings::HasBackgroundImageOpacity() const
+    //{
+    //    return _BackgroundImageOpacity.has_value();
+    //}
+
+    ///* Returns the resolved value for this setting */ /* fallback: user set value --> inherited value --> system set value */
+    //double TerminalSettings::BackgroundImageOpacity() const
+    //{
+    //    const auto val{ _getBackgroundImageOpacityImpl() };
+    //    return val ? *val : double{ 1.0 };
+    //}
+
+    ///* Overwrite the user set value */
+    //void TerminalSettings::BackgroundImageOpacity(const double& value)
+    //{
+    //    _BackgroundImageOpacity = value;
+    //}
+
+    ///* Clear the user set value */
+    //void TerminalSettings::ClearBackgroundImageOpacity()
+    //{
+    //    _BackgroundImageOpacity = std::nullopt;
+    //}
 }
