@@ -1,10 +1,11 @@
 #include "pch.h"
 #include "Peasant.h"
-
+#include "CommandlineArgs.h"
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"
 
 using namespace winrt;
+using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Windows::Foundation;
 using namespace ::Microsoft::Console;
 
@@ -28,24 +29,36 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return GetCurrentProcessId();
     }
 
-    bool Peasant::ExecuteCommandline(winrt::array_view<const winrt::hstring> args, winrt::hstring currentDirectory)
+    bool Peasant::ExecuteCommandline(const Remoting::CommandlineArgs& args)
     {
-        auto argsProcessed = 0;
-        std::wstring fullCmdline;
-        for (const auto& arg : args)
+        if (_initialArgs == nullptr)
         {
-            fullCmdline += argsProcessed++ == 0 ? L"sample.exe" : arg;
-            fullCmdline += L" ";
+            _initialArgs = args;
         }
-        wprintf(L"\x1b[32mExecuted Commandline\x1b[m: \"");
-        wprintf(fullCmdline.c_str());
-        wprintf(L"\"\n");
+
+        _ExecuteCommandlineRequestedHandlers(*this, args);
+
+        // auto argsProcessed = 0;
+        // std::wstring fullCmdline;
+        // for (const auto& arg : args)
+        // {
+        //     fullCmdline += argsProcessed++ == 0 ? L"sample.exe" : arg;
+        //     fullCmdline += L" ";
+        // }
+        // wprintf(L"\x1b[32mExecuted Commandline\x1b[m: \"");
+        // wprintf(fullCmdline.c_str());
+        // wprintf(L"\"\n");
         return true;
     }
 
     void Peasant::raiseActivatedEvent()
     {
         _WindowActivatedHandlers(*this, nullptr);
+    }
+
+    Remoting::CommandlineArgs Peasant::InitialArgs()
+    {
+        return _initialArgs;
     }
 
 }

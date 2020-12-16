@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Monarch.h"
+#include "CommandlineArgs.h"
 
 #include "Monarch.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -91,7 +92,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _setMostRecentPeasant(_thisPeasantID);
     }
 
-    bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd)
+    bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args,
+                                     winrt::hstring cwd)
     {
         auto argsProcessed = 0;
         std::wstring fullCmdline;
@@ -125,7 +127,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     printf("Session 0 is actually #%llu\n", _mostRecentPeasant);
                     if (auto mruPeasant = _getPeasant(_mostRecentPeasant))
                     {
-                        mruPeasant.ExecuteCommandline(args, cwd);
+                        auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
+                        mruPeasant.ExecuteCommandline(*eventArgs);
                         createNewWindow = false;
                     }
                 }
@@ -133,7 +136,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 {
                     if (auto otherPeasant = _getPeasant(sessionId))
                     {
-                        otherPeasant.ExecuteCommandline(args, cwd);
+                        auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
+                        otherPeasant.ExecuteCommandline(*eventArgs);
                         createNewWindow = false;
                     }
                     else
@@ -147,7 +151,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             if (auto mruPeasant = _getPeasant(_mostRecentPeasant))
             {
-                mruPeasant.ExecuteCommandline(args, cwd);
+                auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
+                mruPeasant.ExecuteCommandline(*eventArgs);
                 createNewWindow = false;
             }
         }

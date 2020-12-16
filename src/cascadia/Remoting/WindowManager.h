@@ -12,16 +12,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WindowManager();
         ~WindowManager();
 
-        void ProposeCommandline();
+        void ProposeCommandline(array_view<const winrt::hstring> args, const winrt::hstring cwd);
         bool ShouldCreateWindow();
+
+        winrt::Microsoft::Terminal::Remoting::Peasant CurrentWindow();
 
     private:
         bool _shouldCreateWindow{ false };
         DWORD _registrationHostClass{ 0 };
         winrt::Microsoft::Terminal::Remoting::Monarch _monarch{ nullptr };
+        winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
-        void _RegisterAsMonarch();
-        void _CreateMonarch();
+        void _registerAsMonarch();
+        void _createMonarch();
+        bool _areWeTheKing();
+        winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant();
     };
 }
 

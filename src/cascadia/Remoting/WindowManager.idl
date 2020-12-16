@@ -1,3 +1,4 @@
+import "Peasant.idl";
 
 
 namespace Microsoft.Terminal.Remoting
@@ -6,7 +7,8 @@ namespace Microsoft.Terminal.Remoting
     [default_interface] runtimeclass WindowManager
     {
         WindowManager();
-        void ProposeCommandline();
+        void ProposeCommandline(String[] commands, String cwd);
         Boolean ShouldCreateWindow { get; };
+        Peasant CurrentWindow();
     };
 }

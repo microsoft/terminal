@@ -30,13 +30,35 @@ AppHost::AppHost() noexcept :
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
-    _windowManager.ProposeCommandline();
-    // _RegisterAsMonarch();
-    // _CreateMonarch();
-    _shouldCreateWindow = _windowManager.ShouldCreateWindow();
-    if (!_shouldCreateWindow)
     {
-        return;
+        std::vector<winrt::hstring> args;
+        if (auto commandline{ GetCommandLineW() })
+        {
+            int argc = 0;
+
+            // Get the argv, and turn them into a hstring array to pass to the app.
+            wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+            if (argv)
+            {
+                for (auto& elem : wil::make_range(argv.get(), argc))
+                {
+                    args.emplace_back(elem);
+                }
+            }
+        }
+        if (args.empty())
+        {
+            args.emplace_back(L"wt.exe");
+        }
+
+        _windowManager.ProposeCommandline({ args }, L"placeholder/cwd");
+        // _RegisterAsMonarch();
+        // _CreateMonarch();
+        _shouldCreateWindow = _windowManager.ShouldCreateWindow();
+        if (!_shouldCreateWindow)
+        {
+            return;
+        }
     }
 
     // If there were commandline args to our process, try and process them here.
