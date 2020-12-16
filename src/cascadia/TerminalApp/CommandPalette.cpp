@@ -821,7 +821,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L"\n\t" + til::u8u16(_appArgs.GetExitMessage()));
                 }
-                _noMatchesText().Visibility(Visibility::Visible);
             }
         }
     }
