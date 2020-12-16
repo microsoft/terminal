@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+        GETSET_PROPERTY(bool, IsBaseLayer, false);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;

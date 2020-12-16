@@ -58,6 +58,7 @@ namespace Microsoft.Terminal.Settings.Editor
         ProfileViewModel Profile { get; };
 
         Boolean CanDeleteProfile { get; };
+        Boolean IsBaseLayer;
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged

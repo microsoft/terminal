@@ -219,7 +219,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_viewModelForProfile(_settingsClone.ProfileDefaults()), _settingsClone.GlobalSettings().ColorSchemes(), *this));
+            auto state{ winrt::make<ProfilePageNavigationState>(_viewModelForProfile(_settingsClone.ProfileDefaults()), _settingsClone.GlobalSettings().ColorSchemes(), *this) };
+            state.IsBaseLayer(true);
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
         }
         else if (clickedItemTag == colorSchemesTag)
         {
