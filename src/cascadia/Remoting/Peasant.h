@@ -23,7 +23,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     private:
         uint64_t _id{ 0 };
 
-        winrt::Microsoft::Terminal::Remoting::CommandlineArgs _initialArgs; //{ nullptr };
+        winrt::Microsoft::Terminal::Remoting::CommandlineArgs _initialArgs{ nullptr };
 
         // array_view<const winrt::hstring> _args;
         // winrt::hstring _cwd;

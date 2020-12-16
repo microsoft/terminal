@@ -28,7 +28,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _registrationHostClass = 0;
     }
 
-    void WindowManager::ProposeCommandline(array_view<const winrt::hstring> args, const winrt::hstring cwd)
+    void WindowManager::ProposeCommandline(array_view<const winrt::hstring> args,
+                                           const winrt::hstring cwd)
     {
         const bool isKing = _areWeTheKing();
         // If we're the king, we _definitely_ want to process the arguments, we were

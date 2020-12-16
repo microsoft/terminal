@@ -142,21 +142,11 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
 // - <none>
 void AppHost::_HandleCommandlineArgs()
 {
-    if (auto commandline{ GetCommandLineW() })
+    if (auto peasant{ _windowManager.CurrentWindow() })
     {
-        int argc = 0;
-
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
+        if (auto args{ peasant.InitialArgs() })
         {
-            std::vector<winrt::hstring> args;
-            for (auto& elem : wil::make_range(argv.get(), argc))
-            {
-                args.emplace_back(elem);
-            }
-
-            const auto result = _logic.SetStartupCommandline({ args });
+            const auto result = _logic.SetStartupCommandline(args.Args());
             const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -177,6 +167,41 @@ void AppHost::_HandleCommandlineArgs()
             }
         }
     }
+    // if (auto commandline{ GetCommandLineW() })
+    // {
+    //     int argc = 0;
+
+    //     // Get the argv, and turn them into a hstring array to pass to the app.
+    //     wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+    //     if (argv)
+    //     {
+    //         std::vector<winrt::hstring> args;
+    //         for (auto& elem : wil::make_range(argv.get(), argc))
+    //         {
+    //             args.emplace_back(elem);
+    //         }
+
+    //         const auto result = _logic.SetStartupCommandline({ args });
+    //         const auto message = _logic.ParseCommandlineMessage();
+    //         if (!message.empty())
+    //         {
+    //             const auto displayHelp = result == 0;
+    //             const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
+    //             const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
+    //             // TODO:GH#4134: polish this dialog more, to make the text more
+    //             // like msiexec /?
+    //             MessageBoxW(nullptr,
+    //                         message.data(),
+    //                         GetStringResource(messageTitle).data(),
+    //                         MB_OK | messageIcon);
+
+    //             if (_logic.ShouldExitEarly())
+    //             {
+    //                 ExitProcess(result);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 // Method Description:

@@ -95,16 +95,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     bool Monarch::ProposeCommandline(array_view<const winrt::hstring> args,
                                      winrt::hstring cwd)
     {
-        auto argsProcessed = 0;
-        std::wstring fullCmdline;
-        for (const auto& arg : args)
-        {
-            fullCmdline += argsProcessed++ == 0 ? L"sample.exe" : arg;
-            fullCmdline += L" ";
-        }
-        wprintf(L"\x1b[36mProposed Commandline\x1b[m: \"");
-        wprintf(fullCmdline.c_str());
-        wprintf(L"\"\n");
+        // auto argsProcessed = 0;
+        // std::wstring fullCmdline;
+        // for (const auto& arg : args)
+        // {
+        //     fullCmdline += argsProcessed++ == 0 ? L"sample.exe" : arg;
+        //     fullCmdline += L" ";
+        // }
+        // wprintf(L"\x1b[36mProposed Commandline\x1b[m: \"");
+        // wprintf(fullCmdline.c_str());
+        // wprintf(L"\"\n");
 
         bool createNewWindow = true;
 
@@ -113,7 +113,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // We'll need three args at least - [WindowsTerminal.exe, -s,
             // id] to be able to have a session ID passed on the commandline.
 
-            if (args[1] == L"-s" || args[1] == L"--session")
+            if (args[1] == L"-w" || args[1] == L"--window")
             {
                 auto sessionId = std::stoi({ args[2].data(), args[2].size() });
                 printf("Found a commandline intended for session %d\n", sessionId);
