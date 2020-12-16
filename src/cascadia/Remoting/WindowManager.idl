@@ -1,0 +1,12 @@
+
+
+namespace Microsoft.Terminal.Remoting
+{
+
+    [default_interface] runtimeclass WindowManager
+    {
+        WindowManager();
+        void ProposeCommandline();
+        Boolean ShouldCreateWindow { get; };
+    };
+}

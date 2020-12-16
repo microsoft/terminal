@@ -24,6 +24,9 @@
     <ClInclude Include="Peasant.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowManager.h">
+      <DependentUpon>WindowManager  .idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -36,12 +39,16 @@
     <ClCompile Include="Peasant.cpp">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="WindowManager.cpp">
+      <DependentUpon>WindowManager.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="Monarch.idl" />
     <Midl Include="Peasant.idl" />
+    <Midl Include="WindowManager.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

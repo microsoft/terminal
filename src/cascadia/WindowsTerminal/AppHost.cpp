@@ -3,12 +3,11 @@
 
 #include "pch.h"
 #include "AppHost.h"
+// #include "MonarchFactory.h"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
 #include "resource.h"
-
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -25,17 +24,26 @@ static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
 
 AppHost::AppHost() noexcept :
     _app{},
+    _windowManager{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
     _window{ nullptr }
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
-    _useNonClientArea = _logic.GetShowTabsInTitlebar();
+    _windowManager.ProposeCommandline();
+    // _RegisterAsMonarch();
+    // _CreateMonarch();
+    _shouldCreateWindow = _windowManager.ShouldCreateWindow();
+    if (!_shouldCreateWindow)
+    {
+        return;
+    }
 
     // If there were commandline args to our process, try and process them here.
     // Do this before AppLogic::Create, otherwise this will have no effect
-    _HandleCommandlineArgs();
+    _HandleCommandlineArgs(); // TODO:MG <-- This probably needs to move into _ProposeCommandlineToMonarch
 
+    _useNonClientArea = _logic.GetShowTabsInTitlebar();
     if (_useNonClientArea)
     {
         _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
@@ -65,6 +73,7 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -462,3 +471,27 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
         }
     }
 }
+
+bool AppHost::HasWindow()
+{
+    return _shouldCreateWindow;
+}
+
+// void AppHost::_RegisterAsMonarch()
+// {
+//     winrt::check_hresult(CoRegisterClassObject(Monarch_clsid,
+//                                         winrt::make<::MonarchFactory>().get(),
+//                                         CLSCTX_LOCAL_SERVER,
+//                                         REGCLS_MULTIPLEUSE,
+//                                         &_registrationHostClass));
+// }
+
+// void AppHost::_CreateMonarch()
+// {
+// }
+
+// bool AppHost::_ProposeCommandlineToMonarch()
+// {
+//     // returns true if we should create a new window
+//     return true;
+// }
