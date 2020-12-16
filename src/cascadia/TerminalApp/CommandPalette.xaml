@@ -77,7 +77,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-		    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                 </ResourceDictionary>
@@ -118,7 +118,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
                         <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
-		    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
+                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
                 </ResourceDictionary>
