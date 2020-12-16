@@ -113,6 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
             _updatePatternLocations->Run();
+            _updateLiveSearch->Run();
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
@@ -184,11 +185,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBarUpdateInterval,
             Dispatcher());
 
+        _updateLiveSearch = std::make_shared<ThrottledFunc<>>(
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() })
+                {
+                    // If in the middle of the live search, recompute the matches.
+                    // We avoid navigation to the first result to prevent auto-scrolling.
+                    if (control->_liveSearchState.has_value())
+                    {
+                        control->_LiveSearchAll(control->_liveSearchState.value().Text, control->_liveSearchState.value().CaseSensitive);
+                    }
+                }
+            },
+            UpdatePatternLocationsInterval,
+            Dispatcher());
+
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        _SetLiveSearch(_settings.LiveSearch());
+        _SetLiveSearchEnabled(_settings.LiveSearch());
         _ApplyUISettings();
     }
 
@@ -204,7 +220,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
-                _searchBox->SetStatus(RS_(L"TermControl_NoMatch"));
                 _searchBox->SetStatusVisible(_isLiveSearchEnabled);
 
                 // If a text is selected inside terminal, use it to populate the search box.
@@ -230,6 +245,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
+    // In the live search mode it will be also triggered once every time search criteria changes
     // Arguments:
     // - text: the text to search
     // - goForward: boolean that represents if the current search direction is forward
@@ -238,54 +254,53 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
-        if (_closing)
+        if (_closing || text.empty())
         {
             return;
         }
 
-        std::wstring searchStatus{ RS_(L"TermControl_NoMatch") };
-
-        if (!text.empty())
+        if (_isLiveSearchEnabled)
         {
-            if (_isLiveSearchEnabled)
+            // Live Search
+            // Run only if the live search state was initialized by LiveSearchAll
+            if (_liveSearchState.has_value())
             {
-                const int numMatches = ::base::saturated_cast<int>(_liveSearchMatches.size());
-                if (numMatches > 0)
-                {
-                    _liveSearchIndex = (numMatches + _liveSearchIndex + (goForward ? 1 : -1)) % numMatches;
-                    searchStatus = fmt::format(L"{}/{}", _liveSearchIndex + 1, numMatches);
-                    _terminal->SetBlockSelection(false);
+                _liveSearchState.value().UpdateIndex(goForward);
 
-                    const auto& selectionCoords = til::at(_liveSearchMatches, _liveSearchIndex);
-                    _terminal->SelectNewRegion(selectionCoords.first, selectionCoords.second);
+                const auto currentMatch = _liveSearchState.value().GetCurrentMatch();
+                if (currentMatch.has_value())
+                {
+                    auto lock = _terminal->LockForWriting();
+                    _terminal->SetBlockSelection(false);
+                    _terminal->SelectNewRegion(currentMatch.value().first, currentMatch.value().second);
                     _renderer->TriggerSelection();
                 }
-            }
-            else
-            {
-                const Search::Direction direction = goForward ?
-                                                        Search::Direction::Forward :
-                                                        Search::Direction::Backward;
 
-                const Search::Sensitivity sensitivity = caseSensitive ?
-                                                            Search::Sensitivity::CaseSensitive :
-                                                            Search::Sensitivity::CaseInsensitive;
-
-                Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-                auto lock = _terminal->LockForWriting();
-                if (search.FindNext())
+                if (_searchBox)
                 {
-                    searchStatus = L"";
-                    _terminal->SetBlockSelection(false);
-                    search.Select();
-                    _renderer->TriggerSelection();
+                    _searchBox->SetStatus(_liveSearchState.value().Status());
                 }
             }
         }
-
-        if (_searchBox)
+        else
         {
-            _searchBox->SetStatus(searchStatus.data());
+            // Classic Search
+            const Search::Direction direction = goForward ?
+                                                    Search::Direction::Forward :
+                                                    Search::Direction::Backward;
+
+            const Search::Sensitivity sensitivity = caseSensitive ?
+                                                        Search::Sensitivity::CaseSensitive :
+                                                        Search::Sensitivity::CaseInsensitive;
+
+            Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
+            auto lock = _terminal->LockForWriting();
+            if (search.FindNext())
+            {
+                _terminal->SetBlockSelection(false);
+                search.Select();
+                _renderer->TriggerSelection();
+            }
         }
     }
 
@@ -296,29 +311,48 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_SearchChanged(const winrt::hstring& text, const bool caseSensitive)
+    void TermControl::_SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
-        if (_isLiveSearchEnabled)
+        if (_isLiveSearchEnabled && _searchBox && _searchBox->Visibility() == Visibility::Visible)
         {
             // Clear the selection reset the anchor
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
 
+            _LiveSearchAll(text, caseSensitive);
+            _Search(text, goForward, caseSensitive);
+        }
+    }
+
+    // Method Description:
+    // - As a part of LiveSearch solution looks for all text matching the criteria
+    // Arguments:
+    // - text: the text to search
+    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // Return Value:
+    // - <none>
+    void TermControl::_LiveSearchAll(const winrt::hstring& text, const bool caseSensitive)
+    {
+        std::vector<std::pair<COORD, COORD>> matches;
+        if (!text.empty())
+        {
             const Search::Sensitivity sensitivity = caseSensitive ?
                                                         Search::Sensitivity::CaseSensitive :
                                                         Search::Sensitivity::CaseInsensitive;
 
             Search search(*GetUiaData(), text.c_str(), Search::Direction::Forward, sensitivity);
             auto lock = _terminal->LockForWriting();
-
-            _liveSearchMatches.clear();
-            _liveSearchIndex = -1;
             while (search.FindNext())
             {
-                _liveSearchMatches.push_back(search.GetFoundLocation());
+                matches.push_back(search.GetFoundLocation());
             }
+        }
 
-            _Search(text, true, caseSensitive);
+        const LiveSearchState liveSearchState{ text, caseSensitive, matches };
+        _liveSearchState.emplace(liveSearchState);
+        if (_searchBox)
+        {
+            _searchBox->SetStatus(liveSearchState.Status());
         }
     }
 
@@ -330,7 +364,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - isLiveSearchEnabled: true if live search mode is enabled
     // Return Value:
     // - <none>
-    void TermControl::_SetLiveSearch(bool isLiveSearchEnabled)
+    void TermControl::_SetLiveSearchEnabled(bool isLiveSearchEnabled)
     {
         if (_isLiveSearchEnabled != isLiveSearchEnabled)
         {
@@ -354,6 +388,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
+        _liveSearchState.reset();
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
@@ -420,7 +455,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _RefreshSizeUnderLock();
             }
 
-            _SetLiveSearch(_settings.LiveSearch());
+            _SetLiveSearchEnabled(_settings.LiveSearch());
         }
     }
 
@@ -3249,6 +3284,73 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
+    }
+
+    // Method Description:
+    // - Updates the index of the current match according to the direction.
+    // The index will remain unchanged (usually -1) if the number of matches is 0
+    // Arguments:
+    // - goForward: if true, move to the next match, else go to previous
+    // Return Value:
+    // - <none>
+    void LiveSearchState::UpdateIndex(bool goForward)
+    {
+        const int numMatches = ::base::saturated_cast<int>(Matches.size());
+        if (numMatches > 0)
+        {
+            if (CurrentMatchIndex == -1)
+            {
+                CurrentMatchIndex = goForward ? 0 : numMatches - 1;
+            }
+            else
+            {
+                CurrentMatchIndex = (numMatches + CurrentMatchIndex + (goForward ? 1 : -1)) % numMatches;
+            }
+        }
+    }
+
+    // Method Description:
+    // - Retrieves the current match
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - current match, null-opt if current match is invalid
+    // (e.g., when the index is -1 or there are no matches)
+    std::optional<std::pair<COORD, COORD>> LiveSearchState::GetCurrentMatch()
+    {
+        if (CurrentMatchIndex > -1 && CurrentMatchIndex < Matches.size())
+        {
+            return til::at(Matches, CurrentMatchIndex);
+        }
+        else
+        {
+            return std::nullopt;
+        }
+    }
+
+    // Method Description:
+    // - Builds a status message representing the search state:
+    // * "No results" - if matches are empty
+    // * "?/n" - if there are n matches and we didn't start the iteration over matches
+    // (usually we will get this after buffer update)
+    // * "m/n" - if we are currently at match m out of n.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - status message
+    winrt::hstring LiveSearchState::Status() const
+    {
+        if (Matches.empty())
+        {
+            return RS_(L"TermControl_NoMatch");
+        }
+
+        if (CurrentMatchIndex < 0)
+        {
+            return fmt::format(L"?/{}", Matches.size()).data();
+        }
+
+        return fmt::format(L"{}/{}", CurrentMatchIndex + 1, Matches.size()).data();
     }
 
     // -------------------------------- WinRT Events ---------------------------------

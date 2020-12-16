@@ -18,6 +18,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         this->CharacterReceived({ this, &SearchBoxControl::_CharacterHandler });
         this->KeyDown({ this, &SearchBoxControl::_KeyDownHandler });
+        this->RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
+            // Once the control is visible again we trigger SearchChanged event.
+            // We do this since probably we have a value from the previous search,
+            // and in such case logically the search changes from "nothing" to this value.
+            // A good example for SearchChanged event consumer is LiveSearch.
+            // Once the control is open we want LiveSearch to immediately perform the search
+            // with the value appearing in the box.
+            if (Visibility() == Visibility::Visible)
+            {
+                _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
+            }
+        });
 
         _focusableElements.insert(TextBox());
         _focusableElements.insert(CloseButton());
@@ -219,7 +231,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void SearchBoxControl::TextBoxTextChanged(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        _SearchChangedHandlers(TextBox().Text(), _CaseSensitive());
+        _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:
@@ -231,7 +243,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void SearchBoxControl::CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
     {
-        _SearchChangedHandlers(TextBox().Text(), _CaseSensitive());
+        _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
     }
 
     // Method Description:

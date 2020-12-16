@@ -4,7 +4,6 @@
 namespace Microsoft.Terminal.TerminalControl
 {
     delegate void SearchHandler(String query, Boolean goForward, Boolean isCaseSensitive);
-    delegate void SearchChangedHandler(String query, Boolean isCaseSensitive);
 
     [default_interface] runtimeclass SearchBoxControl : Windows.UI.Xaml.Controls.UserControl
     {
@@ -17,7 +16,7 @@ namespace Microsoft.Terminal.TerminalControl
         void SetStatusVisible(Boolean isVisible);
 
         event SearchHandler Search;
-        event SearchChangedHandler SearchChanged;
+        event SearchHandler SearchChanged;
         event Windows.Foundation.TypedEventHandler<SearchBoxControl, Windows.UI.Xaml.RoutedEventArgs> Closed;
     }
 }

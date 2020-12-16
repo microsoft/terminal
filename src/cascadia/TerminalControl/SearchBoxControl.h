@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void CaseSensitivityButtonClicked(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         WINRT_CALLBACK(Search, SearchHandler);
-        WINRT_CALLBACK(SearchChanged, SearchChangedHandler);
+        WINRT_CALLBACK(SearchChanged, SearchHandler);
         TYPED_EVENT(Closed, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:

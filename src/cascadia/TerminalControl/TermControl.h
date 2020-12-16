@@ -98,6 +98,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const hstring _message;
     };
 
+    struct LiveSearchState
+    {
+    public:
+        LiveSearchState(const winrt::hstring& text, const bool caseSensitive, std::vector<std::pair<COORD, COORD>> matches) :
+            Text(text),
+            CaseSensitive(caseSensitive),
+            Matches(matches)
+        {
+        }
+
+        const winrt::hstring Text;
+        const bool CaseSensitive;
+        const std::vector<std::pair<COORD, COORD>> Matches;
+        int32_t CurrentMatchIndex{ -1 };
+
+        void UpdateIndex(bool goForward);
+        std::optional<std::pair<COORD, COORD>> GetCurrentMatch();
+        winrt::hstring Status() const;
+    };
+
     struct TermControl : TermControlT<TermControl>
     {
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
@@ -207,6 +227,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
 
+        std::shared_ptr<ThrottledFunc<>> _updateLiveSearch;
+
         struct ScrollBarUpdate
         {
             std::optional<double> newValue;
@@ -259,10 +281,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        // LiveSearch
         bool _isLiveSearchEnabled{ false };
-        std::vector<std::pair<COORD, COORD>> _liveSearchMatches;
-        int32_t _liveSearchIndex{ -1 };
+        std::optional<LiveSearchState> _liveSearchState;
+
         void _SetLiveSearchEnabled(bool isLiveSearchEnabled);
+        void _LiveSearchAll(const winrt::hstring& text, const bool caseSensitive);
 
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
@@ -330,7 +354,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
-        void _SearchChanged(const winrt::hstring& text, const bool caseSensitive);
+        void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
 
         // TSFInputControl Handlers
