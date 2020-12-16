@@ -32,7 +32,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void PopulateTextbox(winrt::hstring const& text);
         bool ContainsFocus();
         void SetStatus(winrt::hstring const& text);
-        void SetStatusVisible(bool isVisible);
 
         void GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
         void GoForwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);

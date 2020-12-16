@@ -11,9 +11,7 @@ namespace Microsoft.Terminal.TerminalControl
         void SetFocusOnTextbox();
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
-
         void SetStatus(String status);
-        void SetStatusVisible(Boolean isVisible);
 
         event SearchHandler Search;
         event SearchHandler SearchChanged;

@@ -22,9 +22,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Once the control is visible again we trigger SearchChanged event.
             // We do this since probably we have a value from the previous search,
             // and in such case logically the search changes from "nothing" to this value.
-            // A good example for SearchChanged event consumer is LiveSearch.
-            // Once the control is open we want LiveSearch to immediately perform the search
-            // with the value appearing in the box.
+            // A good example for SearchChanged event consumer is Terminal Control.
+            // Once the Search Box is open we want the Terminal Control
+            // to immediately perform the search with the value appearing in the box.
             if (Visibility() == Visibility::Visible)
             {
                 _SearchChangedHandlers(TextBox().Text(), _GoForward(), _CaseSensitive());
@@ -258,16 +258,5 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             StatusBox().Text(status);
         }
-    }
-
-    // Method Description:
-    // - Allows to set the visibility of the search status
-    // Arguments:
-    // - isVisible: if true, the status is visible
-    // Return Value:
-    // - <none>
-    void SearchBoxControl::SetStatusVisible(bool isVisible)
-    {
-        StatusBox().Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
     }
 }

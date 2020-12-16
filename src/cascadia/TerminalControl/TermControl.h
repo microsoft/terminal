@@ -98,10 +98,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const hstring _message;
     };
 
-    struct LiveSearchState
+    struct SearchState
     {
     public:
-        LiveSearchState(const winrt::hstring& text, const bool caseSensitive, std::vector<std::pair<COORD, COORD>> matches) :
+        SearchState(const winrt::hstring& text, const bool caseSensitive, std::vector<std::pair<COORD, COORD>> matches) :
             Text(text),
             CaseSensitive(caseSensitive),
             Matches(matches)
@@ -227,7 +227,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::shared_ptr<ThrottledFunc<>> _updatePatternLocations;
 
-        std::shared_ptr<ThrottledFunc<>> _updateLiveSearch;
+        std::shared_ptr<ThrottledFunc<>> _updateSearchStatus;
 
         struct ScrollBarUpdate
         {
@@ -281,12 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
-        // LiveSearch
-        bool _isLiveSearchEnabled{ false };
-        std::optional<LiveSearchState> _liveSearchState;
-
-        void _SetLiveSearchEnabled(bool isLiveSearchEnabled);
-        void _LiveSearchAll(const winrt::hstring& text, const bool caseSensitive);
+        std::optional<SearchState> _searchState;
+        void _SearchAll(const winrt::hstring& text, const bool caseSensitive);
 
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;

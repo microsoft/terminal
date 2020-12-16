@@ -113,7 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto onReceiveOutputFn = [this](const hstring str) {
             _terminal->Write(str);
             _updatePatternLocations->Run();
-            _updateLiveSearch->Run();
+            _updateSearchStatus->Run();
         };
         _connectionOutputEventToken = _connection.TerminalOutput(onReceiveOutputFn);
 
@@ -185,15 +185,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             ScrollBarUpdateInterval,
             Dispatcher());
 
-        _updateLiveSearch = std::make_shared<ThrottledFunc<>>(
+        _updateSearchStatus = std::make_shared<ThrottledFunc<>>(
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
                     // If in the middle of the live search, recompute the matches.
                     // We avoid navigation to the first result to prevent auto-scrolling.
-                    if (control->_liveSearchState.has_value())
+                    if (control->_searchState.has_value())
                     {
-                        control->_LiveSearchAll(control->_liveSearchState.value().Text, control->_liveSearchState.value().CaseSensitive);
+                        control->_SearchAll(control->_searchState.value().Text, control->_searchState.value().CaseSensitive);
                     }
                 }
             },
@@ -203,8 +203,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
-
-        _SetLiveSearchEnabled(_settings.LiveSearch());
         _ApplyUISettings();
     }
 
@@ -220,7 +218,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
-                _searchBox->SetStatusVisible(_isLiveSearchEnabled);
 
                 // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
@@ -247,59 +244,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   search button or press enter.
     // In the live search mode it will be also triggered once every time search criteria changes
     // Arguments:
-    // - text: the text to search
+    // - text: not used
     // - goForward: boolean that represents if the current search direction is forward
-    // - caseSensitive: boolean that represents if the current search is case sensitive
+    // - caseSensitive: not used
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& /*text*/, const bool goForward, const bool /*caseSensitive*/)
     {
-        if (_closing || text.empty())
+        // Run only if the live search state was initialized by _SearchAll
+        if (!_closing && _searchState.has_value())
         {
-            return;
-        }
+            _searchState.value().UpdateIndex(goForward);
 
-        if (_isLiveSearchEnabled)
-        {
-            // Live Search
-            // Run only if the live search state was initialized by LiveSearchAll
-            if (_liveSearchState.has_value())
+            const auto currentMatch = _searchState.value().GetCurrentMatch();
+            if (currentMatch.has_value())
             {
-                _liveSearchState.value().UpdateIndex(goForward);
-
-                const auto currentMatch = _liveSearchState.value().GetCurrentMatch();
-                if (currentMatch.has_value())
-                {
-                    auto lock = _terminal->LockForWriting();
-                    _terminal->SetBlockSelection(false);
-                    _terminal->SelectNewRegion(currentMatch.value().first, currentMatch.value().second);
-                    _renderer->TriggerSelection();
-                }
-
-                if (_searchBox)
-                {
-                    _searchBox->SetStatus(_liveSearchState.value().Status());
-                }
-            }
-        }
-        else
-        {
-            // Classic Search
-            const Search::Direction direction = goForward ?
-                                                    Search::Direction::Forward :
-                                                    Search::Direction::Backward;
-
-            const Search::Sensitivity sensitivity = caseSensitive ?
-                                                        Search::Sensitivity::CaseSensitive :
-                                                        Search::Sensitivity::CaseInsensitive;
-
-            Search search(*GetUiaData(), text.c_str(), direction, sensitivity);
-            auto lock = _terminal->LockForWriting();
-            if (search.FindNext())
-            {
+                auto lock = _terminal->LockForWriting();
                 _terminal->SetBlockSelection(false);
-                search.Select();
+                _terminal->SelectNewRegion(currentMatch.value().first, currentMatch.value().second);
                 _renderer->TriggerSelection();
+            }
+
+            if (_searchBox)
+            {
+                _searchBox->SetStatus(_searchState.value().Status());
             }
         }
     }
@@ -313,25 +281,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
     {
-        if (_isLiveSearchEnabled && _searchBox && _searchBox->Visibility() == Visibility::Visible)
+        if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
         {
             // Clear the selection reset the anchor
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
 
-            _LiveSearchAll(text, caseSensitive);
+            _SearchAll(text, caseSensitive);
             _Search(text, goForward, caseSensitive);
         }
     }
 
     // Method Description:
-    // - As a part of LiveSearch solution looks for all text matching the criteria
+    // - Performs search given a criteria and collects all matches
     // Arguments:
     // - text: the text to search
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_LiveSearchAll(const winrt::hstring& text, const bool caseSensitive)
+    void TermControl::_SearchAll(const winrt::hstring& text, const bool caseSensitive)
     {
         std::vector<std::pair<COORD, COORD>> matches;
         if (!text.empty())
@@ -348,32 +316,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
-        const LiveSearchState liveSearchState{ text, caseSensitive, matches };
-        _liveSearchState.emplace(liveSearchState);
+        const SearchState searchState{ text, caseSensitive, matches };
+        _searchState.emplace(searchState);
         if (_searchBox)
         {
-            _searchBox->SetStatus(liveSearchState.Status());
-        }
-    }
-
-    // Method Description:
-    // - The goal of this method is to reset search in the case search mode is switched.
-    // We need this to avoid inconsistencies, when the mode is changed in the middle of
-    // navigation through results.
-    // Arguments:
-    // - isLiveSearchEnabled: true if live search mode is enabled
-    // Return Value:
-    // - <none>
-    void TermControl::_SetLiveSearchEnabled(bool isLiveSearchEnabled)
-    {
-        if (_isLiveSearchEnabled != isLiveSearchEnabled)
-        {
-            _isLiveSearchEnabled = isLiveSearchEnabled;
-            if (_searchBox && _searchBox->Visibility() == Visibility::Visible)
-            {
-                _searchBox->SetStatusVisible(_isLiveSearchEnabled);
-                _searchBox->PopulateTextbox(L"");
-            }
+            _searchBox->SetStatus(searchState.Status());
         }
     }
 
@@ -388,7 +335,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
-        _liveSearchState.reset();
+        _searchState.reset();
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
@@ -454,8 +401,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 _RefreshSizeUnderLock();
             }
-
-            _SetLiveSearchEnabled(_settings.LiveSearch());
         }
     }
 
@@ -3293,7 +3238,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - goForward: if true, move to the next match, else go to previous
     // Return Value:
     // - <none>
-    void LiveSearchState::UpdateIndex(bool goForward)
+    void SearchState::UpdateIndex(bool goForward)
     {
         const int numMatches = ::base::saturated_cast<int>(Matches.size());
         if (numMatches > 0)
@@ -3316,7 +3261,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Return Value:
     // - current match, null-opt if current match is invalid
     // (e.g., when the index is -1 or there are no matches)
-    std::optional<std::pair<COORD, COORD>> LiveSearchState::GetCurrentMatch()
+    std::optional<std::pair<COORD, COORD>> SearchState::GetCurrentMatch()
     {
         if (CurrentMatchIndex > -1 && CurrentMatchIndex < Matches.size())
         {
@@ -3338,7 +3283,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     // Return Value:
     // - status message
-    winrt::hstring LiveSearchState::Status() const
+    winrt::hstring SearchState::Status() const
     {
         if (Matches.empty())
         {

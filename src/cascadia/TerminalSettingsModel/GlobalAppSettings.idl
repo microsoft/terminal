@@ -135,10 +135,6 @@ namespace Microsoft.Terminal.Settings.Model
         void ClearDisableAnimations();
         Boolean DisableAnimations;
 
-        Boolean HasLiveSearch();
-        void ClearLiveSearch();
-        Boolean LiveSearch;
-
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);
 

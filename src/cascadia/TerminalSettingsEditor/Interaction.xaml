@@ -38,13 +38,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                           IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
                           Style="{StaticResource CheckBoxSettingStyle}"/>
             </ContentPresenter>
-
-            <!--Live Search-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_LiveSearch"
-                          IsChecked="{x:Bind State.Globals.LiveSearch, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
         </StackPanel>
     </ScrollViewer>
 </Page>

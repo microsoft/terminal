@@ -39,7 +39,6 @@ namespace TerminalCoreUnitTests
         bool SuppressApplicationTitle() { return _suppressApplicationTitle; }
         uint32_t SelectionBackground() { return COLOR_WHITE; }
         bool ForceVTInput() { return false; }
-        bool LiveSearch() { return _liveSearch; }
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -61,7 +60,6 @@ namespace TerminalCoreUnitTests
         void SuppressApplicationTitle(bool suppressApplicationTitle) { _suppressApplicationTitle = suppressApplicationTitle; }
         void SelectionBackground(uint32_t) {}
         void ForceVTInput(bool) {}
-        void LiveSearch(bool liveSearch) { _liveSearch = liveSearch; }
 
         GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
         GETSET_PROPERTY(winrt::Windows::Foundation::IReference<uint32_t>, StartingTabColor, nullptr);
@@ -73,6 +71,5 @@ namespace TerminalCoreUnitTests
         bool _copyOnSelect{ false };
         bool _suppressApplicationTitle{ false };
         winrt::hstring _startingTitle;
-        bool _liveSearch{ false };
     };
 }
