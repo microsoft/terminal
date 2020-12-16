@@ -5,6 +5,7 @@
 
 #include "Profiles.g.h"
 #include "ProfilePageNavigationState.g.h"
+#include "DeleteProfileEventArgs.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -60,6 +61,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::Profile _profile;
     };
 
+    struct DeleteProfileEventArgs :
+        public DeleteProfileEventArgsT<DeleteProfileEventArgs>
+    {
+    public:
+        DeleteProfileEventArgs(guid profileGuid) :
+            _ProfileGuid(profileGuid) {}
+
+        GETSET_PROPERTY(guid, ProfileGuid);
+    };
+
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
@@ -70,16 +81,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
         }
 
-        bool CanDeleteProfile() { return _pfnDeleteProfile != nullptr; };
-        void SetDeleteProfileCallback(std::function<void(Editor::ProfileViewModel&)> pfn) { _pfnDeleteProfile.swap(pfn); }
-        void DeleteProfile()
-        {
-            if (!_pfnDeleteProfile)
-            {
-                return;
-            }
-            _pfnDeleteProfile(_Profile);
-        }
+        bool CanDeleteProfile() const;
+        void DeleteProfile();
 
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
@@ -87,6 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
         GETSET_PROPERTY(bool, IsBaseLayer, false);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(DeleteProfile, _DeleteProfileHandlers, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;

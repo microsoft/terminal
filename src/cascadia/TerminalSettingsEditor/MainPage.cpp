@@ -235,19 +235,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
-        auto state{ winrt::make_self<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
+        auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
 
-        // You cannot delete the Windows Powershell and CMD profiles
-        const auto myGuid{ profile.Guid() };
-        const winrt::guid pwshGuid{ ::Microsoft::Console::Utils::GuidFromString(L"{61c54bbd-c2c6-5271-96e7-009a87ff44bf}") };
-        const winrt::guid cmdGuid{ ::Microsoft::Console::Utils::GuidFromString(L"{0caa0dad-35be-5f56-a8ff-afceeeaa6101}") };
-        if (myGuid != pwshGuid && myGuid != cmdGuid)
-        {
-            auto pfnDeleteProfile{ std::bind(&MainPage::_DeleteProfile, this, profile) };
-            state->SetDeleteProfileCallback(pfnDeleteProfile);
-        }
+        // Add an event handler for when the user wants to delete a profile.
+        state.DeleteProfile({ this, &MainPage::_DeleteProfile });
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), *state);
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
@@ -334,10 +327,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return profileNavItem;
     }
 
-    void MainPage::_DeleteProfile(Editor::ProfileViewModel& profile)
+    void MainPage::_DeleteProfile(const IInspectable /*sender*/, const Editor::DeleteProfileEventArgs& args)
     {
         // Delete profile from settings model
-        const auto guid{ profile.Guid() };
+        const auto guid{ args.ProfileGuid() };
         auto profileList{ _settingsClone.AllProfiles() };
         for (uint32_t i = 0; i < profileList.Size(); ++i)
         {

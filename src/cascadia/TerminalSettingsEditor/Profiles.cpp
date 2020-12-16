@@ -39,6 +39,37 @@ static const std::set<std::wstring_view> ProfileGeneratorNamespaces{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    bool ProfilePageNavigationState::CanDeleteProfile() const
+    {
+        const auto guid{ Profile().Guid() };
+        const std::wstring_view source{ Profile().Source() };
+        if (IsBaseLayer())
+        {
+            return false;
+        }
+        else if (InBoxProfileGuids.find(guid) != InBoxProfileGuids.end())
+        {
+            // in-box profile
+            return false;
+        }
+        else if (LegacyDynamicProfileGuids.find(guid) != LegacyDynamicProfileGuids.end() ||
+                 ProfileGeneratorNamespaces.find(source) != ProfileGeneratorNamespaces.end())
+        {
+            // dynamic profile
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    void ProfilePageNavigationState::DeleteProfile()
+    {
+        auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(_Profile.Guid()) };
+        _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
     Profiles::Profiles() :
         _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
     {
@@ -265,4 +296,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
+
+    // -------------------------------- WinRT Events ---------------------------------
+    // Winrt events need a method for adding a callback to the event and removing the callback.
+    // These macros will define them both for you.
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(ProfilePageNavigationState, DeleteProfile, _DeleteProfileHandlers, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
 }

@@ -50,6 +50,11 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
     }
 
+    runtimeclass DeleteProfileEventArgs
+    {
+        Guid ProfileGuid { get; };
+    }
+
     runtimeclass ProfilePageNavigationState
     {
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
@@ -59,6 +64,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
+
+        event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
