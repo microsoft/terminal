@@ -227,6 +227,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (ContentDialogResult::Primary == dialogResult)
         {
             CurrentColorScheme().Name(NameBox().Text());
+
+            // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
+            // We need to manually force the ComboBox to refresh itself.
+            const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
+            ColorSchemeComboBox().SelectedIndex(selectedIndex + 1 % ColorSchemeList().Size());
+            ColorSchemeComboBox().SelectedIndex(selectedIndex);
         }
     }
 
