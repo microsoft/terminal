@@ -589,7 +589,7 @@ void Pane::_FocusFirstChild()
             // When these sizes are 0, then the pane might still be in startup,
             // and doesn't yet have a real size. In that case, the control.Focus
             // event won't be handled until _after_ the startup events are all
-            // processed. THis will lead to the Tab not being notified that the
+            // processed. This will lead to the Tab not being notified that the
             // focus moved to a different Pane.
             //
             // In that scenario, trigger the event manually here, to correctly

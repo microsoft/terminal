@@ -371,19 +371,12 @@ void AppCommandlineArgs::_buildMoveFocusParser()
         subcommand->callback([&, this]() {
             if (_moveFocusDirection != Direction::None)
             {
-                // auto moveFocusAction = winrt::make_self<implementation::ActionAndArgs>();
-
-                // moveFocusAction->Action(ShortcutAction::MoveFocus);
-                // auto args = winrt::make_self<implementation::MoveFocusArgs>();
                 MoveFocusArgs args{ _moveFocusDirection };
-                // ActionAndArgs actionAndArgs {args};
 
                 ActionAndArgs actionAndArgs{};
                 actionAndArgs.Action(ShortcutAction::MoveFocus);
                 actionAndArgs.Args(args);
 
-                // args->Direction(_moveFocusDirection);
-                // moveFocusAction->Args(*args);
                 _startupActions.push_back(std::move(actionAndArgs));
             }
         });
