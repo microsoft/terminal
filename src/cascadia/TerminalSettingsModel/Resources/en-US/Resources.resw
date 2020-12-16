@@ -357,8 +357,8 @@
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
     <value>Toggle pane zoom</value>
   </data>
-  <data name="ToggleRetroEffectCommandKey" xml:space="preserve">
-    <value>Toggle retro terminal effect</value>
+  <data name="ToggleShaderEffectsCommandKey" xml:space="preserve">
+    <value>Toggle terminal visual effects</value>
   </data>
   <data name="BreakIntoDebuggerCommandKey" xml:space="preserve">
     <value>Break into the debugger</value>

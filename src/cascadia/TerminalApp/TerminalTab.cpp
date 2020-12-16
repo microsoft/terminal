@@ -8,6 +8,7 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -159,7 +160,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
     }
@@ -180,6 +181,13 @@ namespace winrt::TerminalApp::implementation
 
         _lastIconPath = iconPath;
 
+        // If the icon is currently hidden, just return here (but only after setting _lastIconPath to the new path
+        // for when we show the icon again)
+        if (_iconHidden)
+        {
+            return;
+        }
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(TabViewItem().Dispatcher());
@@ -189,6 +197,34 @@ namespace winrt::TerminalApp::implementation
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(_lastIconPath);
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+        }
+    }
+
+    // Method Description:
+    // - Hide or show the tab icon for this tab
+    // - Used when we want to show the progress ring, which should replace the icon
+    // Arguments:
+    // - hide: if true, we hide the icon; if false, we show the icon
+    winrt::fire_and_forget TerminalTab::HideIcon(const bool hide)
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            if (hide)
+            {
+                Icon({});
+                TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                tab->_iconHidden = true;
+            }
+            else
+            {
+                Icon(_lastIconPath);
+                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                tab->_iconHidden = false;
+            }
         }
     }
 
@@ -439,6 +475,38 @@ namespace winrt::TerminalApp::implementation
                 // active control in this tab. We'll just recalculate the
                 // current color anyways.
                 tab->_RecalculateAndApplyTabColor();
+            }
+        });
+
+        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
+            {
+                // The progress of the control changed, but not necessarily the progress of the tab.
+                // Set the tab's progress ring to the active pane's progress
+                if (tab->GetActiveTerminalControl().TaskbarState() > 0)
+                {
+                    if (tab->GetActiveTerminalControl().TaskbarState() == 3)
+                    {
+                        // 3 is the indeterminate state, set the progress ring as such
+                        tab->_headerControl.IsProgressRingIndeterminate(true);
+                    }
+                    else
+                    {
+                        // any non-indeterminate state has a value, set the progress ring as such
+                        tab->_headerControl.IsProgressRingIndeterminate(false);
+                        tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
+                    }
+                    // Hide the tab icon (the progress ring is placed over it)
+                    tab->HideIcon(true);
+                    tab->_headerControl.IsProgressRingActive(true);
+                }
+                else
+                {
+                    // Show the tab icon
+                    tab->HideIcon(false);
+                    tab->_headerControl.IsProgressRingActive(false);
+                }
             }
         });
     }

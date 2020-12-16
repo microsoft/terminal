@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
+        winrt::fire_and_forget HideIcon(const bool hide);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
@@ -87,6 +88,7 @@ namespace winrt::TerminalApp::implementation
         uint16_t _nextPaneId{ 0 };
 
         bool _receivedKeyDown{ false };
+        bool _iconHidden{ false };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
