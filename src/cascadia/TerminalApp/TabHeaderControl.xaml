@@ -10,6 +10,22 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d"
     MinHeight="16">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <FontIcon x:Name="HeaderZoomIcon"
@@ -25,11 +41,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                  Visibility="Collapsed"
                  MinHeight="0"
                  Padding="4,0,4,0"
-                 Margin="0,-8,0,-8"
                  MaxLength="1024"
                  LostFocus="RenameBoxLostFocusHandler"
                  Height="16"
                  FontSize="12"
+                 BorderThickness="0,0,0,0"
+                 IsSpellCheckEnabled="False"
                  MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"/>
     </StackPanel>
 </UserControl>
