@@ -18,7 +18,7 @@ enum class WindowingBehavior : uint64_t
     UseExisting = 1,
 };
 
-namespace RemotingLocalTests
+namespace RemotingUnitTests
 {
     class RemotingTests;
 };
@@ -37,7 +37,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SetSelfID(const uint64_t selfID);
 
         bool ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd);
-        void ToggleWindowingBehavior();
 
     private:
         Monarch(const uint64_t testPID);
@@ -55,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Windows::Foundation::IInspectable& args);
 
-        friend class RemotingLocalTests::RemotingTests;
+        friend class RemotingUnitTests::RemotingTests;
     };
 }
 

@@ -107,9 +107,6 @@
       <Project>{CA5CAD1A-082C-4476-9F33-94B339494076}</Project>
     </ProjectReference>
 
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\dll\Microsoft.Terminal.Remoting.vcxproj">
-      <Project>{27b5aaeb-a548-44cf-9777-f8baa32af7ae}</Project>
-    </ProjectReference>
   </ItemGroup>
 
   <PropertyGroup>
@@ -135,7 +132,6 @@
   <ItemGroup>
     <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_TerminalApp\TerminalApp.LocalTests.dll" />
     <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_SettingsModel\SettingsModel.LocalTests.dll" />
-    <TestDll Include="$(OpenConsoleCommonOutDir)\LocalTests_Remoting\Remoting.LocalTests.dll" />
   </ItemGroup>
 
   <Target Name="AfterBuild" Inputs="@(TestDll)" Outputs="@(TestDll->'$(TargetDir)'\%(Filename)%(Extension)')">

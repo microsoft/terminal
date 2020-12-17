@@ -178,29 +178,4 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return createNewWindow;
     }
 
-    void Monarch::ToggleWindowingBehavior()
-    {
-        switch (_windowingBehavior)
-        {
-        case WindowingBehavior::UseNew:
-            _windowingBehavior = WindowingBehavior::UseExisting;
-            break;
-        case WindowingBehavior::UseExisting:
-            _windowingBehavior = WindowingBehavior::UseNew;
-            break;
-        }
-
-        printf("windowingBehavior: ");
-        switch (_windowingBehavior)
-        {
-        case WindowingBehavior::UseNew:
-            printf("useNew");
-            break;
-        case WindowingBehavior::UseExisting:
-            printf("useExisting");
-            break;
-        }
-        printf("\n");
-    }
-
 }
