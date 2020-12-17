@@ -11,9 +11,13 @@ using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    Monarch::Monarch()
+    Monarch::Monarch() :
+        _ourPID{ GetCurrentProcessId() }
     {
-        printf("Instantiated a Monarch\n");
+    }
+    Monarch::Monarch(const uint64_t testPID) :
+        _ourPID{ testPID }
+    {
     }
 
     Monarch::~Monarch()
@@ -23,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     uint64_t Monarch::GetPID()
     {
-        return GetCurrentProcessId();
+        return _ourPID;
     }
 
     uint64_t Monarch::AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant)

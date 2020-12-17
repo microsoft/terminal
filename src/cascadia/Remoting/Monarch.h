@@ -18,6 +18,11 @@ enum class WindowingBehavior : uint64_t
     UseExisting = 1,
 };
 
+namespace RemotingLocalTests
+{
+    class RemotingTests;
+};
+
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
     struct Monarch : public MonarchT<Monarch>
@@ -35,6 +40,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void ToggleWindowingBehavior();
 
     private:
+        Monarch(const uint64_t testPID);
+        uint64_t _ourPID;
+
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
         uint64_t _mostRecentPeasant{ 0 };
@@ -46,6 +54,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Windows::Foundation::IInspectable& args);
+
+        friend class RemotingLocalTests::RemotingTests;
     };
 }
 
