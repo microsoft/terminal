@@ -210,8 +210,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Grid.ColumnSpan="2"
                         Orientation="Horizontal"
                         Margin="{StaticResource StandardControlSpacing}">
-                <Button Click="Delete_Click"
-                        Style="{StaticResource BaseButtonStyle}"
+                <Button Style="{StaticResource BaseButtonStyle}"
                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
                     <Button.Resources>
                         <ResourceDictionary>
@@ -252,17 +251,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                                        Margin="10,0,0,0"/>
                         </StackPanel>
                     </Button.Content>
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel>
+                                <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
+                                           Style="{StaticResource CustomFlyoutTextStyle}"/>
+                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        Click="DeleteConfirmation_Click"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
                 </Button>
                 <TextBlock x:Name="DeleteButtonDisclaimer"
                            Style="{StaticResource DisclaimerStyle}"
                            Margin="10,0,0,0"
                            VerticalAlignment="Center"/>
             </StackPanel>
-
-            <ContentDialog x:Load="False"
-                           x:Uid="ColorScheme_DeleteConfirmationDialog"
-                           x:Name="DeleteConfirmationDialog"
-                           DefaultButton="Primary"/>
         </Grid>
     </ScrollViewer>
 </Page>

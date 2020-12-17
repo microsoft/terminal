@@ -140,42 +140,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _State.Profile().ColorSchemeName(val.Name());
     }
 
-    fire_and_forget Profiles::Delete_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        auto dialog{ FindName(L"DeleteConfirmationDialog").try_as<ContentDialog>() };
-        dialog.XamlRoot(sender.as<UIElement>().XamlRoot());
-
-        // IMPORTANT: Set the requested theme of the dialog, because the
-        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
-        // won't inherit our RequestedTheme automagically.
-        // GH#5195, GH#3654 Because we cannot set RequestedTheme at the application level,
-        // we occasionally run into issues where parts of our UI end up themed incorrectly.
-        // Dialogs, for example, live under a different Xaml root element than the rest of
-        // our application. This makes our popup menus and buttons "disappear" when the
-        // user wants Terminal to be in a different theme than the rest of the system.
-        // This hack---and it _is_ a hack--walks up a dialog's ancestry and forces the
-        // theme on each element up to the root. We're relying a bit on Xaml's implementation
-        // details here, but it does have the desired effect.
-        // It's not enough to set the theme on the dialog alone.
-        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _State.Theme() };
-            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
-            while (element)
-            {
-                element.RequestedTheme(theme);
-                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
-            }
-        } };
-
-        themingLambda(dialog, nullptr); // if it's already in the tree
-        auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
-
-        auto dialogResult{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-        if (ContentDialogResult::Primary == dialogResult)
-        {
-            auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
-            state->DeleteProfile();
-        }
+        auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
+        state->DeleteProfile();
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
