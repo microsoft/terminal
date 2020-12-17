@@ -16,6 +16,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _ourPID{ GetCurrentProcessId() }
     {
     }
+
+    // This is a private constructor to be used in unit tests, where we don't
+    // want each Monarch to necessarily use the current PID.
     Monarch::Monarch(const uint64_t testPID) :
         _ourPID{ testPID }
     {
@@ -30,6 +33,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _ourPID;
     }
 
+    // Method Description:
+    // - Add the given peasant to the list of peasants we're tracking. This Peasant may have already been assigned an ID. If it hasn't, then give it an ID.
+    // Arguments:
+    // - peasant: the new Peasant to track.
+    // Return Value:
+    // - the ID assigned to the peasant.
     uint64_t Monarch::AddPeasant(Remoting::IPeasant peasant)
     {
         // TODO:projects/5 This is terrible. There's gotta be a better way
@@ -55,11 +64,20 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
 
         // TODO:projects/5 Wait on the peasant's PID, and remove them from the
-        // map if they die.
+        // map if they die. This won't work great in tests though, with fake
+        // PIDs.
 
         return newPeasantsId;
     }
 
+    // Method Description:
+    // - Event handler for the Peasant::WindowActivated event. Used as an
+    //   opportunity for us to update our internal stack of the "most recent
+    //   window".
+    // Arguments:
+    // - sender: the Peasant that raised this event. This might be out-of-proc!
+    // Return Value:
+    // - <none>
     void Monarch::_peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                           const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
@@ -94,8 +112,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _mostRecentPeasant = peasantID;
     }
 
-    bool Monarch::ProposeCommandline(array_view<const winrt::hstring> /*args*/,
-                                     winrt::hstring /*cwd*/)
+    // Method Description:
+    // - Try to handle a commandline from a new WT invocation. We might need to
+    //   hand the commandline to an existing window, or we might need to tell
+    //   the caller that they need to become a new window to handle it themself.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    bool Monarch::ProposeCommandline(const Remoting::CommandlineArgs& /*args*/)
     {
         // TODO:projects/5
         // The branch dev/migrie/f/remote-commandlines has a more complete

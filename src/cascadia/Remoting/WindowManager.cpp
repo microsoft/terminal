@@ -31,8 +31,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _registrationHostClass = 0;
     }
 
-    void WindowManager::ProposeCommandline(array_view<const winrt::hstring> args,
-                                           const winrt::hstring cwd)
+    void WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args)
     {
         const bool isKing = _areWeTheKing();
         // If we're the king, we _definitely_ want to process the arguments, we were
@@ -40,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // Otherwise, the King will tell us if we should make a new window
         _shouldCreateWindow = isKing ||
-                              _monarch.ProposeCommandline(args, cwd);
+                              _monarch.ProposeCommandline(args);
 
         if (_shouldCreateWindow)
         {
@@ -48,8 +47,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // instance, and tell that peasant to handle that commandline.
             _createOurPeasant();
 
-            auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
-            _peasant.ExecuteCommandline(*eventArgs);
+            _peasant.ExecuteCommandline(args);
         }
         // Othersize, we'll do _nothing_.
     }

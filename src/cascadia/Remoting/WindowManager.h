@@ -12,7 +12,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         WindowManager();
         ~WindowManager();
 
-        void ProposeCommandline(array_view<const winrt::hstring> args, const winrt::hstring cwd);
+        void ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
         bool ShouldCreateWindow();
 
         winrt::Microsoft::Terminal::Remoting::Peasant CurrentWindow();

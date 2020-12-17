@@ -7,6 +7,6 @@ namespace Microsoft.Terminal.Remoting
 
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
-        Boolean ProposeCommandline(String[] args, String cwd);
+        Boolean ProposeCommandline(CommandlineArgs args);
     };
 }

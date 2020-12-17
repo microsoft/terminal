@@ -14,6 +14,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
@@ -147,7 +148,9 @@ void AppHost::_HandleCommandlineArgs()
     std::vector<winrt::hstring> args;
     _buildArgsFromCommandline(args);
     std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
-    _windowManager.ProposeCommandline({ args }, { cwd });
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    _windowManager.ProposeCommandline(eventArgs);
 
     _shouldCreateWindow = _windowManager.ShouldCreateWindow();
     if (!_shouldCreateWindow)

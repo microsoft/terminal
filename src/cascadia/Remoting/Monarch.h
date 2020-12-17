@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant);
 
-        bool ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd);
+        bool ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
 
     private:
         Monarch(const uint64_t testPID);
