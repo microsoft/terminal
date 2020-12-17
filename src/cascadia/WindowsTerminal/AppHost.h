@@ -49,4 +49,7 @@ private:
     // void _RegisterAsMonarch();
     // void _CreateMonarch();
     // bool _ProposeCommandlineToMonarch();
+
+    void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+                              winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);
 };

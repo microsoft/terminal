@@ -45,14 +45,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
             _peasant.ExecuteCommandline(*eventArgs);
-            _shouldCreateWindow = false;
+            _shouldCreateWindow = true;
         }
         else
         {
             // printf("The Monarch instructed us to not create a new window. We'll be exiting now.\n");
+            _shouldCreateWindow = false;
         }
-
-        _shouldCreateWindow = true;
     }
 
     bool WindowManager::ShouldCreateWindow()

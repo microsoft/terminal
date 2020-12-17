@@ -59,6 +59,10 @@ AppHost::AppHost() noexcept :
         {
             return;
         }
+        if (auto peasant{ _windowManager.CurrentWindow() })
+        {
+            peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+        }
     }
 
     // If there were commandline args to our process, try and process them here.
@@ -542,3 +546,9 @@ bool AppHost::HasWindow()
 //     // returns true if we should create a new window
 //     return true;
 // }
+
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+                                   winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
+{
+    _logic.ExecuteCommandline(args.Args());
+}

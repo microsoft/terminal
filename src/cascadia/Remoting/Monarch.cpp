@@ -117,6 +117,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 auto sessionId = std::stoi({ args[2].data(), args[2].size() });
                 printf("Found a commandline intended for session %d\n", sessionId);
+
+                // TODO:MG
+                // HACK: do an args[2:] to slice off the `-w window` args.
+                array_view<const winrt::hstring> argsNoWindow{ args.begin() + 2, args.end() };
                 if (sessionId < 0)
                 {
                     printf("That certainly isn't a valid ID, they should make a new window.\n");
@@ -127,7 +131,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     printf("Session 0 is actually #%llu\n", _mostRecentPeasant);
                     if (auto mruPeasant = _getPeasant(_mostRecentPeasant))
                     {
-                        auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
+                        // TODO In the morning:
+                        // Right now, this commandline includes the "-w window" param, and CLI11 is biting it when parsing that.
+                        // Either:
+                        // * hack yank it for the time being (args[2:])
+                        // * actually have an AppCommandlineArgs do the parsing.
+
+                        auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(argsNoWindow, cwd);
                         mruPeasant.ExecuteCommandline(*eventArgs);
                         createNewWindow = false;
                     }
@@ -136,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 {
                     if (auto otherPeasant = _getPeasant(sessionId))
                     {
-                        auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
+                        auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(argsNoWindow, cwd);
                         otherPeasant.ExecuteCommandline(*eventArgs);
                         createNewWindow = false;
                     }
@@ -163,6 +173,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         return createNewWindow;
     }
+
     void Monarch::ToggleWindowingBehavior()
     {
         switch (_windowingBehavior)
