@@ -33,13 +33,21 @@ the MIT License. See LICENSE in the project root for license information. -->
         </ResourceDictionary>
     </Page.Resources>
 
-    <StackPanel Margin="{StaticResource StandardIndentMargin}">
+    <!--Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.-->
+    <Grid Margin="{StaticResource StandardIndentMargin}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
+                   Grid.Row="0"
                    Style="{StaticResource DisclaimerStyle}"
                    Margin="{StaticResource StandardControlSpacing}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
 
-        <Pivot HorizontalAlignment="Left">
+        <Pivot HorizontalAlignment="Left"
+               Grid.Row="1">
             <!-- General Tab -->
             <PivotItem x:Uid="Profile_General">
                 <ScrollViewer>
@@ -583,5 +591,5 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ScrollViewer>
             </PivotItem>
         </Pivot>
-    </StackPanel>
+    </Grid>
 </Page>
