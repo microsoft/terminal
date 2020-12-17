@@ -68,6 +68,7 @@
     <Style x:Key="DisclaimerStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
         <Setter Property="FontStyle" Value="Italic"/>
+        <Setter Property="TextWrapping" Value="WrapWholeWords"/>
     </Style>
 
     <!--Used for flyout messages-->

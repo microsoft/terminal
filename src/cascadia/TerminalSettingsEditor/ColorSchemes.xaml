@@ -208,10 +208,10 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Grid.Row="2"
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
-                        Orientation="Horizontal"
                         Margin="{StaticResource StandardControlSpacing}">
                 <Button Style="{StaticResource BaseButtonStyle}"
-                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
+                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                        Margin="0,0,0,10">
                     <Button.Resources>
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
@@ -265,7 +265,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </Button>
                 <TextBlock x:Name="DeleteButtonDisclaimer"
                            Style="{StaticResource DisclaimerStyle}"
-                           Margin="10,0,0,0"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>

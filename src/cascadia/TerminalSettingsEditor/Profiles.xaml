@@ -99,11 +99,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Delete Button-->
-                        <StackPanel Orientation="Horizontal"
-                                    Margin="{StaticResource StandardControlSpacing}"
+                        <StackPanel Margin="{StaticResource StandardControlSpacing}"
                                     Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <Button Style="{StaticResource BaseButtonStyle}"
-                                    IsEnabled="{x:Bind State.Profile.CanDeleteProfile}">
+                                    IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
+                                    Margin="0,0,0,10">
                                 <Button.Resources>
                                     <ResourceDictionary>
                                         <ResourceDictionary.ThemeDictionaries>
@@ -157,7 +157,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             </Button>
                             <TextBlock x:Name="DeleteButtonDisclaimer"
                                        Style="{StaticResource DisclaimerStyle}"
-                                       Margin="10,0,0,0"
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                     </StackPanel>
