@@ -371,7 +371,9 @@ Continue to reference `CommonResources.xaml` for appropriate styling and wrap th
 </ContentPresenter>
 ```
 
-**NOTE**: If you are specifically adding a Profile setting, you need to make the setting observable by modifying the `Profiles` files...
+#### Profile Settings
+
+If you are specifically adding a Profile setting, in addition to the steps above, you need to make the setting observable by modifying the `Profiles` files...
 ```c++
 // Profiles.idl --> ProfileViewModel
 // - this declares the setting as observable using the type and the name of the setting
@@ -380,8 +382,13 @@ OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, 
 // Profiles.h --> ProfileViewModel
 // - this defines the setting as observable off of the _profile object
 OBSERVABLE_PROJECTED_SETTING(_profile, CloseOnExit);
+
+// Profiles.h --> ProfileViewModel
+// - if the setting cannot be altered by the user, use the following macro instead:
+PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
 ```
 
+The `ProfilePageNavigationState` holds a `ProfileViewModel`, which wraps the `Profile` object from the Terminal Settings Model. The `ProfileViewModel` makes all of the profile settings observable.
 
 ### Actions
 
