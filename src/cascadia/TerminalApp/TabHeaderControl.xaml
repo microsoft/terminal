@@ -45,7 +45,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                  LostFocus="RenameBoxLostFocusHandler"
                  Height="16"
                  FontSize="12"
-                 BorderThickness="0,0,0,0"
                  IsSpellCheckEnabled="False"
                  MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"/>
     </StackPanel>
