@@ -98,6 +98,8 @@ namespace winrt::TerminalApp::implementation
 
         void _MakeTabViewItem();
 
+        void _SetToolTip(const winrt::hstring& tabTitle);
+
         void _CreateContextMenu() override;
 
         void _RefreshVisualState();

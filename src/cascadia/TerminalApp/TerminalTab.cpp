@@ -50,7 +50,6 @@ namespace winrt::TerminalApp::implementation
                 tab->SetTabText(title);
             }
         });
-
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -74,6 +73,13 @@ namespace winrt::TerminalApp::implementation
 
         UpdateTitle();
         _RecalculateAndApplyTabColor();
+    }
+
+    void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
+    {
+        WUX::Controls::ToolTip toolTip{};
+        toolTip.Content(winrt::box_value(tabTitle));
+        WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 
     // Method Description:
@@ -265,6 +271,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            _SetToolTip(activeTitle);
         }
     }
 
