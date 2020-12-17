@@ -6,7 +6,7 @@
     <x:Double x:Key="StandardFontSize">15.0</x:Double>
     <Thickness x:Key="StandardIndentMargin">20,0,0,0</Thickness>
     <Thickness x:Key="StandardControlSpacing">0,0,0,20</Thickness>
-    <x:Double x:Key="StandardBoxMinWidth">300</x:Double>
+    <x:Double x:Key="StandardBoxMinWidth">200</x:Double>
 
     <!-- This is for easier transition to the SettingsContainer control.
          The SettingsContainer will wrap a setting with inheritance UI.-->
