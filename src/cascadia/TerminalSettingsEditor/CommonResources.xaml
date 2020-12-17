@@ -5,12 +5,13 @@
 
     <x:Double x:Key="StandardFontSize">15.0</x:Double>
     <Thickness x:Key="StandardIndentMargin">20,0,0,0</Thickness>
-    <x:Double x:Key="StandardBoxMinWidth">300</x:Double>
+    <Thickness x:Key="StandardControlSpacing">0,0,0,20</Thickness>
+    <x:Double x:Key="StandardBoxMinWidth">200</x:Double>
 
     <!-- This is for easier transition to the SettingsContainer control.
          The SettingsContainer will wrap a setting with inheritance UI.-->
     <Style x:Key="SettingContainerStyle" TargetType="ContentPresenter">
-        <Setter Property="Padding" Value="0,0,0,20"/>
+        <Setter Property="Padding" Value="{StaticResource StandardControlSpacing}"/>
     </Style>
 
     <!--Used to stack a group of settings-->
@@ -63,6 +64,20 @@
         <Setter Property="Margin" Value="0,20,0,10"/>
     </Style>
 
+    <!--Used for disclaimers-->
+    <Style x:Key="DisclaimerStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="FontStyle" Value="Italic"/>
+        <Setter Property="TextWrapping" Value="WrapWholeWords"/>
+    </Style>
+
+    <!--Used for flyout messages-->
+    <Style x:Key="CustomFlyoutTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
+        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
     <!--Number Box-->
     <Style x:Key="NumberBoxSettingStyle" TargetType="muxc:NumberBox">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
@@ -74,9 +89,17 @@
     <!--Button-Related Styling-->
     <Style x:Key="BaseButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
     <Style x:Key="BrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+
+    <Style x:Key="AccentBrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="Margin" Value="10,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
     </Style>
@@ -105,5 +128,4 @@
         <Setter Property="Width" Value="300"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
-
 </ResourceDictionary>
