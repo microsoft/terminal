@@ -89,6 +89,13 @@
         <Setter Property="VerticalAlignment" Value="Bottom"/>
     </Style>
 
+    <Style x:Key="AccentBrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+        <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+
     <!--Slider-Related Styling-->
     <Style x:Key="SliderSettingStyle" TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}">
         <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>

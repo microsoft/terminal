@@ -43,6 +43,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
+            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -64,29 +65,46 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
                         Margin="{StaticResource StandardControlSpacing}">
-                <ComboBox x:Name="ColorSchemeComboBox"
-                          Grid.Row="0"
-                          Grid.Column="0"
-                          Grid.ColumnSpan="2"
-                          SelectedIndex="0"
-                          ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                          SelectionChanged="ColorSchemeSelectionChanged"
-                          Style="{StaticResource ComboBoxSettingStyle}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="model:ColorScheme">
-                            <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
 
-                <!--Rename Button-->
-                <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
-                <Button x:Uid="ColorScheme_Rename"
-                        Style="{StaticResource BrowseButtonStyle}"
-                        Click="Rename_Click"
-                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
-                    <FontIcon Glyph="&#xE8AC;"/>
-                </Button>
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
+                    <!--Select a color scheme-->
+                    <ComboBox x:Name="ColorSchemeComboBox"
+                              SelectedIndex="0"
+                              ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                              SelectionChanged="ColorSchemeSelectionChanged"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:ColorScheme">
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!--Rename Button-->
+                    <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
+                    <Button x:Uid="ColorScheme_Rename"
+                            Style="{StaticResource BrowseButtonStyle}"
+                            Click="Rename_Click"
+                            IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
+                        <FontIcon Glyph="&#xE8AC;"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{x:Bind IsRenaming, Mode=OneWay}">
+                    <TextBox x:Name="NameBox"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             PreviewKeyDown="NameBox_PreviewKeyDown"/>
+                    <Button Style="{StaticResource AccentBrowseButtonStyle}"
+                            Click="RenameAccept_Click">
+                        <FontIcon Glyph="&#xE8FB;"/>
+                    </Button>
+                    <Button Style="{StaticResource BrowseButtonStyle}"
+                            Click="RenameCancel_Click">
+                        <FontIcon Glyph="&#xE711;"/>
+                    </Button>
+                </StackPanel>
 
                 <!--Add new button-->
                 <Button Click="AddNew_Click"
@@ -238,15 +256,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                            Margin="10,0,0,0"
                            VerticalAlignment="Center"/>
             </StackPanel>
-
-            <ContentDialog x:Load="False"
-                           x:Uid="ColorScheme_RenameDialog"
-                           x:Name="RenameDialog"
-                           DefaultButton="Primary">
-                <TextBox x:Uid="ColorScheme_Name"
-                         x:Name="NameBox"
-                         Style="{StaticResource TextBoxSettingStyle}"/>
-            </ContentDialog>
         </Grid>
     </ScrollViewer>
 </Page>

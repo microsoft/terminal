@@ -99,7 +99,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
         }
         DeleteButtonDisclaimer().Text(disclaimer);
+
+        // Update the state of the page
         _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+        IsRenaming(false);
     }
 
     // Function Description:
@@ -187,52 +190,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ColorSchemeComboBox().SelectedItem(scheme);
     }
 
-    winrt::fire_and_forget ColorSchemes::Rename_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
+    // Function Description:
+    // - Pre-populates/focuses the name TextBox, updates the UI
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void ColorSchemes::Rename_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        const auto schemeName{ CurrentColorScheme().Name() };
-        const hstring title{ fmt::format(std::wstring_view{ RS_(L"ColorScheme_RenameDialog/Title") }, schemeName) };
+        NameBox().Text(CurrentColorScheme().Name());
+        IsRenaming(true);
+        NameBox().Focus(FocusState::Programmatic);
+        NameBox().SelectAll();
+    }
 
-        auto dialog{ FindName(L"RenameDialog").try_as<ContentDialog>() };
-        dialog.Title(winrt::box_value(title));
-        dialog.XamlRoot(sender.as<UIElement>().XamlRoot());
+    void ColorSchemes::RenameAccept_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        CurrentColorScheme().Name(NameBox().Text());
+        IsRenaming(false);
 
-        NameBox().Text(schemeName);
+        // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
+        // We need to manually force the ComboBox to refresh itself.
+        const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
+        ColorSchemeComboBox().SelectedIndex(selectedIndex + 1 % ColorSchemeList().Size());
+        ColorSchemeComboBox().SelectedIndex(selectedIndex);
+    }
 
-        // IMPORTANT: Set the requested theme of the dialog, because the
-        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
-        // won't inherit our RequestedTheme automagically.
-        // GH#5195, GH#3654 Because we cannot set RequestedTheme at the application level,
-        // we occasionally run into issues where parts of our UI end up themed incorrectly.
-        // Dialogs, for example, live under a different Xaml root element than the rest of
-        // our application. This makes our popup menus and buttons "disappear" when the
-        // user wants Terminal to be in a different theme than the rest of the system.
-        // This hack---and it _is_ a hack--walks up a dialog's ancestry and forces the
-        // theme on each element up to the root. We're relying a bit on Xaml's implementation
-        // details here, but it does have the desired effect.
-        // It's not enough to set the theme on the dialog alone.
-        auto themingLambda{ [this](const Windows::Foundation::IInspectable& sender, const RoutedEventArgs&) {
-            auto theme{ _State.Theme() };
-            auto element{ sender.try_as<winrt::Windows::UI::Xaml::FrameworkElement>() };
-            while (element)
-            {
-                element.RequestedTheme(theme);
-                element = element.Parent().try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
-            }
-        } };
+    void ColorSchemes::RenameCancel_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        IsRenaming(false);
+    }
 
-        themingLambda(dialog, nullptr); // if it's already in the tree
-        auto loadedRevoker{ dialog.Loaded(winrt::auto_revoke, themingLambda) }; // if it's not yet in the tree
-
-        auto dialogResult{ co_await dialog.ShowAsync(ContentDialogPlacement::Popup) };
-        if (ContentDialogResult::Primary == dialogResult)
+    void ColorSchemes::NameBox_PreviewKeyDown(IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
-            CurrentColorScheme().Name(NameBox().Text());
-
-            // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
-            // We need to manually force the ComboBox to refresh itself.
-            const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-            ColorSchemeComboBox().SelectedIndex(selectedIndex + 1 % ColorSchemeList().Size());
-            ColorSchemeComboBox().SelectedIndex(selectedIndex);
+            IsRenaming(false);
+            e.Handled(true);
         }
     }
 

@@ -762,16 +762,6 @@
     <value>Open your settings.json file. Alt+Click to open your defaults.json file.</value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
   </data>
-  <data name="ColorScheme_RenameDialog.CloseButtonText" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="ColorScheme_RenameDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Save</value>
-  </data>
-  <data name="ColorScheme_RenameDialog.Title" xml:space="preserve">
-    <value>Rename "{}"</value>
-    <comment>Use '{}' to denote placement for the color scheme name to be renamed</comment>
-  </data>
   <data name="ColorScheme_DeleteButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Delete the current color scheme.</value>
   </data>
