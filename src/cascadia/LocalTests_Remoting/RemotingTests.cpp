@@ -12,6 +12,12 @@ using namespace WEX::Common;
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 
+#define MAKE_MONARCH(name, pid)                               \
+    Remoting::implementation::Monarch _local_##name##{ pid }; \
+    com_ptr<Remoting::implementation::Monarch> name;          \
+    name.attach(&_local_##name##);                            \
+    auto cleanup = wil::scope_exit([&]() { name.detach(); });
+
 namespace RemotingLocalTests
 {
     // TODO:microsoft/terminal#3838:
@@ -50,11 +56,8 @@ namespace RemotingLocalTests
         Log::Comment(L"That's what we need for window process management, but for tests, it'll be more useful to fake the PIDs.");
 
         auto expectedFakePID = 1234u;
-        Remoting::implementation::Monarch foo{ expectedFakePID };
-        com_ptr<Remoting::implementation::Monarch> m2;
-        m2.attach(&foo);
-        auto cleanup = wil::scope_exit([&]() { m2.detach(); });
-        // auto m2 = winrt::make_self<Remoting::implementation::Monarch>(expectedFakePID);
+        MAKE_MONARCH(m2, expectedFakePID);
+
         VERIFY_IS_NOT_NULL(m2);
         VERIFY_ARE_EQUAL(expectedFakePID,
                          m2->GetPID(),
