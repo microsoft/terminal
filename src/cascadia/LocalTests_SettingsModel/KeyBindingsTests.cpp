@@ -48,6 +48,9 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestScrollArgs);
 
+        TEST_METHOD(TestToggleCommandPaletteArgs);
+        TEST_METHOD(TestMoveTabArgs);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -408,7 +411,7 @@ namespace SettingsModelLocalTests
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.TabColor());
             // Remember that COLORREFs are actually BBGGRR order, while the string is in #RRGGBB order
-            VERIFY_ARE_EQUAL(static_cast<uint32_t>(til::color(0x563412)), realArgs.TabColor().Value());
+            VERIFY_ARE_EQUAL(til::color(0x563412), til::color(realArgs.TabColor().Value()));
         }
         {
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
@@ -522,6 +525,108 @@ namespace SettingsModelLocalTests
         }
         {
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "scrollDown", "rowsToScroll": -1 } }])" };
+            const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
+            auto invalidKeyMap = winrt::make_self<implementation::KeyMapping>();
+            VERIFY_IS_NOT_NULL(invalidKeyMap);
+            VERIFY_ARE_EQUAL(0u, invalidKeyMap->_keyShortcuts.size());
+            VERIFY_THROWS(invalidKeyMap->LayerJson(bindingsInvalidJson);, std::exception);
+        }
+    }
+
+    void KeyBindingsTests::TestMoveTabArgs()
+    {
+        const std::string bindings0String{ R"([
+            { "keys": ["up"], "command": { "action": "moveTab", "direction": "forward" } },
+            { "keys": ["down"], "command": { "action": "moveTab", "direction": "backward" } }
+        ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto keymap = winrt::make_self<implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(2u, keymap->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ false, false, false, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::MoveTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<MoveTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(realArgs.Direction(), MoveTabDirection::Forward);
+        }
+        {
+            KeyChord kc{ false, false, false, static_cast<int32_t>(VK_DOWN) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::MoveTab, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<MoveTabArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(realArgs.Direction(), MoveTabDirection::Backward);
+        }
+        {
+            const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": "moveTab" }])" };
+            auto keyMapNoArgs = winrt::make_self<implementation::KeyMapping>();
+            keyMapNoArgs->LayerJson(bindingsInvalidString);
+            VERIFY_ARE_EQUAL(0u, keyMapNoArgs->_keyShortcuts.size());
+        }
+        {
+            const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "moveTab", "direction": "bad" } }])" };
+            const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
+            auto invalidKeyMap = winrt::make_self<implementation::KeyMapping>();
+            VERIFY_IS_NOT_NULL(invalidKeyMap);
+            VERIFY_ARE_EQUAL(0u, invalidKeyMap->_keyShortcuts.size());
+            VERIFY_THROWS(invalidKeyMap->LayerJson(bindingsInvalidJson);, std::exception);
+        }
+    }
+
+    void KeyBindingsTests::TestToggleCommandPaletteArgs()
+    {
+        const std::string bindings0String{ R"([
+            { "keys": ["up"], "command": "commandPalette" },
+            { "keys": ["ctrl+up"], "command": { "action": "commandPalette", "launchMode" : "action" } },
+            { "keys": ["ctrl+shift+up"], "command": { "action": "commandPalette", "launchMode" : "commandLine" } }
+        ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+
+        auto keymap = winrt::make_self<implementation::KeyMapping>();
+        VERIFY_IS_NOT_NULL(keymap);
+        VERIFY_ARE_EQUAL(0u, keymap->_keyShortcuts.size());
+        keymap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(3u, keymap->_keyShortcuts.size());
+
+        {
+            KeyChord kc{ false, false, false, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ToggleCommandPalette, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ToggleCommandPaletteArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(realArgs.LaunchMode(), CommandPaletteLaunchMode::Action);
+        }
+        {
+            KeyChord kc{ true, false, false, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ToggleCommandPalette, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ToggleCommandPaletteArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(realArgs.LaunchMode(), CommandPaletteLaunchMode::Action);
+        }
+        {
+            KeyChord kc{ true, false, true, static_cast<int32_t>(VK_UP) };
+            auto actionAndArgs = ::TestUtils::GetActionAndArgs(*keymap, kc);
+            VERIFY_ARE_EQUAL(ShortcutAction::ToggleCommandPalette, actionAndArgs.Action());
+            const auto& realArgs = actionAndArgs.Args().try_as<ToggleCommandPaletteArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(realArgs.LaunchMode(), CommandPaletteLaunchMode::CommandLine);
+        }
+        {
+            const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "commandPalette", "launchMode": "bad" } }])" };
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidKeyMap = winrt::make_self<implementation::KeyMapping>();
             VERIFY_IS_NOT_NULL(invalidKeyMap);

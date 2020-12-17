@@ -11,34 +11,34 @@
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
 
-#include "..\..\inc\conint.h"
+#include "../../inc/conint.h"
 
-#include "..\..\host\globals.h"
-#include "..\..\host\dbcs.h"
-#include "..\..\host\getset.h"
-#include "..\..\host\misc.h"
-#include "..\..\host\_output.h"
-#include "..\..\host\output.h"
-#include "..\..\host\renderData.hpp"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\srvinit.h"
-#include "..\..\host\stream.h"
-#include "..\..\host\telemetry.hpp"
-#include "..\..\host\tracing.hpp"
+#include "../../host/globals.h"
+#include "../../host/dbcs.h"
+#include "../../host/getset.h"
+#include "../../host/misc.h"
+#include "../../host/_output.h"
+#include "../../host/output.h"
+#include "../../host/renderData.hpp"
+#include "../../host/scrolling.hpp"
+#include "../../host/srvinit.h"
+#include "../../host/stream.h"
+#include "../../host/telemetry.hpp"
+#include "../../host/tracing.hpp"
 
-#include "..\..\renderer\base\renderer.hpp"
-#include "..\..\renderer\gdi\gdirenderer.hpp"
+#include "../../renderer/base/renderer.hpp"
+#include "../../renderer/gdi/gdirenderer.hpp"
 
 #ifndef __INSIDE_WINDOWS
-#include "..\..\renderer\dx\DxRenderer.hpp"
+#include "../../renderer/dx/DxRenderer.hpp"
 #else
 // Forward-declare this so we don't blow up later.
 struct DxEngine;
 #endif
 
-#include "..\inc\ServiceLocator.hpp"
-#include "..\..\types\inc\Viewport.hpp"
-#include "..\interactivity\win32\windowUiaProvider.hpp"
+#include "../inc/ServiceLocator.hpp"
+#include "../../types/inc/Viewport.hpp"
+#include "../interactivity/win32/windowUiaProvider.hpp"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
@@ -351,8 +351,6 @@ void Window::_UpdateSystemMetrics() const
                     {
                         SendMessageW(hWnd, WM_SETHOTKEY, gci.GetHotKey(), 0);
                     }
-
-                    ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
 
                     // Post a window size update so that the new console window will size itself correctly once it's up and
                     // running. This works around chicken & egg cases involving window size calculations having to do with font

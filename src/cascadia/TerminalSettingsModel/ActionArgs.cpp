@@ -22,6 +22,8 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "MoveTabArgs.g.cpp"
+#include "ToggleCommandPaletteArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -56,6 +58,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             ss << fmt::format(L"title: {}, ", _TabTitle);
         }
+
+        if (_TabColor)
+        {
+            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
+        }
+
         auto s = ss.str();
         if (s.empty())
         {
@@ -300,10 +309,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // "Reset tab color"
         if (_TabColor)
         {
-            til::color c{ _TabColor.Value() };
+            til::color tabColor{ _TabColor.Value() };
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"SetTabColorCommandKey")),
-                            c.ToHexString(true))
+                            tabColor.ToHexString(true))
             };
         }
 
@@ -385,5 +394,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ScrollDownCommandKey");
+    }
+
+    winrt::hstring MoveTabArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (_Direction)
+        {
+        case MoveTabDirection::Forward:
+            directionString = RS_(L"MoveTabDirectionForward");
+            break;
+        case MoveTabDirection::Backward:
+            directionString = RS_(L"MoveTabDirectionBackward");
+            break;
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"MoveTabCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring ToggleCommandPaletteArgs::GenerateName() const
+    {
+        if (_LaunchMode == CommandPaletteLaunchMode::CommandLine)
+        {
+            return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
+        }
+        return RS_(L"ToggleCommandPaletteCommandKey");
     }
 }

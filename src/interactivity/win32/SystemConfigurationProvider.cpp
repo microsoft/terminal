@@ -6,7 +6,7 @@
 #include "SystemConfigurationProvider.hpp"
 
 #include "icon.hpp"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 

@@ -6,7 +6,7 @@
 #include "WindowMetrics.hpp"
 
 #include "windowdpiapi.hpp"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

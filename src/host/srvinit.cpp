@@ -14,11 +14,11 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\server\Entrypoints.h"
-#include "..\server\IoSorter.h"
+#include "../server/Entrypoints.h"
+#include "../server/IoSorter.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\interactivity\base\ApiDetector.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../interactivity/base/ApiDetector.hpp"
 
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
@@ -177,10 +177,6 @@ static bool s_IsOnDesktop()
         {
             // Fallback to per-monitor aware V1 if the API isn't available.
             LOG_IF_FAILED(pHighDpiApi->SetProcessPerMonitorDpiAwareness());
-
-            // Allow child dialogs (i.e. Properties and Find) to scale automatically based on DPI if we're currently DPI aware.
-            // Note that we don't need to do this if we're PMv2.
-            pHighDpiApi->EnablePerMonitorDialogScaling();
         }
     }
 

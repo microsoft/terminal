@@ -232,9 +232,19 @@ namespace winrt::TerminalApp::implementation
             _CloseTabsAfterHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::MoveTab:
+        {
+            _MoveTabHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::TabSearch:
         {
             _TabSearchHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::BreakIntoDebugger:
+        {
+            _BreakIntoDebuggerHandlers(*this, eventArgs);
             break;
         }
         default:

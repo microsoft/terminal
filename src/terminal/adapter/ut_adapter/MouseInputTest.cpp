@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include "..\terminal\input\terminalInput.hpp"
+#include "../terminal/input/terminalInput.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -186,8 +186,10 @@ public:
             wch = L'\x0';
             break;
         }
-        // MK_SHIFT is ignored by the translator
-        wch += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
+        // Use Any here with the multi-flag constants -- they capture left/right key state
+        WI_UpdateFlag(wch, 0x04, WI_IsAnyFlagSet(sModifierKeystate, SHIFT_PRESSED));
+        WI_UpdateFlag(wch, 0x08, WI_IsAnyFlagSet(sModifierKeystate, ALT_PRESSED));
+        WI_UpdateFlag(wch, 0x10, WI_IsAnyFlagSet(sModifierKeystate, CTRL_PRESSED));
         return wch;
     }
 
@@ -222,8 +224,10 @@ public:
             result = 0;
             break;
         }
-        // MK_SHIFT and MK_ALT is ignored by the translator
-        result += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
+        // Use Any here with the multi-flag constants -- they capture left/right key state
+        WI_UpdateFlag(result, 0x04, WI_IsAnyFlagSet(sModifierKeystate, SHIFT_PRESSED));
+        WI_UpdateFlag(result, 0x08, WI_IsAnyFlagSet(sModifierKeystate, ALT_PRESSED));
+        WI_UpdateFlag(result, 0x10, WI_IsAnyFlagSet(sModifierKeystate, CTRL_PRESSED));
         return result;
     }
 
@@ -274,8 +278,8 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
             TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
-            // None, MK_SHIFT, MK_CONTROL
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -357,7 +361,8 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
             TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -443,7 +448,8 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_MOUSEMOVE}")
             TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205, 0x0200}")
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -523,7 +529,8 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:sScrollDelta", L"{-120, 120, -10000, 32736}")
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");

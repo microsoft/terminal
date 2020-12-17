@@ -24,11 +24,11 @@ Revision History:
 #include "VtIo.hpp"
 #include "CursorBlinker.hpp"
 
-#include "..\server\ProcessList.h"
-#include "..\server\WaitQueue.h"
+#include "../server/ProcessList.h"
+#include "../server/WaitQueue.h"
 
-#include "..\host\RenderData.hpp"
-#include "..\renderer\inc\BlinkingState.hpp"
+#include "../host/RenderData.hpp"
+#include "../renderer/inc/BlinkingState.hpp"
 
 // clang-format off
 // Flags flags
@@ -169,6 +169,6 @@ private:
 #define CONSOLE_STATUS_READ_COMPLETE 0xC0030002
 #define CONSOLE_STATUS_WAIT_NO_BLOCK 0xC0030003
 
-#include "..\server\ObjectHandle.h"
+#include "../server/ObjectHandle.h"
 
 void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo);

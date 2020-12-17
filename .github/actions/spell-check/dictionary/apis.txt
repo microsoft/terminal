@@ -46,6 +46,7 @@ NCRBUTTONDBLCLK
 NOAGGREGATION
 NOPROGRESS
 NOREDIRECTIONBITMAP
+ntprivapi
 oaidl
 ocidl
 otms
@@ -60,6 +61,7 @@ rx
 schandle
 semver
 serializer
+shobjidl
 SIZENS
 spsc
 sregex

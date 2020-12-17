@@ -282,6 +282,8 @@ void CascadiaSettings::_ValidateSettings()
     // This will also catch other keybinding warnings, like from GH#4239
     _ValidateKeybindings();
 
+    _ValidateColorSchemesInCommands();
+
     _ValidateNoGlobalsKey();
 }
 
@@ -695,6 +697,64 @@ void CascadiaSettings::_ValidateKeybindings()
             _warnings.Append(warning);
         }
     }
+}
+
+// Method Description:
+// - Ensures that every "setColorScheme" command has a valid "color scheme" set.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::InvalidColorSchemeInCmd to our list of warnings if
+//   we find any command with an invalid color scheme.
+void CascadiaSettings::_ValidateColorSchemesInCommands()
+{
+    bool foundInvalidScheme{ false };
+    for (const auto& nameAndCmd : _globals->Commands())
+    {
+        if (_HasInvalidColorScheme(nameAndCmd.Value()))
+        {
+            foundInvalidScheme = true;
+            break;
+        }
+    }
+
+    if (foundInvalidScheme)
+    {
+        _warnings.Append(SettingsLoadWarnings::InvalidColorSchemeInCmd);
+    }
+}
+
+bool CascadiaSettings::_HasInvalidColorScheme(const Model::Command& command)
+{
+    bool invalid{ false };
+    if (command.HasNestedCommands())
+    {
+        for (const auto& nested : command.NestedCommands())
+        {
+            if (_HasInvalidColorScheme(nested.Value()))
+            {
+                invalid = true;
+                break;
+            }
+        }
+    }
+    else if (const auto& actionAndArgs = command.Action())
+    {
+        if (const auto& realArgs = actionAndArgs.Args().try_as<Model::SetColorSchemeArgs>())
+        {
+            auto cmdImpl{ winrt::get_self<Command>(command) };
+            // no need to validate iterable commands on color schemes
+            // they will be expanded to commands with a valid scheme name
+            if (cmdImpl->IterateOn() != ExpandCommandType::ColorSchemes &&
+                !_globals->ColorSchemes().HasKey(realArgs.SchemeName()))
+            {
+                invalid = true;
+            }
+        }
+    }
+
+    return invalid;
 }
 
 // Method Description:

@@ -11,6 +11,43 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
+    static std::tuple<Windows::UI::Xaml::HorizontalAlignment, Windows::UI::Xaml::VerticalAlignment> ConvertConvergedAlignment(ConvergedAlignment alignment)
+    {
+        // extract horizontal alignment
+        Windows::UI::Xaml::HorizontalAlignment horizAlign;
+        switch (alignment & static_cast<ConvergedAlignment>(0x0F))
+        {
+        case ConvergedAlignment::Horizontal_Left:
+            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Left;
+            break;
+        case ConvergedAlignment::Horizontal_Right:
+            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Right;
+            break;
+        case ConvergedAlignment::Horizontal_Center:
+        default:
+            horizAlign = Windows::UI::Xaml::HorizontalAlignment::Center;
+            break;
+        }
+
+        // extract vertical alignment
+        Windows::UI::Xaml::VerticalAlignment vertAlign;
+        switch (alignment & static_cast<ConvergedAlignment>(0xF0))
+        {
+        case ConvergedAlignment::Vertical_Top:
+            vertAlign = Windows::UI::Xaml::VerticalAlignment::Top;
+            break;
+        case ConvergedAlignment::Vertical_Bottom:
+            vertAlign = Windows::UI::Xaml::VerticalAlignment::Bottom;
+            break;
+        case ConvergedAlignment::Vertical_Center:
+        default:
+            vertAlign = Windows::UI::Xaml::VerticalAlignment::Center;
+            break;
+        }
+
+        return { horizAlign, vertAlign };
+    }
+
     TerminalSettings::TerminalSettings(const CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings) :
         _KeyBindings{ keybindings }
     {
@@ -60,6 +97,10 @@ namespace winrt::TerminalApp::implementation
             if (!newTerminalArgs.TabTitle().empty())
             {
                 settings.StartingTitle(newTerminalArgs.TabTitle());
+            }
+            if (newTerminalArgs.TabColor())
+            {
+                settings.StartingTabColor(static_cast<uint32_t>(til::color(newTerminalArgs.TabColor().Value())));
             }
         }
 
@@ -138,9 +179,7 @@ namespace winrt::TerminalApp::implementation
 
         _BackgroundImageOpacity = profile.BackgroundImageOpacity();
         _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
-
-        _BackgroundImageHorizontalAlignment = profile.BackgroundImageHorizontalAlignment();
-        _BackgroundImageVerticalAlignment = profile.BackgroundImageVerticalAlignment();
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(profile.BackgroundImageAlignment());
 
         _RetroTerminalEffect = profile.RetroTerminalEffect();
 

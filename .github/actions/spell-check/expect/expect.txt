@@ -167,6 +167,7 @@ bmp
 BOLDFONT
 BOOLIFY
 bools
+boostorg
 Bopomofo
 Borland
 BOTTOMLEFT
@@ -1062,7 +1063,9 @@ IFont
 ifstream
 IGNOREEND
 IHigh
+IHosted
 iid
+IInitialize
 IInput
 IInspectable
 IInteract
@@ -2835,3 +2838,4 @@ BBBBBCCC
 abcd
 LPMINMAXINFO
 MINMAXINFO
+lstrcmpi
