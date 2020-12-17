@@ -287,17 +287,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Determines whether the focused pane has sufficient space to be split.
-    // Arguments:
-    // - splitType: The type of split we want to create.
-    // Return Value:
-    // - True if the focused pane can be split. False otherwise.
-    bool TerminalTab::CanSplitPane(SplitState splitType)
-    {
-        return _activePane->CanSplit(splitType);
-    }
-
-    // Method Description:
     // - Split the focused pane in our tree of panes, and place the
     //   given TermControl into the newly created pane.
     // Arguments:
@@ -939,9 +928,11 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
-    bool TerminalTab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
+    bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
+                                           const float splitSize,
+                                           winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
     }
 
     // Method Description:

@@ -811,7 +811,7 @@ namespace winrt::TerminalApp::implementation
             TermControl newControl{ settings, debugConnection };
             _RegisterTerminalEvents(newControl, *newTabImpl);
             // Split (auto) with the debug tap.
-            newTabImpl->SplitPane(SplitState::Automatic, .5f, profileGuid, newControl);
+            newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
         }
 
         // This kicks off TabView::SelectionChanged, in response to which
@@ -1650,7 +1650,7 @@ namespace winrt::TerminalApp::implementation
                 realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
             }
 
-            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, availableSpace);
+            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
             if (!canSplit)
             {
                 return;

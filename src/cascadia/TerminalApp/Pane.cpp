@@ -21,7 +21,6 @@ using namespace TerminalApp;
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
-static const float Half = 0.50f;
 
 // WARNING: Don't do this! This won't work
 //   Duration duration{ std::chrono::milliseconds{ 200 } };
@@ -1217,32 +1216,6 @@ void Pane::_SetupEntranceAnimation()
 }
 
 // Method Description:
-// - Determines whether the pane can be split
-// Arguments:
-// - splitType: what type of split we want to create.
-// Return Value:
-// - True if the pane can be split. False otherwise.
-bool Pane::CanSplit(SplitState splitType)
-{
-    if (_IsLeaf())
-    {
-        return _CanSplit(splitType);
-    }
-
-    if (_firstChild->_HasFocusedChild())
-    {
-        return _firstChild->CanSplit(splitType);
-    }
-
-    if (_secondChild->_HasFocusedChild())
-    {
-        return _secondChild->CanSplit(splitType);
-    }
-
-    return false;
-}
-
-// Method Description:
 // - This is a helper to determine if a given Pane can be split, but without
 //   using the ActualWidth() and ActualHeight() methods. This is used during
 //   processing of many "split-pane" commands, which could happen _before_ we've
@@ -1271,14 +1244,16 @@ bool Pane::CanSplit(SplitState splitType)
 // Note:
 // - This method is highly similar to Pane::PreCalculateAutoSplit
 std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                               // TODO: const float splitSize
                                                SplitState splitType,
+                                               const float splitSize,
                                                const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (_IsLeaf())
     {
         if (target.get() == this)
         {
+            const auto firstPrecent = 1.0f - splitSize;
+            const auto secondPercent = splitSize;
             // If this pane is a leaf, and it's the pane we're looking for, use
             // the available space to calculate which direction to split in.
             const Size minSize = _GetMinSize();
@@ -1291,17 +1266,19 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             else if (splitType == SplitState::Vertical)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
-                const auto newWidth = widthMinusSeparator * Half;
+                const auto newFirstWidth = widthMinusSeparator * firstPrecent;
+                const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
-                return { newWidth > minSize.Width };
+                return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
             }
 
             else if (splitType == SplitState::Horizontal)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
-                const auto newHeight = heightMinusSeparator * Half;
+                const auto newFirstHeight = heightMinusSeparator * firstPrecent;
+                const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
-                return { newHeight > minSize.Height };
+                return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
             }
         }
         else
@@ -1330,8 +1307,8 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                                        (availableSpace.Height - firstHeight) - PaneBorderSize :
                                        availableSpace.Height;
 
-        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, { firstWidth, firstHeight });
-        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, { secondWidth, secondHeight });
+        const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, splitSize, { firstWidth, firstHeight });
+        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, splitSize, { secondWidth, secondHeight });
     }
 
     // We should not possibly be getting here - both the above branches should
@@ -1394,45 +1371,6 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
     return splitType;
-}
-
-// Method Description:
-// - Determines whether the pane can be split.
-// Arguments:
-// - splitType: what type of split we want to create.
-// Return Value:
-// - True if the pane can be split. False otherwise.
-bool Pane::_CanSplit(SplitState splitType)
-{
-    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                           gsl::narrow_cast<float>(_root.ActualHeight()) };
-
-    const Size minSize = _GetMinSize();
-
-    auto actualSplitType = _convertAutomaticSplitState(splitType);
-
-    if (actualSplitType == SplitState::None)
-    {
-        return false;
-    }
-
-    if (actualSplitType == SplitState::Vertical)
-    {
-        const auto widthMinusSeparator = actualSize.Width - CombinedPaneBorderSize;
-        const auto newWidth = widthMinusSeparator * Half;
-
-        return newWidth > minSize.Width;
-    }
-
-    if (actualSplitType == SplitState::Horizontal)
-    {
-        const auto heightMinusSeparator = actualSize.Height - CombinedPaneBorderSize;
-        const auto newHeight = heightMinusSeparator * Half;
-
-        return newHeight > minSize.Height;
-    }
-
-    return false;
 }
 
 // Method Description:
