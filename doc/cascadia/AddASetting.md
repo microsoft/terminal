@@ -384,7 +384,7 @@ OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, 
 OBSERVABLE_PROJECTED_SETTING(_profile, CloseOnExit);
 
 // Profiles.h --> ProfileViewModel
-// - if the setting cannot be altered by the user, use the following macro instead:
+// - if the setting cannot be inherited by another profile (aka missing the Clear() function), use the following macro instead:
 PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
 ```
 
