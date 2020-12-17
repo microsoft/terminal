@@ -15,8 +15,8 @@
     <ClCompile Include="..\ApiMessage.cpp" />
     <ClCompile Include="..\ApiMessageState.cpp" />
     <ClCompile Include="..\ApiSorter.cpp" />
+    <ClCompile Include="..\ConDrvDeviceComm.cpp" />
     <ClCompile Include="..\ConsoleShimPolicy.cpp" />
-    <ClCompile Include="..\DeviceComm.cpp" />
     <ClCompile Include="..\DeviceHandle.cpp" />
     <ClCompile Include="..\Entrypoints.cpp" />
     <ClCompile Include="..\IoDispatchers.cpp" />

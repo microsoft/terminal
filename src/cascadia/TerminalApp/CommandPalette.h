@@ -5,6 +5,7 @@
 
 #include "FilteredCommand.h"
 #include "CommandPalette.g.h"
+#include "AppCommandlineArgs.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
@@ -55,6 +56,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, PrefixCharacter, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
 
         TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
         TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
@@ -87,6 +89,9 @@ namespace winrt::TerminalApp::implementation
         void _updateUIForStackChange();
 
         void _rootPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+
+        void _lostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+
         void _backdropPointerPressed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
         void _listItemClicked(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::ItemClickEventArgs const& e);
@@ -130,6 +135,7 @@ namespace winrt::TerminalApp::implementation
 
         static constexpr int CommandLineHistoryLength = 10;
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
+        ::TerminalApp::AppCommandlineArgs _appArgs;
 
         friend class TerminalAppLocalTests::TabTests;
     };

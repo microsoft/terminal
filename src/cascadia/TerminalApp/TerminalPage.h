@@ -115,6 +115,8 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateTabIndices();
 
+        TerminalApp::SettingsTab _settingsTab{ nullptr };
+
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
         bool _isAlwaysOnTop{ false };
@@ -175,7 +177,7 @@ namespace winrt::TerminalApp::implementation
 
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const uint32_t tabIndex);
-        void _MoveFocus(const Microsoft::Terminal::Settings::Model::Direction& direction);
+        void _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
@@ -191,8 +193,9 @@ namespace winrt::TerminalApp::implementation
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
-        void _ResizePane(const Microsoft::Terminal::Settings::Model::Direction& direction);
+        void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void _ScrollPage(ScrollDirection scrollDirection);
+        void _ScrollToBufferEdge(ScrollDirection scrollDirection);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& keyChord);
 
         winrt::fire_and_forget _CopyToClipboardHandler(const IInspectable sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs copiedData);
@@ -264,6 +267,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleTogglePaneZoom(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleScrollUpPage(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleScrollDownPage(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleScrollToTop(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleScrollToBottom(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleOpenSettings(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandlePasteText(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleNewTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -275,7 +280,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleAdjustFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleFind(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleRetroEffect(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleShaderEffects(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleFocusMode(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleAlwaysOnTop(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);

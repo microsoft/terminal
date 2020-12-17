@@ -17,12 +17,12 @@ _CONSOLE_API_MSG::_CONSOLE_API_MSG() :
 
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
 {
-    return reinterpret_cast<ConsoleProcessHandle*>(Descriptor.Process);
+    return reinterpret_cast<ConsoleProcessHandle*>(_pDeviceComm->GetHandle(Descriptor.Process));
 }
 
 ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 {
-    return reinterpret_cast<ConsoleHandleData*>(Descriptor.Object);
+    return reinterpret_cast<ConsoleHandleData*>(_pDeviceComm->GetHandle(Descriptor.Object));
 }
 
 // Routine Description:

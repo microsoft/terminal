@@ -6,7 +6,6 @@
 #include "TabPaletteItem.h"
 #include "CommandLinePaletteItem.h"
 #include "CommandPalette.h"
-
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
@@ -99,6 +98,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
+
+        _appArgs.DisableHelpInExitMessage();
     }
 
     // Method Description:
@@ -438,6 +439,44 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_rootPointerPressed(Windows::Foundation::IInspectable const& /*sender*/,
                                              Windows::UI::Xaml::Input::PointerRoutedEventArgs const& /*e*/)
     {
+        if (Visibility() != Visibility::Collapsed)
+        {
+            _dismissPalette();
+        }
+    }
+
+    // Method Description:
+    // - The purpose of this event handler is to hide the palette if it loses focus.
+    // We say we lost focus if our root element and all its descendants lost focus.
+    // This handler is invoked when our root element or some descendant loses focus.
+    // At this point we need to learn if the newly focused element belongs to this palette.
+    // To achieve this:
+    // - We start with the newly focused element and traverse its visual ancestors up to the Xaml root.
+    // - If one of the ancestors is this CommandPalette, then by our definition the focus is not lost
+    // - If we reach the Xaml root without meeting this CommandPalette,
+    // then the focus is not contained in it anymore and it should be dismissed
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void CommandPalette::_lostFocusHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                           Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
+    {
+        auto focusedElementOrAncestor = Input::FocusManager::GetFocusedElement(this->XamlRoot()).try_as<DependencyObject>();
+        while (focusedElementOrAncestor)
+        {
+            if (focusedElementOrAncestor == *this)
+            {
+                // This palette is the focused element or an ancestor of the focused element. No need to dismiss.
+                return;
+            }
+
+            // Go up to the next ancestor
+            focusedElementOrAncestor = winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetParent(focusedElementOrAncestor);
+        }
+
+        // We got to the root (the element with no parent) and didn't meet this palette on the path.
+        // It means that it lost the focus and needs to be dismissed.
         _dismissPalette();
     }
 
@@ -755,6 +794,35 @@ namespace winrt::TerminalApp::implementation
         {
             _noMatchesText().Visibility(Visibility::Collapsed);
         }
+
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            ParsedCommandLineText(L"");
+
+            const auto commandLine = _getTrimmedInput();
+            if (!commandLine.empty())
+            {
+                ExecuteCommandlineArgs args{ commandLine };
+                _appArgs.FullResetState();
+                if (_appArgs.ParseArgs(args) == 0)
+                {
+                    const auto& commands = _appArgs.GetStartupActions();
+                    if (commands.size() > 0)
+                    {
+                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
+                        for (const auto& command : commands)
+                        {
+                            commandDescription += L"\n\t" + command.Args().GenerateName();
+                        }
+                        ParsedCommandLineText(commandDescription.data());
+                    }
+                }
+                else
+                {
+                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L"\n\t" + til::u8u16(_appArgs.GetExitMessage()));
+                }
+            }
+        }
     }
 
     void CommandPalette::_evaluatePrefix()
@@ -861,6 +929,7 @@ namespace winrt::TerminalApp::implementation
     {
         _currentMode = mode;
 
+        ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
         // Leaving this block of code outside the above if-statement

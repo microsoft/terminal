@@ -102,7 +102,16 @@ namespace winrt::TerminalApp::implementation
             _ScrollDownPageHandlers(*this, eventArgs);
             break;
         }
-
+        case ShortcutAction::ScrollToTop:
+        {
+            _ScrollToTopHandlers(*this, eventArgs);
+            break;
+        }
+        case ShortcutAction::ScrollToBottom:
+        {
+            _ScrollToBottomHandlers(*this, eventArgs);
+            break;
+        }
         case ShortcutAction::NextTab:
         {
             _NextTabHandlers(*this, eventArgs);
@@ -167,9 +176,9 @@ namespace winrt::TerminalApp::implementation
             _ResetFontSizeHandlers(*this, eventArgs);
             break;
         }
-        case ShortcutAction::ToggleRetroEffect:
+        case ShortcutAction::ToggleShaderEffects:
         {
-            _ToggleRetroEffectHandlers(*this, eventArgs);
+            _ToggleShaderEffectsHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleFocusMode:
