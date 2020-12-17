@@ -209,7 +209,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
                         Margin="{StaticResource StandardControlSpacing}">
-                <Button Style="{StaticResource BaseButtonStyle}"
+                <Button x:Name="DeleteButton"
+                        Style="{StaticResource BaseButtonStyle}"
                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
                         Margin="0,0,0,10">
                     <Button.Resources>

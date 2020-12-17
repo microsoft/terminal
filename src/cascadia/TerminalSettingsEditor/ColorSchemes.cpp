@@ -174,6 +174,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
         }
         _ColorSchemeList.RemoveAt(removedSchemeIndex);
+        DeleteButton().Flyout().Hide();
     }
 
     void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
