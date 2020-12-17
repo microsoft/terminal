@@ -90,14 +90,14 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(double, BackgroundImageOpacity, 1.0);
 
         GETSET_SETTING(winrt::Windows::UI::Xaml::Media::Stretch,
-                        BackgroundImageStretchMode,
-                        winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
+                       BackgroundImageStretchMode,
+                       winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
         GETSET_SETTING(winrt::Windows::UI::Xaml::HorizontalAlignment,
-                        BackgroundImageHorizontalAlignment,
-                        winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
+                       BackgroundImageHorizontalAlignment,
+                       winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
         GETSET_SETTING(winrt::Windows::UI::Xaml::VerticalAlignment,
-                        BackgroundImageVerticalAlignment,
-                        winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+                       BackgroundImageVerticalAlignment,
+                       winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::IKeyBindings, KeyBindings, nullptr);
 
