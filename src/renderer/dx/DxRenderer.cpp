@@ -81,7 +81,6 @@ DxEngine::DxEngine() :
     _foregroundColor{ 0 },
     _backgroundColor{ 0 },
     _selectionBackground{},
-    _fontIsItalic{ false },
     _glyphCell{},
     _boxDrawingEffect{},
     _haveDeviceResources{ false },
@@ -100,7 +99,6 @@ DxEngine::DxEngine() :
     _prevScale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
-    _customLayoutItalic{},
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
     _drawingContext{}
 {
@@ -1470,15 +1468,12 @@ try
     // Calculate positioning of our origin.
     const D2D1_POINT_2F origin = til::point{ coord } * _glyphCell;
 
-    // Pick the appropriate layout for the current font style.
-    const auto& layout = _fontIsItalic ? _customLayoutItalic : _customLayout;
-
     // Create the text layout
-    RETURN_IF_FAILED(layout->Reset());
-    RETURN_IF_FAILED(layout->AppendClusters(clusters));
+    RETURN_IF_FAILED(_customLayout->Reset());
+    RETURN_IF_FAILED(_customLayout->AppendClusters(clusters));
 
     // Layout then render the text
-    RETURN_IF_FAILED(layout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
+    RETURN_IF_FAILED(_customLayout->Draw(_drawingContext.get(), _customRenderer.Get(), origin.x, origin.y));
 
     return S_OK;
 }
@@ -1738,11 +1733,9 @@ CATCH_RETURN()
         }*/
     }
 
-    // Record the fact that we need to render the text with an italic font.
-    _fontIsItalic = textAttributes.IsItalic();
-
     // If we have a drawing context, it may be choosing its antialiasing based
     // on the colors. Update it if it exists.
+    // Also record whether we need to render the text with an italic font.
     // We only need to do this here because this is called all the time on painting frames
     // and will update it in a timely fashion. Changing the AA mode or opacity do affect
     // it, but we will always hit updating the drawing brushes so we don't
@@ -1750,6 +1743,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
     if (textAttributes.IsHyperlink())
@@ -1785,9 +1779,15 @@ try
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
 
-    // Prepare the text layouts - one for regular text and one for italics.
-    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
-    _customLayoutItalic = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormatItalic.Get(), _dwriteFontFaceItalic.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
+    // Prepare the text layout.
+    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(),
+                                                _dwriteTextAnalyzer.Get(),
+                                                _dwriteTextFormat.Get(),
+                                                _dwriteTextFormatItalic.Get(),
+                                                _dwriteFontFace.Get(),
+                                                _dwriteFontFaceItalic.Get(),
+                                                _glyphCell.width(),
+                                                _boxDrawingEffect.Get());
 
     return S_OK;
 }
