@@ -113,13 +113,6 @@ jobs:
       testSuite: '${{ parameters.testSuite }}'
       taefQuery: ${{ parameters.taefQuery }}
 
-  - template: helix-createprojfile-steps.yml
-    parameters:
-      condition: and(succeeded(),ne('${{ parameters.testSuite }}','NugetTestSuite'))
-      testFilePath: '$(artifactsDir)\${{ parameters.artifactName }}\$(buildConfiguration)\$(buildPlatform)\Test\Remoting.LocalTests.dll'
-      outputProjFileName: 'RunTestsInHelix-RemotingLocalTests.proj'
-      testSuite: '${{ parameters.testSuite }}'
-      taefQuery: ${{ parameters.taefQuery }}
 
   - template: helix-createprojfile-steps.yml
     parameters:

@@ -22,7 +22,6 @@ Licensed under the MIT license.
 #include <hstring.h>
 
 #include <WexTestClass.h>
-#include <json.h>
 #include "consoletaeftemplates.hpp"
 
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>

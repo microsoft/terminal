@@ -14,9 +14,9 @@
   <PropertyGroup>
     <ProjectGuid>{68a10cd3-aa64-465b-af5f-ed4e9700543c}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>RemotingLocalTests</RootNamespace>
-    <ProjectName>LocalTests_Remoting</ProjectName>
-    <TargetName>Remoting.LocalTests</TargetName>
+    <RootNamespace>RemotingUnitTests</RootNamespace>
+    <ProjectName>UnitTests_Remoting</ProjectName>
+    <TargetName>Remoting.UnitTests</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
