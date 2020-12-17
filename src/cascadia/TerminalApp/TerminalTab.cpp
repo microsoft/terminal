@@ -72,7 +72,7 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
     {
-        auto toolTip = WUX::Controls::ToolTip{};
+        WUX::Controls::ToolTip toolTip{};
         toolTip.Content(winrt::box_value(tabTitle));
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
