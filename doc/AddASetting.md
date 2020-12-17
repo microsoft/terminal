@@ -11,7 +11,7 @@
         - Yes, the large majority of the `DEFINE_PROPERTYKEY` defs are the same, it's only the last byte of the guid that changes
 
 2. Add matching fields to Settings.hpp
-    - add getters, setters, the whole drill.
+    - Add getters, setters, the whole drill.
 
 3. Add to the propsheet
     - We need to add it to *reading and writing* the registry from the propsheet, and *reading* the link from the propsheet. Yes, that's weird, but the propsheet is smart enough to re-use ShortcutSerialization::s_SetLinkValues, but not smart enough to do the same with RegistrySerialization.
