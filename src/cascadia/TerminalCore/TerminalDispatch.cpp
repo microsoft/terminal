@@ -417,14 +417,12 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
     const auto parts = Utils::SplitString(string, L';');
     unsigned int subParam = 0;
 
-    // For now, the only ConEmu action we support is setting the taskbar state/progress,
-    // which has a sub param value of 4
     if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
     {
         return false;
     }
 
-    // 4 is SetProgressBar
+    // 4 is SetProgressBar, which sets the taskbar state/progress.
     if (subParam == 4)
     {
         if (parts.size() >= 2)
@@ -458,7 +456,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
         }
         return _terminalApi.SetTaskbarProgress(state, progress);
     }
-    // 9 is SetWorkingDirectory
+    // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
     else if (subParam == 9)
     {
         if (parts.size() >= 2)
