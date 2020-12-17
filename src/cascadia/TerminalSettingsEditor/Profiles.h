@@ -18,6 +18,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         ProfileViewModel(const Model::Profile& profile) :
             _profile{ profile } {}
 
+        bool CanDeleteProfile() const;
+        GETSET_PROPERTY(bool, IsBaseLayer, false);
+
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
         OBSERVABLE_PROJECTED_SETTING(_profile, Name);
@@ -68,21 +71,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         DeleteProfileEventArgs(guid profileGuid) :
             _ProfileGuid(profileGuid) {}
 
-        GETSET_PROPERTY(guid, ProfileGuid);
+        guid ProfileGuid() const noexcept { return _ProfileGuid; }
+
+    private:
+        guid _ProfileGuid{};
     };
 
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot, Windows::UI::Xaml::ElementTheme theme) :
+        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
             _Schemes{ schemes },
-            _WindowRoot{ windowRoot },
-            _Theme{ theme }
+            _WindowRoot{ windowRoot }
         {
         }
 
-        bool CanDeleteProfile() const;
         void DeleteProfile();
 
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
@@ -91,12 +95,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
-        GETSET_PROPERTY(bool, IsBaseLayer, false);
-        GETSET_PROPERTY(Windows::UI::Xaml::ElementTheme, Theme, Windows::UI::Xaml::ElementTheme::Default);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
-        std::function<void(Editor::ProfileViewModel&)> _pfnDeleteProfile{ nullptr };
     };
 
     struct Profiles : ProfilesT<Profiles>

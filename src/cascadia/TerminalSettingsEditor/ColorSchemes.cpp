@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         RS_(L"ColorScheme_BrightWhite/Header")
     };
 
-    static const std::set<std::wstring> InBoxSchemes = {
+    static const std::array<std::wstring, 9> InBoxSchemes = {
         L"Campbell",
         L"Campbell Powershell",
         L"Vintage",
@@ -93,7 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Set the text disclaimer for the text box
         hstring disclaimer{};
         const std::wstring schemeName{ colorScheme.Name() };
-        if (InBoxSchemes.find(schemeName) != InBoxSchemes.end())
+        if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
         {
             // load disclaimer for in-box profiles
             disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             // Only allow this color scheme to be deleted if it's not provided in-box
             const std::wstring myName{ scheme.Name() };
-            return InBoxSchemes.find(myName) == InBoxSchemes.end();
+            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), myName) == std::end(InBoxSchemes);
         }
         return false;
     }
@@ -212,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
         // We need to manually force the ComboBox to refresh itself.
         const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-        ColorSchemeComboBox().SelectedIndex(selectedIndex + 1 % ColorSchemeList().Size());
+        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ColorSchemeList().Size());
         ColorSchemeComboBox().SelectedIndex(selectedIndex);
     }
 

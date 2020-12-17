@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     if (_settingsClone.FindProfile(profile.Guid()))
                     {
                         // Navigate to the page with the given profile
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_viewModelForProfile(profile), _settingsClone.GlobalSettings().ColorSchemes(), *this, _settingsSource.GlobalSettings().Theme()));
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_viewModelForProfile(profile), _settingsClone.GlobalSettings().ColorSchemes(), *this));
                         return;
                     }
                 }
@@ -219,13 +219,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalProfileTag)
         {
-            auto state{ winrt::make<ProfilePageNavigationState>(_viewModelForProfile(_settingsClone.ProfileDefaults()), _settingsClone.GlobalSettings().ColorSchemes(), *this, _settingsSource.GlobalSettings().Theme()) };
-            state.IsBaseLayer(true);
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
+            profileVM.IsBaseLayer(true);
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profileVM, _settingsClone.GlobalSettings().ColorSchemes(), *this));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings(), _settingsSource.GlobalSettings().Theme()));
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()));
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
@@ -235,7 +235,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
-        auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this, _settingsSource.GlobalSettings().Theme()) };
+        auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
 
         // Add an event handler for when the user wants to delete a profile.
         state.DeleteProfile({ this, &MainPage::_DeleteProfile });

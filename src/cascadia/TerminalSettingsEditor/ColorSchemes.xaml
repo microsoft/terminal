@@ -83,7 +83,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                     <!--Rename Button-->
                     <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
-                    <Button x:Uid="ColorScheme_Rename"
+                    <Button x:Uid="Rename"
                             Style="{StaticResource BrowseButtonStyle}"
                             Click="Rename_Click"
                             IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
@@ -96,12 +96,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBox x:Name="NameBox"
                              Style="{StaticResource TextBoxSettingStyle}"
                              PreviewKeyDown="NameBox_PreviewKeyDown"/>
-                    <Button x:Uid="ColorScheme_RenameAccept"
+                    <Button x:Uid="RenameAccept"
                             Style="{StaticResource AccentBrowseButtonStyle}"
                             Click="RenameAccept_Click">
                         <FontIcon Glyph="&#xE8FB;"/>
                     </Button>
-                    <Button x:Uid="ColorScheme_RenameCancel"
+                    <Button x:Uid="RenameCancel"
                             Style="{StaticResource BrowseButtonStyle}"
                             Click="RenameCancel_Click">
                         <FontIcon Glyph="&#xE711;"/>

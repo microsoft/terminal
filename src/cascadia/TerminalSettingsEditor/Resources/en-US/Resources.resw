@@ -765,7 +765,7 @@
   <data name="ColorScheme_DeleteButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Delete the current color scheme.</value>
   </data>
-  <data name="ColorScheme_Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Rename</value>
   </data>
   <data name="Profile_DeleteButtonDisclaimerInBox" xml:space="preserve">
@@ -783,10 +783,10 @@
   <data name="ColorScheme_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Are you sure you want to delete this color scheme?</value>
   </data>
-  <data name="ColorScheme_RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Accept rename</value>
   </data>
-  <data name="ColorScheme_RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+  <data name="RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Cancel rename</value>
   </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">

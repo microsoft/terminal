@@ -10,6 +10,9 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Boolean CanDeleteProfile { get; };
+        Boolean IsBaseLayer;
+
         OBSERVABLE_PROJECTED_SETTING(String, Name);
         OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_SETTING(String, Source);
@@ -62,15 +65,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         ProfileViewModel Profile { get; };
 
-        Boolean CanDeleteProfile { get; };
-        Boolean IsBaseLayer;
-
         event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
-
-        // This needs to be the theme we are currently using, not the one we're changing to.
-        // We need the theme to be able to force the ContentDialog to follow the appropriate
-        // theme chosen by the user. See Delete_Click() for more details.
-        Windows.UI.Xaml.ElementTheme Theme;
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged

@@ -18,7 +18,8 @@ namespace Microsoft.Terminal.Settings.Model
         All = 0xffffffff
     };
 
-    [flags] enum ConvergedAlignment {
+    [flags]
+    enum ConvergedAlignment {
         // low 4 bits are the horizontal
         Horizontal_Center = 0x00,
         Horizontal_Left = 0x01,

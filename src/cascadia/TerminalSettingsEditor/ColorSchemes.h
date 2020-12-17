@@ -13,12 +13,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
     {
     public:
-        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings, Windows::UI::Xaml::ElementTheme theme) :
-            _Globals{ settings },
-            _Theme{ theme } {}
+        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings) :
+            _Globals{ settings } {}
 
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
-        GETSET_PROPERTY(Windows::UI::Xaml::ElementTheme, Theme, Windows::UI::Xaml::ElementTheme::Default);
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>

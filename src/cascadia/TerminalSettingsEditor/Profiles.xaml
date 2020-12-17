@@ -37,7 +37,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Style="{StaticResource DisclaimerStyle}"
                    Margin="{StaticResource StandardControlSpacing}"
-                   Visibility="{x:Bind State.IsBaseLayer}"/>
+                   Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
 
         <Pivot HorizontalAlignment="Left">
             <!-- General Tab -->
@@ -101,9 +101,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Delete Button-->
                         <StackPanel Orientation="Horizontal"
                                     Margin="{StaticResource StandardControlSpacing}"
-                                    Visibility="{x:Bind State.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                                    Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <Button Style="{StaticResource BaseButtonStyle}"
-                                    IsEnabled="{x:Bind State.CanDeleteProfile}">
+                                    IsEnabled="{x:Bind State.Profile.CanDeleteProfile}">
                                 <Button.Resources>
                                     <ResourceDictionary>
                                         <ResourceDictionary.ThemeDictionaries>

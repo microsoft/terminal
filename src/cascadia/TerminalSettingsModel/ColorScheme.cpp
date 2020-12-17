@@ -42,27 +42,24 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 };
 
 ColorScheme::ColorScheme() :
-    _Foreground{ DEFAULT_FOREGROUND_WITH_ALPHA },
-    _Background{ DEFAULT_BACKGROUND_WITH_ALPHA },
-    _SelectionBackground{ DEFAULT_FOREGROUND },
-    _CursorColor{ DEFAULT_CURSOR_COLOR }
+    ColorScheme(L"", DEFAULT_FOREGROUND_WITH_ALPHA, DEFAULT_BACKGROUND_WITH_ALPHA, DEFAULT_CURSOR_COLOR)
 {
     Utils::InitializeCampbellColorTable(_table);
 }
 
 ColorScheme::ColorScheme(winrt::hstring name) :
-    ColorScheme{}
+    ColorScheme(name, DEFAULT_FOREGROUND_WITH_ALPHA, DEFAULT_BACKGROUND_WITH_ALPHA, DEFAULT_CURSOR_COLOR)
 {
-    _Name = name;
+    Utils::InitializeCampbellColorTable(_table);
 }
 
-ColorScheme::ColorScheme(winrt::hstring name, Color defaultFg, Color defaultBg, Color cursorColor) :
-    ColorScheme{ name }
+ColorScheme::ColorScheme(winrt::hstring name, COLORREF defaultFg, COLORREF defaultBg, COLORREF cursorColor) :
+    _Name{ name },
+    _Foreground{ defaultFg },
+    _Background{ defaultBg },
+    _SelectionBackground{ DEFAULT_FOREGROUND },
+    _CursorColor{ cursorColor }
 {
-    _Foreground = defaultFg;
-    _Background = defaultBg;
-    _SelectionBackground = DEFAULT_FOREGROUND;
-    _CursorColor = cursorColor;
 }
 
 winrt::com_ptr<ColorScheme> ColorScheme::Copy() const

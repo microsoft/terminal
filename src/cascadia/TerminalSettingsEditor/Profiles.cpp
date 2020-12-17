@@ -19,27 +19,26 @@ using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-static const std::set<winrt::guid> InBoxProfileGuids{
-    { 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } }, // Windows Powershell
-    { 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
+static const std::array<winrt::guid, 2> InBoxProfileGuids{
+    winrt::guid{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } }, // Windows Powershell
+    winrt::guid{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
 };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    bool ProfilePageNavigationState::CanDeleteProfile() const
+    bool ProfileViewModel::CanDeleteProfile() const
     {
-        const auto guid{ Profile().Guid() };
-        const auto source{ Profile().Source() };
+        const auto guid{ Guid() };
         if (IsBaseLayer())
         {
             return false;
         }
-        else if (InBoxProfileGuids.find(guid) != InBoxProfileGuids.end())
+        else if (std::find(std::begin(InBoxProfileGuids), std::end(InBoxProfileGuids), guid) != std::end(InBoxProfileGuids))
         {
             // in-box profile
             return false;
         }
-        else if (!source.empty())
+        else if (!Source().empty())
         {
             // dynamic profile
             return false;
@@ -102,17 +101,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Set the text disclaimer for the text box
-        // For an unknown reason, data-binding the text does not compile (using x:Bind)
-        // or is completely ignored (using Binding).
         hstring disclaimer{};
         const auto guid{ _State.Profile().Guid() };
-        const auto source{ _State.Profile().Source() };
-        if (InBoxProfileGuids.find(guid) != InBoxProfileGuids.end())
+        if (std::find(std::begin(InBoxProfileGuids), std::end(InBoxProfileGuids), guid) != std::end(InBoxProfileGuids))
         {
             // load disclaimer for in-box profiles
             disclaimer = RS_(L"Profile_DeleteButtonDisclaimerInBox");
         }
-        else if (!source.empty())
+        else if (!_State.Profile().Source().empty())
         {
             // load disclaimer for dynamic profiles
             disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
