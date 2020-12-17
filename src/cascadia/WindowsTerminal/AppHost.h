@@ -26,7 +26,6 @@ private:
     winrt::TerminalApp::App _app;
     winrt::TerminalApp::AppLogic _logic;
     bool _shouldCreateWindow{ false };
-    // DWORD _registrationHostClass{ 0 };
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
     void _HandleCommandlineArgs();
@@ -45,10 +44,6 @@ private:
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
-
-    // void _RegisterAsMonarch();
-    // void _CreateMonarch();
-    // bool _ProposeCommandlineToMonarch();
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                               winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);

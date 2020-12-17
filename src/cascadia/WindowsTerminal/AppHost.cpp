@@ -517,26 +517,7 @@ bool AppHost::HasWindow()
     return _shouldCreateWindow;
 }
 
-// void AppHost::_RegisterAsMonarch()
-// {
-//     winrt::check_hresult(CoRegisterClassObject(Monarch_clsid,
-//                                         winrt::make<::MonarchFactory>().get(),
-//                                         CLSCTX_LOCAL_SERVER,
-//                                         REGCLS_MULTIPLEUSE,
-//                                         &_registrationHostClass));
-// }
-
-// void AppHost::_CreateMonarch()
-// {
-// }
-
-// bool AppHost::_ProposeCommandlineToMonarch()
-// {
-//     // returns true if we should create a new window
-//     return true;
-// }
-
-void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
 {
     _logic.ExecuteCommandline(args.Args());
