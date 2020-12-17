@@ -351,11 +351,11 @@ void AppCommandlineArgs::_buildMoveFocusParser()
     _moveFocusShort = _app.add_subcommand("mf", RS_A(L"CmdMFDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        std::map<std::string, Direction> map = {
-            { "left", Direction::Left },
-            { "right", Direction::Right },
-            { "up", Direction::Up },
-            { "down", Direction::Down }
+        std::map<std::string, FocusDirection> map = {
+            { "left", FocusDirection::Left },
+            { "right", FocusDirection::Right },
+            { "up", FocusDirection::Up },
+            { "down", FocusDirection::Down }
         };
 
         auto* directionOpt = subcommand->add_option("direction",
@@ -369,7 +369,7 @@ void AppCommandlineArgs::_buildMoveFocusParser()
         // that `this` will still be safe - this function just lets us know this
         // command was parsed.
         subcommand->callback([&, this]() {
-            if (_moveFocusDirection != Direction::None)
+            if (_moveFocusDirection != FocusDirection::None)
             {
                 MoveFocusArgs args{ _moveFocusDirection };
 
@@ -522,7 +522,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusNextTab = false;
     _focusPrevTab = false;
 
-    _moveFocusDirection = Direction::None;
+    _moveFocusDirection = FocusDirection::None;
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
     // the "global" fullscreen flag (-F).

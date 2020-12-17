@@ -84,7 +84,7 @@ private:
     std::string _startingTitle;
     std::string _startingTabColor;
 
-    winrt::Microsoft::Terminal::Settings::Model::Direction _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::Direction::None };
+    winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
