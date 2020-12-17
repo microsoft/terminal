@@ -207,14 +207,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::RenameAccept_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        CurrentColorScheme().Name(NameBox().Text());
-        IsRenaming(false);
-
-        // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
-        // We need to manually force the ComboBox to refresh itself.
-        const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
-        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ColorSchemeList().Size());
-        ColorSchemeComboBox().SelectedIndex(selectedIndex);
+        _RenameCurrentScheme(NameBox().Text());
     }
 
     void ColorSchemes::RenameCancel_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
@@ -224,11 +217,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::NameBox_PreviewKeyDown(IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            _RenameCurrentScheme(NameBox().Text());
+            e.Handled(true);
+        }
+        else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
             IsRenaming(false);
             e.Handled(true);
         }
+    }
+
+    void ColorSchemes::_RenameCurrentScheme(hstring newName)
+    {
+        CurrentColorScheme().Name(newName);
+        IsRenaming(false);
+
+        // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
+        // We need to manually force the ComboBox to refresh itself.
+        const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
+        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ColorSchemeList().Size());
+        ColorSchemeComboBox().SelectedIndex(selectedIndex);
     }
 
     // Function Description:

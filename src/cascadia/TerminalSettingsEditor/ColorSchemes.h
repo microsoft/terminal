@@ -48,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
+        void _RenameCurrentScheme(hstring newName);
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>
