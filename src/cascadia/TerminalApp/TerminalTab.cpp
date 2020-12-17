@@ -205,7 +205,9 @@ namespace winrt::TerminalApp::implementation
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
         }
     }
+
     // Method Description:
+    // - Hide or show the tab icon for this tab
     // - Used when we want to show the progress ring, which should replace the icon
     // Arguments:
     // - hide: if true, we hide the icon; if false, we show the icon
@@ -217,19 +219,22 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            if (hide)
+            if (tab->_iconHidden != hide)
             {
-                Icon({});
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
-                tab->_iconHidden = true;
-            }
-            else
-            {
-                // we need to reset the path so the CommandPalette will be updated
-                // TODO: this could be avoided if were not reseting the Icon property upon hide.
-                Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
-                tab->_iconHidden = false;
+                if (hide)
+                {
+                    Icon({});
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                    tab->_iconHidden = true;
+                }
+                else
+                {
+                    // we need to reset the path so the CommandPalette will be updated
+                    // TODO: this could be avoided if were not reseting the Icon property upon hide.
+                    Icon(_lastIconPath);
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                    tab->_iconHidden = false;
+                }
             }
         }
     }
@@ -268,6 +273,7 @@ namespace winrt::TerminalApp::implementation
             const auto activeTitle = _GetActiveTitle();
             // Bubble our current tab text to anyone who's listening for changes.
             Title(activeTitle);
+
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
             _SetToolTip(activeTitle);
