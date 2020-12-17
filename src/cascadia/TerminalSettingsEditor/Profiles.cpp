@@ -23,26 +23,12 @@ static const std::set<winrt::guid> InBoxProfileGuids{
     { 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
 };
 
-static const std::set<winrt::guid> LegacyDynamicProfileGuids{
-    { 0x574e775e, 0x4f2a, 0x5b96, { 0xac, 0x1e, 0xa2, 0x96, 0x2a, 0x40, 0x23, 0x36 } }, // Powershell Core
-    { 0x58ad8b0c, 0x3ef8, 0x5f4d, { 0xbc, 0x6f, 0x13, 0xe4, 0xc0, 0x0f, 0x25, 0x30 } }, // Debian
-    { 0x2c4de342, 0x38b7, 0x51cf, { 0xb9, 0x40, 0x23, 0x09, 0xa0, 0x97, 0xf5, 0x18 } }, // Ubuntu
-    { 0x1777cdf0, 0xb2c4, 0x5a63, { 0xa2, 0x04, 0xeb, 0x60, 0xf3, 0x49, 0xea, 0x7c } }, // Alpine
-    { 0xc6eaf9f4, 0x32a7, 0x5fdc, { 0xb5, 0xcf, 0x06, 0x6e, 0x8a, 0x4b, 0x1e, 0x40 } } // Ubuntu-18.04
-};
-
-static const std::set<std::wstring_view> ProfileGeneratorNamespaces{
-    L"Windows.Terminal.Wsl",
-    L"Windows.Terminal.Azure",
-    L"Windows.Terminal.PowershellCore"
-};
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     bool ProfilePageNavigationState::CanDeleteProfile() const
     {
         const auto guid{ Profile().Guid() };
-        const std::wstring_view source{ Profile().Source() };
+        const auto source{ Profile().Source() };
         if (IsBaseLayer())
         {
             return false;
@@ -52,8 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // in-box profile
             return false;
         }
-        else if (LegacyDynamicProfileGuids.find(guid) != LegacyDynamicProfileGuids.end() ||
-                 ProfileGeneratorNamespaces.find(source) != ProfileGeneratorNamespaces.end())
+        else if (!source.empty())
         {
             // dynamic profile
             return false;
@@ -120,14 +105,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // or is completely ignored (using Binding).
         hstring disclaimer{};
         const auto guid{ _State.Profile().Guid() };
-        const std::wstring_view source{ _State.Profile().Source() };
+        const auto source{ _State.Profile().Source() };
         if (InBoxProfileGuids.find(guid) != InBoxProfileGuids.end())
         {
             // load disclaimer for in-box profiles
             disclaimer = RS_(L"Profile_DeleteButtonDisclaimerInBox");
         }
-        else if (LegacyDynamicProfileGuids.find(guid) != LegacyDynamicProfileGuids.end() ||
-                 ProfileGeneratorNamespaces.find(source) != ProfileGeneratorNamespaces.end())
+        else if (!source.empty())
         {
             // load disclaimer for dynamic profiles
             disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
@@ -296,9 +280,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
-
-    // -------------------------------- WinRT Events ---------------------------------
-    // Winrt events need a method for adding a callback to the event and removing the callback.
-    // These macros will define them both for you.
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(ProfilePageNavigationState, DeleteProfile, _DeleteProfileHandlers, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
 }

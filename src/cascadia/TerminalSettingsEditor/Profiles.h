@@ -87,10 +87,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
+        TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
         GETSET_PROPERTY(bool, IsBaseLayer, false);
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(DeleteProfile, _DeleteProfileHandlers, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;

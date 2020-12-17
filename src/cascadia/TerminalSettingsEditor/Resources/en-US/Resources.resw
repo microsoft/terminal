@@ -777,6 +777,12 @@
   <data name="ColorScheme_DeleteButtonDisclaimerInBox" xml:space="preserve">
     <value>This color scheme cannot be deleted or renamed because it is shipped in-box.</value>
   </data>
+  <data name="ColorScheme_RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Accept rename</value>
+  </data>
+  <data name="ColorScheme_RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Cancel rename</value>
+  </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they have more specific settings.</value>
   </data>

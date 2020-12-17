@@ -96,11 +96,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBox x:Name="NameBox"
                              Style="{StaticResource TextBoxSettingStyle}"
                              PreviewKeyDown="NameBox_PreviewKeyDown"/>
-                    <Button Style="{StaticResource AccentBrowseButtonStyle}"
+                    <Button x:Uid="ColorScheme_RenameAccept"
+                            Style="{StaticResource AccentBrowseButtonStyle}"
                             Click="RenameAccept_Click">
                         <FontIcon Glyph="&#xE8FB;"/>
                     </Button>
-                    <Button Style="{StaticResource BrowseButtonStyle}"
+                    <Button x:Uid="ColorScheme_RenameCancel"
+                            Style="{StaticResource BrowseButtonStyle}"
                             Click="RenameCancel_Click">
                         <FontIcon Glyph="&#xE711;"/>
                     </Button>
