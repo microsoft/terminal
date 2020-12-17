@@ -291,7 +291,7 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
-        
+
         if (key == VirtualKey::Up)
         {
             // Action Mode: Move focus to the next item in the list.
