@@ -122,30 +122,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(bool, SoftwareRendering, false);
         GETSET_SETTING(bool, ForceVTInput, false);
 
-    public:
-        ///* Returns true if the user explicitly set the value, false otherwise*/
-        //bool HasBackgroundImage() const;
-
-        ///* Returns the resolved value for this setting */ /* fallback: user set value --> inherited value --> system set value */
-        //hstring BackgroundImage() const;
-
-        ///* Overwrite the user set value */
-        //void BackgroundImage(const hstring& value);
-
-        ///* Clear the user set value */
-        //void ClearBackgroundImage();
-
-        //bool HasBackgroundImageOpacity() const;
-
-        ///* Returns the resolved value for this setting */ /* fallback: user set value --> inherited value --> system set value */
-        //double BackgroundImageOpacity() const;
-
-        ///* Overwrite the user set value */
-        //void BackgroundImageOpacity(const double& value);
-
-        ///* Clear the user set value */
-        //void ClearBackgroundImageOpacity();
-
 #pragma warning(pop)
 
     private:
@@ -153,12 +129,6 @@ namespace winrt::TerminalApp::implementation
 
         void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
         void _ApplyGlobalSettings(const Microsoft::Terminal::Settings::Model::GlobalAppSettings& globalSettings) noexcept;
-
-        //std::optional<hstring> _BackgroundImage{ std::nullopt };
-        //std::optional<hstring> _getBackgroundImageImpl() const;
-
-        //std::optional<double> _BackgroundImageOpacity{ std::nullopt };
-        //std::optional<double> _getBackgroundImageOpacityImpl() const;
 
         friend class TerminalAppLocalTests::SettingsTests;
     };
