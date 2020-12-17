@@ -111,7 +111,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
-        winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab) const;
+        static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
 
         void _UpdateTabIndices();
 
@@ -181,7 +181,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
-        TerminalApp::TabBase _GetFocusedTab();
+        TerminalApp::TabBase _GetFocusedTab() const noexcept;
+        winrt::com_ptr<TerminalTab> _GetFocusedTabImpl() const noexcept;
+
         winrt::fire_and_forget _SetFocusedTab(const TerminalApp::TabBase& tabToFocus);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
@@ -247,7 +249,6 @@ namespace winrt::TerminalApp::implementation
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
         static uint32_t _ReadSystemRowsToScroll();
 
-        void _UpdateTabSwitcherCommands(const bool mru);
         void _UpdateMRUTab(const TerminalApp::TabBase& tab);
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
