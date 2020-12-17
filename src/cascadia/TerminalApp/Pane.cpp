@@ -614,7 +614,7 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
         if (profile == _profile)
         {
             // Update the parent of the control's settings object (and not the object itself) so
-            // hat any overrides made by the control don't get affected by the reload
+            // that any overrides made by the control don't get affected by the reload
             auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
             auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
             child->ClearParents();
