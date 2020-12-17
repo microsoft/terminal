@@ -6,7 +6,6 @@
 #include "TabPaletteItem.h"
 #include "CommandLinePaletteItem.h"
 #include "CommandPalette.h"
-
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
@@ -99,6 +98,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
+
+        _appArgs.DisableHelpInExitMessage();
     }
 
     // Method Description:
@@ -793,6 +794,35 @@ namespace winrt::TerminalApp::implementation
         {
             _noMatchesText().Visibility(Visibility::Collapsed);
         }
+
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            ParsedCommandLineText(L"");
+
+            const auto commandLine = _getTrimmedInput();
+            if (!commandLine.empty())
+            {
+                ExecuteCommandlineArgs args{ commandLine };
+                _appArgs.FullResetState();
+                if (_appArgs.ParseArgs(args) == 0)
+                {
+                    const auto& commands = _appArgs.GetStartupActions();
+                    if (commands.size() > 0)
+                    {
+                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
+                        for (const auto& command : commands)
+                        {
+                            commandDescription += L"\n\t" + command.Args().GenerateName();
+                        }
+                        ParsedCommandLineText(commandDescription.data());
+                    }
+                }
+                else
+                {
+                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L"\n\t" + til::u8u16(_appArgs.GetExitMessage()));
+                }
+            }
+        }
     }
 
     void CommandPalette::_evaluatePrefix()
@@ -893,6 +923,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
         // Leaving this block of code outside the above if-statement

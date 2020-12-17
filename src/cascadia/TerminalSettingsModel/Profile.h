@@ -94,6 +94,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         GETSET_SETTING(Microsoft::Terminal::TerminalControl::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::TerminalControl::TextAntialiasingMode::Grayscale);
         GETSET_SETTING(bool, RetroTerminalEffect, false);
+        GETSET_SETTING(hstring, PixelShaderPath, L"");
         GETSET_SETTING(bool, ForceFullRepaintRendering, false);
         GETSET_SETTING(bool, SoftwareRendering, false);
 

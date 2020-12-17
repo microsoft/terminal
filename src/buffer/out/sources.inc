@@ -40,7 +40,6 @@ SOURCES= \
     ..\RowCellIterator.cpp \
     ..\TextColor.cpp \
     ..\TextAttribute.cpp \
-    ..\TextAttributeRun.cpp \
     ..\textBuffer.cpp \
     ..\textBufferCellIterator.cpp \
     ..\textBufferTextIterator.cpp \
