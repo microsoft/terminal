@@ -41,12 +41,6 @@ namespace winrt::TerminalApp::implementation
 
         void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
 
-// TECHNICALLY, the hstring copy assignment can throw, but the GETSET_SETTING
-// macro defines the operator as `noexcept`. We're not really worried about it,
-// because the only time it will throw is when we're out of memory, and then
-// we've got much worse problems. So just suppress that warning for now.
-#pragma warning(push)
-#pragma warning(disable : 26447)
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.
 
