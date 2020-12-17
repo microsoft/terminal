@@ -737,9 +737,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        auto comSettings = winrt::get_self<TerminalSettings>(settings);
-        auto overrideableSettings = comSettings->CreateChild();
-        TermControl term{ *overrideableSettings, connection };
+        // Give term control a child of the settings
+        // This way, the term control's overrides go in the child
+        TermControl term{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 

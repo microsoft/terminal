@@ -613,7 +613,11 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
-            _control.UpdateSettings(settings);
+            auto child = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(_control.Settings());
+            auto parent = winrt::get_self<winrt::TerminalApp::implementation::TerminalSettings>(settings);
+            child->ClearParents();
+            child->InsertParent(0, parent->get_strong());
+            _control.UpdateSettings();
         }
     }
 }
