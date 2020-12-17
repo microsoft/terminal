@@ -11,7 +11,12 @@ using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    Peasant::Peasant()
+    Peasant::Peasant() :
+        _ourPID{ GetCurrentProcessId() }
+    {
+    }
+    Peasant::Peasant(const uint64_t testPID) :
+        _ourPID{ testPID }
     {
     }
 
@@ -26,7 +31,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     uint64_t Peasant::GetPID()
     {
-        return GetCurrentProcessId();
+        return _ourPID;
     }
 
     bool Peasant::ExecuteCommandline(const Remoting::CommandlineArgs& args)
@@ -38,22 +43,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         _ExecuteCommandlineRequestedHandlers(*this, args);
 
-        // auto argsProcessed = 0;
-        // std::wstring fullCmdline;
-        // for (const auto& arg : args)
-        // {
-        //     fullCmdline += argsProcessed++ == 0 ? L"sample.exe" : arg;
-        //     fullCmdline += L" ";
-        // }
-        // wprintf(L"\x1b[32mExecuted Commandline\x1b[m: \"");
-        // wprintf(fullCmdline.c_str());
-        // wprintf(L"\"\n");
         return true;
-    }
-
-    void Peasant::raiseActivatedEvent()
-    {
-        _WindowActivatedHandlers(*this, nullptr);
     }
 
     Remoting::CommandlineArgs Peasant::InitialArgs()

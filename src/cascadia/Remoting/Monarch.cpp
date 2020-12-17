@@ -54,6 +54,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Add an event listener to the peasant's WindowActivated event.
         peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
 
+        // TODO:projects/5 Wait on the peasant's PID, and remove them from the
+        // map if they die.
+
         return newPeasantsId;
     }
 
@@ -89,24 +92,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // recent of all desktops (WindowingBehavior::UseExisting), then use the
         // most recent of all desktops.
         _mostRecentPeasant = peasantID;
-    }
-
-    void Monarch::SetSelfID(const uint64_t selfID)
-    {
-        this->_thisPeasantID = selfID;
-        // Right now, the monarch assumes the role of the most recent
-        // window. If the monarch dies, and a new monarch takes over, then the
-        // entire stack of MRU windows will go with it. That's not what you
-        // want!
-        //
-        // In the real app, we'll have each window also track the timestamp it
-        // was activated at, and the monarch will cache these. So a new monarch
-        // could re-query these last activated timestamps, and reconstruct the
-        // MRU stack.
-        //
-        // This is a sample though, and we're not too worried about complete
-        // correctness here.
-        _setMostRecentPeasant(_thisPeasantID);
     }
 
     bool Monarch::ProposeCommandline(array_view<const winrt::hstring> /*args*/,

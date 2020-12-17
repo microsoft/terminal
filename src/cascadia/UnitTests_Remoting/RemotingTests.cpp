@@ -18,6 +18,12 @@ using namespace winrt::Microsoft::Terminal;
     name.attach(&_local_##name##);                            \
     auto cleanup = wil::scope_exit([&]() { name.detach(); });
 
+#define MAKE_PEASANT(name, pid)                               \
+    Remoting::implementation::Peasant _local_##name##{ pid }; \
+    com_ptr<Remoting::implementation::Peasant> name;          \
+    name.attach(&_local_##name##);                            \
+    auto cleanup = wil::scope_exit([&]() { name.detach(); });
+
 namespace RemotingUnitTests
 {
     class RemotingTests
@@ -26,6 +32,7 @@ namespace RemotingUnitTests
         END_TEST_CLASS()
 
         TEST_METHOD(CreateMonarch);
+        TEST_METHOD(CreatePeasant);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -50,6 +57,25 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(expectedFakePID,
                          m2->GetPID(),
                          L"A Monarch with an explicit PID should use the one we provided");
+    }
+
+    void RemotingTests::CreatePeasant()
+    {
+        auto p1 = winrt::make_self<Remoting::implementation::Peasant>();
+        VERIFY_IS_NOT_NULL(p1);
+        VERIFY_ARE_EQUAL(GetCurrentProcessId(),
+                         p1->GetPID(),
+                         L"A Peasant without an explicit PID should use the current PID");
+
+        Log::Comment(L"That's what we need for window process management, but for tests, it'll be more useful to fake the PIDs.");
+
+        auto expectedFakePID = 2345u;
+        MAKE_PEASANT(p2, expectedFakePID);
+
+        VERIFY_IS_NOT_NULL(p2);
+        VERIFY_ARE_EQUAL(expectedFakePID,
+                         p2->GetPID(),
+                         L"A Peasant with an explicit PID should use the one we provided");
     }
 
 }

@@ -34,8 +34,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         uint64_t AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant);
 
-        void SetSelfID(const uint64_t selfID);
-
         bool ProposeCommandline(array_view<const winrt::hstring> args, winrt::hstring cwd);
 
     private:
