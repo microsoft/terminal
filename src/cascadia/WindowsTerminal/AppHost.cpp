@@ -30,50 +30,16 @@ AppHost::AppHost() noexcept :
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
-    {
-        std::vector<winrt::hstring> args;
-        if (auto commandline{ GetCommandLineW() })
-        {
-            int argc = 0;
-
-            // Get the argv, and turn them into a hstring array to pass to the app.
-            wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-            if (argv)
-            {
-                for (auto& elem : wil::make_range(argv.get(), argc))
-                {
-                    args.emplace_back(elem);
-                }
-            }
-        }
-        if (args.empty())
-        {
-            args.emplace_back(L"wt.exe");
-        }
-
-        _windowManager.ProposeCommandline({ args }, L"placeholder/cwd");
-        // _RegisterAsMonarch();
-        // _CreateMonarch();
-        _shouldCreateWindow = _windowManager.ShouldCreateWindow();
-        if (!_shouldCreateWindow)
-        {
-            return;
-        }
-        if (auto peasant{ _windowManager.CurrentWindow() })
-        {
-            peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
-        }
-
-        // TODO:MG if we end up not creating a new window, we crash. I'm
-        // thinking this is because the XAML host is not happy about being torn
-        // down before it has a chance to do really anything. Is there some way
-        // to get the app logic without instantiating the entire app? or at
-        // least the parts we'll need for remoting?
-    }
-
     // If there were commandline args to our process, try and process them here.
-    // Do this before AppLogic::Create, otherwise this will have no effect
-    _HandleCommandlineArgs(); // TODO:MG <-- This probably needs to move into _ProposeCommandlineToMonarch
+    // Do this before AppLogic::Create, otherwise this will have no effect.
+    //
+    // This will send our commandline to the Monarch, to ask if we should make a
+    // new window or not. If not, exit immediately.
+    _HandleCommandlineArgs();
+    if (!_shouldCreateWindow)
+    {
+        return;
+    }
 
     _useNonClientArea = _logic.GetShowTabsInTitlebar();
     if (_useNonClientArea)
@@ -137,9 +103,35 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
     }
 }
 
+void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
+{
+    if (auto commandline{ GetCommandLineW() })
+    {
+        int argc = 0;
+
+        // Get the argv, and turn them into a hstring array to pass to the app.
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+        if (argv)
+        {
+            for (auto& elem : wil::make_range(argv.get(), argc))
+            {
+                args.emplace_back(elem);
+            }
+        }
+    }
+    if (args.empty())
+    {
+        args.emplace_back(L"wt.exe");
+    }
+}
+
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
-//   the app logic for processing.
+//   the WindowManager, to ask if we should become a window process.
+// - If we should create a window, then pass the arguements to the app logic for
+//   processing.
+// - If we shouldn't become a window, set _shouldCreateWindow to false and exit
+//   immediately.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
 //    * We display a message box because we're a Win32 application (not a
@@ -152,6 +144,17 @@ void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable&
 // - <none>
 void AppHost::_HandleCommandlineArgs()
 {
+    std::vector<winrt::hstring> args;
+    _buildArgsFromCommandline(args);
+    std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+    _windowManager.ProposeCommandline({ args }, { cwd });
+
+    _shouldCreateWindow = _windowManager.ShouldCreateWindow();
+    if (!_shouldCreateWindow)
+    {
+        return;
+    }
+
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
         if (auto args{ peasant.InitialArgs() })
@@ -176,42 +179,19 @@ void AppHost::_HandleCommandlineArgs()
                 }
             }
         }
+
+        // After handling the initial args, hookup the callback for handling
+        // future commandline invocations. When our peasant is told to execute a
+        // commandline (in the future), it'll trigger this callback, that we'll
+        // use to send the actions to the app.
+        peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
     }
-    // if (auto commandline{ GetCommandLineW() })
-    // {
-    //     int argc = 0;
 
-    //     // Get the argv, and turn them into a hstring array to pass to the app.
-    //     wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-    //     if (argv)
-    //     {
-    //         std::vector<winrt::hstring> args;
-    //         for (auto& elem : wil::make_range(argv.get(), argc))
-    //         {
-    //             args.emplace_back(elem);
-    //         }
-
-    //         const auto result = _logic.SetStartupCommandline({ args });
-    //         const auto message = _logic.ParseCommandlineMessage();
-    //         if (!message.empty())
-    //         {
-    //             const auto displayHelp = result == 0;
-    //             const auto messageTitle = displayHelp ? IDS_HELP_DIALOG_TITLE : IDS_ERROR_DIALOG_TITLE;
-    //             const auto messageIcon = displayHelp ? MB_ICONWARNING : MB_ICONERROR;
-    //             // TODO:GH#4134: polish this dialog more, to make the text more
-    //             // like msiexec /?
-    //             MessageBoxW(nullptr,
-    //                         message.data(),
-    //                         GetStringResource(messageTitle).data(),
-    //                         MB_OK | messageIcon);
-
-    //             if (_logic.ShouldExitEarly())
-    //             {
-    //                 ExitProcess(result);
-    //             }
-    //         }
-    //     }
-    // }
+    // TODO:projects/5 if we end up not creating a new window, we crash. I'm
+    // thinking this is because the XAML host is not happy about being torn
+    // down before it has a chance to do really anything. Is there some way
+    // to get the app logic without instantiating the entire app? or at
+    // least the parts we'll need for remoting?
 }
 
 // Method Description:

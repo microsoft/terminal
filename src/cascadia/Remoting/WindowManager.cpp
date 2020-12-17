@@ -15,9 +15,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
     WindowManager::WindowManager()
     {
+        // Register with COM as a server for the Monarch class
         _registerAsMonarch();
+        // Instantiate an instance of the Monarch. This may or may not be in-proc!
         _createMonarch();
     }
+
     WindowManager::~WindowManager()
     {
         // IMPORTANT! Tear down the registration as soon as we exit. If we're not a
@@ -36,22 +39,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // launched with them!
         //
         // Otherwise, the King will tell us if we should make a new window
-        const bool createNewWindow = isKing ||
-                                     _monarch.ProposeCommandline(args, cwd);
+        _shouldCreateWindow = isKing ||
+                              _monarch.ProposeCommandline(args, cwd);
 
-        if (createNewWindow)
+        if (_shouldCreateWindow)
         {
+            // If we should create a new window, then instantiate our Peasant
+            // instance, and tell that peasant to handle that commandline.
             _createOurPeasant();
 
             auto eventArgs = winrt::make_self<implementation::CommandlineArgs>(args, cwd);
             _peasant.ExecuteCommandline(*eventArgs);
-            _shouldCreateWindow = true;
         }
-        else
-        {
-            // printf("The Monarch instructed us to not create a new window. We'll be exiting now.\n");
-            _shouldCreateWindow = false;
-        }
+        // Othersize, we'll do _nothing_.
     }
 
     bool WindowManager::ShouldCreateWindow()
@@ -93,14 +93,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
         _peasant = *p;
-        auto ourID = _monarch.AddPeasant(_peasant);
-        ourID;
-        // printf("The monarch assigned us the ID %llu\n", ourID);
+        _monarch.AddPeasant(_peasant);
 
-        // if (areWeTheKing())
-        // {
-        //     remindKingWhoTheyAre(*peasant);
-        // }
+        // TODO:MG Spawn a thread to wait on the monarch, and handle the election
 
         return _peasant;
     }
