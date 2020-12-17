@@ -1927,8 +1927,15 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
-            const bool warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            auto isMultiLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
+            if (!isMultiLine)
+            {
+                // GH#8601 - some shells execute commands even when only Carriage Return is present.
+                // Hence we need to issue the multi-line warning even if only \r is present.
+                isMultiLine = std::find(text.cbegin(), text.cend(), L'\r') != text.cend();
+            }
+
+            const bool warnMultiLine = isMultiLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
