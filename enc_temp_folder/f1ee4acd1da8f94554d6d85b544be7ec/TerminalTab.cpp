@@ -230,7 +230,7 @@ namespace winrt::TerminalApp::implementation
                 else
                 {
                     // we need to reset the path so the CommandPalette will be updated
-                    // TODO: this could be avoided if were not resetting the Icon property upon hide.
+                    // TODO: this could be avoided if were not reseting the Icon property upon hide.
                     Icon(_lastIconPath);
                     TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
                     tab->_iconHidden = false;
