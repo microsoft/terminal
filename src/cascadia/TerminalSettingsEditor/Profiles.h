@@ -74,10 +74,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot) :
+        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot, Windows::UI::Xaml::ElementTheme theme) :
             _Profile{ viewModel },
             _Schemes{ schemes },
-            _WindowRoot{ windowRoot }
+            _WindowRoot{ windowRoot },
+            _Theme{ theme }
         {
         }
 
@@ -91,6 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
         GETSET_PROPERTY(bool, IsBaseLayer, false);
+        GETSET_PROPERTY(Windows::UI::Xaml::ElementTheme, Theme, Windows::UI::Xaml::ElementTheme::Default);
 
     private:
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
@@ -112,7 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Icon_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void BIAlignment_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Delete_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        fire_and_forget Delete_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
         void CursorShape_Changed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);

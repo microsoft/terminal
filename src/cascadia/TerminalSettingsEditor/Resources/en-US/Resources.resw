@@ -777,6 +777,15 @@
   <data name="ColorScheme_DeleteButtonDisclaimerInBox" xml:space="preserve">
     <value>This color scheme cannot be deleted or renamed because it is shipped in-box.</value>
   </data>
+  <data name="ColorScheme_DeleteConfirmationDialog.CloseButtonText" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="ColorScheme_DeleteConfirmationDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="ColorScheme_DeleteConfirmationDialog.Title" xml:space="preserve">
+    <value>Are you sure you want to delete this color scheme?</value>
+  </data>
   <data name="ColorScheme_RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Accept rename</value>
   </data>
@@ -785,5 +794,14 @@
   </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they have more specific settings.</value>
+  </data>
+  <data name="Profile_DeleteConfirmationDialog.CloseButtonText" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Profile_DeleteConfirmationDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Profile_DeleteConfirmationDialog.Title" xml:space="preserve">
+    <value>Are you sure you want to delete this profile?</value>
   </data>
 </root>

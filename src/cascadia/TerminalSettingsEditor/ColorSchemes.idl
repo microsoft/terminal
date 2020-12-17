@@ -9,7 +9,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         // This needs to be the theme we are currently using, not the one we're changing to.
         // We need the theme to be able to force the ContentDialog to follow the appropriate
-        // theme chosen by the user. See Rename_Click() for more details.
+        // theme chosen by the user. See Delete_Click() for more details.
         Windows.UI.Xaml.ElementTheme Theme;
     };
 
