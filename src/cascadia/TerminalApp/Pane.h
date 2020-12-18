@@ -58,14 +58,16 @@ public:
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
-    bool CanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                  const float splitSize,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                                                                 const winrt::Windows::Foundation::Size parentSize) const;
     std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
                                              winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                             const float splitSize,
                                              const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
@@ -120,8 +122,8 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    bool _CanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                                   const float splitSize,
                                                                    const GUID& profile,
                                                                    const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
