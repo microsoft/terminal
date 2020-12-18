@@ -283,6 +283,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
     {
         _settings = newSettings;
+        auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
@@ -600,7 +601,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 solidColor.Color(newBgColor);
             }
-
             // Set the default background as transparent to prevent the
             // DX layer from overwriting the background image or acrylic effect
             if (!control->_focused && _settings.UnfocusedConfig())

@@ -185,8 +185,11 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(ICoreAppearance appearance)
 {
+    // Set the default background as transparent to prevent the
+    // DX layer from overwriting the background image or acrylic effect
+    til::color newBackgroundColor{ static_cast<COLORREF>(appearance.DefaultBackground()) };
+    _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
-    _defaultBg = appearance.DefaultBackground();
 
     for (int i = 0; i < 16; i++)
     {
