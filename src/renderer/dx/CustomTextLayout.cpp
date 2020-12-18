@@ -1242,7 +1242,7 @@ CATCH_RETURN();
     {
         // Get the font fallback first
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
-        if (FAILED(::Microsoft::WRL::ComPtr<IDWriteTextFormat>(_formatInUse).As(&format1)))
+        if (FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format1))))
         {
             // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
             return S_FALSE;
