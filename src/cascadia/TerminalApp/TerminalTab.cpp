@@ -219,17 +219,19 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            if (hide)
+            if (tab->_iconHidden != hide)
             {
-                Icon({});
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
-                tab->_iconHidden = true;
-            }
-            else
-            {
-                Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
-                tab->_iconHidden = false;
+                if (hide)
+                {
+                    Icon({});
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                }
+                else
+                {
+                    Icon(_lastIconPath);
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                }
+                tab->_iconHidden = hide;
             }
         }
     }
