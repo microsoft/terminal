@@ -106,14 +106,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             auto peasantSearch = _peasants.find(peasantID);
             auto maybeThePeasant = peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
-            maybeThePeasant.GetPID();
+            if (maybeThePeasant)
+            {
+                maybeThePeasant.GetPID();
+            }
             return maybeThePeasant;
         }
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
             // TODO: Remove the peasant from the list of peasants
-
+            _peasants.erase(peasantID);
             return nullptr;
         }
     }
