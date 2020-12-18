@@ -87,6 +87,7 @@ namespace Microsoft::Console::Render
         bool _isTrueTypeFont;
         UINT _fontCodepage;
         HFONT _hfont;
+        HFONT _hfontItalic;
         TEXTMETRICW _tmFontMetrics;
 
         static const size_t s_cPolyTextCache = 80;
@@ -122,6 +123,7 @@ namespace Microsoft::Console::Render
 
         COLORREF _lastFg;
         COLORREF _lastBg;
+        bool _lastFontItalic;
 
         [[nodiscard]] HRESULT _InvalidCombine(const RECT* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const POINT* const ppt) noexcept;
@@ -152,7 +154,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
-                                               _Inout_ wil::unique_hfont& hFont) noexcept;
+                                               _Inout_ wil::unique_hfont& hFont,
+                                               _Inout_ wil::unique_hfont& hFontItalic) noexcept;
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;
