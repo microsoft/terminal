@@ -23,6 +23,7 @@
 #include <deque>
 #include <list>
 #include <memory>
+#include <memory_resource>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
