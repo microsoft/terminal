@@ -1344,8 +1344,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto cursorPosition = point.Position();
+        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused)
+        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
         {
             args.Handled(true);
             return;
