@@ -944,9 +944,12 @@ namespace winrt::TerminalApp::implementation
         auto setting = AppLogic::CurrentAppSettings();
         auto keymap = setting.GlobalSettings().KeyMap();
         const auto actionAndArgs = keymap.TryLookup(kc);
-
         if (actionAndArgs)
         {
+            if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
+            {
+                CommandPalette().Visibility(Visibility::Collapsed);
+            }
             _actionDispatch->DoAction(actionAndArgs);
             e.Handled(true);
         }
