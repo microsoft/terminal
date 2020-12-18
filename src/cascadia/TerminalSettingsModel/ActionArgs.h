@@ -379,6 +379,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
+        SplitPaneArgs(SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitStyle{ style },
+            _SplitSize{ size },
+            _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
             _SplitStyle{ style },
             _TerminalArgs{ terminalArgs } {};
@@ -387,9 +391,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(SplitState, SplitStyle, SplitState::Automatic);
         GETSET_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
         GETSET_PROPERTY(SplitType, SplitMode, SplitType::Manual);
+        GETSET_PROPERTY(double, SplitSize, .5);
 
         static constexpr std::string_view SplitKey{ "split" };
         static constexpr std::string_view SplitModeKey{ "splitMode" };
+        static constexpr std::string_view SplitSizeKey{ "size" };
 
     public:
         hstring GenerateName() const;
@@ -402,6 +408,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return otherAsUs->_SplitStyle == _SplitStyle &&
                        (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(_TerminalArgs) :
                                                    otherAsUs->_TerminalArgs == _TerminalArgs) &&
+                       otherAsUs->_SplitSize == _SplitSize &&
                        otherAsUs->_SplitMode == _SplitMode;
             }
             return false;
@@ -413,6 +420,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
             JsonUtils::GetValueForKey(json, SplitKey, args->_SplitStyle);
             JsonUtils::GetValueForKey(json, SplitModeKey, args->_SplitMode);
+            JsonUtils::GetValueForKey(json, SplitSizeKey, args->_SplitSize);
+            if (args->_SplitSize >= 1 || args->_SplitSize <= 0)
+            {
+                return { nullptr, { SettingsLoadWarnings::InvalidSplitSize } };
+            }
             return { *args, {} };
         }
         IActionArgs Copy() const
@@ -421,6 +433,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitStyle = _SplitStyle;
             copy->_TerminalArgs = _TerminalArgs.Copy();
             copy->_SplitMode = _SplitMode;
+            copy->_SplitSize = _SplitSize;
             return *copy;
         }
     };

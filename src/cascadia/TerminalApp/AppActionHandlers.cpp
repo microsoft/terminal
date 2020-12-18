@@ -122,7 +122,11 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
+            _SplitPane(realArgs.SplitStyle(),
+                       realArgs.SplitMode(),
+                       // This is safe, we're already filtering so the value is (0, 1)
+                       ::base::saturated_cast<float>(realArgs.SplitSize()),
+                       realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -295,11 +299,11 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleToggleRetroEffect(const IInspectable& /*sender*/,
-                                                const ActionEventArgs& args)
+    void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
+                                                  const ActionEventArgs& args)
     {
         const auto termControl = _GetActiveControl();
-        termControl.ToggleRetroEffect();
+        termControl.ToggleShaderEffects();
         args.Handled(true);
     }
 

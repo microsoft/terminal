@@ -231,8 +231,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring SplitPaneArgs::GenerateName() const
     {
         // The string will be similar to the following:
-        // * "Duplicate pane[, split: <direction>][, new terminal arguments...]"
-        // * "Split pane[, split: <direction>][, new terminal arguments...]"
+        // * "Duplicate pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
+        // * "Split pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
         //
         // Direction will only be added to the string if the split direction is
         // not "auto".
@@ -260,6 +260,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case SplitState::Horizontal:
             ss << L"split: horizontal, ";
             break;
+        }
+
+        if (_SplitSize != .5f)
+        {
+            ss << L"size: " << (_SplitSize * 100) << L"%, ";
         }
 
         winrt::hstring newTerminalArgsStr;
