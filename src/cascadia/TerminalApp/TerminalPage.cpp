@@ -930,6 +930,34 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // Called when the users pressed keyBindings while CommandPalette is open.
+    // Arguments:
+    // - e: the KeyRoutedEventArgs containing info about the keystroke.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_KeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        auto key = e.OriginalKey();
+        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+        auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+        winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+        auto setting = AppLogic::CurrentAppSettings();
+        auto keymap = setting.GlobalSettings().KeyMap();
+        const auto actionAndArgs = keymap.TryLookup(kc);
+        if (actionAndArgs)
+        {
+            if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
+            {
+                CommandPalette().Visibility(Visibility::Collapsed);
+            }
+            _actionDispatch->DoAction(actionAndArgs);
+            e.Handled(true);
+        }
+    }
+
+    // Method Description:
     // - Configure the AppKeyBindings to use our ShortcutActionDispatch and the updated KeyMapping
     // as the object to handle dispatching ShortcutAction events.
     // Arguments:
