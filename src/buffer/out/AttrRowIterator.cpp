@@ -39,19 +39,6 @@ bool AttrRowIterator::operator!=(const AttrRowIterator& it) const noexcept
     return !(*this == it);
 }
 
-AttrRowIterator& AttrRowIterator::operator++() noexcept
-{
-    _increment(1);
-    return *this;
-}
-
-AttrRowIterator AttrRowIterator::operator++(int) noexcept
-{
-    auto copy = *this;
-    _increment(1);
-    return copy;
-}
-
 AttrRowIterator& AttrRowIterator::operator+=(const ptrdiff_t& movement)
 {
     if (!_exceeded)
@@ -72,19 +59,6 @@ AttrRowIterator& AttrRowIterator::operator+=(const ptrdiff_t& movement)
 AttrRowIterator& AttrRowIterator::operator-=(const ptrdiff_t& movement)
 {
     return this->operator+=(-movement);
-}
-
-AttrRowIterator& AttrRowIterator::operator--() noexcept
-{
-    _decrement(1);
-    return *this;
-}
-
-AttrRowIterator AttrRowIterator::operator--(int) noexcept
-{
-    auto copy = *this;
-    _decrement(1);
-    return copy;
 }
 
 const TextAttribute* AttrRowIterator::operator->() const

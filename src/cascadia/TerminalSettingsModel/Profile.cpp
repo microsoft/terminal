@@ -58,6 +58,7 @@ static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTer
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
+static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -109,6 +110,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_CursorShape = source->_CursorShape;
     profile->_CursorHeight = source->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
+    profile->_PixelShaderPath = source->_PixelShaderPath;
     profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
 
@@ -334,10 +336,9 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
-
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
-
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
+    JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 }
 
 // Method Description:
@@ -529,6 +530,7 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+    JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
 
     return json;
 }

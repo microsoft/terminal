@@ -25,6 +25,9 @@
     <Midl Include="FontWeightConverter.idl">
       <Filter>Converters</Filter>
     </Midl>
+    <Midl Include="InvertedBooleanToVisibilityConverter.idl">
+      <Filter>Converters</Filter>
+    </Midl>
     <Midl Include="PercentageConverter.idl">
       <Filter>Converters</Filter>
     </Midl>

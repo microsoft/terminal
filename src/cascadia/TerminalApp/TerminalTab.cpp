@@ -8,6 +8,7 @@
 #include "TerminalTab.g.cpp"
 #include "Utils.h"
 #include "ColorHelper.h"
+#include "AppLogic.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -49,7 +50,6 @@ namespace winrt::TerminalApp::implementation
                 tab->SetTabText(title);
             }
         });
-
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -73,6 +73,13 @@ namespace winrt::TerminalApp::implementation
 
         UpdateTitle();
         _RecalculateAndApplyTabColor();
+    }
+
+    void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
+    {
+        WUX::Controls::ToolTip toolTip{};
+        toolTip.Content(winrt::box_value(tabTitle));
+        WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 
     // Method Description:
@@ -159,7 +166,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
     }
@@ -180,6 +187,13 @@ namespace winrt::TerminalApp::implementation
 
         _lastIconPath = iconPath;
 
+        // If the icon is currently hidden, just return here (but only after setting _lastIconPath to the new path
+        // for when we show the icon again)
+        if (_iconHidden)
+        {
+            return;
+        }
+
         auto weakThis{ get_weak() };
 
         co_await winrt::resume_foreground(TabViewItem().Dispatcher());
@@ -189,6 +203,36 @@ namespace winrt::TerminalApp::implementation
             // The TabViewItem Icon needs MUX while the IconSourceElement in the CommandPalette needs WUX...
             Icon(_lastIconPath);
             TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+        }
+    }
+
+    // Method Description:
+    // - Hide or show the tab icon for this tab
+    // - Used when we want to show the progress ring, which should replace the icon
+    // Arguments:
+    // - hide: if true, we hide the icon; if false, we show the icon
+    winrt::fire_and_forget TerminalTab::HideIcon(const bool hide)
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            if (tab->_iconHidden != hide)
+            {
+                if (hide)
+                {
+                    Icon({});
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                }
+                else
+                {
+                    Icon(_lastIconPath);
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                }
+                tab->_iconHidden = hide;
+            }
         }
     }
 
@@ -229,6 +273,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            _SetToolTip(activeTitle);
         }
     }
 
@@ -251,17 +296,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Determines whether the focused pane has sufficient space to be split.
-    // Arguments:
-    // - splitType: The type of split we want to create.
-    // Return Value:
-    // - True if the focused pane can be split. False otherwise.
-    bool TerminalTab::CanSplitPane(SplitState splitType)
-    {
-        return _activePane->CanSplit(splitType);
-    }
-
-    // Method Description:
     // - Split the focused pane in our tree of panes, and place the
     //   given TermControl into the newly created pane.
     // Arguments:
@@ -270,11 +304,14 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
+    void TerminalTab::SplitPane(SplitState splitType,
+                                const float splitSize,
+                                const GUID& profile,
+                                TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
-        auto [first, second] = _activePane->Split(splitType, profile, control);
+        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
         first->Id(activePaneId);
         second->Id(_nextPaneId);
         ++_nextPaneId;
@@ -439,6 +476,38 @@ namespace winrt::TerminalApp::implementation
                 // active control in this tab. We'll just recalculate the
                 // current color anyways.
                 tab->_RecalculateAndApplyTabColor();
+            }
+        });
+
+        control.SetTaskbarProgress([weakThis](auto&&, auto&&) {
+            // Check if Tab's lifetime has expired
+            if (auto tab{ weakThis.get() })
+            {
+                // The progress of the control changed, but not necessarily the progress of the tab.
+                // Set the tab's progress ring to the active pane's progress
+                if (tab->GetActiveTerminalControl().TaskbarState() > 0)
+                {
+                    if (tab->GetActiveTerminalControl().TaskbarState() == 3)
+                    {
+                        // 3 is the indeterminate state, set the progress ring as such
+                        tab->_headerControl.IsProgressRingIndeterminate(true);
+                    }
+                    else
+                    {
+                        // any non-indeterminate state has a value, set the progress ring as such
+                        tab->_headerControl.IsProgressRingIndeterminate(false);
+                        tab->_headerControl.ProgressValue(gsl::narrow<uint32_t>(tab->GetActiveTerminalControl().TaskbarProgress()));
+                    }
+                    // Hide the tab icon (the progress ring is placed over it)
+                    tab->HideIcon(true);
+                    tab->_headerControl.IsProgressRingActive(true);
+                }
+                else
+                {
+                    // Show the tab icon
+                    tab->HideIcon(false);
+                    tab->_headerControl.IsProgressRingActive(false);
+                }
             }
         });
     }
@@ -868,9 +937,11 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
-    bool TerminalTab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
+    bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
+                                           const float splitSize,
+                                           winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
     }
 
     // Method Description:

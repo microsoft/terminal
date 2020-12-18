@@ -154,7 +154,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         pair_type{ "extra-black", static_cast<uint16_t>(950u) },
     };
 
-    // Override mapping parser to add boolean parsing
+    // Override mapping parser to add unsigned int parsing
     auto FromJson(const Json::Value& json)
     {
         unsigned int value{ 400 };
@@ -191,7 +191,10 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
         return BaseEnumMapper::CanConvert(json) || json.isUInt();
     }
 
-    using EnumMapper::TypeDescription;
+    std::string TypeDescription() const
+    {
+        return EnumMapper::TypeDescription() + " or number";
+    }
 };
 
 JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)

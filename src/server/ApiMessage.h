@@ -23,7 +23,7 @@ Revision History:
 class ConsoleProcessHandle;
 class ConsoleHandleData;
 
-class DeviceComm;
+class IDeviceComm;
 
 typedef struct _CONSOLE_API_MSG
 {
@@ -32,7 +32,7 @@ typedef struct _CONSOLE_API_MSG
     CD_IO_COMPLETE Complete;
     CONSOLE_API_STATE State;
 
-    DeviceComm* _pDeviceComm;
+    IDeviceComm* _pDeviceComm;
     IApiRoutines* _pApiRoutines;
 
     // From here down is the actual packet data sent/received.

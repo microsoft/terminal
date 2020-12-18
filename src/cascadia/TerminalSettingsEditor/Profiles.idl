@@ -10,6 +10,9 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Boolean CanDeleteProfile { get; };
+        Boolean IsBaseLayer;
+
         OBSERVABLE_PROJECTED_SETTING(String, Name);
         OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
         OBSERVABLE_PROJECTED_SETTING(String, Source);
@@ -50,12 +53,19 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
     }
 
+    runtimeclass DeleteProfileEventArgs
+    {
+        Guid ProfileGuid { get; };
+    }
+
     runtimeclass ProfilePageNavigationState
     {
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         ProfileViewModel Profile { get; };
+
+        event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged

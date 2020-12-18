@@ -122,12 +122,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void ResetFontSize();
 
         void SendInput(const winrt::hstring& input);
-        void ToggleRetroEffect();
+        void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged();
         void _AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain);
         winrt::fire_and_forget _RendererEnteredErrorState();
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
+        winrt::fire_and_forget _RendererWarning(const HRESULT hr);
 
         void CreateSearchBoxControl();
 

@@ -15,6 +15,7 @@ Author(s):
 
 #pragma once
 
+#include "boost/container/small_vector.hpp"
 #include "TextAttribute.hpp"
 #include "TextAttributeRun.hpp"
 
@@ -38,20 +39,38 @@ public:
     bool operator==(const AttrRowIterator& it) const noexcept;
     bool operator!=(const AttrRowIterator& it) const noexcept;
 
-    AttrRowIterator& operator++() noexcept;
-    AttrRowIterator operator++(int) noexcept;
+    AttrRowIterator& operator++() noexcept
+    {
+        _increment(1);
+        return *this;
+    }
+    AttrRowIterator operator++(int) noexcept
+    {
+        auto copy = *this;
+        _increment(1);
+        return copy;
+    }
 
     AttrRowIterator& operator+=(const ptrdiff_t& movement);
     AttrRowIterator& operator-=(const ptrdiff_t& movement);
 
-    AttrRowIterator& operator--() noexcept;
-    AttrRowIterator operator--(int) noexcept;
+    AttrRowIterator& operator--() noexcept
+    {
+        _decrement(1);
+        return *this;
+    }
+    AttrRowIterator operator--(int) noexcept
+    {
+        auto copy = *this;
+        _decrement(1);
+        return copy;
+    }
 
     const TextAttribute* operator->() const;
     const TextAttribute& operator*() const;
 
 private:
-    std::vector<TextAttributeRun>::const_iterator _run;
+    boost::container::small_vector_base<TextAttributeRun>::const_iterator _run;
     const ATTR_ROW* _pAttrRow;
     size_t _currentAttributeIndex; // index of TextAttribute within the current TextAttributeRun
     bool _exceeded;

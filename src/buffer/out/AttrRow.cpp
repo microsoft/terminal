@@ -11,10 +11,16 @@
 // - attr - the default text attribute
 // Return Value:
 // - constructed object
-// Note: will throw exception if unable to allocate memory for text attribute storage
-ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
+ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr) noexcept
 {
-    _list.push_back(TextAttributeRun(cchRowWidth, attr));
+    try
+    {
+        _list.emplace_back(TextAttributeRun(cchRowWidth, attr));
+    }
+    catch (...)
+    {
+        FAIL_FAST_CAUGHT_EXCEPTION();
+    }
     _cchRowWidth = cchRowWidth;
 }
 
@@ -25,7 +31,7 @@ ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
 void ATTR_ROW::Reset(const TextAttribute attr)
 {
     _list.clear();
-    _list.push_back(TextAttributeRun(_cchRowWidth, attr));
+    _list.emplace_back(TextAttributeRun(_cchRowWidth, attr));
 }
 
 // Routine Description:
@@ -402,7 +408,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
     // fact that an existing piece of the run was split in half (to hold the latter half).
     const size_t cNewRun = _list.size() + newAttrs.size() + 1;
-    std::vector<TextAttributeRun> newRun;
+    decltype(_list) newRun;
     newRun.reserve(cNewRun);
 
     // We will start analyzing from the beginning of our existing run.
@@ -595,8 +601,7 @@ std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribut
     {
         if (runs.empty() || runs.back().GetAttributes() != attr)
         {
-            const TextAttributeRun run(1, attr);
-            runs.push_back(run);
+            runs.emplace_back(TextAttributeRun(1, attr));
         }
         else
         {

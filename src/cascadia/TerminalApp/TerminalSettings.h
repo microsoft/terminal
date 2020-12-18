@@ -116,6 +116,7 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(bool, SoftwareRendering, false);
         GETSET_SETTING(bool, ForceVTInput, false);
 
+        GETSET_PROPERTY(hstring, PixelShaderPath);
 #pragma warning(pop)
 
     private:

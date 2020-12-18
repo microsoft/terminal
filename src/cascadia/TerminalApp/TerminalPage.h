@@ -124,6 +124,7 @@ namespace winrt::TerminalApp::implementation
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
+        bool _removing{ false };
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
@@ -156,6 +157,7 @@ namespace winrt::TerminalApp::implementation
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
+        void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
@@ -192,8 +194,13 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
-        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType, const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual, const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
+
+        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType,
+                        const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual,
+                        const float splitSize = 0.5f,
+                        const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+
         void _ScrollPage(ScrollDirection scrollDirection);
         void _ScrollToBufferEdge(ScrollDirection scrollDirection);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::TerminalControl::KeyChord& keyChord);
@@ -282,7 +289,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleAdjustFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleFind(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleResetFontSize(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
-        void _HandleToggleRetroEffect(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleToggleShaderEffects(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleFocusMode(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleFullscreen(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleToggleAlwaysOnTop(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
