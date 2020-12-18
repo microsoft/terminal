@@ -16,11 +16,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     WindowManager::WindowManager()
     {
         _monarchWaitInterrupt.create();
+        // _peasantListenerInterrupt.create();
+
+        // wil::unique_event peasantListenerInterrupt;
+        // peasantListenerInterrupt.create();
+        // _peasantHandles.emplace_back(std::move(peasantListenerInterrupt));
 
         // Register with COM as a server for the Monarch class
         _registerAsMonarch();
         // Instantiate an instance of the Monarch. This may or may not be in-proc!
-        _createMonarch();
+        _createMonarchAndCallbacks();
     }
 
     WindowManager::~WindowManager()
@@ -32,10 +37,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
         _monarchWaitInterrupt.SetEvent();
+        // _peasantListenerInterrupt.SetEvent();
         if (_electionThread.joinable())
         {
             _electionThread.join();
         }
+        // if (_peasantListenerThread.joinable())
+        // {
+        //     _peasantListenerThread.join();
+        // }
     }
 
     void WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args)
@@ -93,6 +103,35 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                       CLSCTX_LOCAL_SERVER);
     }
 
+    void WindowManager::_createMonarchAndCallbacks()
+    {
+        _createMonarch();
+        const auto isKing = _areWeTheKing();
+        if (!isKing)
+        {
+            return;
+        }
+        // Here, we're the king!
+
+        // TODO:MG Add an even handler to the monarch's PeasantAdded event.
+        // We'll use that callback as a chance to start waiting on the peasant's
+        // PID. If they die, we'll tell the monarch to remove them from the
+        // list.
+        // _peasantHandles.emplace_back(_peasantListenerInterrupt.get());
+
+        // _peasantListenerThread = std::thread([this]() {
+
+        //     bool exitRequested = false;
+        //     while (!exitRequested)
+        //     {
+        //     }
+        // });
+
+        // Wait, don't. Let's just have the monarch try/catch any accesses to
+        // peasants. If the peasant dies, then it can't get the peasant's
+        // anything. In that case, _remove it_.
+    }
+
     bool WindowManager::_areWeTheKing()
     {
         auto kingPID = _monarch.GetPID();
@@ -111,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     bool WindowManager::_electionNight2020()
     {
-        _createMonarch();
+        _createMonarchAndCallbacks();
         if (_areWeTheKing())
         {
             return true;
@@ -134,7 +173,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             while (!exitRequested)
             {
                 wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(_monarch.GetPID())) };
-                // TODO:MG
+                // TODO:MG If we fail to open the monarch, then they don't exist
+                //  anymore! Go straight to an election.
+                //
                 // if (hMonarch.get() == nullptr)
                 // {
                 //     const auto gle = GetLastError();
@@ -146,11 +187,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 switch (waitResult)
                 {
                 case WAIT_OBJECT_0 + 0: // waits[0] was signaled
-                    // printf("THE KING IS \x1b[31mDEAD\x1b[m\n");
-                    // // Return false here - this will trigger us to find the new monarch
-                    // return false;
-                    //
-                    // TODO:MG Connect to the new monarch, which might be us!
+                    // Connect to the new monarch, which might be us!
+                    // If we become the monarch, then we'll return true and exit this thread.
                     exitRequested = _electionNight2020();
                     break;
                 case WAIT_OBJECT_0 + 1: // waits[1] was signaled

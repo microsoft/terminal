@@ -24,10 +24,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
         wil::unique_event _monarchWaitInterrupt;
+        // wil::unique_event _peasantListenerInterrupt;
+
         std::thread _electionThread;
+        // std::thread _peasantListenerThread;
+
+        // // NON-OWNING HANDLES
+        // std::vector<HANDLE> _peasantHandles{};
 
         void _registerAsMonarch();
         void _createMonarch();
+        void _createMonarchAndCallbacks();
         bool _areWeTheKing();
         winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant();
 

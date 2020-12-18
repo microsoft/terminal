@@ -66,6 +66,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // TODO:projects/5 Wait on the peasant's PID, and remove them from the
         // map if they die. This won't work great in tests though, with fake
         // PIDs.
+        //
+        // We should trigger a callback. The manager will use this callback as
+        // an opportunity to start waiting on the new peasant.
 
         return newPeasantsId;
     }
@@ -99,8 +102,20 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - the peasant if it exists in our map, otherwise null
     Remoting::IPeasant Monarch::_getPeasant(uint64_t peasantID)
     {
-        auto peasantSearch = _peasants.find(peasantID);
-        return peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
+        try
+        {
+            auto peasantSearch = _peasants.find(peasantID);
+            auto maybeThePeasant = peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
+            maybeThePeasant.GetPID();
+            return maybeThePeasant;
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            // TODO: Remove the peasant from the list of peasants
+
+            return nullptr;
+        }
     }
 
     void Monarch::_setMostRecentPeasant(const uint64_t peasantID)
