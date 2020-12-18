@@ -35,6 +35,12 @@ typedef struct _CONSOLE_API_MSG
     IDeviceComm* _pDeviceComm;
     IApiRoutines* _pApiRoutines;
 
+private:
+    boost::container::small_vector<BYTE, 128> _inputBuffer;
+    boost::container::small_vector<BYTE, 128> _outputBuffer;
+
+public:
+
     // From here down is the actual packet data sent/received.
     CD_IO_DESCRIPTOR Descriptor;
     union
@@ -58,6 +64,8 @@ typedef struct _CONSOLE_API_MSG
     // End packet data
 
 public:
+    // DO NOT PUT MORE FIELDS DOWN HERE. They will be stomped by driver fills.
+
     ConsoleProcessHandle* GetProcessHandle() const;
     ConsoleHandleData* GetObjectHandle() const;
 
@@ -72,5 +80,7 @@ public:
 
     void SetReplyStatus(const NTSTATUS Status);
     void SetReplyInformation(const ULONG_PTR pInformation);
+
+    // DO NOT PUT MORE FIELDS DOWN HERE. They will be stomped by driver fills.
 
 } CONSOLE_API_MSG, *PCONSOLE_API_MSG, * const PCCONSOLE_API_MSG;

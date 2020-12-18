@@ -20,7 +20,6 @@ Revision History:
 
 #pragma once
 
-#include "boost/container/small_vector.hpp"
 #include "TextAttributeRun.hpp"
 #include "AttrRowIterator.hpp"
 

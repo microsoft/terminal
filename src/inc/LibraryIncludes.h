@@ -74,6 +74,9 @@
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
 
+// Boost
+#include "boost/container/small_vector.hpp"
+
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
