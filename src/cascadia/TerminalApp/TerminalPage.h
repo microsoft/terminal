@@ -124,6 +124,7 @@ namespace winrt::TerminalApp::implementation
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;
+        bool _removing{ false };
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 

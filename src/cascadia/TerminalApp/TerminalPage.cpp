@@ -1117,6 +1117,11 @@ namespace winrt::TerminalApp::implementation
     // - tabIndex: the index of the tab to be removed
     void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
+        // We use _removing flag to suppress _OnTabSelectionChanged events
+        // that might get triggered while removing
+        _removing = true;
+        auto unsetRemoving = wil::scope_exit([&]() noexcept { _removing = false; });
+
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
 
         // Removing the tab from the collection should destroy its control and disconnect its connection,
@@ -1152,7 +1157,7 @@ namespace winrt::TerminalApp::implementation
                 const auto newSelectedTab = _mruTabs.GetAt(0);
 
                 uint32_t newSelectedIndex;
-                if (_mruTabs.IndexOf(_tabs.GetAt(tabIndex), newSelectedIndex))
+                if (_tabs.IndexOf(newSelectedTab, newSelectedIndex))
                 {
                     _UpdatedSelectedTab(newSelectedIndex);
                     _tabView.SelectedItem(newSelectedTab.TabViewItem());
@@ -2222,7 +2227,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void TerminalPage::_OnTabSelectionChanged(const IInspectable& sender, const WUX::Controls::SelectionChangedEventArgs& /*eventArgs*/)
     {
-        if (!_rearranging)
+        if (!_rearranging && !_removing)
         {
             auto tabView = sender.as<MUX::Controls::TabView>();
             auto selectedIndex = tabView.SelectedIndex();
