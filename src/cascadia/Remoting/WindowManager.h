@@ -24,13 +24,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
         wil::unique_event _monarchWaitInterrupt;
-        // wil::unique_event _peasantListenerInterrupt;
 
         std::thread _electionThread;
-        // std::thread _peasantListenerThread;
-
-        // // NON-OWNING HANDLES
-        // std::vector<HANDLE> _peasantHandles{};
 
         void _registerAsMonarch();
         void _createMonarch();
@@ -40,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         bool _electionNight2020();
         void _createPeasantThread();
+        void _waitOnMonarchThread();
     };
 }
 

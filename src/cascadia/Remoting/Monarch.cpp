@@ -63,13 +63,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Add an event listener to the peasant's WindowActivated event.
         peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
 
-        // TODO:projects/5 Wait on the peasant's PID, and remove them from the
-        // map if they die. This won't work great in tests though, with fake
-        // PIDs.
-        //
-        // We should trigger a callback. The manager will use this callback as
-        // an opportunity to start waiting on the new peasant.
-
         return newPeasantsId;
     }
 
@@ -115,7 +108,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
-            // TODO: Remove the peasant from the list of peasants
+            // Remove the peasant from the list of peasants
             _peasants.erase(peasantID);
             return nullptr;
         }

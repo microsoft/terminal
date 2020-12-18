@@ -279,6 +279,7 @@ namespace RemotingUnitTests
 
         VERIFY_ARE_EQUAL(2u, m0->_peasants.size());
 
+        Log::Comment(L"Kill peasant 1. Make sure that it gets removed from the monarch.");
         RemotingTests::_killPeasant(m0, p1->GetID());
 
         auto maybeP2 = m0->_getPeasant(2);
@@ -286,7 +287,6 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(peasant2PID, maybeP2.GetPID());
 
         auto maybeP1 = m0->_getPeasant(1);
-        // VERIFY_ARE_EQUAL(peasant1PID, maybeP1.GetPID());
         VERIFY_IS_NULL(maybeP1);
 
         VERIFY_ARE_EQUAL(1u, m0->_peasants.size());

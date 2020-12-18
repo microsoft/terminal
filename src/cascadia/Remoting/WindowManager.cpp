@@ -16,11 +16,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     WindowManager::WindowManager()
     {
         _monarchWaitInterrupt.create();
-        // _peasantListenerInterrupt.create();
-
-        // wil::unique_event peasantListenerInterrupt;
-        // peasantListenerInterrupt.create();
-        // _peasantHandles.emplace_back(std::move(peasantListenerInterrupt));
 
         // Register with COM as a server for the Monarch class
         _registerAsMonarch();
@@ -37,15 +32,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
         _monarchWaitInterrupt.SetEvent();
-        // _peasantListenerInterrupt.SetEvent();
+
         if (_electionThread.joinable())
         {
             _electionThread.join();
         }
-        // if (_peasantListenerThread.joinable())
-        // {
-        //     _peasantListenerThread.join();
-        // }
     }
 
     void WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args)
@@ -113,20 +104,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         // Here, we're the king!
 
-        // TODO:MG Add an even handler to the monarch's PeasantAdded event.
-        // We'll use that callback as a chance to start waiting on the peasant's
-        // PID. If they die, we'll tell the monarch to remove them from the
-        // list.
-        // _peasantHandles.emplace_back(_peasantListenerInterrupt.get());
-
-        // _peasantListenerThread = std::thread([this]() {
-
-        //     bool exitRequested = false;
-        //     while (!exitRequested)
-        //     {
-        //     }
-        // });
-
         // Wait, don't. Let's just have the monarch try/catch any accesses to
         // peasants. If the peasant dies, then it can't get the peasant's
         // anything. In that case, _remove it_.
@@ -151,6 +128,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     bool WindowManager::_electionNight2020()
     {
         _createMonarchAndCallbacks();
+
+        // Tell the new monarch who we are. We might be that monarch!
+        _monarch.AddPeasant(_peasant);
+
         if (_areWeTheKing())
         {
             return true;
@@ -166,51 +147,62 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // caused the exception in the first place...
 
         _electionThread = std::thread([this] {
-            HANDLE waits[2];
-            waits[1] = _monarchWaitInterrupt.get();
-
-            bool exitRequested = false;
-            while (!exitRequested)
-            {
-                wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(_monarch.GetPID())) };
-                // TODO:MG If we fail to open the monarch, then they don't exist
-                //  anymore! Go straight to an election.
-                //
-                // if (hMonarch.get() == nullptr)
-                // {
-                //     const auto gle = GetLastError();
-                //     return false;
-                // }
-                waits[0] = hMonarch.get();
-                auto waitResult = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
-
-                switch (waitResult)
-                {
-                case WAIT_OBJECT_0 + 0: // waits[0] was signaled
-                    // Connect to the new monarch, which might be us!
-                    // If we become the monarch, then we'll return true and exit this thread.
-                    exitRequested = _electionNight2020();
-                    break;
-                case WAIT_OBJECT_0 + 1: // waits[1] was signaled
-                    exitRequested = true;
-                    break;
-
-                case WAIT_TIMEOUT:
-                    printf("Wait timed out. This should be impossible.\n");
-                    exitRequested = true;
-                    break;
-
-                // Return value is invalid.
-                default:
-                {
-                    auto gle = GetLastError();
-                    printf("WaitForMultipleObjects returned: %d\n", waitResult);
-                    printf("Wait error: %d\n", gle);
-                    ExitProcess(0);
-                }
-                }
-            }
+            _waitOnMonarchThread();
         });
+    }
+
+    void WindowManager::_waitOnMonarchThread()
+    {
+        HANDLE waits[2];
+        waits[1] = _monarchWaitInterrupt.get();
+
+        bool exitRequested = false;
+        while (!exitRequested)
+        {
+            wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS,
+                                                     FALSE,
+                                                     static_cast<DWORD>(_monarch.GetPID())) };
+            // TODO:MG If we fail to open the monarch, then they don't exist
+            //  anymore! Go straight to an election.
+            //
+            // TODO:MG At any point in all this, the current monarch might die.
+            // We go straight to a new election, right? Worst case, eventually,
+            // we'll become the new monarch.
+            //
+            // if (hMonarch.get() == nullptr)
+            // {
+            //     const auto gle = GetLastError();
+            //     return false;
+            // }
+            waits[0] = hMonarch.get();
+            auto waitResult = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
+
+            switch (waitResult)
+            {
+            case WAIT_OBJECT_0 + 0: // waits[0] was signaled
+                // Connect to the new monarch, which might be us!
+                // If we become the monarch, then we'll return true and exit this thread.
+                exitRequested = _electionNight2020();
+                break;
+            case WAIT_OBJECT_0 + 1: // waits[1] was signaled
+                exitRequested = true;
+                break;
+
+            case WAIT_TIMEOUT:
+                printf("Wait timed out. This should be impossible.\n");
+                exitRequested = true;
+                break;
+
+            // Return value is invalid.
+            default:
+            {
+                auto gle = GetLastError();
+                printf("WaitForMultipleObjects returned: %d\n", waitResult);
+                printf("Wait error: %d\n", gle);
+                ExitProcess(0);
+            }
+            }
+        }
     }
 
     Remoting::Peasant WindowManager::CurrentWindow()
