@@ -65,7 +65,7 @@ namespace winrt::TerminalApp::implementation
 
         GETSET_SETTING(Windows::Foundation::IReference<uint32_t>, TabColor, nullptr);
 
-        GETSET_PROPERTY(Microsoft::Terminal::TerminalControl::IControlAppearance, UnfocusedConfig, nullptr);
+        GETSET_SETTING(Microsoft::Terminal::TerminalControl::IControlAppearance, UnfocusedConfig, nullptr);
         // When set, StartingTabColor allows to create a terminal with a "sticky" tab color.
         // This color is prioritized above the TabColor (that is usually initialized based on profile settings).
         // Due to this prioritization, the tab color will be preserved upon settings reload
@@ -118,7 +118,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(bool, ForceVTInput, false);
 
         GETSET_PROPERTY(hstring, PixelShaderPath);
-#pragma warning(pop)
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};

@@ -280,18 +280,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - newSettings: New settings values for the profile in this terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings(IControlSettings newSettings)
+    winrt::fire_and_forget TermControl::UpdateSettings()
     {
-        _settings = newSettings;
         auto weakThis{ get_weak() };
 
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
-        _UpdateSettingsFromUIThread(newSettings);
-        auto appearance = newSettings.try_as<IControlAppearance>();
-        if (!_focused && newSettings.UnfocusedConfig())
+        _UpdateSettingsFromUIThread(_settings);
+        auto appearance = _settings.try_as<IControlAppearance>();
+        if (!_focused && _settings.UnfocusedConfig())
         {
-            appearance = newSettings.UnfocusedConfig();
+            appearance = _settings.UnfocusedConfig();
         }
         _UpdateAppearanceFromUIThread(appearance);
     }
@@ -362,7 +361,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto lock = _terminal->LockForWriting();
 
         // Update DxEngine settings under the lock
-        _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+        _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -600,16 +599,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
                 solidColor.Color(newBgColor);
-            }
-            // Set the default background as transparent to prevent the
-            // DX layer from overwriting the background image or acrylic effect
-            if (!control->_focused && _settings.UnfocusedConfig())
-            {
-                _settings.UnfocusedConfig().DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
-            }
-            else
-            {
-                _settings.DefaultBackground(static_cast<COLORREF>(newBgColor.with_alpha(0)));
             }
         }
     }
