@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "AppHost.h"
-// #include "MonarchFactory.h"
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
@@ -129,7 +128,7 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the WindowManager, to ask if we should become a window process.
-// - If we should create a window, then pass the arguements to the app logic for
+// - If we should create a window, then pass the arguments to the app logic for
 //   processing.
 // - If we shouldn't become a window, set _shouldCreateWindow to false and exit
 //   immediately.

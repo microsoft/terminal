@@ -115,7 +115,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // Method Description:
     // - Try to handle a commandline from a new WT invocation. We might need to
     //   hand the commandline to an existing window, or we might need to tell
-    //   the caller that they need to become a new window to handle it themself.
+    //   the caller that they need to become a new window to handle it themselves.
     // Arguments:
     // - <none>
     // Return Value:
@@ -127,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // version of this function, with a naive implementation. For now, we
         // always want to create a new window, so we'll just return true. This
         // will tell the caller that we didn't handle the commandline, and they
-        // should open a new window to deal with it themself.
+        // should open a new window to deal with it themselves.
         return true;
     }
 

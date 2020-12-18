@@ -82,9 +82,6 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
-      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;user32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>

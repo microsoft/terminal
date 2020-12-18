@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             _peasant.ExecuteCommandline(args);
         }
-        // Othersize, we'll do _nothing_.
+        // Otherwise, we'll do _nothing_.
     }
 
     bool WindowManager::ShouldCreateWindow()
@@ -74,7 +74,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // definitions for our types automatically. This only works in the following
         // cases:
         //
-        // * If we're running unpackaged: the .winmd but be a sibling of the .exe
+        // * If we're running unpackaged: the .winmd must be a sibling of the .exe
         // * If we're running packaged: the .winmd must be in the package root
         _monarch = create_instance<Remoting::Monarch>(Monarch_clsid,
                                                       CLSCTX_LOCAL_SERVER);
