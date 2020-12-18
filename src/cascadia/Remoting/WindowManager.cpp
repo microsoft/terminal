@@ -15,6 +15,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
     WindowManager::WindowManager()
     {
+        _monarchWaitInterrupt.create();
+
         // Register with COM as a server for the Monarch class
         _registerAsMonarch();
         // Instantiate an instance of the Monarch. This may or may not be in-proc!
@@ -29,6 +31,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // monarch!
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
+        _monarchWaitInterrupt.SetEvent();
+        if (_electionThread.joinable())
+        {
+            _electionThread.join();
+        }
     }
 
     void WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args)
@@ -46,6 +53,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // If we should create a new window, then instantiate our Peasant
             // instance, and tell that peasant to handle that commandline.
             _createOurPeasant();
+
+            // TODO:MG Spawn a thread to wait on the monarch, and handle the election
+            if (!isKing)
+            {
+                _createPeasantThread();
+            }
 
             _peasant.ExecuteCommandline(args);
         }
@@ -93,9 +106,73 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _peasant = *p;
         _monarch.AddPeasant(_peasant);
 
-        // TODO:MG Spawn a thread to wait on the monarch, and handle the election
-
         return _peasant;
+    }
+
+    bool WindowManager::_electionNight2020()
+    {
+        _createMonarch();
+        if (_areWeTheKing())
+        {
+            return true;
+        }
+        return false;
+    }
+
+    void WindowManager::_createPeasantThread()
+    {
+        // If we catch an exception trying to get at the monarch ever, we can
+        // set the _monarchWaitInterrupt, and use that to trigger a new
+        // election. Though, we wouldn't be able to retry the function that
+        // caused the exception in the first place...
+
+        _electionThread = std::thread([this] {
+            HANDLE waits[2];
+            waits[1] = _monarchWaitInterrupt.get();
+
+            bool exitRequested = false;
+            while (!exitRequested)
+            {
+                wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS, FALSE, static_cast<DWORD>(_monarch.GetPID())) };
+                // TODO:MG
+                // if (hMonarch.get() == nullptr)
+                // {
+                //     const auto gle = GetLastError();
+                //     return false;
+                // }
+                waits[0] = hMonarch.get();
+                auto waitResult = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
+
+                switch (waitResult)
+                {
+                case WAIT_OBJECT_0 + 0: // waits[0] was signaled
+                    // printf("THE KING IS \x1b[31mDEAD\x1b[m\n");
+                    // // Return false here - this will trigger us to find the new monarch
+                    // return false;
+                    //
+                    // TODO:MG Connect to the new monarch, which might be us!
+                    exitRequested = _electionNight2020();
+                    break;
+                case WAIT_OBJECT_0 + 1: // waits[1] was signaled
+                    exitRequested = true;
+                    break;
+
+                case WAIT_TIMEOUT:
+                    printf("Wait timed out. This should be impossible.\n");
+                    exitRequested = true;
+                    break;
+
+                // Return value is invalid.
+                default:
+                {
+                    auto gle = GetLastError();
+                    printf("WaitForMultipleObjects returned: %d\n", waitResult);
+                    printf("Wait error: %d\n", gle);
+                    ExitProcess(0);
+                }
+                }
+            }
+        });
     }
 
     Remoting::Peasant WindowManager::CurrentWindow()

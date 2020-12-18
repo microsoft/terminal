@@ -7,7 +7,7 @@
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    struct WindowManager final : public WindowManagerT<WindowManager> 
+    struct WindowManager final : public WindowManagerT<WindowManager>
     {
         WindowManager();
         ~WindowManager();
@@ -23,10 +23,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::Monarch _monarch{ nullptr };
         winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
+        wil::unique_event _monarchWaitInterrupt;
+        std::thread _electionThread;
+
         void _registerAsMonarch();
         void _createMonarch();
         bool _areWeTheKing();
         winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant();
+
+        bool _electionNight2020();
+        void _createPeasantThread();
     };
 }
 
