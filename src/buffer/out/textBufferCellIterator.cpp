@@ -65,7 +65,7 @@ TextBufferCellIterator::operator bool() const noexcept
 // - it - The other iterator to compare to this one.
 // Return Value:
 // - True if it's the same text buffer and same cell position. False otherwise.
-bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const
+bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const noexcept
 {
     return _pos == it._pos &&
            &_buffer == &it._buffer &&
@@ -81,7 +81,7 @@ bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const
 // - it - The other iterator to compare to this one.
 // Return Value:
 // - True if it's the same text buffer and different cell position or if they're different buffers. False otherwise.
-bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const
+bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const noexcept
 {
     return !(*this == it);
 }

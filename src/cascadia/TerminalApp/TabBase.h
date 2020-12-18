@@ -28,14 +28,12 @@ namespace winrt::TerminalApp::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // The TabViewIndex is the index this Tab object resides in TerminalPage's _tabs vector.
-        // This is needed since Tab is going to be managing its own SwitchToTab command.
         GETSET_PROPERTY(uint32_t, TabViewIndex, 0);
         // The TabViewNumTabs is the number of Tab objects in TerminalPage's _tabs vector.
         GETSET_PROPERTY(uint32_t, TabViewNumTabs, 0);
 
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Title, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Icon, _PropertyChangedHandlers);
-        OBSERVABLE_GETSET_PROPERTY(winrt::Microsoft::Terminal::Settings::Model::Command, SwitchToTabCommand, _PropertyChangedHandlers, nullptr);
         GETSET_PROPERTY(winrt::Microsoft::UI::Xaml::Controls::TabViewItem, TabViewItem, nullptr);
 
         OBSERVABLE_GETSET_PROPERTY(winrt::Windows::UI::Xaml::FrameworkElement, Content, _PropertyChangedHandlers, nullptr);

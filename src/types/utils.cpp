@@ -391,7 +391,8 @@ bool Utils::StringToUint(const std::wstring_view wstr,
 // Return Value:
 // - a vector containing the result string parts.
 std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
-                                                  const wchar_t delimiter)
+                                                  const wchar_t delimiter) noexcept
+try
 {
     std::vector<std::wstring_view> result;
     size_t current = 0;
@@ -420,6 +421,11 @@ std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
     }
 
     return result;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
 }
 
 // Routine Description:

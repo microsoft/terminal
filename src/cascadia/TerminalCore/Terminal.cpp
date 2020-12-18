@@ -339,7 +339,7 @@ void Terminal::UpdateAppearance(ICoreAppearance appearance)
             {
                 try
                 {
-                    auto row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
+                    auto& row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
                     if (row.GetCharRow().WasWrapForced())
                     {
                         proposedTop--;

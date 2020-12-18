@@ -122,7 +122,11 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(), realArgs.SplitMode(), realArgs.TerminalArgs());
+            _SplitPane(realArgs.SplitStyle(),
+                       realArgs.SplitMode(),
+                       // This is safe, we're already filtering so the value is (0, 1)
+                       ::base::saturated_cast<float>(realArgs.SplitSize()),
+                       realArgs.TerminalArgs());
             args.Handled(true);
         }
     }
@@ -164,6 +168,20 @@ namespace winrt::TerminalApp::implementation
                                              const ActionEventArgs& args)
     {
         _ScrollPage(ScrollDown);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToTop(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollUp);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleScrollToBottom(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _ScrollToBufferEdge(ScrollDown);
         args.Handled(true);
     }
 
@@ -214,14 +232,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<ResizePaneArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.ResizeDirection() == ResizeDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _ResizePane(realArgs.Direction());
+                _ResizePane(realArgs.ResizeDirection());
                 args.Handled(true);
             }
         }
@@ -232,14 +250,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<MoveFocusArgs>())
         {
-            if (realArgs.Direction() == Direction::None)
+            if (realArgs.FocusDirection() == FocusDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _MoveFocus(realArgs.Direction());
+                _MoveFocus(realArgs.FocusDirection());
                 args.Handled(true);
             }
         }
@@ -281,11 +299,11 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
-    void TerminalPage::_HandleToggleRetroEffect(const IInspectable& /*sender*/,
-                                                const ActionEventArgs& args)
+    void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
+                                                  const ActionEventArgs& args)
     {
         const auto termControl = _GetActiveControl();
-        termControl.ToggleRetroEffect();
+        termControl.ToggleShaderEffects();
         args.Handled(true);
     }
 
@@ -313,13 +331,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleToggleCommandPalette(const IInspectable& /*sender*/,
                                                    const ActionEventArgs& args)
     {
-        // TODO GH#6677: When we add support for commandline mode, first set the
-        // mode that the command palette should be in, before making it visible.
-        CommandPalette().EnableCommandPaletteMode();
-        CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
-                                        Visibility::Collapsed :
-                                        Visibility::Visible);
-        args.Handled(true);
+        if (const auto& realArgs = args.ActionArgs().try_as<ToggleCommandPaletteArgs>())
+        {
+            CommandPalette().EnableCommandPaletteMode(realArgs.LaunchMode());
+            CommandPalette().Visibility(CommandPalette().Visibility() == Visibility::Visible ?
+                                            Visibility::Collapsed :
+                                            Visibility::Visible);
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleSetColorScheme(const IInspectable& /*sender*/,
@@ -521,7 +540,7 @@ namespace winrt::TerminalApp::implementation
                                             const ActionEventArgs& args)
     {
         // Tab search is always in-order.
-        _UpdatePaletteWithInOrderTabs();
+        CommandPalette().SetTabs(_tabs, true);
 
         auto opt = _GetFocusedTabIndex();
         uint32_t startIdx = opt.value_or(0);
@@ -550,4 +569,15 @@ namespace winrt::TerminalApp::implementation
             actionArgs.Handled(true);
         }
     }
+
+    void TerminalPage::_HandleBreakIntoDebugger(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& actionArgs)
+    {
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            actionArgs.Handled(true);
+            DebugBreak();
+        }
+    }
+
 }

@@ -30,18 +30,23 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget Scroll(const int delta);
 
-        bool CanSplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
-        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+        void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                       const float splitSize,
+                       const GUID& profile,
+                       winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
+        winrt::fire_and_forget HideIcon(const bool hide);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
-        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const;
+        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                  const float splitSize,
+                                  winrt::Windows::Foundation::Size availableSpace) const;
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-        void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
-        void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::Direction& direction);
+        void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile);
         winrt::fire_and_forget UpdateTitle();
@@ -83,7 +88,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::MenuFlyoutItem _closeTabsAfterMenuItem{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
 
+        std::vector<uint16_t> _mruPanes;
+        uint16_t _nextPaneId{ 0 };
+
         bool _receivedKeyDown{ false };
+        bool _iconHidden{ false };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
@@ -92,6 +101,8 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
         void _MakeTabViewItem();
+
+        void _SetToolTip(const winrt::hstring& tabTitle);
 
         void _CreateContextMenu() override;
 

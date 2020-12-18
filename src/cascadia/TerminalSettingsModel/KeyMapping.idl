@@ -31,10 +31,12 @@ namespace Microsoft.Terminal.Settings.Model
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ScrollToTop,
+        ScrollToBottom,
         ResizePane,
         MoveFocus,
         Find,
-        ToggleRetroEffect,
+        ToggleShaderEffects,
         ToggleFocusMode,
         ToggleFullscreen,
         ToggleAlwaysOnTop,
@@ -49,7 +51,8 @@ namespace Microsoft.Terminal.Settings.Model
         CloseOtherTabs,
         CloseTabsAfter,
         TabSearch,
-        MoveTab
+        MoveTab,
+        BreakIntoDebugger
     };
 
     [default_interface] runtimeclass ActionAndArgs {

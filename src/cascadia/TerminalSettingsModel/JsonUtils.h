@@ -506,7 +506,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             }
 
             DeserializationError e{ json };
-            e.expectedType = TypeDescription();
+            e.expectedType = static_cast<const TBase&>(*this).TypeDescription();
             throw e;
         }
 
@@ -572,7 +572,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                     {
                         // attempt to combine AllClear (explicitly) with anything else
                         DeserializationError e{ element };
-                        e.expectedType = BaseEnumMapper::TypeDescription();
+                        e.expectedType = static_cast<const TBase&>(*this).TypeDescription();
                         throw e;
                     }
                     value |= newFlag;
