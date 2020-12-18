@@ -142,6 +142,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasUnfocusedConfig();
         void ClearUnfocusedConfig();
-        AppearanceConfig UnfocusedConfig;
+        IAppearanceConfig UnfocusedConfig;
     }
 }
