@@ -288,9 +288,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         co_await winrt::resume_foreground(Dispatcher());
         _UpdateSettingsFromUIThread(_settings);
         auto appearance = _settings.try_as<IControlAppearance>();
-        if (!_focused && _settings.UnfocusedConfig())
+        if (!_focused && _unfocusedAppearance)
         {
-            appearance = _settings.UnfocusedConfig();
+            appearance = _unfocusedAppearance;
         }
         _UpdateAppearanceFromUIThread(appearance);
     }
@@ -1997,7 +1997,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Only update the appearance here if an unfocused config exists -
         // if an unfocused config does not exist then we never would have switched
         // appearances anyway so there's no need to switch back upon gaining focus
-        if (_settings.UnfocusedConfig())
+        if (_unfocusedAppearance)
         {
             UpdateAppearance(_settings);
         }
@@ -2053,9 +2053,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Check if there is an unfocused config we should set the appearance to
         // upon losing focus
-        if (_settings.UnfocusedConfig())
+        if (_unfocusedAppearance)
         {
-            UpdateAppearance(_settings.UnfocusedConfig());
+            UpdateAppearance(_unfocusedAppearance);
         }
     }
 
@@ -3248,6 +3248,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     IControlSettings TermControl::Settings() const
     {
         return _settings;
+    }
+
+    IControlSettings TermControl::UnfocusedAppearance() const
+    {
+        return _unfocusedAppearance;
+    }
+
+    void TermControl::UnfocusedAppearance(IControlSettings unfocusedAppearance)
+    {
+        _unfocusedAppearance = unfocusedAppearance;
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept

@@ -741,7 +741,18 @@ namespace winrt::TerminalApp::implementation
 
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
-        TermControl term{ *(winrt::get_self<TerminalSettings>(settings)->CreateChild()), connection };
+        const auto child = winrt::get_self<TerminalSettings>(settings)->CreateChild();
+        TermControl term{ *child, connection };
+
+        // Check if the profile defines an unfocusedConfig
+        const auto profile = _settings.FindProfile(profileGuid);
+        if (profile.UnfocusedConfig())
+        {
+            // Now, make a grandchild for the unfocused appearance
+            const auto grandchild = child->CreateChild();
+            grandchild->ApplyAppearanceSettings(profile.UnfocusedConfig(), _settings.GlobalSettings().ColorSchemes());
+            term.UnfocusedAppearance(*grandchild);
+        }
 
         auto newTabImpl = winrt::make_self<TerminalTab>(profileGuid, term);
 
@@ -792,7 +803,6 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItems().Append(tabViewItem);
 
         // Set this tab's icon to the icon from the user's profile
-        const auto profile = _settings.FindProfile(profileGuid);
         if (profile != nullptr && !profile.Icon().empty())
         {
             newTabImpl->UpdateIcon(profile.Icon());
@@ -1703,7 +1713,18 @@ namespace winrt::TerminalApp::implementation
 
             // Give term control a child of the settings so that any overrides go in the child
             // This way, when we do a settings reload we just update the parent and the overrides remain
-            TermControl newControl{ *(winrt::get_self<TerminalSettings>(controlSettings)->CreateChild()), controlConnection };
+            const auto child = (winrt::get_self<TerminalSettings>(controlSettings)->CreateChild());
+            TermControl newControl{ *child, controlConnection };
+
+            // Check if the profile defines an unfocusedConfig
+            const auto profile = _settings.FindProfile(_settings.GetProfileForArgs(newTerminalArgs));
+            if (profile.UnfocusedConfig())
+            {
+                // Now, make a grandchild for the unfocused appearance
+                const auto grandchild = child->CreateChild();
+                grandchild->ApplyAppearanceSettings(profile.UnfocusedConfig(), _settings.GlobalSettings().ColorSchemes());
+                newControl.UnfocusedAppearance(*grandchild);
+            }
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *focusedTab);

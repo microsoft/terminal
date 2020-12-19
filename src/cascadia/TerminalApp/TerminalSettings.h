@@ -40,6 +40,8 @@ namespace winrt::TerminalApp::implementation
                                                                              const Microsoft::Terminal::TerminalControl::IKeyBindings& keybindings);
 
         void ApplyColorScheme(const Microsoft::Terminal::Settings::Model::ColorScheme& scheme);
+        void ApplyAppearanceSettings(const Microsoft::Terminal::Settings::Model::IAppearanceConfig& appearance,
+                                     const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
 
         // --------------------------- Core Settings ---------------------------
         //  All of these settings are defined in ICoreSettings.

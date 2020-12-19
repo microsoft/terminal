@@ -58,6 +58,7 @@ namespace winrt::TerminalApp::implementation
         const auto globals = appSettings.GlobalSettings();
         _ApplyProfileSettings(profile, globals.ColorSchemes());
         _ApplyGlobalSettings(globals);
+        ApplyAppearanceSettings(profile, globals.ColorSchemes());
     }
 
     // Method Description:
@@ -108,6 +109,42 @@ namespace winrt::TerminalApp::implementation
         return { profileGuid, settings };
     }
 
+    void TerminalSettings::ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    {
+        _CursorShape = appearance.CursorShape();
+        if (!appearance.ColorSchemeName().empty())
+        {
+            if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
+            {
+                ApplyColorScheme(scheme);
+            }
+        }
+        if (appearance.Foreground())
+        {
+            _DefaultForeground = til::color{ appearance.Foreground().Value() };
+        }
+        if (appearance.Background())
+        {
+            _DefaultBackground = til::color{ appearance.Background().Value() };
+        }
+        if (appearance.SelectionBackground())
+        {
+            _SelectionBackground = til::color{ appearance.SelectionBackground().Value() };
+        }
+        if (appearance.CursorColor())
+        {
+            _CursorColor = til::color{ appearance.CursorColor().Value() };
+        }
+        if (!appearance.BackgroundImagePath().empty())
+        {
+            _BackgroundImage = appearance.ExpandedBackgroundImagePath();
+        }
+
+        _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
+        _BackgroundImageStretchMode = appearance.BackgroundImageStretchMode();
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
+    }
+
     // Method Description:
     // - Apply Profile settings, as well as any colors from our color scheme, if we have one.
     // Arguments:
@@ -122,7 +159,6 @@ namespace winrt::TerminalApp::implementation
         _SnapOnInput = profile.SnapOnInput();
         _AltGrAliasing = profile.AltGrAliasing();
         _CursorHeight = profile.CursorHeight();
-        _CursorShape = profile.CursorShape();
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
@@ -147,40 +183,7 @@ namespace winrt::TerminalApp::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
-        if (!profile.ColorSchemeName().empty())
-        {
-            if (const auto scheme = schemes.TryLookup(profile.ColorSchemeName()))
-            {
-                ApplyColorScheme(scheme);
-            }
-        }
-        if (profile.Foreground())
-        {
-            _DefaultForeground = til::color{ profile.Foreground().Value() };
-        }
-        if (profile.Background())
-        {
-            _DefaultBackground = til::color{ profile.Background().Value() };
-        }
-        if (profile.SelectionBackground())
-        {
-            _SelectionBackground = til::color{ profile.SelectionBackground().Value() };
-        }
-        if (profile.CursorColor())
-        {
-            _CursorColor = til::color{ profile.CursorColor().Value() };
-        }
-
         _ScrollState = profile.ScrollState();
-
-        if (!profile.BackgroundImagePath().empty())
-        {
-            _BackgroundImage = profile.ExpandedBackgroundImagePath();
-        }
-
-        _BackgroundImageOpacity = profile.BackgroundImageOpacity();
-        _BackgroundImageStretchMode = profile.BackgroundImageStretchMode();
-        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(profile.BackgroundImageAlignment());
 
         _RetroTerminalEffect = profile.RetroTerminalEffect();
         _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.PixelShaderPath().c_str()) };
