@@ -298,7 +298,6 @@ using namespace Microsoft::Console::Render;
 {
     try
     {
-
         const auto cchLine = clusters.size();
 
         // Exit early if there are no lines to draw.
@@ -314,7 +313,7 @@ using namespace Microsoft::Console::Render;
         COORD const coordFontSize = _GetFontSize();
 
         auto& polyWidth = _polyWidths.emplace_back(cchLine, 0);
-        
+
         // Sum up the total widths the entire line/run is expected to take while
         // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
         size_t cchCharWidths = 0;

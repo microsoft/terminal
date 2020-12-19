@@ -34,8 +34,8 @@ GdiEngine::GdiEngine() :
     _hfont(nullptr),
     _hfontItalic(nullptr),
     _pool{}, // It's important the pool is first so it can be given to the others on construction.
-    _polyStrings{&_pool},
-    _polyWidths{&_pool}
+    _polyStrings{ &_pool },
+    _polyWidths{ &_pool }
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
