@@ -31,6 +31,7 @@ GdiEngine::GdiEngine() :
     _lastBg(INVALID_COLOR),
     _fPaintStarted(false),
     _hfont((HFONT)INVALID_HANDLE_VALUE),
+    _invalidCharacters{},
     _pool{}, // It's important the pool is first so it can be given to the others on construction.
     _polyStrings{&_pool},
     _polyWidths{&_pool}
