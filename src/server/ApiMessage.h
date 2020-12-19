@@ -64,7 +64,9 @@ public:
     // End packet data
 
 public:
-    // DO NOT PUT MORE FIELDS DOWN HERE. They will be stomped by driver fills.
+    // DO NOT PUT MORE FIELDS DOWN HERE.
+    // The tail end of this structure will have a console driver packet
+    // copied over it and it will overwrite any fields declared here.
 
     ConsoleProcessHandle* GetProcessHandle() const;
     ConsoleHandleData* GetObjectHandle() const;
@@ -81,6 +83,8 @@ public:
     void SetReplyStatus(const NTSTATUS Status);
     void SetReplyInformation(const ULONG_PTR pInformation);
 
-    // DO NOT PUT MORE FIELDS DOWN HERE. They will be stomped by driver fills.
+    // DO NOT PUT MORE FIELDS DOWN HERE.
+    // The tail end of this structure will have a console driver packet
+    // copied over it and it will overwrite any fields declared here.
 
 } CONSOLE_API_MSG, *PCONSOLE_API_MSG, * const PCCONSOLE_API_MSG;
