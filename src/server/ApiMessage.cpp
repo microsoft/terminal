@@ -20,7 +20,6 @@ _CONSOLE_API_MSG::_CONSOLE_API_MSG() :
     CreateScreenBuffer{ 0 },
     msgHeader{ 0 }
 {
-    
 }
 
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const

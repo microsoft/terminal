@@ -40,7 +40,6 @@ private:
     boost::container::small_vector<BYTE, 128> _outputBuffer;
 
 public:
-
     // From here down is the actual packet data sent/received.
     CD_IO_DESCRIPTOR Descriptor;
     union
