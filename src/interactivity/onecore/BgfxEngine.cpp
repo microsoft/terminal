@@ -230,15 +230,21 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     return S_OK;
 }
 
-std::vector<til::rectangle> BgfxEngine::GetDirtyArea()
+[[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
+
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
     r.Top = 0;
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return { r };
+    _dirtyArea = r;
+
+    _area = { &_dirtyArea,
+              1 };
+
+    return S_OK;
 }
 
 [[nodiscard]] HRESULT BgfxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept

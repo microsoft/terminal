@@ -337,7 +337,7 @@ const std::wstring& CONSOLE_INFORMATION::GetTitle() const noexcept
 // - <none>
 // Return Value:
 // - a new wstring containing the combined prefix and title.
-const std::wstring CONSOLE_INFORMATION::GetTitleAndPrefix() const
+const std::wstring& CONSOLE_INFORMATION::GetTitleAndPrefix() const
 {
     return _TitleAndPrefix;
 }

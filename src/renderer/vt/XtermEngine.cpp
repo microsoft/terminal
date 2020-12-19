@@ -57,7 +57,8 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     }
     else
     {
-        const auto dirty = GetDirtyArea();
+        gsl::span<const til::rectangle> dirty;
+        RETURN_IF_FAILED(GetDirtyArea(dirty));
 
         // If we have 0 or 1 dirty pieces in the area, set as appropriate.
         Viewport dirtyView = dirty.empty() ? Viewport::Empty() : Viewport::FromInclusive(til::at(dirty, 0));

@@ -427,12 +427,17 @@ CATCH_RETURN();
 // - Gets the area that we currently believe is dirty within the character cell grid
 // - Not currently used by UiaEngine.
 // Arguments:
-// - <none>
+// - area - Rectangle describing dirty area in characters.
 // Return Value:
-// - Rectangle describing dirty area in characters.
-[[nodiscard]] std::vector<til::rectangle> UiaEngine::GetDirtyArea()
+// - S_OK.
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
-    return { Viewport::Empty().ToInclusive() };
+    // Magic static is only valid because any instance of this object has the same behavior.
+    // Use member variable instead if this ever changes.
+    const static til::rectangle emptyInclusive{ Viewport::Empty().ToInclusive() };
+    area = { &emptyInclusive,
+             1 };
+    return S_OK;
 }
 
 // Routine Description:

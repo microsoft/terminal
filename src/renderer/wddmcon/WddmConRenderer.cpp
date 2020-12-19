@@ -353,7 +353,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-std::vector<til::rectangle> WddmConEngine::GetDirtyArea()
+[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
@@ -361,7 +361,12 @@ std::vector<til::rectangle> WddmConEngine::GetDirtyArea()
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return { r };
+    _dirtyArea = r;
+
+    _area = { &_dirtyArea,
+              1 };
+
+    return S_OK;
 }
 
 RECT WddmConEngine::GetDisplaySize()
