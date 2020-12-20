@@ -101,16 +101,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct SearchState
     {
     public:
-        SearchState(const winrt::hstring& text, const bool caseSensitive, std::vector<std::pair<COORD, COORD>> matches) :
+        static std::atomic<size_t> _searchIdGenerator;
+
+        SearchState(const winrt::hstring& text, const bool caseSensitive) :
             Text(text),
             CaseSensitive(caseSensitive),
-            Matches(matches)
+            SearchId(_searchIdGenerator.fetch_add(1))
         {
         }
 
         const winrt::hstring Text;
         const bool CaseSensitive;
-        const std::vector<std::pair<COORD, COORD>> Matches;
+        const size_t SearchId;
+        std::optional<std::vector<std::pair<COORD, COORD>>> Matches;
         int32_t CurrentMatchIndex{ -1 };
 
         void UpdateIndex(bool goForward);
@@ -283,7 +286,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
         std::optional<SearchState> _searchState;
-        void _SearchAll(const winrt::hstring& text, const bool caseSensitive);
 
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
@@ -350,9 +352,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
 
+        winrt::Windows::Foundation::IAsyncOperation<bool> _SearchOne(Search& search);
         void _Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _SearchChanged(const winrt::hstring& text, const bool goForward, const bool caseSensitive);
         void _CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        fire_and_forget _SearchAsync(std::optional<bool> goForward, Windows::Foundation::TimeSpan const& delay);
+        void _SelectSearchResult(std::optional<bool> goForward);
 
         // TSFInputControl Handlers
         void _CompositionCompleted(winrt::hstring text);
