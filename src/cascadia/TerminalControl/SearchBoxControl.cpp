@@ -259,4 +259,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             StatusBox().Text(status);
         }
     }
+
+    // Method Description:
+    // - Enables / disables results navigation buttons
+    // Arguments:
+    // - enable: if true, the buttons should be enabled
+    // Return Value:
+    // - <none>
+    void SearchBoxControl::SetNavigationEnabled(bool enabled)
+    {
+        GoBackwardButton().IsEnabled(enabled);
+        GoForwardButton().IsEnabled(enabled);
+    }
 }
