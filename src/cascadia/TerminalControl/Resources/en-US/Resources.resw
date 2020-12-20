@@ -182,6 +182,10 @@
     <value>No results</value>
     <comment>Will be presented near the search box when Find operation returned no results.</comment>
   </data>
+  <data name="TermControl_Searching" xml:space="preserve">
+    <value>Searching...</value>
+    <comment>Will be presented near the search box when Find operation is running.</comment>
+  </data>
   <data name="NoticeFontNotFound" xml:space="preserve">
     <value>Unable to find the selected font "{0}".
 
