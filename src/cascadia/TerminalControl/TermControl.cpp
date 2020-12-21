@@ -839,13 +839,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _blinkTimer = std::nullopt;
             }
 
-            // Setup mouse vanish attributes
-            SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
-
-            // Store cursor, so we can restore it, e.g., after mouse vanishing
-            // (we'll need to adapt this logic once we make cursor context aware)
-            _defaultCursor = CoreWindow::GetForCurrentThread().PointerCursor();
-
             // import value from WinUser (convert from milli-seconds to micro-seconds)
             _multiClickTimer = GetDoubleClickTime() * 1000;
 
@@ -876,7 +869,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _HideCursor();
+        _HideCursorHandlers(*this, nullptr);
 
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
@@ -1222,7 +1215,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursor();
+        _RestoreCursorHandlers(*this, nullptr);
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -1352,7 +1346,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursor();
+        _RestoreCursorHandlers(*this, nullptr);
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
@@ -1561,7 +1555,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursor();
+        _RestoreCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
@@ -1930,8 +1924,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursor();
-
         _focused = true;
 
         InputPane::GetForCurrentView().TryShow();
@@ -1996,7 +1988,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursor();
+        _RestoreCursorHandlers(*this, nullptr);
 
         _focused = false;
 
@@ -3244,32 +3236,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const size_t TermControl::TaskbarProgress() const noexcept
     {
         return _terminal->GetTaskbarProgress();
-    }
-
-    // Method Description:
-    // - Hides cursor if required
-    // Return Value:
-    // - <none>
-    void TermControl::_HideCursor()
-    {
-        if (_shouldMouseVanish && !_isMouseHidden)
-        {
-            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
-            _isMouseHidden = true;
-        }
-    }
-
-    // Method Description:
-    // - Restores cursor if required
-    // Return Value:
-    // - <none>
-    void TermControl::_RestoreCursor()
-    {
-        if (_isMouseHidden)
-        {
-            CoreWindow::GetForCurrentThread().PointerCursor(_defaultCursor);
-            _isMouseHidden = false;
-        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

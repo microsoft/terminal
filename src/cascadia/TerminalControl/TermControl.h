@@ -179,6 +179,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(HideCursor, IInspectable, IInspectable);
+        TYPED_EVENT(RestoreCursor, IInspectable, IInspectable);
         // clang-format on
 
     private:
@@ -231,10 +233,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
-
-        bool _shouldMouseVanish{ false };
-        bool _isMouseHidden{ false };
-        Windows::UI::Core::CoreCursor _defaultCursor{ nullptr };
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
@@ -336,9 +334,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-
-        void _HideCursor();
-        void _RestoreCursor();
 
         winrt::fire_and_forget _AsyncCloseConnection();
     };
