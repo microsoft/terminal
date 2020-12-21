@@ -970,7 +970,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-         if (keyBindingSearch)
+        if (keyBindingSearch)
         {
             keyBindingSearch = false;
             return;
@@ -1946,7 +1946,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-
 
         _focused = true;
 
