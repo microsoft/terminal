@@ -839,6 +839,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _blinkTimer = std::nullopt;
             }
 
+            // Setup mouse vanish attributes
+            SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
+
+            // Store cursor, so we can restore it, e.g., after mouse vanishing
+            // (we'll need to adapt this logic once we make cursor context aware)
+            _defaultCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+
             // import value from WinUser (convert from milli-seconds to micro-seconds)
             _multiClickTimer = GetDoubleClickTime() * 1000;
 
@@ -867,6 +874,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_closing)
         {
             return;
+        }
+
+        if (_shouldMouseVanish && !_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
+            _isMouseHidden = true;
         }
 
         const auto ch = e.Character();
@@ -1340,6 +1353,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_closing)
         {
             return;
+        }
+
+        if (_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultCursor);
+            _isMouseHidden = false;
         }
 
         const auto ptr = args.Pointer();

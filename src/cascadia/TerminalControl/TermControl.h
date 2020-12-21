@@ -232,6 +232,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
         std::optional<Windows::UI::Xaml::DispatcherTimer> _blinkTimer;
 
+        bool _shouldMouseVanish{ false };
+        bool _isMouseHidden{ false };
+        Windows::UI::Core::CoreCursor _defaultCursor{ nullptr };
+
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
