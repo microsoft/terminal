@@ -1973,7 +1973,8 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
+            std::wregex newLine{ LR"((\r|\n))" };
+            const bool hasNewLine = std::regex_search(text.c_str(), newLine);
             const bool warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
