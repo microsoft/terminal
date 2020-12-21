@@ -124,7 +124,7 @@ namespace winrt::TerminalApp::implementation
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
 
-        void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Windows::Foundation::Collections::IMapView<hstring, Microsoft::Terminal::Settings::Model::ColorScheme>& schemes);
+        void _ApplyProfileSettings(const Microsoft::Terminal::Settings::Model::Profile& profile);
         void _ApplyGlobalSettings(const Microsoft::Terminal::Settings::Model::GlobalAppSettings& globalSettings) noexcept;
 
         friend class TerminalAppLocalTests::SettingsTests;

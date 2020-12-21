@@ -132,9 +132,6 @@
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="AppAppearanceConfig.h">
-      <DependentUpon>AppAppearanceConfig.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
@@ -207,9 +204,6 @@
     <ClCompile Include="AppKeyBindings.cpp">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="AppAppearanceConfig.cpp">
-      <DependentUpon>AppAppearanceConfig.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="ShortcutActionDispatch.cpp">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
     </ClCompile>
@@ -238,7 +232,6 @@
     <Midl Include="PaletteItem.idl" />
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
-    <Midl Include="AppAppearanceConfig.idl" />
     <Midl Include="AppLogic.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>

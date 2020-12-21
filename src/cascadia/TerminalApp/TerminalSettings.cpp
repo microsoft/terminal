@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "TerminalSettings.h"
-#include "AppAppearanceConfig.h"
 
 #include "TerminalSettings.g.cpp"
 
@@ -56,7 +55,7 @@ namespace winrt::TerminalApp::implementation
         THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
-        _ApplyProfileSettings(profile, globals.ColorSchemes());
+        _ApplyProfileSettings(profile);
         _ApplyGlobalSettings(globals);
         ApplyAppearanceSettings(profile, globals.ColorSchemes());
     }
@@ -152,7 +151,7 @@ namespace winrt::TerminalApp::implementation
     // - schemes: a map of schemes to look for our color scheme in, if we have one.
     // Return Value:
     // - <none>
-    void TerminalSettings::_ApplyProfileSettings(const Profile& profile, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
+    void TerminalSettings::_ApplyProfileSettings(const Profile& profile)
     {
         // Fill in the Terminal Setting's CoreSettings from the profile
         _HistorySize = profile.HistorySize();
@@ -194,49 +193,6 @@ namespace winrt::TerminalApp::implementation
         {
             const til::color colorRef{ profile.TabColor().Value() };
             _TabColor = static_cast<uint32_t>(colorRef);
-        }
-
-        // For the UnfocusedConfig object, basically do the same as what we did for the profile above
-        if (profile.UnfocusedConfig())
-        {
-            auto unfocusedConfig = winrt::make_self<implementation::AppAppearanceConfig>();
-
-            auto backgroundImageAlignment = ConvertConvergedAlignment(profile.UnfocusedConfig().BackgroundImageAlignment());
-
-            unfocusedConfig->CursorShape(profile.UnfocusedConfig().CursorShape());
-            unfocusedConfig->BackgroundImageOpacity(profile.UnfocusedConfig().BackgroundImageOpacity());
-            unfocusedConfig->BackgroundImageStretchMode(profile.UnfocusedConfig().BackgroundImageStretchMode());
-            unfocusedConfig->BackgroundImageHorizontalAlignment(std::get<0>(backgroundImageAlignment));
-            unfocusedConfig->BackgroundImageVerticalAlignment(std::get<1>(backgroundImageAlignment));
-
-            if (!profile.UnfocusedConfig().ColorSchemeName().empty())
-            {
-                if (const auto scheme = schemes.TryLookup(profile.UnfocusedConfig().ColorSchemeName()))
-                {
-                    unfocusedConfig->ApplyColorScheme(scheme);
-                }
-            }
-            if (profile.UnfocusedConfig().Background())
-            {
-                unfocusedConfig->DefaultBackground(til::color{ profile.UnfocusedConfig().Background().Value() });
-            }
-            if (profile.UnfocusedConfig().Foreground())
-            {
-                unfocusedConfig->DefaultForeground(til::color{ profile.UnfocusedConfig().Foreground().Value() });
-            }
-            if (profile.UnfocusedConfig().SelectionBackground())
-            {
-                unfocusedConfig->SelectionBackground(til::color{ profile.UnfocusedConfig().SelectionBackground().Value() });
-            }
-            if (profile.UnfocusedConfig().CursorColor())
-            {
-                unfocusedConfig->CursorColor(til::color{ profile.UnfocusedConfig().CursorColor().Value() });
-            }
-            if (!profile.UnfocusedConfig().BackgroundImagePath().empty())
-            {
-                unfocusedConfig->BackgroundImage(profile.UnfocusedConfig().ExpandedBackgroundImagePath());
-            }
-            _UnfocusedConfig = *unfocusedConfig;
         }
     }
 
