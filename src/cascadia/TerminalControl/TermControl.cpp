@@ -1226,6 +1226,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        if (_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultCursor);
+            _isMouseHidden = false;
+        }
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -1566,6 +1572,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_closing)
         {
             return;
+        }
+
+        if (_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultCursor);
+            _isMouseHidden = false;
         }
 
         const auto point = args.GetCurrentPoint(*this);
@@ -1997,6 +2009,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_closing)
         {
             return;
+        }
+
+        if (_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultCursor);
+            _isMouseHidden = false;
         }
 
         _focused = false;
