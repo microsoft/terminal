@@ -946,6 +946,7 @@ namespace winrt::TerminalApp::implementation
         auto setting = AppLogic::CurrentAppSettings();
         auto keymap = setting.GlobalSettings().KeyMap();
         const auto actionAndArgs = keymap.TryLookup(kc);
+
         if (actionAndArgs)
         {
             if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
@@ -1022,6 +1023,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->NextSearchMatch({ this, &TerminalPage::_HandleNextSearchMatch });
+        _actionDispatch->PrevSearchMatch({ this, &TerminalPage::_HandlePrevSearchMatch });
     }
 
     // Method Description:
@@ -2539,6 +2542,18 @@ namespace winrt::TerminalApp::implementation
     {
         const auto termControl = _GetActiveControl();
         termControl.CreateSearchBoxControl();
+    }
+
+    void TerminalPage::_GoForward()
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.SearchNextMatch();
+    }
+
+    void TerminalPage::_GoBackward()
+    {
+        const auto termControl = _GetActiveControl();
+        termControl.SearchPrevMatch();
     }
 
     // Method Description:

@@ -100,6 +100,9 @@ namespace Microsoft.Terminal.TerminalControl
 
         void CreateSearchBoxControl();
 
+        void SearchNextMatch();
+        void SearchPrevMatch();
+
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 

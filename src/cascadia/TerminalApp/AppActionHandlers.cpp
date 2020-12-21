@@ -185,6 +185,20 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleNextSearchMatch(const IInspectable& /*sender*/,
+        const ActionEventArgs& args)
+    {
+        _GoForward();
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandlePrevSearchMatch(const IInspectable& /*sender*/,
+        const ActionEventArgs& args)
+    {
+        _GoBackward();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {

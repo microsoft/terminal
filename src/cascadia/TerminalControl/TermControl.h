@@ -132,6 +132,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void CreateSearchBoxControl();
 
+        void SearchNextMatch();
+        void SearchPrevMatch();
+
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         bool OnMouseWheel(const Windows::Foundation::Point location, const int32_t delta, const bool leftButtonDown, const bool midButtonDown, const bool rightButtonDown);
@@ -187,6 +190,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _initializedTerminal;
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
+        bool keyBindingSearch = true;
 
         event_token _connectionOutputEventToken;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;

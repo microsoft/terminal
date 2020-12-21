@@ -52,7 +52,9 @@ namespace Microsoft.Terminal.Settings.Model
         CloseTabsAfter,
         TabSearch,
         MoveTab,
-        BreakIntoDebugger
+        BreakIntoDebugger,
+        NextSearchMatch,
+        PrevSearchMatch
     };
 
     [default_interface] runtimeclass ActionAndArgs {

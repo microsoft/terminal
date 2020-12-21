@@ -224,6 +224,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    void TermControl::SearchNextMatch()
+    {
+        if (!_searchBox)
+        {
+            return;
+        }
+        keyBindingSearch = true;
+        _Search(_searchBox->TextBox().Text(), true, false);
+    }
+
+    void TermControl::SearchPrevMatch()
+    {
+        if (!_searchBox)
+        {
+            return;
+        }
+        keyBindingSearch = true;
+        _Search(_searchBox->TextBox().Text(), false, false);
+    }
+
     // Method Description:
     // - Search text in text buffer. This is triggered if the user click
     //   search button or press enter.
@@ -938,10 +958,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
     {
+        if (e.OriginalKey() == VirtualKey::Enter)
+        {
+            return;
+        }
+
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
-        if (_searchBox && _searchBox->ContainsFocus())
+        if (_searchBox && _searchBox->ContainsFocus() && _searchBox->TextBox().Text().empty())
         {
+            return;
+        }
+
+         if (keyBindingSearch)
+        {
+            keyBindingSearch = false;
             return;
         }
 
@@ -1915,6 +1946,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
 
         _focused = true;
 

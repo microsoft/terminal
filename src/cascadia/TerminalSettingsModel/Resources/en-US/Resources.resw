@@ -215,6 +215,12 @@
   <data name="FindCommandKey" xml:space="preserve">
     <value>Find</value>
   </data>
+  <data name="NextSearchMatchCommandKey" xml:space="preserve">
+    <value>Next search match</value>
+  </data>
+  <data name="PrevSearchMatchCommandKey" xml:space="preserve">
+    <value>Previous search match</value>
+  </data>
   <data name="IncreaseFontSizeCommandKey" xml:space="preserve">
     <value>Increase font size</value>
   </data>
