@@ -1,7 +1,7 @@
 ---
 author: <Pankaj> <Bhojwani> <pabhojwa@microsoft.com>
 created on: <2020-11-20>
-last updated: <2020-12-4>
+last updated: <2020-12-21>
 issue id: <#8345>
 ---
 
@@ -22,25 +22,15 @@ pane is focused and which panes are unfocused. This change would grant us that f
 
 ## Solution Design
 
-We will add new interfaces in the `TerminalControl` namespace, called `IControlAppearance` and `ICoreAppearance`,
-which defines how `TerminalControl` and `TerminalCore` will ask for the rendering settings they need to know about
-(such as `CursorShape`). `TerminalApp` will implement this interface through a class called `AppAppearanceConfig`.
+The implementation design for appearance config objects centers around the recent change where inheritance was added to the
+`TerminalSettings` class in the Terminal Settings Model - i.e. different `TerminalSettings` objects can inherit from each other.
+The reason for this change was that we did not want a settings reload to erase any overrides `TermControl` may have made
+to the settings during runtime. By instead passing a child of the `TerminalSettings` object to the control, we can change
+the parent of the child during a settings reload without the overrides being erased (since those overrides live in the child).
 
-We will also have `IControlSettings` require `IControlAppearance`, and `ICoreSettings` will require `ICoreAppearance`.
-That way, the control's `settings` object can itself also be used as an object that implements both appearance interfaces. We do this so we
-do not need a separate 'regular' configuration object when we wish to switch back to the 'regular' appearance from the unfocused
-appearance - we can simply pass in the settings.
-
-On the Settings Model side, there will be a new interface called `IAppearanceConfig`, which is essentially a
-combination/mirror of the appearance interfaces described earlier. A new class, `AppearanceConfig`, will implement this
-interface and so will `Profile` itself (for the same reason as earlier - so that no new configuration object is
-needed for the regular appearance). We are choosing to have a separate interface on the settings model side to maintain
-its separation from the rest of the terminal.
-
-When we parse out the settings json file, each state-appearance will be stored in an object of the `AppearanceConfig`
-class. Later on, these values get piped over to the `AppAppearanceConfig` objects in `TerminalApp`. This is the
-similar to the way we already pipe over information such as `FontFace` and `CursorStyle` from the settings
-model to the app.
+The idea behind unfocused appearance configurations is similar. We will pass in another `TerminalSettings` object to the control,
+which is simply a child that already has some overrides in it. When the control gains or loses focus, it simply switches between
+the two settings objects appropriately.
 
 ### Allowed parameters
 
@@ -57,26 +47,20 @@ of further parameters can be discussed in the future and is out of scope for thi
 
 ### Inheritance
 
-In the case that not all of the allowed parameters are defined in an appearance object, we will obtain the
-values for those parameters in the following matter:
-
-If the profile defines an `unfocusedConfig`, any parameters not explicitly defined within it will adopt
-the values from the profile itself. If the profile does not define an `unfocusedConfig`, then the global/default `unfocusedConfig` is used
-for this profile (and any undefined parameters within *that* will be set to default values).
-
-Thus, if a user wishes for the unfocused state to look the same as the focused state for a particular profile,
-while still having a global/default unfocused state appearance, they simply need to define an empty `unfocusedConfig`
-for that profile (similarly, they could define just 1 or 2 parameters if they wish for minimal changes between the focused
-and unfocused states for that profile). If they do not define any `unfocusedConfig` for the profile, then
-the global/default one will be used.
-
-If neither the profile nor the global settings have defined an `unfocusedConfig`, then there will be no
-appearance change when switching between focused and unfocused states.
-
-This inheritance model can be thought of as an 'all-or-nothing' approach in the sense that the `unfocusedConfig` object
+The inheritance model can be thought of as an 'all-or-nothing' approach in the sense that the `unfocusedConfig` object
 is considered as a *single* setting instead of an object with many settings. We have chosen this model because it is cleaner
 and easier to understand than the alternative, where each setting within an `unfocusedConfig` object has a parent from which
 it obtains its value.
+
+Note that when `TerminalApp` initializes a control, it creates a `TerminalSettings` object for that profile and passes the
+control a child of that object (so that the control can store overrides in the child, as described earlier). If an unfocused
+config is defined in the profile (or in globals/profile defaults), then `TerminalApp` will create a *child of that child*,
+put the relevant overrides in it, and pass that into the control as well. Thus, the inheritance of any undefined parameters
+in the unfocused config will be as follows:
+
+1. The unfocused config specified in the profile (or in globals/profile defaults)
+2. Overrides made by term control
+3. The parent profile
 
 ## UI/UX Design
 
@@ -94,7 +78,8 @@ Users will be able to add a new setting to their profiles that will look like th
 ```
 
 When certain appearance settings are changed via OSC sequences (such as the background color), only the focused/regular
-appearance will change and the unfocused one will remain unchanged.
+appearance will change and the unfocused one will remain unchanged. However, since the unfocused settings object inherits
+from the regular one, it will still apply the change (provided it does not define its own value for that setting).
 
 ## Capabilities
 
