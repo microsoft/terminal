@@ -27,7 +27,6 @@
     <ClInclude Include="../TerminalPage.h" />
     <ClInclude Include="../MinMaxCloseControl.h" />
     <ClInclude Include="../AppKeyBindings.h" />
-    <ClInclude Include="../AppAppearanceConfig.h" />
     <ClInclude Include="../TitlebarControl.h" />
     <ClInclude Include="../TabRowControl.h" />
     <ClInclude Include="../App.h" />
