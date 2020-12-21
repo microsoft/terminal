@@ -337,6 +337,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
+        void _HideCursor();
+        void _RestoreCursor();
+
         winrt::fire_and_forget _AsyncCloseConnection();
     };
 }
