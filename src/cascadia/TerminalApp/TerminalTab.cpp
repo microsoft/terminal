@@ -50,8 +50,18 @@ namespace winrt::TerminalApp::implementation
                 tab->SetTabText(title);
             }
         });
+
+        // Initialize the timer, but don't start it
+        _bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+        _bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
+
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
+    }
+
+    void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
+    {
+        ShowBellIndicator(false);
     }
 
     // Method Description:
@@ -232,6 +242,26 @@ namespace winrt::TerminalApp::implementation
                     TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
                 }
                 tab->_iconHidden = hide;
+            }
+        }
+    }
+
+    winrt::fire_and_forget TerminalTab::ShowBellIndicator(const bool show)
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            tab->_headerControl.BellIndicator(show);
+            if (show)
+            {
+                tab->_bellIndicatorTimer.Start();
+            }
+            else
+            {
+                tab->_bellIndicatorTimer.Stop();
             }
         }
     }
@@ -601,10 +631,14 @@ namespace winrt::TerminalApp::implementation
         // Add a PaneRaiseVisualBell event handler to the Pane. When the pane emits this event,
         // we need to bubble it all the way to app host. In this part of the chain we bubble it
         // from the hosting tab to the page.
-        pane->PaneRaiseVisualBell([weakThis](auto&& /*s*/) {
+        pane->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& e) {
             if (auto tab{ weakThis.get() })
             {
-                tab->_TabRaiseVisualBellHandlers();
+                if (e)
+                {
+                    tab->_TabRaiseVisualBellHandlers();
+                }
+                tab->ShowBellIndicator(true);
             }
         });
     }

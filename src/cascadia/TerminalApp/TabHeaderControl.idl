@@ -11,6 +11,7 @@ namespace TerminalApp
         Boolean IsPaneZoomed { get; set; };
         Boolean IsProgressRingActive { get; set; };
         Boolean IsProgressRingIndeterminate { get; set; };
+        Boolean BellIndicator { get; set; };
         UInt32 ProgressValue { get; set; };
 
         TabHeaderControl();

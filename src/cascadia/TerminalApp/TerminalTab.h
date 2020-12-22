@@ -38,6 +38,8 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
         winrt::fire_and_forget HideIcon(const bool hide);
 
+        winrt::fire_and_forget ShowBellIndicator(const bool show);
+
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
         bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -99,6 +101,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+
+        Windows::UI::Xaml::DispatcherTimer _bellIndicatorTimer;
+        void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         void _MakeTabViewItem();
 
