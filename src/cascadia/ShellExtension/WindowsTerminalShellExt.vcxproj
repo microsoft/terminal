@@ -60,3 +60,4 @@
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>
+
