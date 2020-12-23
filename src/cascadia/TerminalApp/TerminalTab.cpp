@@ -51,10 +51,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        // Initialize the timer, but don't start it
-        _bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
-        _bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
-
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -62,6 +58,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
     {
         ShowBellIndicator(false);
+        ActivateBellIndicatorTimer(false);
     }
 
     // Method Description:
@@ -138,6 +135,10 @@ namespace winrt::TerminalApp::implementation
             {
                 lastFocusedControl.Focus(_focusState);
                 lastFocusedControl.TaskbarProgressChanged();
+            }
+            if (_headerControl.BellIndicator() && !_bellIndicatorTimer.has_value())
+            {
+                ActivateBellIndicatorTimer(true);
             }
         }
     }
@@ -255,13 +256,29 @@ namespace winrt::TerminalApp::implementation
         if (auto tab{ weakThis.get() })
         {
             tab->_headerControl.BellIndicator(show);
-            if (show)
+        }
+    }
+
+    winrt::fire_and_forget TerminalTab::ActivateBellIndicatorTimer(const bool activate)
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            if (activate)
             {
-                tab->_bellIndicatorTimer.Start();
+                DispatcherTimer bellIndicatorTimer;
+                bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+                bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
+                bellIndicatorTimer.Start();
+                tab->_bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
             }
             else
             {
-                tab->_bellIndicatorTimer.Stop();
+                tab->_bellIndicatorTimer.value().Stop();
+                tab->_bellIndicatorTimer = std::nullopt;
             }
         }
     }
@@ -594,10 +611,17 @@ namespace winrt::TerminalApp::implementation
             // Do nothing if the Tab's lifetime is expired or pane isn't new.
             auto tab{ weakThis.get() };
 
-            if (tab && sender != tab->_activePane)
+            if (tab)
             {
-                tab->_UpdateActivePane(sender);
-                tab->_RecalculateAndApplyTabColor();
+                if (sender != tab->_activePane)
+                {
+                    tab->_UpdateActivePane(sender);
+                    tab->_RecalculateAndApplyTabColor();
+                }
+                if (tab->_headerControl.BellIndicator() && !tab->_bellIndicatorTimer.has_value())
+                {
+                    tab->ActivateBellIndicatorTimer(true);
+                }
             }
         });
 
@@ -631,14 +655,19 @@ namespace winrt::TerminalApp::implementation
         // Add a PaneRaiseVisualBell event handler to the Pane. When the pane emits this event,
         // we need to bubble it all the way to app host. In this part of the chain we bubble it
         // from the hosting tab to the page.
-        pane->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& e) {
+        pane->PaneRaiseBell([weakThis](auto&& /*s*/, auto&& visual) {
             if (auto tab{ weakThis.get() })
             {
-                if (e)
+                if (visual)
                 {
                     tab->_TabRaiseVisualBellHandlers();
                 }
                 tab->ShowBellIndicator(true);
+                // TODO: only activate timer if this tab is focused
+                // the code to activate the timer when the tab gets focused is already there in the pane
+                // got focus event handler and tab::Focus(), we
+                // just need to make sure we don't activate the timer here unless the tab is focused
+                tab->ActivateBellIndicatorTimer(true);
             }
         });
     }

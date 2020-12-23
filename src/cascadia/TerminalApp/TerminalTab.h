@@ -39,6 +39,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget HideIcon(const bool hide);
 
         winrt::fire_and_forget ShowBellIndicator(const bool show);
+        winrt::fire_and_forget ActivateBellIndicatorTimer(const bool activate);
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         winrt::Microsoft::Terminal::Settings::Model::SplitState PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
@@ -102,7 +103,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
-        Windows::UI::Xaml::DispatcherTimer _bellIndicatorTimer;
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
         void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         void _MakeTabViewItem();
