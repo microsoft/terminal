@@ -126,7 +126,10 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         auto path = this->GetPathFromExplorer();
 
         // no go, unable to get a reasonable path
-        if (path.empty()) {return S_FALSE;} 
+        if (path.empty())
+        {
+            return S_FALSE;
+        }
         pszName = wil::make_cotaskmem_string(path.c_str(), path.length());
     }
     else
@@ -228,12 +231,11 @@ HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
     return E_NOTIMPL;
 }
 
-
 std::wstring OpenTerminalHere::GetPathFromExplorer() const
 {
     using namespace std;
     using namespace winrt;
-    
+
     wstring path;
     HRESULT hr = NOERROR;
 
@@ -250,8 +252,11 @@ std::wstring OpenTerminalHere::GetPathFromExplorer() const
     {
         //special folder: desktop
         hr = ::SHGetFolderPath(NULL, CSIDL_DESKTOP, NULL, SHGFP_TYPE_CURRENT, szName);
-        if(FAILED(hr)) { return path; }
-        
+        if (FAILED(hr))
+        {
+            return path;
+        }
+
         path = szName;
         return path;
     }
@@ -261,14 +266,15 @@ std::wstring OpenTerminalHere::GetPathFromExplorer() const
         return path;
     }
 
-
     auto shell = create_instance<IShellWindows>(CLSID_ShellWindows);
-    if (shell == nullptr) { return path; }
+    if (shell == nullptr)
+    {
+        return path;
+    }
 
     com_ptr<IDispatch> disp;
     wil::unique_variant variant;
     variant.vt = VT_I4;
-    
 
     com_ptr<IWebBrowserApp> browser;
     // look for correct explorer window
@@ -297,12 +303,15 @@ std::wstring OpenTerminalHere::GetPathFromExplorer() const
     if (browser != nullptr)
     {
         wil::unique_bstr url;
-        hr=browser->get_LocationURL(&url);
-        if(FAILED(hr)) { return path; }
+        hr = browser->get_LocationURL(&url);
+        if (FAILED(hr))
+        {
+            return path;
+        }
 
         wstring sUrl(url.get(), SysStringLen(url.get()));
         DWORD size = MAX_PATH;
-        hr=::PathCreateFromUrl(sUrl.c_str(), szName, &size, NULL);
+        hr = ::PathCreateFromUrl(sUrl.c_str(), szName, &size, NULL);
         if (SUCCEEDED(hr))
         {
             path = szName;

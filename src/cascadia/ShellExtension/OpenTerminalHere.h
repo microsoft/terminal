@@ -49,7 +49,6 @@ struct __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
 
 private:
     std::wstring GetPathFromExplorer() const;
-
 };
 
 CoCreatableClass(OpenTerminalHere);
