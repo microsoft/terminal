@@ -231,7 +231,7 @@ HRESULT OpenTerminalHere::EnumSubCommands(IEnumExplorerCommand** ppEnum)
     return E_NOTIMPL;
 }
 
-std::wstring OpenTerminalHere::GetPathFromExplorer() const
+std::wstring OpenTerminalHere::_GetPathFromExplorer() const
 {
     using namespace std;
     using namespace winrt;
