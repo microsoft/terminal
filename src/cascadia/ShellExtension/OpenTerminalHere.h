@@ -48,7 +48,7 @@ struct __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
 #pragma endregion
 
 private:
-    std::wstring GetPathFromExplorer() const;
+    std::wstring _GetPathFromExplorer() const;
 };
 
 CoCreatableClass(OpenTerminalHere);
