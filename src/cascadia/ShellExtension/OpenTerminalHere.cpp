@@ -123,7 +123,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
     if (psiItemArray == nullptr)
     {
         // get the current path from explorer.exe
-        const auto path = this->GetPathFromExplorer();
+        const auto path = this->_GetPathFromExplorer();
 
         // no go, unable to get a reasonable path
         if (path.empty())
