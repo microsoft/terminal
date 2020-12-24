@@ -260,7 +260,7 @@ namespace winrt::TerminalApp::implementation
 
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
-        _defaultCursor = CoreWindow::GetForCurrentThread().PointerCursor();
+        _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
     }
 
     // Method Description:
@@ -1263,8 +1263,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
         term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
-        term.HideCursor({ this, &TerminalPage::_HideCursorHandler });
-        term.RestoreCursor({ this, &TerminalPage::_RestoreCursorHandler });
+        term.HidePointerCursor({ this, &TerminalPage::_HidePointerCursorHandler });
+        term.RestorePointerCursor({ this, &TerminalPage::_RestorePointerCursorHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -3057,7 +3057,7 @@ namespace winrt::TerminalApp::implementation
     // - Hides cursor if required
     // Return Value:
     // - <none>
-    void TerminalPage::_HideCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    void TerminalPage::_HidePointerCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
     {
         if (_shouldMouseVanish && !_isMouseHidden)
         {
@@ -3070,11 +3070,11 @@ namespace winrt::TerminalApp::implementation
     // - Restores cursor if required
     // Return Value:
     // - <none>
-    void TerminalPage::_RestoreCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    void TerminalPage::_RestorePointerCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
     {
         if (_isMouseHidden)
         {
-            CoreWindow::GetForCurrentThread().PointerCursor(_defaultCursor);
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultPointerCursor);
             _isMouseHidden = false;
         }
     }

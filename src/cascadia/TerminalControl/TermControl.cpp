@@ -869,7 +869,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _HideCursorHandlers(*this, nullptr);
+        _HidePointerCursorHandlers(*this, nullptr);
 
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
@@ -1215,7 +1215,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursorHandlers(*this, nullptr);
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         _CapturePointer(sender, args);
 
@@ -1346,7 +1346,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursorHandlers(*this, nullptr);
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
@@ -1555,7 +1555,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursorHandlers(*this, nullptr);
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
@@ -1988,7 +1988,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        _RestoreCursorHandlers(*this, nullptr);
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         _focused = false;
 

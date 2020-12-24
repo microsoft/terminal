@@ -263,9 +263,9 @@ namespace winrt::TerminalApp::implementation
 
         bool _shouldMouseVanish{ false };
         bool _isMouseHidden{ false };
-        Windows::UI::Core::CoreCursor _defaultCursor{ nullptr };
-        void _HideCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
-        void _RestoreCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+        Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
+        void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
