@@ -14,10 +14,13 @@ namespace winrt::TerminalApp::implementation
         TabPaletteItem() = default;
         TabPaletteItem(winrt::TerminalApp::TabBase const& tab);
 
-        GETSET_PROPERTY(winrt::TerminalApp::TabBase, Tab, nullptr);
+        winrt::TerminalApp::TabBase Tab() const noexcept
+        {
+            return _tab.get();
+        }
 
     private:
-        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _tabChangedRevoker;
+        winrt::weak_ref<winrt::TerminalApp::TabBase> _tab;
     };
 }
 
