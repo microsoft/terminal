@@ -126,7 +126,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // could not find the page we were on, fallback to first menu item
         const auto firstItem{ navigationMenu.MenuItems().GetAt(0) };
         navigationMenu.SelectedItem(firstItem);
-        if (const auto tag{ navigationMenu.SelectedItem().as<NavigationViewItem>().Tag() })
+        if (const auto tag{ navigationMenu.SelectedItem().as<MUX::Controls::NavigationViewItem>().Tag() })
         {
             _Navigate(unbox_value<hstring>(tag));
         }
