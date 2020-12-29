@@ -64,7 +64,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        // remove all profile-related NavViewItems
+        // "remove" all profile-related NavViewItems
+        // LOAD-BEARING: use Visibility here, instead of menuItems.Remove().
+        //               Remove() works fine on NavViewItems with an hstring tag,
+        //               but causes an out-of-bounds error with Profile tagged items.
+        //               The cause of this error is unknown.
         auto menuItems{ SettingsNav().MenuItems() };
         for (auto i = menuItems.Size() - 1; i > 0; --i)
         {
@@ -72,17 +76,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto tag{ navViewItem.Tag() })
                 {
-                    if (tag.try_as<Editor::ProfileViewModel>())
+                    if (tag.try_as<Model::Profile>())
                     {
-                        // remove NavViewItem pointing to a Profile
-                        menuItems.RemoveAt(i);
+                        // hide NavViewItem pointing to a Profile
+                        navViewItem.Visibility(Visibility::Collapsed);
                     }
                     else if (const auto stringTag{ tag.try_as<hstring>() })
                     {
                         if (stringTag == addProfileTag)
                         {
-                            // remove NavViewItem pointing to "Add Profile"
-                            menuItems.RemoveAt(i);
+                            // hide NavViewItem pointing to "Add Profile"
+                            navViewItem.Visibility(Visibility::Collapsed);
                         }
                     }
                 }
@@ -100,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto tag{ selectedItem.as<MUX::Controls::NavigationViewItem>().Tag() })
             {
-                if (const auto oldProfile{ tag.try_as<Editor::ProfileViewModel>() })
+                if (const auto oldProfile{ tag.try_as<Model::Profile>() })
                 {
                     // check if the profile still exists
                     if (const auto profile{ _settingsClone.FindProfile(oldProfile.Guid()) })
