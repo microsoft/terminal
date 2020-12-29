@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto tag{ navViewItem.Tag() })
                 {
-                    if (tag.try_as<Model::Profile>())
+                    if (tag.try_as<Editor::ProfileViewModel>())
                     {
                         // hide NavViewItem pointing to a Profile
                         navViewItem.Visibility(Visibility::Collapsed);
@@ -104,7 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto tag{ selectedItem.as<MUX::Controls::NavigationViewItem>().Tag() })
             {
-                if (const auto oldProfile{ tag.try_as<Model::Profile>() })
+                if (const auto oldProfile{ tag.try_as<Editor::ProfileViewModel>() })
                 {
                     // check if the profile still exists
                     if (const auto profile{ _settingsClone.FindProfile(oldProfile.Guid()) })
