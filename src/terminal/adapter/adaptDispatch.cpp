@@ -2686,3 +2686,14 @@ void AdaptDispatch::_ReportDECSTBMSetting()
     response.append(L"r\033\\"sv);
     _api.ReturnResponse({ response.data(), response.size() });
 }
+
+// Routine Description:
+// - DECPS - Plays a sequence of musical notes.
+// Arguments:
+// - params - The volume, duration, and note values to play.
+// Return value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PlaySounds(const VTParameters /*parameters*/)
+{
+    return false;
+}

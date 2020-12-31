@@ -138,6 +138,8 @@ public:
                                const DispatchTypes::DrcsCharsetSize /*charsetSize*/) override { return nullptr; }
 
     StringHandler RequestSetting() override { return nullptr; }; // DECRQSS
+
+    bool PlaySounds(const VTParameters /*parameters*/) override { return false; }; // DECPS
 };
 
 #pragma warning(default : 26440) // Restore "can be declared noexcept" warning
