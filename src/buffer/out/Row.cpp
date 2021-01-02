@@ -110,14 +110,14 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     if (it)
     {
-        std::unique_ptr<CharRow> bupCharRow;
-        std::unique_ptr<ATTR_ROW> bupAttrRow;
+        std::unique_ptr<CharRow> backupCharRow;
+        std::unique_ptr<ATTR_ROW> backupAttrRow;
         const auto start = currentIndex;
 
         if (insert)
         {
-            bupCharRow = std::make_unique<CharRow>(_charRow);
-            bupAttrRow = std::make_unique<ATTR_ROW>(_attrRow);
+            backupCharRow = std::make_unique<CharRow>(_charRow);
+            backupAttrRow = std::make_unique<ATTR_ROW>(_attrRow);
         }
 
         // Accumulate usages of the same color so we can spend less time in InsertAttrRuns rewriting it.
@@ -211,14 +211,14 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                                                   _charRow.size()));
         }
 
-        // if there was a credible request for insertion, _and_ we didn't run off the end of the allocated space
+        // if there was a credible request for insertion _and_ we didn't run off the end of the allocated space
         if (insert && (currentIndex <= finalColumnInRow))
         {
             // currentIndex is one beyond the final cell we filled
-            auto outIt = _charRow.begin() + currentIndex;
-            const auto bst = bupCharRow->cbegin() + start;
+            auto outIt{ _charRow.begin() + currentIndex };
+            const auto backupStart{ backupCharRow->cbegin() + start };
             // copy the raw cells from the original position to the new shifted one
-            std::copy(bst, bst + (finalColumnInRow - currentIndex) + 1, outIt);
+            std::copy(backupStart, backupStart + (finalColumnInRow - currentIndex) + 1, outIt);
 
             if (_charRow.DbcsAttrAt(finalColumnInRow).IsLeading())
             {
@@ -233,7 +233,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 _charRow.SetDoubleBytePadded(false);
             }
 
-            const auto oldAttrRuns{ bupAttrRow->GetAttributeRunsInRange(start, finalColumnInRow) };
+            const auto oldAttrRuns{ backupAttrRow->GetAttributeRunsInRange(start, finalColumnInRow) };
             LOG_IF_FAILED(_attrRow.InsertAttrRuns(oldAttrRuns, currentIndex, finalColumnInRow, _charRow.size()));
         }
     }

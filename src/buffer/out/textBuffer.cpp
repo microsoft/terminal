@@ -395,6 +395,7 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
 
     // Take the cell distance written and notify that it needs to be repainted.
     // Insert damages the entire rest of the line, so mark it appropriately.
+    __assume(!insert);
     const auto written = insert ? (row.size() - target.X) : newIt.GetCellDistance(givenIt);
     const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
     _NotifyPaint(paint);
