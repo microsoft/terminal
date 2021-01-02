@@ -230,7 +230,7 @@ class AttrRowTests
         return HRESULT_FROM_NT(status);
     }
 
-    NoThrowString LogRunElement(_In_ TextAttributeRun& run)
+    NoThrowString LogRunElement(_In_ const TextAttributeRun& run)
     {
         return NoThrowString().Format(L"%wc%d", run.GetAttributes().GetLegacyAttributes(), run.GetLength());
     }
@@ -254,7 +254,7 @@ class AttrRowTests
     }
 
     void LogChain(_In_ PCWSTR pwszPrefix,
-                  std::vector<TextAttributeRun>& chain)
+                  const std::vector<TextAttributeRun>& chain)
     {
         NoThrowString str(pwszPrefix);
 
@@ -377,6 +377,29 @@ class AttrRowTests
         {
             VERIFY_ARE_EQUAL(packedRun[testIndex], originalRow._list[testIndex]);
         }
+    }
+
+    static size_t _AppendAndCount(ATTR_ROW& /*row*/) { return 0; }
+
+    template<typename... Args>
+    static size_t _AppendAndCount(ATTR_ROW& row, const size_t len, const TextAttribute& attribute, Args&&... args)
+    {
+        row._list.emplace_back(TextAttributeRun{ len, attribute });
+        return len + _AppendAndCount(row, std::forward<Args>(args)...);
+    }
+
+    // CreateFilledAttrRow produces an ATTR_ROW containing
+    // the provided attribute+length pairs with a final column
+    // count that matches the provided lengths.
+    // CreateFilledAttrRow(5, A, 10, B, 7, C) => len 22, containing A B C
+    template<typename... Args>
+    static std::unique_ptr<ATTR_ROW> CreateFilledAttrRow(Args&&... args)
+    {
+        auto chain{ std::make_unique<ATTR_ROW>(0, TextAttribute(0)) }; // we will stomp this in a second
+        chain->_list.clear();
+        const auto columnCount{ _AppendAndCount(*chain, std::forward<Args>(args)...) };
+        chain->_cchRowWidth = gsl::narrow_cast<UINT>(columnCount);
+        return chain;
     }
 
     TEST_METHOD(TestInsertAttrRunsSingle)
@@ -749,5 +772,83 @@ class AttrRowTests
 
         state.CleanupGlobalScreenBuffer();
         state.CleanupGlobalFont();
+    }
+
+    TEST_METHOD(TestRunsInRange)
+    {
+        {
+            Log::Comment(L"1. One run"); // This run has the start and end changed
+            auto chain{ CreateFilledAttrRow(120, TextAttribute(L'A')) };
+            // CHAIN
+            // | Default Attr ... |
+            //[0                 120)
+            //   | SUBSET       |
+            //  [2             119) (len = 117)
+            const auto runsInRange{ chain->GetAttributeRunsInRange(2, 118) };
+
+            LogChain(L"SRC: ", chain->_list);
+            LogChain(L"DST: ", runsInRange);
+
+            VERIFY_ARE_EQUAL(1, runsInRange.size());
+            VERIFY_ARE_EQUAL(TextAttribute(L'A'), runsInRange[0].GetAttributes());
+            VERIFY_ARE_EQUAL(117, runsInRange[0].GetLength());
+        }
+        {
+            Log::Comment(L"2. One run, no actual subsetting"); // No run has its length changed
+            auto chain{ CreateFilledAttrRow(120, TextAttribute(L'A')) };
+            // CHAIN
+            // | Default Attr ... |
+            //[0                 120)
+            // | SUBSET           |
+            //[0                 120)
+            const auto runsInRange{ chain->GetAttributeRunsInRange(0, 119) };
+
+            LogChain(L"SRC: ", chain->_list);
+            LogChain(L"DST: ", runsInRange);
+
+            VERIFY_ARE_EQUAL(1, runsInRange.size());
+            VERIFY_ARE_EQUAL(TextAttribute(L'A'), runsInRange[0].GetAttributes());
+            VERIFY_ARE_EQUAL(120, runsInRange[0].GetLength());
+        }
+        {
+            Log::Comment(L"3. Two runs"); // Each run has its length changed
+            auto chain{ CreateFilledAttrRow(60, TextAttribute(L'A'), 60, TextAttribute(L'B')) };
+            // CHAIN
+            // | A      |  B      |
+            //[0     60) [60     120)
+            //   | SubA | SubB  |
+            //  [2   60) [60   119) (len = 58, 59)
+            const auto runsInRange{ chain->GetAttributeRunsInRange(2, 118) };
+
+            LogChain(L"SRC: ", chain->_list);
+            LogChain(L"DST: ", runsInRange);
+
+            VERIFY_ARE_EQUAL(2, runsInRange.size());
+            VERIFY_ARE_EQUAL(TextAttribute(L'A'), runsInRange[0].GetAttributes());
+            VERIFY_ARE_EQUAL(58, runsInRange[0].GetLength());
+            VERIFY_ARE_EQUAL(TextAttribute(L'B'), runsInRange[1].GetAttributes());
+            VERIFY_ARE_EQUAL(59, runsInRange[1].GetLength());
+        }
+        {
+            Log::Comment(L"4. Three runs"); // The middle run does NOT have its length changed
+            auto chain{ CreateFilledAttrRow(40, TextAttribute(L'A'), 40, TextAttribute(L'B'), 40, TextAttribute(L'C')) };
+            // CHAIN
+            // | A      |  B      |  C      |
+            //[0     40) [40   80) [80     120)
+            //   | SubA | SubB    | SubC  |
+            //  [2   40) [40   80) [80   119) (len = 38, 40, 39)
+            const auto runsInRange{ chain->GetAttributeRunsInRange(2, 118) };
+
+            LogChain(L"SRC: ", chain->_list);
+            LogChain(L"DST: ", runsInRange);
+
+            VERIFY_ARE_EQUAL(3, runsInRange.size());
+            VERIFY_ARE_EQUAL(TextAttribute(L'A'), runsInRange[0].GetAttributes());
+            VERIFY_ARE_EQUAL(38, runsInRange[0].GetLength());
+            VERIFY_ARE_EQUAL(TextAttribute(L'B'), runsInRange[1].GetAttributes());
+            VERIFY_ARE_EQUAL(40, runsInRange[1].GetLength());
+            VERIFY_ARE_EQUAL(TextAttribute(L'C'), runsInRange[2].GetAttributes());
+            VERIFY_ARE_EQUAL(39, runsInRange[2].GetLength());
+        }
     }
 };
