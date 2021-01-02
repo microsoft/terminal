@@ -89,9 +89,9 @@ public:
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
-    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
+    virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET, SM
 
-    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST
+    virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST, RM
 
     virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) = 0; // DSR, DSR-OS, DSR-CPR
     virtual bool DeviceAttributes() = 0; // DA1

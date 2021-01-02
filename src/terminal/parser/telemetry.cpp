@@ -274,6 +274,8 @@ void TermTelemetry::WriteFinalTraceLog() const
                                       TraceLoggingUInt32(_uiTimesUsed[OSCSCB], "OscSetClipboard"),
                                       TraceLoggingUInt32(_uiTimesUsed[REP], "REP"),
                                       TraceLoggingUInt32(_uiTimesUsed[DECALN], "DECALN"),
+                                      TraceLoggingUInt32(_uiTimesUsed[SM], "SM"),
+                                      TraceLoggingUInt32(_uiTimesUsed[RM], "RM"),
                                       TraceLoggingUInt32Array(_uiTimesFailed, ARRAYSIZE(_uiTimesFailed), "Failed"),
                                       TraceLoggingUInt32(_uiTimesFailedOutsideRange, "FailedOutsideRange"));
         }

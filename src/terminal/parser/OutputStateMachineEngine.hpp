@@ -119,6 +119,8 @@ namespace Microsoft::Console::VirtualTerminal
             VPR_VerticalPositionRelative = VTID("e"),
             HVP_HorizontalVerticalPosition = VTID("f"),
             TBC_TabClear = VTID("g"),
+            SM_ModeSet = VTID("h"),
+            RM_ModeReset = VTID("l"),
             DECSET_PrivateModeSet = VTID("?h"),
             DECRST_PrivateModeReset = VTID("?l"),
             SGR_SetGraphicsRendition = VTID("m"),
