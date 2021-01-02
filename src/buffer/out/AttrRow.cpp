@@ -586,7 +586,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 
 // Routine Description:
 // - Returns a list of attribute runs that cover the specified columns (inclusive) with
-//   updated counts such that the list of runs stands alone.
+//   their counts updated to match their coverage in the specified range.
 std::vector<TextAttributeRun> ATTR_ROW::GetAttributeRunsInRange(const size_t iStart, const size_t iEnd)
 {
     size_t startApplies{}, endApplies{};
