@@ -292,6 +292,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
+        case SettingsTarget::SettingsUI:
+            return RS_(L"OpenSettingsUICommandKey");
         default:
             return RS_(L"OpenSettingsCommandKey");
         }
