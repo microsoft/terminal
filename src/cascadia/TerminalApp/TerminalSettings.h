@@ -117,7 +117,6 @@ namespace winrt::TerminalApp::implementation
         GETSET_SETTING(bool, ForceVTInput, false);
 
         GETSET_PROPERTY(hstring, PixelShaderPath);
-#pragma warning(pop)
 
     private:
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable{};
