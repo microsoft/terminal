@@ -283,9 +283,8 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
          variant.intVal++)
     {
         com_ptr<IWebBrowserApp> tmp;
-        if (FAILED(disp->QueryInterface(browser.put())))
+        if (FAILED(disp->QueryInterface(tmp.put())))
         {
-            disp = nullptr;
             continue;
         }
 
@@ -296,8 +295,6 @@ std::wstring OpenTerminalHere::_GetPathFromExplorer() const
             browser = tmp;
             break; //found
         }
-
-        disp = nullptr;
     }
 
     if (browser != nullptr)
