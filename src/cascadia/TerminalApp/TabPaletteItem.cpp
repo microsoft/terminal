@@ -23,5 +23,23 @@ namespace winrt::TerminalApp::implementation
     {
         Name(tab.Title());
         Icon(tab.Icon());
+
+        _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
+            auto item{ weakThis.get() };
+            auto senderTab{ sender.try_as<TabBase>() };
+
+            if (item && senderTab)
+            {
+                auto changedProperty = e.PropertyName();
+                if (changedProperty == L"Title")
+                {
+                    item->Name(senderTab.Title());
+                }
+                else if (changedProperty == L"Icon")
+                {
+                    item->Icon(senderTab.Icon());
+                }
+            }
+        });
     }
 }
