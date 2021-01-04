@@ -363,4 +363,7 @@
   <data name="BreakIntoDebuggerCommandKey" xml:space="preserve">
     <value>Break into the debugger</value>
   </data>
+  <data name="OpenSettingsUICommandKey" xml:space="preserve">
+    <value>Open Settings...</value>
+  </data>
 </root>
