@@ -184,7 +184,7 @@ size_t ATTR_ROW::FindAttrIndex(const size_t index, size_t* const pApplies) const
 // Routine Description:
 // - Finds the hyperlink IDs present in this row and returns them
 // Return value:
-// - An unordered set containing the hyperlink IDs present in this row
+// - The hyperlink IDs present in this row
 std::vector<uint16_t> ATTR_ROW::GetHyperlinks()
 {
     std::vector<uint16_t> ids;
