@@ -126,10 +126,17 @@ const CONSOLE_API_DESCRIPTOR ConsoleApiLayer3[] = {
     CONSOLE_API_STRUCT(ApiDispatchers::ServerSetConsoleCurrentFont, CONSOLE_CURRENTFONT_MSG, "SetConsoleCurrentFont")
 };
 
+#include "../interactivity/inc/ServiceLocator.hpp"
 [[nodiscard]] HRESULT TestL9Message(_Inout_ CONSOLE_API_MSG* const m,
                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
     CONSOLE_L9_TEST_API* const a = &m->u.consoleMsgL9.TestApi;
+    //auto f = Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleControl();
+    //auto vv = f->EndTask((HANDLE)m->GetProcessHandle()->dwProcessId, 0xA0, 0x00);
+    //(void)vv;
+    HANDLE h = OpenThread(THREAD_SET_CONTEXT, FALSE, m->GetProcessHandle()->dwThreadId);
+    if (h)
+        QueueUserAPC((PAPCFUNC)a->APC, h, 0xABABCDCD);
     a->ReplyValue = a->TestValue * 16;
     return S_OK;
 }

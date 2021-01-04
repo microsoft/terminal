@@ -54,7 +54,11 @@ private:
 
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
+
+public:
     wil::unique_handle const _hProcess;
+
+private:
 
     const ConsoleProcessPolicy _policy;
     const ConsoleShimPolicy _shimPolicy;

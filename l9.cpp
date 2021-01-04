@@ -74,6 +74,7 @@ typedef enum _CONSOLE_API_NUMBER_L9 {
 
 typedef struct _CONSOLE_L9_TEST_API {
     IN ULONG TestValue;
+    IN PVOID64 APCFunc;
     OUT ULONG ReplyValue;
 } CONSOLE_L9_TEST_API, *PCONSOLE_L9_TEST_API;
 
@@ -368,18 +369,39 @@ Return Value:
                                     0);
 }
 
+void MyAPCHandler(ULONG_PTR data);
 ULONG TestL9()
 {
     CONSOLE_MSG_L9 m;
     PCONSOLE_L9_TEST_API a = &m.u.TestApi;
     a->TestValue = 1024;
-    ConsoleCallServer(ConsoleGetHandle(), &m, ConsoleTestApi, sizeof(*a));
+    a->APCFunc = (PVOID64)&MyAPCHandler;
+    HRESULT hr = ConsoleCallServer(ConsoleGetHandle(), &m, ConsoleTestApi, sizeof(*a));
+    if (!SUCCEEDED(hr)) {
+        return 0xFFFFFFFF;
+    }
     return a->ReplyValue;
 }
 
 #include <stdio.h>
+void MyAPCHandler(ULONG_PTR data) {
+    fprintf(stderr, "Received APC: %8.08llx\n", data);
+}
+
+BOOL WINAPI CtrlHandler(DWORD ctrlType)
+{
+    if (ctrlType == 0xA0) {
+        fprintf(stderr, "Received a good signal 0xA0!\n");
+        return TRUE;
+    }
+    fprintf(stderr, "Received a signal %x\n", ctrlType);
+    return FALSE;
+}
+
 int main() {
+    SetConsoleCtrlHandler(&CtrlHandler, TRUE);
     auto rep = TestL9();
     fprintf(stderr, "Reply Val %8.08llx\n", (unsigned long long)rep);
+    SleepEx(2000, TRUE);
     return 0;
 }
