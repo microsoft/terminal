@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 if (const auto tag{ navViewItem.Tag() })
                 {
-                    if (tag.try_as<Model::Profile>())
+                    if (tag.try_as<Editor::ProfileViewModel>())
                     {
                         // hide NavViewItem pointing to a Profile
                         navViewItem.Visibility(Visibility::Collapsed);
@@ -104,13 +104,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto tag{ selectedItem.as<MUX::Controls::NavigationViewItem>().Tag() })
             {
-                if (const auto profile{ tag.try_as<Model::Profile>() })
+                if (const auto oldProfile{ tag.try_as<Editor::ProfileViewModel>() })
                 {
                     // check if the profile still exists
-                    if (_settingsClone.FindProfile(profile.Guid()))
+                    if (const auto profile{ _settingsClone.FindProfile(oldProfile.Guid()) })
                     {
                         // Navigate to the page with the given profile
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(_viewModelForProfile(profile), _settingsClone.GlobalSettings().ColorSchemes(), *this));
+                        _Navigate(_viewModelForProfile(profile));
                         return;
                     }
                 }
@@ -126,7 +126,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // could not find the page we were on, fallback to first menu item
         const auto firstItem{ navigationMenu.MenuItems().GetAt(0) };
         navigationMenu.SelectedItem(firstItem);
-        if (const auto tag{ navigationMenu.SelectedItem().as<NavigationViewItem>().Tag() })
+        if (const auto tag{ navigationMenu.SelectedItem().as<MUX::Controls::NavigationViewItem>().Tag() })
         {
             _Navigate(unbox_value<hstring>(tag));
         }
