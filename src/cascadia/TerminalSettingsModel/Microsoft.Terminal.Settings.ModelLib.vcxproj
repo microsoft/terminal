@@ -27,6 +27,9 @@
       <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
+    <ClInclude Include="ApplicationState.h">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClInclude>
@@ -79,6 +82,9 @@
       <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
+    <ClCompile Include="ApplicationState.cpp">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
@@ -122,6 +128,7 @@
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ApplicationState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
