@@ -24,7 +24,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
-static std::unordered_set<std::string_view> ColorSchemeKeys{
+static const std::array<std::string_view, 21> ColorSchemeKeys{
     "name",
     "cursorColor",
     "selectionBackground",

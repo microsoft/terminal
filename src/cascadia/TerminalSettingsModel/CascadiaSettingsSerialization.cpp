@@ -433,7 +433,7 @@ void CascadiaSettings::_LoadProtoExtensions()
     std::mutex mtx;
     Windows::Foundation::Collections::IVectorView<Windows::ApplicationModel::AppExtensions::AppExtension> extensions;
 
-    auto lambda = [&]() -> winrt::fire_and_forget {
+    auto findAllExtensions = [&]() -> winrt::fire_and_forget {
         co_await resume_background();
         const auto localExtensions = catalog.FindAllAsync().get();
 
@@ -443,7 +443,7 @@ void CascadiaSettings::_LoadProtoExtensions()
     };
 
     std::unique_lock<std::mutex> lock{ mtx };
-    lambda();
+    findAllExtensions();
     cv.wait(lock);
 
     for (const auto& ext : extensions)
@@ -457,7 +457,7 @@ void CascadiaSettings::_LoadProtoExtensions()
             std::mutex mtx2;
             Windows::Storage::StorageFolder foundFolder{ nullptr };
 
-            auto lambda2 = [&]() -> winrt::fire_and_forget {
+            auto findPublicFolder = [&]() -> winrt::fire_and_forget {
                 co_await resume_background();
                 const auto localFolder = ext.GetPublicFolderAsync().get();
                 std::unique_lock<std::mutex> lock{ mtx2 };
@@ -466,7 +466,7 @@ void CascadiaSettings::_LoadProtoExtensions()
             };
 
             std::unique_lock<std::mutex> lock2{ mtx2 };
-            lambda2();
+            findPublicFolder();
             cv2.wait(lock2);
 
             // the StorageFolder class has its own methods for obtaining the files within the folder
@@ -494,7 +494,7 @@ void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, 
     const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
 
     // The json files should be within subdirectories where the subdirectory name is the app name
-    for (auto& protoExtFolder : std::filesystem::directory_iterator(root))
+    for (const auto& protoExtFolder : std::filesystem::directory_iterator(root))
     {
         // We only want the parent folder name as the source (not the full path)
         const auto source = protoExtFolder.path().filename().wstring();
@@ -522,7 +522,7 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
     // Expand out environment strings like %LOCALAPPDATA% and %ProgramData%
     const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
 
-    for (auto& protoExt : std::filesystem::directory_iterator(root))
+    for (const auto& protoExt : std::filesystem::directory_iterator(root))
     {
         if (protoExt.path().extension() == jsonExtension)
         {
@@ -551,7 +551,7 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
 // - Given a set of json files, uses them to modify existing profiles,
 //   create new profiles, and create new color schemes
 // Arguments:
-// - stubs: the set of json files
+// - files: the set of json files (each item in the set is the file data)
 // - source: the location the files came from
 void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string> files, const winrt::hstring source)
 {
