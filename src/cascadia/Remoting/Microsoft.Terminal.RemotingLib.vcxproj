@@ -14,6 +14,16 @@
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
+  <ItemDefinitionGroup>
+
+    <ClCompile>
+      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
+      on being compiled with RTTI (/GR). We need this in this project, because
+      we're including the CLI11 header via the CommandlineArgs project. -->
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Monarch.h">
@@ -74,9 +84,46 @@
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\CommandlineArgs\CommandlineArgs.vcxproj" >
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <!-- Make sure to set ReferenceOutputAssembly=false, or we'll try and
+      MDMERGE with MUX from the CommandlineArgs output, and get duplicate type
+      errors everywhere. -->
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+
+      <!-- This is going to turn into a disaster. We still need to reference MUX
+      to get mdmerge happy, but we can't roll that up without rolling up the DLL
+      and now we'll get duplicate types in WT.vcxproj. GAH. We'll need to have
+      Remoting accept a callback to say "I encountered a commandline, someone,
+      deal with it?", then have apphost register for that callback. So the flow
+      is monarch->AppHost->AppLogic -->
+
+    </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below -->
+
+
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.TerminalControl">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Settings.Model">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
   </ItemGroup>
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>

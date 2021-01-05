@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Monarch.h"
 #include "CommandlineArgs.h"
+#include "../CommandlineArgs/AppCommandlineArgs.h"
 
 #include "Monarch.g.cpp"
 #include "../../types/inc/utils.hpp"
@@ -139,6 +140,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // always want to create a new window, so we'll just return true. This
         // will tell the caller that we didn't handle the commandline, and they
         // should open a new window to deal with it themselves.
+
+        CommandlineArgs::AppCommandlineArgs argParser;
+
         return true;
     }
 
