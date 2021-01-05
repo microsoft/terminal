@@ -86,13 +86,12 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
             CONSOLE_STATE_INFO csi = pLinkSettings->CreateConsoleStateInfo();
             csi.LinkTitle = linkNameForCsi;
-            WCHAR wszShortcutTitle[MAX_PATH];
-            BOOL fReadConsoleProperties;
+            WCHAR wszShortcutTitle[MAX_PATH] = L"\0";
+            BOOL fReadConsoleProperties = FALSE;
             WORD wShowWindow = pLinkSettings->GetShowWindow();
             DWORD dwHotKey = pLinkSettings->GetHotKey();
-
-            int iShowWindow;
-            WORD wHotKey;
+            int iShowWindow = 0;
+            WORD wHotKey = 0;
             NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
                                                                      &fReadConsoleProperties,
                                                                      wszShortcutTitle,
@@ -105,36 +104,37 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                                                                      &iShowWindow,
                                                                      &wHotKey);
 
-            // Convert results back to appropriate types and set.
-            if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
+            if (NT_SUCCESS(Status))
             {
-                pLinkSettings->SetShowWindow(wShowWindow);
-            }
-
-            dwHotKey = wHotKey;
-            pLinkSettings->SetHotKey(dwHotKey);
-
-            if (wszLinkTarget[0] != L'\0')
-            {
-                // guarantee null termination to make OACR happy.
-                wszLinkTarget[ARRAYSIZE(wszLinkTarget) - 1] = L'\0';
-            }
-
-            // if we got a title, use it. even on overall link value load failure, the title will be correct if
-            // filled out.
-            if (wszShortcutTitle[0] != L'\0')
-            {
-                // guarantee null termination to make OACR happy.
-                wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
-                StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
-
-                // OACR complains about the use of a DWORD here, so roundtrip through a size_t
-                size_t cbTitleLength;
-                if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
+                // Convert results back to appropriate types and set.
+                if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))
                 {
-                    // don't care about return result -- the buffer is guaranteed null terminated to at least
-                    // the length of Title
-                    (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
+                    pLinkSettings->SetShowWindow(wShowWindow);
+                }
+
+                dwHotKey = wHotKey;
+                pLinkSettings->SetHotKey(dwHotKey);
+
+                if (wszLinkTarget[0] != L'\0')
+                {
+                    // guarantee null termination to make OACR happy.
+                    wszLinkTarget[ARRAYSIZE(wszLinkTarget) - 1] = L'\0';
+                }
+
+                if (wszShortcutTitle[0] != L'\0')
+                {
+                    // guarantee null termination to make OACR happy.
+                    wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
+                    StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
+
+                    // OACR complains about the use of a DWORD here, so roundtrip through a size_t
+                    size_t cbTitleLength;
+                    if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
+                    {
+                        // don't care about return result -- the buffer is guaranteed null terminated to at least
+                        // the length of Title
+                        (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
+                    }
                 }
             }
 
