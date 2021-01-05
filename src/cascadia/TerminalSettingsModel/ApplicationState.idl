@@ -7,6 +7,8 @@ namespace Microsoft.Terminal.Settings.Model
 	static ApplicationState GetForCurrentApp();
 	static void Reset();
 
+	void Commit();
+
 	Boolean ShowConfirmCloseAllTabs;
 	Boolean ShowConfirmLargePaste;
 	Boolean ShowConfirmMultiLinePaste;

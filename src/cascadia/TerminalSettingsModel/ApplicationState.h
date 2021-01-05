@@ -15,10 +15,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ApplicationState : ApplicationStateT<ApplicationState>
     {
-        ApplicationState() = default;
+        ApplicationState(std::filesystem::path path) :
+            _path{ path } {}
 
         static Microsoft::Terminal::Settings::Model::ApplicationState GetForCurrentApp();
         static void Reset();
+
+        void Commit();
 
         bool ShowConfirmCloseAllTabs();
         void ShowConfirmCloseAllTabs(bool value);
@@ -26,6 +29,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ShowConfirmLargePaste(bool value);
         bool ShowConfirmMultiLinePaste();
         void ShowConfirmMultiLinePaste(bool value);
+
+    private:
+        static winrt::com_ptr<ApplicationState> LoadAll();
+        void LayerJson(const Json::Value& value);
+        void Invalidate() { _invalidated = true; }
+        bool _invalidated{ false };
+        std::filesystem::path _path{};
     };
 }
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
