@@ -5,6 +5,7 @@
 
 #include "Profiles.g.h"
 #include "ProfilePageNavigationState.g.h"
+#include "DeleteProfileEventArgs.g.h"
 #include "ProfileViewModel.g.h"
 #include "Utils.h"
 #include "ViewModelHelpers.h"
@@ -16,6 +17,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ProfileViewModel(const Model::Profile& profile) :
             _profile{ profile } {}
+
+        bool CanDeleteProfile() const;
+        GETSET_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, ConnectionType);
@@ -60,6 +64,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Model::Profile _profile;
     };
 
+    struct DeleteProfileEventArgs :
+        public DeleteProfileEventArgsT<DeleteProfileEventArgs>
+    {
+    public:
+        DeleteProfileEventArgs(guid profileGuid) :
+            _ProfileGuid(profileGuid) {}
+
+        guid ProfileGuid() const noexcept { return _ProfileGuid; }
+
+    private:
+        guid _ProfileGuid{};
+    };
+
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
@@ -70,9 +87,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
         }
 
+        void DeleteProfile();
+
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
+        TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
@@ -95,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget StartingDirectory_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         fire_and_forget Icon_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void BIAlignment_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void DeleteConfirmation_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
         void CursorShape_Changed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);

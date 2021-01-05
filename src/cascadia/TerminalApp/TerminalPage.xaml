@@ -95,6 +95,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="CommandPalette"
             Grid.Row="1"
             Visibility="Collapsed"
+            PreviewKeyDown ="_KeyDownHandler"
             VerticalAlignment="Stretch" />
 
         <mux:InfoBar x:Name="KeyboardWarningInfoBar"

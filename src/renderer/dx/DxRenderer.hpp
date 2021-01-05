@@ -196,7 +196,9 @@ namespace Microsoft::Console::Render
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormatItalic;
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFaceItalic;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextLayout> _customLayout;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
@@ -317,8 +319,10 @@ namespace Microsoft::Console::Render
                                                FontInfo& actual,
                                                const int dpi,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
+                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
                                                LineMetrics& lineMetrics) const noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;

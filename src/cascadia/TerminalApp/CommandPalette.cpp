@@ -291,7 +291,6 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
-        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
 
         if (key == VirtualKey::Up)
         {
@@ -691,7 +690,10 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>() })
             {
-                _SwitchToTabRequestedHandlers(*this, tabPaletteItem.Tab());
+                if (const auto tab{ tabPaletteItem.Tab() })
+                {
+                    _SwitchToTabRequestedHandlers(*this, tab);
+                }
             }
         }
     }

@@ -10,6 +10,7 @@
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
@@ -18,8 +19,42 @@ using namespace winrt::Windows::Storage::AccessCache;
 using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
+static const std::array<winrt::guid, 2> InBoxProfileGuids{
+    winrt::guid{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } }, // Windows Powershell
+    winrt::guid{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
+};
+
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    bool ProfileViewModel::CanDeleteProfile() const
+    {
+        const auto guid{ Guid() };
+        if (IsBaseLayer())
+        {
+            return false;
+        }
+        else if (std::find(std::begin(InBoxProfileGuids), std::end(InBoxProfileGuids), guid) != std::end(InBoxProfileGuids))
+        {
+            // in-box profile
+            return false;
+        }
+        else if (!Source().empty())
+        {
+            // dynamic profile
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    void ProfilePageNavigationState::DeleteProfile()
+    {
+        auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(_Profile.Guid()) };
+        _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
     Profiles::Profiles() :
         _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
     {
@@ -64,6 +99,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
         }
+
+        // Set the text disclaimer for the text box
+        hstring disclaimer{};
+        const auto guid{ _State.Profile().Guid() };
+        if (std::find(std::begin(InBoxProfileGuids), std::end(InBoxProfileGuids), guid) != std::end(InBoxProfileGuids))
+        {
+            // load disclaimer for in-box profiles
+            disclaimer = RS_(L"Profile_DeleteButtonDisclaimerInBox");
+        }
+        else if (!_State.Profile().Source().empty())
+        {
+            // load disclaimer for dynamic profiles
+            disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
+        }
+        DeleteButtonDisclaimer().Text(disclaimer);
     }
 
     ColorScheme Profiles::CurrentColorScheme()
@@ -84,6 +134,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles::CurrentColorScheme(const ColorScheme& val)
     {
         _State.Profile().ColorSchemeName(val.Name());
+    }
+
+    void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
+        state->DeleteProfile();
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)

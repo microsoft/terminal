@@ -88,6 +88,8 @@ TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 #include "../inc/operators.hpp"
 #include "../inc/conattrs.hpp"
 
+#include "boost/container/small_vector.hpp"
+
 // TODO: MSFT 9355094 Find a better way of doing this. http://osgvsowi/9355094
 [[nodiscard]] inline NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr)
 {
