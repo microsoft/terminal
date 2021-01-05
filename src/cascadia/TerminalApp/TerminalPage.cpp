@@ -2698,7 +2698,7 @@ namespace winrt::TerminalApp::implementation
     // - an empty list if we failed to parse, otherwise a list of actions to execute.
     std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::CommandlineArgs::AppCommandlineArgs appArgs;
         if (appArgs.ParseArgs(args) == 0)
         {
             return appArgs.GetStartupActions();

@@ -17,7 +17,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
-using namespace TerminalApp;
+
 
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;

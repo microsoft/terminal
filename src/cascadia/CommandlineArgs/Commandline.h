@@ -23,12 +23,12 @@ namespace TerminalAppLocalTests
 {
     class CommandlineTest;
 };
-namespace TerminalApp
+namespace CommandlineArgs
 {
     class Commandline;
 };
 
-class TerminalApp::Commandline
+class CommandlineArgs::Commandline
 {
 public:
     static constexpr std::wstring_view Delimiter{ L";" };

@@ -17,7 +17,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace ::TerminalApp;
+using namespace ::CommandlineArgs;
 
 namespace winrt
 {
@@ -1113,7 +1113,7 @@ namespace winrt::TerminalApp::implementation
 
     int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args)
     {
-        ::TerminalApp::AppCommandlineArgs appArgs;
+        ::CommandlineArgs::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
