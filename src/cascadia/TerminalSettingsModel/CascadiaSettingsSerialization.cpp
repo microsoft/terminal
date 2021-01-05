@@ -576,8 +576,13 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                     auto matchingProfile = _FindMatchingProfile(profileStub);
                     if (matchingProfile)
                     {
-                        // We found a matching profile, so layer the modification on top of it
-                        matchingProfile->LayerJson(profileStub);
+                        // We found a matching profile, create a child of it and put the modifications there
+                        // (we add a new inheritance layer)
+                        auto childImpl{ matchingProfile->CreateChild() };
+                        childImpl->LayerJson(profileStub);
+
+                        // replace parent in _profiles with child
+                        _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
                     }
                 }
                 else
