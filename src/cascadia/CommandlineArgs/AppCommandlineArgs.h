@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 #pragma once
 
+#include <CLI11/CLI11.hpp>
 #include "Commandline.h"
 
 #ifdef UNIT_TESTING
