@@ -901,6 +901,9 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
         // Update the IDs
         it.SetId(i++);
 
+        // Also update the char row parent pointers as they can get shuffled up in the rotates.
+        it.GetCharRow().UpdateParent(&it);
+
         // Resize the rows in the X dimension if we have a new width
         if (newRowWidth.has_value())
         {
