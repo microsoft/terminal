@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "WindowManager.h"
 #include "MonarchFactory.h"
@@ -69,7 +72,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void WindowManager::_createMonarch()
     {
         // Heads up! This only works because we're using
-        // "metadata-based-marshalling" for our WinRT types. THat means the OS is
+        // "metadata-based-marshalling" for our WinRT types. That means the OS is
         // using the .winmd file we generate to figure out the proxy/stub
         // definitions for our types automatically. This only works in the following
         // cases:
@@ -82,8 +85,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     bool WindowManager::_areWeTheKing()
     {
-        auto kingPID = _monarch.GetPID();
-        auto ourPID = GetCurrentProcessId();
+        const auto kingPID{ _monarch.GetPID() };
+        const auto ourPID{ GetCurrentProcessId() };
         return (ourPID == kingPID);
     }
 
@@ -93,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _peasant = *p;
         _monarch.AddPeasant(_peasant);
 
-        // TODO:MG Spawn a thread to wait on the monarch, and handle the election
+        // TODO:projects/5 Spawn a thread to wait on the monarch, and handle the election
 
         return _peasant;
     }

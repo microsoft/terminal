@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "Monarch.h"
 #include "CommandlineArgs.h"
@@ -43,7 +46,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         // TODO:projects/5 This is terrible. There's gotta be a better way
         // of finding the first opening in a non-consecutive map of int->object
-        auto providedID = peasant.GetID();
+        const auto providedID = peasant.GetID();
 
         if (providedID == 0)
         {

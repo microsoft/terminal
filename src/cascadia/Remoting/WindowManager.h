@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include "WindowManager.g.h"
@@ -7,7 +10,7 @@
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
-    struct WindowManager final : public WindowManagerT<WindowManager> 
+    struct WindowManager final : public WindowManagerT<WindowManager>
     {
         WindowManager();
         ~WindowManager();
