@@ -211,3 +211,57 @@ private:                                                                    \
         /*no value was found*/                                              \
         return std::nullopt;                                                \
     }
+
+// This macro is similar to the ones above, but is reserved for settings
+// that are arrays (like color table)
+#define GETSET_ARRAY_SETTING(type, size, name)                              \
+public:                                                                     \
+    /* Returns true if the user explicitly set the value, false otherwise*/ \
+    bool Has##name() const                                                  \
+    {                                                                       \
+        return _##name.has_value();                                         \
+    }                                                                       \
+                                                                            \
+    /* Returns the resolved value for this setting */                       \
+    /* fallback: user set value --> inherited value --> empty array */      \
+    std::array<type, size> name() const                                     \
+    {                                                                       \
+        const auto val{ _get##name##Impl() };                               \
+        return val ? *val : std::array<type, size>{};                       \
+    }                                                                       \
+                                                                            \
+    /* Overwrite the user set value */                                      \
+    void name(const std::array<type, size>& value)                          \
+    {                                                                       \
+        _##name = value;                                                    \
+    }                                                                       \
+                                                                            \
+    /* Clear the user set value */                                          \
+    void Clear##name()                                                      \
+    {                                                                       \
+        _##name = std::nullopt;                                             \
+    }                                                                       \
+                                                                            \
+private:                                                                    \
+    std::optional<std::array<type, size>> _##name{ std::nullopt };          \
+    std::optional<std::array<type, size>> _get##name##Impl() const          \
+    {                                                                       \
+        /*return user set value*/                                           \
+        if (_##name)                                                        \
+        {                                                                   \
+            return _##name;                                                 \
+        }                                                                   \
+                                                                            \
+        /*user set value was not set*/                                      \
+        /*iterate through parents to find a value*/                         \
+        for (auto parent : _parents)                                        \
+        {                                                                   \
+            if (auto val{ parent->_get##name##Impl() })                     \
+            {                                                               \
+                return val;                                                 \
+            }                                                               \
+        }                                                                   \
+                                                                            \
+        /*no value was found*/                                              \
+        return std::nullopt;                                                \
+    }
