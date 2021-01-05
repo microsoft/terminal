@@ -2,12 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "AppLogic.h"
 #include "AppCommandlineArgs.h"
 #include "../types/inc/utils.hpp"
 #include <LibraryResources.h>
 
-using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace TerminalApp;
 

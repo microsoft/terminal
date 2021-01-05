@@ -10,7 +10,7 @@
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
-#include "AppCommandlineArgs.h"
+#include "../CommandlineArgs/AppCommandlineArgs.h"
 
 static constexpr uint32_t DefaultRowsToScroll{ 3 };
 static constexpr std::wstring_view TabletInputServiceKey{ L"TabletInputService" };
