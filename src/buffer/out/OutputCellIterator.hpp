@@ -54,6 +54,8 @@ public:
     ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
     friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;
 
+    void AddCellDistanceFault(ptrdiff_t fault) { _distance += fault; };
+
     OutputCellIterator& operator++();
     OutputCellIterator operator++(int);
 

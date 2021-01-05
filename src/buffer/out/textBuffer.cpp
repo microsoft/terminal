@@ -184,129 +184,6 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport 
     return TextBufferCellIterator(*this, at, limit);
 }
 
-//Routine Description:
-// - Corrects and enforces consistent double byte character state (KAttrs line) within a row of the text buffer.
-// - This will take the given double byte information and check that it will be consistent when inserted into the buffer
-//   at the current cursor position.
-// - It will correct the buffer (by erasing the character prior to the cursor) if necessary to make a consistent state.
-//Arguments:
-// - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
-//Return Value:
-// - True if it is valid to insert a character with the given double byte attributes. False otherwise.
-bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute)
-{
-    // To figure out if the sequence is valid, we have to look at the character that comes before the current one
-    const COORD coordPrevPosition = _GetPreviousFromCursor();
-    ROW& prevRow = GetRowByOffset(coordPrevPosition.Y);
-    DbcsAttribute prevDbcsAttr;
-    try
-    {
-        prevDbcsAttr = prevRow.GetCharRow().DbcsAttrAt(coordPrevPosition.X);
-    }
-    catch (...)
-    {
-        LOG_HR(wil::ResultFromCaughtException());
-        return false;
-    }
-
-    bool fValidSequence = true; // Valid until proven otherwise
-    bool fCorrectableByErase = false; // Can't be corrected until proven otherwise
-
-    // Here's the matrix of valid items:
-    // N = None (single byte)
-    // L = Lead (leading byte of double byte sequence
-    // T = Trail (trailing byte of double byte sequence
-    // Prev Curr    Result
-    // N    N       OK.
-    // N    L       OK.
-    // N    T       Fail, uncorrectable. Trailing byte must have had leading before it.
-    // L    N       Fail, OK with erase. Lead needs trailing pair. Can erase lead to correct.
-    // L    L       Fail, OK with erase. Lead needs trailing pair. Can erase prev lead to correct.
-    // L    T       OK.
-    // T    N       OK.
-    // T    L       OK.
-    // T    T       Fail, uncorrectable. New trailing byte must have had leading before it.
-
-    // Check for only failing portions of the matrix:
-    if (prevDbcsAttr.IsSingle() && dbcsAttribute.IsTrailing())
-    {
-        // N, T failing case (uncorrectable)
-        fValidSequence = false;
-    }
-    else if (prevDbcsAttr.IsLeading())
-    {
-        if (dbcsAttribute.IsSingle() || dbcsAttribute.IsLeading())
-        {
-            // L, N and L, L failing cases (correctable)
-            fValidSequence = false;
-            fCorrectableByErase = true;
-        }
-    }
-    else if (prevDbcsAttr.IsTrailing() && dbcsAttribute.IsTrailing())
-    {
-        // T, T failing case (uncorrectable)
-        fValidSequence = false;
-    }
-
-    // If it's correctable by erase, erase the previous character
-    if (fCorrectableByErase)
-    {
-        // Erase previous character into an N type.
-        try
-        {
-            prevRow.ClearColumn(coordPrevPosition.X);
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return false;
-        }
-
-        // Sequence is now N N or N L, which are both okay. Set sequence back to valid.
-        fValidSequence = true;
-    }
-
-    return fValidSequence;
-}
-
-//Routine Description:
-// - Call before inserting a character into the buffer.
-// - This will ensure a consistent double byte state (KAttrs line) within the text buffer
-// - It will attempt to correct the buffer if we're inserting an unexpected double byte character type
-//   and it will pad out the buffer if we're going to split a double byte sequence across two rows.
-//Arguments:
-// - dbcsAttribute - Double byte information associated with the character about to be inserted into the buffer
-//Return Value:
-// - true if we successfully prepared the buffer and moved the cursor
-// - false otherwise (out of memory)
-bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
-{
-    // This function corrects most errors. If this is false, we had an uncorrectable one which
-    // older versions of conhost simply let pass by unflinching.
-    LOG_HR_IF(E_NOT_VALID_STATE, !(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
-
-    bool fSuccess = true;
-    // Now compensate if we don't have enough space for the upcoming double byte sequence
-    // We only need to compensate for leading bytes
-    if (dbcsAttribute.IsLeading())
-    {
-        const auto cursorPosition = GetCursor().GetPosition();
-        const auto lineWidth = GetLineWidth(cursorPosition.Y);
-
-        // If we're about to lead on the last column in the row, we need to add a padding space
-        if (cursorPosition.X == lineWidth - 1)
-        {
-            // set that we're wrapping for double byte reasons
-            auto& row = GetRowByOffset(cursorPosition.Y);
-            row.SetDoubleBytePadded(true);
-
-            // then move the cursor forward and onto the next row
-            fSuccess = IncrementCursor();
-        }
-    }
-    return fSuccess;
-}
-
 // Routine Description:
 // - Writes cells to the output buffer. Writes at the cursor.
 // Arguments:
@@ -389,70 +266,6 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     _NotifyPaint(paint);
 
     return newIt;
-}
-
-//Routine Description:
-// - Inserts one codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
-//Arguments:
-// - chars - The codepoint to insert
-// - dbcsAttribute - Double byte information associated with the codepoint
-// - bAttr - Color data associated with the character
-//Return Value:
-// - true if we successfully inserted the character
-// - false otherwise (out of memory)
-bool TextBuffer::InsertCharacter(const std::wstring_view chars,
-                                 const DbcsAttribute dbcsAttribute,
-                                 const TextAttribute attr)
-{
-    // Ensure consistent buffer state for double byte characters based on the character type we're about to insert
-    bool fSuccess = _PrepareForDoubleByteSequence(dbcsAttribute);
-
-    if (fSuccess)
-    {
-        // Get the current cursor position
-        short const iRow = GetCursor().GetPosition().Y; // row stored as logical position, not array position
-        short const iCol = GetCursor().GetPosition().X; // column logical and array positions are equal.
-
-        // Get the row associated with the given logical position
-        ROW& Row = GetRowByOffset(iRow);
-
-        // Store character and double byte data
-        CharRow& charRow = Row.GetCharRow();
-
-        try
-        {
-            charRow.GlyphAt(iCol) = chars;
-            charRow.DbcsAttrAt(iCol) = dbcsAttribute;
-        }
-        catch (...)
-        {
-            LOG_HR(wil::ResultFromCaughtException());
-            return false;
-        }
-
-        // Store color data
-        fSuccess = Row.GetAttrRow().SetAttrToEnd(iCol, attr);
-        if (fSuccess)
-        {
-            // Advance the cursor
-            fSuccess = IncrementCursor();
-        }
-    }
-    return fSuccess;
-}
-
-//Routine Description:
-// - Inserts one ucs2 codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
-//Arguments:
-// - wch - The codepoint to insert
-// - dbcsAttribute - Double byte information associated with the codepoint
-// - bAttr - Color data associated with the character
-//Return Value:
-// - true if we successfully inserted the character
-// - false otherwise (out of memory)
-bool TextBuffer::InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr)
-{
-    return InsertCharacter({ &wch, 1 }, dbcsAttribute, attr);
 }
 
 //Routine Description:
@@ -2174,32 +1987,21 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
         }
 
-        // Loop through every character in the current row (up to
-        // the "right" boundary, which is one past the final valid
-        // character)
-        for (short iOldCol = 0; iOldCol < iRight; iOldCol++)
+        OutputCellIterator it{ oldBuffer.GetCellDataAt({ 0, iOldRow }, Viewport::FromDimensions({ 0, iOldRow }, iRight, 1)) };
+        auto preCurPos{ newBuffer.GetCursor().GetPosition() };
+        const auto last = newBuffer.Write(it, preCurPos, true); // true - wrap if we don't fit!
+        const auto distance = last.GetCellDistance(it);
+
+        if (iOldRow == cOldCursorPos.Y)
         {
-            if (iOldCol == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
-            {
-                cNewCursorPos = newCursor.GetPosition();
-                fFoundCursorPos = true;
-            }
-
-            try
-            {
-                // TODO: MSFT: 19446208 - this should just use an iterator and the inserter...
-                const auto glyph = row.GetCharRow().GlyphAt(iOldCol);
-                const auto dbcsAttr = row.GetCharRow().DbcsAttrAt(iOldCol);
-                const auto textAttr = row.GetAttrRow().GetAttrByColumn(iOldCol);
-
-                if (!newBuffer.InsertCharacter(glyph, dbcsAttr, textAttr))
-                {
-                    hr = E_OUTOFMEMORY;
-                    break;
-                }
-            }
-            CATCH_RETURN();
+            cNewCursorPos = preCurPos;
+            // we started at (0, NewY) -- walk forward by the old position's X to figure out where we land in the new line
+            newBuffer.GetSize().MoveInBounds(cOldCursorPos.X, cNewCursorPos);
+            fFoundCursorPos = true;
         }
+
+        newBuffer.GetSize().MoveInBounds(distance, preCurPos);
+        newBuffer.GetCursor().SetPosition(preCurPos);
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
@@ -2232,7 +2034,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (iRight < cOldColsTotal && !row.WasWrapForced())
+            if (distance < cOldColsTotal && !row.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {

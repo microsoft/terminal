@@ -97,8 +97,6 @@ public:
                                  const std::optional<bool> setWrap = std::nullopt,
                                  const std::optional<size_t> limitRight = std::nullopt);
 
-    bool InsertCharacter(const wchar_t wch, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
-    bool InsertCharacter(const std::wstring_view chars, const DbcsAttribute dbcsAttribute, const TextAttribute attr);
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -229,10 +227,6 @@ private:
     void _AdjustWrapOnCurrentRow(const bool fSet);
 
     void _NotifyPaint(const Microsoft::Console::Types::Viewport& viewport) const;
-
-    // Assist with maintaining proper buffer state for Double Byte character sequences
-    bool _PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute);
-    bool _AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribute);
 
     ROW& _GetFirstRow();
     ROW& _GetPrevRowNoWrap(const ROW& row);

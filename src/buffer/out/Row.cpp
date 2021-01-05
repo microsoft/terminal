@@ -152,12 +152,14 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             if (currentIndex == 0 && it->DbcsAttr().IsTrailing())
             {
                 _charRow.ClearCell(currentIndex);
+                it.AddCellDistanceFault(1); // we couldn't fit a cell here but we skipped a column :|
             }
             // If we're trying to fill the last cell with a leading byte, pad it out instead by clearing it.
             // Don't increment iterator. We'll exit because we couldn't write a lead at the end of a line.
             else if (fillingLastColumn && it->DbcsAttr().IsLeading())
             {
                 _charRow.ClearCell(currentIndex);
+                it.AddCellDistanceFault(1); // we couldn't fit a cell here but we skipped a column :|
                 SetDoubleBytePadded(true);
             }
             // Otherwise, copy the data given and increment the iterator.

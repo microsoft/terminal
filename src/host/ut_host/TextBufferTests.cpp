@@ -93,8 +93,6 @@ class TextBufferTests
 
     TEST_METHOD(TestCopyProperties);
 
-    TEST_METHOD(TestInsertCharacter);
-
     TEST_METHOD(TestIncrementCursor);
 
     TEST_METHOD(TestNewlineCursor);
@@ -384,50 +382,6 @@ void TextBufferTests::TestCopyProperties()
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsOn());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().IsDouble());
     VERIFY_IS_TRUE(testTextBuffer->GetCursor().GetDelay());
-}
-
-void TextBufferTests::TestInsertCharacter()
-{
-    TextBuffer& textBuffer = GetTbi();
-
-    // get starting cursor position
-    COORD const coordCursorBefore = textBuffer.GetCursor().GetPosition();
-
-    // Get current row from the buffer
-    ROW& Row = textBuffer.GetRowByOffset(coordCursorBefore.Y);
-
-    // create some sample test data
-    const auto wch = L'Z';
-    const std::wstring_view wchTest(&wch, 1);
-    DbcsAttribute dbcsAttribute;
-    dbcsAttribute.SetTrailing();
-    WORD const wAttrTest = BACKGROUND_INTENSITY | FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE;
-    TextAttribute TestAttributes = TextAttribute(wAttrTest);
-
-    CharRow& charRow = Row.GetCharRow();
-    charRow.DbcsAttrAt(coordCursorBefore.X).SetLeading();
-    // ensure that the buffer didn't start with these fields
-    VERIFY_ARE_NOT_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_NOT_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
-
-    auto attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
-
-    VERIFY_ARE_NOT_EQUAL(attr, TestAttributes);
-
-    // now apply the new data to the buffer
-    textBuffer.InsertCharacter(wchTest, dbcsAttribute, TestAttributes);
-
-    // ensure that the buffer position where the cursor WAS contains the test items
-    VERIFY_ARE_EQUAL(charRow.GlyphAt(coordCursorBefore.X), wchTest);
-    VERIFY_ARE_EQUAL(charRow.DbcsAttrAt(coordCursorBefore.X), dbcsAttribute);
-
-    attr = Row.GetAttrRow().GetAttrByColumn(coordCursorBefore.X);
-    VERIFY_ARE_EQUAL(attr, TestAttributes);
-
-    // ensure that the cursor moved to a new position (X or Y or both have changed)
-    VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
-                   (coordCursorBefore.Y != textBuffer.GetCursor().GetPosition().Y));
-    // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
 }
 
 void TextBufferTests::TestIncrementCursor()
