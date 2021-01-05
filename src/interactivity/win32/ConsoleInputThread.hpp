@@ -14,7 +14,7 @@ Author(s):
 
 #include "precomp.h"
 
-#include "..\inc\IConsoleInputThread.hpp"
+#include "../inc/IConsoleInputThread.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {

@@ -9,7 +9,7 @@
 #include "cmdline.h"
 #include "resource.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // 5 digit number for command history
 static constexpr size_t COMMAND_NUMBER_LENGTH = 5;

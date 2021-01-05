@@ -161,6 +161,7 @@ void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexce
 {
     _validDefaultProfile = true;
     _defaultProfile = defaultProfile;
+    _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
@@ -331,6 +332,11 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
 {
     _colorSchemes.Insert(scheme.Name(), scheme);
+}
+
+void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
+{
+    _colorSchemes.TryRemove(schemeName);
 }
 
 // Method Description:

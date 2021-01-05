@@ -383,7 +383,10 @@ static constexpr bool _isActionableFromGround(const wchar_t wch) noexcept
 void StateMachine::_ActionExecute(const wchar_t wch)
 {
     _trace.TraceOnExecute(wch);
-    _engine->ActionExecute(wch);
+    const bool success = _engine->ActionExecute(wch);
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(success);
 }
 
 // Routine Description:
@@ -397,7 +400,11 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 {
     _trace.TraceOnExecuteFromEscape(wch);
-    _engine->ActionExecuteFromEscape(wch);
+
+    const bool success = _engine->ActionExecuteFromEscape(wch);
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(success);
 }
 
 // Routine Description:
@@ -409,7 +416,11 @@ void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 void StateMachine::_ActionPrint(const wchar_t wch)
 {
     _trace.TraceOnAction(L"Print");
-    _engine->ActionPrint(wch);
+
+    const bool success = _engine->ActionPrint(wch);
+
+    // Trace the result.
+    _trace.DispatchSequenceTrace(success);
 }
 
 // Routine Description:

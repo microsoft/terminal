@@ -18,7 +18,7 @@
 
 #include "ApiRoutines.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -528,7 +528,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         }
 
         // Make sure the viewport doesn't now overflow the buffer dimensions.
-        auto overflow = screenInfo.GetViewport().EndExclusive() - screenInfo.GetBufferSize().Dimensions();
+        auto overflow = screenInfo.GetViewport().BottomRightExclusive() - screenInfo.GetBufferSize().Dimensions();
         if (overflow.X > 0 || overflow.Y > 0)
         {
             overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };
@@ -638,7 +638,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // Note that it also doesn't set cursor position.
 
         // However, we do need to make sure the viewport doesn't now overflow the buffer dimensions.
-        auto overflow = context.GetViewport().EndExclusive() - context.GetBufferSize().Dimensions();
+        auto overflow = context.GetViewport().BottomRightExclusive() - context.GetBufferSize().Dimensions();
         if (overflow.X > 0 || overflow.Y > 0)
         {
             overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };

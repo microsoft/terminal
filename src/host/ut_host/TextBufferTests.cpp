@@ -2471,56 +2471,107 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 });
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection);
 
         std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+
+        const auto formatWrappedRows = blockSelection;
+        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
         for (auto& text : textData)
         {
             result += text;
         }
 
         std::wstring expectedText = L"";
-        if (includeCRLF)
+        if (formatWrappedRows)
         {
-            if (trimTrailingWhitespace)
+            if (includeCRLF)
             {
-                Log::Comment(L"Standard Copy to Clipboard");
-                expectedText += L"12345";
-                expectedText += L"67\r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123  \r\n";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123\r\n";
+                    expectedText += L"\r\n";
+                }
+                else
+                {
+                    Log::Comment(L"Copy block selection to Clipboard");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
             }
             else
             {
-                Log::Comment(L"UI Automation");
-                expectedText += L"12345";
-                expectedText += L"67   \r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123  ";
-                expectedText += L"     \r\n";
-                expectedText += L"     ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123";
+                }
+                else
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
             }
         }
         else
         {
-            if (trimTrailingWhitespace)
+            if (includeCRLF)
             {
-                Log::Comment(L"UNDEFINED");
-                expectedText += L"12345";
-                expectedText += L"67";
-                expectedText += L"  345";
-                expectedText += L"123  ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"Standard Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                }
+                else
+                {
+                    Log::Comment(L"UI Automation");
+                    expectedText += L"12345";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  ";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
             }
             else
             {
-                Log::Comment(L"Shift+Copy to Clipboard");
-                expectedText += L"12345";
-                expectedText += L"67   ";
-                expectedText += L"  345";
-                expectedText += L"123  ";
-                expectedText += L"     ";
-                expectedText += L"     ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                }
+                else
+                {
+                    Log::Comment(L"Shift+Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
             }
         }
 

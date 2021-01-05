@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -233,6 +233,24 @@ class AttrRowTests
     NoThrowString LogRunElement(_In_ TextAttributeRun& run)
     {
         return NoThrowString().Format(L"%wc%d", run.GetAttributes().GetLegacyAttributes(), run.GetLength());
+    }
+
+    void LogChain(_In_ PCWSTR pwszPrefix,
+                  boost::container::small_vector_base<TextAttributeRun>& chain)
+    {
+        NoThrowString str(pwszPrefix);
+
+        if (chain.size() > 0)
+        {
+            str.Append(LogRunElement(chain[0]));
+
+            for (size_t i = 1; i < chain.size(); i++)
+            {
+                str.AppendFormat(L"->%s", (const wchar_t*)(LogRunElement(chain[i])));
+            }
+        }
+
+        Log::Comment(str);
     }
 
     void LogChain(_In_ PCWSTR pwszPrefix,

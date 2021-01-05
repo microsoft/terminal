@@ -15,11 +15,14 @@
 // Return Value:
 // - instantiated object
 // Note: will through if unable to allocate char/attribute buffers
-CharRow::CharRow(size_t rowWidth, ROW* const pParent) :
+#pragma warning(push)
+#pragma warning(disable : 26447) // small_vector's constructor says it can throw but it should not given how we use it.  This suppresses this error for the AuditMode build.
+CharRow::CharRow(size_t rowWidth, ROW* const pParent) noexcept :
     _data(rowWidth, value_type()),
     _pParent{ FAIL_FAST_IF_NULL(pParent) }
 {
 }
+#pragma warning(pop)
 
 // Routine Description:
 // - gets the size of the row, in glyph cells
@@ -90,9 +93,9 @@ typename CharRow::const_iterator CharRow::cend() const noexcept
 // - <none>
 // Return Value:
 // - The calculated left boundary of the internal string.
-size_t CharRow::MeasureLeft() const
+size_t CharRow::MeasureLeft() const noexcept
 {
-    std::vector<value_type>::const_iterator it = _data.cbegin();
+    const_iterator it = _data.cbegin();
     while (it != _data.cend() && it->IsSpace())
     {
         ++it;
@@ -106,9 +109,9 @@ size_t CharRow::MeasureLeft() const
 // - <none>
 // Return Value:
 // - The calculated right boundary of the internal string.
-size_t CharRow::MeasureRight() const noexcept
+size_t CharRow::MeasureRight() const
 {
-    std::vector<value_type>::const_reverse_iterator it = _data.crbegin();
+    const_reverse_iterator it = _data.crbegin();
     while (it != _data.crend() && it->IsSpace())
     {
         ++it;

@@ -20,6 +20,7 @@ Revision History:
 
 #pragma once
 
+#include "boost/container/small_vector.hpp"
 #include "TextAttributeRun.hpp"
 #include "AttrRowIterator.hpp"
 
@@ -28,7 +29,16 @@ class ATTR_ROW final
 public:
     using const_iterator = typename AttrRowIterator;
 
-    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
+    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
+    noexcept;
+
+    ~ATTR_ROW() = default;
+
+    ATTR_ROW(const ATTR_ROW&) = default;
+    ATTR_ROW& operator=(const ATTR_ROW&) = default;
+    ATTR_ROW(ATTR_ROW&&)
+    noexcept = default;
+    ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
     TextAttribute GetAttrByColumn(const size_t column) const;
     TextAttribute GetAttrByColumn(const size_t column,
@@ -66,7 +76,7 @@ public:
 private:
     void Reset(const TextAttribute attr);
 
-    std::vector<TextAttributeRun> _list;
+    boost::container::small_vector<TextAttributeRun, 1> _list;
     size_t _cchRowWidth;
 
 #ifdef UNIT_TESTING

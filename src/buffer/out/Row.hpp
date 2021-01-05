@@ -32,9 +32,10 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
+    ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent)
+    noexcept;
 
-    size_t size() const noexcept;
+    size_t size() const noexcept { return _rowWidth; }
 
     void SetWrapForced(const bool wrap) noexcept;
     bool WasWrapForced() const noexcept;
@@ -42,23 +43,23 @@ public:
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
 
-    const CharRow& GetCharRow() const noexcept;
-    CharRow& GetCharRow() noexcept;
+    const CharRow& GetCharRow() const noexcept { return _charRow; }
+    CharRow& GetCharRow() noexcept { return _charRow; }
 
-    const ATTR_ROW& GetAttrRow() const noexcept;
-    ATTR_ROW& GetAttrRow() noexcept;
+    const ATTR_ROW& GetAttrRow() const noexcept { return _attrRow; }
+    ATTR_ROW& GetAttrRow() noexcept { return _attrRow; }
 
-    SHORT GetId() const noexcept;
-    void SetId(const SHORT id) noexcept;
+    SHORT GetId() const noexcept { return _id; }
+    void SetId(const SHORT id) noexcept { _id = id; }
 
     bool Reset(const TextAttribute Attr);
-    [[nodiscard]] HRESULT Resize(const size_t width);
+    [[nodiscard]] HRESULT Resize(const unsigned short width);
 
     void ClearColumn(const size_t column);
-    std::wstring GetText() const;
+    std::wstring GetText() const { return _charRow.GetText(); }
 
-    RowCellIterator AsCellIter(const size_t startIndex) const;
-    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const;
+    RowCellIterator AsCellIter(const size_t startIndex) const { return AsCellIter(startIndex, size() - startIndex); }
+    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const { return RowCellIterator(*this, startIndex, count); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
@@ -75,7 +76,7 @@ private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
     SHORT _id;
-    size_t _rowWidth;
+    unsigned short _rowWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line

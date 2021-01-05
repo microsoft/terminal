@@ -486,7 +486,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -504,7 +504,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -664,7 +664,7 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Move focus. This will cause us to un-zoom.");
         result = RunOnUIThread([&page]() {
             // Set up action
-            MoveFocusArgs args{ Direction::Left };
+            MoveFocusArgs args{ FocusDirection::Left };
             ActionEventArgs eventArgs{ args };
 
             page->_HandleMoveFocus(nullptr, eventArgs);
@@ -865,14 +865,14 @@ namespace TerminalAppLocalTests
             page->_OpenNewTab(newTerminalArgs);
             page->_OpenNewTab(newTerminalArgs);
         });
-        VERIFY_ARE_EQUAL(4u, page->_mruTabActions.Size());
+        VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
 
         Log::Comment(L"give alphabetical names to all switch tab actions");
         RunOnUIThread([&page]() {
-            page->_tabs.GetAt(0).SwitchToTabCommand().Name(L"a");
-            page->_tabs.GetAt(1).SwitchToTabCommand().Name(L"b");
-            page->_tabs.GetAt(2).SwitchToTabCommand().Name(L"c");
-            page->_tabs.GetAt(3).SwitchToTabCommand().Name(L"d");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(0))->Title(L"a");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(1))->Title(L"b");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(2))->Title(L"c");
+            page->_GetTerminalTabImpl(page->_tabs.GetAt(3))->Title(L"d");
         });
 
         Log::Comment(L"Change the tab switch order to MRU switching");
@@ -888,11 +888,11 @@ namespace TerminalAppLocalTests
             page->_UpdatedSelectedTab(3);
         });
 
-        VERIFY_ARE_EQUAL(4u, page->_mruTabActions.Size());
-        VERIFY_ARE_EQUAL(L"d", page->_mruTabActions.GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"c", page->_mruTabActions.GetAt(1).Name());
-        VERIFY_ARE_EQUAL(L"b", page->_mruTabActions.GetAt(2).Name());
-        VERIFY_ARE_EQUAL(L"a", page->_mruTabActions.GetAt(3).Name());
+        VERIFY_ARE_EQUAL(4u, page->_mruTabs.Size());
+        VERIFY_ARE_EQUAL(L"d", page->_mruTabs.GetAt(0).Title());
+        VERIFY_ARE_EQUAL(L"c", page->_mruTabs.GetAt(1).Title());
+        VERIFY_ARE_EQUAL(L"b", page->_mruTabs.GetAt(2).Title());
+        VERIFY_ARE_EQUAL(L"a", page->_mruTabs.GetAt(3).Title());
 
         Log::Comment(L"Switch to the next MRU tab, which is the third tab");
         RunOnUIThread([&page]() {
@@ -906,9 +906,9 @@ namespace TerminalAppLocalTests
 
         Log::Comment(L"Verify command palette preserves MRU order of tabs");
         VERIFY_ARE_EQUAL(4u, palette->_filteredActions.Size());
-        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Command().Name());
-        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Command().Name());
-        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Command().Name());
-        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Command().Name());
+        VERIFY_ARE_EQUAL(L"d", palette->_filteredActions.GetAt(0).Item().Name());
+        VERIFY_ARE_EQUAL(L"c", palette->_filteredActions.GetAt(1).Item().Name());
+        VERIFY_ARE_EQUAL(L"b", palette->_filteredActions.GetAt(2).Item().Name());
+        VERIFY_ARE_EQUAL(L"a", palette->_filteredActions.GetAt(3).Item().Name());
     }
 }

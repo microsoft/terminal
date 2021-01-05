@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 #include "window.hpp"
 

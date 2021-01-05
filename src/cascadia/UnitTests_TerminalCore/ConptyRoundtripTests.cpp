@@ -3529,7 +3529,7 @@ void ConptyRoundtripTests::HyperlinkIdConsistency()
 
     auto verifyData = [](TextBuffer& tb) {
         // Check that all the linked cells still have the same ID
-        auto attrRow = tb.GetRowByOffset(0).GetAttrRow();
+        auto& attrRow = tb.GetRowByOffset(0).GetAttrRow();
         auto id = attrRow.GetAttrByColumn(0).GetHyperlinkId();
         for (auto i = 1; i < 4; ++i)
         {

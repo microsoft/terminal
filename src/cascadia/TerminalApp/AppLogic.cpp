@@ -41,7 +41,9 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"MissingRequiredParameter"),
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
-    USES_RESOURCE(L"FailedToWriteToSettings")
+    USES_RESOURCE(L"FailedToWriteToSettings"),
+    USES_RESOURCE(L"InvalidColorSchemeInCmd"),
+    USES_RESOURCE(L"InvalidSplitSize")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -194,6 +196,13 @@ namespace winrt::TerminalApp::implementation
         // SetTitleBarContent
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
+    }
+
+    // Method Description:
+    // - Implements the IInitializeWithWindow interface from shobjidl_core.
+    HRESULT AppLogic::Initialize(HWND hwnd)
+    {
+        return _root->Initialize(hwnd);
     }
 
     // Method Description:
@@ -583,10 +592,10 @@ namespace winrt::TerminalApp::implementation
             auto tabControl = TabRowControl();
             tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-            // For whatever reason, there's about 6px of unaccounted-for space
-            // in the application. I couldn't tell you where these 6px are
+            // For whatever reason, there's about 10px of unaccounted-for space
+            // in the application. I couldn't tell you where these 10px are
             // coming from, but they need to be included in this math.
-            proposedSize.Width += (tabControl.DesiredSize().Height + 6) * scale;
+            proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
         }
 
         return proposedSize;

@@ -10,7 +10,7 @@
 
 #include "history.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
                              "Microsoft.Windows.Console.Host",
