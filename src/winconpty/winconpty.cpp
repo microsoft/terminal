@@ -196,6 +196,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     // Move the process handle out of the PROCESS_INFORMATION into out Pseudoconsole
     pPty->hConPtyProcess = pi.hProcess;
     pi.hProcess = nullptr;
+    CloseHandle(pi.hThread); // we do not need the thread handle
 
     RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(&pPty->hPtyReference,
                                                  serverHandle.get(),
