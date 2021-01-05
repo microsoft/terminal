@@ -7,8 +7,7 @@
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
 #include "JsonUtils.h"
-#include <appmodel.h>
-#include <shlobj.h>
+#include "FileUtils.h"
 #include <fmt/chrono.h>
 
 // defaults.h is a file containing the default json settings in a std::string_view
@@ -19,12 +18,12 @@
 // Both defaults.h and userDefaults.h are generated at build time into the
 // "Generated Files" directory.
 
+using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace ::Microsoft::Console;
 
 static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
 static constexpr std::wstring_view LegacySettingsFilename{ L"profiles.json" };
-static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
@@ -39,7 +38,6 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
-static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
@@ -403,10 +401,6 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     // Ignore UTF-8 BOM
     auto actualDataStart = fileData.data();
     const auto actualDataEnd = fileData.data() + fileData.size();
-    if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
-    {
-        actualDataStart += Utf8Bom.size();
-    }
 
     std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
@@ -815,20 +809,6 @@ winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Jso
     return nullptr;
 }
 
-// Function Description:
-// - Returns true if we're running in a packaged context.
-//   If we are, we want to change our settings path slightly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff we're running in a packaged context.
-bool CascadiaSettings::_IsPackaged()
-{
-    UINT32 length = 0;
-    LONG rc = GetCurrentPackageFullName(&length, nullptr);
-    return rc != APPMODEL_ERROR_NO_PACKAGE;
-}
-
 // Method Description:
 // - Writes the given content in UTF-8 to a settings file using the Win32 APIS's.
 //   Will overwrite any existing content in the file.
@@ -926,31 +906,7 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
         }
     }
 
-    return _ReadFile(hFile.get());
-}
-
-// Method Description:
-// - Reads the content in UTF-8 encoding of the given file using the Win32 APIs
-// Arguments:
-// - <none>
-// Return Value:
-// - an optional with the content of the file if we were able to read it. If we
-//   fail to read it, this can throw an exception from reading the file
-std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
-{
-    // fileSize is in bytes
-    const auto fileSize = GetFileSize(hFile, nullptr);
-    THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
-
-    auto utf8buffer = std::make_unique<char[]>(fileSize);
-
-    DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
-
-    // convert buffer to UTF-8 string
-    std::string utf8string(utf8buffer.get(), fileSize);
-
-    return { utf8string };
+    return { ReadUTF8TextFileFull(hFile.get()) };
 }
 
 // function Description:
@@ -965,23 +921,7 @@ std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
 // - the full path to the settings file
 winrt::hstring CascadiaSettings::SettingsPath()
 {
-    wil::unique_cotaskmem_string localAppDataFolder;
-    // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
-    // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
-    // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
-    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder));
-
-    std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
-
-    if (!_IsPackaged())
-    {
-        parentDirectoryForSettingsFile /= UnpackagedSettingsFolderName;
-    }
-
-    // Create the directory if it doesn't exist
-    std::filesystem::create_directories(parentDirectoryForSettingsFile);
-
-    return winrt::hstring{ (parentDirectoryForSettingsFile / SettingsFilename).wstring() };
+    return winrt::hstring{ (GetBaseSettingsPath() / SettingsFilename).wstring() };
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
