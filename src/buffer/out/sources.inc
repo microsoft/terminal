@@ -43,7 +43,6 @@ SOURCES= \
     ..\textBufferTextIterator.cpp \
     ..\CharRow.cpp \
     ..\CharRowCell.cpp \
-    ..\CharRowCellReference.cpp \
     ..\UnicodeStorage.cpp \
 	..\search.cpp \
 

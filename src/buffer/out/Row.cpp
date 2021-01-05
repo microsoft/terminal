@@ -166,7 +166,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             else
             {
                 _charRow.DbcsAttrAt(currentIndex) = it->DbcsAttr();
-                _charRow.GlyphAt(currentIndex) = it->Chars();
+                _charRow.WriteCharsIntoColumn(currentIndex, it->Chars());
                 ++it;
             }
 

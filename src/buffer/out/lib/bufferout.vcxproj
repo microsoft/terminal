@@ -25,7 +25,6 @@
     <ClCompile Include="..\textBufferTextIterator.cpp" />
     <ClCompile Include="..\CharRow.cpp" />
     <ClCompile Include="..\CharRowCell.cpp" />
-    <ClCompile Include="..\CharRowCellReference.cpp" />
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -50,7 +49,6 @@
     <ClInclude Include="..\textBufferTextIterator.hpp" />
     <ClInclude Include="..\CharRow.hpp" />
     <ClInclude Include="..\CharRowCell.hpp" />
-    <ClInclude Include="..\CharRowCellReference.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\UnicodeStorage.hpp" />
   </ItemGroup>

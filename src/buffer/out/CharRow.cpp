@@ -178,32 +178,6 @@ void CharRow::ClearGlyph(const size_t column)
     _data.at(column).EraseChars();
 }
 
-// Routine Description:
-// - returns text data at column as a const reference.
-// Arguments:
-// - column - column to get text data for
-// Return Value:
-// - text data at column
-// - Note: will throw exception if column is out of bounds
-const CharRow::reference CharRow::GlyphAt(const size_t column) const
-{
-    THROW_HR_IF(E_INVALIDARG, column >= _data.size());
-    return { const_cast<CharRow&>(*this), column };
-}
-
-// Routine Description:
-// - returns text data at column as a reference.
-// Arguments:
-// - column - column to get text data for
-// Return Value:
-// - text data at column
-// - Note: will throw exception if column is out of bounds
-CharRow::reference CharRow::GlyphAt(const size_t column)
-{
-    THROW_HR_IF(E_INVALIDARG, column >= _data.size());
-    return { *this, column };
-}
-
 std::wstring CharRow::GetText() const
 {
     std::wstring wstr;
@@ -211,13 +185,9 @@ std::wstring CharRow::GetText() const
 
     for (size_t i = 0; i < _data.size(); ++i)
     {
-        const auto glyph = GlyphAt(i);
-        if (!DbcsAttrAt(i).IsTrailing())
+        if (!_data.at(i).DbcsAttr().IsTrailing())
         {
-            for (const auto wch : glyph)
-            {
-                wstr.push_back(wch);
-            }
+            wstr.append(GlyphDataAt(i));
         }
     }
     return wstr;
@@ -235,7 +205,7 @@ const DelimiterClass CharRow::DelimiterClassAt(const size_t column, const std::w
 {
     THROW_HR_IF(E_INVALIDARG, column >= _data.size());
 
-    const auto glyph = *GlyphAt(column).begin();
+    const auto glyph = *GlyphDataAt(column).begin();
     if (glyph <= UNICODE_SPACE)
     {
         return DelimiterClass::ControlChar;
@@ -272,6 +242,40 @@ COORD CharRow::GetStorageKey(const size_t column) const noexcept
 }
 
 // Routine Description:
+// - assignment operator. will store extended glyph data in a separate storage location
+// Arguments:
+// - chars - the glyph data to store
+void CharRow::WriteCharsIntoColumn(size_t column, const std::wstring_view chars)
+{
+    THROW_HR_IF(E_INVALIDARG, chars.empty());
+    auto& position = _data.at(column);
+    if (chars.size() == 1)
+    {
+        position.Char() = chars.front();
+        position.DbcsAttr().SetGlyphStored(false);
+    }
+    else
+    {
+        auto& storage = _pParent->GetUnicodeStorage();
+        const auto key = GetStorageKey(column);
+        storage.StoreGlyph(key, { chars.cbegin(), chars.cend() });
+        position.DbcsAttr().SetGlyphStored(true);
+    }
+}
+
+const std::wstring_view CharRow::GlyphDataAt(const size_t column) const
+{
+    if (_data.at(column).DbcsAttr().IsGlyphStored())
+    {
+        const auto& text = GetUnicodeStorage().GetText(GetStorageKey(column));
+        return { text.data(), text.size() };
+    }
+    else
+    {
+        return { &_data.at(column).Char(), 1 };
+    }
+}
+
 // - Updates the pointer to the parent row (which might change if we shuffle the rows around)
 // Arguments:
 // - pParent - Pointer to the parent row
