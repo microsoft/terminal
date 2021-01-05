@@ -76,7 +76,11 @@ void ParserTracing::TraceCharInput(const wchar_t wch)
 
 void ParserTracing::AddSequenceTrace(const wchar_t wch)
 {
-    _sequenceTrace.push_back(wch);
+    // Don't waste time storing this if no one is listening.
+    if (TraceLoggingProviderEnabled(g_hConsoleVirtTermParserEventTraceProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    {
+        _sequenceTrace.push_back(wch);
+    }
 }
 
 void ParserTracing::DispatchSequenceTrace(const bool fSuccess) noexcept

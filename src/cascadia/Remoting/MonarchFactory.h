@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 
 #include "Monarch.h"
@@ -8,9 +11,6 @@
 // per-process. Once the first monarch is created, we'll stash it in g_weak.
 // Future callers who try to instantiate a Monarch will get the one that's
 // already been made.
-//
-// I'm sure there's a better way to do this with WRL, but I'm not familiar
-// enough with WRL to know for sure.
 
 winrt::weak_ref<winrt::Microsoft::Terminal::Remoting::implementation::Monarch> g_weak{ nullptr };
 

@@ -486,7 +486,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -504,7 +504,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, nullptr);
+            page->_SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, nullptr);
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));

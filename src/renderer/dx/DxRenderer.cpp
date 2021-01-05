@@ -1909,6 +1909,7 @@ CATCH_RETURN()
 
     // If we have a drawing context, it may be choosing its antialiasing based
     // on the colors. Update it if it exists.
+    // Also record whether we need to render the text with an italic font.
     // We only need to do this here because this is called all the time on painting frames
     // and will update it in a timely fashion. Changing the AA mode or opacity do affect
     // it, but we will always hit updating the drawing brushes so we don't
@@ -1916,6 +1917,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
     if (textAttributes.IsHyperlink())
@@ -1943,8 +1945,10 @@ try
                                       fiFontInfo,
                                       _dpi,
                                       _dwriteTextFormat,
+                                      _dwriteTextFormatItalic,
                                       _dwriteTextAnalyzer,
                                       _dwriteFontFace,
+                                      _dwriteFontFaceItalic,
                                       _lineMetrics));
 
     _glyphCell = fiFontInfo.GetSize();
@@ -1952,8 +1956,15 @@ try
     // Calculate and cache the box effect for the base font. Scale is 1.0f because the base font is exactly the scale we want already.
     RETURN_IF_FAILED(CustomTextLayout::s_CalculateBoxEffect(_dwriteTextFormat.Get(), _glyphCell.width(), _dwriteFontFace.Get(), 1.0f, &_boxDrawingEffect));
 
-    // Prepare the text layout
-    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(), _dwriteTextAnalyzer.Get(), _dwriteTextFormat.Get(), _dwriteFontFace.Get(), _glyphCell.width(), _boxDrawingEffect.Get());
+    // Prepare the text layout.
+    _customLayout = WRL::Make<CustomTextLayout>(_dwriteFactory.Get(),
+                                                _dwriteTextAnalyzer.Get(),
+                                                _dwriteTextFormat.Get(),
+                                                _dwriteTextFormatItalic.Get(),
+                                                _dwriteFontFace.Get(),
+                                                _dwriteFontFaceItalic.Get(),
+                                                _glyphCell.width(),
+                                                _boxDrawingEffect.Get());
 
     return S_OK;
 }
@@ -2033,16 +2044,20 @@ float DxEngine::GetScaling() const noexcept
                                                 int const iDpi) noexcept
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
     Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> faceItalic;
     LineMetrics lineMetrics;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
                             iDpi,
                             format,
+                            formatItalic,
                             analyzer,
                             face,
+                            faceItalic,
                             lineMetrics);
 }
 
@@ -2311,8 +2326,10 @@ CATCH_RETURN();
                                                  FontInfo& actual,
                                                  const int dpi,
                                                  Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormatItalic,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
                                                  Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace,
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFaceItalic,
                                                  LineMetrics& lineMetrics) const noexcept
 {
     try
@@ -2447,11 +2464,33 @@ CATCH_RETURN();
 
         THROW_IF_FAILED(format.As(&textFormat));
 
+        // We also need to create an italic variant of the font face and text
+        // format, based on the same parameters, but using an italic style.
+        std::wstring fontNameItalic = fontName;
+        DWRITE_FONT_WEIGHT weightItalic = weight;
+        DWRITE_FONT_STYLE styleItalic = DWRITE_FONT_STYLE_ITALIC;
+        DWRITE_FONT_STRETCH stretchItalic = stretch;
+
+        const auto faceItalic = _ResolveFontFaceWithFallback(fontNameItalic, weightItalic, stretchItalic, styleItalic, fontLocaleName);
+
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> formatItalic;
+        THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontNameItalic.data(),
+                                                         nullptr,
+                                                         weightItalic,
+                                                         styleItalic,
+                                                         stretchItalic,
+                                                         fontSize,
+                                                         localeName.data(),
+                                                         &formatItalic));
+
+        THROW_IF_FAILED(formatItalic.As(&textFormatItalic));
+
         Microsoft::WRL::ComPtr<IDWriteTextAnalyzer> analyzer;
         THROW_IF_FAILED(_dwriteFactory->CreateTextAnalyzer(&analyzer));
         THROW_IF_FAILED(analyzer.As(&textAnalyzer));
 
         fontFace = face;
+        fontFaceItalic = faceItalic;
 
         THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));

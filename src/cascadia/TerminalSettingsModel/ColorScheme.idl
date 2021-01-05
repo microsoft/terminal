@@ -4,6 +4,8 @@
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass ColorScheme {
+        ColorScheme(String name);
+
         String Name;
 
         Windows.UI.Color Foreground;

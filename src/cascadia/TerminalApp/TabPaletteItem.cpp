@@ -19,7 +19,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 namespace winrt::TerminalApp::implementation
 {
     TabPaletteItem::TabPaletteItem(winrt::TerminalApp::TabBase const& tab) :
-        _Tab(tab)
+        _tab(tab)
     {
         Name(tab.Title());
         Icon(tab.Icon());

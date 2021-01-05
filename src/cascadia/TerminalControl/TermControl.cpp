@@ -1288,7 +1288,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
-                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell && !shiftEnabled)
                 {
                     // Single Click: reset the selection and begin a new one
                     _terminal->ClearSelection();
