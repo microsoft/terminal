@@ -37,11 +37,11 @@ public:
 
     size_t size() const noexcept { return _rowWidth; }
 
-    void SetWrapForced(const bool wrap) noexcept;
-    bool WasWrapForced() const noexcept;
+    void SetWrapForced(const bool wrap) noexcept { _wrapForced = wrap; }
+    bool WasWrapForced() const noexcept { return _wrapForced; }
 
-    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
-    bool WasDoubleBytePadded() const noexcept;
+    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept { _doubleBytePadded = doubleBytePadded; }
+    bool WasDoubleBytePadded() const noexcept { return _doubleBytePadded; }
 
     const CharRow& GetCharRow() const noexcept { return _charRow; }
     CharRow& GetCharRow() noexcept { return _charRow; }
