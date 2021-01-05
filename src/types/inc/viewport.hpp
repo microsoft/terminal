@@ -26,7 +26,7 @@ namespace Microsoft::Console::Types
         ~Viewport() {}
         constexpr Viewport() noexcept :
             _sr({ 0, 0, -1, -1 }){};
-        Viewport(const Viewport& other) noexcept;
+        Viewport(const Viewport& other) = default;
         Viewport(Viewport&&) = default;
         Viewport& operator=(const Viewport&) & = default;
         Viewport& operator=(Viewport&&) & = default;

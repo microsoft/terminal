@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "OutputCellIterator.hpp"
+#include "TextBufferCellIterator.hpp"
 
 #include "../../types/inc/convert.hpp"
 #include "../../types/inc/Utf16Parser.hpp"
@@ -153,6 +154,17 @@ OutputCellIterator::OutputCellIterator(const gsl::span<const OutputCell> cells) 
 {
 }
 
+OutputCellIterator::OutputCellIterator(TextBufferCellIterator start) :
+    _mode(Mode::BufferCopy),
+    _run(start),
+    _currentView(*start),
+    _attr(InvalidTextAttribute),
+    _distance(0),
+    _pos(0),
+    _fillLimit(0)
+{
+}
+
 // Routine Description:
 // - Specifies whether this iterator is valid for dereferencing (still valid underlying data)
 // Return Value:
@@ -189,6 +201,11 @@ OutputCellIterator::operator bool() const noexcept
         case Mode::LegacyAttr:
         {
             return _pos < std::get<gsl::span<const WORD>>(_run).size();
+        }
+        case Mode::BufferCopy:
+        {
+            auto& it = std::get<TextBufferCellIterator>(_run);
+            return (bool)it;
         }
         default:
             FAIL_FAST_HR(E_NOTIMPL);
@@ -286,6 +303,16 @@ OutputCellIterator& OutputCellIterator::operator++()
         if (operator bool())
         {
             _currentView = s_GenerateViewLegacyAttr(til::at(std::get<gsl::span<const WORD>>(_run), _pos));
+        }
+        break;
+    }
+    case Mode::BufferCopy:
+    {
+        auto& it = std::get<TextBufferCellIterator>(_run);
+        if (++it)
+        {
+            _pos++;
+            _currentView = *it;
         }
         break;
     }

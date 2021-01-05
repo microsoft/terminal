@@ -58,8 +58,8 @@ protected:
 
     const ROW* _pRow;
     ATTR_ROW::const_iterator _attrIter;
-    const TextBuffer& _buffer;
-    const Microsoft::Console::Types::Viewport _bounds;
+    std::reference_wrapper<const TextBuffer> _buffer;
+    Microsoft::Console::Types::Viewport _bounds;
     bool _exceeded;
     COORD _pos;
 

@@ -23,6 +23,7 @@ Revision History:
 
 #include "OutputCell.hpp"
 #include "OutputCellView.hpp"
+#include "TextBufferCellIterator.hpp"
 
 class OutputCellIterator final
 {
@@ -42,6 +43,7 @@ public:
     OutputCellIterator(const gsl::span<const WORD> legacyAttributes) noexcept;
     OutputCellIterator(const gsl::span<const CHAR_INFO> charInfos) noexcept;
     OutputCellIterator(const gsl::span<const OutputCell> cells);
+    OutputCellIterator(TextBufferCellIterator start);
     ~OutputCellIterator() = default;
 
     OutputCellIterator& operator=(const OutputCellIterator& it) = default;
@@ -83,6 +85,10 @@ private:
         // Cell mode is where we have an already fully structured cell data usually
         // from accessing/copying data already put into the OutputBuffer.
         Cell,
+
+        // BufferCopy mode is where we're starting from a TextBufferCellIterator,
+        // which produces fully-formed cells out of another buffer.
+        BufferCopy,
     };
     Mode _mode;
 
@@ -93,6 +99,7 @@ private:
         gsl::span<const WORD>,
         gsl::span<const CHAR_INFO>,
         gsl::span<const OutputCell>,
+        TextBufferCellIterator,
         std::monostate>
         _run;
 

@@ -11,11 +11,6 @@ Viewport::Viewport(const SMALL_RECT sr) noexcept :
 {
 }
 
-Viewport::Viewport(const Viewport& other) noexcept :
-    _sr(other._sr)
-{
-}
-
 Viewport Viewport::Empty() noexcept
 {
     return Viewport();
