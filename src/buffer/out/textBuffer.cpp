@@ -1953,6 +1953,12 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
         const CharRow& charRow = row.GetCharRow();
         short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        if (iRight == 0 && !row.WasWrapForced())
+        {
+            // don't beef it if iRight=0 on iterator
+            newBuffer.NewlineCursor();
+            continue;
+        }
 
         // If we're starting a new row, try and preserve the line rendition
         // from the row in the original buffer.
