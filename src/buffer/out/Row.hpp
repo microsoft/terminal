@@ -24,7 +24,6 @@ Revision History:
 #include "OutputCell.hpp"
 #include "OutputCellIterator.hpp"
 #include "CharRow.hpp"
-#include "RowCellIterator.hpp"
 #include "UnicodeStorage.hpp"
 
 class TextBuffer;
@@ -57,9 +56,6 @@ public:
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const { return _charRow.GetText(); }
-
-    RowCellIterator AsCellIter(const size_t startIndex) const { return AsCellIter(startIndex, size() - startIndex); }
-    RowCellIterator AsCellIter(const size_t startIndex, const size_t count) const { return RowCellIterator(*this, startIndex, count); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
