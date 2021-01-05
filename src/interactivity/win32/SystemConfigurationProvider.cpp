@@ -120,21 +120,23 @@ void SystemConfigurationProvider::GetSettingsFromLink(
                     // guarantee null termination to make OACR happy.
                     wszLinkTarget[ARRAYSIZE(wszLinkTarget) - 1] = L'\0';
                 }
+            }
 
-                if (wszShortcutTitle[0] != L'\0')
+            // if we got a title, use it. even on overall link value load failure, the title will be correct if
+            // filled out.
+            if (wszShortcutTitle[0] != L'\0')
+            {
+                // guarantee null termination to make OACR happy.
+                wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
+                StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
+
+                // OACR complains about the use of a DWORD here, so roundtrip through a size_t
+                size_t cbTitleLength;
+                if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
                 {
-                    // guarantee null termination to make OACR happy.
-                    wszShortcutTitle[ARRAYSIZE(wszShortcutTitle) - 1] = L'\0';
-                    StringCbCopyW(pwszTitle, *pdwTitleLength, wszShortcutTitle);
-
-                    // OACR complains about the use of a DWORD here, so roundtrip through a size_t
-                    size_t cbTitleLength;
-                    if (SUCCEEDED(StringCbLengthW(pwszTitle, *pdwTitleLength, &cbTitleLength)))
-                    {
-                        // don't care about return result -- the buffer is guaranteed null terminated to at least
-                        // the length of Title
-                        (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
-                    }
+                    // don't care about return result -- the buffer is guaranteed null terminated to at least
+                    // the length of Title
+                    (void)SizeTToDWord(cbTitleLength, pdwTitleLength);
                 }
             }
 
