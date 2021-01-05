@@ -132,7 +132,7 @@ namespace winrt::TerminalApp::implementation
 
         static constexpr int CommandLineHistoryLength = 10;
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
-        ::TerminalApp::AppCommandlineArgs _appArgs;
+        ::CommandlineArgs::AppCommandlineArgs _appArgs;
 
         friend class TerminalAppLocalTests::TabTests;
     };
