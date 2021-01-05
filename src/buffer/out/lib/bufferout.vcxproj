@@ -43,7 +43,6 @@
     <ClInclude Include="..\OutputCellRect.hpp" />
     <ClInclude Include="..\OutputCellView.hpp" />
     <ClInclude Include="..\Row.hpp" />
-    <ClInclude Include="..\RowCellIterator.hpp" />
     <ClInclude Include="..\search.h" />
     <ClInclude Include="..\TextColor.h" />
     <ClInclude Include="..\TextAttribute.h" />
