@@ -76,7 +76,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 #include <winrt/Windows.UI.Popups.h>
 
-#include <CLI11/CLI11.hpp>
-
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
