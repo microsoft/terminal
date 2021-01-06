@@ -51,6 +51,44 @@ namespace
 
     static const TestCase testCases[] = {
         TestCase{
+            L"No reflow required",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"AB    ", false },
+                        { L"$     ", false },
+                        { L"CD    ", false },
+                        { L"EFG   ", false },
+                        { L"      ", false },
+                    },
+                    { 0, 1 } // cursor on $
+                },
+                TestBuffer{
+                    { 5, 5 }, // reduce width by 1
+                    {
+                        { L"AB   ", false },
+                        { L"$    ", false },
+                        { L"CD   ", false },
+                        { L"EFG  ", false },
+                        { L"     ", false },
+                    },
+                    { 0, 1 } // cursor on $
+                },
+                TestBuffer{
+                    { 4, 5 },
+                    {
+                        { L"AB  ", false },
+                        { L"$   ", false },
+                        { L"CD  ", false },
+                        { L"EFG ", false },
+                        { L"    ", false },
+                    },
+                    { 0, 1 } // cursor on $
+                },
+            },
+        },
+        TestCase{
             L"SBCS, cursor remains in buffer, no circling, no original wrap",
             {
                 TestBuffer{
@@ -68,7 +106,7 @@ namespace
                     { 5, 5 }, // reduce width by 1
                     {
                         { L"ABCDE", true_due_to_exact_wrap_bug },
-                        { L"F$   ", false }, // EXACT WRAP BUG. $ should be alone on next line.
+                        { L"F$   ", false }, // [BUG] EXACT WRAP. $ should be alone on next line.
                         { L"     ", false },
                         { L"     ", false },
                         { L"     ", false },
@@ -149,6 +187,44 @@ namespace
             },
         },
         TestCase{
+            L"SBCS line padded with spaces (to wrap)",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"AB    ", true }, // AB    $     CD is one long wrapped line
+                        { L"$     ", true },
+                        { L"CD    ", false },
+                        { L"EFG   ", false },
+                        { L"      ", false },
+                    },
+                    { 0, 1 } // cursor on $
+                },
+                TestBuffer{
+                    { 7, 5 }, // reduce width by 1
+                    {
+                        { L"AB    $", true },
+                        { L"     CD", true_due_to_exact_wrap_bug },
+                        { L"       ", false },
+                        { L"EFG    ", false },
+                        { L"       ", false },
+                    },
+                    { 6, 0 } // cursor on $
+                },
+                TestBuffer{
+                    { 8, 5 },
+                    {
+                        { L"AB    $ ", true },
+                        { L"    CD  ", false }, // Goes to false because we hit the end of ..CD
+                        { L"EFG     ", false }, // [BUG] EFG moves up due to exact wrap bug above
+                        { L"        ", false },
+                        { L"        ", false },
+                    },
+                    { 6, 0 } // cursor on $
+                },
+            },
+        },
+        TestCase{
             L"DBCS, cursor remains in buffer, no circling, with original wrap",
             {
                 TestBuffer{
@@ -210,6 +286,56 @@ namespace
                         { L"        ", false },
                     },
                     { 0, 1 } // cursor on $
+                },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor remains in buffer, with circling, no original wrap",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        { L"$     ", false },
+                        { L"GHIJKL", false },
+                        { L"MNOPQR", false },
+                        { L"STUVWX", false },
+                    },
+                    { 0, 1 } // cursor on $
+                },
+                TestBuffer{
+                    { 5, 5 }, // reduce width by 1
+                    {
+                        { L"F$   ", false },
+                        { L"GHIJK", true }, // [BUG] We should see GHIJK\n L\n MNOPQ\n R\n
+                        { L"LMNOP", true }, // The wrapping here is irregular
+                        { L"QRSTU", true },
+                        { L"VWX  ", false },
+                    },
+                    { 1, 1 } // [BUG] cursor moves to 1,1 instead of sticking with the $
+                },
+                TestBuffer{
+                    { 6, 5 }, // going back to 6,5, the data lost has been destroyed
+                    {
+                        //{ L"F$    ", false }, // [BUG] this line is erroneously destroyed too!
+                        { L"GHIJKL", true },
+                        { L"MNOPQR", true },
+                        { L"STUVWX", true },
+                        { L"      ", false },
+                        { L"      ", false }, // [BUG] this line is added
+                    },
+                    { 1, 1 }, // [BUG] cursor does not follow [H], it sticks at 1,1
+                },
+                TestBuffer{
+                    { 7, 5 }, // a number of errors are carried forward from the previous buffer
+                    {
+                        { L"GHIJKLM", true },
+                        { L"NOPQRST", true },
+                        { L"UVWX   ", false }, // [BUG] This line loses wrap for some reason
+                        { L"       ", false },
+                        { L"       ", false },
+                    },
+                    { 0, 1 }, // [BUG] The cursor moves to 0, 1 now, sticking with the [N] from before
                 },
             },
         },
