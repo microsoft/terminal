@@ -168,6 +168,7 @@ BOLDFONT
 BOOLIFY
 bools
 Bopomofo
+boostorg
 Borland
 BOTTOMLEFT
 BOTTOMRIGHT
@@ -247,7 +248,6 @@ charset
 CHARSETINFO
 chcp
 checkbox
-Checkboxes
 chh
 Childitem
 chk
@@ -382,7 +382,6 @@ CORESYSTEM
 cotaskmem
 countof
 cout
-CParams
 CPG
 cpinfo
 CPINFOEX
@@ -411,7 +410,6 @@ csbi
 csbiex
 csharp
 CSHORT
-cso
 csproj
 Csr
 csrmsg
@@ -424,7 +422,6 @@ cstdlib
 cstr
 cstring
 cstyle
-CSV
 CSwitch
 CText
 ctime
@@ -836,7 +833,6 @@ gcy
 gdi
 gdip
 gdirenderer
-GENERATEPROJECTPRIFILE
 geopol
 GETALIAS
 GETALIASES
@@ -951,7 +947,6 @@ hfont
 hglobal
 hh
 hhh
-hhhh
 hhook
 hhx
 HIBYTE
@@ -978,7 +973,6 @@ hmod
 hmodule
 hmon
 HMONITOR
-Horiz
 HORZ
 hostable
 hostlib
@@ -1088,10 +1082,8 @@ INITMENU
 inkscape
 inl
 INLINEPREFIX
-Inlines
 INotify
 inout
-INPATHROOT
 inproc
 Inputkeyinfo
 INPUTPROCESSORPROFILE
@@ -1333,7 +1325,6 @@ mailto
 majorly
 makeappx
 MAKEINTRESOURCE
-MAKEINTRESOURCEA
 MAKEINTRESOURCEW
 MAKELANGID
 MAKELONG
@@ -1406,7 +1397,6 @@ monostate
 MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
-mousemode
 MOUSEMOVE
 mousewheel
 MOVESTART
@@ -1428,7 +1418,6 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
-msixbundle
 msrc
 msvcrt
 MSVS
@@ -1943,7 +1932,6 @@ Replymessage
 repositorypath
 rescap
 Resequence
-Reserialize
 RESETCONTENT
 resheader
 resizable
@@ -1970,7 +1958,6 @@ rgpwsz
 rgrc
 rgs
 rgui
-rgus
 rgw
 rgwch
 rhs
@@ -2104,7 +2091,6 @@ sfi
 SFINAE
 SFUI
 sgr
-SGRXY
 SHCo
 shcore
 shellapi
@@ -2277,6 +2263,7 @@ tcome
 tcommandline
 tcommands
 tcon
+TDelegated
 TDP
 TEAMPROJECT
 tearoff
@@ -2443,7 +2430,6 @@ UNCPRIORITY
 undef
 Unescape
 unexpand
-Unfocus
 unhighlighting
 unhosted
 unicode
@@ -2768,14 +2754,12 @@ XColors
 xcopy
 XCount
 xdy
-xe
 XEncoding
 xes
 Xes
 XES
 xff
 XFile
-xlang
 XManifest
 XMath
 XMFLOAT
@@ -2800,6 +2784,7 @@ xvalue
 XVIRTUALSCREEN
 XWalk
 xy
+Xzn
 yact
 YAML
 YCast
@@ -2826,7 +2811,6 @@ zu
 zxcvbnm
 zy
 AAAAABBBBBBCCC
-AAAAA
 BBBBBCCC
 abcd
 LPMINMAXINFO
