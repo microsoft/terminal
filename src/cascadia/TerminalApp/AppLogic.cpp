@@ -1125,25 +1125,45 @@ namespace winrt::TerminalApp::implementation
         return result; // TODO:MG does a return value make sense
     }
 
+    // Method Description:
+    // - Parse the given commandline args in an attempt to find the specified
+    //   window. The rest of the args are ignored for now (they'll be handled
+    //   whenever the commandline fets to the window it was intended for).
+    // - Note that this function will only ever be called by the monarch. A
+    //   return value of `0` in this case does not mean "run the commandline in
+    //   _this_ process", rather it means "run the commandline in the current
+    //   process", whoever that may be.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // Return Value:
+    // - 0: We should handle the args "in the current window".
+    // - -1: We should handle the args in a new window
+    // - anything else: We should handle the commandline in the window with the given ID.
     int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
-            // TODO:MG Right now, any successful parse will end up in the same window
-            // return 0;
             return appArgs.GetTargetWindow();
 
-            // TODO:projects/5 We'll want to use the windowingBehavior setting to determine
-            // well
-            // Maybe that'd be a special return value out of here, to tell the monarch to do something special
+            // TODO:projects/5
+            //
+            // In the future, we'll want to use the windowingBehavior setting to
+            // determine what happens when a window ID wasn't manually provided.
+            //
+            // Maybe that'd be a special return value out of here, to tell the
+            // monarch to do something special:
+            //
             // -1 -> create a new window
             // -2 -> find the mru, this desktop
-            // -3 -> MRU, any desktop
+            // -3 -> MRU, any desktop (is this not just 0?)
         }
 
-        // Any unsuccessful parse will be a new window.
+        // Any unsuccessful parse will be a new window. That new window will try
+        // to handle the commandline iteslf, and find that the commandline
+        // failed to parse. When that happens, the new window will display the
+        // message box.
         return -1;
     }
 

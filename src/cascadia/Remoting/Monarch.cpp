@@ -139,7 +139,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         if (_mostRecentPeasant == 0)
         {
             // We haven't yet been told the MRU peasant. Just use the first one.
-            // TODO: GOD this is just gonna be a random one. Hacks on hacks on hacks
+            // TODO:MG GOD this is just gonna be a random one. Hacks on hacks on hacks
             if (_peasants.size() > 0)
             {
                 return _peasants.begin()->second.GetID();
@@ -164,18 +164,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //   to another window in this case.
     bool Monarch::ProposeCommandline(const Remoting::CommandlineArgs& args)
     {
-        // TODO:projects/5
-        // The branch dev/migrie/f/remote-commandlines has a more complete
-        // version of this function, with a naive implementation. For now, we
-        // always want to create a new window, so we'll just return true. This
-        // will tell the caller that we didn't handle the commandline, and they
-        // should open a new window to deal with it themselves.
+        // Raise an event, to ask how to handle this commandline. We can't ask
+        // the app ourselves - we exist isolated from that knowledge (and
+        // dependency hell). The WindowManager will raise this up to the app
+        // host, which will then ask the AppLogic, who will then parse the
+        // commandline and determine the provided ID of the window.
         auto findWindowArgs = winrt::make_self<Remoting::implementation::FindTargetWindowArgs>();
         findWindowArgs->Args(args);
+
         _FindTargetWindowRequestedHandlers(*this, *findWindowArgs);
+
+        // After the event was handled, ResultTargetWindow() will be filled with
+        // the parsed result.
         const auto targetWindow = findWindowArgs->ResultTargetWindow();
 
-        // TODO:projects/5 targetWindow==0 -> use the currently active window
+        // If there's a valid ID returned, then let's try and find the peasant that goes with it.
         if (targetWindow >= 0)
         {
             uint64_t windowID = ::base::saturated_cast<uint64_t>(targetWindow);
@@ -188,12 +191,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
                 targetPeasant.ExecuteCommandline(args);
+                // TODO:MG if the targeted peasant fails to execute the
+                // commandline, we should create our own window to display the
+                // message box.
                 return false;
             }
+            else
+            {
+                // TODO:MG in this case, an ID was provided, but there's no
+                // peasant with that ID. Instead, we should tell the caller that
+                // they should make a new window, but _with that ID_.
+                //
+                // `Monarch::ProposeCommandline` needs to return a structure of
+                // `{ shouldCreateWindow: bool, givenID: optional<uint> }`
+                //
+            }
         }
-        // TEMPORARY: if the target window is -1, then we want a new window. All
-        // other cases, just do it in this window (for now).
-        // return targetWindow == -1;
+
+        // TODO:MG in this case, no usable ID was provided. Return { true, nullopt }
         return true;
     }
 

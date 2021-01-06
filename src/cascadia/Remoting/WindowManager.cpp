@@ -52,13 +52,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _shouldCreateWindow = isKing ||
                               _monarch.ProposeCommandline(args);
 
+        // TODO:projects/5 The monarch may respond back "you should be a new
+        // window, with ID,name of (id, name)". Really the responses are:
+        // * You should not create a new window
+        // * Create a new window (but without a given ID or name). The Monarch
+        //   will assign your ID/name later
+        // * Create a new window, and you'll have this ID or name
+        //   - This is the case where the user provides `wt -w 1`, and there's
+        //     no existing window 1
+
         if (_shouldCreateWindow)
         {
             // If we should create a new window, then instantiate our Peasant
             // instance, and tell that peasant to handle that commandline.
             _createOurPeasant();
 
-            // TODO:MG Spawn a thread to wait on the monarch, and handle the election
+            // Spawn a thread to wait on the monarch, and handle the election
             if (!isKing)
             {
                 _createPeasantThread();
@@ -150,9 +159,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (_areWeTheKing())
         {
-            // This is only called when a _new_ monarch is elected. We need to
-            // do this _always_, even on the first instance, which won't have an
-            // election
+            // This is only called when a _new_ monarch is elected. So don't do
+            // anything here that needs to be done for all monarch windows. This
+            // should only be for work that's done when a window _becomes_ a
+            // monarch, after the death of the previous monarch.
             return true;
         }
         return false;
