@@ -63,4 +63,31 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _initialArgs;
     }
 
+    void Peasant::ActivateWindow()
+    {
+        // TODO: projects/5 - somehow, pass an identifier for the current
+        // desktop into this method. The Peasant shouldn't need to be able to
+        // figure it out, but it will need to report it to the monarch.
+
+        // Raise our WindowActivated event, to let the monarch know we've been
+        // activated.
+        try
+        {
+            // Try/catch this, because the other side of this event is handled
+            // by the monarch. The monarch might have died. If they have, this
+            // will throw and exception. Just eat it, the election thread will
+            // handle hooking up the new one.
+            _WindowActivatedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            // TODO:MG Tracelogging
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        // TODO:MG Open three windows, close the first (the monarch). The focus
+        // should automatically move to the third, from the windows shell. In
+        // that window, `wt -w 0` does not work right.
+    }
+
 }

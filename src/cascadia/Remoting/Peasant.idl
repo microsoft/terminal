@@ -21,6 +21,8 @@ namespace Microsoft.Terminal.Remoting
         UInt64 GetID();
         UInt64 GetPID();
         Boolean ExecuteCommandline(CommandlineArgs args);
+        void ActivateWindow();
+
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
     };

@@ -44,6 +44,7 @@ private:
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
+    void _WindowActivated();
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                               winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);

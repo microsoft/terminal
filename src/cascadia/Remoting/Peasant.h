@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t GetPID();
 
         bool ExecuteCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
+        void ActivateWindow();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

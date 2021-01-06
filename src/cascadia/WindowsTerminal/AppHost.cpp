@@ -70,6 +70,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 }
@@ -527,4 +528,12 @@ void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& 
 {
     const auto targetWindow = _logic.FindTargetWindow(args.Args().Args());
     args.ResultTargetWindow(targetWindow);
+}
+
+void AppHost::_WindowActivated()
+{
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        peasant.ActivateWindow();
+    }
 }
