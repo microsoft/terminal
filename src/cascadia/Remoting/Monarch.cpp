@@ -132,6 +132,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // recent of all desktops (WindowingBehavior::UseExisting), then use the
         // most recent of all desktops.
         _mostRecentPeasant = peasantID;
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_MostRecentPeasantSet",
+                          TraceLoggingUInt64(peasantID, "peasantID", "the ID of the activated peasant"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
     uint64_t Monarch::_getMostRecentPeasantID()
@@ -194,6 +199,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // TODO:MG if the targeted peasant fails to execute the
                 // commandline, we should create our own window to display the
                 // message box.
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_ProposeCommandline_Existing",
+                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the matching peasant"),
+                                  TraceLoggingBoolean(true, "foundMatch", "true if we found a peasant with that ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
                 return false;
             }
             else
@@ -205,9 +217,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // `Monarch::ProposeCommandline` needs to return a structure of
                 // `{ shouldCreateWindow: bool, givenID: optional<uint> }`
                 //
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_ProposeCommandline_Existing",
+                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the matching peasant"),
+                                  TraceLoggingBoolean(false, "foundMatch", "true if we found a peasant with that ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
             }
         }
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_ProposeCommandline_NewWindow",
+                          TraceLoggingInt64(targetWindow, "targetWindow", "The provided ID"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         // TODO:MG in this case, no usable ID was provided. Return { true, nullopt }
         return true;
     }

@@ -69,6 +69,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // desktop into this method. The Peasant shouldn't need to be able to
         // figure it out, but it will need to report it to the monarch.
 
+        bool successfullyNotified = false;
         // Raise our WindowActivated event, to let the monarch know we've been
         // activated.
         try
@@ -78,6 +79,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // will throw and exception. Just eat it, the election thread will
             // handle hooking up the new one.
             _WindowActivatedHandlers(*this, nullptr);
+            successfullyNotified = true;
         }
         catch (...)
         {
@@ -85,6 +87,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             LOG_CAUGHT_EXCEPTION();
         }
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_ActivateWindow",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         // TODO:MG Open three windows, close the first (the monarch). The focus
         // should automatically move to the third, from the windows shell. In
         // that window, `wt -w 0` does not work right.

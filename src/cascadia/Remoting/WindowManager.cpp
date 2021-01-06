@@ -110,6 +110,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         _createMonarch();
         const auto isKing = _areWeTheKing();
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "WindowManager_ConnectedToMonarch",
+                          TraceLoggingUInt64(_monarch.GetPID(), "monarchPID", "The PID of the new Monarch"),
+                          TraceLoggingBoolean(isKing, "isKing", "true if we are the new monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
         if (!isKing)
         {
             return;
@@ -146,6 +153,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
         _peasant = *p;
         _monarch.AddPeasant(_peasant);
+
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "WindowManager_CreateOurPeasant",
+                          TraceLoggingUInt64(_peasant.GetID(), "peasantID", "The ID of our new peasant"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
         return _peasant;
     }
@@ -209,11 +221,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             switch (waitResult)
             {
             case WAIT_OBJECT_0 + 0: // waits[0] was signaled
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_MonarchDied",
+                                  TraceLoggingUInt64(_peasant.GetID(), "peasantID", "Our peasant ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
                 // Connect to the new monarch, which might be us!
                 // If we become the monarch, then we'll return true and exit this thread.
                 exitRequested = _electionNight2020();
                 break;
             case WAIT_OBJECT_0 + 1: // waits[1] was signaled
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_MonarchWaitInterrupted",
+                                  TraceLoggingUInt64(_peasant.GetID(), "peasantID", "Our peasant ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
                 exitRequested = true;
                 break;
 
