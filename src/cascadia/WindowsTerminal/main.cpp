@@ -126,7 +126,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     AppHost host;
     if (!host.HasWindow())
     {
-        return 0;
+        // return 0;
+        ExitProcess(0);
     }
 
     // Initialize the xaml content. This must be called AFTER the

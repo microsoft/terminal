@@ -1132,7 +1132,9 @@ namespace winrt::TerminalApp::implementation
         if (result == 0)
         {
             // TODO:MG Right now, any successful parse will end up in the same window
-            return 0;
+            // return 0;
+            return appArgs.GetTargetWindow();
+
             // TODO:projects/5 We'll want to use the windowingBehavior setting to determine
             // well
             // Maybe that'd be a special return value out of here, to tell the monarch to do something special
