@@ -615,7 +615,7 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
                 else
                 {
                     // This is a new color scheme, add it only if it specifies _all_ the fields
-                    if (_ValidateColorScheme(schemeStub))
+                    if (ColorScheme::ValidateColorScheme(schemeStub))
                     {
                         const auto newScheme = ColorScheme::FromJson(schemeStub);
                         _globals->AddColorScheme(*newScheme);

@@ -24,30 +24,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
-static const std::array<std::string_view, 21> ColorSchemeKeys{
-    "name",
-    "cursorColor",
-    "selectionBackground",
-    "background",
-    "foreground",
-    "black",
-    "blue",
-    "cyan",
-    "green",
-    "purple",
-    "red",
-    "white",
-    "yellow",
-    "brightBlack",
-    "brightBlue",
-    "brightCyan",
-    "brightGreen",
-    "brightPurple",
-    "brightRed",
-    "brightWhite",
-    "brightYellow"
-};
-
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
@@ -283,25 +259,6 @@ winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Mod
 winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
 {
     return _deserializationErrorMessage;
-}
-
-// Method Description:
-// - Validates a given color scheme
-// - A color scheme is valid if it contains values for _all_ the fields
-// Arguments:
-// - The color scheme to validate
-// Return Value:
-// - true if the scheme is valid, false otherwise
-bool CascadiaSettings::_ValidateColorScheme(const Json::Value scheme)
-{
-    for (const auto& key : ColorSchemeKeys)
-    {
-        if (!scheme.isMember(JsonKey(key)))
-        {
-            return false;
-        }
-    }
-    return true;
 }
 
 // Method Description:

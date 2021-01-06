@@ -143,8 +143,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::optional<guid> _GetProfileGuidByName(const hstring) const;
         std::optional<guid> _GetProfileGuidByIndex(std::optional<int> index) const;
 
-        bool _ValidateColorScheme(const Json::Value scheme);
-
         void _ValidateSettings();
         void _ValidateProfilesExist();
         void _ValidateDefaultProfileExists();
