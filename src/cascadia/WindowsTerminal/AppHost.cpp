@@ -30,6 +30,12 @@ AppHost::AppHost() noexcept :
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
+    // Inform the WindowManager that it can use us to find the target window for
+    // a set of commandline args. This needs to be done before
+    // _HandleCommandlineArgs, because WE might end up being the monarch. That
+    // would mean we'd need to be responsible for looking that up.
+    _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
+
     // If there were commandline args to our process, try and process them here.
     // Do this before AppLogic::Create, otherwise this will have no effect.
     //
@@ -520,4 +526,11 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
                                    winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
 {
     _logic.ExecuteCommandline(args.Args());
+}
+
+void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
+{
+    const auto targetWindow = _logic.FindTargetWindow(args.Args().Args());
+    args.ResultTargetWindow(targetWindow);
 }

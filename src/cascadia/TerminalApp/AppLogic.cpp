@@ -1125,6 +1125,26 @@ namespace winrt::TerminalApp::implementation
         return result; // TODO:MG does a return value make sense
     }
 
+    int32_t AppLogic::FindTargetWindow(array_view<const winrt::hstring> args)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            // TODO:MG Right now, any successful parse will end up in the same window
+            return 0;
+            // TODO:projects/5 We'll want to use the windowingBehavior setting to determine
+            // well
+            // Maybe that'd be a special return value out of here, to tell the monarch to do something special
+            // -1 -> create a new window
+            // -2 -> find the mru, this desktop
+            // -3 -> MRU, any desktop
+        }
+
+        // Any unsuccessful parse will be a new window.
+        return -1;
+    }
+
     // Method Description:
     // - If there were any errors parsing the commandline that was used to
     //   initialize the terminal, this will return a string containing that

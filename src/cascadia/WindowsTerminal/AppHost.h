@@ -47,4 +47,7 @@ private:
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                               winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);
+
+    void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
+                           const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
 };

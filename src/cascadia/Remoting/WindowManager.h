@@ -20,6 +20,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::Peasant CurrentWindow();
 
+        // Don't do this, the monarch can and will change over time
+        // FORWARDED_TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs, _monarch, FindTargetWindowRequested);
+        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+
     private:
         bool _shouldCreateWindow{ false };
         DWORD _registrationHostClass{ 0 };
@@ -39,6 +43,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool _electionNight2020();
         void _createPeasantThread();
         void _waitOnMonarchThread();
+        void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                             const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
     };
 }
 

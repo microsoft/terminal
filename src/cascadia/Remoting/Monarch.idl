@@ -5,11 +5,19 @@ import "Peasant.idl";
 
 namespace Microsoft.Terminal.Remoting
 {
+
+    [default_interface] runtimeclass FindTargetWindowArgs {
+        CommandlineArgs Args;
+        Int32 ResultTargetWindow;
+    }
+
     [default_interface] runtimeclass Monarch {
         Monarch();
 
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
         Boolean ProposeCommandline(CommandlineArgs args);
+
+        event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };
 }

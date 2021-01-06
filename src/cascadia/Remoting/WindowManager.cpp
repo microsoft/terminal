@@ -106,10 +106,23 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             return;
         }
         // Here, we're the king!
+        //
+        // This is where you should do any aditional setup that might need to be
+        // done when we become the king. THis will be called both for the first
+        // window, and when the current monarch diesd.
 
         // Wait, don't. Let's just have the monarch try/catch any accesses to
         // peasants. If the peasant dies, then it can't get the peasant's
         // anything. In that case, _remove it_.
+
+        _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
+
+        // winrt::com_ptr<Remoting::implementation::Monarch> monarchImpl;
+        // monarchImpl.copy_from(winrt::get_self<Remoting::implementation::Monarch>(_monarch));
+        // if (monarchImpl)
+        // {
+        //     monarchImpl->SetMostRecentPeasant(_peasant.GetID());
+        // }
     }
 
     bool WindowManager::_areWeTheKing()
@@ -137,6 +150,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (_areWeTheKing())
         {
+            // This is only called when a _new_ monarch is elected. We need to
+            // do this _always_, even on the first instance, which won't have an
+            // election
             return true;
         }
         return false;
@@ -213,4 +229,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _peasant;
     }
 
+    void WindowManager::_raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                                        const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
+    {
+        _FindTargetWindowRequestedHandlers(sender, args);
+    }
 }

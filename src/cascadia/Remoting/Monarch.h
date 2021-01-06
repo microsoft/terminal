@@ -39,6 +39,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         bool ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
 
+        TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+
     private:
         Monarch(const uint64_t testPID);
         uint64_t _ourPID;
@@ -51,6 +53,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
         void _setMostRecentPeasant(const uint64_t peasantID);
+        uint64_t _getMostRecentPeasantID();
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Windows::Foundation::IInspectable& args);

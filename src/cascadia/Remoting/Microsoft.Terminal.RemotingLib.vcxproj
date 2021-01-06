@@ -19,6 +19,9 @@
     <ClInclude Include="Monarch.h">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FindTargetWindowArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MonarchFactory.h" />
     <ClInclude Include="Peasant.h">
@@ -34,6 +37,9 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="Monarch.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FindTargetWindowArgs.cpp">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="pch.cpp">

@@ -56,6 +56,8 @@ namespace TerminalApp
         UInt64 GetLastActiveControlTaskbarState();
         UInt64 GetLastActiveControlTaskbarProgress();
 
+        Int32 FindTargetWindow(String[] args);
+
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
