@@ -194,12 +194,6 @@ void AppHost::_HandleCommandlineArgs()
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
     }
-
-    // TODO:projects/5 if we end up not creating a new window, we crash. I'm
-    // thinking this is because the XAML host is not happy about being torn
-    // down before it has a chance to do really anything. Is there some way
-    // to get the app logic without instantiating the entire app? or at
-    // least the parts we'll need for remoting?
 }
 
 // Method Description:
