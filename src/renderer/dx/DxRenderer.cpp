@@ -2068,10 +2068,12 @@ float DxEngine::GetScaling() const noexcept
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+try
 {
     area = _invalidMap.runs();
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Gets the current font size

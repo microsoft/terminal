@@ -434,9 +434,8 @@ CATCH_RETURN();
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.
-    const static til::rectangle emptyInclusive{ Viewport::Empty().ToInclusive() };
-    area = { &emptyInclusive,
-             1 };
+    const static til::rectangle empty;
+    area = { &empty, 1 };
     return S_OK;
 }
 
