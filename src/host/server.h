@@ -129,9 +129,9 @@ public:
     std::pair<COLORREF, COLORREF> LookupAttributeColors(const TextAttribute& attr) const noexcept;
 
     void SetTitle(const std::wstring_view newTitle);
-    void SetTitlePrefix(const std::wstring& newTitlePrefix);
-    void SetOriginalTitle(const std::wstring& originalTitle);
-    void SetLinkTitle(const std::wstring& linkTitle);
+    void SetTitlePrefix(const std::wstring_view newTitlePrefix);
+    void SetOriginalTitle(const std::wstring_view originalTitle);
+    void SetLinkTitle(const std::wstring_view linkTitle);
     const std::wstring_view GetTitle() const noexcept;
     const std::wstring_view GetOriginalTitle() const noexcept;
     const std::wstring_view GetLinkTitle() const noexcept;

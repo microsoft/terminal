@@ -292,7 +292,7 @@ void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 // - newTitlePrefix: The new value to use for the title prefix
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
+void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring_view newTitlePrefix)
 {
     _Prefix = newTitlePrefix;
     _TitleAndPrefix = _Prefix + _Title;
@@ -311,7 +311,7 @@ void CONSOLE_INFORMATION::SetTitlePrefix(const std::wstring& newTitlePrefix)
 // - originalTitle: The new value to use for the console's original title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
+void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring_view originalTitle)
 {
     _OriginalTitle = originalTitle;
 }
@@ -323,7 +323,7 @@ void CONSOLE_INFORMATION::SetOriginalTitle(const std::wstring& originalTitle)
 // - linkTitle: The new value to use for the console's link title
 // Return Value:
 // - <none>
-void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring& linkTitle)
+void CONSOLE_INFORMATION::SetLinkTitle(const std::wstring_view linkTitle)
 {
     _LinkTitle = linkTitle;
 }
