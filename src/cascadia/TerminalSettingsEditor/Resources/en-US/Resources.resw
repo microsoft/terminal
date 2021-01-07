@@ -722,6 +722,27 @@
   <data name="Profile_BellStyleVisual.Content" xml:space="preserve">
     <value>Visual (Flash Taskbar)</value>
   </data>
+  <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
+    <value>Add new</value>
+  </data>
+  <data name="ColorScheme_DeleteButton.Text" xml:space="preserve">
+    <value>Delete color scheme</value>
+  </data>
+  <data name="ColorScheme_Name.Header" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ColorScheme_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>The name of the color scheme.</value>
+  </data>
+  <data name="Profile_DeleteButton.Text" xml:space="preserve">
+    <value>Delete profile</value>
+  </data>
+  <data name="Profile_Name.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>The name of the profile that appears in the dropdown.</value>
+  </data>
+  <data name="Profile_Name.Header" xml:space="preserve">
+    <value>Name</value>
+  </data>
   <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
     <value>Acrylic</value>
   </data>
@@ -740,5 +761,41 @@
   <data name="Nav_OpenJSON.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Open your settings.json file. Alt+Click to open your defaults.json file.</value>
     <comment>{Locked="settings.json"}, {Locked="defaults.json"}</comment>
+  </data>
+  <data name="ColorScheme_DeleteButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Delete the current color scheme.</value>
+  </data>
+  <data name="Rename.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="Profile_DeleteButtonDisclaimerInBox" xml:space="preserve">
+    <value>This profile cannot be deleted because it is included by default.</value>
+  </data>
+  <data name="Profile_DeleteButtonDisclaimerDynamic" xml:space="preserve">
+    <value>This profile cannot be deleted because it is automatically generated.</value>
+  </data>
+  <data name="ColorScheme_DeleteButtonDisclaimerInBox" xml:space="preserve">
+    <value>This color scheme cannot be deleted or renamed because it is included by default.</value>
+  </data>
+  <data name="ColorScheme_DeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Yes, delete color scheme</value>
+  </data>
+  <data name="ColorScheme_DeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Are you sure you want to delete this color scheme?</value>
+  </data>
+  <data name="RenameAccept.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Accept rename</value>
+  </data>
+  <data name="RenameCancel.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Cancel rename</value>
+  </data>
+  <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
+    <value>Settings defined here will apply to all profiles unless they are overridden by a profile's settings.</value>
+  </data>
+  <data name="Profile_DeleteConfirmationButton.Content" xml:space="preserve">
+    <value>Yes, delete profile</value>
+  </data>
+  <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
+    <value>Are you sure you want to delete this profile?</value>
   </data>
 </root>

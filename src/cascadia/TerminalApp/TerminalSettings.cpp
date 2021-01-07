@@ -182,6 +182,7 @@ namespace winrt::TerminalApp::implementation
         std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(profile.BackgroundImageAlignment());
 
         _RetroTerminalEffect = profile.RetroTerminalEffect();
+        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(profile.PixelShaderPath().c_str()) };
 
         _AntialiasingMode = profile.AntialiasingMode();
 

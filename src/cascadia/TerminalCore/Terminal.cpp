@@ -329,7 +329,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
             {
                 try
                 {
-                    auto row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
+                    auto& row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
                     if (row.GetCharRow().WasWrapForced())
                     {
                         proposedTop--;

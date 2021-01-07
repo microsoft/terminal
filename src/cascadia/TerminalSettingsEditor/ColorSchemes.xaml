@@ -5,6 +5,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
+    xmlns:model="using:Microsoft.Terminal.Settings.Model"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -15,8 +16,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <Thickness x:Key="ColorSchemesStandardControlMargin">10,0,0,20</Thickness>
-            
+            <Thickness x:Key="ColorSchemesStandardControlMargin">0,0,10,20</Thickness>
+
             <Style x:Key="ColorStackPanelStyle" TargetType="StackPanel">
                 <Setter Property="Margin" Value="{StaticResource ColorSchemesStandardControlMargin}"/>
                 <Setter Property="Height" Value="59"/>
@@ -42,32 +43,85 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
+            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
-        <Grid>
+        <Grid Margin="{StaticResource StandardIndentMargin}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*" MaxWidth="480"/>
                 <ColumnDefinition Width="1*"/>
             </Grid.ColumnDefinitions>
 
-            <!--Select a color scheme-->
-            <ComboBox x:Name="ColorSchemeComboBox"
-                      Grid.Row="0"
-                      Grid.Column="0"
-                      Grid.ColumnSpan="2"
-                      SelectedIndex="0"
-                      ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
-                      SelectionChanged="ColorSchemeSelectionChanged"
-                      Style="{StaticResource ComboBoxSettingStyle}"
-                      Margin="{StaticResource ColorSchemesStandardControlMargin}"/>
+            <!--Select Color and Add New Button-->
+            <StackPanel Orientation="Horizontal"
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Margin="{StaticResource StandardControlSpacing}">
 
-            <!-- Color Table -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
+                    <!--Select a color scheme-->
+                    <ComboBox x:Name="ColorSchemeComboBox"
+                              SelectedIndex="0"
+                              ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
+                              SelectionChanged="ColorSchemeSelectionChanged"
+                              Style="{StaticResource ComboBoxSettingStyle}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:ColorScheme">
+                                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!--Rename Button-->
+                    <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
+                    <Button x:Uid="Rename"
+                            Style="{StaticResource BrowseButtonStyle}"
+                            Click="Rename_Click"
+                            IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
+                        <FontIcon Glyph="&#xE8AC;"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{x:Bind IsRenaming, Mode=OneWay}">
+                    <TextBox x:Name="NameBox"
+                             Style="{StaticResource TextBoxSettingStyle}"
+                             PreviewKeyDown="NameBox_PreviewKeyDown"/>
+                    <Button x:Uid="RenameAccept"
+                            Style="{StaticResource AccentBrowseButtonStyle}"
+                            Click="RenameAccept_Click">
+                        <FontIcon Glyph="&#xE8FB;"/>
+                    </Button>
+                    <Button x:Uid="RenameCancel"
+                            Style="{StaticResource BrowseButtonStyle}"
+                            Click="RenameCancel_Click">
+                        <FontIcon Glyph="&#xE711;"/>
+                    </Button>
+                </StackPanel>
+
+                <!--Add new button-->
+                <Button Click="AddNew_Click"
+                        Style="{StaticResource BrowseButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE710;"
+                                  FontSize="15"/>
+                        <TextBlock x:Uid="ColorScheme_AddNewButton"
+                                   Margin="10,0,0,0"
+                                   FontSize="15"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Color Table (Left Column)-->
             <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentColorTable, Mode=OneWay}"
                           Grid.Row="1"
@@ -98,8 +152,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Additional Colors -->
-            <ItemsControl Grid.Row="2"
+            <!-- Additional Colors (Right Column) -->
+            <ItemsControl Grid.Row="1"
                           Grid.Column="1">
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
                     <TextBlock x:Uid="ColorScheme_Foreground"
@@ -149,6 +203,71 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button>
                 </StackPanel>
             </ItemsControl>
+
+            <!--Delete Button-->
+            <StackPanel Grid.Row="2"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Margin="{StaticResource StandardControlSpacing}">
+                <Button x:Name="DeleteButton"
+                        Style="{StaticResource BaseButtonStyle}"
+                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                        Margin="0,0,0,10">
+                    <Button.Resources>
+                        <ResourceDictionary>
+                            <ResourceDictionary.ThemeDictionaries>
+                                <ResourceDictionary x:Key="Light">
+                                    <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
+                                    <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="Dark">
+                                    <SolidColorBrush x:Key="ButtonBackground" Color="Firebrick"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#C23232"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#A21212"/>
+                                    <SolidColorBrush x:Key="ButtonForeground" Color="White"/>
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="White"/>
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="White"/>
+                                </ResourceDictionary>
+                                <ResourceDictionary x:Key="HighContrast">
+                                    <SolidColorBrush x:Key="ButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
+                                    <SolidColorBrush x:Key="ButtonForeground" Color="{ThemeResource SystemColorButtonTextColor}"/>
+                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                                    <SolidColorBrush x:Key="ButtonForegroundPressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                                </ResourceDictionary>
+                            </ResourceDictionary.ThemeDictionaries>
+                        </ResourceDictionary>
+                    </Button.Resources>
+                    <Button.Content>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE74D;"
+                                      FontSize="{StaticResource StandardFontSize}"/>
+                            <TextBlock x:Uid="ColorScheme_DeleteButton"
+                                       FontSize="{StaticResource StandardFontSize}"
+                                       Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </Button.Content>
+                    <Button.Flyout>
+                        <Flyout>
+                            <StackPanel>
+                                <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
+                                           Style="{StaticResource CustomFlyoutTextStyle}"/>
+                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        Click="DeleteConfirmation_Click"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+                <TextBlock x:Name="DeleteButtonDisclaimer"
+                           Style="{StaticResource DisclaimerStyle}"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
         </Grid>
     </ScrollViewer>
 </Page>

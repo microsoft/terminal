@@ -35,9 +35,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _InitializeProfilesList();
         void _CreateAndNavigateToNewProfile(const uint32_t index);
-        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const ProfileViewModel& profile);
+        winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
+        void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
 
         void _Navigate(hstring clickedItemTag);
+        void _Navigate(const Editor::ProfileViewModel& profile);
         void _RefreshCurrentPage();
     };
 }

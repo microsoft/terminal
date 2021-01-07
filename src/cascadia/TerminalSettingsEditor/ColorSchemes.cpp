@@ -11,6 +11,7 @@
 
 using namespace winrt;
 using namespace winrt::Windows::UI;
+using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::UI::Xaml::Controls;
 using namespace winrt::Windows::UI::Xaml::Media;
@@ -38,8 +39,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         RS_(L"ColorScheme_BrightWhite/Header")
     };
 
+    static const std::array<std::wstring, 9> InBoxSchemes = {
+        L"Campbell",
+        L"Campbell Powershell",
+        L"Vintage",
+        L"One Half Dark",
+        L"One Half Light",
+        L"Solarized Dark",
+        L"Solarized Light",
+        L"Tango Dark",
+        L"Tango Light"
+    };
+
     ColorSchemes::ColorSchemes() :
-        _ColorSchemeList{ single_threaded_observable_vector<hstring>() },
+        _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
     {
         InitializeComponent();
@@ -73,10 +86,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                    SelectionChangedEventArgs const& args)
     {
         //  Update the color scheme this page is modifying
-        auto str = winrt::unbox_value<hstring>(args.AddedItems().GetAt(0));
-        auto colorScheme = _State.Globals().ColorSchemes().Lookup(str);
+        const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
+
+        // Set the text disclaimer for the text box
+        hstring disclaimer{};
+        const std::wstring schemeName{ colorScheme.Name() };
+        if (std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), schemeName) != std::end(InBoxSchemes))
+        {
+            // load disclaimer for in-box profiles
+            disclaimer = RS_(L"ColorScheme_DeleteButtonDisclaimerInBox");
+        }
+        DeleteButtonDisclaimer().Text(disclaimer);
+
+        // Update the state of the page
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"CanDeleteCurrentScheme" });
+        IsRenaming(false);
     }
 
     // Function Description:
@@ -92,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto& colorSchemeMap{ _State.Globals().ColorSchemes() };
         for (const auto& pair : colorSchemeMap)
         {
-            _ColorSchemeList.Append(pair.Key());
+            _ColorSchemeList.Append(pair.Value());
         }
     }
 
@@ -118,6 +144,101 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 _CurrentColorTable.GetAt(index).Color(args.NewColor());
             }
         }
+    }
+
+    bool ColorSchemes::CanDeleteCurrentScheme() const
+    {
+        if (const auto scheme{ CurrentColorScheme() })
+        {
+            // Only allow this color scheme to be deleted if it's not provided in-box
+            const std::wstring myName{ scheme.Name() };
+            return std::find(std::begin(InBoxSchemes), std::end(InBoxSchemes), myName) == std::end(InBoxSchemes);
+        }
+        return false;
+    }
+
+    void ColorSchemes::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        const auto schemeName{ CurrentColorScheme().Name() };
+        _State.Globals().RemoveColorScheme(schemeName);
+
+        const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
+        if (static_cast<uint32_t>(removedSchemeIndex) < _ColorSchemeList.Size() - 1)
+        {
+            // select same index
+            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex + 1);
+        }
+        else
+        {
+            // select last color scheme (avoid out of bounds error)
+            ColorSchemeComboBox().SelectedIndex(removedSchemeIndex - 1);
+        }
+        _ColorSchemeList.RemoveAt(removedSchemeIndex);
+        DeleteButton().Flyout().Hide();
+    }
+
+    void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        // Give the new scheme a distinct name
+        const hstring schemeName{ fmt::format(L"Color Scheme {}", _State.Globals().ColorSchemes().Size() + 1) };
+        Model::ColorScheme scheme{ schemeName };
+
+        // Add the new color scheme
+        _State.Globals().AddColorScheme(scheme);
+
+        // Update current page
+        _ColorSchemeList.Append(scheme);
+        ColorSchemeComboBox().SelectedItem(scheme);
+    }
+
+    // Function Description:
+    // - Pre-populates/focuses the name TextBox, updates the UI
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void ColorSchemes::Rename_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        NameBox().Text(CurrentColorScheme().Name());
+        IsRenaming(true);
+        NameBox().Focus(FocusState::Programmatic);
+        NameBox().SelectAll();
+    }
+
+    void ColorSchemes::RenameAccept_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _RenameCurrentScheme(NameBox().Text());
+    }
+
+    void ColorSchemes::RenameCancel_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        IsRenaming(false);
+    }
+
+    void ColorSchemes::NameBox_PreviewKeyDown(IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Enter)
+        {
+            _RenameCurrentScheme(NameBox().Text());
+            e.Handled(true);
+        }
+        else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
+        {
+            IsRenaming(false);
+            e.Handled(true);
+        }
+    }
+
+    void ColorSchemes::_RenameCurrentScheme(hstring newName)
+    {
+        CurrentColorScheme().Name(newName);
+        IsRenaming(false);
+
+        // The color scheme is renamed appropriately, but the ComboBox still shows the old name (until you open it)
+        // We need to manually force the ComboBox to refresh itself.
+        const auto selectedIndex{ ColorSchemeComboBox().SelectedIndex() };
+        ColorSchemeComboBox().SelectedIndex((selectedIndex + 1) % ColorSchemeList().Size());
+        ColorSchemeComboBox().SelectedIndex(selectedIndex);
     }
 
     // Function Description:
