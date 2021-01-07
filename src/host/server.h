@@ -132,10 +132,10 @@ public:
     void SetTitlePrefix(const std::wstring& newTitlePrefix);
     void SetOriginalTitle(const std::wstring& originalTitle);
     void SetLinkTitle(const std::wstring& linkTitle);
-    const std::wstring& GetTitle() const noexcept;
-    const std::wstring& GetOriginalTitle() const noexcept;
-    const std::wstring& GetLinkTitle() const noexcept;
-    const std::wstring& GetTitleAndPrefix() const;
+    const std::wstring_view GetTitle() const noexcept;
+    const std::wstring_view GetOriginalTitle() const noexcept;
+    const std::wstring_view GetLinkTitle() const noexcept;
+    const std::wstring_view GetTitleAndPrefix() const;
 
     [[nodiscard]] static NTSTATUS AllocateConsole(const std::wstring_view title);
     // MSFT:16886775 : get rid of friends
@@ -152,7 +152,8 @@ public:
 private:
     CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
     std::wstring _Title;
-    std::wstring _TitleAndPrefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
+    std::wstring _TitleAndPrefix; 
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle; // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer;

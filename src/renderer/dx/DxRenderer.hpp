@@ -128,7 +128,7 @@ namespace Microsoft::Console::Render
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
         [[nodiscard]] bool _FullRepaintNeeded() const noexcept;
 

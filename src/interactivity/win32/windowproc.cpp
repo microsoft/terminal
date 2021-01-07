@@ -687,7 +687,10 @@ using namespace Microsoft::Console::Types;
 
     case CM_UPDATE_TITLE:
     {
-        SetWindowTextW(hWnd, gci.GetTitleAndPrefix().c_str());
+        // SetWindowTextW needs null terminated string so assign view to string.
+        const std::wstring titleAndPrefix{ gci.GetTitleAndPrefix() };
+
+        SetWindowTextW(hWnd, titleAndPrefix.c_str());
         break;
     }
 

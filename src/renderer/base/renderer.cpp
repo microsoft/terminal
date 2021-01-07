@@ -459,7 +459,7 @@ void Renderer::TriggerCircling()
 // - <none>
 void Renderer::TriggerTitleChange()
 {
-    const auto& newTitle = _pData->GetConsoleTitle();
+    const auto newTitle = _pData->GetConsoleTitle();
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         LOG_IF_FAILED(pEngine->InvalidateTitle(newTitle));
@@ -475,7 +475,7 @@ void Renderer::TriggerTitleChange()
 // - the HRESULT of the underlying engine's UpdateTitle call.
 HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 {
-    const auto& newTitle = _pData->GetConsoleTitle();
+    const auto newTitle = _pData->GetConsoleTitle();
     return pEngine->UpdateTitle(newTitle);
 }
 

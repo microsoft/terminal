@@ -541,7 +541,7 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
+[[nodiscard]] HRESULT XtermEngine::_DoUpdateTitle(const std::wstring_view newTitle) noexcept
 {
     // inbox telnet uses xterm-ascii as its mode. If we're in ascii mode, don't
     //      do anything, to maintain compatibility.

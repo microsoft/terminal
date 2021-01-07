@@ -222,7 +222,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring_view str) noexcept;
         [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring_view str) noexcept;
 
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept override;
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
 #ifdef UNIT_TESTING
