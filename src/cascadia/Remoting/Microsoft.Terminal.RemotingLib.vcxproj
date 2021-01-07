@@ -22,6 +22,9 @@
     <ClInclude Include="FindTargetWindowArgs.h">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ProposeCommandlineResult.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="WindowActivatedArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
@@ -43,6 +46,9 @@
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FindTargetWindowArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ProposeCommandlineResult.cpp">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="WindowActivatedArgs.cpp">

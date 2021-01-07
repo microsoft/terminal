@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _createMonarch();
         void _createMonarchAndCallbacks();
         bool _areWeTheKing();
-        winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant();
+        winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID);
 
         bool _electionNight2020();
         void _createPeasantThread();

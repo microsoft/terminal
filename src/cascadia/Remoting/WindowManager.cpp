@@ -49,8 +49,41 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // launched with them!
         //
         // Otherwise, the King will tell us if we should make a new window
-        _shouldCreateWindow = isKing ||
-                              _monarch.ProposeCommandline(args);
+        _shouldCreateWindow = isKing;
+        std::optional<uint64_t> givenID;
+
+        if (!isKing)
+        {
+            auto result = _monarch.ProposeCommandline(args);
+            _shouldCreateWindow = result.ShouldCreateWindow();
+            if (result.Id())
+            {
+                givenID = result.Id().Value();
+            }
+            if (givenID)
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ProposeCommandline",
+                                  TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingUInt64(givenID.value(), "Id", "The ID we should assign our peasant"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            }
+            else
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ProposeCommandline",
+                                  TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                                  TraceLoggingPointer(nullptr, "Id", "No ID provided"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            }
+        }
+        else
+        {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "WindowManager_ProposeCommandline_AsMonarch",
+                              TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+        }
 
         // TODO:projects/5 The monarch may respond back "you should be a new
         // window, with ID,name of (id, name)". Really the responses are:
@@ -65,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             // If we should create a new window, then instantiate our Peasant
             // instance, and tell that peasant to handle that commandline.
-            _createOurPeasant();
+            _createOurPeasant({ givenID });
 
             // Spawn a thread to wait on the monarch, and handle the election
             if (!isKing)
@@ -143,9 +176,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return (ourPID == kingPID);
     }
 
-    Remoting::IPeasant WindowManager::_createOurPeasant()
+    Remoting::IPeasant WindowManager::_createOurPeasant(std::optional<uint64_t> givenID)
     {
         auto p = winrt::make_self<Remoting::implementation::Peasant>();
+        if (givenID)
+        {
+            p->AssignID(givenID.value());
+        }
         _peasant = *p;
         _monarch.AddPeasant(_peasant);
 
