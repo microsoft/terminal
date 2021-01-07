@@ -24,7 +24,6 @@ Revision History:
 #include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
 #include "UnicodeStorage.hpp"
-#include "boost/container/small_vector.hpp"
 
 class ROW;
 
