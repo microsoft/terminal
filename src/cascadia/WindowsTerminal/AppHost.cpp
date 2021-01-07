@@ -517,12 +517,32 @@ bool AppHost::HasWindow()
     return _shouldCreateWindow;
 }
 
+// Method Description:
+// - Event handler for the Peasant::ExecuteCommandlineRequested event. Take the
+//   provided commandline args, and attempt to parse them and perform the
+//   actions immediately. The parsing is performed by AppLogic.
+// - This is invoked when another wt.exe instance runs something like `wt -w 1
+//   new-tab`, and the Monarch delegates the commandline to this instance.
+// Arguments:
+// - args: the bundle of a commandline and working directory to use for this invocation.
+// Return Value:
+// - <none>
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
 {
     _logic.ExecuteCommandline(args.Args(), args.CurrentDirectory());
 }
 
+// Method Description:
+// - Event handler for the WindowManager::FindTargetWindowRequested event. The
+//   manager will ask us how to figure out what the target window is for a set
+//   of commandline arguments. We'll take those arguments, and ask AppLogic to
+//   parse them for us. We'll then set ResultTargetWindow in the given args, so
+//   the sender can use that reuslt.
+// Arguments:
+// - args: the bundle of a commandline and working directory to find the correct target window for.
+// Return Value:
+// - <none>
 void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                 const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
 {
@@ -534,8 +554,8 @@ void AppHost::_WindowActivated()
 {
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
-        // TODO: projects.5 - in the future, we'll want to actually get the
-        // desktip GUID in IslandWindow, and bubble that up here, then down to
+        // TODO: projects/5 - in the future, we'll want to actually get the
+        // desktop GUID in IslandWindow, and bubble that up here, then down to
         // the Peasant. For now, we're just leaving space for it.
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs args{ peasant.GetID(),
                                                                         winrt::guid{},

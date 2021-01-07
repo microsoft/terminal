@@ -1112,6 +1112,22 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
+    // Method Description:
+    // - Parse the provided commandline arguments into actions, and try to
+    //   perform them immediately.
+    // - This function returns 0, unless a there was a non-zero result from
+    //   trying to parse one of the commands provided. In that case, no commands
+    //   after the failing command will be parsed, and the non-zero code
+    //   returned.
+    // - If a non-empty cwd is provided, the entire terminal exe will switch to
+    //   that CWD while we handle these actions, then return to the original
+    //   CWD.
+    // Arguments:
+    // - args: an array of strings to process as a commandline. These args can contain spaces
+    // - cwd: The directory to use as the CWD while performing thse actions.
+    // Return Value:
+    // - the result of the first command who's parsing returned a non-zero code,
+    //   or 0. (see AppLogic::_ParseArgs)
     int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
                                          const winrt::hstring& cwd)
     {
@@ -1123,8 +1139,8 @@ namespace winrt::TerminalApp::implementation
 
             _root->ProcessStartupActions(actions, false, cwd);
         }
-
-        return result; // TODO:MG does a return value make sense
+        // Return the result of parsing with commandline, though it may or may not be used.
+        return result;
     }
 
     // Method Description:
@@ -1166,6 +1182,13 @@ namespace winrt::TerminalApp::implementation
         // to handle the commandline iteslf, and find that the commandline
         // failed to parse. When that happens, the new window will display the
         // message box.
+        //
+        // This will also work for the case where the user specifies an invalid
+        // commandline in conjunction with `-w 0`. This function will determine
+        // that the commandline hasa  parse error, and indicate that we should
+        // create a new window. Then, in that new window, we'll try to  set the
+        // StartupActions, which will again fail, returning the correct error
+        // message.
         return -1;
     }
 
