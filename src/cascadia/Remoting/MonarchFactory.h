@@ -12,14 +12,14 @@
 // Future callers who try to instantiate a Monarch will get the one that's
 // already been made.
 
-winrt::weak_ref<winrt::Microsoft::Terminal::Remoting::implementation::Monarch> g_weak{ nullptr };
-
 struct MonarchFactory : winrt::implements<MonarchFactory, ::IClassFactory>
 {
     MonarchFactory() = default;
 
     HRESULT __stdcall CreateInstance(IUnknown* outer, GUID const& iid, void** result) noexcept
     {
+        static winrt::weak_ref<winrt::Microsoft::Terminal::Remoting::implementation::Monarch> g_weak{ nullptr };
+
         *result = nullptr;
         if (outer)
         {
