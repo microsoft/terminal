@@ -2035,9 +2035,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //   performance guarantees aren't exactly stellar)
         // - The STL doesn't have a simple string search/replace method.
         //   This fact is lamentable.
-        // - We search for \n, and when we find it we check the if the
-        //   previous character is \r, if so we copy the string up to
-        //   the \n (but not including it), otherwise we replace the lone \n with \r
+        // - We search for \n, and when we find it we copy the string up to
+        //   the \n (but not including it). Then, we check the if the
+        //   previous character is \r, if its not, then we had a lone \n
+        //   and so we append our own \r
 
         if (wstr.find(L"\n") == std::wstring::npos)
         {
