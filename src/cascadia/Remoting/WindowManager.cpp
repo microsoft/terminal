@@ -117,6 +117,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingBoolean(isKing, "isKing", "true if we are the new monarch"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
+        if (_peasant)
+        {
+            // Oh, don't do this, we do this in the election night
+            // // Tell the monarch about our peasant
+            // _monarch.AddPeasant(_peasant);
+
+            // Inform the monarch of the time we were last activated
+            _monarch.HandleActivatePeasant(_peasant.GetLastActivatedArgs());
+        }
+
         if (!isKing)
         {
             return;
@@ -125,7 +135,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //
         // This is where you should do any aditional setup that might need to be
         // done when we become the king. THis will be called both for the first
-        // window, and when the current monarch diesd.
+        // window, and when the current monarch dies.
 
         // Wait, don't. Let's just have the monarch try/catch any accesses to
         // peasants. If the peasant dies, then it can't get the peasant's
@@ -135,9 +145,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // winrt::com_ptr<Remoting::implementation::Monarch> monarchImpl;
         // monarchImpl.copy_from(winrt::get_self<Remoting::implementation::Monarch>(_monarch));
-        // if (monarchImpl)
+        // if (monarchImpl && _peasant)
         // {
-        //     monarchImpl->SetMostRecentPeasant(_peasant.GetID());
+        //     monarchImpl->HandleActivatePeasant(_peasant.GetLastActivatedArgs());
         // }
     }
 

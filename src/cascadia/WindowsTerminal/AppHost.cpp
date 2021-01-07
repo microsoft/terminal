@@ -534,6 +534,12 @@ void AppHost::_WindowActivated()
 {
     if (auto peasant{ _windowManager.CurrentWindow() })
     {
-        peasant.ActivateWindow();
+        // TODO: projects.5 - in the future, we'll want to actually get the
+        // desktip GUID in IslandWindow, and bubble that up here, then down to
+        // the Peasant. For now, we're just leaving space for it.
+        winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs args{ peasant.GetID(),
+                                                                        winrt::guid{},
+                                                                        winrt::clock().now() };
+        peasant.ActivateWindow(args);
     }
 }

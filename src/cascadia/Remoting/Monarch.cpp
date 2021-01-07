@@ -67,6 +67,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Add an event listener to the peasant's WindowActivated event.
         peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_AddPeasant",
+                          TraceLoggingUInt64(providedID, "providedID", "the provided ID for the peasant"),
+                          TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
         return newPeasantsId;
     }
 
@@ -78,17 +84,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - sender: the Peasant that raised this event. This might be out-of-proc!
     // Return Value:
     // - <none>
-    void Monarch::_peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
-                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
+    void Monarch::_peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                          const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args)
     {
         // TODO:projects/5 Pass the desktop and timestamp of when the window was
         // activated in `args`.
 
-        if (auto peasant{ sender.try_as<Remoting::Peasant>() })
-        {
-            auto theirID = peasant.GetID();
-            _setMostRecentPeasant(theirID);
-        }
+        HandleActivatePeasant(args);
+        // if (auto peasant{ sender.try_as<Remoting::Peasant>() })
+        // {
+        //     auto theirID = peasant.GetID();
+        // }
     }
 
     // Method Description:
@@ -125,17 +131,20 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //
     // That was stupid. I knew it would be but yea it didn't work.
     // THe Window manager doesn't have a peasant yet when it first creates the monarch.
-    void Monarch::_setMostRecentPeasant(const uint64_t peasantID)
+    //
+    // TODO:MG Make this HandleActivatePeasant(PeasantActivatedArgs args). The
+    // WindowManager can pass in an args for _peasant.GetLastActivatedArgs()
+    void Monarch::HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args)
     {
         // TODO:projects/5 Use a heap/priority queue per-desktop to track which
         // peasant was the most recent per-desktop. When we want to get the most
         // recent of all desktops (WindowingBehavior::UseExisting), then use the
         // most recent of all desktops.
-        _mostRecentPeasant = peasantID;
+        _mostRecentPeasant = args.PeasantID();
 
         TraceLoggingWrite(g_hRemotingProvider,
-                          "Monarch_MostRecentPeasantSet",
-                          TraceLoggingUInt64(peasantID, "peasantID", "the ID of the activated peasant"),
+                          "Monarch_SetMostRecentPeasant",
+                          TraceLoggingUInt64(args.PeasantID(), "peasantID", "the ID of the activated peasant"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 

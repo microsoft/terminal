@@ -22,6 +22,9 @@
     <ClInclude Include="FindTargetWindowArgs.h">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="WindowActivatedArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MonarchFactory.h" />
     <ClInclude Include="Peasant.h">
@@ -41,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="FindTargetWindowArgs.cpp">
       <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="WindowActivatedArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

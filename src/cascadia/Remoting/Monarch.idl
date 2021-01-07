@@ -17,6 +17,7 @@ namespace Microsoft.Terminal.Remoting
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
         Boolean ProposeCommandline(CommandlineArgs args);
+        void HandleActivatePeasant(WindowActivatedArgs args);
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };

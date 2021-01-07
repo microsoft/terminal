@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t AddPeasant(winrt::Microsoft::Terminal::Remoting::IPeasant peasant);
 
         bool ProposeCommandline(const winrt::Microsoft::Terminal::Remoting::CommandlineArgs& args);
+        void HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
 
@@ -52,11 +53,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
-        void _setMostRecentPeasant(const uint64_t peasantID);
         uint64_t _getMostRecentPeasantID();
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
-                                     const winrt::Windows::Foundation::IInspectable& args);
+                                     const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
 
         friend class RemotingUnitTests::RemotingTests;
     };

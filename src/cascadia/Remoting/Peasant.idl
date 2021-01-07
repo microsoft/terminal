@@ -13,6 +13,14 @@ namespace Microsoft.Terminal.Remoting
         String CurrentDirectory();
     };
 
+    runtimeclass WindowActivatedArgs
+    {
+        WindowActivatedArgs(UInt64 peasantID, Guid desktopID, Windows.Foundation.DateTime activatedTime);
+        UInt64 PeasantID { get; };
+        Guid DesktopID { get; };
+        Windows.Foundation.DateTime ActivatedTime { get; };
+    };
+
     interface IPeasant
     {
         CommandlineArgs InitialArgs { get; };
@@ -21,9 +29,10 @@ namespace Microsoft.Terminal.Remoting
         UInt64 GetID();
         UInt64 GetPID();
         Boolean ExecuteCommandline(CommandlineArgs args);
-        void ActivateWindow();
+        void ActivateWindow(WindowActivatedArgs args);
+        WindowActivatedArgs GetLastActivatedArgs();
 
-        event Windows.Foundation.TypedEventHandler<Object, Object> WindowActivated;
+        event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
     };
 
