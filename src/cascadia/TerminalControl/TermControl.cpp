@@ -2028,10 +2028,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Also converts \n line-endings to \r line-endings
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        std::wregex multiLines{ LR"(((\r)?)(\n))" };
-        auto res = std::regex_replace(wstr, multiLines, L"\r");
+        // Some notes on this implementation:
+        //
+        // - std::regex can do this in a single line, but is somewhat
+        //   overkill for a simple search/replace operation (and its
+        //   performance guarantees aren't exactly stellar)
+        // - The STL doesn't have a simple string search/replace method.
+        //   This fact is lamentable.
+        // - We search for \n, and when we find it we check the if the
+        //   previous character is \r, if so we just remove the \n,
+        //   otherwise we replace the lone \n with \r
 
-        _connection.WriteInput(res);
+        std::wstring stripped{ wstr };
+
+        std::wstring::size_type pos = 0;
+
+        while ((pos = stripped.find(L"\n", pos)) != std::wstring::npos)
+        {
+            if (pos > 0 && (stripped.at(pos - 1) == L'\r'))
+            {
+                // We found '\r\n', erase the '\n'
+                stripped.erase(pos, 1);
+            }
+            else
+            {
+                // We found a lone '\n', replace it with '\r'
+                stripped.replace(pos, 1, L"\r");
+            }
+        }
+
+        _connection.WriteInput(stripped);
         _terminal->TrySnapOnInput();
     }
 
