@@ -607,8 +607,7 @@ void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string
             // Now we separately get each stub that adds a color scheme
             for (const auto& schemeStub : fullFile[JsonKey(SchemesKey)])
             {
-                auto matchingScheme = _FindMatchingColorScheme(schemeStub);
-                if (matchingScheme)
+                if (_FindMatchingColorScheme(schemeStub))
                 {
                     // We do not allow modifications to existing color schemes
                 }
