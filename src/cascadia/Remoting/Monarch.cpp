@@ -82,19 +82,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //   window".
     // Arguments:
     // - sender: the Peasant that raised this event. This might be out-of-proc!
+    // - args: a bundle of the peasant ID, timestamp, and desktop ID, for the activated peasant
     // Return Value:
     // - <none>
     void Monarch::_peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                          const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args)
+                                          const Remoting::WindowActivatedArgs& args)
     {
-        // TODO:projects/5 Pass the desktop and timestamp of when the window was
-        // activated in `args`.
-
         HandleActivatePeasant(args);
-        // if (auto peasant{ sender.try_as<Remoting::Peasant>() })
-        // {
-        //     auto theirID = peasant.GetID();
-        // }
     }
 
     // Method Description:
@@ -124,27 +118,30 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
-    // TODO:MG This probably shouldn't be a public function. I'm making it
-    // public so the WindowManager can use it to manually tell the monarch it's
-    // own ID to use as the MRU, when the monarch is first instantiated. THat's
-    // dumb, but it's a hack to get something working.
-    //
-    // That was stupid. I knew it would be but yea it didn't work.
-    // THe Window manager doesn't have a peasant yet when it first creates the monarch.
-    //
-    // TODO:MG Make this HandleActivatePeasant(PeasantActivatedArgs args). The
-    // WindowManager can pass in an args for _peasant.GetLastActivatedArgs()
-    void Monarch::HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args)
+    void Monarch::HandleActivatePeasant(const Remoting::WindowActivatedArgs& args)
     {
         // TODO:projects/5 Use a heap/priority queue per-desktop to track which
         // peasant was the most recent per-desktop. When we want to get the most
         // recent of all desktops (WindowingBehavior::UseExisting), then use the
         // most recent of all desktops.
-        _mostRecentPeasant = args.PeasantID();
+        const auto oldLastActiveTime = _lastActivatedTime.time_since_epoch().count();
+        const auto newLastActiveTime = args.ActivatedTime().time_since_epoch().count();
+
+        // For now, we'll just pay attention to whoever the most recent peasant
+        // was. We're not too wooried about the mru peasant dying. Worst case -
+        // when the user executes a `wt -w 0`, we won't be able to find that
+        // peasant, and it'll open in a new window instead of the current one.
+        if (args.ActivatedTime() > _lastActivatedTime)
+        {
+            _mostRecentPeasant = args.PeasantID();
+            _lastActivatedTime = args.ActivatedTime();
+        }
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SetMostRecentPeasant",
                           TraceLoggingUInt64(args.PeasantID(), "peasantID", "the ID of the activated peasant"),
+                          TraceLoggingInt64(oldLastActiveTime, "oldLastActiveTime", "The previous lastActiveTime"),
+                          TraceLoggingInt64(newLastActiveTime, "newLastActiveTime", "The provided args.ActivatedTime()"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
@@ -153,7 +150,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         if (_mostRecentPeasant == 0)
         {
             // We haven't yet been told the MRU peasant. Just use the first one.
-            // TODO:MG GOD this is just gonna be a random one. Hacks on hacks on hacks
+            // This is just gonna be a random one, but really shouldn't happen
+            // in practice. The WindowManager should set the MRU peasant
+            // immediately as soon as it creates the monarch/peasant for the
+            // first window.
             if (_peasants.size() > 0)
             {
                 return _peasants.begin()->second.GetID();

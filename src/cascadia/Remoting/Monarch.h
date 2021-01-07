@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t _nextPeasantID{ 1 };
         uint64_t _thisPeasantID{ 0 };
         uint64_t _mostRecentPeasant{ 0 };
+        winrt::Windows::Foundation::DateTime _lastActivatedTime{};
+
         WindowingBehavior _windowingBehavior{ WindowingBehavior::UseNew };
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
 

@@ -119,10 +119,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (_peasant)
         {
-            // Oh, don't do this, we do this in the election night
-            // // Tell the monarch about our peasant
-            // _monarch.AddPeasant(_peasant);
-
             // Inform the monarch of the time we were last activated
             _monarch.HandleActivatePeasant(_peasant.GetLastActivatedArgs());
         }
@@ -137,18 +133,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // done when we become the king. THis will be called both for the first
         // window, and when the current monarch dies.
 
-        // Wait, don't. Let's just have the monarch try/catch any accesses to
-        // peasants. If the peasant dies, then it can't get the peasant's
-        // anything. In that case, _remove it_.
-
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
-
-        // winrt::com_ptr<Remoting::implementation::Monarch> monarchImpl;
-        // monarchImpl.copy_from(winrt::get_self<Remoting::implementation::Monarch>(_monarch));
-        // if (monarchImpl && _peasant)
-        // {
-        //     monarchImpl->HandleActivatePeasant(_peasant.GetLastActivatedArgs());
-        // }
     }
 
     bool WindowManager::_areWeTheKing()
