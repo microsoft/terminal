@@ -205,10 +205,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
+                // This will raise the peasant's ExecuteCommandlineRequested
+                // event, which will then ask the AppHost to handle the
+                // commandline, which will then pass it to AppLogic for
+                // handling.
                 targetPeasant.ExecuteCommandline(args);
-                // TODO:MG if the targeted peasant fails to execute the
-                // commandline, we should create our own window to display the
-                // message box.
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_ProposeCommandline_Existing",
@@ -222,18 +223,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
             else if (windowID > 0)
             {
-                // TODO:MG in this case, an ID was provided, but there's no
+                // In this case, an ID was provided, but there's no
                 // peasant with that ID. Instead, we should tell the caller that
                 // they should make a new window, but _with that ID_.
-                //
-                // `Monarch::ProposeCommandline` needs to return a structure of
-                // `{ shouldCreateWindow: bool, givenID: optional<uint> }`
-                //
+
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_ProposeCommandline_Existing",
                                   TraceLoggingUInt64(windowID, "peasantID", "the ID of the matching peasant"),
                                   TraceLoggingBoolean(false, "foundMatch", "true if we found a peasant with that ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
                 auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>();
                 result->ShouldCreateWindow(true);
                 result->Id(windowID);
@@ -245,8 +244,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           "Monarch_ProposeCommandline_NewWindow",
                           TraceLoggingInt64(targetWindow, "targetWindow", "The provided ID"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-        // TODO:MG in this case, no usable ID was provided. Return { true, nullopt }
-        // return true;
+
+        // In this case, no usable ID was provided. Return { true, nullopt }
         auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>();
         result->ShouldCreateWindow(true);
         return *result;

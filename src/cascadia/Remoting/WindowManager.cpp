@@ -54,12 +54,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (!isKing)
         {
+            // The monarch may respond back "you should be a new
+            // window, with ID,name of (id, name)". Really the responses are:
+            // * You should not create a new window
+            // * Create a new window (but without a given ID or name). The
+            //   Monarch will assign your ID/name later
+            // * Create a new window, and you'll have this ID or name
+            //   - This is the case where the user provides `wt -w 1`, and
+            //     there's no existing window 1
+
             auto result = _monarch.ProposeCommandline(args);
             _shouldCreateWindow = result.ShouldCreateWindow();
             if (result.Id())
             {
                 givenID = result.Id().Value();
             }
+
+            // TraceLogging doesn't have a good solution for logging an
+            // optional. So we have to repeat the calls here:
             if (givenID)
             {
                 TraceLoggingWrite(g_hRemotingProvider,
@@ -79,20 +91,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         else
         {
+            // We're the monarch, we don't need to propose anything. We're just
+            // going to do it.
             TraceLoggingWrite(g_hRemotingProvider,
                               "WindowManager_ProposeCommandline_AsMonarch",
                               TraceLoggingBoolean(_shouldCreateWindow, "CreateWindow", "true iff we should create a new window"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
-
-        // TODO:projects/5 The monarch may respond back "you should be a new
-        // window, with ID,name of (id, name)". Really the responses are:
-        // * You should not create a new window
-        // * Create a new window (but without a given ID or name). The Monarch
-        //   will assign your ID/name later
-        // * Create a new window, and you'll have this ID or name
-        //   - This is the case where the user provides `wt -w 1`, and there's
-        //     no existing window 1
 
         if (_shouldCreateWindow)
         {
