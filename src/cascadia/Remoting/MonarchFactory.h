@@ -26,18 +26,18 @@ struct MonarchFactory : winrt::implements<MonarchFactory, ::IClassFactory>
             return CLASS_E_NOAGGREGATION;
         }
 
-        if (!g_weak)
+        // Lock the ref immediately. We don't want it freed from out beneath us
+        auto strong = g_weak.get();
+        if (!strong)
         {
             // Create a new Monarch instance
-            auto strong = winrt::make_self<winrt::Microsoft::Terminal::Remoting::implementation::Monarch>();
-
+            strong = winrt::make_self<winrt::Microsoft::Terminal::Remoting::implementation::Monarch>();
             g_weak = (*strong).get_weak();
             return strong.as(iid, result);
         }
         else
         {
             // We already instantiated one Monarch, let's just return that one!
-            auto strong = g_weak.get();
             return strong.as(iid, result);
         }
     }
