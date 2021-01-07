@@ -1344,8 +1344,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto cursorPosition = point.Position();
+        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused)
+        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
         {
             args.Handled(true);
             return;
@@ -1363,8 +1365,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
-
-                const auto cursorPosition = point.Position();
 
                 if (_singleClickTouchdownPos)
                 {
@@ -1407,10 +1407,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
-            const auto terminalPos = _GetTerminalPosition(point.Position());
-            if (terminalPos != _lastHoveredCell)
+
+            if (terminalPosition != _lastHoveredCell)
             {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
+                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
                 if (!uri.empty())
                 {
                     // Update the tooltip with the URI
@@ -1425,7 +1425,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::point startPos{ terminalPosition.X, terminalPosition.Y };
                     const til::size fontSize{ _actualFont.GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
@@ -1435,10 +1435,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                     OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
-                _lastHoveredCell = terminalPos;
+                _lastHoveredCell = terminalPosition;
 
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPos);
+                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition);
+                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition);
                 // If the hyperlink ID changed or the interval changed, trigger a redraw all
                 // (so this will happen both when we move onto a link and when we move off a link)
                 if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))

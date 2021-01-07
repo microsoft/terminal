@@ -34,7 +34,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Page.Resources>
 
     <!--Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.-->
-    <Grid Margin="{StaticResource StandardIndentMargin}">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
@@ -42,16 +42,17 @@ the MIT License. See LICENSE in the project root for license information. -->
         
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
+                   Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
-                   Margin="{StaticResource StandardControlSpacing}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
 
         <Pivot HorizontalAlignment="Left"
-               Grid.Row="1">
+               Grid.Row="1"
+               Margin="{StaticResource PivotIndentMargin}">
             <!-- General Tab -->
             <PivotItem x:Uid="Profile_General">
                 <ScrollViewer>
-                    <StackPanel>
+                    <StackPanel Margin="{StaticResource PivotStackPanelMargin}">
                         <!--Commandline-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <StackPanel Orientation="Horizontal">
@@ -530,7 +531,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!-- Advanced Tab -->
             <PivotItem x:Uid="Profile_Advanced">
                 <ScrollViewer>
-                    <StackPanel>
+                    <StackPanel Margin="{StaticResource PivotStackPanelMargin}">
                         <!--Suppress Application Title-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <CheckBox x:Uid="Profile_SuppressApplicationTitle"

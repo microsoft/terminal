@@ -1230,9 +1230,15 @@ void TextBuffer::_PruneHyperlinks()
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
     // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
     // Get all the hyperlink references in the row we're erasing
-    auto firstRowRefs = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
-    if (!firstRowRefs.empty())
+    const auto hyperlinks = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
+
+    if (!hyperlinks.empty())
     {
+        // Move to unordered set so we can use hashed lookup of IDs instead of linear search.
+        // Only make it an unordered set now because set always heap allocates but vector
+        // doesn't when the set is empty (saving an allocation in the common case of no links.)
+        std::unordered_set<uint16_t> firstRowRefs{ hyperlinks.cbegin(), hyperlinks.cend() };
+
         const auto total = TotalRowCount();
         // Loop through all the rows in the buffer except the first row -
         // we have found all hyperlink references in the first row and put them in refs,
@@ -1254,12 +1260,12 @@ void TextBuffer::_PruneHyperlinks()
                 break;
             }
         }
-    }
 
-    // Now delete obsolete references from our map
-    for (auto hyperlinkReference : firstRowRefs)
-    {
-        RemoveHyperlinkFromMap(hyperlinkReference);
+        // Now delete obsolete references from our map
+        for (auto hyperlinkReference : firstRowRefs)
+        {
+            RemoveHyperlinkFromMap(hyperlinkReference);
+        }
     }
 }
 

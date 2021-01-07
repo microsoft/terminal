@@ -20,7 +20,6 @@ Revision History:
 
 #pragma once
 
-#include "boost/container/small_vector.hpp"
 #include "TextAttributeRun.hpp"
 #include "AttrRowIterator.hpp"
 
@@ -51,7 +50,7 @@ public:
     size_t FindAttrIndex(const size_t index,
                          size_t* const pApplies) const;
 
-    std::unordered_set<uint16_t> GetHyperlinks();
+    std::vector<uint16_t> GetHyperlinks();
 
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
