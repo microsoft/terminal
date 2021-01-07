@@ -2036,28 +2036,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // - The STL doesn't have a simple string search/replace method.
         //   This fact is lamentable.
         // - We search for \n, and when we find it we check the if the
-        //   previous character is \r, if so we just remove the \n,
-        //   otherwise we replace the lone \n with \r
+        //   previous character is \r, if so we copy the string up to
+        //   the \n (but not including it), otherwise we replace the lone \n with \r
 
-        std::wstring stripped{ wstr };
-
-        std::wstring::size_type pos = 0;
-
-        while ((pos = stripped.find(L"\n", pos)) != std::wstring::npos)
+        if (wstr.find(L"\n") == std::wstring::npos)
         {
-            if (pos > 0 && (stripped.at(pos - 1) == L'\r'))
+            // we did not find a newline, just go ahead and write the string
+            _connection.WriteInput(wstr);
+        }
+        else
+        {
+            // found a newline, strip this string of all newlines
+            std::wstring stripped;
+            stripped.reserve(wstr.length());
+
+            std::wstring::size_type pos = 0;
+            std::wstring::size_type begin = 0;
+
+            while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
             {
-                // We found '\r\n', erase the '\n'
-                stripped.erase(pos, 1);
+                // copy up to but not including the \n
+                stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+                if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
+                {
+                    // there was no \r before the \n we did not copy,
+                    // so append our own \r (this effectively replaces the \n
+                    // with a \r)
+                    stripped.push_back(L'\r');
+                }
+                ++pos;
+                begin = pos;
             }
-            else
-            {
-                // We found a lone '\n', replace it with '\r'
-                stripped.replace(pos, 1, L"\r");
-            }
+
+            // we may have removed some characters, so we may not need as much space
+            // as we reserved earlier
+            stripped.shrink_to_fit();
+            _connection.WriteInput(stripped);
         }
 
-        _connection.WriteInput(stripped);
         _terminal->TrySnapOnInput();
     }
 
