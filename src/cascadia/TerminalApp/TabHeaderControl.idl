@@ -9,7 +9,7 @@ namespace TerminalApp
     {
         String Title { get; set; };
         Boolean IsPaneZoomed { get; set; };
-        UInt32 RenamerMaxWidth { get; set; };
+        Double RenamerMaxWidth { get; set; };
 
         TabHeaderControl();
         void BeginRename();

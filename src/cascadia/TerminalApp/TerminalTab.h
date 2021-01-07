@@ -7,8 +7,8 @@
 #include "TabBase.h"
 #include "TerminalTab.g.h"
 
-static constexpr uint32_t HeaderRenameBoxWidthDefault{ 165 };
-static constexpr uint32_t HeaderRenameBoxWidthTitleLength{ 1024 };
+static constexpr double HeaderRenameBoxWidthDefault{ 165 };
+static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
