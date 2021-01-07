@@ -2061,7 +2061,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             begin = pos;
         }
 
-        if (begin == 0 && pos == std::wstring::npos)
+        if (begin == 0)
         {
             // we did not find a newline, just go ahead and write the original string
             _connection.WriteInput(wstr);
