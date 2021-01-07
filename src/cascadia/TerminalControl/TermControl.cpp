@@ -2040,34 +2040,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //   previous character is \r, if its not, then we had a lone \n
         //   and so we append our own \r
 
-        if (wstr.find(L"\n") == std::wstring::npos)
+        std::wstring stripped;
+        stripped.reserve(wstr.length());
+
+        std::wstring::size_type pos = 0;
+        std::wstring::size_type begin = 0;
+
+        while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
         {
-            // we did not find a newline, just go ahead and write the string
+            // copy up to but not including the \n
+            stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
+            {
+                // there was no \r before the \n we did not copy,
+                // so append our own \r (this effectively replaces the \n
+                // with a \r)
+                stripped.push_back(L'\r');
+            }
+            ++pos;
+            begin = pos;
+        }
+
+        if (begin == 0 && pos == std::wstring::npos)
+        {
+            // we did not find a newline, just go ahead and write the original string
             _connection.WriteInput(wstr);
         }
         else
         {
-            // found a newline, strip this string of all newlines
-            std::wstring stripped;
-            stripped.reserve(wstr.length());
-
-            std::wstring::size_type pos = 0;
-            std::wstring::size_type begin = 0;
-
-            while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
-            {
-                // copy up to but not including the \n
-                stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
-                if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
-                {
-                    // there was no \r before the \n we did not copy,
-                    // so append our own \r (this effectively replaces the \n
-                    // with a \r)
-                    stripped.push_back(L'\r');
-                }
-                ++pos;
-                begin = pos;
-            }
+            // copy over the part after the last \n
+            stripped.append(wstr.cbegin() + begin, wstr.cend());
 
             // we may have removed some characters, so we may not need as much space
             // as we reserved earlier
