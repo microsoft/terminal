@@ -151,20 +151,27 @@
   <Target Name="OpenConsoleStripDuplicateWinmdFromReferencesBeforePass1">
     <ItemGroup>
       <!-- Back up the references we're about to delete -->
-      <OCReferencePathToRestore Include="@(ReferencePath)" Condition="'%(Filename)' == '$(RootNamespace)'"/>
-      <ReferencePath Remove="@(OCReferencePathToRestore)"/>
+      <OCReferencePathToRestore Include="@(ReferencePath)" Condition="'%(Filename)' == '$(RootNamespace)'" />
+      <ReferencePath Remove="@(OCReferencePathToRestore)" />
     </ItemGroup>
   </Target>
   <Target Name="OpenConsoleRestoreDuplicateWinmdToReferences" AfterTargets="MarkupCompilePass2">
     <ItemGroup>
       <!-- Put them back. -->
-      <ReferencePath Include="@(OCReferencePathToRestore)"/>
+      <ReferencePath Include="@(OCReferencePathToRestore)" />
     </ItemGroup>
   </Target>
   <Target Name="OpenConsoleStripDuplicateWinmdFromReferencesBeforePass2">
     <ItemGroup>
       <!-- Nobody else uses this item group, it's safe to never restore. -->
-      <WinMDReferenceToCompile Remove="@(WinMDReferenceToCompile)" Condition="'%(Filename)' == '$(RootNamespace)'"/>
+      <WinMDReferenceToCompile Remove="@(WinMDReferenceToCompile)" Condition="'%(Filename)' == '$(RootNamespace)'" />
     </ItemGroup>
+  </Target>
+  <Import Project="..\..\..\packages\AdaptiveCards.Rendering.Uwp.2.4.0\build\native\AdaptiveCards.Rendering.Uwp.targets" Condition="Exists('..\..\..\packages\AdaptiveCards.Rendering.Uwp.2.4.0\build\native\AdaptiveCards.Rendering.Uwp.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\AdaptiveCards.Rendering.Uwp.2.4.0\build\native\AdaptiveCards.Rendering.Uwp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\AdaptiveCards.Rendering.Uwp.2.4.0\build\native\AdaptiveCards.Rendering.Uwp.targets'))" />
   </Target>
 </Project>

@@ -56,12 +56,18 @@
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Name="LinkTip"
                                          Placement="Mouse">
-                                    <TextBlock IsTextSelectionEnabled="True">
-                                        <Run x:Name="HoveredUri"/> <LineBreak />
-                                        <Run x:Uid="HowToOpenRun"
-                                             FontStyle="Italic">
-                                        </Run>
-                                    </TextBlock>
+                                    <Grid x:Name="LinkTipGrid">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <TextBlock
+                                            Grid.Row="1"
+                                            IsTextSelectionEnabled="True">
+                                            <Run x:Uid="HowToOpenRun"
+                                                 FontStyle="Italic"/>
+                                        </TextBlock>
+                                    </Grid>
                                 </ToolTip>
                             </ToolTipService.ToolTip>
                         </Border>

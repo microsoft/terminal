@@ -15,6 +15,9 @@
 #include "TermControl.g.cpp"
 #include "TermControlAutomationPeer.h"
 
+#include <winrt/AdaptiveCards.Rendering.Uwp.h>
+#include <winrt/Windows.Web.Http.Headers.h>
+
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
 using namespace ::Microsoft::Terminal::Core;
@@ -27,6 +30,9 @@ using namespace winrt::Windows::UI::ViewManagement;
 using namespace winrt::Windows::UI::Input;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::AdaptiveCards::Rendering::Uwp;
+//using namespace winrt::Windows::Web::Http;
+//using namespace winrt::Windows::Foundation;
 
 // The minimum delay between updates to the scroll bar's values.
 // The updates are throttled to limit power usage.
@@ -1413,8 +1419,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
                 if (!uri.empty())
                 {
-                    // Update the tooltip with the URI
-                    HoveredUri().Text(uri);
+                    // TODO CARLOS
+
+                    // create a preview AC from the uri
+                    const auto cardJson{ _GetAdaptiveCardPreview(uri) };
+                    const auto card{ AdaptiveCard::FromJsonString(cardJson) };
+
+                    // render and inject the AC
+                    const AdaptiveCardRenderer renderer{};
+                    const auto renderedAdaptiveCard{ renderer.RenderAdaptiveCard(card.AdaptiveCard()) };
+                    if (const auto uiCard{ renderedAdaptiveCard.FrameworkElement() })
+                    {
+                        LinkTipGrid().Children().Append(uiCard);
+                    }
 
                     // Set the border thickness so it covers the entire cell
                     const auto charSizeInPixels = CharacterDimensions();
@@ -1484,6 +1501,56 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
         args.Handled(true);
+    }
+
+    std::wstring TermControl::_GetAdaptiveCardPreview(std::wstring uri)
+    try
+    {
+        // TODO CARLOS
+        auto response = R"({"token":"f845a9459e5747ad8eb037c1c19f825e","card":{"type":"AdaptiveCard","$schema":"http://adaptivecards.io/schemas/adaptive-card.json","version":"1.2","body":[{"type":"TextBlock","text":"tomlm/Razorback on {{DATE(2021-01-07T02:06:12Z, COMPACT)}}","size":"small","isSubtle":true},{"type":"ColumnSet","columns":[{"type":"Column","width":"auto","items":[{"type":"Image","url":"https://githubcards.azurewebsites.net/Open.png"}]},{"type":"Column","width":"stretch","items":[{"type":"RichTextBlock","inlines":[{"type":"TextRun","text":"test","weight":"Bolder","size":"Medium"},{"type":"TextRun","text":" #1","isSubtle":true,"size":"Medium"}],"spacing":"None"}],"verticalContentAlignment":"Center"}]},{"type":"TextBlock","text":"","fontType":"Monospace","wrap":true,"maxLines":2},{"type":"RichTextBlock","inlines":[]},{"type":"ColumnSet","columns":[{"type":"Column","width":"auto","items":[{"type":"Image","url":"${assignee.avatar_url}","size":"Small","style":"Person","width":"25px","height":"25px","spacing":"ExtraLarge"}]},{"type":"Column","width":"stretch","items":[{"type":"TextBlock","text":"You are assigned and open."}],"verticalContentAlignment":"Center"}],"spacing":"Large","separator":true}],"actions":[{"type":"Action.ShowCard","title":"Add comment","card":{"body":[{"type":"Input.Text","isMultiline":true,"id":"comment"}],"actions":[{"type":"Action.Execute","verb":"AddComment","title":"Save","data":{"url":"https://github.com/tomlm/Razorback/issues/1"}}]}},{"type":"Action.Execute","verb":"close","title":"Close issue","data":{"url":"https://github.com/tomlm/Razorback/issues/1"}}],"authentication":{"text":"Please login to GitHub","connectionName":"GitConnection","TokenExchangeResource":null,"buttons":[{"type":"signin","title":"Signin","image":null,"text":"Please login to GitHub","displayText":null,"value":"https://token.botframework.com/api/oauth/signin?signin=2b22f1996e83432ebb2d54c175904db2","channelData":null,"imageAltText":null}]}}})";
+        std::string x{ response };
+
+        // post-process response
+        auto y{ x.substr(51, x.length() - 2) };
+
+        return til::u8u16(y);
+        //HttpClient httpClient;
+        //auto headers{ httpClient.DefaultRequestHeaders() };
+        //
+        //std::wstring header{ L"ie" };
+        //if (!headers.UserAgent().TryParseAdd(header))
+        //{
+        //    throw L"Invalid header value: " + header;
+        //}
+        //
+        //header = L"Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)";
+        //if (!headers.UserAgent().TryParseAdd(header))
+        //{
+        //    throw L"Invalid header value: " + header;
+        //}
+        //
+        //Uri requestUri{ uri };
+        //
+        //// Send the GET request asynchronously, and retrieve the response as a string.
+        //HttpResponseMessage httpResponseMessage;
+        //std::wstring httpResponseBody;
+        //try
+        //{
+        //    // Send the GET request.
+        //    httpResponseMessage = httpClient.GetAsync(requestUri).get();
+        //    httpResponseMessage.EnsureSuccessStatusCode();
+        //    httpResponseBody = httpResponseMessage.Content().ReadAsStringAsync().get();
+        //    return httpResponseBody;
+        //}
+        //catch (winrt::hresult_error const& ex)
+        //{
+        //    httpResponseBody = ex.message();
+        //    return {};
+        //}
+    }
+    catch (...)
+    {
+        return {};
     }
 
     // Method Description:

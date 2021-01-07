@@ -282,6 +282,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DragOverHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::DragEventArgs const& e);
         winrt::fire_and_forget _HyperlinkHandler(const std::wstring_view uri);
 
+        std::wstring _GetAdaptiveCardPreview(std::wstring uri); 
+
         void _CursorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _BlinkTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
