@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Peasant.idl";
+
+namespace Microsoft.Terminal.Remoting
+{
+    [default_interface] runtimeclass Monarch {
+        Monarch();
+
+        UInt64 GetPID();
+        UInt64 AddPeasant(IPeasant peasant);
+        Boolean ProposeCommandline(CommandlineArgs args);
+    };
+}
