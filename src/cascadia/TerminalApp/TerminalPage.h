@@ -81,7 +81,9 @@ namespace winrt::TerminalApp::implementation
         void ShowKeyboardServiceWarning();
         winrt::hstring KeyboardServiceDisabledText();
 
-        winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
+        winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions,
+                                                     const bool initial,
+                                                     const winrt::hstring cwd = L"");
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);

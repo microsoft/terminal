@@ -50,6 +50,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _initialArgs = args;
         }
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_ExecuteCommandline",
+                          TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
+                          TraceLoggingWideString(args.CurrentDirectory().c_str(), "directory", "the provided cwd"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
         // Raise an event with these args. The AppHost will listen for this
         // event to know when to take these args and dispatch them to a
         // currently-running window.

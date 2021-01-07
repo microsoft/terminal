@@ -520,7 +520,7 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
 {
-    _logic.ExecuteCommandline(args.Args());
+    _logic.ExecuteCommandline(args.Args(), args.CurrentDirectory());
 }
 
 void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,

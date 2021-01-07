@@ -1112,14 +1112,16 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
-    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args)
+    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
+                                         const winrt::hstring& cwd)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
-            _root->ProcessStartupActions(actions, false);
+
+            _root->ProcessStartupActions(actions, false, cwd);
         }
 
         return result; // TODO:MG does a return value make sense
