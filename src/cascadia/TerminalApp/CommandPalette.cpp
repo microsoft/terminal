@@ -245,18 +245,26 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && key == VirtualKey::Tab)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
         {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+            winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+            const auto action = _keymap.TryLookup(kc);
+            if (action)
             {
-                SelectNextItem(false);
-                e.Handled(true);
-            }
-            else
-            {
-                SelectNextItem(true);
-                e.Handled(true);
+                if (action.Action() == ShortcutAction::PrevTab)
+                {
+                    SelectNextItem(false);
+                    e.Handled(true);
+                }
+                else if (action.Action() == ShortcutAction::NextTab)
+                {
+                    SelectNextItem(true);
+                    e.Handled(true);
+                }
             }
         }
         else if (key == VirtualKey::Home)
@@ -349,30 +357,6 @@ namespace winrt::TerminalApp::implementation
             }
 
             e.Handled(true);
-        }
-        else
-        {
-            const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
-
-            // In the interest of not telling all modes to check for keybindings, limit to TabSwitch mode for now.
-            if (_currentMode == CommandPaletteMode::TabSwitchMode)
-            {
-                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-                auto success = _bindings.TryKeyChord({
-                    ctrlDown,
-                    altDown,
-                    shiftDown,
-                    vkey,
-                });
-
-                if (success)
-                {
-                    e.Handled(true);
-                }
-            }
         }
     }
 
@@ -855,9 +839,9 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
+    void CommandPalette::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
     {
-        _bindings = bindings;
+        _keymap = keymap;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)

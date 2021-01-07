@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "TerminalPage.h"
 #include "Utils.h"
-#include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
@@ -108,7 +107,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyBindings(*_bindings);
+            CommandPalette().SetKeyMap(_settings.KeyMap());
         }
     }
 
@@ -945,9 +944,7 @@ namespace winrt::TerminalApp::implementation
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        auto setting = AppLogic::CurrentAppSettings();
-        auto keymap = setting.GlobalSettings().KeyMap();
-        const auto actionAndArgs = keymap.TryLookup(kc);
+        const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs)
         {
             if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
@@ -1318,14 +1315,6 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        if (CommandPalette().Visibility() == Visibility::Visible)
-        {
-            // If the tab switcher is currently open, don't change its mode.
-            // Just select the new tab.
-            CommandPalette().SelectNextItem(bMoveRight);
-            return;
-        }
-
         const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
         const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
 
@@ -2207,7 +2196,7 @@ namespace winrt::TerminalApp::implementation
                 // here, then the user won't be able to navigate the ATS any
                 // longer.
                 //
-                // When the tab swither is eventually dismissed, the focus will
+                // When the tab switcher is eventually dismissed, the focus will
                 // get tossed back to the focused terminal control, so we don't
                 // need to worry about focus getting lost.
                 if (CommandPalette().Visibility() != Visibility::Visible)
