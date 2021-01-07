@@ -153,7 +153,7 @@ private:
     CRITICAL_SECTION _csConsoleLock; // serialize input and output using this
     std::wstring _Title;
     std::wstring _Prefix; // Eg Select, Mark - things that we manually prepend to the title.
-    std::wstring _TitleAndPrefix; 
+    std::wstring _TitleAndPrefix;
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle; // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer;

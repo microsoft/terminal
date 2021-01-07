@@ -232,7 +232,6 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
 [[nodiscard]] HRESULT BgfxEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
-
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
     r.Top = 0;
