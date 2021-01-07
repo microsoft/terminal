@@ -689,6 +689,13 @@ namespace winrt::TerminalApp::implementation
         // that as the empty string.
         const auto schemeName = scheme ? scheme.Name() : L"\0";
 
+        auto focusedObject{ Windows::UI::Xaml::Input::FocusManager::GetFocusedElement(XamlRoot()) };
+        if (focusedObject)
+        {
+
+        }
+
+
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",

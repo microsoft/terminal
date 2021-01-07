@@ -57,8 +57,14 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
     {
-        ShowBellIndicator(false);
-        ActivateBellIndicatorTimer(false);
+        auto weakThis{ get_weak() };
+        
+        if (auto tab{ weakThis.get() })
+        {
+            tab->ShowBellIndicator(false);
+            tab->_bellIndicatorTimer.value().Stop();
+            tab->_bellIndicatorTimer = std::nullopt;
+        }
     }
 
     // Method Description:
@@ -136,9 +142,9 @@ namespace winrt::TerminalApp::implementation
                 lastFocusedControl.Focus(_focusState);
                 lastFocusedControl.TaskbarProgressChanged();
             }
-            if (_headerControl.BellIndicator() && !_bellIndicatorTimer.has_value())
+            if (_headerControl.BellIndicator())
             {
-                ActivateBellIndicatorTimer(true);
+                ShowBellIndicator(false);
             }
         }
     }
@@ -259,7 +265,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalTab::ActivateBellIndicatorTimer(const bool activate)
+    winrt::fire_and_forget TerminalTab::ActivateBellIndicatorTimer()
     {
         auto weakThis{ get_weak() };
 
@@ -267,19 +273,11 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            if (activate)
-            {
-                DispatcherTimer bellIndicatorTimer;
-                bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
-                bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
-                bellIndicatorTimer.Start();
-                tab->_bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
-            }
-            else
-            {
-                tab->_bellIndicatorTimer.value().Stop();
-                tab->_bellIndicatorTimer = std::nullopt;
-            }
+            DispatcherTimer bellIndicatorTimer;
+            bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+            bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
+            bellIndicatorTimer.Start();
+            tab->_bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
         }
     }
 
@@ -618,10 +616,6 @@ namespace winrt::TerminalApp::implementation
                     tab->_UpdateActivePane(sender);
                     tab->_RecalculateAndApplyTabColor();
                 }
-                if (tab->_headerControl.BellIndicator() && !tab->_bellIndicatorTimer.has_value())
-                {
-                    tab->ActivateBellIndicatorTimer(true);
-                }
             }
         });
 
@@ -663,11 +657,11 @@ namespace winrt::TerminalApp::implementation
                     tab->_TabRaiseVisualBellHandlers();
                 }
                 tab->ShowBellIndicator(true);
-                // TODO: only activate timer if this tab is focused
-                // the code to activate the timer when the tab gets focused is already there in the pane
-                // got focus event handler and tab::Focus(), we
-                // just need to make sure we don't activate the timer here unless the tab is focused
-                tab->ActivateBellIndicatorTimer(true);
+
+                // If this tab is focused, activate the bell indicator timer, which will
+                // remove the bell indicator once it fires
+                // (otherwise, the indicator is removed when the tab gets focus)
+                //tab->ActivateBellIndicatorTimer();
             }
         });
     }
