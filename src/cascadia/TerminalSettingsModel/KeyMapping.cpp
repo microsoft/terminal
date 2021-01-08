@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                    const KeyChord& chord)
     {
         _keyShortcuts[chord] = actionAndArgs;
-        _orderedKeyShortcuts.push_back(std::make_pair(chord, actionAndArgs));
+        _keyShortcutsByInsertionOrder.push_back(std::make_pair(chord, actionAndArgs));
     }
 
     // Method Description:
@@ -56,15 +56,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _keyShortcuts.erase(chord);
 
         KeyChordEquality keyChordEquality;
-        _orderedKeyShortcuts.erase(std::remove_if(_orderedKeyShortcuts.begin(), _orderedKeyShortcuts.end(), [keyChordEquality, chord](const auto& mapping) {
-                                       return keyChordEquality(mapping.first, chord);
-                                   }),
-                                   _orderedKeyShortcuts.end());
+        _keyShortcutsByInsertionOrder.erase(std::remove_if(_keyShortcutsByInsertionOrder.begin(), _keyShortcutsByInsertionOrder.end(), [keyChordEquality, chord](const auto& keyBinding) {
+                                                return keyChordEquality(keyBinding.first, chord);
+                                            }),
+                                            _keyShortcutsByInsertionOrder.end());
     }
 
     KeyChord KeyMapping::GetKeyBindingForAction(Microsoft::Terminal::Settings::Model::ShortcutAction const& action)
     {
-        for (auto it = _orderedKeyShortcuts.rbegin(); it != _orderedKeyShortcuts.rend(); ++it)
+        for (auto it = _keyShortcutsByInsertionOrder.rbegin(); it != _keyShortcutsByInsertionOrder.rend(); ++it)
         {
             const auto& kv = *it;
             if (kv.second.Action() == action)
@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return { nullptr };
         }
 
-        for (auto it = _orderedKeyShortcuts.rbegin(); it != _orderedKeyShortcuts.rend(); ++it)
+        for (auto it = _keyShortcutsByInsertionOrder.rbegin(); it != _keyShortcutsByInsertionOrder.rend(); ++it)
         {
             const auto& kv = *it;
             const auto action = kv.second.Action();
