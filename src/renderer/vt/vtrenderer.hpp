@@ -113,6 +113,7 @@ namespace Microsoft::Console::Render
         std::string _buffer;
 
         std::string _formatBuffer;
+        std::string _conversionBuffer;
 
         TextAttribute _lastTextAttributes;
 
