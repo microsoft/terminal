@@ -9,8 +9,25 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    MinHeight="16">
 
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <mux:ProgressRing x:Name="HeaderProgressRing"
@@ -39,8 +56,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                  Visibility="Collapsed"
                  MinHeight="0"
                  Padding="4,0,4,0"
-                 Margin="0,-8,0,-8"
                  MaxLength="1024"
-                 LostFocus="RenameBoxLostFocusHandler"/>
+                 LostFocus="RenameBoxLostFocusHandler"
+                 Height="16"
+                 FontSize="12"
+                 IsSpellCheckEnabled="False"
+                 MaxWidth="{x:Bind RenamerMaxWidth, Mode=OneWay}"/>
     </StackPanel>
 </UserControl>

@@ -50,6 +50,9 @@ namespace winrt::TerminalApp::implementation
                 tab->SetTabText(title);
             }
         });
+
+        _UpdateHeaderControlMaxWidth();
+
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -73,6 +76,26 @@ namespace winrt::TerminalApp::implementation
 
         UpdateTitle();
         _RecalculateAndApplyTabColor();
+    }
+
+    winrt::fire_and_forget TerminalTab::_UpdateHeaderControlMaxWidth()
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            {
+                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
+            }
+            else
+            {
+                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
+            }
+        }
     }
 
     void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
@@ -169,6 +192,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
+
+        // The tabWidthMode may have changed, update the header control accordingly
+        _UpdateHeaderControlMaxWidth();
     }
 
     // Method Description:
