@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
     // Arguments:
-    // - newSettings: New settings values for the profile in this terminal.
+    // - <none>
     // Return Value:
     // - <none>
     winrt::fire_and_forget TermControl::UpdateSettings()
