@@ -107,6 +107,8 @@ namespace RemotingUnitTests
         m->_peasants[peasantID] = *tombstone;
     }
 
+    // Helper to get the first argument out of the commandline, and try to
+    // convert it to an int.
     void RemotingTests::_findTargetWindowHelper(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                 const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
     {
