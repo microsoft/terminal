@@ -528,7 +528,7 @@ bool AppHost::HasWindow()
 // Return Value:
 // - <none>
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
-                                   winrt::Microsoft::Terminal::Remoting::CommandlineArgs args)
+                                   Remoting::CommandlineArgs args)
 {
     _logic.ExecuteCommandline(args.Args(), args.CurrentDirectory());
 }
@@ -544,7 +544,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
 // Return Value:
 // - <none>
 void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args)
+                                const Remoting::FindTargetWindowArgs& args)
 {
     const auto targetWindow = _logic.FindTargetWindow(args.Args().Args());
     args.ResultTargetWindow(targetWindow);
@@ -557,9 +557,9 @@ void AppHost::_WindowActivated()
         // TODO: projects/5 - in the future, we'll want to actually get the
         // desktop GUID in IslandWindow, and bubble that up here, then down to
         // the Peasant. For now, we're just leaving space for it.
-        winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs args{ peasant.GetID(),
-                                                                        winrt::guid{},
-                                                                        winrt::clock().now() };
+        Remoting::WindowActivatedArgs args{ peasant.GetID(),
+                                            winrt::guid{},
+                                            winrt::clock().now() };
         peasant.ActivateWindow(args);
     }
 }
