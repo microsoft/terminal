@@ -451,7 +451,7 @@ void CascadiaSettings::_LoadFragmentExtensions()
     for (const auto& ext : extensions)
     {
         // Only apply the stubs if the package name is not in ignored namespaces
-        if (ignoredNamespaces.find(ext.Package().DisplayName().c_str()) == ignoredNamespaces.end())
+        if (ignoredNamespaces.find(ext.Package().Id().FamilyName().c_str()) == ignoredNamespaces.end())
         {
             // Likewise, getting the public folder from an extension is an async operation
             // So we use another mutex and condition variable
@@ -481,7 +481,7 @@ void CascadiaSettings::_LoadFragmentExtensions()
             const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
 
             // Provide the package name as the source
-            _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().DisplayName().c_str());
+            _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
         }
     }
 }
