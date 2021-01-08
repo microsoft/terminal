@@ -80,6 +80,7 @@ namespace Microsoft::Console::Render
 
         LONG _displayHeight;
         LONG _displayWidth;
+        til::rectangle _dirtyArea;
 
         COORD _fontSize;
 
