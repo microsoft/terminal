@@ -59,6 +59,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -402,6 +403,16 @@ void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable cons
     _GotFocusHandlers(shared_from_this());
 }
 
+// Event Description:
+// - Called when our control loses focus. We'll use this to trigger our LostFocus
+//   callback. The tab that's hosting us should have registered a callback which
+//   can be used to update its own internal focus state
+void Pane::_ControlLostFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+                                    RoutedEventArgs const& /* args */)
+{
+    _LostFocusHandlers(shared_from_this());
+}
+
 // Method Description:
 // - Fire our Closed event to tell our parent that we should be removed.
 // Arguments:
@@ -711,6 +722,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // re-attach our handler for the control's GotFocus event.
         _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+        _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
@@ -1416,6 +1428,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // control telling us that it's now focused, we want it telling its new
     // parent.
     _gotFocusRevoker.revoke();
+    _lostFocusRevoker.revoke();
 
     _splitState = actualSplitType;
     _desiredSplitPosition = 1.0f - splitSize;
@@ -2065,4 +2078,5 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 }
 
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

@@ -616,6 +616,21 @@ namespace winrt::TerminalApp::implementation
                     tab->_UpdateActivePane(sender);
                     tab->_RecalculateAndApplyTabColor();
                 }
+                tab->_focusState = WUX::FocusState::Programmatic;
+                if (tab->_headerControl.BellIndicator())
+                {
+                    tab->ShowBellIndicator(false);
+                }
+            }
+        });
+
+        pane->LostFocus([weakThis](std::shared_ptr<Pane> /*sender*/) {
+            // Do nothing if the Tab's lifetime is expired or pane isn't new.
+            auto tab{ weakThis.get() };
+
+            if (tab)
+            {
+                tab->_focusState = WUX::FocusState::Unfocused;
             }
         });
 
@@ -661,7 +676,10 @@ namespace winrt::TerminalApp::implementation
                 // If this tab is focused, activate the bell indicator timer, which will
                 // remove the bell indicator once it fires
                 // (otherwise, the indicator is removed when the tab gets focus)
-                //tab->ActivateBellIndicatorTimer();
+                if (tab->_focusState != WUX::FocusState::Unfocused)
+                {
+                    tab->ActivateBellIndicatorTimer();
+                }
             }
         });
     }
