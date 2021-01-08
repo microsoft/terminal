@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Monarch.g.h"
-#include "Peasant.h"
+#include "SamplePeasant.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 
 // {50dba6cd-2222-4b12-8363-5e06f5d0082c}

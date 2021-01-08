@@ -1,7 +1,6 @@
 #pragma once
-#include <conio.h>
-#include "Monarch.h"
-#include "Peasant.h"
+#include "SampleMonarch.h"
+#include "SamplePeasant.h"
 #include "../../types/inc/utils.hpp"
 
 class AppState

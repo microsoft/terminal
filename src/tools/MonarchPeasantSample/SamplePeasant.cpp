@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Peasant.h"
+#include "SamplePeasant.h"
 
 #include "Peasant.g.cpp"
 #include "../../types/inc/utils.hpp"

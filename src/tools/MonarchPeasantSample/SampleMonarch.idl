@@ -1,4 +1,4 @@
-import "Peasant.idl";
+import "SamplePeasant.idl";
 
 namespace MonarchPeasantSample
 {

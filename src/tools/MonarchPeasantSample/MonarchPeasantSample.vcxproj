@@ -25,11 +25,11 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="AppState.h" />
-    <ClInclude Include="Monarch.h">
-      <DependentUpon>Monarch.idl</DependentUpon>
+    <ClInclude Include="SampleMonarch.h">
+      <DependentUpon>SampleMonarch.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Peasant.h">
-      <DependentUpon>Peasant.idl</DependentUpon>
+    <ClInclude Include="SamplePeasant.h">
+      <DependentUpon>SamplePeasant.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
 
@@ -41,17 +41,17 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Monarch.cpp">
-      <DependentUpon>Monarch.idl</DependentUpon>
+    <ClCompile Include="SampleMonarch.cpp">
+      <DependentUpon>SampleMonarch.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="Peasant.cpp">
-      <DependentUpon>Peasant.idl</DependentUpon>
+    <ClCompile Include="SamplePeasant.cpp">
+      <DependentUpon>SamplePeasant.idl</DependentUpon>
     </ClCompile>
   </ItemGroup>
 
   <ItemGroup>
-    <Midl Include="Monarch.idl" />
-    <Midl Include="Peasant.idl" />
+    <Midl Include="SampleMonarch.idl" />
+    <Midl Include="SamplePeasant.idl" />
   </ItemGroup>
 
   <ItemGroup>
