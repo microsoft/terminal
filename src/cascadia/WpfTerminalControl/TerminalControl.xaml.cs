@@ -93,6 +93,31 @@ namespace Microsoft.Terminal.Wpf
             byte r = Convert.ToByte(theme.DefaultBackground & 0xff);
 
             this.terminalGrid.Background = new SolidColorBrush(Color.FromRgb(r, g, b));
+
+            // Background for terminal border shown when the terminal renderer is smaller than the window size.
+            EllipseGeometry backgroundEllipse = new EllipseGeometry(new Point(10, 10), 20, 20);
+            RectangleGeometry dotRectangle = new RectangleGeometry(new Rect(1, 1, 1, 1));
+
+            GeometryGroup geometryGroup = new GeometryGroup();
+            geometryGroup.Children.Add(backgroundEllipse);
+            geometryGroup.Children.Add(dotRectangle);
+
+            GeometryDrawing backgroundGeometry = new GeometryDrawing();
+            backgroundGeometry.Geometry = geometryGroup;
+            backgroundGeometry.Brush = Brushes.White;
+            backgroundGeometry.Pen = new Pen(Brushes.DarkGray, 1);
+
+            DrawingBrush drawingBrush = new DrawingBrush()
+            {
+                Drawing = backgroundGeometry,
+                TileMode = TileMode.Tile,
+                Stretch = Stretch.None,
+                Viewport = new Rect(0, 0, 20, 20),
+                ViewportUnits = BrushMappingMode.Absolute,
+            };
+
+            this.RightBorder.Background = drawingBrush;
+            this.BottomBorder.Background = drawingBrush;
         }
 
         /// <summary>
@@ -117,7 +142,12 @@ namespace Microsoft.Terminal.Wpf
 
 #pragma warning disable VSTHRD001 // Avoid legacy thread switching APIs
             await this.Dispatcher.BeginInvoke(
-                new Action(delegate() { this.terminalGrid.Margin = this.CalculateMargins(); }),
+                new Action(delegate()
+                {
+                    var borders = this.CalculateBorders();
+                    this.RightColumn.Width = new GridLength(borders.Width);
+                    this.BottomRow.Height = new GridLength(borders.Height);
+                }),
                 System.Windows.Threading.DispatcherPriority.Render);
 #pragma warning restore VSTHRD001 // Avoid legacy thread switching APIs
         }
@@ -157,8 +187,10 @@ namespace Microsoft.Terminal.Wpf
 
             if (!this.AutoResize)
             {
-                // Renderer will not resize on control resize. We have to manually calculate the margin to fill in the space.
-                this.terminalGrid.Margin = this.CalculateMargins(sizeInfo.NewSize);
+                // Renderer will not resize on control resize. We have to manually calculate the borders to fill in the space.
+                var borders = this.CalculateBorders();
+                this.RightColumn.Width = new GridLength(borders.Width);
+                this.BottomRow.Height = new GridLength(borders.Height);
 
                 // Margins stop resize events, therefore we have to manually check if more space is available and raise
                 //  a resize event if needed.
@@ -169,11 +201,11 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Calculates the margins that should surround the terminal renderer, if any.
+        /// Calculates the border size that surround the terminal renderer, if any.
         /// </summary>
         /// <param name="controlSize">New size of the control. Uses the control's current size if not provided.</param>
         /// <returns>The new terminal control margin thickness in device independent units.</returns>
-        private Thickness CalculateMargins(Size controlSize = default)
+        private Size CalculateBorders(Size controlSize = default)
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
             double width = 0, height = 0;
@@ -187,7 +219,7 @@ namespace Microsoft.Terminal.Wpf
                 };
             }
 
-            // During initialization, the terminal renderer size will be 0 and the terminal renderer
+            // During initialization, the terminal renderer size can be 0 and the terminal renderer
             // draws on all available space. Therefore no margins are needed until resized.
             if (this.TerminalRendererSize.Width != 0)
             {
@@ -202,10 +234,13 @@ namespace Microsoft.Terminal.Wpf
             width -= this.scrollbar.ActualWidth;
 
             // Prevent negative margin size.
-            width = width < 0 ? 0 : width;
-            height = height < 0 ? 0 : height;
+            var borderSize = new Size()
+            {
+                Width = width < 0 ? 0 : width,
+                Height = height < 0 ? 0 : height,
+            };
 
-            return new Thickness(0, 0, width, height);
+            return borderSize;
         }
 
         private void TerminalControl_GotFocus(object sender, RoutedEventArgs e)
