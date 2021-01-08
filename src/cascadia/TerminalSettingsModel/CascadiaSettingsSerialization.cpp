@@ -49,8 +49,7 @@ static constexpr std::string_view SettingsSchemaFragment{ "\n"
 
 static constexpr std::string_view jsonExtension{ ".json" };
 static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
-static constexpr std::wstring_view LocalAppDataFolder{ L"%LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments" };
-static constexpr std::wstring_view ProgramDataFolder{ L"%ProgramData%\\Microsoft\\Windows Terminal\\Fragments" };
+static constexpr std::wstring_view FragmentsPath{ L"\\Microsoft\\Windows Terminal\\Fragments" };
 
 static constexpr std::string_view AppExtensionHostName{ "com.microsoft.windows.terminal.settings" };
 
@@ -411,17 +410,21 @@ void CascadiaSettings::_LoadFragmentExtensions()
     }
 
     // Search through the local app data folder
-    const auto expandedLocalAppDataFolderPath = wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataFolder.data());
-    if (std::filesystem::exists(expandedLocalAppDataFolderPath))
+    PWSTR localAppDataFolder;
+    SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder);
+    auto localAppDataFragments = std::wstring(localAppDataFolder) + FragmentsPath.data();
+    if (std::filesystem::exists(localAppDataFragments))
     {
-        _ApplyJsonStubsHelper(expandedLocalAppDataFolderPath, ignoredNamespaces);
+        _ApplyJsonStubsHelper(localAppDataFragments, ignoredNamespaces);
     }
 
-    // Search through the global app data folder
-    const auto expandedGlobalAppDataFolderPath = wil::ExpandEnvironmentStringsW<std::wstring>(ProgramDataFolder.data());
-    if (std::filesystem::exists(expandedGlobalAppDataFolderPath))
+    // Search through the program data folder
+    PWSTR programDataFolder;
+    SHGetKnownFolderPath(FOLDERID_ProgramData, 0, nullptr, &programDataFolder);
+    auto programDataFragments = std::wstring(programDataFolder) + FragmentsPath.data();
+    if (std::filesystem::exists(programDataFragments))
     {
-        _ApplyJsonStubsHelper(expandedGlobalAppDataFolderPath, ignoredNamespaces);
+        _ApplyJsonStubsHelper(programDataFragments, ignoredNamespaces);
     }
 
     // Search through app extensions
