@@ -6,7 +6,6 @@
 #include "TabPaletteItem.h"
 #include "CommandLinePaletteItem.h"
 #include "CommandPalette.h"
-
 #include <LibraryResources.h>
 
 #include "CommandPalette.g.cpp"
@@ -99,6 +98,8 @@ namespace winrt::TerminalApp::implementation
         });
 
         _filteredActionsView().SelectionChanged({ this, &CommandPalette::_selectedCommandChanged });
+
+        _appArgs.DisableHelpInExitMessage();
     }
 
     // Method Description:
@@ -244,18 +245,26 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && key == VirtualKey::Tab)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
         {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+            winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+            const auto action = _keymap.TryLookup(kc);
+            if (action)
             {
-                SelectNextItem(false);
-                e.Handled(true);
-            }
-            else
-            {
-                SelectNextItem(true);
-                e.Handled(true);
+                if (action.Action() == ShortcutAction::PrevTab)
+                {
+                    SelectNextItem(false);
+                    e.Handled(true);
+                }
+                else if (action.Action() == ShortcutAction::NextTab)
+                {
+                    SelectNextItem(true);
+                    e.Handled(true);
+                }
             }
         }
         else if (key == VirtualKey::Home)
@@ -290,7 +299,6 @@ namespace winrt::TerminalApp::implementation
                                          Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
         auto key = e.OriginalKey();
-        auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
 
         if (key == VirtualKey::Up)
         {
@@ -349,30 +357,6 @@ namespace winrt::TerminalApp::implementation
             }
 
             e.Handled(true);
-        }
-        else
-        {
-            const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
-
-            // In the interest of not telling all modes to check for keybindings, limit to TabSwitch mode for now.
-            if (_currentMode == CommandPaletteMode::TabSwitchMode)
-            {
-                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-                auto success = _bindings.TryKeyChord({
-                    ctrlDown,
-                    altDown,
-                    shiftDown,
-                    vkey,
-                });
-
-                if (success)
-                {
-                    e.Handled(true);
-                }
-            }
         }
     }
 
@@ -690,7 +674,10 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto tabPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::TabPaletteItem>() })
             {
-                _SwitchToTabRequestedHandlers(*this, tabPaletteItem.Tab());
+                if (const auto tab{ tabPaletteItem.Tab() })
+                {
+                    _SwitchToTabRequestedHandlers(*this, tab);
+                }
             }
         }
     }
@@ -793,6 +780,35 @@ namespace winrt::TerminalApp::implementation
         {
             _noMatchesText().Visibility(Visibility::Collapsed);
         }
+
+        if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            ParsedCommandLineText(L"");
+
+            const auto commandLine = _getTrimmedInput();
+            if (!commandLine.empty())
+            {
+                ExecuteCommandlineArgs args{ commandLine };
+                _appArgs.FullResetState();
+                if (_appArgs.ParseArgs(args) == 0)
+                {
+                    const auto& commands = _appArgs.GetStartupActions();
+                    if (commands.size() > 0)
+                    {
+                        std::wstring commandDescription{ RS_(L"CommandPalette_ParsedCommandLine") };
+                        for (const auto& command : commands)
+                        {
+                            commandDescription += L"\n\t" + command.Args().GenerateName();
+                        }
+                        ParsedCommandLineText(commandDescription.data());
+                    }
+                }
+                else
+                {
+                    ParsedCommandLineText(RS_(L"CommandPalette_FailedParsingCommandLine") + L"\n\t" + til::u8u16(_appArgs.GetExitMessage()));
+                }
+            }
+        }
     }
 
     void CommandPalette::_evaluatePrefix()
@@ -823,9 +839,9 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
+    void CommandPalette::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
     {
-        _bindings = bindings;
+        _keymap = keymap;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
@@ -893,6 +909,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        ParsedCommandLineText(L"");
         _searchBox().Text(L"");
         _searchBox().Select(_searchBox().Text().size(), 0);
         // Leaving this block of code outside the above if-statement

@@ -31,6 +31,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!-- This creates an instance of our CommandKeyChordVisibilityConverter we can reference below -->
             <local:EmptyStringVisibilityConverter x:Key="CommandKeyChordVisibilityConverter"/>
+            <local:EmptyStringVisibilityConverter x:Key="ParsedCommandLineTextVisibilityConverter"/>
             <local:EmptyStringVisibilityConverter x:Key="ParentCommandVisibilityConverter"/>
             <local:HasNestedCommandsVisibilityConverter x:Key="HasNestedCommandsVisibilityConverter"/>
             <model:IconPathConverter x:Key="IconSourceConverter"/>
@@ -69,6 +70,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
+                    <!--  ParsedCommandLineText styles  -->
+                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <Style x:Key="CommandPaletteBackground" TargetType="Grid">
@@ -100,6 +111,16 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
                     </Style>
 
+                    <!--  ParsedCommandLineText styles  -->
+                    <Style x:Key="ParsedCommandLineBorderStyle" TargetType="Border">
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="CornerRadius" Value="1" />
+                        <Setter Property="Background" Value="{ThemeResource SystemAltMediumLowColor}" />
+                        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
+                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                    </Style>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
                     <Style x:Key="CommandPaletteBackground" TargetType="Grid">
@@ -110,6 +131,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Key="KeyChordBorderStyle" TargetType="Border"/>
                     <Style x:Key="KeyChordTextBlockStyle" TargetType="TextBlock"/>
 
+                    <!--  ParsedCommandLineText styles (use XAML defaults for High Contrast theme) -->
+                    <Style x:Key="ParsedCommandLineBoderStyle" TargetType="Border"/>
+                    <Style x:Key="ParsedCommandLineTextBlockStyle" TargetType="TextBlock"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
@@ -227,6 +251,22 @@ the MIT License. See LICENSE in the project root for license information. -->
                 Grid.Row="1"
                 Text="{x:Bind NoMatchesText, Mode=OneWay}">
             </TextBlock>
+
+            <Border
+                Grid.Row="1"
+                Visibility="{x:Bind ParsedCommandLineText, Mode=OneWay, Converter={StaticResource ParsedCommandLineTextVisibilityConverter}}"
+                Style="{ThemeResource ParsedCommandLineBorderStyle}"
+		        Padding="16"
+		        HorizontalAlignment="Stretch"
+                VerticalAlignment="Center">
+
+                <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                    <TextBlock
+                        FontStyle="Italic"
+                        TextWrapping="Wrap"
+                        Text="{x:Bind ParsedCommandLineText, Mode=OneWay}"/>
+                </ScrollViewer>
+            </Border>
 
             <ListView
                 Grid.Row="2"

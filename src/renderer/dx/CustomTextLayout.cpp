@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "CustomTextLayout.h"
+#include "CustomTextRenderer.h"
 
 #include <wrl.h>
 #include <wrl/client.h>
@@ -19,19 +20,27 @@ using namespace Microsoft::Console::Render;
 // - factory - DirectWrite factory reference in case we need other DirectWrite objects for our layout
 // - analyzer - DirectWrite text analyzer from the factory that has been cached at a level above this layout (expensive to create)
 // - format - The DirectWrite format object representing the size and other text properties to be applied (by default) to a layout
+// - formatItalic - The italic variant of the format object representing the size and other text properties for italic text
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
+// - fontItalic - The italic variant of the font face to use while calculating layout for italic text
 // - width - The count of pixels available per column (the expected pixel width of every column)
 // - boxEffect - Box drawing scaling effects that are cached for the base font across layouts.
 CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                                    gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
                                    gsl::not_null<IDWriteTextFormat*> const format,
+                                   gsl::not_null<IDWriteTextFormat*> const formatItalic,
                                    gsl::not_null<IDWriteFontFace1*> const font,
+                                   gsl::not_null<IDWriteFontFace1*> const fontItalic,
                                    size_t const width,
                                    IBoxDrawingEffect* const boxEffect) :
     _factory{ factory.get() },
     _analyzer{ analyzer.get() },
     _format{ format.get() },
+    _formatItalic{ formatItalic.get() },
+    _formatInUse{ format.get() },
     _font{ font.get() },
+    _fontItalic{ fontItalic.get() },
+    _fontInUse{ font.get() },
     _boxDrawingEffect{ boxEffect },
     _localeName{},
     _numberSubstitution{},
@@ -113,6 +122,9 @@ CATCH_RETURN()
     RETURN_HR_IF_NULL(E_INVALIDARG, columns);
     *columns = 0;
 
+    _formatInUse = _format.Get();
+    _fontInUse = _font.Get();
+
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
@@ -144,6 +156,10 @@ CATCH_RETURN()
                                                                FLOAT originX,
                                                                FLOAT originY) noexcept
 {
+    const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
+    _formatInUse = drawingContext->useItalicFont ? _formatItalic.Get() : _format.Get();
+    _fontInUse = drawingContext->useItalicFont ? _fontItalic.Get() : _font.Get();
+
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
@@ -183,7 +199,7 @@ CATCH_RETURN()
         const HRESULT hr = _analyzer->GetTextComplexity(
             _text.c_str(),
             textLength,
-            _font.Get(),
+            _fontInUse,
             &isTextSimple,
             &uiLengthRead,
             &_glyphIndices.at(glyphStart));
@@ -240,7 +256,7 @@ CATCH_RETURN()
         {
             if (!run.fontFace)
             {
-                run.fontFace = _font;
+                run.fontFace = _fontInUse;
             }
         }
 
@@ -360,7 +376,7 @@ CATCH_RETURN()
 
             USHORT designUnitsPerEm = metrics.designUnitsPerEm;
 
-            RETURN_IF_FAILED(_font->GetDesignGlyphAdvances(
+            RETURN_IF_FAILED(_fontInUse->GetDesignGlyphAdvances(
                 textLength,
                 &_glyphIndices.at(glyphStart),
                 &_glyphDesignUnitAdvances.at(glyphStart),
@@ -368,7 +384,7 @@ CATCH_RETURN()
 
             for (size_t i = glyphStart; i < _glyphAdvances.size(); i++)
             {
-                _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _format->GetFontSize() * run.fontScale;
+                _glyphAdvances.at(i) = (float)_glyphDesignUnitAdvances.at(i) / designUnitsPerEm * _formatInUse->GetFontSize() * run.fontScale;
             }
 
             // Set all the clusters as sequential. In a simple run, we're going 1 to 1.
@@ -433,7 +449,7 @@ CATCH_RETURN()
         _glyphAdvances.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphAdvances.size()));
         _glyphOffsets.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphOffsets.size()));
 
-        const auto fontSizeFormat = _format->GetFontSize();
+        const auto fontSizeFormat = _formatInUse->GetFontSize();
         const auto fontSize = fontSizeFormat * run.fontScale;
 
         hr = _analyzer->GetGlyphPlacements(
@@ -913,7 +929,7 @@ CATCH_RETURN();
         // internal storage representation into something that matches DWrite's structures.
         DWRITE_GLYPH_RUN glyphRun;
         glyphRun.bidiLevel = run.bidiLevel;
-        glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
+        glyphRun.fontEmSize = _formatInUse->GetFontSize() * run.fontScale;
         glyphRun.fontFace = run.fontFace.Get();
         glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
         glyphRun.glyphCount = run.glyphCount;
@@ -1226,7 +1242,7 @@ CATCH_RETURN();
     {
         // Get the font fallback first
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
-        if (FAILED(_format.As(&format1)))
+        if (FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format1))))
         {
             // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
             return S_FALSE;
@@ -1318,7 +1334,7 @@ CATCH_RETURN();
             }
             else
             {
-                run.fontFace = _font;
+                run.fontFace = _fontInUse;
             }
 
             // Store the font scale as well.
@@ -1458,7 +1474,7 @@ try
         else
         {
             ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> eff;
-            RETURN_IF_FAILED(s_CalculateBoxEffect(_format.Get(), _width, run.fontFace.Get(), run.fontScale, &eff));
+            RETURN_IF_FAILED(s_CalculateBoxEffect(_formatInUse, _width, run.fontFace.Get(), run.fontScale, &eff));
 
             // store data in the run
             run.drawingEffect = std::move(eff);

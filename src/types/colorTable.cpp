@@ -468,6 +468,13 @@ void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
     std::copy(campbellColorTable.begin(), campbellColorTable.end(), table.begin());
 }
 
+void Utils::InitializeCampbellColorTable(const gsl::span<til::color> table)
+{
+    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
+
+    std::copy(campbellColorTable.begin(), campbellColorTable.end(), table.begin());
+}
+
 // Function Description:
 // - Fill the first 16 entries of a given color table with the Campbell color
 //   scheme, in the Windows BGR order.

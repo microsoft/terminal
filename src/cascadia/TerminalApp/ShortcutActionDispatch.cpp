@@ -176,9 +176,9 @@ namespace winrt::TerminalApp::implementation
             _ResetFontSizeHandlers(*this, eventArgs);
             break;
         }
-        case ShortcutAction::ToggleRetroEffect:
+        case ShortcutAction::ToggleShaderEffects:
         {
-            _ToggleRetroEffectHandlers(*this, eventArgs);
+            _ToggleShaderEffectsHandlers(*this, eventArgs);
             break;
         }
         case ShortcutAction::ToggleFocusMode:

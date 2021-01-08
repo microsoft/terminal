@@ -24,8 +24,8 @@ ADDREF
 addressof
 ADDSTRING
 ADDTOOL
-AEnd
 aef
+AEnd
 AFew
 AFill
 AFX
@@ -168,7 +168,6 @@ BOLDFONT
 BOOLIFY
 bools
 boostorg
-Bopomofo
 Borland
 BOTTOMLEFT
 BOTTOMRIGHT
@@ -248,7 +247,6 @@ charset
 CHARSETINFO
 chcp
 checkbox
-Checkboxes
 chh
 Childitem
 chk
@@ -384,7 +382,6 @@ CORESYSTEM
 cotaskmem
 countof
 cout
-CParams
 CPG
 cpinfo
 CPINFOEX
@@ -413,7 +410,6 @@ csbi
 csbiex
 csharp
 CSHORT
-cso
 csproj
 Csr
 csrmsg
@@ -426,7 +422,6 @@ cstdlib
 cstr
 cstring
 cstyle
-CSV
 CSwitch
 CText
 ctime
@@ -832,6 +827,7 @@ fuzzwrapper
 fwdecl
 fwe
 fwlink
+GAUSSIAN
 gb
 gci
 gcx
@@ -839,7 +835,6 @@ gcy
 gdi
 gdip
 gdirenderer
-GENERATEPROJECTPRIFILE
 geopol
 GETALIAS
 GETALIASES
@@ -909,6 +904,7 @@ Goldmine
 gonce
 Google
 goutput
+GPUs
 Gravell's
 grayscale
 GREENSCROLL
@@ -954,7 +950,6 @@ hfont
 hglobal
 hh
 hhh
-hhhh
 hhook
 hhx
 HIBYTE
@@ -981,7 +976,6 @@ hmod
 hmodule
 hmon
 HMONITOR
-Horiz
 HORZ
 hostable
 hostlib
@@ -1039,6 +1033,7 @@ IData
 IDCANCEL
 IDD
 IDesktop
+IDevice
 IDictionary
 IDISHWND
 IDisposable
@@ -1093,10 +1088,8 @@ INITMENU
 inkscape
 inl
 INLINEPREFIX
-Inlines
 INotify
 inout
-INPATHROOT
 inproc
 Inputkeyinfo
 INPUTPROCESSORPROFILE
@@ -1338,7 +1331,6 @@ mailto
 majorly
 makeappx
 MAKEINTRESOURCE
-MAKEINTRESOURCEA
 MAKEINTRESOURCEW
 MAKELANGID
 MAKELONG
@@ -1411,7 +1403,6 @@ monostate
 MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
-mousemode
 MOUSEMOVE
 mousewheel
 MOVESTART
@@ -1433,7 +1424,6 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
-msixbundle
 msrc
 msvcrt
 MSVS
@@ -1591,6 +1581,7 @@ OACR
 oauth
 objbase
 ocf
+ocolor
 odl
 oem
 oemcp
@@ -1789,6 +1780,7 @@ pragma
 prc
 prealigned
 prebuilt
+precendence
 precomp
 prect
 prefast
@@ -1882,10 +1874,12 @@ QWER
 qzmp
 RAII
 RALT
+rasterbar
 rasterfont
 rasterization
 rawinput
 RAWPATH
+raytracers
 razzlerc
 rbar
 rbegin
@@ -1951,7 +1945,6 @@ Replymessage
 repositorypath
 rescap
 Resequence
-Reserialize
 RESETCONTENT
 resheader
 resizable
@@ -1978,7 +1971,6 @@ rgpwsz
 rgrc
 rgs
 rgui
-rgus
 rgw
 rgwch
 rhs
@@ -2112,7 +2104,6 @@ sfi
 SFINAE
 SFUI
 sgr
-SGRXY
 SHCo
 shcore
 shellapi
@@ -2284,7 +2275,6 @@ TCI
 tcome
 tcommandline
 tcommands
-tcon
 TDelegated
 TDP
 TEAMPROJECT
@@ -2296,6 +2286,7 @@ tellp
 telnet
 telnetd
 templated
+teraflop
 terminalcore
 TERMINALSCROLLING
 terminfo
@@ -2429,8 +2420,6 @@ ucdxml
 uch
 UCHAR
 ucs
-UDK
-UDKs
 UDM
 uer
 uget
@@ -2453,7 +2442,6 @@ UNCPRIORITY
 undef
 Unescape
 unexpand
-Unfocus
 unhighlighting
 unhosted
 unicode
@@ -2778,14 +2766,12 @@ XColors
 xcopy
 XCount
 xdy
-xe
 XEncoding
 xes
 Xes
 XES
 xff
 XFile
-xlang
 XManifest
 XMath
 XMFLOAT
@@ -2810,6 +2796,7 @@ xvalue
 XVIRTUALSCREEN
 XWalk
 xy
+Xzn
 yact
 YAML
 YCast
@@ -2836,7 +2823,6 @@ zu
 zxcvbnm
 zy
 AAAAABBBBBBCCC
-AAAAA
 BBBBBCCC
 abcd
 LPMINMAXINFO

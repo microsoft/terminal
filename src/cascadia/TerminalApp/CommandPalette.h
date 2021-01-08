@@ -5,6 +5,7 @@
 
 #include "FilteredCommand.h"
 #include "CommandPalette.g.h"
+#include "AppCommandlineArgs.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
@@ -31,7 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
         void SetTabs(Windows::Foundation::Collections::IVector<winrt::TerminalApp::TabBase> const& tabs, const bool clearList);
-        void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
+        void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
 
         void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
 
@@ -46,7 +47,6 @@ namespace winrt::TerminalApp::implementation
 
         // Tab Switcher
         void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
-        void SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherMode order);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -54,6 +54,7 @@ namespace winrt::TerminalApp::implementation
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, PrefixCharacter, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ControlName, _PropertyChangedHandlers);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParentCommandName, _PropertyChangedHandlers);
+        OBSERVABLE_GETSET_PROPERTY(winrt::hstring, ParsedCommandLineText, _PropertyChangedHandlers);
 
         TYPED_EVENT(SwitchToTabRequested, winrt::TerminalApp::CommandPalette, winrt::TerminalApp::TabBase);
         TYPED_EVENT(CommandLineExecutionRequested, winrt::TerminalApp::CommandPalette, winrt::hstring);
@@ -107,7 +108,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring _getTrimmedInput();
         void _evaluatePrefix();
 
-        Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
+        Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
 
         // Tab Switcher
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _tabActions{ nullptr };
@@ -128,6 +129,7 @@ namespace winrt::TerminalApp::implementation
 
         static constexpr int CommandLineHistoryLength = 10;
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
+        ::TerminalApp::AppCommandlineArgs _appArgs;
 
         friend class TerminalAppLocalTests::TabTests;
     };
