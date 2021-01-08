@@ -1045,7 +1045,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::Direction::Left, myArgs.Direction());
+            VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.FocusDirection());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1062,7 +1062,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::Direction::Right, myArgs.Direction());
+            VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.FocusDirection());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1079,7 +1079,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::Direction::Up, myArgs.Direction());
+            VERIFY_ARE_EQUAL(FocusDirection::Up, myArgs.FocusDirection());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1096,7 +1096,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::Direction::Down, myArgs.Direction());
+            VERIFY_ARE_EQUAL(FocusDirection::Down, myArgs.FocusDirection());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1120,14 +1120,14 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::Direction::Left, myArgs.Direction());
+            VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.FocusDirection());
 
             actionAndArgs = appArgs._startupActions.at(2);
             VERIFY_ARE_EQUAL(ShortcutAction::MoveFocus, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             myArgs = actionAndArgs.Args().try_as<MoveFocusArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(winrt::TerminalApp::Direction::Right, myArgs.Direction());
+            VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.FocusDirection());
         }
     }
 
