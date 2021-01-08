@@ -42,7 +42,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
     USES_RESOURCE(L"FailedToWriteToSettings"),
-    USES_RESOURCE(L"InvalidColorSchemeInCmd")
+    USES_RESOURCE(L"InvalidColorSchemeInCmd"),
+    USES_RESOURCE(L"InvalidSplitSize")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -1109,6 +1110,19 @@ namespace winrt::TerminalApp::implementation
         }
 
         return result;
+    }
+
+    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
+            _root->ProcessStartupActions(actions, false);
+        }
+
+        return result; // TODO:MG does a return value make sense
     }
 
     // Method Description:

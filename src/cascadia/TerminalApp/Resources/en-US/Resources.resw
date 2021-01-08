@@ -249,6 +249,10 @@
     <value>Found a command with an invalid "colorScheme". This command will be ignored. Make sure that when setting a "colorScheme", the value matches the "name" of a color scheme in the "schemes" list.</value>
     <comment>{Locked="\"colorScheme\"","\"name\"","\"schemes\""}</comment>
   </data>
+  <data name="InvalidSplitSize" xml:space="preserve">
+    <value>Found a "splitPane" command with an invalid "size". This command will be ignored. Make sure the size is between 0 and 1, exclusive.</value>
+    <comment>{Locked="\"splitPane\"","\"size\""}</comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
@@ -267,6 +271,9 @@
   </data>
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
+  </data>
+  <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
+    <value>Specify the size as a percentage of the parent pane. Valid values are between (0,1), exclusive.</value>
   </data>
   <data name="CmdNewTabDesc" xml:space="preserve">
     <value>Create a new tab</value>

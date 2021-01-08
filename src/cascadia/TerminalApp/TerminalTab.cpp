@@ -51,6 +51,8 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        _UpdateHeaderControlMaxWidth();
+
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
@@ -74,6 +76,33 @@ namespace winrt::TerminalApp::implementation
 
         UpdateTitle();
         _RecalculateAndApplyTabColor();
+    }
+
+    winrt::fire_and_forget TerminalTab::_UpdateHeaderControlMaxWidth()
+    {
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+            if (settings.GlobalSettings().TabWidthMode() == winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::SizeToContent)
+            {
+                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthTitleLength);
+            }
+            else
+            {
+                tab->_headerControl.RenamerMaxWidth(HeaderRenameBoxWidthDefault);
+            }
+        }
+    }
+
+    void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
+    {
+        WUX::Controls::ToolTip toolTip{};
+        toolTip.Content(winrt::box_value(tabTitle));
+        WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 
     // Method Description:
@@ -163,6 +192,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
+
+        // The tabWidthMode may have changed, update the header control accordingly
+        _UpdateHeaderControlMaxWidth();
     }
 
     // Method Description:
@@ -213,17 +245,19 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            if (hide)
+            if (tab->_iconHidden != hide)
             {
-                Icon({});
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
-                tab->_iconHidden = true;
-            }
-            else
-            {
-                Icon(_lastIconPath);
-                TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
-                tab->_iconHidden = false;
+                if (hide)
+                {
+                    Icon({});
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX({}));
+                }
+                else
+                {
+                    Icon(_lastIconPath);
+                    TabViewItem().IconSource(IconPathConverter::IconSourceMUX(_lastIconPath));
+                }
+                tab->_iconHidden = hide;
             }
         }
     }
@@ -265,6 +299,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
+            _SetToolTip(activeTitle);
         }
     }
 
@@ -287,17 +322,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Determines whether the focused pane has sufficient space to be split.
-    // Arguments:
-    // - splitType: The type of split we want to create.
-    // Return Value:
-    // - True if the focused pane can be split. False otherwise.
-    bool TerminalTab::CanSplitPane(SplitState splitType)
-    {
-        return _activePane->CanSplit(splitType);
-    }
-
-    // Method Description:
     // - Split the focused pane in our tree of panes, and place the
     //   given TermControl into the newly created pane.
     // Arguments:
@@ -306,11 +330,14 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitState splitType, const GUID& profile, TermControl& control)
+    void TerminalTab::SplitPane(SplitState splitType,
+                                const float splitSize,
+                                const GUID& profile,
+                                TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
-        auto [first, second] = _activePane->Split(splitType, profile, control);
+        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
         first->Id(activePaneId);
         second->Id(_nextPaneId);
         ++_nextPaneId;
@@ -936,9 +963,11 @@ namespace winrt::TerminalApp::implementation
         return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
     }
 
-    bool TerminalTab::PreCalculateCanSplit(SplitState splitType, winrt::Windows::Foundation::Size availableSpace) const
+    bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
+                                           const float splitSize,
+                                           winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateCanSplit(_activePane, splitType, availableSpace).value_or(false);
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
     }
 
     // Method Description:

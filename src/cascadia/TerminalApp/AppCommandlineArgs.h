@@ -91,6 +91,7 @@ private:
 
     bool _splitVertical{ false };
     bool _splitHorizontal{ false };
+    float _splitPaneSize{ 0.5f };
 
     int _focusTabIndex{ -1 };
     bool _focusNextTab{ false };

@@ -22,8 +22,10 @@ namespace Microsoft::Console::Render
 
         CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
                          gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
-                         gsl::not_null<IDWriteTextFormat*> const format,
-                         gsl::not_null<IDWriteFontFace1*> const font,
+                         gsl::not_null<IDWriteTextFormat*> const normalFormat,
+                         gsl::not_null<IDWriteTextFormat*> const italicFormat,
+                         gsl::not_null<IDWriteFontFace1*> const normalFont,
+                         gsl::not_null<IDWriteFontFace1*> const italicFont,
                          size_t const width,
                          IBoxDrawingEffect* const boxEffect);
 
@@ -160,11 +162,15 @@ namespace Microsoft::Console::Render
         // DirectWrite analyzer
         const ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _analyzer;
 
-        // DirectWrite text format
+        // DirectWrite text formats
         const ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _format;
+        const ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _formatItalic;
+        IDWriteTextFormat* _formatInUse;
 
-        // DirectWrite font face
+        // DirectWrite font faces
         const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
+        const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _fontItalic;
+        IDWriteFontFace1* _fontInUse;
 
         // Box drawing effect
         const ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;

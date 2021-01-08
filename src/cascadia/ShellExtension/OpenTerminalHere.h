@@ -46,6 +46,9 @@ struct __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
     STDMETHODIMP GetCanonicalName(GUID* pguidCommandName);
     STDMETHODIMP EnumSubCommands(IEnumExplorerCommand** ppEnum);
 #pragma endregion
+
+private:
+    std::wstring _GetPathFromExplorer() const;
 };
 
 CoCreatableClass(OpenTerminalHere);

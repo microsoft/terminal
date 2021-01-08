@@ -334,6 +334,11 @@ void GlobalAppSettings::AddColorScheme(const Model::ColorScheme& scheme)
     _colorSchemes.Insert(scheme.Name(), scheme);
 }
 
+void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
+{
+    _colorSchemes.TryRemove(schemeName);
+}
+
 // Method Description:
 // - Return the warnings that we've collected during parsing the JSON for the
 //   keybindings. It's possible that the user provided keybindings have some
