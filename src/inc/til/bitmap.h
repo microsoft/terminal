@@ -466,7 +466,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             static std::pmr::unsynchronized_pool_resource pool;
             return pool;
         }
-        
+
         mutable std::optional<std::pmr::vector<til::rectangle>> _runs;
 
 #ifdef UNIT_TESTING
