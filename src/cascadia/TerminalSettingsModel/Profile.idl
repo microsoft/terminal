@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "IAppearanceConfig.idl";
-import "AppearanceConfig.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
