@@ -185,15 +185,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return const_iterator(_bits, _sz, _sz.area());
         }
 
-        const std::vector<til::rectangle>& runs() const
+        const gsl::span<const til::rectangle> runs() const
         {
             // If we don't have cached runs, rebuild.
             if (!_runs.has_value())
             {
-                _runs.emplace(begin(), end());
+                _runs.emplace(begin(), end(), &_getPool());
             }
 
-            // Return a reference to the runs.
+            // Return the runs.
             return _runs.value();
         }
 
@@ -454,7 +454,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         til::rectangle _rc;
         dynamic_bitset<> _bits;
 
-        mutable std::optional<std::vector<til::rectangle>> _runs;
+        // Memory pooling to save alloc/free work to the OS.
+        // The optional below will destroy the internal vector when it is reset.
+        // But that will do a whole free to the OS when we know we're probably going to rebuild
+        // it very shortly for the new set of runs. We could make a pair bool/vector
+        // or continue to use the optional with a PMR vector inside.
+        // It's static because we only need one pool to manage memory
+        // for all vectors of rectangles no matter which bitmap instance is making them.
+        static std::pmr::unsynchronized_pool_resource& _getPool()
+        {
+            static std::pmr::unsynchronized_pool_resource pool;
+            return pool;
+        }
+        
+        mutable std::optional<std::pmr::vector<til::rectangle>> _runs;
 
 #ifdef UNIT_TESTING
         friend class ::BitmapTests;
