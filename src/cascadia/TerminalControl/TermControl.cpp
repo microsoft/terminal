@@ -2061,9 +2061,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             begin = pos;
         }
 
+        // If we entered the while loop even once, begin would be non-zero
+        // (because we set begin = pos right after incrementing pos)
+        // So, if begin is still zero at this point it means we never found a newline
+        // and we can just write the original string
         if (begin == 0)
         {
-            // we did not find a newline, just go ahead and write the original string
             _connection.WriteInput(wstr);
         }
         else
