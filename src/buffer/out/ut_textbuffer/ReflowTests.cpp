@@ -105,7 +105,7 @@ namespace
                 TestBuffer{
                     { 5, 5 }, // reduce width by 1
                     {
-                        { L"ABCDE", true_due_to_exact_wrap_bug },
+                        { L"ABCDE", true },
                         { L"F$   ", false }, // [BUG] EXACT WRAP. $ should be alone on next line.
                         { L"     ", false },
                         { L"     ", false },
@@ -339,10 +339,306 @@ namespace
                 },
             },
         },
+        TestCase{
+            // The cursor is not found during character insertion.
+            // Instead, it is found off the right edge of the text. This triggers
+            // a separate cursor found codepath in the original algorithm.
+            L"SBCS, cursor off rightmost char in non-wrapped line",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        { L"$     ", false },
+                        { L"      ", false },
+                        { L"      ", false },
+                        { L"      ", false },
+                    },
+                    { 1, 1 } // cursor *after* $
+                },
+                TestBuffer{
+                    { 5, 5 }, // reduce width by 1
+                    {
+                        { L"ABCDE", true },
+                        { L"F$   ", false }, // [BUG] EXACT WRAP. $ should be alone on next line.
+                        { L"     ", false },
+                        { L"     ", false },
+                        { L"     ", false },
+                    },
+                    { 2, 1 } // cursor follows space after $ to next line
+                },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor off rightmost char in wrapped line, which is then pushed off bottom",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", true },
+                        { L"GHIJKL", true },
+                        { L"MNOPQR", true },
+                        { L"STUVWX", true },
+                        { L"YZ0 $ ", false },
+                    },
+                    { 5, 4 } // cursor *after* $
+                },
+                TestBuffer{
+                    { 5, 5 }, // reduce width by 1
+                    {
+                        { L"FGHIJ", true },
+                        { L"KLMNO", true },
+                        { L"PQRST", true },
+                        { L"UVWXY", true },
+                        { L"Z0 $ ", false },
+                    },
+                    { 4, 4 } // cursor follows space after $ to newly introduced bottom line
+                },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor off in space to far right of text (end of buffer content)",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        //       v cursor
+                        { L"$     ", false },
+                        //       ^ cursor
+                        { L"      ", false },
+                        { L"      ", false },
+                        { L"      ", false },
+                    },
+                    { 5, 1 } // cursor in space far after $
+                },
+                TestBuffer{
+                    { 5, 5 }, // reduce width by 1
+                    {
+                        { L"ABCDE", true },
+                        { L"F$   ", true }, // [BUG] This line is marked wrapped, and I do not know why
+                        //   v cursor
+                        { L"     ", false },
+                        //   ^ cursor
+                        { L"     ", false },
+                        { L"     ", false },
+                    },
+                    { 1, 2 } // cursor stays same linear distance from $
+                },
+                TestBuffer{
+                    { 6, 5 }, // grow back to original size
+                    {
+                        { L"ABCDEF", true_due_to_exact_wrap_bug },
+                        //      v cursor [BUG] cursor does not retain linear distance from $
+                        { L"$     ", false },
+                        //      ^ cursor
+                        { L"      ", false },
+                        { L"      ", false },
+                        { L"      ", false },
+                    },
+                    { 4, 1 } // cursor stays same linear distance from $
+                },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor off in space to far right of text (middle of buffer content)",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        //       v cursor
+                        { L"$     ", false },
+                        //       ^ cursor
+                        { L"BLAH  ", false },
+                        { L"BLAH  ", false },
+                        { L"      ", false },
+                    },
+                    { 5, 1 } // cursor in space far after $
+                },
+                TestBuffer{
+                    { 5, 5 }, // reduce width by 1
+                    {
+                        { L"ABCDE", true },
+                        { L"F$   ", false },
+                        { L"BLAH ", false },
+                        { L"BLAH ", true }, // [BUG] this line wraps, no idea why
+                        //  v cursor [BUG] cursor erroneously moved to end of all content
+                        { L"     ", false },
+                        //  ^ cursor
+                    },
+                    { 0, 4 } },
+                TestBuffer{
+                    { 6, 5 }, // grow back to original size
+                    {
+                        { L"ABCDEF", true },
+                        { L"$     ", false },
+                        { L"BLAH  ", false },
+                        //       v cursor [BUG] cursor is pulled up to previous line because it was marked wrapped
+                        { L"BLAH  ", false },
+                        //       ^ cursor
+                        { L"      ", false },
+                    },
+                    { 5, 3 } },
+            },
+        },
+        TestCase{
+            // Shrinking the buffer this much forces a multi-line wrap before the cursor
+            L"SBCS, cursor off in space to far right of text (end of buffer content), aggressive shrink",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        //       v cursor
+                        { L"$     ", false },
+                        //       ^ cursor
+                        { L"      ", false },
+                        { L"      ", false },
+                        { L"      ", false },
+                    },
+                    { 5, 1 } // cursor in space far after $
+                },
+                TestBuffer{
+                    { 2, 5 }, // reduce width aggressively
+                    {
+                        { L"CD", true },
+                        { L"EF", true },
+                        { L"$ ", true },
+                        { L"  ", true },
+                        //   v cursor
+                        { L"  ", false },
+                        //   ^ cursor
+                    },
+                    { 1, 4 } },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor off in space to far right of text (end of buffer content), fully wrapped, aggressive shrink",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", true },
+                        //       v cursor
+                        { L"$     ", true },
+                        //       ^ cursor
+                        { L"      ", true },
+                        { L"      ", true },
+                        { L"      ", true },
+                    },
+                    { 5, 1 } // cursor in space far after $
+                },
+                TestBuffer{
+                    { 2, 5 }, // reduce width aggressively
+                    {
+                        { L"EF", true },
+                        { L"$ ", true },
+                        { L"  ", true },
+                        { L"  ", true },
+                        //   v cursor [BUG] cursor does not maintain linear distance from $
+                        { L"  ", false },
+                        //   ^ cursor
+                    },
+                    { 1, 4 } },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor off in space to far right of text (middle of buffer content), fully wrapped, aggressive shrink",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", true },
+                        //       v cursor
+                        { L"$     ", true },
+                        //       ^ cursor
+                        { L"      ", true },
+                        { L"      ", true },
+                        { L"     Q", true },
+                    },
+                    { 5, 1 } // cursor in space far after $
+                },
+                TestBuffer{
+                    { 2, 5 }, // reduce width aggressively
+                    {
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L" Q", true },
+                        //   v cursor [BUG] cursor jumps to end of world
+                        { L"  ", false }, // POTENTIAL [BUG] a whole new blank line is added for the cursor
+                        //   ^ cursor
+                    },
+                    { 1, 4 } },
+            },
+        },
+        TestCase{
+            L"SBCS, cursor off in space to far right of text (middle of buffer content), partially wrapped, aggressive shrink",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        //       v cursor
+                        { L"$     ", false },
+                        //       ^ cursor
+                        { L"      ", false },
+                        { L"      ", true },
+                        { L"     Q", true },
+                    },
+                    { 5, 1 } // cursor in space far after $
+                },
+                TestBuffer{
+                    { 2, 5 }, // reduce width aggressively
+                    {
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L" Q", true },
+                        //  v  cursor [BUG] cursor jumps to different place than fully wrapped case
+                        { L"  ", false },
+                        //  ^  cursor
+                    },
+                    { 0, 4 } },
+            },
+        },
+        TestCase{
+            // This triggers the cursor being walked forward w/ newlines to maintain
+            // distance from the last char in the buffer
+            L"SBCS, cursor at end of buffer, otherwise same as previous test",
+            {
+                TestBuffer{
+                    { 6, 5 },
+                    {
+                        { L"ABCDEF", false },
+                        { L"$     ", false },
+                        { L"     Q", true },
+                        { L"      ", true },
+                        //       v cursor
+                        { L"      ", true },
+                        //       ^ cursor
+                    },
+                    { 5, 4 } // cursor at end of buffer
+                },
+                TestBuffer{
+                    { 2, 5 }, // reduce width aggressively
+                    {
+                        { L"  ", true },
+                        { L"  ", true },
+                        { L" Q", true },
+                        { L"  ", false },
+                        //  v  cursor [BUG] cursor loses linear distance from Q; is this important?
+                        { L"  ", false },
+                        //  ^  cursor
+                    },
+                    { 0, 4 } },
+            },
+        },
     };
 
 #pragma region TAEF hookup for the test case array above
-    struct TaefDataRow : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataRow>
+    struct ArrayIndexTaefAdapterRow : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataRow>
     {
         HRESULT RuntimeClassInitialize(const size_t index)
         {
@@ -383,13 +679,13 @@ namespace
         size_t _index;
     };
 
-    struct TaefDataSource : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataSource>
+    struct ArrayIndexTaefAdapterSource : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataSource>
     {
         STDMETHODIMP Advance(IDataRow** ppDataRow) override
         {
             if (_index < std::extent<decltype(testCases)>::value)
             {
-                Microsoft::WRL::MakeAndInitialize<TaefDataRow>(ppDataRow, _index++);
+                Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
             }
             else
             {
@@ -428,7 +724,7 @@ namespace
 
 extern "C" HRESULT __declspec(dllexport) __cdecl ReflowTestDataSource(IDataSource** ppDataSource, void*)
 {
-    auto source{ Microsoft::WRL::Make<TaefDataSource>() };
+    auto source{ Microsoft::WRL::Make<ArrayIndexTaefAdapterSource>() };
     return source.CopyTo(ppDataSource);
 }
 
@@ -490,14 +786,15 @@ class ReflowTests
         size_t i{};
         for (const auto& testRow : testBuffer.rows)
         {
+            NoThrowString indexString;
             const auto& row{ buffer.GetRowByOffset(i) };
 
             const auto& charRow{ row.GetCharRow() };
 
-            VERIFY_ARE_EQUAL(testRow.wrap, charRow.WasWrapForced());
+            indexString.Format(L"[Row %d]", i);
+            VERIFY_ARE_EQUAL(testRow.wrap, charRow.WasWrapForced(), indexString);
 
             size_t j{};
-            NoThrowString indexString;
             for (auto it{ charRow.begin() }; it != charRow.end(); ++it)
             {
                 indexString.Format(L"[Cell %d, %d; Text line index %d]", it - charRow.begin(), i, j);
@@ -518,8 +815,6 @@ class ReflowTests
                     VERIFY_IS_TRUE(it->DbcsAttr().IsSingle(), indexString);
                 }
 
-                // casts below are so WEX knows how to log them
-                //VERIFY_ARE_EQUAL((unsigned int)ch, (unsigned int)it->Char(), indexString);
                 VERIFY_ARE_EQUAL(ch, it->Char(), indexString);
                 j++;
             }
@@ -537,7 +832,7 @@ class ReflowTests
         WEX::TestExecution::SetVerifyOutput verifyOutputScope{ WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures };
 
         unsigned int i{};
-        TestData::TryGetValue(L"index", i); // index is produced by the TaefDataSource above
+        TestData::TryGetValue(L"index", i); // index is produced by the ArrayIndexTaefAdapterSource above
         const auto& testCase{ testCases[i] };
         Log::Comment(NoThrowString().Format(L"[%zu.0] Test case \"%.*s\"", i, testCase.name.size(), testCase.name.data()));
 
