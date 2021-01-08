@@ -7,12 +7,27 @@
 #include "Peasant.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 
-// {06171993-7eb1-4f3e-85f5-8bdd7386cce3}
-constexpr GUID Monarch_clsid{
+// We sure different GUIDs here depending on whether we're running a Release,
+// Preview, or Dev build. This ensures that different installs don't
+// accidentally talk to one another.
+//
+// * Release: {06171993-7eb1-4f3e-85f5-8bdd7386cce3}
+// * Preview: {04221993-7eb1-4f3e-85f5-8bdd7386cce3}
+// * Dev:     {08302020-7eb1-4f3e-85f5-8bdd7386cce3}
+constexpr GUID Monarch_clsid
+{
+#if defined(WT_BRANDING_RELEASE)
     0x06171993,
-    0x7eb1,
-    0x4f3e,
-    { 0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe3 }
+#elif defined(WT_BRANDING_PREVIEW)
+    0x04221993,
+#else
+    0x08302020,
+#endif
+        0x7eb1,
+        0x4f3e,
+    {
+        0x85, 0xf5, 0x8b, 0xdd, 0x73, 0x86, 0xcc, 0xe3
+    }
 };
 
 enum class WindowingBehavior : uint64_t

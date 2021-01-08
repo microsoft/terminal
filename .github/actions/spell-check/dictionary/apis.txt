@@ -59,6 +59,7 @@ OUTLINETEXTMETRICW
 overridable
 PAGESCROLL
 REGCLS
+pmr
 RETURNCMD
 rfind
 roundf
