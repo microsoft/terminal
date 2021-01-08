@@ -47,7 +47,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         com_array<Windows::UI::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Color& value) noexcept;
 
-        static bool ValidateColorScheme(const Json::Value scheme);
+        static bool ValidateColorScheme(const Json::Value& scheme);
 
         GETSET_PROPERTY(winrt::hstring, Name);
         GETSET_COLORPROPERTY(Foreground); // defined in constructor

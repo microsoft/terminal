@@ -40,30 +40,6 @@ static constexpr std::array<std::string_view, 16> TableColors = {
     "brightWhite"
 };
 
-static const std::array<std::string_view, 21> ColorSchemeKeys{
-    "name",
-    "cursorColor",
-    "selectionBackground",
-    "background",
-    "foreground",
-    "black",
-    "blue",
-    "cyan",
-    "green",
-    "purple",
-    "red",
-    "white",
-    "yellow",
-    "brightBlack",
-    "brightBlue",
-    "brightCyan",
-    "brightGreen",
-    "brightPurple",
-    "brightRed",
-    "brightWhite",
-    "brightYellow"
-};
-
 ColorScheme::ColorScheme() :
     _Foreground{ DEFAULT_FOREGROUND_WITH_ALPHA },
     _Background{ DEFAULT_BACKGROUND_WITH_ALPHA },
@@ -194,19 +170,23 @@ void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Windows::UI::Co
 
 // Method Description:
 // - Validates a given color scheme
-// - A color scheme is valid if it contains values for _all_ the fields
+// - A color scheme is valid if it has a name and defines all the colors
 // Arguments:
 // - The color scheme to validate
 // Return Value:
 // - true if the scheme is valid, false otherwise
-bool ColorScheme::ValidateColorScheme(const Json::Value scheme)
+bool ColorScheme::ValidateColorScheme(const Json::Value& scheme)
 {
-    for (const auto& key : ColorSchemeKeys)
+    for (const auto& key : TableColors)
     {
         if (!scheme.isMember(JsonKey(key)))
         {
             return false;
         }
+    }
+    if (!scheme.isMember(JsonKey(NameKey)))
+    {
+        return false;
     }
     return true;
 }

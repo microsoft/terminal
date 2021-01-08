@@ -143,7 +143,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         // created by now, because we're going to check in there for any generators
         // that should be disabled (if the user had any settings.)
         resultPtr->_LoadDynamicProfiles();
-        resultPtr->_LoadProtoExtensions();
+        resultPtr->_LoadFragmentExtensions();
 
         if (!fileHasData)
         {
@@ -397,7 +397,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
 //   modify existing profiles or add new color schemes
 // - If the user settings has any namespaces in the "disabledProfileSources"
 //   property, we'll ensure that the corresponding folders do not get searched
-void CascadiaSettings::_LoadProtoExtensions()
+void CascadiaSettings::_LoadFragmentExtensions()
 {
     // First, accumulate the namespaces the user wants to ignore
     std::unordered_set<std::wstring> ignoredNamespaces;
@@ -411,15 +411,17 @@ void CascadiaSettings::_LoadProtoExtensions()
     }
 
     // Search through the local app data folder
-    if (std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataFolder.data())))
+    const auto expandedLocalAppDataFolderPath = wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataFolder.data());
+    if (std::filesystem::exists(expandedLocalAppDataFolderPath))
     {
-        _ApplyJsonStubsHelper(LocalAppDataFolder, ignoredNamespaces);
+        _ApplyJsonStubsHelper(expandedLocalAppDataFolderPath, ignoredNamespaces);
     }
 
     // Search through the global app data folder
-    if (std::filesystem::exists(wil::ExpandEnvironmentStringsW<std::wstring>(ProgramDataFolder.data())))
+    const auto expandedGlobalAppDataFolderPath = wil::ExpandEnvironmentStringsW<std::wstring>(ProgramDataFolder.data());
+    if (std::filesystem::exists(expandedGlobalAppDataFolderPath))
     {
-        _ApplyJsonStubsHelper(ProgramDataFolder, ignoredNamespaces);
+        _ApplyJsonStubsHelper(expandedGlobalAppDataFolderPath, ignoredNamespaces);
     }
 
     // Search through app extensions
@@ -479,7 +481,7 @@ void CascadiaSettings::_LoadProtoExtensions()
             const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
 
             // Provide the package name as the source
-            _AddOrModifyProfiles(jsonFiles, ext.Package().DisplayName().c_str());
+            _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().DisplayName().c_str());
         }
     }
 }
@@ -491,20 +493,18 @@ void CascadiaSettings::_LoadProtoExtensions()
 // - The set of ignored namespaces
 void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, const std::unordered_set<std::wstring>& ignoredNamespaces)
 {
-    const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
-
     // The json files should be within subdirectories where the subdirectory name is the app name
-    for (const auto& protoExtFolder : std::filesystem::directory_iterator(root))
+    for (const auto& fragmentExtFolder : std::filesystem::directory_iterator(directory))
     {
         // We only want the parent folder name as the source (not the full path)
-        const auto source = protoExtFolder.path().filename().wstring();
+        const auto source = fragmentExtFolder.path().filename().wstring();
 
         // Only apply the stubs if the parent folder name is not in ignored namespaces
         // (also make sure this is a directory for sanity)
-        if (std::filesystem::is_directory(protoExtFolder) && ignoredNamespaces.find(source) == ignoredNamespaces.end())
+        if (std::filesystem::is_directory(fragmentExtFolder) && ignoredNamespaces.find(source) == ignoredNamespaces.end())
         {
-            const auto jsonFiles = _AccumulateJsonFilesInDirectory(protoExtFolder.path().c_str());
-            _AddOrModifyProfiles(jsonFiles, winrt::hstring{ source });
+            const auto jsonFiles = _AccumulateJsonFilesInDirectory(fragmentExtFolder.path().c_str());
+            _ParseAndLayerFragmentFiles(jsonFiles, winrt::hstring{ source });
         }
     }
 }
@@ -519,29 +519,22 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
 {
     std::unordered_set<std::string> jsonFiles;
 
-    // Expand out environment strings like %LOCALAPPDATA% and %ProgramData%
-    const std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
-
-    for (const auto& protoExt : std::filesystem::directory_iterator(root))
+    for (const auto& fragmentExt : std::filesystem::directory_iterator(directory))
     {
-        if (protoExt.path().extension() == jsonExtension)
+        if (fragmentExt.path().extension() == jsonExtension)
         {
-            wil::unique_hfile hFile{ CreateFileW(protoExt.path().c_str(),
+            wil::unique_hfile hFile{ CreateFileW(fragmentExt.path().c_str(),
                                                  GENERIC_READ,
                                                  FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                  nullptr,
                                                  OPEN_EXISTING,
                                                  FILE_ATTRIBUTE_NORMAL,
                                                  nullptr) };
-            if (!hFile)
-            {
-                THROW_LAST_ERROR();
-            }
-            else
-            {
-                const auto fileData = _ReadFile(hFile.get()).value();
-                jsonFiles.emplace(fileData);
-            }
+
+            THROW_LAST_ERROR_IF(!hFile);
+
+            const auto fileData = _ReadFile(hFile.get()).value();
+            jsonFiles.emplace(fileData);
         }
     }
     return jsonFiles;
@@ -553,15 +546,13 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
 // Arguments:
 // - files: the set of json files (each item in the set is the file data)
 // - source: the location the files came from
-void CascadiaSettings::_AddOrModifyProfiles(const std::unordered_set<std::string> files, const winrt::hstring source)
+void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std::string> files, const winrt::hstring source)
 {
     for (const auto& file : files)
     {
         // A file could have many new profiles/many profiles it wants to modify/many new color schemes
         // so we first parse the entire file into one json object
-        Json::Value fullFile;
-
-        _ParseJsonInto(file.data(), fullFile);
+        auto fullFile = _ParseUtf8JsonString(file.data());
 
         if (fullFile.isMember(JsonKey(ProfilesKey)))
         {
@@ -647,7 +638,7 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     // their raw contents again.
     Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
 
-    _ParseJsonInto(fileData, root);
+    root = _ParseUtf8JsonString(fileData);
 
     // If this is the user settings, also store away the original settings
     // string. We'll need to keep it around so we can modify it without
@@ -664,9 +655,11 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
 // - Will ignore leading UTF-8 BOMs
 // Arguments:
 // - fileData: the string to parse as JSON data
-// - result: the location to put the parsed json value into
-void CascadiaSettings::_ParseJsonInto(std::string_view fileData, Json::Value& result)
+// Return value:
+// - the parsed json value
+Json::Value CascadiaSettings::_ParseUtf8JsonString(std::string_view fileData)
 {
+    Json::Value result;
     // Ignore UTF-8 BOM
     auto actualDataStart = fileData.data();
     const auto actualDataEnd = fileData.data() + fileData.size();
@@ -685,6 +678,7 @@ void CascadiaSettings::_ParseJsonInto(std::string_view fileData, Json::Value& re
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
+    return result;
 }
 
 // Method Description:
@@ -790,6 +784,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         // changes to re-create this profile.
         const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
         const auto diff = profileImpl->GenerateStub();
+
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
         // Add the user's indent to the start of each line
