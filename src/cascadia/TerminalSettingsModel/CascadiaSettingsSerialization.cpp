@@ -560,6 +560,8 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
         if (fullFile.isMember(JsonKey(ProfilesKey)))
         {
             // Now we separately get each stub that modifies/adds a profile
+            // We intentionally don't use a const reference here because we modify
+            // the profile stub by giving it a guid so we can call _FindMatchingProfile
             for (auto& profileStub : fullFile[JsonKey(ProfilesKey)])
             {
                 if (profileStub.isMember(JsonKey(UpdatesKey)))
