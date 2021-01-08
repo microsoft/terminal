@@ -203,6 +203,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
+
+                // If a text is selected inside terminal, use it to populate the search box.
+                // If the search box already contains a value, it will be overridden.
+                if (_terminal->IsSelectionActive())
+                {
+                    // Currently we populate the search box only if a single line is selected.
+                    // Empirically, multi-line selection works as well on sample scenarios,
+                    // but since code paths differ, extra work is required to ensure correctness.
+                    const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(true);
+                    if (bufferData.text.size() == 1)
+                    {
+                        const auto selectedLine{ til::at(bufferData.text, 0) };
+                        _searchBox->PopulateTextbox(selectedLine.data());
+                    }
+                }
+
                 _searchBox->SetFocusOnTextbox();
             }
         }
@@ -292,7 +308,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Update DxEngine settings under the lock
             _renderEngine->SetSelectionBackground(_settings.SelectionBackground());
 
-            _renderEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -332,10 +349,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _SendInputToConnection(wstr);
     }
 
-    void TermControl::ToggleRetroEffect()
+    void TermControl::ToggleShaderEffects()
     {
         auto lock = _terminal->LockForWriting();
-        _renderEngine->SetRetroTerminalEffects(!_renderEngine->GetRetroTerminalEffects());
+        // Originally, this action could be used to enable the retro effects
+        // even when they're set to `false` in the settings. If the user didn't
+        // specify a custom pixel shader, manually enable the legacy retro
+        // effect first. This will ensure that a toggle off->on will still work,
+        // even if they currently have retro effect off.
+        if (_settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        {
+            // SetRetroTerminalEffect to true will enable the effect. In this
+            // case, the shader effect will already be disabled (because neither
+            // a pixel shader nor the retro effects were originally requested).
+            // So we _don't_ want to toggle it again below, because that would
+            // toggle it back off.
+            _renderEngine->SetRetroTerminalEffect(true);
+        }
+        else
+        {
+            _renderEngine->ToggleShaderEffects();
+        }
     }
 
     // Method Description:
@@ -600,6 +634,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Called when the renderer triggers a warning. It might do this when it
+    //   fails to find a shader file, or fails to compile a shader. We'll take
+    //   that renderer warning, and display a dialog to the user with and
+    //   appropriate error message. WE'll display the dialog with our
+    //   RaiseNotice event.
+    // Arguments:
+    // - hr: an  HRESULT describing the warning
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TermControl::_RendererWarning(const HRESULT hr)
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            winrt::hstring message;
+            if (HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) == hr ||
+                HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
+                                        _settings.PixelShaderPath()) };
+            }
+            else if (D2DERR_SHADER_COMPILE_FAILED == hr)
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderCompileFailed") }) };
+            }
+            else
+            {
+                message = { fmt::format(std::wstring_view{ RS_(L"UnexpectedRendererError") },
+                                        hr) };
+            }
+
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Warning, std::move(message));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
+    }
+
     void TermControl::_AttachDxgiSwapChainToXaml(IDXGISwapChain1* swapChain)
     {
         auto nativePanel = SwapChainPanel().as<ISwapChainPanelNative>();
@@ -679,7 +752,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             _terminal->CreateFromSettings(_settings, renderTarget);
 
-            dxEngine->SetRetroTerminalEffects(_settings.RetroTerminalEffect());
+            // IMPORTANT! Set this callback up sooner than later. If we do it
+            // after Enable, then it'll be possible to paint the frame once
+            // _before_ the warning handler is set up, and then warnings from
+            // the first paint will be ignored!
+            dxEngine->SetWarningCallback(std::bind(&TermControl::_RendererWarning, this, std::placeholders::_1));
+
+            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
@@ -1208,7 +1288,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetSelectionEnd(terminalPosition, mode);
                     _selectionNeedsToBeCopied = true;
                 }
-                else if (mode == ::Terminal::SelectionExpansionMode::Cell)
+                else if (mode == ::Terminal::SelectionExpansionMode::Cell && !shiftEnabled)
                 {
                     // Single Click: reset the selection and begin a new one
                     _terminal->ClearSelection();
@@ -1264,8 +1344,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto cursorPosition = point.Position();
+        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused)
+        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
         {
             args.Handled(true);
             return;
@@ -1283,8 +1365,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
-
-                const auto cursorPosition = point.Position();
 
                 if (_singleClickTouchdownPos)
                 {
@@ -1327,10 +1407,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
-            const auto terminalPos = _GetTerminalPosition(point.Position());
-            if (terminalPos != _lastHoveredCell)
+
+            if (terminalPosition != _lastHoveredCell)
             {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
+                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
                 if (!uri.empty())
                 {
                     // Update the tooltip with the URI
@@ -1345,7 +1425,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::point startPos{ terminalPosition.X, terminalPosition.Y };
                     const til::size fontSize{ _actualFont.GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
@@ -1355,10 +1435,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                     OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
-                _lastHoveredCell = terminalPos;
+                _lastHoveredCell = terminalPosition;
 
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPos);
+                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition);
+                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition);
                 // If the hyperlink ID changed or the interval changed, trigger a redraw all
                 // (so this will happen both when we move onto a link and when we move off a link)
                 if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))

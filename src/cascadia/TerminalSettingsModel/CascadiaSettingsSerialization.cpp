@@ -73,13 +73,17 @@ static void _CatchRethrowSerializationExceptionWithLocationInfo(std::string_view
         try
         {
             jsonValueAsString = e.jsonValue.asString();
+            if (e.jsonValue.isString())
+            {
+                jsonValueAsString = fmt::format("\"{}\"", jsonValueAsString);
+            }
         }
         catch (...)
         {
             // discard: we're in the middle of error handling
         }
 
-        msg = fmt::format("  Have: \"{}\"\n  Expected: {}", jsonValueAsString, e.expectedType);
+        msg = fmt::format("  Have: {}\n  Expected: {}", jsonValueAsString, e.expectedType);
 
         auto [l, c] = _LineAndColumnFromPosition(settingsString, e.jsonValue.getOffsetStart());
         msg = fmt::format((e.key ? keyedHeader : basicHeader),

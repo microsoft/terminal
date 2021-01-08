@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.TerminalControl
     // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
     [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")] interface IDirectKeyListener {
         Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
-    }
+    };
 
     [flags]
     enum CopyFormat
@@ -103,8 +103,8 @@ namespace Microsoft.Terminal.TerminalControl
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
+        void ToggleShaderEffects();
         void SendInput(String input);
-        void ToggleRetroEffect();
 
         void TaskbarProgressChanged();
         UInt64 TaskbarState { get; };
