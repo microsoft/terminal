@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
     {
         auto weakThis{ get_weak() };
-        
+
         if (auto tab{ weakThis.get() })
         {
             tab->ShowBellIndicator(false);
