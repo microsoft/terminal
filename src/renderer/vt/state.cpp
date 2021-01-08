@@ -50,10 +50,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _deferredCursorPos{ INVALID_COORDS },
     _inResizeRequest{ false },
     _trace{},
-    _bufferLine{},
-    _buffer{},
-    _formatBuffer{},
-    _conversionBuffer{}
+    _bufferLine{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -149,11 +146,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 {
     try
     {
-        // We're likely going to be converting a ton of strings, so we'll use
-        // a buffer string stored on this class so we don't end up alloc/freeing
-        // in a tight loop and wasting a bunch of time and energy on that.
-        ConvertToA(CP_UTF8, wstr, _conversionBuffer);
-        return _Write(_conversionBuffer);
+        const auto converted = ConvertToA(CP_UTF8, wstr);
+        return _Write(converted);
     }
     CATCH_RETURN();
 }
