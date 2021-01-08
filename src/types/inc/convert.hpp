@@ -35,7 +35,7 @@ enum class CodepointWidth : BYTE
                                      const std::wstring_view source);
 
 // These out-param forms of the functions exist so a frequent caller on a hot
-// codepath can hold their string buffer between calls instead of
+// code path can hold their string buffer between calls instead of
 // letting us allocate one for it to be thrown away shortly after.
 [[nodiscard]] void ConvertToW(const UINT codepage,
                               const std::string_view source,
