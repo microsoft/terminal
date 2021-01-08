@@ -41,6 +41,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void KeyMapping::SetKeyBinding(const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs,
                                    const KeyChord& chord)
     {
+        // if the chord is already mapped - clear the mapping
+        if (_keyShortcuts.find(chord) != _keyShortcuts.end())
+        {
+            ClearKeyBinding(chord);
+        }
+
         _keyShortcuts[chord] = actionAndArgs;
         _keyShortcutsByInsertionOrder.push_back(std::make_pair(chord, actionAndArgs));
     }
