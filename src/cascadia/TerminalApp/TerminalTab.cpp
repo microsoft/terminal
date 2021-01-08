@@ -50,11 +50,15 @@ namespace winrt::TerminalApp::implementation
                 tab->SetTabText(title);
             }
         });
-
         // Use our header control as the TabViewItem's header
         TabViewItem().Header(_headerControl);
     }
 
+    // Method Description:
+    // - Called when the timer for the bell indicator in the tab header fires
+    // - Removes the bell indicator from the tab header
+    // Arguments:
+    // - sender, e: not used
     void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
     {
         auto weakThis{ get_weak() };
@@ -142,6 +146,7 @@ namespace winrt::TerminalApp::implementation
                 lastFocusedControl.Focus(_focusState);
                 lastFocusedControl.TaskbarProgressChanged();
             }
+            // When we gain focus, remove the bell indicator if it is active
             if (_headerControl.BellIndicator())
             {
                 ShowBellIndicator(false);
@@ -253,6 +258,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Hide or show the bell indicator in the tab header
+    // Arguments:
+    // - show: if true, we show the indicator; if false, we hide the indicator
     winrt::fire_and_forget TerminalTab::ShowBellIndicator(const bool show)
     {
         auto weakThis{ get_weak() };
@@ -265,6 +274,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Activates the timer for the bell indicator in the tab
+    // - Called if a bell raised when the tab already has focus
     winrt::fire_and_forget TerminalTab::ActivateBellIndicatorTimer()
     {
         auto weakThis{ get_weak() };
@@ -617,6 +629,7 @@ namespace winrt::TerminalApp::implementation
                     tab->_RecalculateAndApplyTabColor();
                 }
                 tab->_focusState = WUX::FocusState::Programmatic;
+                // This tab has gained focus, remove the bell indicator if it is active
                 if (tab->_headerControl.BellIndicator())
                 {
                     tab->ShowBellIndicator(false);
@@ -630,6 +643,7 @@ namespace winrt::TerminalApp::implementation
 
             if (tab)
             {
+                // update this tab's focus state
                 tab->_focusState = WUX::FocusState::Unfocused;
             }
         });
