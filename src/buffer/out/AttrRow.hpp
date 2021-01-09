@@ -45,8 +45,6 @@ public:
     TextAttribute GetAttrByColumn(const size_t column,
                                   size_t* const pApplies) const;
 
-    size_t GetNumberOfRuns() const noexcept;
-
     size_t FindAttrIndex(const size_t index,
                          size_t* const pApplies) const;
 
@@ -61,8 +59,6 @@ public:
                                          const size_t iStart,
                                          const size_t iEnd,
                                          const size_t cBufferWidth);
-
-    static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
 
     const_iterator begin() const noexcept;
     const_iterator end() const noexcept;

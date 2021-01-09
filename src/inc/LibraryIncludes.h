@@ -26,6 +26,7 @@
 #include <memory_resource>
 #include <map>
 #include <mutex>
+#include <numeric>
 #include <shared_mutex>
 #include <new>
 #include <optional>

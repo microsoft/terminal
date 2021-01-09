@@ -118,15 +118,6 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column,
 }
 
 // Routine Description:
-// - reports how many runs we have stored (to be used for some optimizations
-// Return Value:
-// - Count of runs. 1 means we have 1 color to represent the entire row.
-size_t ATTR_ROW::GetNumberOfRuns() const noexcept
-{
-    return _list.size();
-}
-
-// Routine Description:
 // - This routine finds the nth attribute in this ATTR_ROW.
 // Arguments:
 // - index - which attribute to find
@@ -584,32 +575,6 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     return S_OK;
 }
 
-// Routine Description:
-// - packs a vector of TextAttribute into a vector of TextAttributeRun
-// Arguments:
-// - attrs - text attributes to pack
-// Return Value:
-// - packed text attribute run
-std::vector<TextAttributeRun> ATTR_ROW::PackAttrs(const std::vector<TextAttribute>& attrs)
-{
-    std::vector<TextAttributeRun> runs;
-    if (attrs.empty())
-    {
-        return runs;
-    }
-    for (auto attr : attrs)
-    {
-        if (runs.empty() || runs.back().GetAttributes() != attr)
-        {
-            runs.emplace_back(TextAttributeRun(1, attr));
-        }
-        else
-        {
-            runs.back().SetLength(runs.back().GetLength() + 1);
-        }
-    }
-    return runs;
-}
 
 ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept
 {

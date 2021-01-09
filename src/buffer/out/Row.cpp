@@ -197,6 +197,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                                                   colorStarts,
                                                   currentIndex - 1,
                                                   _charRow.size()));
+
         }
     }
 
