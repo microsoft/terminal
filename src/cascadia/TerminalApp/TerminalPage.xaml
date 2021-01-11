@@ -64,7 +64,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                     x:Uid="MultiLineWarningText"
                     TextWrapping="Wrap">
                 </TextBlock>
-                <ScrollViewer>
+                <ScrollViewer
+                    Margin="0,16,0,0"
+                    x:Name="ClipboardContentScrollViewer"
+                    MaxHeight="100">
                     <TextBlock
                         x:Name="ClipboardText"
                         TextWrapping="Wrap">

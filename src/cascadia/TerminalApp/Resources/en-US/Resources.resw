@@ -406,7 +406,7 @@
     <value>Cancel</value>
   </data>
   <data name="MultiLineWarningText.Text" xml:space="preserve">
-    <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
+    <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue? Here are your clipboard contents:</value>
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
     <value>Paste anyway</value>
