@@ -172,7 +172,6 @@ BOLDFONT
 BOOLIFY
 bools
 boostorg
-Bopomofo
 Borland
 BOTTOMLEFT
 BOTTOMRIGHT
@@ -252,7 +251,6 @@ charset
 CHARSETINFO
 chcp
 checkbox
-Checkboxes
 chh
 Childitem
 chk
@@ -389,7 +387,6 @@ CORESYSTEM
 cotaskmem
 countof
 cout
-CParams
 CPG
 cpinfo
 CPINFOEX
@@ -418,7 +415,6 @@ csbi
 csbiex
 csharp
 CSHORT
-cso
 csproj
 Csr
 csrmsg
@@ -431,7 +427,6 @@ cstdlib
 cstr
 cstring
 cstyle
-CSV
 CSwitch
 CText
 ctime
@@ -633,7 +628,6 @@ doskey
 dotnet
 doubleclick
 downlevel
-DOWNSCALE
 dpg
 dpi
 DPIAPI
@@ -847,7 +841,6 @@ gcy
 gdi
 gdip
 gdirenderer
-GENERATEPROJECTPRIFILE
 geopol
 GETALIAS
 GETALIASES
@@ -966,7 +959,6 @@ hfont
 hglobal
 hh
 hhh
-hhhh
 hhook
 hhx
 HIBYTE
@@ -993,7 +985,6 @@ hmod
 hmodule
 hmon
 HMONITOR
-Horiz
 HORZ
 hostable
 hostlib
@@ -1106,10 +1097,8 @@ INITMENU
 inkscape
 inl
 INLINEPREFIX
-Inlines
 INotify
 inout
-INPATHROOT
 inproc
 Inputkeyinfo
 INPUTPROCESSORPROFILE
@@ -1122,7 +1111,6 @@ INTERCEPTCOPYPASTE
 INTERNALNAME
 interop
 interoperability
-intersectors
 inthread
 intptr
 intsafe
@@ -1222,7 +1210,6 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
-Kode
 KU
 KVM
 KX
@@ -1357,7 +1344,6 @@ mailto
 majorly
 makeappx
 MAKEINTRESOURCE
-MAKEINTRESOURCEA
 MAKEINTRESOURCEW
 MAKELANGID
 MAKELONG
@@ -1433,7 +1419,6 @@ monostate
 MOUSEACTIVATE
 MOUSEFIRST
 MOUSEHWHEEL
-mousemode
 MOUSEMOVE
 mousewheel
 MOVESTART
@@ -1455,7 +1440,6 @@ MSGSELECTMODE
 msiexec
 MSIL
 msix
-msixbundle
 msrc
 msvcrt
 MSVS
@@ -1859,7 +1843,6 @@ pshn
 PSHNOTIFY
 PSHORT
 pshpack
-psin
 PSINGLE
 psl
 psldl
@@ -1980,16 +1963,13 @@ Replymessage
 repositorypath
 rescap
 Resequence
-Reserialize
 RESETCONTENT
 resheader
 resizable
 resmimetype
-reso
 restrictedcapabilities
 resw
 resx
-RETROII
 retval
 rfa
 rfc
@@ -2009,7 +1989,6 @@ rgpwsz
 rgrc
 rgs
 rgui
-rgus
 rgw
 rgwch
 rhs
@@ -2060,14 +2039,11 @@ SBCSDBCS
 sbi
 sbiex
 sbold
-sbri
-scanbri
 scancode
 scanline
 schemename
 SCL
 scm
-scol
 scprintf
 SCRBUF
 SCRBUFSIZE
@@ -2146,7 +2122,6 @@ sfi
 SFINAE
 SFUI
 sgr
-SGRXY
 SHCo
 shcore
 shellapi
@@ -2201,9 +2176,6 @@ SOURCESDIRECTORY
 SPACEBAR
 spammy
 spand
-spe
-sph
-spherefunctions
 splashscreen
 sprintf
 sqlproj
@@ -2322,7 +2294,6 @@ TCI
 tcome
 tcommandline
 tcommands
-tcon
 TDelegated
 TDP
 TEAMPROJECT
@@ -2468,8 +2439,6 @@ ucdxml
 uch
 UCHAR
 ucs
-UDK
-UDKs
 UDM
 uer
 uget
@@ -2492,7 +2461,6 @@ UNCPRIORITY
 undef
 Unescape
 unexpand
-Unfocus
 unhighlighting
 unhosted
 unicode
@@ -2585,7 +2553,6 @@ vga
 vgaoem
 viewkind
 viewports
-Viginetting
 Virt
 VIRTTERM
 Virtualizing
@@ -2803,7 +2770,6 @@ wwaproj
 WWith
 wx
 wxh
-wz
 xa
 xact
 xamarin
@@ -2822,14 +2788,12 @@ XColors
 xcopy
 XCount
 xdy
-xe
 XEncoding
 xes
 Xes
 XES
 xff
 XFile
-xlang
 XManifest
 XMath
 XMFLOAT
@@ -2853,9 +2817,7 @@ xutr
 xvalue
 XVIRTUALSCREEN
 XWalk
-XWV
 xy
-xyw
 Xzn
 yact
 YAML

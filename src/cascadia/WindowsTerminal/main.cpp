@@ -124,6 +124,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;
+    if (!host.HasWindow())
+    {
+        return 0;
+    }
 
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initialized.

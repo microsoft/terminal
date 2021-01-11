@@ -34,6 +34,7 @@ IExplorer
 IInheritable
 IMap
 IObject
+IPeasant
 IStorage
 ITab
 ITaskbar
@@ -43,6 +44,7 @@ localtime
 lround
 LSHIFT
 msappx
+MULTIPLEUSE
 NCHITTEST
 NCLBUTTONDBLCLK
 NCRBUTTONDBLCLK
@@ -56,6 +58,7 @@ otms
 OUTLINETEXTMETRICW
 overridable
 PAGESCROLL
+REGCLS
 pmr
 RETURNCMD
 rfind
