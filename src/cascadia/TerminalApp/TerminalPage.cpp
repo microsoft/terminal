@@ -1957,6 +1957,8 @@ namespace winrt::TerminalApp::implementation
             {
                 co_await winrt::resume_foreground(Dispatcher());
 
+                ClipboardText().Text(text.c_str());
+
                 ContentDialogResult warningResult;
                 if (warnMultiLine)
                 {
