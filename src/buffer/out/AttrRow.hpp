@@ -81,5 +81,6 @@ private:
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;
+    friend class CommonState;
 #endif
 };

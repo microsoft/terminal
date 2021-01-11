@@ -62,9 +62,8 @@ public:
 
     OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
 
-    friend bool operator==(const ROW& a, const ROW& b) noexcept;
-
 #ifdef UNIT_TESTING
+    friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
     friend class RowTests;
 #endif
 
@@ -80,13 +79,11 @@ private:
     TextBuffer* _pParent; // non ownership pointer
 };
 
-inline bool operator==(const ROW& a, const ROW& b) noexcept
+#ifdef UNIT_TESTING
+constexpr bool operator==(const ROW& a, const ROW& b) noexcept
 {
-    return (a._charRow == b._charRow &&
-            a._attrRow == b._attrRow &&
-            a._rowWidth == b._rowWidth &&
-            a._pParent == b._pParent &&
-            a._wrapForced == b._wrapForced &&
-            a._doubleBytePadded == b._doubleBytePadded &&
+    // comparison is only used in the tests; this should suffice.
+    return (a._pParent == b._pParent &&
             a._id == b._id);
 }
+#endif

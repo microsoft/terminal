@@ -86,7 +86,6 @@ public:
     void UpdateParent(ROW* const pParent);
 
     friend CharRowCellReference;
-    friend bool operator==(const CharRow& a, const CharRow& b) noexcept;
     friend class ROW;
 
 private:
@@ -101,11 +100,6 @@ protected:
     // ROW that this CharRow belongs to
     ROW* _pParent;
 };
-
-inline bool operator==(const CharRow& a, const CharRow& b) noexcept
-{
-    return (a._data == b._data);
-}
 
 template<typename InputIt1, typename InputIt2>
 void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttrs, CharRow::iterator outIt)
