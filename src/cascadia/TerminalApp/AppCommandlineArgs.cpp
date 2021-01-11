@@ -343,8 +343,8 @@ void AppCommandlineArgs::_buildFocusTabParser()
 }
 
 // Method Description:
-// - Adds the `focus-tab` subcommand and related options to the commandline parser.
-// - Additionally adds the `ft` subcommand, which is just a shortened version of `focus-tab`
+// - Adds the `move-focus` subcommand and related options to the commandline parser.
+// - Additionally adds the `mf` subcommand, which is just a shortened version of `move-focus`
 // Arguments:
 // - <none>
 // Return Value:
