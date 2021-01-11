@@ -9,39 +9,6 @@ class RunLengthEncodingTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    namespace details
-    {
-        template<typename T, typename S = size_t>
-        class _rle_run
-        {
-        public:
-            _rle_run(const S length, const T value) :
-                _length(length),
-                _value(value)
-            {
-            }
-
-            S _length;
-            T _value;
-
-            std::wstring to_string() const
-            {
-                return wil::str_printf<std::wstring>(L"[%td for %td]", _value, _length);
-            }
-
-            constexpr bool operator==(const _rle_run& other) const noexcept
-            {
-                return _length == other._length &&
-                       _value == other._value;
-            }
-
-            constexpr bool operator!=(const _rle_run& other) const noexcept
-            {
-                return !(*this == other);
-            }
-        };
-    };
-
     template<typename T, typename S = size_t>
     class rle
     {
@@ -69,7 +36,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         T at(S position, S& applies)
         {
             THROW_HR_IF(E_INVALIDARG, position >= _size);
-            return _find(position, applies)->_value;
+            return _find(position, applies)->first;
         }
 
         // Replaces every value seen in the run with a new one
@@ -78,9 +45,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             for (auto& run : _list)
             {
-                if (run._value == oldValue)
+                if (run.first == oldValue)
                 {
-                    run._value = newValue;
+                    run.first = newValue;
                 }
             }
         }
@@ -100,7 +67,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 auto& run = _list.at(runPos);
 
                 // Extend its length by the additional columns we're adding.
-                run.SetLength(run.GetLength() + newSize - _size);
+                run.second = run.second + newSize - _size;
 
                 // Store that the new total width we represent is the new width.
                 _size = newSize;
@@ -118,7 +85,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // then when we called FindAttrIndex, it returned the B5 as the pIndexedRun and a 2 for how many more segments it covers
                 // after and including the 3rd column.
                 // B5-2 = B3, which is what we desire to cover the new 3 size buffer.
-                run._length = run._length - CountOfAttr + 1;
+                run.second = run.second - CountOfAttr + 1;
 
                 // Store that the new total width we represent is the new width.
                 _size = newSize;
@@ -136,21 +103,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // If no start is specified, fills the entire list.
         void fill(const T value, const S start = gsl::narrow_cast<S>(0))
         {
-            _list.assign(1, til::details::_rle_run<T, S>{ gsl::narrow<S>(_size - start), value });
+            _list.assign(1, std::pair<T, S>{ value, gsl::narrow<S>(_size - start) });
         }
 
         // Inserts this value at the given position for the given run length.
         void insert(const T value, const S position, const S length = gsl::narrow_cast<S>(1))
         {
-            til::details::_rle_run<T, S> item{ length, value };
+            std::pair<T, S> item{ value, length };
         
-            _merge(gsl::span<til::details::_rle_run<T, S>>{ &item, gsl::narrow_cast<S>(1) }, position);
+            _merge(gsl::span<std::pair<T, S>>{ &item, gsl::narrow_cast<S>(1) }, position);
         }
 
         constexpr bool operator==(const rle& other) const noexcept
         {
             return _size == other._size &&
-                   std::equal(_list.cbegin(), _list.cend(), other.cbegin());
+                   std::equal(_list.cbegin(), _list.cend(), other._list.cbegin());
         }
 
         constexpr bool operator!=(const rle& other) const noexcept
@@ -166,7 +133,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             for (auto& item : _list)
             {
-                wss << item.to_string() << L" ";
+                wss << wil::str_printf<std::wstring>(L"[%td for %td]", item.first, item.second) << L" ";
             }
 
             wss << std::endl;
@@ -187,7 +154,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto runPos = _list.cbegin();
             do
             {
-                totalLength += runPos->_length;
+                totalLength += runPos->second;
 
                 if (totalLength > position)
                 {
@@ -216,7 +183,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return runPos;
         }
 
-        void _merge(const gsl::span<const til::details::_rle_run<T, S>> newItems,
+        void _merge(const gsl::span<std::pair<T, S>> newItems,
                     const S startIndex)
         {
             // Definitions:
@@ -236,8 +203,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Do the -1 math here now so we don't have to have -1s scattered all over this function.
             const size_t iLastBufferCol = _size - 1;
 
-            const S endIndex = std::accumulate(newItems.begin(), newItems.end(), 0, [](S sum, til::details::_rle_run<T, S> item) {
-                return sum + item->_length;
+            const S endIndex = std::accumulate(newItems.begin(), newItems.end(), gsl::narrow_cast<S>(0), [](S sum, std::pair<T, S> item) {
+                return sum + item.second;
             });
 
             // If the insertion size is 1, do some pre-processing to
@@ -245,11 +212,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (newItems.size() == 1)
             {
                 // Get the new color attribute we're trying to apply
-                const T NewAttr = til::at(newItems, 0)._value;
+                const T NewAttr = til::at(newItems, 0).first;
 
                 // If the existing run was only 1 element...
                 // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
-                if (_list.size() == 1 && _list.at(0)._value == NewAttr)
+                if (_list.size() == 1 && _list.at(0).first == NewAttr)
                 {
                     return;
                 }
@@ -265,7 +232,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     for (size_t i = 0; i < _list.size(); i++)
                     {
                         const auto curr = begin + i;
-                        upperBound += curr->GetLength();
+                        upperBound += curr->second;
 
                         if (startIndex >= lowerBound && startIndex < upperBound)
                         {
@@ -277,7 +244,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             //
                             // 'B' is the new color and '^' represents where startIndex is. We don't have to
                             // do anything.
-                            if (curr->GetAttributes() == NewAttr)
+                            if (curr->first == NewAttr)
                             {
                                 return;
                             }
@@ -290,9 +257,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             // AAAAADCCCCCCCCC
                             //
                             // Here 'D' is the new color.
-                            if (curr->GetLength() == 1)
+                            if (curr->second == 1)
                             {
-                                curr->SetAttributes(NewAttr);
+                                curr->first = NewAttr;
                                 return;
                             }
 
@@ -308,13 +275,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 // AAAAAABBBBBBCCC
                                 //
                                 // Here 'A' is the new color.
-                                if (NewAttr == prev->GetAttributes())
+                                if (NewAttr == prev->first)
                                 {
-                                    prev->IncrementLength();
-                                    curr->DecrementLength();
+                                    prev->second++;
+                                    curr->second--;
 
                                     // If we just reduced the right half to zero, just erase it out of the list.
-                                    if (curr->GetLength() == 0)
+                                    if (curr->second == 0)
                                     {
                                         _list.erase(curr);
                                     }
@@ -335,12 +302,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                                 //
                                 // Here 'B' is the new color.
                                 const auto next = std::next(curr, 1);
-                                if (NewAttr == next->GetAttributes())
+                                if (NewAttr == next->first)
                                 {
-                                    curr->DecrementLength();
-                                    next->IncrementLength();
+                                    curr->second--;
+                                    next->second++;
 
-                                    if (curr->GetLength() == 0)
+                                    if (curr->second == 0)
                                     {
                                         _list.erase(curr);
                                     }
@@ -402,7 +369,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 while (iExistingRunCoverage < startIndex)
                 {
                     // Add up how much length we can cover by copying an item from the existing run.
-                    iExistingRunCoverage += pExistingRunPos->GetLength();
+                    iExistingRunCoverage += pExistingRunPos->second;
 
                     // Copy it to the new run buffer and advance both pointers.
                     newRun.push_back(*pExistingRunPos++);
@@ -425,7 +392,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 //      the new/final run.
 
                 // Fetch out the length so we can fix it up based on the below conditions.
-                size_t length = newRun.back().GetLength();
+                size_t length = newRun.back().second;
 
                 // If we've covered more cells already than the start of the attributes to be inserted...
                 if (iExistingRunCoverage > startIndex)
@@ -440,9 +407,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // Now we're still on that "last cell copied" into the new run.
                 // If the color of that existing copied cell matches the color of the first segment
                 // of the run we're about to insert, we can just increment the length to extend the coverage.
-                if (newRun.back()._value == pInsertRunPos->GetAttributes())
+                if (newRun.back().first == pInsertRunPos->first)
                 {
-                    length += pInsertRunPos->GetLength();
+                    length += pInsertRunPos->second;
 
                     // Since the color matched, we have already "used up" part of the insert run
                     // and can skip it in our big "memcopy" step below that will copy the bulk of the insert run.
@@ -451,7 +418,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
 
                 // We're done manipulating the length. Store it back.
-                newRun.back().SetLength(length);
+                newRun.back().second = length;
             }
 
             // Bulk copy the majority (or all, depending on circumstance) of the insert run into the final run buffer.
@@ -465,7 +432,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             while (iExistingRunCoverage <= endIndex)
             {
                 FAIL_FAST_IF(!(pExistingRunPos != pExistingRunEnd));
-                iExistingRunCoverage += pExistingRunPos->GetLength();
+                iExistingRunCoverage += pExistingRunPos->second;
                 pExistingRunPos++;
             }
 
@@ -495,11 +462,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // This case is slightly off from the example above. This case is for if the B2 above was actually Y2.
                     // That Y2 from the existing run is the same color as the Y2 we just filled a few columns left in the final run
                     // so we can just adjust the final run's column count instead of adding another segment here.
-                    if (newRun.back()._value == pExistingRunPos->GetAttributes())
+                    if (newRun.back().first == pExistingRunPos->first)
                     {
-                        size_t length = newRun.back().GetLength();
+                        size_t length = newRun.back().second;
                         length += (iExistingRunCoverage - (endIndex + 1));
-                        newRun.back().SetLength(length);
+                        newRun.back().second = length;
                     }
                     else
                     {
@@ -510,11 +477,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         newRun.emplace_back();
 
                         // Copy the existing run's color information to the new run
-                        newRun.back().SetAttributes(pExistingRunPos->GetAttributes());
+                        newRun.back().first = pExistingRunPos->first;
 
                         // Adjust the length of that copied color to cover only the reduced number of columns needed
                         // now that some have been replaced by the insert run.
-                        newRun.back().SetLength(iExistingRunCoverage - (endIndex + 1));
+                        newRun.back().second = iExistingRunCoverage - (endIndex + 1);
                     }
 
                     // Now that we're done recovering a piece of the existing run we skipped, move the pointer forward again.
@@ -532,12 +499,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // New Run desired when done = R3 -> B7
                 // Existing run pointer is on B2.
                 // We want to merge the 2 from the B2 into the B5 so we get B7.
-                else if (newRun.back()._value == pExistingRunPos->GetAttributes())
+                else if (newRun.back().first == pExistingRunPos->first)
                 {
                     // Add the value from the existing run into the current new run position.
-                    size_t length = newRun.back().GetLength();
-                    length += pExistingRunPos->GetLength();
-                    newRun.back().SetLength(length);
+                    size_t length = newRun.back().second;
+                    length += pExistingRunPos->second;
+                    newRun.back().second = length;
 
                     // Advance the existing run position since we consumed its value and merged it in.
                     pExistingRunPos++;
@@ -555,9 +522,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return;
         }
 
-        boost::container::small_vector<til::details::_rle_run<T>, 1> _list;
+        boost::container::small_vector<std::pair<T, S>, 1> _list;
         S _size;
-        T _defaultValue;
 
 #ifdef UNIT_TESTING
         friend class ::RunLengthEncodingTests;

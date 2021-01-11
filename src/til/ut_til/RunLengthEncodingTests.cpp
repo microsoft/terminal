@@ -31,7 +31,7 @@ class RunLengthEncodingTests
 
     TEST_METHOD(AtPos)
     {
-        til::rle<UINT> rle(10, 10);
+        til::rle<int> rle(10, 10);
         rle.insert(3, 0, 4);
         rle.insert(7, 4, 2);
         rle.insert(11, 6, 3);
@@ -51,7 +51,7 @@ class RunLengthEncodingTests
 
     TEST_METHOD(AtPosApplies)
     {
-        til::rle<UINT> rle(10, 10);
+        til::rle<int> rle(10, 10);
         rle.insert(3, 0, 4);
         rle.insert(7, 4, 2);
         rle.insert(11, 6, 3);
@@ -92,7 +92,7 @@ class RunLengthEncodingTests
 
     TEST_METHOD(Replace)
     {
-        til::rle<UINT> actual(20, 10);
+        til::rle<int> actual(20, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 3);
@@ -105,7 +105,7 @@ class RunLengthEncodingTests
         actual.replace(9, 81);
         actual.replace(3, 9);
 
-        til::rle<UINT> expected(20, 10);
+        til::rle<int> expected(20, 10);
         expected.insert(9, 0, 4);
         expected.insert(49, 4, 2);
         expected.insert(11, 6, 3);
@@ -117,7 +117,7 @@ class RunLengthEncodingTests
 
     TEST_METHOD(ResizeShrink)
     {
-        til::rle<UINT> actual(10, 10);
+        til::rle<int> actual(10, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 3);
@@ -126,7 +126,7 @@ class RunLengthEncodingTests
         // 3 3 3 3 7 7 11 11 11 4
         // 3 for 4, 7 for 2, 11 for 3, 4 for 1.
 
-        til::rle<UINT> expected(7, 10);
+        til::rle<int> expected(7, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 1);
@@ -139,7 +139,7 @@ class RunLengthEncodingTests
 
     TEST_METHOD(ResizeGrow)
     {
-        til::rle<UINT> actual(10, 10);
+        til::rle<int> actual(10, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 3);
@@ -148,7 +148,7 @@ class RunLengthEncodingTests
         // 3 3 3 3 7 7 11 11 11 4
         // 3 for 4, 7 for 2, 11 for 3, 4 for 1.
 
-        til::rle<UINT> expected(13, 10);
+        til::rle<int> expected(13, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 3);
@@ -162,28 +162,28 @@ class RunLengthEncodingTests
 
     TEST_METHOD(FillAll)
     {
-        til::rle<UINT> actual(10, 10);
+        til::rle<int> actual(10, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 3);
         actual.insert(4, 9, 1);
         actual.fill(20);
 
-        til::rle<UINT> expected(10, 20);
+        til::rle<int> expected(10, 20);
 
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(FillFrom)
     {
-        til::rle<UINT> actual(10, 10);
+        til::rle<int> actual(10, 10);
         actual.insert(3, 0, 4);
         actual.insert(7, 4, 2);
         actual.insert(11, 6, 3);
         actual.insert(4, 9, 1);
         actual.fill(20, 2);
 
-        til::rle<UINT> expected(10, 20);
+        til::rle<int> expected(10, 20);
         actual.insert(3, 0, 2);
 
         VERIFY_ARE_EQUAL(expected, actual);
