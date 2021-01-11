@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
         void SetTabs(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& tabs, Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& mruTabs);
-        void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
+        void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
@@ -107,7 +107,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring _getTrimmedInput();
         void _evaluatePrefix();
 
-        Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
+        Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
 
         // Tab Switcher
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _tabActions{ nullptr };

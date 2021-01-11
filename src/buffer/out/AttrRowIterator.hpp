@@ -15,7 +15,6 @@ Author(s):
 
 #pragma once
 
-#include "boost/container/small_vector.hpp"
 #include "TextAttribute.hpp"
 #include "TextAttributeRun.hpp"
 

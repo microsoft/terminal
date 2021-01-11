@@ -110,6 +110,8 @@ namespace Microsoft.Terminal.TerminalControl
         UInt64 TaskbarState { get; };
         UInt64 TaskbarProgress { get; };
 
+        String WorkingDirectory { get; };
+
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
     }

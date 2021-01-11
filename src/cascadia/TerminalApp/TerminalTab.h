@@ -7,6 +7,9 @@
 #include "TabBase.h"
 #include "TerminalTab.g.h"
 
+static constexpr double HeaderRenameBoxWidthDefault{ 165 };
+static constexpr double HeaderRenameBoxWidthTitleLength{ std::numeric_limits<double>::infinity() };
+
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
@@ -102,6 +105,7 @@ namespace winrt::TerminalApp::implementation
 
         void _MakeTabViewItem();
 
+        winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
         void _SetToolTip(const winrt::hstring& tabTitle);
 
         void _CreateContextMenu() override;

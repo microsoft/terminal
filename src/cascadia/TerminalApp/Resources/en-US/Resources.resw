@@ -318,6 +318,16 @@
   <data name="CmdFullscreenDesc" xml:space="preserve">
     <value>Launch the window in fullscreen mode</value>
   </data>
+  <data name="CmdMoveFocusDesc" xml:space="preserve">
+    <value>Move focus to the adjacent pane in the specified direction</value>
+  </data>
+  <data name="CmdMFDesc" xml:space="preserve">
+    <value>An alias for the "move-focus" subcommand.</value>
+    <comment>{Locked="\"move-focus\""}</comment>
+  </data>
+  <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
+    <value>The direction to move focus in</value>
+  </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
   </data>
