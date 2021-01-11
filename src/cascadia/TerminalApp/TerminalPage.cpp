@@ -1115,6 +1115,13 @@ namespace winrt::TerminalApp::implementation
                 if (profileGuid.has_value())
                 {
                     const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
+                    const auto workingDirectory = terminalTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        settings.StartingDirectory(workingDirectory);
+                    }
+
                     _CreateNewTabFromSettings(profileGuid.value(), settings);
                 }
             }
@@ -1638,6 +1645,12 @@ namespace winrt::TerminalApp::implementation
                 {
                     profileFound = true;
                     controlSettings = { winrt::make<TerminalSettings>(_settings, current_guid.value(), *_bindings) };
+                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.StartingDirectory(workingDirectory);
+                    }
                     realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of

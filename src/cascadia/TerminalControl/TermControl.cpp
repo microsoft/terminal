@@ -2460,6 +2460,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _settings.ProfileName();
     }
 
+    hstring TermControl::WorkingDirectory() const
+    {
+        hstring hstr{ _terminal->GetWorkingDirectory() };
+        return hstr;
+    }
+
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
