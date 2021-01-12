@@ -41,7 +41,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void KeyMapping::SetKeyBinding(const Microsoft::Terminal::Settings::Model::ActionAndArgs& actionAndArgs,
                                    const KeyChord& chord)
     {
+        // if the chord is already mapped - clear the mapping
+        if (_keyShortcuts.find(chord) != _keyShortcuts.end())
+        {
+            ClearKeyBinding(chord);
+        }
+
         _keyShortcuts[chord] = actionAndArgs;
+        _keyShortcutsByInsertionOrder.push_back(std::make_pair(chord, actionAndArgs));
     }
 
     // Method Description:
@@ -53,12 +60,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void KeyMapping::ClearKeyBinding(const KeyChord& chord)
     {
         _keyShortcuts.erase(chord);
+
+        KeyChordEquality keyChordEquality;
+        _keyShortcutsByInsertionOrder.erase(std::remove_if(_keyShortcutsByInsertionOrder.begin(), _keyShortcutsByInsertionOrder.end(), [keyChordEquality, chord](const auto& keyBinding) {
+                                                return keyChordEquality(keyBinding.first, chord);
+                                            }),
+                                            _keyShortcutsByInsertionOrder.end());
     }
 
     KeyChord KeyMapping::GetKeyBindingForAction(Microsoft::Terminal::Settings::Model::ShortcutAction const& action)
     {
-        for (auto& kv : _keyShortcuts)
+        for (auto it = _keyShortcutsByInsertionOrder.rbegin(); it != _keyShortcutsByInsertionOrder.rend(); ++it)
         {
+            const auto& kv = *it;
             if (kv.second.Action() == action)
             {
                 return kv.first;
@@ -72,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     //   and IActionArgs. This enables searching no only for the binding of a
     //   particular ShortcutAction, but also a particular set of values for
     //   arguments to that action.
+    //   If several bindings might match the lookup, prefers the one that was added last.
     // Arguments:
     // - actionAndArgs: The ActionAndArgs to lookup the keybinding for.
     // Return Value:
@@ -83,8 +98,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return { nullptr };
         }
 
-        for (auto& kv : _keyShortcuts)
+        for (auto it = _keyShortcutsByInsertionOrder.rbegin(); it != _keyShortcutsByInsertionOrder.rend(); ++it)
         {
+            const auto& kv = *it;
             const auto action = kv.second.Action();
             const auto args = kv.second.Args();
             const auto actionMatched = action == actionAndArgs.Action();
