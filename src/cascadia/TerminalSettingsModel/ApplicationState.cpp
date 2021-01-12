@@ -40,23 +40,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto [mtx, state] = _getStaticStorage();
         std::lock_guard<std::mutex> lock{ mtx };
-        if (auto& s{ state.get() })
+        auto& s{ state.get() };
+        if (s && !s->_invalidated)
         {
             return *s;
         }
 
-        auto newState{ LoadAll() };
-        state.get() = newState;
+        auto newState{ winrt::make_self<ApplicationState>(_statePath()) };
+        newState->_load();
+        s = newState;
         return *newState;
     }
 
     // Method Description:
     // - Deserializes a state.json document into an ApplicationState.
     // - *ANY* errors will result in the creation of a new empty state
-    winrt::com_ptr<ApplicationState> ApplicationState::LoadAll()
+    void ApplicationState::_load()
     {
-        const auto path{ _statePath() };
-        wil::unique_hfile hFile{ CreateFileW(path.c_str(),
+        wil::unique_hfile hFile{ CreateFileW(_path.c_str(),
                                              GENERIC_READ,
                                              FILE_SHARE_READ | FILE_SHARE_WRITE,
                                              nullptr,
@@ -64,25 +65,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                              FILE_ATTRIBUTE_NORMAL,
                                              nullptr) };
 
-        auto newState{ winrt::make_self<ApplicationState>(path) };
         if (hFile)
         {
-            const auto data{ ReadUTF8TextFileFull(hFile.get()) };
-
-            std::string errs; // This string will receive any error text from failing to parse.
-            std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-
-            // Parse the json data into either our defaults or user settings. We'll keep
-            // these original json values around for later, in case we need to parse
-            // their raw contents again.
-            Json::Value root;
-            // `parse` will return false if it fails.
-            if (reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+            try
             {
-                newState->LayerJson(root);
+                const auto data{ ReadUTF8TextFileFull(hFile.get()) };
+
+                std::string errs; // This string will receive any error text from failing to parse.
+                std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+                // Parse the json data into either our defaults or user settings. We'll keep
+                // these original json values around for later, in case we need to parse
+                // their raw contents again.
+                Json::Value root;
+                // `parse` will return false if it fails.
+                if (reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+                {
+                    LayerJson(root);
+                }
             }
+            CATCH_LOG();
         }
-        return newState;
     }
 
     // Method Description:
@@ -106,15 +109,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
+    // - Unhooks the current application state from global storage so that a subsequent request will
+    //   reload it (public)
+    void ApplicationState::Reload()
+    {
+        _invalidated = true;
+    }
+
+    // Method Description:
     // - Deletes the application global state, deleting it from disk and unregistering it globally.
     //   On the next call to GetForCurrentApp, a new state will be created.
     void ApplicationState::Reset()
     {
-        auto [mtx, state] = _getStaticStorage();
-        std::lock_guard<std::mutex> lock{ mtx };
-        winrt::com_ptr<ApplicationState> oldState{ nullptr };
-        std::swap(oldState, state.get());
-        oldState->ResetInstance();
+        _delete();
+        _invalidated = true;
     }
 
     // Method Description:
@@ -142,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     // Method Description:
     // - Deletes this instance of state from disk.
-    void ApplicationState::ResetInstance()
+    void ApplicationState::_delete()
     {
         std::filesystem::remove(_path);
         _invalidated = true; // don't write the file later -- just in case somebody has an outstanding reference

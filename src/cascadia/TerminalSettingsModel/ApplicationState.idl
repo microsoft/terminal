@@ -5,8 +5,9 @@ namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState GetForCurrentApp();
-        static void Reset();
 
+        void Reload();
+        void Reset();
         void Commit();
 
         Boolean CloseAllTabsWarningDismissed;

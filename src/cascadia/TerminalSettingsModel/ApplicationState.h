@@ -19,7 +19,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _path{ path } {}
 
         static Microsoft::Terminal::Settings::Model::ApplicationState GetForCurrentApp();
-        static void Reset();
+        void Reload();
+        void Reset();
 
         void Commit();
 
@@ -28,10 +29,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         GETSET_PROPERTY(bool, MultiLinePasteWarningDismissed, false);
 
     private:
-        static winrt::com_ptr<ApplicationState> LoadAll();
+        void _load();
+        void _delete();
+
         void LayerJson(const Json::Value& value);
         Json::Value ToJson() const;
-        void ResetInstance();
+
         bool _invalidated{ false };
         std::filesystem::path _path{};
     };
