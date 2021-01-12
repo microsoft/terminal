@@ -81,6 +81,9 @@
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Toast.h">
+      <DependentUpon>Toast.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
@@ -152,6 +155,9 @@
     </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Toast.cpp">
+      <DependentUpon>Toast.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
@@ -270,6 +276,7 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />
+    <Midl Include="Toast.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl" />

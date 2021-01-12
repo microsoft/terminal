@@ -390,6 +390,17 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
+
+        Toast t;
+        if (auto tt = t.Root().try_as<MUX::Controls::TeachingTip>())
+        {
+            tt.Title({ L"Title" });
+            tt.Subtitle({ L"Subtitle" });
+            Root().Children().Append(tt);
+            t.Show();
+        }
+        _appLevelToast = t;
+
         _InitializedHandlers(*this, nullptr);
     }
 
