@@ -4,13 +4,13 @@
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass ApplicationState {
-	static ApplicationState GetForCurrentApp();
-	static void Reset();
+        static ApplicationState GetForCurrentApp();
+        static void Reset();
 
-	void Commit();
+        void Commit();
 
-	Boolean ShowConfirmCloseAllTabs;
-	Boolean ShowConfirmLargePaste;
-	Boolean ShowConfirmMultiLinePaste;
+        Boolean CloseAllTabsWarningDismissed;
+        Boolean LargePasteWarningDismissed;
+        Boolean MultiLinePasteWarningDismissed;
     }
 }

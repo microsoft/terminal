@@ -23,17 +23,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void Commit();
 
-        bool ShowConfirmCloseAllTabs();
-        void ShowConfirmCloseAllTabs(bool value);
-        bool ShowConfirmLargePaste();
-        void ShowConfirmLargePaste(bool value);
-        bool ShowConfirmMultiLinePaste();
-        void ShowConfirmMultiLinePaste(bool value);
+        GETSET_PROPERTY(bool, CloseAllTabsWarningDismissed, false);
+        GETSET_PROPERTY(bool, LargePasteWarningDismissed, false);
+        GETSET_PROPERTY(bool, MultiLinePasteWarningDismissed, false);
 
     private:
         static winrt::com_ptr<ApplicationState> LoadAll();
         void LayerJson(const Json::Value& value);
-        void Invalidate() { _invalidated = true; }
+        Json::Value ToJson() const;
+        void ResetInstance();
         bool _invalidated{ false };
         std::filesystem::path _path{};
     };

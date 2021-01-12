@@ -9,6 +9,10 @@
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
+static constexpr std::string_view CloseAllTabsWarningDismissedKey{ "closeAllTabsWarningDismissed" };
+static constexpr std::string_view LargePasteWarningDismissedKey{ "largePasteWarningDismissed" };
+static constexpr std::string_view MultiLinePasteWarningDismissedKey{ "multiLinePasteWarningDismissed" };
+
 using namespace ::Microsoft::Terminal::Settings::Model;
 
 static std::filesystem::path _statePath()
@@ -74,7 +78,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ApplicationState::LayerJson(const Json::Value& document)
     {
-        (void)document;
+        JsonUtils::GetValueForKey(document, CloseAllTabsWarningDismissedKey, _CloseAllTabsWarningDismissed);
+        JsonUtils::GetValueForKey(document, LargePasteWarningDismissedKey, _LargePasteWarningDismissed);
+        JsonUtils::GetValueForKey(document, MultiLinePasteWarningDismissedKey, _MultiLinePasteWarningDismissed);
+    }
+
+    Json::Value ApplicationState::ToJson() const
+    {
+        Json::Value document{ Json::objectValue };
+        JsonUtils::SetValueForKey(document, CloseAllTabsWarningDismissedKey, _CloseAllTabsWarningDismissed);
+        JsonUtils::SetValueForKey(document, LargePasteWarningDismissedKey, _LargePasteWarningDismissed);
+        JsonUtils::SetValueForKey(document, MultiLinePasteWarningDismissedKey, _MultiLinePasteWarningDismissed);
+        return document;
     }
 
     void ApplicationState::Reset()
@@ -83,8 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::lock_guard<std::mutex> lock{ mtx };
         winrt::com_ptr<ApplicationState> oldState{ nullptr };
         std::swap(oldState, state.get());
-        std::filesystem::remove(_statePath());
-        oldState->Invalidate(); // make sure it doesn't commit later
+        oldState->ResetInstance();
     }
 
     void ApplicationState::Commit()
@@ -94,31 +108,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // We were destroyed, don't write.
             return;
         }
-        throw hresult_not_implemented();
+
+        Json::StreamWriterBuilder wbuilder;
+        const auto content{ Json::writeString(wbuilder, ToJson()) };
+        wil::unique_hfile hOut{ CreateFileW(_path.c_str(),
+                                            GENERIC_WRITE,
+                                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                            nullptr,
+                                            CREATE_ALWAYS,
+                                            FILE_ATTRIBUTE_NORMAL,
+                                            nullptr) };
+        THROW_LAST_ERROR_IF(!hOut);
+        THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
     }
 
-    bool ApplicationState::ShowConfirmCloseAllTabs()
+    void ApplicationState::ResetInstance()
     {
-        throw hresult_not_implemented();
-    }
-    void ApplicationState::ShowConfirmCloseAllTabs(bool /*value*/)
-    {
-        throw hresult_not_implemented();
-    }
-    bool ApplicationState::ShowConfirmLargePaste()
-    {
-        throw hresult_not_implemented();
-    }
-    void ApplicationState::ShowConfirmLargePaste(bool /*value*/)
-    {
-        throw hresult_not_implemented();
-    }
-    bool ApplicationState::ShowConfirmMultiLinePaste()
-    {
-        throw hresult_not_implemented();
-    }
-    void ApplicationState::ShowConfirmMultiLinePaste(bool /*value*/)
-    {
-        throw hresult_not_implemented();
+        std::filesystem::remove(_path);
+        _invalidated = true; // don't write the file later -- just in case somebody has an outstanding reference
     }
 }
