@@ -1974,6 +1974,9 @@ namespace winrt::TerminalApp::implementation
                     warningResult = co_await _ShowLargePasteWarningDialog();
                 }
 
+                // Clear the clipboard text so it doesn't lie around in memory
+                ClipboardText().Text(L"");
+
                 if (warningResult != ContentDialogResult::Primary)
                 {
                     // user rejected the paste
