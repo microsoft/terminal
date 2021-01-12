@@ -253,6 +253,10 @@
     <value>Found a "splitPane" command with an invalid "size". This command will be ignored. Make sure the size is between 0 and 1, exclusive.</value>
     <comment>{Locked="\"splitPane\"","\"size\""}</comment>
   </data>
+  <data name="FailedToParseStartupActions" xml:space="preserve">
+    <value>Failed to parse "startupActions".</value>
+    <comment>{Locked="\"startupActions\""}</comment>
+  </data>
   <data name="CmdCommandArgDesc" xml:space="preserve">
     <value>An optional command, with arguments, to be spawned in the new tab or pane</value>
   </data>
