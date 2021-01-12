@@ -215,13 +215,42 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj">
       <Private>false</Private>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Private>false</Private>
+    </ProjectReference> -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+      <!-- <Private>false</Private> -->
+      <Private>true</Private>
+      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
+
+
+  <ItemGroup>
+    <!-- Manually add references to each of our dependent winmds. Mark them as
+    private=false and CopyLocalSatelliteAssemblies=false, so that we don't
+    propagate them upwards (which can make referencing this project result in
+    duplicate type definitions)-->
+<!--     <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference> -->
+    <Reference Include="Microsoft.Terminal.TerminalControl">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+  </ItemGroup>
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
