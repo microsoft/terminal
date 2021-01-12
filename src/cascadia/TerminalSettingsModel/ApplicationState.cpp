@@ -15,6 +15,8 @@ static constexpr std::string_view MultiLinePasteWarningDismissedKey{ "multiLineP
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 
+// Function Description:
+// - Returns the path to the state file that lives next to the user's settings.
 static std::filesystem::path _statePath()
 {
     const auto statePath{ GetBaseSettingsPath() / L"state.json" };
@@ -23,6 +25,8 @@ static std::filesystem::path _statePath()
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    // Function Description:
+    // - Returns a mutex and storage location for the application-global ApplicationState object
     static std::tuple<std::reference_wrapper<std::mutex>, std::reference_wrapper<winrt::com_ptr<ApplicationState>>> _getStaticStorage()
     {
         static std::mutex mutex{};
@@ -30,6 +34,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return std::make_tuple(std::ref(mutex), std::ref(storage));
     }
 
+    // Method Description:
+    // - Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::GetForCurrentApp()
     {
         auto [mtx, state] = _getStaticStorage();
@@ -44,6 +50,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return *newState;
     }
 
+    // Method Description:
+    // - Deserializes a state.json document into an ApplicationState.
+    // - *ANY* errors will result in the creation of a new empty state
     winrt::com_ptr<ApplicationState> ApplicationState::LoadAll()
     {
         const auto path{ _statePath() };
@@ -76,6 +85,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return newState;
     }
 
+    // Method Description:
+    // - Deserializes a JSON document into the current ApplicationState
     void ApplicationState::LayerJson(const Json::Value& document)
     {
         JsonUtils::GetValueForKey(document, CloseAllTabsWarningDismissedKey, _CloseAllTabsWarningDismissed);
@@ -83,6 +94,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         JsonUtils::GetValueForKey(document, MultiLinePasteWarningDismissedKey, _MultiLinePasteWarningDismissed);
     }
 
+    // Method Description:
+    // - Creates a JSON document from the current ApplicationState
     Json::Value ApplicationState::ToJson() const
     {
         Json::Value document{ Json::objectValue };
@@ -92,6 +105,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return document;
     }
 
+    // Method Description:
+    // - Deletes the application global state, deleting it from disk and unregistering it globally.
+    //   On the next call to GetForCurrentApp, a new state will be created.
     void ApplicationState::Reset()
     {
         auto [mtx, state] = _getStaticStorage();
@@ -101,6 +117,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         oldState->ResetInstance();
     }
 
+    // Method Description:
+    // - Writes this application state to disk as JSON, overwriting whatever was there originally.
     void ApplicationState::Commit()
     {
         if (_invalidated)
@@ -122,6 +140,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
     }
 
+    // Method Description:
+    // - Deletes this instance of state from disk.
     void ApplicationState::ResetInstance()
     {
         std::filesystem::remove(_path);
