@@ -521,6 +521,7 @@ void AppCommandlineArgs::_resetStateToDefault()
 
     _splitVertical = false;
     _splitHorizontal = false;
+    _splitPaneSize = 0.5f;
 
     _focusTabIndex = -1;
     _focusNextTab = false;
