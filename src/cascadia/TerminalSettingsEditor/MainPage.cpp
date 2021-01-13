@@ -64,69 +64,95 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        // "remove" all profile-related NavViewItems
-        // LOAD-BEARING: use Visibility here, instead of menuItems.Remove().
-        //               Remove() works fine on NavViewItems with an hstring tag,
-        //               but causes an out-of-bounds error with Profile tagged items.
-        //               The cause of this error is unknown.
+        // Deduce information about the currently selected item
+        std::optional<IInspectable> selectedItemTag{ std::nullopt };
+        std::optional<uint32_t> selectedItemIndex{ std::nullopt };
         auto menuItems{ SettingsNav().MenuItems() };
-        for (auto i = menuItems.Size() - 1; i > 0; --i)
+        if (const auto selectedItem{ SettingsNav().SelectedItem() })
         {
-            if (const auto navViewItem{ menuItems.GetAt(i).try_as<MUX::Controls::NavigationViewItem>() })
+            if (const auto navViewItem{ selectedItem.try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                selectedItemTag = navViewItem.Tag();
+            }
+            menuItems.IndexOf(selectedItem, *selectedItemIndex);
+        }
+
+        // remove all profile-related NavViewItems by populating a std::vector
+        // with the ones we want to keep.
+        // NOTE: menuItems.Remove() causes an out-of-bounds crash. Using ReplaceAll()
+        //       gets around this crash.
+        std::vector<IInspectable> menuItemsSTL;
+        for (uint32_t i = 0; i < menuItems.Size(); ++i)
+        {
+            const auto item{ menuItems.GetAt(i) };
+            if (const auto navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
             {
                 if (const auto tag{ navViewItem.Tag() })
                 {
                     if (tag.try_as<Editor::ProfileViewModel>())
                     {
-                        // hide NavViewItem pointing to a Profile
-                        navViewItem.Visibility(Visibility::Collapsed);
+                        // don't add NavViewItem pointing to a Profile
+                        continue;
                     }
                     else if (const auto stringTag{ tag.try_as<hstring>() })
                     {
                         if (stringTag == addProfileTag)
                         {
-                            // hide NavViewItem pointing to "Add Profile"
-                            navViewItem.Visibility(Visibility::Collapsed);
+                            // don't add the "Add Profile" item
+                            continue;
+                        }
+                    }
+                }
+            }
+            menuItemsSTL.push_back(item);
+        }
+        menuItems.ReplaceAll(menuItemsSTL);
+
+        // Repopulate profile-related menu items
+        _InitializeProfilesList();
+
+        // now that the menuItems are repopulated,
+        // refresh the current page using the SelectedItem data we collected before the refresh
+        if (selectedItemTag)
+        {
+            if (const auto tag{ selectedItemTag->try_as<hstring>() })
+            {
+                // SelectedItem is a menu item we didn't remove
+                SettingsNav().SelectedItem(menuItems.GetAt(*selectedItemIndex));
+                _Navigate(*tag);
+                co_return;
+            }
+            else if (const auto selectedItemProfileTag{ selectedItemTag->try_as<ProfileViewModel>() })
+            {
+                // SelectedItem was pointing to a profile
+                // Iterate over all menu items to find the one we were pointing at before
+                for (const auto item : menuItems)
+                {
+                    if (const auto menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+                    {
+                        if (const auto tag{ menuItem.Tag() })
+                        {
+                            if (const auto profileTag{ tag.try_as<ProfileViewModel>() })
+                            {
+                                if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                                {
+                                    // found the one that was selected before the refresh
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(*selectedItemProfileTag);
+                                    co_return;
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        _InitializeProfilesList();
 
-        _RefreshCurrentPage();
-    }
-
-    void MainPage::_RefreshCurrentPage()
-    {
-        auto navigationMenu{ SettingsNav() };
-        if (const auto selectedItem{ navigationMenu.SelectedItem() })
-        {
-            if (const auto tag{ selectedItem.as<MUX::Controls::NavigationViewItem>().Tag() })
-            {
-                if (const auto oldProfile{ tag.try_as<Editor::ProfileViewModel>() })
-                {
-                    // check if the profile still exists
-                    if (const auto profile{ _settingsClone.FindProfile(oldProfile.Guid()) })
-                    {
-                        // Navigate to the page with the given profile
-                        _Navigate(_viewModelForProfile(profile));
-                        return;
-                    }
-                }
-                else if (const auto stringTag{ tag.try_as<hstring>() })
-                {
-                    // navigate to the page with this tag
-                    _Navigate(*stringTag);
-                    return;
-                }
-            }
-        }
-
-        // could not find the page we were on, fallback to first menu item
-        const auto firstItem{ navigationMenu.MenuItems().GetAt(0) };
-        navigationMenu.SelectedItem(firstItem);
-        if (const auto tag{ navigationMenu.SelectedItem().as<MUX::Controls::NavigationViewItem>().Tag() })
+        // couldn't find the selected item,
+        // fallback to first menu item
+        const auto firstItem{ menuItems.GetAt(0) };
+        SettingsNav().SelectedItem(firstItem);
+        if (const auto tag{ SettingsNav().SelectedItem().as<MUX::Controls::NavigationViewItem>().Tag() })
         {
             _Navigate(unbox_value<hstring>(tag));
         }
@@ -271,8 +297,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::ResetButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _settingsClone = _settingsSource.Copy();
-        _RefreshCurrentPage();
+        UpdateSettings(_settingsSource);
     }
 
     void MainPage::_InitializeProfilesList()
