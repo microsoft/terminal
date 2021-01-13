@@ -814,4 +814,23 @@
   <data name="Globals_TabSwitcherModeDisabled.Content" xml:space="preserve">
     <value>Disabled</value>
   </data>
+  <data name="Globals_CopyFormat.Header" xml:space="preserve">
+    <value>Copy format</value>
+  </data>
+  <data name="Globals_CopyFormat.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defines whether the color and font formatting of selected text is copied to your clipboard, and in which format. When set to 'None', only plaintext is copied.</value>
+    <comment>"None", "Html", "Rtf" and "All" must match Globals_CopyFormatNone.Content, Globals_CopyFormatHtml.Content, Globals_CopyFormatRtf.Content and Globals_CopyFormatAll.Content values respectively.</comment>
+  </data>
+  <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Globals_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="Globals_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+  </data>
+  <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
+    <value>All</value>
+  </data>
 </root>

@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_PROPERTY(Editor::InteractionPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, State().Globals, TabSwitcherMode);
+        GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::TerminalControl::CopyFormat, State().Globals, CopyFormatting);
     };
 }
 

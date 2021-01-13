@@ -17,5 +17,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentTabSwitcherMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabSwitcherModeList { get; };
+
+        IInspectable CurrentCopyFormat;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CopyFormatList { get; };
     }
 }
