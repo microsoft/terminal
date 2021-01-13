@@ -26,6 +26,18 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
+        _profile{ profile }
+    {
+        PropertyChanged([this](auto&&, const Data::PropertyChangedEventArgs& args) {
+            if (args.PropertyName() == L"BackgroundImagePath")
+            {
+                // _propertyChangedHandlers(*static_cast<T*>(this), Data::PropertyChangedEventArgs{ L"UseDesktopBGImage" });
+                _NotifyChanges(L"UseDesktopBGImage");
+            }
+        });
+    }
+
     bool ProfileViewModel::CanDeleteProfile() const
     {
         const auto guid{ Guid() };

@@ -15,8 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfileViewModel : ProfileViewModelT<ProfileViewModel>, ViewModelHelper<ProfileViewModel>
     {
     public:
-        ProfileViewModel(const Model::Profile& profile) :
-            _profile{ profile } {}
+        ProfileViewModel(const Model::Profile& profile);
 
         bool CanDeleteProfile() const;
 
