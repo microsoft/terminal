@@ -74,13 +74,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _CurrentColorTable.Append(entry);
         }
 
+        // Try to look up the scheme that was navigated to. If we find it, immediately select it.
         std::wstring lastNameFromNav{ _State.LastSelectedScheme().c_str() };
-        std::wstring lastName{ _lastSchemeName.c_str() };
-        std::wstring currentName{ CurrentColorScheme() ? CurrentColorScheme().Name().c_str() : L"" };
-        lastName;
-        currentName;
-        lastNameFromNav;
-
         auto it = std::find_if(begin(_ColorSchemeList),
                                end(_ColorSchemeList),
                                [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
@@ -107,7 +102,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
 
-        _lastSchemeName = colorScheme.Name();
         _State.LastSelectedScheme(colorScheme.Name());
 
         // Set the text disclaimer for the text box
