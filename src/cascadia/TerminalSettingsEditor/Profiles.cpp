@@ -277,4 +277,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
+
+    void Profiles::UseAcrylic_Checked(Windows::Foundation::IInspectable const& /*sender*/,
+                                      Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    {
+        // This isn't it.
+        // AcrylicOpacityControl().StartBringIntoView();
+
+        // This isn't quite right - it definitely scrolls, but not correctly. It
+        // seems to scroll up?
+        //
+        // auto delta = AcrylicOpacityControl().TransformToVisual(Appearance_ScrollViewer()).TransformPoint({0, 0});
+        // Appearance_ScrollViewer().ChangeView(nullptr, delta.Y, nullptr);
+
+        auto currentOffset = Appearance_ScrollViewer().VerticalOffset();
+        auto opacityControlOffset = AcrylicOpacityControl().TransformToVisual(Appearance_ScrollViewer());
+        auto delta = opacityControlOffset.TransformPoint({ 0, 0 });
+        auto scrollH = Appearance_ScrollViewer().ScrollableHeight();
+        scrollH;
+        auto veiwH = Appearance_ScrollViewer().ViewportHeight();
+        veiwH;
+        currentOffset;
+        delta;
+        // auto delta = AcrylicOpacityControl().TransformToVisual(Appearance_ScrollViewer()).TransformPoint({0, 0});
+        // Appearance_ScrollViewer().ChangeView(nullptr, currentOffset + delta.Y, nullptr);
+        // Appearance_ScrollViewer().ChangeView(nullptr, -delta.Y, nullptr);
+        Appearance_ScrollViewer().ChangeView(nullptr, scrollH - veiwH, nullptr);
+    }
 }

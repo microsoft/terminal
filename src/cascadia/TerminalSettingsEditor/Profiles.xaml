@@ -39,7 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
@@ -174,7 +174,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!-- Appearance Tab -->
             <PivotItem x:Uid="Profile_Appearance">
-                <ScrollViewer>
+                <ScrollViewer x:Name="Appearance_ScrollViewer">
                     <StackPanel>
 
                         <!--Grouping: Text-->
@@ -501,6 +501,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <CheckBox x:Uid="Profile_UseAcrylic"
                                       x:Name="UseAcrylicCheckBox"
                                       IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"
+                                      Checked="UseAcrylic_Checked"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
                         </ContentPresenter>
 
