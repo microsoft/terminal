@@ -47,6 +47,9 @@
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
       <DependentUpon>InvertedBooleanToVisibilityConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="BackgroundImageIsEmptyConverter.h">
+      <DependentUpon>Profiles.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PercentageConverter.h">
       <DependentUpon>PercentageConverter.idl</DependentUpon>
     </ClInclude>
@@ -119,6 +122,9 @@
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
       <DependentUpon>InvertedBooleanToVisibilityConverter.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="BackgroundImageIsEmptyConverter.cpp">
+      <DependentUpon>Profiles.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PercentageConverter.cpp">
       <DependentUpon>PercentageConverter.idl</DependentUpon>

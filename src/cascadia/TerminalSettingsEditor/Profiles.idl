@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
+        // Boolean IsUsingDesktopBGImage;
 
         OBSERVABLE_PROJECTED_SETTING(String, Name);
         OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
@@ -57,6 +58,12 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Guid ProfileGuid { get; };
     }
+
+
+    runtimeclass BackgroundImageIsEmptyConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        BackgroundImageIsEmptyConverter();
+    };
 
     runtimeclass ProfilePageNavigationState
     {

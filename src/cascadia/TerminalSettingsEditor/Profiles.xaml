@@ -30,6 +30,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:PercentageConverter x:Key="PercentageConverter"/>
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
+            <local:BackgroundImageIsEmptyConverter x:Key="BackgroundImageIsEmptyConverter"/>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -280,6 +281,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <TextBlock x:Uid="Profile_BackgroundHeader" Style="{StaticResource GroupingHeader}"/>
 
                         <!--Background Image-->
+                                      <!-- Click="UseDesktopImageClicked" -->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <CheckBox x:Uid="Profile_UseDesktopImage"
+                                      x:Name="UseDesktopImageCheckBox"
+                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                        </ContentPresenter>
+
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_BackgroundImage"
@@ -293,7 +301,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Background Image Stretch Mode-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource BackgroundImageIsEmptyConverter}}">
                             <muxc:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
                                                ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
@@ -302,7 +311,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Background Image Alignment-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource BackgroundImageIsEmptyConverter}}">
                             <StackPanel HorizontalAlignment="Left">
                                 <TextBlock x:Uid="Profile_BackgroundImageAlignment"
                                            Style="{StaticResource CustomSettingHeaderStyle}"
@@ -458,7 +468,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Background Image Opacity-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource BackgroundImageIsEmptyConverter}}">
                             <StackPanel>
                                 <TextBlock x:Uid="Profile_BackgroundImageOpacity"
                                            Style="{StaticResource SliderHeaderStyle}"/>
