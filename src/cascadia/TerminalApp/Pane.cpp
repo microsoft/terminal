@@ -368,27 +368,18 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     auto paneProfile = settings.FindProfile(_profile.value());
     if (paneProfile)
     {
-        // We only want to do anything if either visual or audible is set, so check for that first
-        if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual) ||
-            WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+        // We don't want to do anything if nothing is set, so check for that first
+        if (static_cast<int>(paneProfile.BellStyle()) != 0)
         {
-            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
-            {
-                // Visual is set, raise the event with the bool set to true
-                _PaneRaiseBellHandlers(nullptr, true);
-            }
-            else
-            {
-                // Visual is not set, raise the event with the bool set to false
-                _PaneRaiseBellHandlers(nullptr, false);
-            }
-
             if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
             {
                 // Audible is set, play the sound
                 const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
                 PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
             }
+
+            // raise the event with the bool value corresponding to the visual flag
+            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual));
         }
     }
 }
