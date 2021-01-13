@@ -16,9 +16,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                   Foundation::IInspectable const& /* parameter */,
                                                                   hstring const& /* language */)
     {
+        // Returns Visible if the string is _not_ "desktopWallpaper", else returns Collapsed
         const auto& name = winrt::unbox_value_or<hstring>(value, L"");
-        // return winrt::box_value(name.empty() ? Visibility::Collapsed : Visibility::Visible);
-        // return winrt::box_value(name == L"desktopWallpaper" ? false : true);
         return winrt::box_value(name == L"desktopWallpaper" ? Visibility::Collapsed : Visibility::Visible);
     }
 

@@ -283,7 +283,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <TextBlock x:Uid="Profile_BackgroundHeader" Style="{StaticResource GroupingHeader}"/>
 
                         <!--Background Image-->
-                                      <!-- Click="UseDesktopImageClicked" -->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <CheckBox x:Uid="Profile_UseDesktopImage"
                                       x:Name="UseDesktopImageCheckBox"

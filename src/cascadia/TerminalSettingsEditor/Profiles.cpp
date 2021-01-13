@@ -29,6 +29,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
         _profile{ profile }
     {
+        // Add a property changed handler to our own property changed event.
+        // When the BackgroundImagePath changes, we _also_ need to change the
+        // value of UseDesktopBGImage.
+        //
+        // We need to do this so if someone manually types "desktopWallpaper"
+        // into the path TextBox, we properly update the checkbox and stored
+        // _lastBgImagePath. Without this, then we'll permenantly hide the text
+        // box, prevent it from ever being changed again.
         PropertyChanged([this](auto&&, const Data::PropertyChangedEventArgs& args) {
             if (args.PropertyName() == L"BackgroundImagePath")
             {
@@ -65,6 +73,35 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else
         {
             return true;
+        }
+    }
+
+    bool ProfileViewModel::UseDesktopBGImage()
+    {
+        return BackgroundImagePath() == L"desktopWallpaper";
+    }
+
+    void ProfileViewModel::UseDesktopBGImage(const bool useDesktop)
+    {
+        if (useDesktop)
+        {
+            // Stash the current value of BackgroundImagePath. If the user
+            // checks and unchecks the "Use desktop wallpaper" button, we want
+            // the path that we display in the text box to remain unchanged.
+            //
+            // Only stash this value if it's not the special "desktopWallpaper"
+            // value.
+            if (BackgroundImagePath() != L"desktopWallpaper")
+            {
+                _lastBgImagePath = BackgroundImagePath();
+            }
+            BackgroundImagePath(L"desktopWallpaper");
+        }
+        else
+        {
+            // Restore the path we had previously cached. This might be the
+            // empty string.
+            BackgroundImagePath(_lastBgImagePath);
         }
     }
 
@@ -297,23 +334,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
 
-    bool ProfileViewModel::UseDesktopBGImage()
-    {
-        return BackgroundImagePath() == L"desktopWallpaper";
-    };
-    void ProfileViewModel::UseDesktopBGImage(const bool useDesktop)
-    {
-        if (useDesktop)
-        {
-            if (BackgroundImagePath() != L"desktopWallpaper")
-            {
-                _lastBgImagePath = BackgroundImagePath();
-            }
-            BackgroundImagePath(L"desktopWallpaper");
-        }
-        else
-        {
-            BackgroundImagePath(_lastBgImagePath);
-        }
-    };
 }
