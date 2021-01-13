@@ -91,6 +91,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
                             <Setter Property="SmallChange" Value="1"/>
                             <Setter Property="LargeChange" Value="10"/>
+                            <Setter Property="Minimum" Value="1"/>
                         </Style>
                     </Grid.Resources>
                     <Grid.RowDefinitions>
@@ -114,8 +115,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 Margin="0,0,10,0">
                         <TextBlock x:Uid="Globals_InitialCols" Style="{StaticResource LaunchSizeSubHeaderStyle}"/>
                         <muxc:NumberBox Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}"
-                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                        Minimum="1"/>
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
                     </StackPanel>
 
                     <!--Rows-->
@@ -123,8 +123,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 Grid.Row="1" Grid.Column="1">
                         <TextBlock x:Uid="Globals_InitialRows" Style="{StaticResource LaunchSizeSubHeaderStyle}"/>
                         <muxc:NumberBox Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}"
-                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                        Minimum="1"/>
+                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
                     </StackPanel>
                 </Grid>
              </ContentPresenter>
