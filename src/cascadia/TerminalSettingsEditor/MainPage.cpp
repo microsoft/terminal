@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Deduce information about the currently selected item
         IInspectable selectedItemTag;
         auto menuItems{ SettingsNav().MenuItems() };
-        if (const auto selectedItem{ SettingsNav().SelectedItem() })
+        if (const auto& selectedItem{ SettingsNav().SelectedItem() })
         {
             if (const auto navViewItem{ selectedItem.try_as<MUX::Controls::NavigationViewItem>() })
             {
@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             if (const auto navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
             {
-                if (const auto tag{ navViewItem.Tag() })
+                if (const auto& tag{ navViewItem.Tag() })
                 {
                     if (tag.try_as<Editor::ProfileViewModel>())
                     {
