@@ -59,10 +59,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 <TextBox x:Uid="Profile_Commandline"
                                          x:Name="Commandline"
                                          Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                         Style="{StaticResource TextBoxSettingStyle}"
+                                         Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
                                 <Button x:Uid="Profile_CommandlineBrowse"
                                         Click="Commandline_Click"
-                                        Style="{StaticResource BrowseButtonStyle}"/>
+                                        Style="{StaticResource BrowseButtonStyle}"
+                                        Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"/>
                             </StackPanel>
                         </ContentPresenter>
 
