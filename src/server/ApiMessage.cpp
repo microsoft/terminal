@@ -9,20 +9,27 @@
 #include "DeviceComm.h"
 
 _CONSOLE_API_MSG::_CONSOLE_API_MSG() :
+    Complete{ 0 },
+    State{ 0 },
     _pDeviceComm(nullptr),
-    _pApiRoutines(nullptr)
+    _pApiRoutines(nullptr),
+    _inputBuffer{},
+    _outputBuffer{},
+    Descriptor{ 0 },
+    CreateObject{ 0 },
+    CreateScreenBuffer{ 0 },
+    msgHeader{ 0 }
 {
-    ZeroMemory(this, sizeof(_CONSOLE_API_MSG));
 }
 
 ConsoleProcessHandle* _CONSOLE_API_MSG::GetProcessHandle() const
 {
-    return reinterpret_cast<ConsoleProcessHandle*>(Descriptor.Process);
+    return reinterpret_cast<ConsoleProcessHandle*>(_pDeviceComm->GetHandle(Descriptor.Process));
 }
 
 ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 {
-    return reinterpret_cast<ConsoleHandleData*>(Descriptor.Object);
+    return reinterpret_cast<ConsoleHandleData*>(_pDeviceComm->GetHandle(Descriptor.Object));
 }
 
 // Routine Description:
@@ -57,6 +64,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 // -  HRESULT indicating if the input buffer was successfully retrieved.
 [[nodiscard]] HRESULT _CONSOLE_API_MSG::GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer,
                                                        _Out_ ULONG* const pcbSize)
+try
 {
     // Initialize the buffer if it hasn't been initialized yet.
     if (State.InputBuffer == nullptr)
@@ -65,12 +73,11 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 
         ULONG const cbReadSize = Descriptor.InputSize - State.ReadOffset;
 
-        wistd::unique_ptr<BYTE[]> pPayload = wil::make_unique_nothrow<BYTE[]>(cbReadSize);
-        RETURN_IF_NULL_ALLOC(pPayload);
+        _inputBuffer.resize(cbReadSize);
 
-        RETURN_IF_FAILED(ReadMessageInput(0, pPayload.get(), cbReadSize));
+        RETURN_IF_FAILED(ReadMessageInput(0, _inputBuffer.data(), cbReadSize));
 
-        State.InputBuffer = pPayload.release(); // TODO: MSFT: 9565140 - don't release, maintain as smart pointer.
+        State.InputBuffer = _inputBuffer.data();
         State.InputBufferSize = cbReadSize;
     }
 
@@ -80,6 +87,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
@@ -94,6 +102,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 [[nodiscard]] HRESULT _CONSOLE_API_MSG::GetAugmentedOutputBuffer(const ULONG cbFactor,
                                                                  _Outptr_result_bytebuffer_(*pcbSize) PVOID* const ppvBuffer,
                                                                  _Out_ PULONG pcbSize)
+try
 {
     // Initialize the buffer if it hasn't been initialized yet.
     if (State.OutputBuffer == nullptr)
@@ -103,11 +112,12 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
         ULONG cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
         RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
 
-        BYTE* pPayload = new (std::nothrow) BYTE[cbWriteSize];
-        RETURN_IF_NULL_ALLOC(pPayload);
-        ZeroMemory(pPayload, sizeof(BYTE) * cbWriteSize);
+        _outputBuffer.resize(cbWriteSize);
 
-        State.OutputBuffer = pPayload; // TODO: MSFT: 9565140 - maintain as smart pointer.
+        // 0 it out.
+        std::fill(_outputBuffer.begin(), _outputBuffer.end(), (BYTE)0);
+
+        State.OutputBuffer = _outputBuffer.data();
         State.OutputBufferSize = cbWriteSize;
     }
 
@@ -117,6 +127,7 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - This routine retrieves the output buffer associated with this message. It will allocate one if needed.
@@ -148,8 +159,9 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
 
     if (State.InputBuffer != nullptr)
     {
-        delete[] static_cast<BYTE*>(State.InputBuffer);
+        _inputBuffer.clear();
         State.InputBuffer = nullptr;
+        State.InputBufferSize = 0;
     }
 
     if (State.OutputBuffer != nullptr)
@@ -165,8 +177,9 @@ ConsoleHandleData* _CONSOLE_API_MSG::GetObjectHandle() const
             LOG_IF_FAILED(_pDeviceComm->WriteOutput(&IoOperation));
         }
 
-        delete[] static_cast<BYTE*>(State.OutputBuffer);
+        _outputBuffer.clear();
         State.OutputBuffer = nullptr;
+        State.OutputBufferSize = 0;
     }
 
     return hr;

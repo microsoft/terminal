@@ -42,7 +42,8 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
     USES_RESOURCE(L"FailedToWriteToSettings"),
-    USES_RESOURCE(L"InvalidColorSchemeInCmd")
+    USES_RESOURCE(L"InvalidColorSchemeInCmd"),
+    USES_RESOURCE(L"InvalidSplitSize")
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -591,10 +592,10 @@ namespace winrt::TerminalApp::implementation
             auto tabControl = TabRowControl();
             tabControl.Measure({ SHRT_MAX, SHRT_MAX });
 
-            // For whatever reason, there's about 6px of unaccounted-for space
-            // in the application. I couldn't tell you where these 6px are
+            // For whatever reason, there's about 10px of unaccounted-for space
+            // in the application. I couldn't tell you where these 10px are
             // coming from, but they need to be included in this math.
-            proposedSize.Width += (tabControl.DesiredSize().Height + 6) * scale;
+            proposedSize.Height += (tabControl.DesiredSize().Height + 10) * scale;
         }
 
         return proposedSize;

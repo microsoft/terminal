@@ -42,6 +42,7 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
     _currentPatternId{ 0 }
 {
     // initialize ROWs
+    _storage.reserve(static_cast<size_t>(screenBufferSize.Y));
     for (size_t i = 0; i < static_cast<size_t>(screenBufferSize.Y); ++i)
     {
         _storage.emplace_back(static_cast<SHORT>(i), screenBufferSize.X, _currentAttributes, this);
@@ -837,11 +838,10 @@ void TextBuffer::Reset()
         const SHORT TopRowIndex = (GetFirstRowIndex() + TopRow) % currentSize.Y;
 
         // rotate rows until the top row is at index 0
-        const ROW& newTopRow = _storage.at(TopRowIndex);
-        while (&newTopRow != &_storage.front())
+        for (int i = 0; i < TopRowIndex; i++)
         {
-            _storage.push_back(std::move(_storage.front()));
-            _storage.pop_front();
+            _storage.emplace_back(std::move(_storage.front()));
+            _storage.erase(_storage.begin());
         }
 
         _SetFirstRowIndex(0);
@@ -1230,9 +1230,15 @@ void TextBuffer::_PruneHyperlinks()
     // If the buffer does not contain the same reference, we can remove that hyperlink from our map
     // This way, obsolete hyperlink references are cleared from our hyperlink map instead of hanging around
     // Get all the hyperlink references in the row we're erasing
-    auto firstRowRefs = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
-    if (!firstRowRefs.empty())
+    const auto hyperlinks = _storage.at(_firstRow).GetAttrRow().GetHyperlinks();
+
+    if (!hyperlinks.empty())
     {
+        // Move to unordered set so we can use hashed lookup of IDs instead of linear search.
+        // Only make it an unordered set now because set always heap allocates but vector
+        // doesn't when the set is empty (saving an allocation in the common case of no links.)
+        std::unordered_set<uint16_t> firstRowRefs{ hyperlinks.cbegin(), hyperlinks.cend() };
+
         const auto total = TotalRowCount();
         // Loop through all the rows in the buffer except the first row -
         // we have found all hyperlink references in the first row and put them in refs,
@@ -1254,12 +1260,12 @@ void TextBuffer::_PruneHyperlinks()
                 break;
             }
         }
-    }
 
-    // Now delete obsolete references from our map
-    for (auto hyperlinkReference : firstRowRefs)
-    {
-        RemoveHyperlinkFromMap(hyperlinkReference);
+        // Now delete obsolete references from our map
+        for (auto hyperlinkReference : firstRowRefs)
+        {
+            RemoveHyperlinkFromMap(hyperlinkReference);
+        }
     }
 }
 
@@ -1512,12 +1518,14 @@ void TextBuffer::_ExpandTextRow(SMALL_RECT& textRow) const
 // - trimTrailingWhitespace - remove the trailing whitespace at the end of each line
 // - textRects - the rectangular regions from which the data will be extracted from the buffer (i.e.: selection rects)
 // - GetAttributeColors - function used to map TextAttribute to RGB COLORREFs. If null, only extract the text.
+// - formatWrappedRows - if set we will apply formatting (CRLF inclusion and whitespace trimming) on wrapped rows
 // Return Value:
 // - The text, background color, and foreground color data of the selected region of the text buffer.
 const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
                                                    const bool trimTrailingWhitespace,
                                                    const std::vector<SMALL_RECT>& selectionRects,
-                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors) const
+                                                   std::function<std::pair<COLORREF, COLORREF>(const TextAttribute&)> GetAttributeColors,
+                                                   const bool formatWrappedRows) const
 {
     TextAndColor data;
     const bool copyTextColor = GetAttributeColors != nullptr;
@@ -1579,12 +1587,12 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
             it++;
         }
 
-        const bool forcedWrap = GetRowByOffset(iRow).GetCharRow().WasWrapForced();
+        // We apply formatting to rows if the row was NOT wrapped or formatting of wrapped rows is allowed
+        const bool shouldFormatRow = formatWrappedRows || !GetRowByOffset(iRow).GetCharRow().WasWrapForced();
 
         if (trimTrailingWhitespace)
         {
-            // if the row was NOT wrapped...
-            if (!forcedWrap)
+            if (shouldFormatRow)
             {
                 // remove the spaces at the end (aka trim the trailing whitespace)
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
@@ -1603,8 +1611,7 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
         // a.k.a if we're earlier than the bottom, then apply CR/LF.
         if (includeCRLF && i < selectionRects.size() - 1)
         {
-            // if the row was NOT wrapped...
-            if (!forcedWrap)
+            if (shouldFormatRow)
             {
                 // then we can assume a CR/LF is proper
                 selectionText.push_back(UNICODE_CARRIAGERETURN);
@@ -2322,7 +2329,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
 //   user defined id from the custom id map (if there is one)
 // Arguments:
 // - The ID of the hyperlink to be removed
-void TextBuffer::RemoveHyperlinkFromMap(uint16_t id)
+void TextBuffer::RemoveHyperlinkFromMap(uint16_t id) noexcept
 {
     _hyperlinkMap.erase(id);
     for (const auto& customIdPair : _hyperlinkCustomIdMap)
@@ -2409,7 +2416,7 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     // all the text into one string and find the patterns in that string
     for (auto i = firstRow; i <= lastRow; ++i)
     {
-        auto row = GetRowByOffset(i);
+        auto& row = GetRowByOffset(i);
         concatAll += row.GetCharRow().GetText();
     }
 

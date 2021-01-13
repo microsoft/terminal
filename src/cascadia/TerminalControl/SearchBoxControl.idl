@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.TerminalControl
     {
         SearchBoxControl();
         void SetFocusOnTextbox();
+        void PopulateTextbox(String text);
         Boolean ContainsFocus();
 
         event SearchHandler Search;

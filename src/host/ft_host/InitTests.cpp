@@ -5,6 +5,7 @@
 
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+using namespace WEX::Logging;
 
 const DWORD _dwMaxMillisecondsToWaitOnStartup = 120 * 1000;
 const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
@@ -236,19 +237,46 @@ MODULE_SETUP(ModuleSetup)
 
     // Wait a moment for the driver to be ready after freeing to attach.
     Sleep(1000);
-
     VERIFY_WIN32_BOOL_SUCCEEDED_RETURN(AttachConsole(dwFindPid));
 
-    // Replace CRT handles
-    // These need to be reopened as read/write or they can affect some of the tests.
-    //
-    // std_out and std_in need to be closed when tests are finished, this is handled by the wil::scope_exit at the
-    // top of this file.
-    errno_t err = 0;
-    err = freopen_s(&std_out, "CONOUT$", "w+", stdout);
-    VERIFY_ARE_EQUAL(0, err);
-    err = freopen_s(&std_in, "CONIN$", "r+", stdin);
-    VERIFY_ARE_EQUAL(0, err);
+    int tries = 0;
+    while (tries < 5)
+    {
+        tries++;
+        Log::Comment(NoThrowString().Format(L"Attempt #%d to confirm we've attached", tries));
+
+        // Replace CRT handles
+        // These need to be reopened as read/write or they can affect some of the tests.
+        //
+        // std_out and std_in need to be closed when tests are finished, this is handled by the wil::scope_exit at the
+        // top of this file.
+        errno_t err = 0;
+        err = freopen_s(&std_out, "CONOUT$", "w+", stdout);
+        VERIFY_ARE_EQUAL(0, err);
+        err = freopen_s(&std_in, "CONIN$", "r+", stdin);
+        VERIFY_ARE_EQUAL(0, err);
+
+        // Now, try to get at the console we've set up. It's possible 1s wasn't long enough. If that was, we'll try again.
+
+        HANDLE const hOut = GetStdOutputHandle();
+        VERIFY_IS_NOT_NULL(hOut, L"Verify we have the standard output handle.");
+
+        CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
+        csbiexBefore.cbSize = sizeof(csbiexBefore);
+        BOOL succeeded = GetConsoleScreenBufferInfoEx(hOut, &csbiexBefore);
+        if (!succeeded)
+        {
+            auto gle = GetLastError();
+            VERIFY_ARE_EQUAL(6u, gle, L"If we fail to set up the console, GetLastError should return 6 here.");
+            Sleep(1000);
+        }
+        else
+        {
+            break;
+        }
+    };
+
+    VERIFY_IS_LESS_THAN(tries, 5, L"Make sure we set up the new console in time");
 
     return true;
 }

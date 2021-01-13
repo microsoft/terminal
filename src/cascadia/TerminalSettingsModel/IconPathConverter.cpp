@@ -7,7 +7,7 @@
 using namespace winrt::Windows;
 using namespace winrt::Windows::UI::Xaml;
 
-namespace winrt::TerminalApp::implementation
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
 // These are templates that help us figure out which BitmapIconSource/FontIconSource to use for a given IconSource.
 // We have to do this because some of our code still wants to use WUX/MUX IconSources.

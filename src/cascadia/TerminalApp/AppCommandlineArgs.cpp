@@ -247,6 +247,10 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                                                                      _splitVertical,
                                                                      RS_A(L"CmdSplitPaneVerticalArgDesc"));
         subcommand._verticalOption->excludes(subcommand._horizontalOption);
+        auto* sizeOpt = subcommand.subcommand->add_option("-s,--size",
+                                                          _splitPaneSize,
+                                                          RS_A(L"CmdSplitPaneSizeArgDesc"));
+        sizeOpt->check(CLI::Range(0.01f, 0.99f));
 
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -274,7 +278,7 @@ void AppCommandlineArgs::_buildSplitPaneParser()
                     style = SplitState::Vertical;
                 }
             }
-            SplitPaneArgs args{ style, terminalArgs };
+            SplitPaneArgs args{ style, _splitPaneSize, terminalArgs };
             splitPaneActionAndArgs.Args(args);
             _startupActions.push_back(splitPaneActionAndArgs);
         });
@@ -719,4 +723,76 @@ int AppCommandlineArgs::ParseArgs(winrt::array_view<const winrt::hstring>& args)
     // If all the args were successfully parsed, we'll have some commands
     // built in _appArgs, which we'll use when the application starts up.
     return 0;
+}
+
+// Method Description:
+// - Attempts to parse an array of commandline args into a list of
+//   commands to execute, and then parses these commands. As commands are
+//   successfully parsed, they will generate ShortcutActions for us to be
+//   able to execute. If we fail to parse any commands, we'll return the
+//   error code from the failure to parse that command, and stop processing
+//   additional commands.
+// - The first arg in args should be the program name "wt" (or some variant). It
+//   will be ignored during parsing.
+// Arguments:
+// - args: ExecuteCommandlineArgs describing the command line to parse
+// Return Value:
+// - 0 if the commandline was successfully parsed
+int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args)
+{
+    if (!args || args.Commandline().empty())
+    {
+        return 0;
+    }
+
+    // Convert the commandline into an array of args with
+    // CommandLineToArgvW, similar to how the app typically does when
+    // called from the commandline.
+    int argc = 0;
+    wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(args.Commandline().c_str(), &argc) };
+    if (argv)
+    {
+        std::vector<winrt::hstring> args;
+
+        // Make sure the first argument is wt.exe, because ParseArgs will
+        // always skip the program name. The particular value of this first
+        // string doesn't terribly matter.
+        args.emplace_back(L"wt.exe");
+        for (auto& elem : wil::make_range(argv.get(), argc))
+        {
+            args.emplace_back(elem);
+        }
+        winrt::array_view<const winrt::hstring> argsView{ args };
+        return ParseArgs(argsView);
+    }
+    return 0;
+}
+
+// Method Description:
+// - Allows disabling addition of help-related info in the exit message
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::DisableHelpInExitMessage()
+{
+    _app.set_help_flag();
+    _app.set_help_all_flag();
+}
+
+// Method Description:
+// - Resets the state to allow external consumers to reuse this instance
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::FullResetState()
+{
+    _resetStateToDefault();
+
+    _currentCommandline = nullptr;
+    _launchMode = std::nullopt;
+    _startupActions.clear();
+    _exitMessage = "";
+    _shouldExitEarly = false;
 }

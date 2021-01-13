@@ -147,18 +147,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ResizePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_ResizeDirection)
         {
-        case Direction::Left:
+        case ResizeDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case ResizeDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case ResizeDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case ResizeDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
         }
@@ -171,20 +171,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (_FocusDirection)
         {
-        case Direction::Left:
+        case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");
             break;
-        case Direction::Right:
+        case FocusDirection::Right:
             directionString = RS_(L"DirectionRight");
             break;
-        case Direction::Up:
+        case FocusDirection::Up:
             directionString = RS_(L"DirectionUp");
             break;
-        case Direction::Down:
+        case FocusDirection::Down:
             directionString = RS_(L"DirectionDown");
             break;
+        case FocusDirection::Previous:
+            return RS_(L"MoveFocusToLastUsedPane");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
@@ -229,8 +231,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring SplitPaneArgs::GenerateName() const
     {
         // The string will be similar to the following:
-        // * "Duplicate pane[, split: <direction>][, new terminal arguments...]"
-        // * "Split pane[, split: <direction>][, new terminal arguments...]"
+        // * "Duplicate pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
+        // * "Split pane[, split: <direction>][, size: <size>%][, new terminal arguments...]"
         //
         // Direction will only be added to the string if the split direction is
         // not "auto".
@@ -260,6 +262,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         }
 
+        if (_SplitSize != .5f)
+        {
+            ss << L"size: " << (_SplitSize * 100) << L"%, ";
+        }
+
         winrt::hstring newTerminalArgsStr;
         if (_TerminalArgs)
         {
@@ -285,6 +292,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
+        case SettingsTarget::SettingsUI:
+            return RS_(L"OpenSettingsUICommandKey");
         default:
             return RS_(L"OpenSettingsCommandKey");
         }
