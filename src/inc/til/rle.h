@@ -36,7 +36,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         T at(S position, S& applies)
         {
             THROW_HR_IF(E_INVALIDARG, position >= _size);
-            return _find(position, applies)->first;
+            return _at(position, applies)->first;
         }
 
         // Replaces every value seen in the run with a new one
@@ -63,8 +63,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (newSize > _size)
             {
                 // Get the attribute that covers the final column of old width.
-                const auto runPos = at(_size - 1);
-                auto& run = _list.at(runPos);
+                auto& run = _list.back();
 
                 // Extend its length by the additional columns we're adding.
                 run.second = run.second + newSize - _size;
@@ -76,22 +75,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             else
             {
                 // Get the attribute that covers the final column of the new width
-                size_t CountOfAttr = 0;
-                const auto runPos = at(newSize - 1, CountOfAttr);
-                auto& run = _list.at(runPos);
+                S applies = 0;
+                auto run = _at(newSize - 1, applies);
 
-                // CountOfAttr was given to us as "how many columns left from this point forward are covered by the returned run"
+                // applies was given to us as "how many columns left from this point forward are covered by the returned run"
                 // So if the original run was B5 covering a 5 size OldWidth and we have a newSize of 3
                 // then when we called FindAttrIndex, it returned the B5 as the pIndexedRun and a 2 for how many more segments it covers
                 // after and including the 3rd column.
                 // B5-2 = B3, which is what we desire to cover the new 3 size buffer.
-                run.second = run.second - CountOfAttr + 1;
+                run->second = run->second - applies + 1;
 
                 // Store that the new total width we represent is the new width.
                 _size = newSize;
 
                 // Erase segments after the one we just updated.
-                _list.erase(_list.cbegin() + runPos + 1, _list.cend());
+                _list.erase(run + 1, _list.cend());
 
                 // NOTE: Under some circumstances here, we have leftover run segments in memory or blank run segments
                 // in memory. We're not going to waste time redimensioning the array in the heap. We're just noting that the useful
@@ -103,7 +101,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // If no start is specified, fills the entire list.
         void fill(const T value, const S start = gsl::narrow_cast<S>(0))
         {
-            _list.assign(1, std::pair<T, S>{ value, gsl::narrow<S>(_size - start) });
+            insert(value, start, gsl::narrow_cast<S>(_size - start));
         }
 
         // Inserts this value at the given position for the given run length.
@@ -111,7 +109,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             std::pair<T, S> item{ value, length };
         
-            _merge(gsl::span<std::pair<T, S>>{ &item, gsl::narrow_cast<S>(1) }, position);
+            _merge(gsl::span<std::pair<T, S>>{ &item, 1 }, position);
         }
 
         constexpr bool operator==(const rle& other) const noexcept
@@ -142,7 +140,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     protected:
-        auto _find(S position, S& applies) const
+        auto _at(S position, S& applies)
         {
             FAIL_FAST_IF(!(position < _size)); // The requested index cannot be longer than the total length described by this set of Attrs.
 
@@ -151,7 +149,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
 
             // Scan through the internal array from position 0 adding up the lengths that each attribute applies to
-            auto runPos = _list.cbegin();
+            auto runPos = _list.begin();
             do
             {
                 totalLength += runPos->second;
@@ -163,11 +161,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
 
                 runPos++;
-            } while (runPos < _list.cend());
+            } while (runPos < _list.end());
 
             // we should have broken before falling out the while case.
             // if we didn't break, then this ATTR_ROW wasn't filled with enough attributes for the entire row of characters
-            FAIL_FAST_IF(runPos >= _list.cend());
+            FAIL_FAST_IF(runPos >= _list.end());
 
             // The remaining iterator position is the position of the attribute that is applicable at the position requested (position)
             // Calculate its remaining applicability if requested
@@ -198,14 +196,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //            (rgInsertAttrs is a 2 length array with Y1->N1 in it and cInsertAttrs = 2)
             // Final Run: R3 -> G2 -> Y1 -> N1 -> G1 -> B2
 
-            // We'll need to know what the last valid column is for some calculations versus endIndex
-            // because endIndex is specified to us as an inclusive index value.
-            // Do the -1 math here now so we don't have to have -1s scattered all over this function.
-            const size_t iLastBufferCol = _size - 1;
-
-            const S endIndex = std::accumulate(newItems.begin(), newItems.end(), gsl::narrow_cast<S>(0), [](S sum, std::pair<T, S> item) {
-                return sum + item.second;
-            });
+            S newItemsTotalCoverage = 0;
+            for (auto& item : newItems)
+            {
+                newItemsTotalCoverage += item.second;
+            }
 
             // If the insertion size is 1, do some pre-processing to
             // see if we can get this done quickly.
@@ -222,14 +217,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
                 // .. otherwise if we internally have a list of 2 or more and we're about to insert a single color
                 // it's possible that we just walk left-to-right through the row and find a quick exit.
-                else if (startIndex >= 0 && startIndex == endIndex)
+                else if (startIndex >= 0 && newItemsTotalCoverage == 1)
                 {
                     // First we try to find the run where the insertion happens, using lowerBound and upperBound to track
                     // where we are currently at.
                     const auto begin = _list.begin();
-                    size_t lowerBound = 0;
-                    size_t upperBound = 0;
-                    for (size_t i = 0; i < _list.size(); i++)
+                    S lowerBound = 0;
+                    S upperBound = 0;
+                    for (S i = 0; i < _list.size(); i++)
                     {
                         const auto curr = begin + i;
                         upperBound += curr->second;
@@ -331,7 +326,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             // If we're about to cover the entire existing run with a new one, we can also make an optimization.
-            if (startIndex == 0 && endIndex == iLastBufferCol)
+            if (startIndex == 0 && newItemsTotalCoverage == _size)
             {
                 // Just dump what we're given over what we have and call it a day.
                 _list.assign(newItems.begin(), newItems.end());
@@ -346,7 +341,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // becomes R3->B2->Y2->B1->G2.
             // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
             // fact that an existing piece of the run was split in half (to hold the latter half).
-            const size_t cNewRun = _list.size() + newItems.size() + 1;
+            const S cNewRun = gsl::narrow_cast<S>(_list.size() + newItems.size() + 1);
             decltype(_list) newRun;
             newRun.reserve(cNewRun);
 
@@ -358,8 +353,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto pExistingRunPos = existingRun;
             const auto pExistingRunEnd = _list.end();
             auto pInsertRunPos = newItems.begin();
-            size_t cInsertRunRemaining = newItems.size();
-            size_t iExistingRunCoverage = 0;
+            S cInsertRunRemaining = gsl::narrow_cast<S>(newItems.size());
+            S iExistingRunCoverage = 0;
 
             // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.
             // If the new run starts at 0, we have nothing to copy from the beginning.
@@ -392,7 +387,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 //      the new/final run.
 
                 // Fetch out the length so we can fix it up based on the below conditions.
-                size_t length = newRun.back().second;
+                S length = newRun.back().second;
 
                 // If we've covered more cells already than the start of the attributes to be inserted...
                 if (iExistingRunCoverage > startIndex)
@@ -426,6 +421,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             // We're technically done with the insert run now and have 0 remaining, but won't bother updating its pointers
             // and counts any further because we won't use them.
+
+            const S endIndex = startIndex + newItemsTotalCoverage - 1;
 
             // Now we need to move our pointer for the original existing run forward and update our counts
             // on how many cells we could have copied from the source before finishing off the new run.
@@ -464,7 +461,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // so we can just adjust the final run's column count instead of adding another segment here.
                     if (newRun.back().first == pExistingRunPos->first)
                     {
-                        size_t length = newRun.back().second;
+                        S length = newRun.back().second;
                         length += (iExistingRunCoverage - (endIndex + 1));
                         newRun.back().second = length;
                     }
@@ -502,7 +499,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 else if (newRun.back().first == pExistingRunPos->first)
                 {
                     // Add the value from the existing run into the current new run position.
-                    size_t length = newRun.back().second;
+                    S length = newRun.back().second;
                     length += pExistingRunPos->second;
                     newRun.back().second = length;
 

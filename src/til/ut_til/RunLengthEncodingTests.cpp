@@ -20,7 +20,7 @@ class RunLengthEncodingTests
 
     TEST_METHOD(ConstructVerySmall)
     {
-        const til::rle<unsigned char, unsigned char> rle(12, 37);
+        const til::rle<unsigned short, unsigned char> rle(12, 37);
     }
 
     TEST_METHOD(Size)
@@ -127,12 +127,14 @@ class RunLengthEncodingTests
         // 3 for 4, 7 for 2, 11 for 3, 4 for 1.
 
         til::rle<int> expected(7, 10);
-        actual.insert(3, 0, 4);
-        actual.insert(7, 4, 2);
-        actual.insert(11, 6, 1);
+        expected.insert(3, 0, 4);
+        expected.insert(7, 4, 2);
+        expected.insert(11, 6, 1);
 
         // 3 3 3 3 7 7 11
         // 3 for 4, 7 for 2, 11 for 1
+
+        actual.resize(7);
 
         VERIFY_ARE_EQUAL(expected, actual);
     }
@@ -149,13 +151,15 @@ class RunLengthEncodingTests
         // 3 for 4, 7 for 2, 11 for 3, 4 for 1.
 
         til::rle<int> expected(13, 10);
-        actual.insert(3, 0, 4);
-        actual.insert(7, 4, 2);
-        actual.insert(11, 6, 3);
-        actual.insert(4, 9, 4);
+        expected.insert(3, 0, 4);
+        expected.insert(7, 4, 2);
+        expected.insert(11, 6, 3);
+        expected.insert(4, 9, 4);
 
         // 3 3 3 3 7 7 11 11 11 4 4 4 4
         // 3 for 4, 7 for 2, 11 for 3, 4 for 4.
+
+        actual.resize(13);
 
         VERIFY_ARE_EQUAL(expected, actual);
     }
@@ -184,28 +188,43 @@ class RunLengthEncodingTests
         actual.fill(20, 2);
 
         til::rle<int> expected(10, 20);
-        actual.insert(3, 0, 2);
+        expected.insert(3, 0, 2);
 
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
-    TEST_METHOD(InsertLengthOne)
+    TEST_METHOD(Insert)
     {
+        til::rle<int> actual(10, 10);
+        actual.insert(4, 9); // insert single, implicit length
 
-    }
+        til::rle<int> expected(10, 4);
+        expected.insert(10, 0, 9); // insert multiple, say length
 
-    TEST_METHOD(InsertLengthMany)
-    {
-
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
     TEST_METHOD(Equal)
     {
+        til::rle<int> actual(10, 10);
+        til::rle<int> expected(10, 10);
 
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 
-    TEST_METHOD(NotEqual)
+    TEST_METHOD(NotEqualValue)
     {
+        til::rle<int> actual(10, 9);
+        til::rle<int> expected(10, 10);
 
+        VERIFY_ARE_NOT_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(NotEqualLength)
+    {
+        til::rle<int> actual(5, 10);
+        til::rle<int> expected(10, 10);
+
+        VERIFY_ARE_NOT_EQUAL(expected, actual);
     }
 };

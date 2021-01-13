@@ -97,4 +97,25 @@
     <Type Name="til::color">
       <DisplayString>{{RGB: {(int)r,d}, {(int)g,d}, {(int)b,d}; α: {(int)a,d}}}</DisplayString>
     </Type>
+
+    <Type Name="til::rle&lt;*&gt;">
+      <DisplayString>{{Size: {_size,d}}}</DisplayString>
+        <Expand>
+            <Item Name="[size]">_size</Item>
+            <ArrayItems>
+                <Size>_list.m_holder.m_size</Size>
+                <ValuePointer>_list.m_holder.m_start</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+
+    <Type Name="boost::container::small_vector&lt;*&gt;">
+        <Expand>
+            <Item Name="[size]">m_holder.m_size</Item>
+            <ArrayItems>
+                <Size>m_holder.m_size</Size>
+                <ValuePointer>m_holder.m_start</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
 </AutoVisualizer>
