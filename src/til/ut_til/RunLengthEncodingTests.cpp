@@ -15,7 +15,8 @@ class RunLengthEncodingTests
 
     TEST_METHOD(ConstructDefaultLength)
     {
-        const til::rle<unsigned int> rle(86, 9);
+        til::rle<unsigned int> rle(86, 9);
+        auto foo = rle.begin();
     }
 
     TEST_METHOD(ConstructVerySmall)

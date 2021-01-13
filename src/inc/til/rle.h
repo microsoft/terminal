@@ -9,10 +9,265 @@ class RunLengthEncodingTests;
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
+    namespace details
+    {
+        template<typename ParentIt>
+        class rle_const_iterator
+        {
+            // If you use this as a sample for your own iterator, this looks
+            // a bit daunting. But it's almost entirely boilerplate.
+            // All you actually have to fill in is:
+            // A. size_type might not be necessary for you. It's just inferrable
+            //    from our parent so I defined it.
+            // 1. value_type, pointer, reference, and difference type. These
+            //    specify the overall types. They're generally what you want to see
+            //    when someone does *iterator or iterator-> or it1 - it2.
+            //    If you have half an idea of what those return types should be,
+            //    define them at the top or better yet, infer them from the underlying
+            //    data source.
+            // 2. Fill in operator*() and operator->() pointing directly at the data value.
+            // 3. Fill in inc() and dec(). That gives you ++it, it++, --it, and it--.
+            // 4. Fill in operator+=(). That gives you +=, +, -=, and -.
+            // 5. Fill in operator-() for a difference between two instances.
+            // 6. Fill in operator[] to go to the offset like an array index.
+            // 7. Fill in operator== for equality. Gets == and != in one shot.
+            // 8. Fill in operator< for comparison. Also covers > and <= and >=.
+            // Congrats, you have a const_iterator. Go implement the non-const
+            // inheriting from this. It's super simple once this is done.
+
+        private:
+            using size_type = typename ParentIt::value_type::second_type;
+        public:
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = typename ParentIt::value_type::first_type;
+            using pointer = const value_type*;
+            using reference = const value_type&;
+            using difference_type = typename ParentIt::difference_type;
+
+            rle_const_iterator(ParentIt it) :
+                _it(it)
+            {
+            }
+
+            [[nodiscard]] reference operator*() const noexcept
+            {
+                
+            }
+
+            [[nodiscard]] pointer operator->() const noexcept
+            {
+                
+            }
+
+            rle_const_iterator& operator++() noexcept
+            {
+                inc();
+                return *this;
+            }
+
+            rle_const_iterator operator++(int) noexcept
+            {
+                rle_const_iterator tmp = *this;
+                inc();
+                return tmp;
+            }
+
+            rle_const_iterator& operator--() noexcept
+            {
+                dec();
+                return *this;
+            }
+
+            rle_const_iterator operator--(int) noexcept
+            {
+                rle_const_iterator tmp = *this;
+                dec();
+                return tmp;
+            }
+
+            rle_const_iterator& operator+=(const difference_type offset) noexcept
+            {
+                // TODO: Optional iterator debug
+            }
+
+            [[nodiscard]] rle_const_iterator operator+(const difference_type offset) const noexcept
+            {
+                rle_const_iterator tmp = *this;
+                return tmp += offset;
+            }
+
+            rle_const_iterator& operator-=(const difference_type offset) noexcept
+            {
+                return *this += -offset;
+            }
+
+            [[nodiscard]] rle_const_iterator operator-(const difference_type offset) const noexcept
+            {
+                rle_const_iterator tmp = *this;
+                return tmp -= offset;
+            }
+
+            [[nodiscard]] difference_type operator-(const rle_const_iterator& right) const noexcept
+            {
+                // TODO: Optional iterator debug
+            }
+
+            [[nodiscard]] reference operator[](const difference_type offset) const noexcept
+            {
+
+            }
+
+            [[nodiscard]] bool operator==(const rle_const_iterator& right) const noexcept
+            {
+                // TODO: Optional iterator debug
+            }
+
+            [[nodiscard]] bool operator!=(const rle_const_iterator& right) const noexcept
+            {
+                return !(*this == right);
+            }
+
+            [[nodiscard]] bool operator<(const rle_const_iterator& right) const noexcept
+            {
+                // TODO: Optional iterator debug
+            }
+
+            [[nodiscard]] bool operator>(const rle_const_iterator& right) const noexcept
+            {
+                return right < *this;
+            }
+
+            [[nodiscard]] bool operator<=(const rle_const_iterator& right) const noexcept
+            {
+                return !(right < *this);
+            }
+
+            [[nodiscard]] bool operator>=(const rle_const_iterator& right) const noexcept
+            {
+                return !(*this < right);
+            }
+
+        private:
+            void inc() noexcept
+            {
+
+            }
+
+            void dec() noexcept
+            {
+
+            }
+
+            ParentIt _it;
+            size_type _usage;
+        };
+
+        template<typename ParentIt>
+        class rle_iterator : public rle_const_iterator<ParentIt>
+        {
+            // This looks like a lot, but seriously... we're defining nothing here.
+            // It's literally just stripping consts off of the const iterator and
+            // making those accessible.
+            // If you use this as a sample, all you have to change is:
+            // 1. Make it inherit correctly and align that with the template.
+            // 2. Fix _Mybase to match
+            // 3. value_type needs to be whatever makes sense to come off of *iterator
+            // 4. difference_type needs to come from somewhere else, probably.
+
+            using _Mybase = rle_const_iterator<ParentIt>;
+
+            using iterator_category = std::random_access_iterator_tag;
+            using value_type = typename ParentIt::value_type::first_type;
+            using pointer = value_type*;
+            using reference = value_type&;
+            using difference_type = typename ParentIt::difference_type;
+
+            // Use base's constructor.
+            using _Mybase::_Mybase;
+
+            [[nodiscard]] reference operator*() const noexcept
+            {
+                return const_cast<reference>(_Mybase::operator*());
+            }
+
+            [[nodiscard]] pointer operator->() const noexcept
+            {
+                return const_cast<std::remove_const_t<value_type>*>(_Mybase::operator->());
+            }
+
+            rle_iterator& operator++() noexcept
+            {
+                _Mybase::operator++();
+                return *this;
+            }
+
+            rle_iterator operator++(int) noexcept
+            {
+                rle_iterator tmp = *this;
+                _Mybase::operator++();
+                return tmp;
+            }
+
+            rle_iterator& operator--() noexcept
+            {
+                _Mybase::operator--();
+                return *this;
+            }
+
+            rle_iterator operator--(int) noexcept
+            {
+                rle_iterator tmp = *this;
+                _Mybase::operator--();
+                return tmp;
+            }
+
+            rle_iterator& operator+=(const difference_type offset) noexcept
+            {
+                _Mybase::operator+=(offset);
+                return *this;
+            }
+
+            [[nodiscard]] rle_iterator operator+(const difference_type offset) const noexcept
+            {
+                rle_iterator tmp = *this;
+                return tmp += offset;
+            }
+
+            rle_iterator& operator-=(const difference_type offset) noexcept
+            {
+                _Mybase::operator-=(offset);
+                return *this;
+            }
+
+            // Use base's difference method.
+            using _Mybase::operator-;
+
+            [[nodiscard]] rle_iterator operator-(const difference_type offset) const noexcept
+            {
+                rle_iterator tmp = *this;
+                return tmp -= offset;
+            }
+
+            [[nodiscard]] reference operator[](const difference_type offset) const noexcept
+            {
+                return const_cast<reference>(_Mybase::operator[](offset));
+            }
+        };
+    };
+
     template<typename T, typename S = size_t>
     class rle
     {
+    private:
+        boost::container::small_vector<std::pair<T, S>, 1> _list;
+        S _size;
+
     public:
+        using iterator = details::rle_iterator<typename decltype(_list)::iterator>;
+        using const_iterator = details::rle_const_iterator<typename decltype(_list)::const_iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
         rle(const S size, const T value) :
             _size(size)
         {
@@ -108,7 +363,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         void insert(const T value, const S position, const S length = gsl::narrow_cast<S>(1))
         {
             std::pair<T, S> item{ value, length };
-        
+
             _merge(gsl::span<std::pair<T, S>>{ &item, 1 }, position);
         }
 
@@ -121,6 +376,66 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         constexpr bool operator!=(const rle& other) const noexcept
         {
             return !(*this == other);
+        }
+
+        [[nodiscard]] iterator begin() noexcept
+        {
+            return iterator(_list.begin());
+        }
+
+        [[nodiscard]] const_iterator begin() const noexcept
+        {
+            return const_iterator(_list.begin());
+        }
+
+        [[nodiscard]] iterator end() noexcept
+        {
+            return iterator(_list.end());
+        }
+
+        [[nodiscard]] const_iterator end() const noexcept
+        {
+            return const_iterator(_list.end());
+        }
+
+        [[nodiscard]] reverse_iterator rbegin() noexcept
+        {
+            return reverse_iterator(end());
+        }
+
+        [[nodiscard]] const_reverse_iterator rbegin() const noexcept
+        {
+            return const_reverse_iterator(end());
+        }
+
+        [[nodiscard]] reverse_iterator rend() noexcept
+        {
+            return reverse_iterator(begin());
+        }
+
+        [[nodiscard]] const_reverse_iterator rend() const noexcept
+        {
+            return const_reverse_iterator(begin());
+        }
+
+        [[nodiscard]] const_iterator cbegin() const noexcept
+        {
+            return begin();
+        }
+
+        [[nodiscard]] const_iterator cend() const noexcept
+        {
+            return end();
+        }
+
+        [[nodiscard]] const_reverse_iterator crbegin() const noexcept
+        {
+            return rbegin();
+        }
+
+        [[nodiscard]] const_reverse_iterator crend() const noexcept
+        {
+            return rend();
         }
 
         std::wstring to_string() const
@@ -518,9 +833,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _list.swap(newRun);
             return;
         }
-
-        boost::container::small_vector<std::pair<T, S>, 1> _list;
-        S _size;
 
 #ifdef UNIT_TESTING
         friend class ::RunLengthEncodingTests;

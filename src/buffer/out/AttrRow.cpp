@@ -575,7 +575,6 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     return S_OK;
 }
 
-
 ATTR_ROW::const_iterator ATTR_ROW::begin() const noexcept
 {
     return AttrRowIterator(this);
