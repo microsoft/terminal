@@ -59,12 +59,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid ProfileGuid { get; };
     }
 
-
-    runtimeclass BackgroundImageIsEmptyConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        BackgroundImageIsEmptyConverter();
-    };
-
     runtimeclass ProfilePageNavigationState
     {
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
