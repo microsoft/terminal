@@ -39,7 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
@@ -206,6 +206,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:NumberBox x:Uid="Profile_FontSize"
                                             Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
                                             Style="{StaticResource NumberBoxSettingStyle}"
+                                            AcceptsExpression="False"
+                                            Minimum="1"
+                                            Maximum="128"
                                             SmallChange="1"
                                             LargeChange="10"/>
                         </ContentPresenter>
