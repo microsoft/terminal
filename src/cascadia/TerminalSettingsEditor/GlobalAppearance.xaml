@@ -34,6 +34,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource RadioButtonsSettingStyle}"/>
             </ContentPresenter>
 
+            <!--Always show tabs-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <CheckBox x:Uid="Globals_AlwaysShowTabs"
+                          IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
+                          Style="{StaticResource CheckBoxSettingStyle}"/>
+            </ContentPresenter>
+
             <!--Show Titlebar-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <CheckBox x:Uid="Globals_ShowTitlebar"
@@ -45,13 +52,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <CheckBox x:Uid="Globals_ShowTitleInTitlebar"
                           IsChecked="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
-
-            <!--Always show tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_AlwaysShowTabs"
-                          IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
                           Style="{StaticResource CheckBoxSettingStyle}"/>
             </ContentPresenter>
 
