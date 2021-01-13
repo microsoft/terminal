@@ -32,10 +32,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PropertyChanged([this](auto&&, const Data::PropertyChangedEventArgs& args) {
             if (args.PropertyName() == L"BackgroundImagePath")
             {
-                // _propertyChangedHandlers(*static_cast<T*>(this), Data::PropertyChangedEventArgs{ L"UseDesktopBGImage" });
                 _NotifyChanges(L"UseDesktopBGImage");
             }
         });
+
+        // Cache the original BG image path. If the user clicks "Use desktop
+        // wallpaper", then unchecks it, this is the string we'll restore to
+        // them.
+        if (BackgroundImagePath() != L"desktopWallpaper")
+        {
+            _lastBgImagePath = BackgroundImagePath();
+        }
     }
 
     bool ProfileViewModel::CanDeleteProfile() const
@@ -298,13 +305,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (useDesktop)
         {
-            _lastBgImagePath = BackgroundImagePath();
+            if (BackgroundImagePath() != L"desktopWallpaper")
+            {
+                _lastBgImagePath = BackgroundImagePath();
+            }
             BackgroundImagePath(L"desktopWallpaper");
         }
         else
         {
             BackgroundImagePath(_lastBgImagePath);
         }
-        // useDesktop;
     };
 }
