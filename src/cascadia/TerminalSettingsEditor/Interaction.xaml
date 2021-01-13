@@ -58,10 +58,10 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!--Copy Format-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <muxc:RadioButtons x:Uid="Globals_CopyFormat"
-                                               ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                   ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>
