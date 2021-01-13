@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _Globals{ settings } {}
 
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
+        GETSET_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
@@ -49,6 +50,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _UpdateColorTable(const winrt::Microsoft::Terminal::Settings::Model::ColorScheme& colorScheme);
         void _UpdateColorSchemeList();
         void _RenameCurrentScheme(hstring newName);
+
+        winrt::hstring _lastSchemeName;
     };
 
     struct ColorTableEntry : ColorTableEntryT<ColorTableEntry>

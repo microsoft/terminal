@@ -73,6 +73,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto entry = winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 });
             _CurrentColorTable.Append(entry);
         }
+
+        std::wstring lastNameFromNav{ _State.LastSelectedScheme().c_str() };
+        std::wstring lastName{ _lastSchemeName.c_str() };
+        std::wstring currentName{ CurrentColorScheme() ? CurrentColorScheme().Name().c_str() : L"" };
+        lastName;
+        currentName;
+        lastNameFromNav;
+
+        auto it = std::find_if(begin(_ColorSchemeList),
+                               end(_ColorSchemeList),
+                               [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
+
+        if (it != end(_ColorSchemeList))
+        {
+            auto scheme = *it;
+            ColorSchemeComboBox().SelectedItem(scheme);
+        }
     }
 
     // Function Description:
@@ -89,6 +106,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
+
+        _lastSchemeName = colorScheme.Name();
+        _State.LastSelectedScheme(colorScheme.Name());
 
         // Set the text disclaimer for the text box
         hstring disclaimer{};
@@ -119,6 +139,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (const auto& pair : colorSchemeMap)
         {
             _ColorSchemeList.Append(pair.Value());
+        }
+
+        if (_lastSchemeName == L"" && _ColorSchemeList.Size() > 0)
+        {
+            _lastSchemeName = _ColorSchemeList.GetAt(0).Name();
         }
     }
 
