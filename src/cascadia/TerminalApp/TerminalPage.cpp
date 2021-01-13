@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "TerminalPage.h"
 #include "Utils.h"
-#include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
@@ -108,7 +107,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyBindings(*_bindings);
+            CommandPalette().SetKeyMap(_settings.KeyMap());
         }
     }
 
@@ -332,7 +331,7 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ProcessStartupActions(_startupActions, true);
+                ProcessStartupActions(_startupActions, true);
             }
         }
     }
@@ -348,8 +347,8 @@ namespace winrt::TerminalApp::implementation
     //   should fire an Initialized event.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
-                                                                const bool initial)
+    winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
+                                                               const bool initial)
     {
         // If there are no actions left, do nothing.
         if (actions.Size() == 0)
@@ -602,7 +601,9 @@ namespace winrt::TerminalApp::implementation
                 settingsItem.Click({ this, &TerminalPage::_SettingsButtonOnClick });
                 newTabFlyout.Items().Append(settingsItem);
 
-                auto settingsKeyChord = keyBindings.GetKeyBindingForAction(ShortcutAction::OpenSettings);
+                Microsoft::Terminal::Settings::Model::OpenSettingsArgs args{ SettingsTarget::SettingsFile };
+                Microsoft::Terminal::Settings::Model::ActionAndArgs settingsAction{ ShortcutAction::OpenSettings, args };
+                const auto settingsKeyChord{ keyBindings.GetKeyBindingForActionWithArgs(settingsAction) };
                 if (settingsKeyChord)
                 {
                     _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
@@ -943,9 +944,7 @@ namespace winrt::TerminalApp::implementation
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        auto setting = AppLogic::CurrentAppSettings();
-        auto keymap = setting.GlobalSettings().KeyMap();
-        const auto actionAndArgs = keymap.TryLookup(kc);
+        const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs)
         {
             if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
@@ -1095,34 +1094,38 @@ namespace winrt::TerminalApp::implementation
     // - Duplicates the current focused tab
     void TerminalPage::_DuplicateTabViewItem()
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
+            try
             {
-                try
-                {
-                    // TODO: GH#5047 - In the future, we should get the Profile of
-                    // the focused pane, and use that to build a new instance of the
-                    // settings so we can duplicate this tab/pane.
-                    //
-                    // Currently, if the profile doesn't exist anymore in our
-                    // settings, we'll silently do nothing.
-                    //
-                    // In the future, it will be preferable to just duplicate the
-                    // current control's settings, but we can't do that currently,
-                    // because we won't be able to create a new instance of the
-                    // connection without keeping an instance of the original Profile
-                    // object around.
+                // TODO: GH#5047 - In the future, we should get the Profile of
+                // the focused pane, and use that to build a new instance of the
+                // settings so we can duplicate this tab/pane.
+                //
+                // Currently, if the profile doesn't exist anymore in our
+                // settings, we'll silently do nothing.
+                //
+                // In the future, it will be preferable to just duplicate the
+                // current control's settings, but we can't do that currently,
+                // because we won't be able to create a new instance of the
+                // connection without keeping an instance of the original Profile
+                // object around.
 
-                    const auto& profileGuid = terminalTab->GetFocusedProfile();
-                    if (profileGuid.has_value())
+                const auto& profileGuid = terminalTab->GetFocusedProfile();
+                if (profileGuid.has_value())
+                {
+                    const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
+                    const auto workingDirectory = terminalTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
                     {
-                        const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
-                        _CreateNewTabFromSettings(profileGuid.value(), settings);
+                        settings.StartingDirectory(workingDirectory);
                     }
+
+                    _CreateNewTabFromSettings(profileGuid.value(), settings);
                 }
-                CATCH_LOG();
             }
+            CATCH_LOG();
         }
     }
 
@@ -1319,14 +1322,6 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        if (CommandPalette().Visibility() == Visibility::Visible)
-        {
-            // If the tab switcher is currently open, don't change its mode.
-            // Just select the new tab.
-            CommandPalette().SelectNextItem(bMoveRight);
-            return;
-        }
-
         const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
         const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
 
@@ -1418,20 +1413,17 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_UnZoomIfNeeded()
     {
-        if (auto focusedTab = _GetFocusedTab())
+        if (const auto activeTab{ _GetFocusedTabImpl() })
         {
-            if (auto activeTab = _GetTerminalTabImpl(focusedTab))
+            if (activeTab->IsZoomed())
             {
-                if (activeTab->IsZoomed())
-                {
-                    // Remove the content from the tab first, so Pane::UnZoom can
-                    // re-attach the content to the tree w/in the pane
-                    _tabContent.Children().Clear();
-                    // In ExitZoom, we'll change the Tab's Content(), triggering the
-                    // content changed event, which will re-attach the tab's new content
-                    // root to the tree.
-                    activeTab->ExitZoom();
-                }
+                // Remove the content from the tab first, so Pane::UnZoom can
+                // re-attach the content to the tree w/in the pane
+                _tabContent.Children().Clear();
+                // In ExitZoom, we'll change the Tab's Content(), triggering the
+                // content changed event, which will re-attach the tab's new content
+                // root to the tree.
+                activeTab->ExitZoom();
             }
         }
     }
@@ -1446,24 +1438,18 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_MoveFocus(const FocusDirection& direction)
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
-            {
-                _UnZoomIfNeeded();
-                terminalTab->NavigateFocus(direction);
-            }
+            _UnZoomIfNeeded();
+            terminalTab->NavigateFocus(direction);
         }
     }
 
     TermControl TerminalPage::_GetActiveControl()
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
-            {
-                return terminalTab->GetActiveTerminalControl();
-            }
+            return terminalTab->GetActiveTerminalControl();
         }
         return nullptr;
     }
@@ -1488,11 +1474,23 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - returns a com_ptr to the currently focused tab. This might return null,
     //   so make sure to check the result!
-    winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab()
+    winrt::TerminalApp::TabBase TerminalPage::_GetFocusedTab() const noexcept
     {
         if (auto index{ _GetFocusedTabIndex() })
         {
             return _tabs.GetAt(*index);
+        }
+        return nullptr;
+    }
+
+    // Method Description:
+    // - returns a com_ptr to the currently focused tab implementation. This might return null,
+    //   so make sure to check the result!
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetFocusedTabImpl() const noexcept
+    {
+        if (auto tab{ _GetFocusedTab() })
+        {
+            return _GetTerminalTabImpl(tab);
         }
         return nullptr;
     }
@@ -1538,13 +1536,10 @@ namespace winrt::TerminalApp::implementation
     //   tab's Closed event.
     void TerminalPage::_CloseFocusedPane()
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
-            {
-                _UnZoomIfNeeded();
-                terminalTab->ClosePane();
-            }
+            _UnZoomIfNeeded();
+            terminalTab->ClosePane();
         }
     }
 
@@ -1587,26 +1582,23 @@ namespace winrt::TerminalApp::implementation
     // - rowsToScroll: a number of lines to move the viewport. If not provided we will use a system default.
     void TerminalPage::_Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll)
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
+            uint32_t realRowsToScroll;
+            if (rowsToScroll == nullptr)
             {
-                uint32_t realRowsToScroll;
-                if (rowsToScroll == nullptr)
-                {
-                    // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
-                    realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                           terminalTab->GetActiveTerminalControl().GetViewHeight() :
-                                           _systemRowsToScroll;
-                }
-                else
-                {
-                    // use the custom value specified in the command
-                    realRowsToScroll = rowsToScroll.Value();
-                }
-                auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
-                terminalTab->Scroll(scrollDelta);
+                // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
+                realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
+                                       terminalTab->GetActiveTerminalControl().GetViewHeight() :
+                                       _systemRowsToScroll;
             }
+            else
+            {
+                // use the custom value specified in the command
+                realRowsToScroll = rowsToScroll.Value();
+            }
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
+            terminalTab->Scroll(scrollDelta);
         }
     }
 
@@ -1632,17 +1624,9 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto indexOpt = _GetFocusedTabIndex();
+        const auto focusedTab{ _GetFocusedTabImpl() };
 
-        // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
-        if (!indexOpt)
-        {
-            return;
-        }
-
-        auto focusedTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt));
-
-        // Do nothing if the focused tab isn't a TerminalTab
+        // Do nothing if no TerminalTab is focused
         if (!focusedTab)
         {
             return;
@@ -1661,6 +1645,12 @@ namespace winrt::TerminalApp::implementation
                 {
                     profileFound = true;
                     controlSettings = { winrt::make<TerminalSettings>(_settings, current_guid.value(), *_bindings) };
+                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.StartingDirectory(workingDirectory);
+                    }
                     realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
@@ -1721,13 +1711,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_ResizePane(const ResizeDirection& direction)
     {
-        if (auto index{ _GetFocusedTabIndex() })
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
-            {
-                _UnZoomIfNeeded();
-                terminalTab->ResizePane(direction);
-            }
+            _UnZoomIfNeeded();
+            terminalTab->ResizePane(direction);
         }
     }
 
@@ -1738,14 +1725,8 @@ namespace winrt::TerminalApp::implementation
     // - scrollDirection: ScrollUp will move the viewport up, ScrollDown will move the viewport down
     void TerminalPage::_ScrollPage(ScrollDirection scrollDirection)
     {
-        auto indexOpt = _GetFocusedTabIndex();
-        // Do nothing if for some reason, there's no tab in focus. We don't want to crash.
-        if (!indexOpt)
-        {
-            return;
-        }
-
-        if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
+        // Do nothing if for some reason, there's no terminal tab in focus. We don't want to crash.
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             const auto control = _GetActiveControl();
             const auto termHeight = control.GetViewHeight();
@@ -1756,13 +1737,10 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_ScrollToBufferEdge(ScrollDirection scrollDirection)
     {
-        if (const auto indexOpt = _GetFocusedTabIndex())
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*indexOpt)))
-            {
-                auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
-                terminalTab->Scroll(scrollDelta);
-            }
+            auto scrollDelta = _ComputeScrollDelta(scrollDirection, INT_MAX);
+            terminalTab->Scroll(scrollDelta);
         }
     }
 
@@ -1872,12 +1850,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (_settings && _settings.GlobalSettings().SnapToGridOnResize())
         {
-            if (auto index{ _GetFocusedTabIndex() })
+            if (const auto terminalTab{ _GetFocusedTabImpl() })
             {
-                if (auto terminalTab = _GetTerminalTabImpl(_tabs.GetAt(*index)))
-                {
-                    return terminalTab->CalcSnappedDimension(widthOrHeight, dimension);
-                }
+                return terminalTab->CalcSnappedDimension(widthOrHeight, dimension);
             }
         }
         return dimension;
@@ -1973,8 +1948,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
-            const bool warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
+            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
+            const auto warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
@@ -1983,6 +1959,13 @@ namespace winrt::TerminalApp::implementation
             if (warnMultiLine || warnLargeText)
             {
                 co_await winrt::resume_foreground(Dispatcher());
+
+                // We have to initialize the dialog here to be able to change the text of the text block within it
+                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                ClipboardText().Text(text);
+
+                // The vertical offset on the scrollbar does not reset automatically, so reset it manually
+                ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
 
                 ContentDialogResult warningResult;
                 if (warnMultiLine)
@@ -1993,6 +1976,9 @@ namespace winrt::TerminalApp::implementation
                 {
                     warningResult = co_await _ShowLargePasteWarningDialog();
                 }
+
+                // Clear the clipboard text so it doesn't lie around in memory
+                ClipboardText().Text(L"");
 
                 if (warningResult != ContentDialogResult::Primary)
                 {
@@ -2234,7 +2220,7 @@ namespace winrt::TerminalApp::implementation
                 // here, then the user won't be able to navigate the ATS any
                 // longer.
                 //
-                // When the tab swither is eventually dismissed, the focus will
+                // When the tab switcher is eventually dismissed, the focus will
                 // get tossed back to the focused terminal control, so we don't
                 // need to worry about focus getting lost.
                 if (CommandPalette().Visibility() != Visibility::Visible)
@@ -2883,7 +2869,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - If the tab is a TerminalTab, a com_ptr to the implementation type.
     //   If the tab is not a TerminalTab, nullptr
-    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab) const
+    winrt::com_ptr<TerminalTab> TerminalPage::_GetTerminalTabImpl(const TerminalApp::TabBase& tab)
     {
         if (auto terminalTab = tab.try_as<TerminalApp::TerminalTab>())
         {

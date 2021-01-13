@@ -1112,6 +1112,19 @@ namespace winrt::TerminalApp::implementation
         return result;
     }
 
+    int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args)
+    {
+        ::TerminalApp::AppCommandlineArgs appArgs;
+        auto result = appArgs.ParseArgs(args);
+        if (result == 0)
+        {
+            auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
+            _root->ProcessStartupActions(actions, false);
+        }
+
+        return result; // TODO:MG does a return value make sense
+    }
+
     // Method Description:
     // - If there were any errors parsing the commandline that was used to
     //   initialize the terminal, this will return a string containing that
