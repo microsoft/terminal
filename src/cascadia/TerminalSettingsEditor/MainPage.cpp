@@ -206,6 +206,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto clickedItemContainer = args.InvokedItemContainer())
         {
+            if (clickedItemContainer.IsSelected())
+            {
+                // Clicked on the selected item.
+                // Don't navigate to the same page again.
+                return;
+            }
+
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
                 if (navString == addProfileTag)
