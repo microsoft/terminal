@@ -684,15 +684,16 @@ namespace winrt::TerminalApp::implementation
                 if (visual)
                 {
                     tab->_TabRaiseVisualBellHandlers();
-                }
-                tab->ShowBellIndicator(true);
 
-                // If this tab is focused, activate the bell indicator timer, which will
-                // remove the bell indicator once it fires
-                // (otherwise, the indicator is removed when the tab gets focus)
-                if (tab->_focusState != WUX::FocusState::Unfocused)
-                {
-                    tab->ActivateBellIndicatorTimer();
+                    tab->ShowBellIndicator(true);
+
+                    // If this tab is focused, activate the bell indicator timer, which will
+                    // remove the bell indicator once it fires
+                    // (otherwise, the indicator is removed when the tab gets focus)
+                    if (tab->_focusState != WUX::FocusState::Unfocused)
+                    {
+                        tab->ActivateBellIndicatorTimer();
+                    }
                 }
             }
         });
