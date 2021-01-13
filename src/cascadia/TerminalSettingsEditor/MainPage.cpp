@@ -65,16 +65,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         co_await winrt::resume_foreground(Dispatcher());
 
         // Deduce information about the currently selected item
-        std::optional<IInspectable> selectedItemTag{ std::nullopt };
-        std::optional<uint32_t> selectedItemIndex{ std::nullopt };
+        IInspectable selectedItemTag;
         auto menuItems{ SettingsNav().MenuItems() };
-        if (const auto selectedItem{ SettingsNav().SelectedItem() })
+        if (const auto& selectedItem{ SettingsNav().SelectedItem() })
         {
-            if (const auto navViewItem{ selectedItem.try_as<MUX::Controls::NavigationViewItem>() })
+            if (const auto& navViewItem{ selectedItem.try_as<MUX::Controls::NavigationViewItem>() })
             {
                 selectedItemTag = navViewItem.Tag();
             }
-            menuItems.IndexOf(selectedItem, *selectedItemIndex);
         }
 
         // remove all profile-related NavViewItems by populating a std::vector
@@ -82,19 +80,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // NOTE: menuItems.Remove() causes an out-of-bounds crash. Using ReplaceAll()
         //       gets around this crash.
         std::vector<IInspectable> menuItemsSTL;
-        for (uint32_t i = 0; i < menuItems.Size(); ++i)
+        for (const auto& item : menuItems)
         {
-            const auto item{ menuItems.GetAt(i) };
-            if (const auto navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+            if (const auto& navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
             {
-                if (const auto tag{ navViewItem.Tag() })
+                if (const auto& tag{ navViewItem.Tag() })
                 {
                     if (tag.try_as<Editor::ProfileViewModel>())
                     {
                         // don't add NavViewItem pointing to a Profile
                         continue;
                     }
-                    else if (const auto stringTag{ tag.try_as<hstring>() })
+                    else if (const auto& stringTag{ tag.try_as<hstring>() })
                     {
                         if (stringTag == addProfileTag)
                         {
@@ -104,7 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     }
                 }
             }
-            menuItemsSTL.push_back(item);
+            menuItemsSTL.emplace_back(item);
         }
         menuItems.ReplaceAll(menuItemsSTL);
 
@@ -115,32 +112,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // refresh the current page using the SelectedItem data we collected before the refresh
         if (selectedItemTag)
         {
-            if (const auto tag{ selectedItemTag->try_as<hstring>() })
+            const auto& selectedItemStringTag{ selectedItemTag.try_as<hstring>() };
+            const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() };
+            for (const auto& item : menuItems)
             {
-                // SelectedItem is a menu item we didn't remove
-                SettingsNav().SelectedItem(menuItems.GetAt(*selectedItemIndex));
-                _Navigate(*tag);
-                co_return;
-            }
-            else if (const auto selectedItemProfileTag{ selectedItemTag->try_as<ProfileViewModel>() })
-            {
-                // SelectedItem was pointing to a profile
-                // Iterate over all menu items to find the one we were pointing at before
-                for (const auto item : menuItems)
+                if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
                 {
-                    if (const auto menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+                    if (const auto& tag{ menuItem.Tag() })
                     {
-                        if (const auto tag{ menuItem.Tag() })
+                        if (const auto& stringTag{ tag.try_as<hstring>() })
                         {
-                            if (const auto profileTag{ tag.try_as<ProfileViewModel>() })
+                            if (stringTag == selectedItemStringTag)
                             {
-                                if (profileTag->Guid() == selectedItemProfileTag->Guid())
-                                {
-                                    // found the one that was selected before the refresh
-                                    SettingsNav().SelectedItem(item);
-                                    _Navigate(*selectedItemProfileTag);
-                                    co_return;
-                                }
+                                // found the one that was selected before the refresh
+                                SettingsNav().SelectedItem(item);
+                                _Navigate(*stringTag);
+                                co_return;
+                            }
+                        }
+                        else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
+                        {
+                            if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                            {
+                                // found the one that was selected before the refresh
+                                SettingsNav().SelectedItem(item);
+                                _Navigate(*selectedItemProfileTag);
+                                co_return;
                             }
                         }
                     }
@@ -150,9 +147,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // couldn't find the selected item,
         // fallback to first menu item
-        const auto firstItem{ menuItems.GetAt(0) };
+        const auto& firstItem{ menuItems.GetAt(0) };
         SettingsNav().SelectedItem(firstItem);
-        if (const auto tag{ SettingsNav().SelectedItem().as<MUX::Controls::NavigationViewItem>().Tag() })
+        if (const auto& tag{ SettingsNav().SelectedItem().try_as<MUX::Controls::NavigationViewItem>().Tag() })
         {
             _Navigate(unbox_value<hstring>(tag));
         }
