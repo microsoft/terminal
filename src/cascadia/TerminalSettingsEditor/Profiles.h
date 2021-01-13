@@ -19,6 +19,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _profile{ profile } {}
 
         bool CanDeleteProfile() const;
+
+        bool UseDesktopBGImage();
+        void UseDesktopBGImage(const bool useDesktop);
+
         GETSET_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
@@ -62,6 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Model::Profile _profile;
+        winrt::hstring _lastBgImagePath;
     };
 
     struct DeleteProfileEventArgs :

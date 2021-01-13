@@ -278,4 +278,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
 
+    bool ProfileViewModel::UseDesktopBGImage()
+    {
+        return BackgroundImagePath() == L"desktopWallpaper";
+    };
+    void ProfileViewModel::UseDesktopBGImage(const bool useDesktop)
+    {
+        if (useDesktop)
+        {
+            _lastBgImagePath = BackgroundImagePath();
+            BackgroundImagePath(L"desktopWallpaper");
+        }
+        else
+        {
+            BackgroundImagePath(_lastBgImagePath);
+        }
+        // useDesktop;
+    };
 }

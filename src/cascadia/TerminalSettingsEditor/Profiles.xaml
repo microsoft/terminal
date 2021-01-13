@@ -31,6 +31,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
             <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter"/>
+            <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter"/>
+
         </ResourceDictionary>
     </Page.Resources>
 
@@ -285,10 +287,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <CheckBox x:Uid="Profile_UseDesktopImage"
                                       x:Name="UseDesktopImageCheckBox"
+                                      IsChecked="{x:Bind State.Profile.UseDesktopBGImage, Mode=TwoWay}"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
                         </ContentPresenter>
 
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_BackgroundImage"
                                          x:Name="BackgroundImage"

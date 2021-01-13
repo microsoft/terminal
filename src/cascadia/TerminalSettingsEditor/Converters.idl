@@ -33,4 +33,9 @@ namespace Microsoft.Terminal.Settings.Editor
         StringIsEmptyConverter();
     };
 
+    runtimeclass StringIsNotDesktopConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        StringIsNotDesktopConverter();
+    };
+
 }

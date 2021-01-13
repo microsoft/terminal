@@ -50,6 +50,9 @@
     <ClInclude Include="StringIsEmptyConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="StringIsNotDesktopConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PercentageConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -124,6 +127,9 @@
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="StringIsEmptyConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsNotDesktopConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PercentageConverter.cpp">
