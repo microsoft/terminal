@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //
         // We need to do this so if someone manually types "desktopWallpaper"
         // into the path TextBox, we properly update the checkbox and stored
-        // _lastBgImagePath. Without this, then we'll permenantly hide the text
+        // _lastBgImagePath. Without this, then we'll permanently hide the text
         // box, prevent it from ever being changed again.
         PropertyChanged([this](auto&&, const Data::PropertyChangedEventArgs& args) {
             if (args.PropertyName() == L"BackgroundImagePath")
@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         });
 
         // Cache the original BG image path. If the user clicks "Use desktop
-        // wallpaper", then unchecks it, this is the string we'll restore to
+        // wallpaper", then un-checks it, this is the string we'll restore to
         // them.
         if (BackgroundImagePath() != L"desktopWallpaper")
         {
