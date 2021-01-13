@@ -174,7 +174,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!-- Appearance Tab -->
             <PivotItem x:Uid="Profile_Appearance">
-                <ScrollViewer x:Name="Appearance_ScrollViewer">
+                <ScrollViewer>
                     <StackPanel>
 
                         <!--Grouping: Text-->
@@ -251,25 +251,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <CheckBox x:Uid="Profile_RetroTerminalEffect"
                                       IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
-                        </ContentPresenter>
-
-                        <!--Grouping: Window-->
-                        <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
-
-                        <!--Padding-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <TextBox x:Uid="Profile_Padding"
-                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
-                                     Style="{StaticResource TextBoxSettingStyle}"/>
-                        </ContentPresenter>
-
-                        <!--Scrollbar Visibility-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
                         </ContentPresenter>
 
                         <!--Grouping: Cursor-->
@@ -504,7 +485,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <CheckBox x:Uid="Profile_UseAcrylic"
                                       x:Name="UseAcrylicCheckBox"
                                       IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"
-                                      Checked="UseAcrylic_Checked"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
                         </ContentPresenter>
 
@@ -527,6 +507,25 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                Style="{StaticResource SliderValueLabelStyle}"/>
                                 </Grid>
                             </StackPanel>
+                        </ContentPresenter>
+
+                        <!--Grouping: Window-->
+                        <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
+
+                        <!--Padding-->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <TextBox x:Uid="Profile_Padding"
+                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                        </ContentPresenter>
+
+                        <!--Scrollbar Visibility-->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
                         </ContentPresenter>
                     </StackPanel>
                 </ScrollViewer>
