@@ -798,4 +798,20 @@
   <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Are you sure you want to delete this profile?</value>
   </data>
+  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
+    <value>Tab switcher mode</value>
+  </data>
+  <data name="Globals_TabSwitcherMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defines the terminal behavior when switching tabs. When set to "Most recently used", tabs will be selected based on their most recently used ordering. When set to "In order", tabs will be switched in their current order on the tab bar. When set to "Disabled", the tab switcher is disabled.</value>
+    <comment>"Mru", "InOrder", and "Disabled" must match Globals_TabSwitcherModeMru.Content, Globals_TabSwitcherModeInOrder.Content, and Globals_TabSwitcherModeDisabled.Content values respectively.</comment>
+  </data>
+  <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Most recently used</value>
+  </data>
+  <data name="Globals_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>In order</value>
+  </data>
+  <data name="Globals_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
 </root>
