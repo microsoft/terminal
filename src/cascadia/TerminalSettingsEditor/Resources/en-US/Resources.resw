@@ -441,13 +441,13 @@
     <value>Profile termination behavior</value>
   </data>
   <data name="Profile_CloseOnExitAlways.Content" xml:space="preserve">
-    <value>Always close</value>
+    <value>Close when process exits, fails, or crashes</value>
   </data>
   <data name="Profile_CloseOnExitGraceful.Content" xml:space="preserve">
-    <value>Close when exit is typed/process exits normally</value>
+    <value>Close only when process exits successfully</value>
   </data>
   <data name="Profile_CloseOnExitNever.Content" xml:space="preserve">
-    <value>Never close</value>
+    <value>Never close automatically</value>
   </data>
   <data name="Profile_ColorScheme.Header" xml:space="preserve">
     <value>Color scheme</value>
