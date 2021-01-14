@@ -109,6 +109,10 @@
         </Expand>
     </Type>
 
+    <Type Name="til::details::rle_const_iterator&lt;*&gt;">
+        <DisplayString>{{ Run of {_it.m_ptr->first,d} for {_it.m_ptr->second,d} at {_usage,d}}}</DisplayString>
+    </Type>
+
     <Type Name="boost::container::small_vector&lt;*&gt;">
         <Expand>
             <Item Name="[size]">m_holder.m_size</Item>

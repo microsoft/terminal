@@ -28,6 +28,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // 2. Fill in operator*() and operator->() pointing directly at the data value.
             // 3. Fill in inc() and dec(). That gives you ++it, it++, --it, and it--.
             // 4. Fill in operator+=(). That gives you +=, +, -=, and -.
+            // ALTERNATIVE 3/4. You might be able to just define += and then feed the rest into it
+            //    depending on your circumstance.
             // 5. Fill in operator-() for a difference between two instances.
             // 6. Fill in operator[] to go to the offset like an array index.
             // 7. Fill in operator== for equality. Gets == and != in one shot.
@@ -45,18 +47,19 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using difference_type = typename ParentIt::difference_type;
 
             rle_const_iterator(ParentIt it) :
-                _it(it)
+                _it(it),
+                _usage(1)
             {
             }
 
             [[nodiscard]] reference operator*() const noexcept
             {
-                
+                return _it->first;
             }
 
             [[nodiscard]] pointer operator->() const noexcept
             {
-                
+                return &operator*();
             }
 
             rle_const_iterator& operator++() noexcept
@@ -88,6 +91,87 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             rle_const_iterator& operator+=(const difference_type offset) noexcept
             {
                 // TODO: Optional iterator debug
+                if (offset < 0) // negative direction
+                {
+                    // Hold a running count of how much more we need to move.
+                    // Flip the sign to make it just the magnitude since this
+                    // branch is already the direction.
+                    auto move = -offset;
+
+                    // While we still need to move...
+                    while (move > 0)
+                    {
+                        // Check how much space we have used on this run.
+                        // A run that is 6 long (_it->second) and
+                        // we have addressed the 4th position (_usage, starts at 1).
+                        // We can move to the 1st position, or 3 to the left.
+                        const auto space = static_cast<difference_type>(_usage - 1);
+
+                        // If we have enough space to move...
+                        if (space >= move)
+                        {
+                            // Move the storage forward the requested distance.
+                            _usage -= move;
+
+                            // Remove the moved distance.
+                            move -= move;
+                        }
+                        // If we do NOT have enough space.
+                        else
+                        {
+                            // Reduce the requested distance by the total usage
+                            // to count "burning out" this run.
+                            move -= _usage;
+
+                            // Advance the underlying iterator.
+                            --_it;
+
+                            // Signify we're on the last position.
+                            _usage = _it->second;
+                        }
+                    }
+                }
+                else // positive direction
+                {
+                    // Hold a running count of how much more we need to move.
+                    auto move = offset;
+
+                    // While we still need to move...
+                    while (move > 0)
+                    {
+                        // Check how much space we have left on this run.
+                        // A run that is 6 long (_it->second) and
+                        // we have addressed the 4th position (_usage, starts at 1).
+                        // Then there are 2 left.
+                        const auto space = static_cast<difference_type>(_it->second - _usage);
+
+                        // If we have enough space to move...
+                        if (space >= move)
+                        {
+                            // Move the storage forward the requested distance.
+                            _usage += move;
+
+                            // Remove the moved distance.
+                            move -= move;
+                        }
+                        // If we do NOT have enough space.
+                        else
+                        {
+                            // Reduce the requested distance by the remaining space
+                            // to count "burning out" this run.
+                            // + 1 more for jumping to the next list item.
+                            move -= space + 1;
+
+                            // Advance the underlying iterator.
+                            ++_it;
+
+                            // Signify we're on the first position.
+                            _usage = 1;
+                        }
+                    }
+                    
+                }
+                return *this;
             }
 
             [[nodiscard]] rle_const_iterator operator+(const difference_type offset) const noexcept
@@ -110,16 +194,56 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             [[nodiscard]] difference_type operator-(const rle_const_iterator& right) const noexcept
             {
                 // TODO: Optional iterator debug
+
+                // Hold the accumulation.
+                difference_type accumulation = 0;
+
+                // Make ourselves a copy of the right side. We'll 
+                auto tmp = right;
+
+                // While we're pointing to a run that is RIGHT of tmp...
+                while (_it > tmp._it)
+                {
+                    // Add all remaining space in tmp to the accumulation.
+                    // + 1 more for jumping to the next list item.
+                    accumulation += tmp._it->second - tmp._usage + 1;
+
+                    // Move tmp's iterator rightward.
+                    ++tmp._it;
+
+                    // Set it to the first position in the run.
+                    tmp._usage = 1;
+                }
+
+                // While we're pointing to a run that is LEFT of tmp...
+                while (_it < tmp._it)
+                {
+                    // Subtract all used space in tmp from the accumulation.
+                    accumulation -= _usage;
+
+                    // Move tmp's iterator leftward.
+                    --tmp._it;
+
+                    // Set it to the last position in the run.
+                    tmp._usage = tmp._it->second;
+                }
+
+                // Now both iterators should be at the same position.
+                // Just accumulate the difference between their usages.
+                accumulation += _usage - tmp._usage;
+
+                return accumulation;
             }
 
             [[nodiscard]] reference operator[](const difference_type offset) const noexcept
             {
-
+                return *operator+(offset);
             }
 
             [[nodiscard]] bool operator==(const rle_const_iterator& right) const noexcept
             {
                 // TODO: Optional iterator debug
+                return _it == right._it && _usage == right._usage;
             }
 
             [[nodiscard]] bool operator!=(const rle_const_iterator& right) const noexcept
@@ -130,6 +254,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             [[nodiscard]] bool operator<(const rle_const_iterator& right) const noexcept
             {
                 // TODO: Optional iterator debug
+                return _it < right._it || (_it == right._it && _usage < right._usage);
             }
 
             [[nodiscard]] bool operator>(const rle_const_iterator& right) const noexcept
@@ -150,12 +275,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         private:
             void inc() noexcept
             {
-
+                // In this particular implementation, we need to use the advanced
+                // seeking logic of += for the run lengths, so don't do a shorthand
+                // for single increment/decrement. Forward it on.
+                operator+=(1);
             }
 
             void dec() noexcept
             {
-
+                // In this particular implementation, we need to use the advanced
+                // seeking logic of += for the run lengths, so don't do a shorthand
+                // for single increment/decrement. Forward it on.
+                operator-=(1);
             }
 
             ParentIt _it;
@@ -165,6 +296,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         template<typename ParentIt>
         class rle_iterator : public rle_const_iterator<ParentIt>
         {
+        public:
             // This looks like a lot, but seriously... we're defining nothing here.
             // It's literally just stripping consts off of the const iterator and
             // making those accessible.
@@ -263,9 +395,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         S _size;
 
     public:
-        using iterator = details::rle_iterator<typename decltype(_list)::iterator>;
+        //using iterator = details::rle_iterator<typename decltype(_list)::iterator>;
         using const_iterator = details::rle_const_iterator<typename decltype(_list)::const_iterator>;
-        using reverse_iterator = std::reverse_iterator<iterator>;
+        //using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         rle(const S size, const T value) :
@@ -378,40 +510,40 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return !(*this == other);
         }
 
-        [[nodiscard]] iterator begin() noexcept
+        /*[[nodiscard]] iterator begin() noexcept
         {
             return iterator(_list.begin());
-        }
+        }*/
 
         [[nodiscard]] const_iterator begin() const noexcept
         {
             return const_iterator(_list.begin());
         }
 
-        [[nodiscard]] iterator end() noexcept
+        /*[[nodiscard]] iterator end() noexcept
         {
             return iterator(_list.end());
-        }
+        }*/
 
         [[nodiscard]] const_iterator end() const noexcept
         {
             return const_iterator(_list.end());
         }
 
-        [[nodiscard]] reverse_iterator rbegin() noexcept
+        /*[[nodiscard]] reverse_iterator rbegin() noexcept
         {
             return reverse_iterator(end());
-        }
+        }*/
 
         [[nodiscard]] const_reverse_iterator rbegin() const noexcept
         {
             return const_reverse_iterator(end());
         }
 
-        [[nodiscard]] reverse_iterator rend() noexcept
+        /*[[nodiscard]] reverse_iterator rend() noexcept
         {
             return reverse_iterator(begin());
-        }
+        }*/
 
         [[nodiscard]] const_reverse_iterator rend() const noexcept
         {

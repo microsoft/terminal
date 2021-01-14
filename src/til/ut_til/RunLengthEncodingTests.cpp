@@ -228,4 +228,414 @@ class RunLengthEncodingTests
 
         VERIFY_ARE_NOT_EQUAL(expected, actual);
     }
+
+    TEST_METHOD(IteratorIncDecOnes)
+    {
+        til::rle<int> rle(10, 1);
+        rle.insert(2, 0, 2);
+        rle.insert(3, 2, 3);
+        rle.insert(4, 5, 4);
+
+        // test array should be 2 2 3 3 3 4 4 4 4 1
+        // or 2 for 2, 3 for 3, 4 for 4, 1 for 1.
+
+        Log::Comment(L"Increment by 1s.");
+
+        auto it = rle.begin();
+        for (auto i = 0; i < 2; ++i)
+        {
+            VERIFY_ARE_EQUAL(2, *it);
+            ++it;
+        }
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            VERIFY_ARE_EQUAL(3, *it);
+            ++it;
+        }
+
+        for (auto i = 0; i < 4; ++i)
+        {
+            VERIFY_ARE_EQUAL(4, *it);
+            ++it;
+        }
+
+        for (auto i = 0; i < 1; ++i)
+        {
+            VERIFY_ARE_EQUAL(1, *it);
+            ++it;
+        }
+
+        VERIFY_ARE_EQUAL(rle.end(), it);
+
+        Log::Comment(L"Decrement by 1s.");
+
+        for (auto i = 0; i < 1; ++i)
+        {
+            --it;
+            VERIFY_ARE_EQUAL(1, *it);
+        }
+
+        for (auto i = 0; i < 4; ++i)
+        {
+            --it;
+            VERIFY_ARE_EQUAL(4, *it);
+        }
+
+        for (auto i = 0; i < 3; ++i)
+        {
+            --it;
+            VERIFY_ARE_EQUAL(3, *it);
+        }
+
+        for (auto i = 0; i < 2; ++i)
+        {
+            --it;
+            VERIFY_ARE_EQUAL(2, *it);
+        }
+
+        VERIFY_ARE_EQUAL(rle.begin(), it);
+    }
+
+    struct TestStruct
+    {
+        int a;
+        int b;
+
+        [[nodiscard]] bool operator==(const TestStruct& right) const noexcept
+        {
+            return a == right.a && b == right.b;
+        }
+    };
+
+    TEST_METHOD(ConstIteratorReference)
+    {
+        const TestStruct expected{ 3, 2 };
+
+        til::rle<TestStruct> rle(5, expected);
+
+        const TestStruct actual = *rle.cbegin();
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ConstIteratorPointer)
+    {
+        const TestStruct expected{ 3, 2 };
+
+        til::rle<TestStruct> rle(5, expected);
+
+        const auto it = rle.cbegin();
+
+        const TestStruct actual{ it->a, it->b };
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ConstIteratorIncPrefix)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 1, 1);
+
+        // 2 7 2 2 2
+
+        auto it = rle.cbegin();
+        ++it;
+        VERIFY_ARE_EQUAL(7, *it);
+    }
+
+    TEST_METHOD(ConstIteratorIncPostfix)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 1, 1);
+
+        // 2 7 2 2 2
+
+        auto it = rle.cbegin();
+        auto prevIt = it++;
+        VERIFY_ARE_EQUAL(7, *it);
+        VERIFY_ARE_EQUAL(2, *prevIt);
+        VERIFY_ARE_NOT_EQUAL(it, prevIt);
+    }
+
+    TEST_METHOD(ConstIteratorDecPrefix)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 4, 1);
+
+        // 2 2 2 2 7
+
+        auto it = rle.cend();
+        --it;
+        VERIFY_ARE_EQUAL(7, *it);
+    }
+
+    TEST_METHOD(ConstIteratorDecPostfix)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 4, 1);
+
+        // 2 2 2 2 7
+
+        auto it = rle.cend();
+        auto prevIt = it--;
+        VERIFY_ARE_EQUAL(7, *it);
+        VERIFY_ARE_EQUAL(rle.cend(), prevIt);
+        VERIFY_ARE_NOT_EQUAL(it, prevIt);
+    }
+
+    TEST_METHOD(ConstIteratorPlusEquals)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 2, 1);
+
+        // 2 2 7 2 2
+
+        auto it = rle.cbegin();
+        it += 2;
+        VERIFY_ARE_EQUAL(7, *it);
+    }
+
+    TEST_METHOD(ConstIteratorPlusOffset)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 2, 1);
+
+        // 2 2 7 2 2
+
+        auto it = rle.cbegin();
+        auto itAfter = it + 2;
+        VERIFY_ARE_EQUAL(7, *itAfter);
+        VERIFY_ARE_NOT_EQUAL(it, itAfter);
+    }
+
+    TEST_METHOD(ConstIteratorMinusEquals)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 3, 1);
+
+        // 2 2 2 7 2
+
+        auto it = rle.cend();
+        it -= 2;
+        VERIFY_ARE_EQUAL(7, *it);
+    }
+
+    TEST_METHOD(ConstIteratorMinusOffset)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 3, 1);
+        auto it = rle.cend();
+        auto itAfter = it - 2;
+        VERIFY_ARE_EQUAL(7, *itAfter);
+        VERIFY_ARE_NOT_EQUAL(it, itAfter);
+    }
+
+    TEST_METHOD(ConstIteratorDifference)
+    {
+        til::rle<int> rle(5, 2);
+
+        const ptrdiff_t expected = 5;
+        VERIFY_ARE_EQUAL(expected, rle.cend() - rle.cbegin());
+        VERIFY_ARE_EQUAL(-expected, rle.cbegin() - rle.cend());
+    }
+
+    TEST_METHOD(ConstIteratorArrayOffset)
+    {
+        til::rle<int> rle(5, 2);
+        rle.insert(7, 2, 1);
+        const auto it = rle.cbegin();
+        VERIFY_ARE_EQUAL(2, it[0]);
+        VERIFY_ARE_EQUAL(2, it[1]);
+        VERIFY_ARE_EQUAL(7, it[2]);
+        VERIFY_ARE_EQUAL(2, it[3]);
+        VERIFY_ARE_EQUAL(2, it[4]);
+    }
+
+    TEST_METHOD(ConstIteratorEquality)
+    {
+        til::rle<int> rle(5, 2);
+
+        auto begin = rle.cbegin();
+        auto end = rle.cend();
+        end -= 5;
+        VERIFY_IS_TRUE(begin == end);
+    }
+
+    TEST_METHOD(ConstIteratorInequality)
+    {
+        til::rle<int> rle(5, 2);
+
+        auto begin = rle.cbegin();
+        auto end = rle.cend();
+        VERIFY_IS_TRUE(begin != end);
+    }
+
+    TEST_METHOD(ConstIteratorLessThan)
+    {
+        til::rle<int> rle(5, 2);
+
+        auto begin = rle.cbegin();
+        auto end = rle.cend();
+        auto begin2 = end - 5;
+        VERIFY_IS_TRUE(begin < end);
+        VERIFY_IS_FALSE(end < begin);
+        VERIFY_IS_FALSE(begin < begin2);
+    }
+
+    TEST_METHOD(ConstIteratorGreaterThan)
+    {
+        til::rle<int> rle(5, 2);
+
+        auto begin = rle.cbegin();
+        auto end = rle.cend();
+        auto begin2 = end - 5;
+        VERIFY_IS_FALSE(begin > end);
+        VERIFY_IS_TRUE(end > begin);
+        VERIFY_IS_FALSE(begin > begin2);
+    }
+
+    TEST_METHOD(ConstIteratorLessThanEqual)
+    {
+        til::rle<int> rle(5, 2);
+
+        auto begin = rle.cbegin();
+        auto end = rle.cend();
+        auto begin2 = end - 5;
+        VERIFY_IS_TRUE(begin <= end);
+        VERIFY_IS_FALSE(end <= begin);
+        VERIFY_IS_TRUE(begin <= begin2);
+    }
+
+    TEST_METHOD(ConstIteratorGreaterThanEqual)
+    {
+        til::rle<int> rle(5, 2);
+
+        auto begin = rle.cbegin();
+        auto end = rle.cend();
+        auto begin2 = end - 5;
+        VERIFY_IS_FALSE(begin >= end);
+        VERIFY_IS_TRUE(end >= begin);
+        VERIFY_IS_TRUE(begin >= begin2);
+    }
+
+    TEST_METHOD(ConstReverseIterate)
+    {
+        til::rle<int> rle(5, 5);
+        rle.insert(1, 0, 1);
+        rle.insert(2, 1, 1);
+        rle.insert(3, 2, 1);
+        rle.insert(4, 3, 1);
+
+        // 1 2 3 4 5
+
+        auto rit = rle.crbegin();
+        for (int i = 5; i > 0; i--)
+        {
+            VERIFY_ARE_EQUAL(i, *rit);
+            rit++;
+        }
+
+        VERIFY_ARE_EQUAL(rle.crend(), rit);
+    }
+
+    //TEST_METHOD(NonConstIterators)
+    //{
+    //    til::rle<int> rle(5, 5);
+
+    //    auto iter = rle.begin();
+    //    *iter++ = 1;
+    //    *iter++ = 2;
+    //    *iter++ = 3;
+    //    *iter++ = 4;
+
+    //    VERIFY_ARE_EQUAL(1, rle.at(0));
+    //    VERIFY_ARE_EQUAL(2, rle.at(1));
+    //    VERIFY_ARE_EQUAL(3, rle.at(2));
+    //    VERIFY_ARE_EQUAL(4, rle.at(3));
+    //    VERIFY_ARE_EQUAL(5, rle.at(4));
+
+    //    VERIFY_ARE_EQUAL(rle.end(), iter);
+
+    //    auto riter = rle.crbegin();
+    //    VERIFY_ARE_EQUAL(5, *riter++);
+    //    VERIFY_ARE_EQUAL(4, *riter++);
+    //    VERIFY_ARE_EQUAL(3, *riter++);
+    //    VERIFY_ARE_EQUAL(2, *riter++);
+    //    VERIFY_ARE_EQUAL(1, *riter++);
+
+    //    VERIFY_ARE_EQUAL(rle.crend(), riter);
+    //}
+
+    TEST_METHOD(IteratorIncDecMultiple)
+    {
+        til::rle<int> rle(10, 1);
+        rle.insert(2, 0, 2);
+        rle.insert(3, 2, 3);
+        rle.insert(4, 5, 4);
+
+        // test array should be 2 2 3 3 3 4 4 4 4 1
+        // or 2 for 2, 3 for 3, 4 for 4, 1 for 1.
+
+        auto it = rle.begin();
+
+        // 2 2 3 3 3 4 4 4 4 1
+        // ^
+        VERIFY_ARE_EQUAL(2, *it, L"Check we're sitting on the first of the first run.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        // ^->
+        ++it;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //   ^
+        VERIFY_ARE_EQUAL(2, *it, L"Move a spot into the run and ensure we're still on the same one.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //   ^----->
+        it += 3;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //         ^
+        VERIFY_ARE_EQUAL(3, *it, L"Jump forward by 3 and we should still be on the second run of 3s.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //         ^------->
+        it += 4;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //                 ^
+        VERIFY_ARE_EQUAL(4, *it, L"Jump forward by 4 and we should still be on the third run of 4s.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //                 ^--->
+        it += 2;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //                     ^
+        VERIFY_ARE_EQUAL(rle.end(), it, L"Jump past the last run of 1 for 1 to what should be the end.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //               <-----^
+        it -= 3;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //               ^
+        VERIFY_ARE_EQUAL(4, *it, L"Jump back by 3 and we should be in the middle of the 4s run.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //       <-------^
+        it -= 4;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        //       ^
+        VERIFY_ARE_EQUAL(3, *it, L"Jump back by 4 and we should be in the middle of the 3s run.");
+
+        // 2 2 3 3 3 4 4 4 4 1
+        // <-----^
+        it -= 3;
+
+        // 2 2 3 3 3 4 4 4 4 1
+        // ^
+        VERIFY_ARE_EQUAL(2, *it, L"Jump back by 3 and we should be at the beginning of the 2s run.");
+        VERIFY_ARE_EQUAL(rle.begin(), it, L"And it should equal 'begin'");
+    }
 };
