@@ -491,19 +491,24 @@
     <value>Sets the shape of the cursor.</value>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
-    <value>Bar</value>
+    <value>Bar ( ┃ )</value>
+    <comment>{Locked="┃"}</comment>
   </data>
   <data name="Profile_CursorShapeEmptyBox.Content" xml:space="preserve">
-    <value>Empty box</value>
+    <value>Empty box ( ▯ )</value>
+    <comment>{Locked="▯"}</comment>
   </data>
   <data name="Profile_CursorShapeFilledBox.Content" xml:space="preserve">
-    <value>Filled box</value>
+    <value>Filled box ( █ )</value>
+    <comment>{Locked="█"}</comment>
   </data>
   <data name="Profile_CursorShapeUnderscore.Content" xml:space="preserve">
-    <value>Underscore</value>
+    <value>Underscore ( ▁ )</value>
+    <comment>{Locked="▁"}</comment>
   </data>
   <data name="Profile_CursorShapeVintage.Content" xml:space="preserve">
-    <value>Vintage</value>
+    <value>Vintage ( ▃ )</value>
+    <comment>{Locked="▃"}</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
     <value>Font face</value>
