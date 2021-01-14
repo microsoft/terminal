@@ -11,6 +11,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     namespace details
     {
+        template<typename Allocator>
         class _bitmap_const_iterator
         {
         public:
@@ -20,7 +21,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using pointer = typename const til::rectangle*;
             using reference = typename const til::rectangle&;
 
-            _bitmap_const_iterator(const dynamic_bitset<>& values, til::rectangle rc, ptrdiff_t pos) :
+            _bitmap_const_iterator(const dynamic_bitset<unsigned long long, Allocator>& values, til::rectangle rc, ptrdiff_t pos) :
                 _values(values),
                 _rc(rc),
                 _pos(pos),
@@ -74,7 +75,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
         private:
-            const dynamic_bitset<>& _values;
+            const dynamic_bitset<unsigned long long, Allocator>& _values;
             const til::rectangle _rc;
             ptrdiff_t _pos;
             ptrdiff_t _nextPos;
@@ -130,36 +131,111 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
             }
         };
-    }
 
+    template<typename Allocator = std::allocator<unsigned long long>>
     class bitmap
     {
     public:
-        using const_iterator = details::_bitmap_const_iterator;
+        using allocator_type = Allocator;
+        using const_iterator = details::_bitmap_const_iterator<allocator_type>;
 
-        bitmap() noexcept :
+    private:
+        using run_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<til::rectangle>;
+
+    public:
+        explicit bitmap(const allocator_type& allocator) noexcept :
+            _alloc{ allocator },
             _sz{},
             _rc{},
-            _bits{},
-            _runs{}
+            _bits{ _alloc },
+            _runs{ _alloc }
+        {
+        }
+
+        bitmap() noexcept :
+            bitmap(allocator_type{})
         {
         }
 
         bitmap(til::size sz) :
-            bitmap(sz, false)
+            bitmap(sz, false, allocator_type{})
+        {
+        }
+
+        bitmap(til::size sz, const allocator_type& allocator) :
+            bitmap(sz, false, allocator)
+        {
+        }
+
+        bitmap(til::size sz, bool fill, const allocator_type& allocator) :
+            _alloc{ allocator },
+            _sz(sz),
+            _rc(sz),
+            _bits(_sz.area(), fill ? std::numeric_limits<unsigned long long>::max() : 0, _alloc),
+            _runs{ _alloc }
         {
         }
 
         bitmap(til::size sz, bool fill) :
-            _sz(sz),
-            _rc(sz),
-            _bits(_sz.area()),
-            _runs{}
+            bitmap(sz, fill, allocator_type{})
         {
-            if (fill)
+        }
+
+        bitmap(const bitmap& other) :
+            _alloc{ std::allocator_traits<allocator_type>::select_on_container_copy_construction(other._alloc) },
+            _sz{ other._sz },
+            _rc{ other._rc },
+            _bits{ other._bits },
+            _runs{ other._runs }
+        {
+            // copy constructor is required to call select_on_container_copy
+        }
+
+        bitmap& operator=(const bitmap& other)
+        {
+            if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_copy_assignment::value)
             {
-                set_all();
+                _alloc = other._alloc;
             }
+            _sz = other._sz;
+            _rc = other._rc;
+            _bits = other._bits;
+            _runs = other._runs;
+            return *this;
+        }
+
+        bitmap(bitmap&& other) :
+            _alloc{ std::move(other._alloc) },
+            _sz{ std::move(other._sz) },
+            _rc{ std::move(other._rc) },
+            _bits{ std::move(other._bits) },
+            _runs{ std::move(other._runs) }
+        {
+        }
+
+        bitmap& operator=(bitmap&& other)
+        {
+            if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_move_assignment::value)
+            {
+                _alloc = std::move(other._alloc);
+            }
+            _bits = std::move(other._bits);
+            _runs = std::move(other._runs);
+            _sz = std::move(other._sz);
+            _rc = std::move(other._rc);
+            return *this;
+        }
+
+        void swap(bitmap& other)
+        {
+            if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_swap::value)
+            {
+                std::swap(_alloc, other._alloc);
+            }
+            std::swap(_bits, other._bits);
+            std::swap(_runs, other._runs);
+            std::swap(_sz, other._sz);
+            std::swap(_rc, other._rc);
         }
 
         constexpr bool operator==(const bitmap& other) const noexcept
@@ -185,7 +261,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return const_iterator(_bits, _sz, _sz.area());
         }
 
-        const std::vector<til::rectangle>& runs() const
+        const std::vector<til::rectangle, run_allocator_type>& runs() const
         {
             // If we don't have cached runs, rebuild.
             if (!_runs.has_value())
@@ -208,7 +284,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
 
             // FUTURE: PERF: GH #4015: This could use in-place walk semantics instead of a temporary.
-            til::bitmap other{ _sz };
+            bitmap<allocator_type> other{ _sz, _alloc };
 
             for (auto run : *this)
             {
@@ -311,7 +387,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (_sz != size)
             {
                 // Make a new bitmap for the other side, empty initially.
-                auto newMap = bitmap(size, false);
+                bitmap<allocator_type> newMap{ size, false, _alloc };
 
                 // Copy any regions that overlap from this map to the new one.
                 // Just iterate our runs...
@@ -450,52 +526,62 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _runs.reset(); // reset cached runs on any non-const method
         }
 
+        allocator_type _alloc;
         til::size _sz;
         til::rectangle _rc;
-        dynamic_bitset<> _bits;
+        dynamic_bitset<unsigned long long, allocator_type> _bits;
 
-        mutable std::optional<std::vector<til::rectangle>> _runs;
+        mutable std::optional<std::vector<til::rectangle, run_allocator_type>> _runs;
 
 #ifdef UNIT_TESTING
         friend class ::BitmapTests;
 #endif
     };
+
+    }
+
+    using bitmap = ::til::details::bitmap<>;
+
+    namespace pmr
+    {
+        using bitmap = ::til::details::bitmap<std::pmr::polymorphic_allocator<unsigned long long>>;
+    }
 }
 
 #ifdef __WEX_COMMON_H__
 namespace WEX::TestExecution
 {
-    template<>
-    class VerifyOutputTraits<::til::bitmap>
+    template<typename T>
+    class VerifyOutputTraits<::til::details::bitmap<T>>
     {
     public:
-        static WEX::Common::NoThrowString ToString(const ::til::bitmap& rect)
+        static WEX::Common::NoThrowString ToString(const ::til::details::bitmap<T>& rect)
         {
             return WEX::Common::NoThrowString(rect.to_string().c_str());
         }
     };
 
-    template<>
-    class VerifyCompareTraits<::til::bitmap, ::til::bitmap>
+    template<typename T>
+    class VerifyCompareTraits<::til::details::bitmap<T>, ::til::details::bitmap<T>>
     {
     public:
-        static bool AreEqual(const ::til::bitmap& expected, const ::til::bitmap& actual) noexcept
+        static bool AreEqual(const ::til::details::bitmap<T>& expected, const ::til::details::bitmap<T>& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::bitmap& expected, const ::til::bitmap& actual) noexcept
+        static bool AreSame(const ::til::details::bitmap<T>& expected, const ::til::details::bitmap<T>& actual) noexcept
         {
             return &expected == &actual;
         }
 
-        static bool IsLessThan(const ::til::bitmap& expectedLess, const ::til::bitmap& expectedGreater) = delete;
+        static bool IsLessThan(const ::til::details::bitmap<T>& expectedLess, const ::til::details::bitmap<T>& expectedGreater) = delete;
 
-        static bool IsGreaterThan(const ::til::bitmap& expectedGreater, const ::til::bitmap& expectedLess) = delete;
+        static bool IsGreaterThan(const ::til::details::bitmap<T>& expectedGreater, const ::til::details::bitmap<T>& expectedLess) = delete;
 
-        static bool IsNull(const ::til::bitmap& object) noexcept
+        static bool IsNull(const ::til::details::bitmap<T>& object) noexcept
         {
-            return object == til::bitmap{};
+            return object == til::details::bitmap<T>{};
         }
     };
 
