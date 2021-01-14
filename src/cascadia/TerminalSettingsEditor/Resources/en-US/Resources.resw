@@ -603,6 +603,12 @@
   <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
   </data>
+  <data name="Profile_StartingDirectoryUseParentCheckbox.Content" xml:space="preserve">
+    <value>Use parent process directory</value>
+  </data>
+  <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>If checked, this profile will spawn in the directory from which Windows Terminal was launched.</value>
+  </data>
   <data name="Profile_SuppressApplicationTitle.Content" xml:space="preserve">
     <value>Suppress title changes</value>
   </data>
