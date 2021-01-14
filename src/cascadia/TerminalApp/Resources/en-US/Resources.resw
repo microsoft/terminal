@@ -415,7 +415,7 @@
   <data name="MultiLinePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="MultiLinePasteDialog.Content" xml:space="preserve">
+  <data name="MultiLineWarningText.Text" xml:space="preserve">
     <value>You are about to paste text that contains multiple lines. If you paste this text into your shell, it may result in the unexpected execution of commands. Do you wish to continue?</value>
   </data>
   <data name="MultiLinePasteDialog.PrimaryButtonText" xml:space="preserve">
@@ -536,5 +536,8 @@
   </data>
   <data name="NoticeWarning" xml:space="preserve">
     <value>Warning</value>
+  </data>
+  <data name="ClipboardTextHeader.Text" xml:space="preserve">
+    <value>Clipboard contents (preview):</value>
   </data>
 </root>

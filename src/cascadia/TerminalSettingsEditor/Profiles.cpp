@@ -300,4 +300,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
+
 }
