@@ -135,10 +135,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _ColorSchemeList.Append(pair.Value());
         }
 
-        if (_lastSchemeName == L"" && _ColorSchemeList.Size() > 0)
-        {
-            _lastSchemeName = _ColorSchemeList.GetAt(0).Name();
-        }
     }
 
     // Function Description:
