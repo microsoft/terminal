@@ -54,7 +54,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ScrollViewer>
                     <StackPanel Margin="{StaticResource PivotStackPanelMargin}">
                         <!--Commandline-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_Commandline"
                                          x:Name="Commandline"
@@ -101,7 +102,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Hidden-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <CheckBox x:Uid="Profile_Hidden"
                                       IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
