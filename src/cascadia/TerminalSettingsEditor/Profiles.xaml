@@ -39,7 +39,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
@@ -54,7 +54,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ScrollViewer>
                     <StackPanel Margin="{StaticResource PivotStackPanelMargin}">
                         <!--Commandline-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_Commandline"
                                          x:Name="Commandline"
@@ -68,14 +69,22 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Starting Directory-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBox x:Uid="Profile_StartingDirectory"
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox x:Uid="Profile_StartingDirectory"
                                          x:Name="StartingDirectory"
                                          Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
                                          Style="{StaticResource TextBoxSettingStyle}"/>
-                                <Button x:Uid="Profile_StartingDirectoryBrowse"
+                                    <Button x:Uid="Profile_StartingDirectoryBrowse"
+                                        x:Name="StartingDirectoryBrowse"
                                         Click="StartingDirectory_Click"
                                         Style="{StaticResource BrowseButtonStyle}"/>
+                                </StackPanel>
+                                <CheckBox x:Uid="Profile_StartingDirectoryUseParentCheckbox"
+                                      x:Name="StartingDirectoryUseParentCheckbox"
+                                      Style="{StaticResource CheckBoxSettingStyle}"
+                                      Checked="UseParentProcessDirectory_Check"
+                                      Unchecked="UseParentProcessDirectory_Uncheck"/>
                             </StackPanel>
                         </ContentPresenter>
 
@@ -101,7 +110,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Hidden-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <CheckBox x:Uid="Profile_Hidden"
                                       IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
@@ -206,6 +216,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:NumberBox x:Uid="Profile_FontSize"
                                             Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
                                             Style="{StaticResource NumberBoxSettingStyle}"
+                                            AcceptsExpression="False"
+                                            Minimum="1"
+                                            Maximum="128"
                                             SmallChange="1"
                                             LargeChange="10"/>
                         </ContentPresenter>
@@ -248,25 +261,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <CheckBox x:Uid="Profile_RetroTerminalEffect"
                                       IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
-                        </ContentPresenter>
-
-                        <!--Grouping: Window-->
-                        <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
-
-                        <!--Padding-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <TextBox x:Uid="Profile_Padding"
-                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
-                                     Style="{StaticResource TextBoxSettingStyle}"/>
-                        </ContentPresenter>
-
-                        <!--Scrollbar Visibility-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
                         </ContentPresenter>
 
                         <!--Grouping: Cursor-->
@@ -523,6 +517,25 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                Style="{StaticResource SliderValueLabelStyle}"/>
                                 </Grid>
                             </StackPanel>
+                        </ContentPresenter>
+
+                        <!--Grouping: Window-->
+                        <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
+
+                        <!--Padding-->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <TextBox x:Uid="Profile_Padding"
+                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                        </ContentPresenter>
+
+                        <!--Scrollbar Visibility-->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
                         </ContentPresenter>
                     </StackPanel>
                 </ScrollViewer>
