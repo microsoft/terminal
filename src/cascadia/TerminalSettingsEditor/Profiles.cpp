@@ -40,7 +40,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         PropertyChanged([this](auto&&, const Data::PropertyChangedEventArgs& args) {
             if (args.PropertyName() == L"BackgroundImagePath")
             {
-                _NotifyChanges(L"UseDesktopBGImage");
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
+            }
+            else if (args.PropertyName() == L"IsBaseLayer")
+            {
+                _NotifyChanges(L"BackgroundImageSettingsVisible");
             }
         });
 
@@ -103,6 +107,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // empty string.
             BackgroundImagePath(_lastBgImagePath);
         }
+    }
+
+    bool ProfileViewModel::BackgroundImageSettingsVisible()
+    {
+        return IsBaseLayer() || BackgroundImagePath() != L"";
     }
 
     void ProfilePageNavigationState::DeleteProfile()

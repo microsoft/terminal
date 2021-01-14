@@ -311,7 +311,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Background Image Stretch Mode-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsEmptyConverter}}">
+                                          Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                             <muxc:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
                                                ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
@@ -321,7 +321,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Background Image Alignment-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsEmptyConverter}}">
+                                          Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                             <StackPanel HorizontalAlignment="Left">
                                 <TextBlock x:Uid="Profile_BackgroundImageAlignment"
                                            Style="{StaticResource CustomSettingHeaderStyle}"
@@ -478,7 +478,7 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Background Image Opacity-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsEmptyConverter}}">
+                                          Visibility="{x:Bind State.Profile.BackgroundImageSettingsVisible, Mode=OneWay}">
                             <StackPanel>
                                 <TextBlock x:Uid="Profile_BackgroundImageOpacity"
                                            Style="{StaticResource SliderHeaderStyle}"/>
