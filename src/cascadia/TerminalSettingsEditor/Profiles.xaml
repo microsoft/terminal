@@ -74,9 +74,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                                          Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
                                          Style="{StaticResource TextBoxSettingStyle}"/>
                                 <Button x:Uid="Profile_StartingDirectoryBrowse"
+                                        x:Name="StartingDirectoryBrowse"
                                         Click="StartingDirectory_Click"
                                         Style="{StaticResource BrowseButtonStyle}"/>
                             </StackPanel>
+                        </ContentPresenter>
+
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <CheckBox x:Uid="Profile_StartingDirectoryUseParentCheckbox"
+                                      x:Name="StartingDirectoryUseParentCheckbox"
+                                      Style="{StaticResource CheckBoxSettingStyle}"
+                                      Margin="0,-20,0,0"
+                                      Checked="UseParentProcessDirectory_Check"
+                                      Unchecked="UseParentProcessDirectory_Uncheck"/>
                         </ContentPresenter>
 
                         <!--Icon-->
