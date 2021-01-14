@@ -803,7 +803,7 @@
   </data>
   <data name="Globals_TabSwitcherMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines the terminal behavior when switching tabs. When set to "Most recently used", tabs will be selected based on their most recently used ordering. When set to "In order", tabs will be switched in their current order on the tab bar. When set to "Disabled", the tab switcher is disabled.</value>
-    <comment>"Mru", "InOrder", and "Disabled" must match Globals_TabSwitcherModeMru.Content, Globals_TabSwitcherModeInOrder.Content, and Globals_TabSwitcherModeDisabled.Content values respectively.</comment>
+    <comment>"Most recently used", "In order", and "Disabled" must match Globals_TabSwitcherModeMru.Content, Globals_TabSwitcherModeInOrder.Content, and Globals_TabSwitcherModeDisabled.Content values respectively.</comment>
   </data>
   <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
     <value>Most recently used</value>
@@ -815,14 +815,14 @@
     <value>Disabled</value>
   </data>
   <data name="Globals_CopyFormat.Header" xml:space="preserve">
-    <value>Copy format</value>
+    <value>Copy formatted text to clipboard</value>
   </data>
   <data name="Globals_CopyFormat.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Defines whether the color and font formatting of selected text is copied to your clipboard, and in which format. When set to 'None', only plaintext is copied.</value>
     <comment>"None", "Html", "Rtf" and "All" must match Globals_CopyFormatNone.Content, Globals_CopyFormatHtml.Content, Globals_CopyFormatRtf.Content and Globals_CopyFormatAll.Content values respectively.</comment>
   </data>
   <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
-    <value>None</value>
+    <value>Plain text only</value>
   </data>
   <data name="Globals_CopyFormatHtml.Content" xml:space="preserve">
     <value>HTML</value>
@@ -831,6 +831,6 @@
     <value>RTF</value>
   </data>
   <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
-    <value>All</value>
+    <value>Both HTML and RTF</value>
   </data>
 </root>
