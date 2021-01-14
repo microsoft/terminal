@@ -96,7 +96,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     // Hold a running count of how much more we need to move.
                     // Flip the sign to make it just the magnitude since this
                     // branch is already the direction.
-                    auto move = -offset;
+                    auto move = static_cast<difference_type>(-offset);
 
                     // While we still need to move...
                     while (move > 0)
@@ -111,7 +111,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         if (space >= move)
                         {
                             // Move the storage forward the requested distance.
-                            _usage -= move;
+                            _usage -= gsl::narrow_cast<decltype(_usage)>(move);
 
                             // Remove the moved distance.
                             move -= move;
@@ -134,7 +134,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 else // positive direction
                 {
                     // Hold a running count of how much more we need to move.
-                    auto move = offset;
+                    auto move = static_cast<difference_type>(offset);
 
                     // While we still need to move...
                     while (move > 0)
@@ -149,7 +149,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                         if (space >= move)
                         {
                             // Move the storage forward the requested distance.
-                            _usage += move;
+                            _usage += gsl::narrow_cast<decltype(_usage)>(move);
 
                             // Remove the moved distance.
                             move -= move;
@@ -302,11 +302,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // making those accessible.
             // If you use this as a sample, all you have to change is:
             // 1. Make it inherit correctly and align that with the template.
-            // 2. Fix _Mybase to match
+            // 2. Fix mybase to match
             // 3. value_type needs to be whatever makes sense to come off of *iterator
             // 4. difference_type needs to come from somewhere else, probably.
 
-            using _Mybase = rle_const_iterator<ParentIt>;
+            using mybase = rle_const_iterator<ParentIt>;
 
             using iterator_category = std::random_access_iterator_tag;
             using value_type = typename ParentIt::value_type::first_type;
@@ -315,47 +315,47 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             using difference_type = typename ParentIt::difference_type;
 
             // Use base's constructor.
-            using _Mybase::_Mybase;
+            using mybase::mybase;
 
             [[nodiscard]] reference operator*() const noexcept
             {
-                return const_cast<reference>(_Mybase::operator*());
+                return const_cast<reference>(mybase::operator*());
             }
 
             [[nodiscard]] pointer operator->() const noexcept
             {
-                return const_cast<std::remove_const_t<value_type>*>(_Mybase::operator->());
+                return const_cast<std::remove_const_t<value_type>*>(mybase::operator->());
             }
 
             rle_iterator& operator++() noexcept
             {
-                _Mybase::operator++();
+                mybase::operator++();
                 return *this;
             }
 
             rle_iterator operator++(int) noexcept
             {
                 rle_iterator tmp = *this;
-                _Mybase::operator++();
+                mybase::operator++();
                 return tmp;
             }
 
             rle_iterator& operator--() noexcept
             {
-                _Mybase::operator--();
+                mybase::operator--();
                 return *this;
             }
 
             rle_iterator operator--(int) noexcept
             {
                 rle_iterator tmp = *this;
-                _Mybase::operator--();
+                mybase::operator--();
                 return tmp;
             }
 
             rle_iterator& operator+=(const difference_type offset) noexcept
             {
-                _Mybase::operator+=(offset);
+                mybase::operator+=(offset);
                 return *this;
             }
 
@@ -367,12 +367,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             rle_iterator& operator-=(const difference_type offset) noexcept
             {
-                _Mybase::operator-=(offset);
+                mybase::operator-=(offset);
                 return *this;
             }
 
             // Use base's difference method.
-            using _Mybase::operator-;
+            using mybase::operator-;
 
             [[nodiscard]] rle_iterator operator-(const difference_type offset) const noexcept
             {
@@ -382,7 +382,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             [[nodiscard]] reference operator[](const difference_type offset) const noexcept
             {
-                return const_cast<reference>(_Mybase::operator[](offset));
+                return const_cast<reference>(mybase::operator[](offset));
             }
         };
     };
@@ -413,14 +413,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Get the value at the position
-        T at(S position)
+        T at(S position) const
         {
             S applies;
             return at(position, applies);
         }
 
         // Get the value at the position and for how much longer it applies.
-        T at(S position, S& applies)
+        T at(S position, S& applies) const
         {
             THROW_HR_IF(E_INVALIDARG, position >= _size);
             return _at(position, applies)->first;
@@ -587,6 +587,48 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
     protected:
+        // TODO: get Dustin help to not duplicate this for constness.
+        auto _at(S position, S& applies) const
+        {
+            FAIL_FAST_IF(!(position < _size)); // The requested index cannot be longer than the total length described by this set of Attrs.
+
+            S totalLength = 0;
+
+            FAIL_FAST_IF(!(_list.size() > 0)); // There should be a non-zero and positive number of items in the array.
+
+            // Scan through the internal array from position 0 adding up the lengths that each attribute applies to
+            auto runPos = _list.begin();
+            do
+            {
+                totalLength += runPos->second;
+
+                if (totalLength > position)
+                {
+                    // If we've just passed up the requested position with the length we added, break early
+                    break;
+                }
+
+                runPos++;
+            } while (runPos < _list.end());
+
+            // we should have broken before falling out the while case.
+            // if we didn't break, then this ATTR_ROW wasn't filled with enough attributes for the entire row of characters
+            FAIL_FAST_IF(runPos >= _list.end());
+
+            // The remaining iterator position is the position of the attribute that is applicable at the position requested (position)
+            // Calculate its remaining applicability if requested
+
+            // The length on which the found attribute applies is the total length seen so far minus the position we were searching for.
+            FAIL_FAST_IF(!(totalLength > position)); // The length of all attributes we counted up so far should be longer than the position requested or we'll underflow.
+
+            applies = totalLength - position;
+            FAIL_FAST_IF(!(applies > 0)); // An attribute applies for >0 characters
+            // MSFT: 17130145 - will restore this and add a better assert to catch the real issue.
+            //FAIL_FAST_IF(!(attrApplies <= _size)); // An attribute applies for a maximum of the total length available to us
+
+            return runPos;
+        }
+
         auto _at(S position, S& applies)
         {
             FAIL_FAST_IF(!(position < _size)); // The requested index cannot be longer than the total length described by this set of Attrs.

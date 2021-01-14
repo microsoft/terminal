@@ -20,33 +20,25 @@ Revision History:
 
 #pragma once
 
-#include "TextAttributeRun.hpp"
-#include "AttrRowIterator.hpp"
+#include "til/rle.h"
 
-class ATTR_ROW final
+#include "TextAttributeRun.hpp"
+
+class ATTR_ROW final : public til::rle<TextAttribute, UINT>
 {
 public:
-    using const_iterator = typename AttrRowIterator;
+    using mybase = til::rle<TextAttribute, UINT>;
 
-    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
-    noexcept;
+    using const_iterator = mybase::const_iterator;
+    using const_reverse_iterator = mybase::const_reverse_iterator;
 
-    ~ATTR_ROW() = default;
-
-    ATTR_ROW(const ATTR_ROW&) = default;
-    ATTR_ROW& operator=(const ATTR_ROW&) = default;
-    ATTR_ROW(ATTR_ROW&&)
-    noexcept = default;
-    ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
+    using mybase::mybase; // use base constructor
 
     void Reset(const TextAttribute attr);
 
     TextAttribute GetAttrByColumn(const size_t column) const;
     TextAttribute GetAttrByColumn(const size_t column,
                                   size_t* const pApplies) const;
-
-    size_t FindAttrIndex(const size_t index,
-                         size_t* const pApplies) const;
 
     std::vector<uint16_t> GetHyperlinks();
 
@@ -60,18 +52,12 @@ public:
                                          const size_t iEnd,
                                          const size_t cBufferWidth);
 
-    const_iterator begin() const noexcept;
-    const_iterator end() const noexcept;
+    using mybase::begin;
+    using mybase::end;
+    using mybase::cbegin;
+    using mybase::cend;
 
-    const_iterator cbegin() const noexcept;
-    const_iterator cend() const noexcept;
-
-    friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
-    friend class AttrRowIterator;
-
-private:
-    boost::container::small_vector<TextAttributeRun, 1> _list;
-    size_t _cchRowWidth;
+    using mybase::operator==;
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;
