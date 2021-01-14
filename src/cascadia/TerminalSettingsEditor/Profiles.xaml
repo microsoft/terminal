@@ -30,6 +30,9 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:PercentageConverter x:Key="PercentageConverter"/>
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
+            <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter"/>
+            <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter"/>
+
         </ResourceDictionary>
     </Page.Resources>
 
@@ -39,7 +42,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        
+
         <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
@@ -206,6 +209,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:NumberBox x:Uid="Profile_FontSize"
                                             Value="{x:Bind State.Profile.FontSize, Mode=TwoWay}"
                                             Style="{StaticResource NumberBoxSettingStyle}"
+                                            AcceptsExpression="False"
+                                            Minimum="1"
+                                            Maximum="128"
                                             SmallChange="1"
                                             LargeChange="10"/>
                         </ContentPresenter>
@@ -250,25 +256,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                       Style="{StaticResource CheckBoxSettingStyle}"/>
                         </ContentPresenter>
 
-                        <!--Grouping: Window-->
-                        <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
-
-                        <!--Padding-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <TextBox x:Uid="Profile_Padding"
-                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
-                                     Style="{StaticResource TextBoxSettingStyle}"/>
-                        </ContentPresenter>
-
-                        <!--Scrollbar Visibility-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
-                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
-                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
-                        </ContentPresenter>
-
                         <!--Grouping: Cursor-->
                         <TextBlock x:Uid="Profile_CursorHeader" Style="{StaticResource GroupingHeader}"/>
 
@@ -297,6 +284,14 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Background Image-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <CheckBox x:Uid="Profile_UseDesktopImage"
+                                      x:Name="UseDesktopImageCheckBox"
+                                      IsChecked="{x:Bind State.Profile.UseDesktopBGImage, Mode=TwoWay}"
+                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                        </ContentPresenter>
+
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_BackgroundImage"
                                          x:Name="BackgroundImage"
@@ -309,7 +304,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Background Image Stretch Mode-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsEmptyConverter}}">
                             <muxc:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
                                                ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
@@ -318,7 +314,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Background Image Alignment-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsEmptyConverter}}">
                             <StackPanel HorizontalAlignment="Left">
                                 <TextBlock x:Uid="Profile_BackgroundImageAlignment"
                                            Style="{StaticResource CustomSettingHeaderStyle}"
@@ -474,7 +471,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Background Image Opacity-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Visibility="{x:Bind State.Profile.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsEmptyConverter}}">
                             <StackPanel>
                                 <TextBlock x:Uid="Profile_BackgroundImageOpacity"
                                            Style="{StaticResource SliderHeaderStyle}"/>
@@ -523,6 +521,25 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                Style="{StaticResource SliderValueLabelStyle}"/>
                                 </Grid>
                             </StackPanel>
+                        </ContentPresenter>
+
+                        <!--Grouping: Window-->
+                        <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource GroupingHeader}"/>
+
+                        <!--Padding-->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <TextBox x:Uid="Profile_Padding"
+                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                        </ContentPresenter>
+
+                        <!--Scrollbar Visibility-->
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                            <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
+                                               ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
+                                               SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
                         </ContentPresenter>
                     </StackPanel>
                 </ScrollViewer>
