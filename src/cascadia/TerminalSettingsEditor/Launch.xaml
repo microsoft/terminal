@@ -70,13 +70,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                           Style="{StaticResource CheckBoxSettingStyle}"/>
             </ContentPresenter>
 
-            <!--Always on Top-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_AlwaysOnTop"
-                          IsChecked="{x:Bind State.Settings.GlobalSettings.AlwaysOnTop, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
-
             <!--Launch Mode-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <muxc:RadioButtons x:Uid="Globals_LaunchMode"
