@@ -51,6 +51,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"Tango Light"
     };
 
+    void ColorSchemesPageNavigationState::RenameColorScheme(hstring oldName, hstring newName)
+    {
+        // dispatch an event to update all references to <oldName> with <newName>
+        auto renameSchemeArgs {winrt::make_self<ModifyColorSchemeNameEventArgs>(oldName, newName)};
+        _ModifyColorSchemeNameHandlers(*this, *renameSchemeArgs);
+    }
+
+    void ColorSchemesPageNavigationState::DeleteColorScheme(hstring name)
+    {
+        // dispatch an event to update all references to <name> with "Campbell"
+        // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
+        auto deleteSchemeArgs{ winrt::make_self<ModifyColorSchemeNameEventArgs>(name, L"Campbell") };
+        _ModifyColorSchemeNameHandlers(*this, *deleteSchemeArgs);
+    }
+
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
@@ -175,6 +190,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto schemeName{ CurrentColorScheme().Name() };
         _State.Globals().RemoveColorScheme(schemeName);
+        winrt::get_self<ColorSchemesPageNavigationState>(_State)->DeleteColorScheme(schemeName);
 
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
         if (static_cast<uint32_t>(removedSchemeIndex) < _ColorSchemeList.Size() - 1)
@@ -245,6 +261,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
+        winrt::get_self<ColorSchemesPageNavigationState>(_State)->RenameColorScheme(CurrentColorScheme().Name(), newName);
         CurrentColorScheme().Name(newName);
         IsRenaming(false);
 

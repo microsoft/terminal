@@ -51,6 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
+        _colorSchemesNavState.ModifyColorSchemeName({ this, &MainPage::_ModifyColorSchemeName });
     }
 
     // Method Description:
@@ -385,5 +386,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
+    }
+
+    // Method Description:
+    // - Updates all references to a renamed/deleted color scheme
+    // Arguments:
+    // - sender - unused
+    // - args - data regarding the color scheme that was modified
+    void MainPage::_ModifyColorSchemeName(const IInspectable /*sender*/, const Editor::ModifyColorSchemeNameEventArgs& args)
+    {
+        for (auto profile : _settingsClone.AllProfiles())
+        {
+            if (profile.ColorSchemeName() == args.OldName())
+            {
+                profile.ColorSchemeName(args.NewName());
+            }
+        }
     }
 }
