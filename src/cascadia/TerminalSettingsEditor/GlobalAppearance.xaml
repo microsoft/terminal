@@ -64,13 +64,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource RadioButtonsSettingStyle}"/>
             </ContentPresenter>
 
-            <!--Confirm Close All Tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs"
-                          IsChecked="{x:Bind State.Globals.ConfirmCloseAllTabs, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
-
             <!--Disable Animations-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <CheckBox x:Uid="Globals_DisableAnimations"

@@ -184,12 +184,6 @@
     <value>When checked, tabs are always displayed. When unchecked and 'show the title bar' is checked, tabs only appear after opening a new tab.</value>
     <comment>'show the title bar' must match the value for &lt;Globals_ShowTitlebar.Content&gt;.</comment>
   </data>
-  <data name="Globals_ConfirmCloseAllTabs.Content" xml:space="preserve">
-    <value>Show close all tabs popup</value>
-  </data>
-  <data name="Globals_ConfirmCloseAllTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, closing a window with multiple tabs open will require confirmation. When unchecked, the confirmation dialog will not appear.</value>
-  </data>
   <data name="Globals_CopyFormatting.Content" xml:space="preserve">
     <value>Copy formatting</value>
   </data>
