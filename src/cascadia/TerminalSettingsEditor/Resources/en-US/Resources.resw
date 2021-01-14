@@ -279,7 +279,7 @@
     <value>Always on top</value>
   </data>
   <data name="Globals_AlwaysOnTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, Windows Terminal windows will launch on top of all other windows on the desktop.</value>
+    <value>Windows Terminal will always be the topmost window on the desktop.</value>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
