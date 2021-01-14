@@ -6,6 +6,7 @@
 #include "ColorLightenConverter.g.cpp"
 
 using namespace winrt::Windows;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Text;
 
@@ -16,9 +17,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                             Foundation::IInspectable const& /* parameter */,
                                                             hstring const& /* language */)
     {
-        value;
-        auto c = winrt::Windows::UI::Color{255, 255, 0, 255 }; // ARGB
-        return winrt::box_value(c);
+        auto original = winrt::unbox_value_or<Color>(value, Color{ 255, 0, 0, 0 });
+        auto result = original;
+        result.A = 128; // halfway transparent
+        return winrt::box_value(result);
     }
 
     Foundation::IInspectable ColorLightenConverter::ConvertBack(Foundation::IInspectable const& /*value*/,
