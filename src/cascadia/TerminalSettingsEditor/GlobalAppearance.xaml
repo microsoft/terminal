@@ -34,6 +34,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    Style="{StaticResource RadioButtonsSettingStyle}"/>
             </ContentPresenter>
 
+            <!--Always show tabs-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <CheckBox x:Uid="Globals_AlwaysShowTabs"
+                          IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
+                          Style="{StaticResource CheckBoxSettingStyle}"/>
+            </ContentPresenter>
+
             <!--Show Titlebar-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <CheckBox x:Uid="Globals_ShowTitlebar"
@@ -48,13 +55,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                           Style="{StaticResource CheckBoxSettingStyle}"/>
             </ContentPresenter>
 
-            <!--Always show tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_AlwaysShowTabs"
-                          IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
-
             <!--Tab Width Mode-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <muxc:RadioButtons x:Uid="Globals_TabWidthMode"
@@ -62,13 +62,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                    ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    Style="{StaticResource RadioButtonsSettingStyle}"/>
-            </ContentPresenter>
-
-            <!--Confirm Close All Tabs-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ConfirmCloseAllTabs"
-                          IsChecked="{x:Bind State.Globals.ConfirmCloseAllTabs, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
             </ContentPresenter>
 
             <!--Disable Animations-->

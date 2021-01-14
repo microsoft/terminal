@@ -183,12 +183,6 @@
   <data name="Globals_AlwaysShowTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When unchecked, the tab bar will appear when a new tab is created.</value>
   </data>
-  <data name="Globals_ConfirmCloseAllTabs.Content" xml:space="preserve">
-    <value>Show close all tabs popup</value>
-  </data>
-  <data name="Globals_ConfirmCloseAllTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, closing a window with multiple tabs open will require confirmation. When unchecked, the confirmation dialog will not appear.</value>
-  </data>
   <data name="Globals_CopyFormatting.Content" xml:space="preserve">
     <value>Copy formatting</value>
   </data>
@@ -486,19 +480,24 @@
     <value>Cursor shape</value>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
-    <value>Bar</value>
+    <value>Bar ( ┃ )</value>
+    <comment>{Locked="┃"}</comment>
   </data>
   <data name="Profile_CursorShapeEmptyBox.Content" xml:space="preserve">
-    <value>Empty box</value>
+    <value>Empty box ( ▯ )</value>
+    <comment>{Locked="▯"}</comment>
   </data>
   <data name="Profile_CursorShapeFilledBox.Content" xml:space="preserve">
-    <value>Filled box</value>
+    <value>Filled box ( █ )</value>
+    <comment>{Locked="█"}</comment>
   </data>
   <data name="Profile_CursorShapeUnderscore.Content" xml:space="preserve">
-    <value>Underscore</value>
+    <value>Underscore ( ▁ )</value>
+    <comment>{Locked="▁"}</comment>
   </data>
   <data name="Profile_CursorShapeVintage.Content" xml:space="preserve">
-    <value>Vintage</value>
+    <value>Vintage ( ▃ )</value>
+    <comment>{Locked="▃"}</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
     <value>Font face</value>

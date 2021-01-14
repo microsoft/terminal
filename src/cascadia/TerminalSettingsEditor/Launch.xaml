@@ -91,6 +91,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
                             <Setter Property="SmallChange" Value="1"/>
                             <Setter Property="LargeChange" Value="10"/>
+                            <Setter Property="Minimum" Value="1"/>
                         </Style>
                     </Grid.Resources>
                     <Grid.RowDefinitions>
