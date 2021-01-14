@@ -132,411 +132,413 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         };
 
-    template<typename Allocator = std::allocator<unsigned long long>>
-    class bitmap
-    {
-    public:
-        using allocator_type = Allocator;
-        using const_iterator = details::_bitmap_const_iterator<allocator_type>;
-
-    private:
-        using run_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<til::rectangle>;
-
-    public:
-        explicit bitmap(const allocator_type& allocator) noexcept :
-            _alloc{ allocator },
-            _sz{},
-            _rc{},
-            _bits{ _alloc },
-            _runs{ _alloc }
+        template<typename Allocator = std::allocator<unsigned long long>>
+        class bitmap
         {
-        }
+        public:
+            using allocator_type = Allocator;
+            using const_iterator = details::_bitmap_const_iterator<allocator_type>;
 
-        bitmap() noexcept :
-            bitmap(allocator_type{})
-        {
-        }
+        private:
+            using run_allocator_type = typename std::allocator_traits<allocator_type>::template rebind_alloc<til::rectangle>;
 
-        bitmap(til::size sz) :
-            bitmap(sz, false, allocator_type{})
-        {
-        }
-
-        bitmap(til::size sz, const allocator_type& allocator) :
-            bitmap(sz, false, allocator)
-        {
-        }
-
-        bitmap(til::size sz, bool fill, const allocator_type& allocator) :
-            _alloc{ allocator },
-            _sz(sz),
-            _rc(sz),
-            _bits(_sz.area(), fill ? std::numeric_limits<unsigned long long>::max() : 0, _alloc),
-            _runs{ _alloc }
-        {
-        }
-
-        bitmap(til::size sz, bool fill) :
-            bitmap(sz, fill, allocator_type{})
-        {
-        }
-
-        bitmap(const bitmap& other) :
-            _alloc{ std::allocator_traits<allocator_type>::select_on_container_copy_construction(other._alloc) },
-            _sz{ other._sz },
-            _rc{ other._rc },
-            _bits{ other._bits },
-            _runs{ other._runs }
-        {
-            // copy constructor is required to call select_on_container_copy
-        }
-
-        bitmap& operator=(const bitmap& other)
-        {
-            if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_copy_assignment::value)
+        public:
+            explicit bitmap(const allocator_type& allocator) noexcept :
+                _alloc{ allocator },
+                _sz{},
+                _rc{},
+                _bits{ _alloc },
+                _runs{ _alloc }
             {
-                _alloc = other._alloc;
-            }
-            _sz = other._sz;
-            _rc = other._rc;
-            _bits = other._bits;
-            _runs = other._runs;
-            return *this;
-        }
-
-        bitmap(bitmap&& other) :
-            _alloc{ std::move(other._alloc) },
-            _sz{ std::move(other._sz) },
-            _rc{ std::move(other._rc) },
-            _bits{ std::move(other._bits) },
-            _runs{ std::move(other._runs) }
-        {
-        }
-
-        bitmap& operator=(bitmap&& other)
-        {
-            if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_move_assignment::value)
-            {
-                _alloc = std::move(other._alloc);
-            }
-            _bits = std::move(other._bits);
-            _runs = std::move(other._runs);
-            _sz = std::move(other._sz);
-            _rc = std::move(other._rc);
-            return *this;
-        }
-
-        void swap(bitmap& other)
-        {
-            if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_swap::value)
-            {
-                std::swap(_alloc, other._alloc);
-            }
-            std::swap(_bits, other._bits);
-            std::swap(_runs, other._runs);
-            std::swap(_sz, other._sz);
-            std::swap(_rc, other._rc);
-        }
-
-        constexpr bool operator==(const bitmap& other) const noexcept
-        {
-            return _sz == other._sz &&
-                   _rc == other._rc &&
-                   _bits == other._bits;
-            // _runs excluded because it's a cache of generated state.
-        }
-
-        constexpr bool operator!=(const bitmap& other) const noexcept
-        {
-            return !(*this == other);
-        }
-
-        const_iterator begin() const
-        {
-            return const_iterator(_bits, _sz, 0);
-        }
-
-        const_iterator end() const
-        {
-            return const_iterator(_bits, _sz, _sz.area());
-        }
-
-        const std::vector<til::rectangle, run_allocator_type>& runs() const
-        {
-            // If we don't have cached runs, rebuild.
-            if (!_runs.has_value())
-            {
-                _runs.emplace(begin(), end());
             }
 
-            // Return a reference to the runs.
-            return _runs.value();
-        }
-
-        // optional fill the uncovered area with bits.
-        void translate(const til::point delta, bool fill = false)
-        {
-            if (delta.x() == 0)
+            bitmap() noexcept :
+                bitmap(allocator_type{})
             {
-                // fast path by using bit shifting
-                translate_y(delta.y(), fill);
-                return;
             }
 
-            // FUTURE: PERF: GH #4015: This could use in-place walk semantics instead of a temporary.
-            bitmap<allocator_type> other{ _sz, _alloc };
-
-            for (auto run : *this)
+            bitmap(til::size sz) :
+                bitmap(sz, false, allocator_type{})
             {
-                // Offset by the delta
-                run += delta;
-
-                // Intersect with the bounds of our bitmap area
-                // as part of it could have slid out of bounds.
-                run &= _rc;
-
-                // Set it into the new bitmap.
-                other.set(run);
             }
 
-            // If we were asked to fill... find the uncovered region.
-            if (fill)
+            bitmap(til::size sz, const allocator_type& allocator) :
+                bitmap(sz, false, allocator)
             {
-                // Original Rect of As.
-                //
-                // X <-- origin
-                // A A A A
-                // A A A A
-                // A A A A
-                // A A A A
-                const auto originalRect = _rc;
+            }
 
-                // If Delta = (2, 2)
-                // Translated Rect of Bs.
-                //
-                // X <-- origin
-                //
-                //
-                //     B B B B
-                //     B B B B
-                //     B B B B
-                //     B B B B
-                const auto translatedRect = _rc + delta;
+            bitmap(til::size sz, bool fill, const allocator_type& allocator) :
+                _alloc{ allocator },
+                _sz(sz),
+                _rc(sz),
+                _bits(_sz.area(), fill ? std::numeric_limits<unsigned long long>::max() : 0, _alloc),
+                _runs{ _alloc }
+            {
+            }
 
-                // Subtract the B from the A one to see what wasn't filled by the move.
-                // C is the overlap of A and B:
-                //
-                // X <-- origin
-                // A A A A                     1 1 1 1
-                // A A A A                     1 1 1 1
-                // A A C C B B     subtract    2 2
-                // A A C C B B    --------->   2 2
-                //     B B B B      A - B
-                //     B B B B
-                //
-                // 1 and 2 are the spaces to fill that are "uncovered".
-                const auto fillRects = originalRect - translatedRect;
-                for (const auto& f : fillRects)
+            bitmap(til::size sz, bool fill) :
+                bitmap(sz, fill, allocator_type{})
+            {
+            }
+
+            bitmap(const bitmap& other) :
+                _alloc{ std::allocator_traits<allocator_type>::select_on_container_copy_construction(other._alloc) },
+                _sz{ other._sz },
+                _rc{ other._rc },
+                _bits{ other._bits },
+                _runs{ other._runs }
+            {
+                // copy constructor is required to call select_on_container_copy
+            }
+
+            bitmap& operator=(const bitmap& other)
+            {
+                if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_copy_assignment::value)
                 {
-                    other.set(f);
+                    _alloc = other._alloc;
                 }
+                _sz = other._sz;
+                _rc = other._rc;
+                _bits = other._bits;
+                _runs = other._runs;
+                return *this;
             }
 
-            // Swap us with the temporary one.
-            std::swap(other, *this);
-        }
-
-        void set(const til::point pt)
-        {
-            THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
-            _runs.reset(); // reset cached runs on any non-const method
-
-            _bits.set(_rc.index_of(pt));
-        }
-
-        void set(const til::rectangle rc)
-        {
-            THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
-            _runs.reset(); // reset cached runs on any non-const method
-
-            for (auto row = rc.top(); row < rc.bottom(); ++row)
+            bitmap(bitmap&& other) noexcept :
+                _alloc{ std::move(other._alloc) },
+                _sz{ std::move(other._sz) },
+                _rc{ std::move(other._rc) },
+                _bits{ std::move(other._bits) },
+                _runs{ std::move(other._runs) }
             {
-                _bits.set(_rc.index_of(til::point{ rc.left(), row }), rc.width(), true);
             }
-        }
 
-        void set_all() noexcept
-        {
-            _runs.reset(); // reset cached runs on any non-const method
-            _bits.set();
-        }
-
-        void reset_all() noexcept
-        {
-            _runs.reset(); // reset cached runs on any non-const method
-            _bits.reset();
-        }
-
-        // True if we resized. False if it was the same size as before.
-        // Set fill if you want the new region (on growing) to be marked dirty.
-        bool resize(til::size size, bool fill = false)
-        {
-            _runs.reset(); // reset cached runs on any non-const method
-
-            // Don't resize if it's not different
-            if (_sz != size)
+            bitmap& operator=(bitmap&& other) noexcept
             {
-                // Make a new bitmap for the other side, empty initially.
-                bitmap<allocator_type> newMap{ size, false, _alloc };
-
-                // Copy any regions that overlap from this map to the new one.
-                // Just iterate our runs...
-                for (const auto& run : *this)
+                if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_move_assignment::value)
                 {
-                    // intersect them with the new map
-                    // so we don't attempt to set bits that fit outside
-                    // the new one.
-                    const auto intersect = run & newMap._rc;
+                    _alloc = std::move(other._alloc);
+                }
+                _bits = std::move(other._bits);
+                _runs = std::move(other._runs);
+                _sz = std::move(other._sz);
+                _rc = std::move(other._rc);
+                return *this;
+            }
 
-                    // and if there is still anything left, set them.
-                    if (!intersect.empty())
-                    {
-                        newMap.set(intersect);
-                    }
+            ~bitmap() {}
+
+            void swap(bitmap& other)
+            {
+                if constexpr (std::allocator_traits<allocator_type>::propagate_on_container_swap::value)
+                {
+                    std::swap(_alloc, other._alloc);
+                }
+                std::swap(_bits, other._bits);
+                std::swap(_runs, other._runs);
+                std::swap(_sz, other._sz);
+                std::swap(_rc, other._rc);
+            }
+
+            constexpr bool operator==(const bitmap& other) const noexcept
+            {
+                return _sz == other._sz &&
+                       _rc == other._rc &&
+                       _bits == other._bits;
+                // _runs excluded because it's a cache of generated state.
+            }
+
+            constexpr bool operator!=(const bitmap& other) const noexcept
+            {
+                return !(*this == other);
+            }
+
+            const_iterator begin() const
+            {
+                return const_iterator(_bits, _sz, 0);
+            }
+
+            const_iterator end() const
+            {
+                return const_iterator(_bits, _sz, _sz.area());
+            }
+
+            const std::vector<til::rectangle, run_allocator_type>& runs() const
+            {
+                // If we don't have cached runs, rebuild.
+                if (!_runs.has_value())
+                {
+                    _runs.emplace(begin(), end());
                 }
 
-                // Then, if we were requested to fill the new space on growing,
-                // find the space in the new rectangle that wasn't in the old
-                // and fill it up.
+                // Return a reference to the runs.
+                return _runs.value();
+            }
+
+            // optional fill the uncovered area with bits.
+            void translate(const til::point delta, bool fill = false)
+            {
+                if (delta.x() == 0)
+                {
+                    // fast path by using bit shifting
+                    translate_y(delta.y(), fill);
+                    return;
+                }
+
+                // FUTURE: PERF: GH #4015: This could use in-place walk semantics instead of a temporary.
+                bitmap<allocator_type> other{ _sz, _alloc };
+
+                for (auto run : *this)
+                {
+                    // Offset by the delta
+                    run += delta;
+
+                    // Intersect with the bounds of our bitmap area
+                    // as part of it could have slid out of bounds.
+                    run &= _rc;
+
+                    // Set it into the new bitmap.
+                    other.set(run);
+                }
+
+                // If we were asked to fill... find the uncovered region.
                 if (fill)
                 {
-                    // A subtraction will yield anything in the new that isn't
-                    // a part of the old.
-                    const auto newAreas = newMap._rc - _rc;
-                    for (const auto& area : newAreas)
+                    // Original Rect of As.
+                    //
+                    // X <-- origin
+                    // A A A A
+                    // A A A A
+                    // A A A A
+                    // A A A A
+                    const auto originalRect = _rc;
+
+                    // If Delta = (2, 2)
+                    // Translated Rect of Bs.
+                    //
+                    // X <-- origin
+                    //
+                    //
+                    //     B B B B
+                    //     B B B B
+                    //     B B B B
+                    //     B B B B
+                    const auto translatedRect = _rc + delta;
+
+                    // Subtract the B from the A one to see what wasn't filled by the move.
+                    // C is the overlap of A and B:
+                    //
+                    // X <-- origin
+                    // A A A A                     1 1 1 1
+                    // A A A A                     1 1 1 1
+                    // A A C C B B     subtract    2 2
+                    // A A C C B B    --------->   2 2
+                    //     B B B B      A - B
+                    //     B B B B
+                    //
+                    // 1 and 2 are the spaces to fill that are "uncovered".
+                    const auto fillRects = originalRect - translatedRect;
+                    for (const auto& f : fillRects)
                     {
-                        newMap.set(area);
+                        other.set(f);
                     }
                 }
 
-                // Swap and return.
-                std::swap(newMap, *this);
-
-                return true;
+                // Swap us with the temporary one.
+                std::swap(other, *this);
             }
-            else
+
+            void set(const til::point pt)
             {
-                return false;
+                THROW_HR_IF(E_INVALIDARG, !_rc.contains(pt));
+                _runs.reset(); // reset cached runs on any non-const method
+
+                _bits.set(_rc.index_of(pt));
             }
-        }
 
-        constexpr bool one() const noexcept
-        {
-            return _bits.count() == 1;
-        }
-
-        constexpr bool any() const noexcept
-        {
-            return !none();
-        }
-
-        constexpr bool none() const noexcept
-        {
-            return _bits.none();
-        }
-
-        constexpr bool all() const noexcept
-        {
-            return _bits.all();
-        }
-
-        constexpr til::size size() const noexcept
-        {
-            return _sz;
-        }
-
-        std::wstring to_string() const
-        {
-            std::wstringstream wss;
-            wss << std::endl
-                << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
-            wss << L"Runs:" << std::endl;
-
-            for (auto& item : *this)
+            void set(const til::rectangle rc)
             {
-                wss << L"\t- " << item.to_string() << std::endl;
+                THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
+                _runs.reset(); // reset cached runs on any non-const method
+
+                for (auto row = rc.top(); row < rc.bottom(); ++row)
+                {
+                    _bits.set(_rc.index_of(til::point{ rc.left(), row }), rc.width(), true);
+                }
             }
 
-            return wss.str();
-        }
-
-    private:
-        void translate_y(ptrdiff_t delta_y, bool fill)
-        {
-            if (delta_y == 0)
+            void set_all() noexcept
             {
-                return;
+                _runs.reset(); // reset cached runs on any non-const method
+                _bits.set();
             }
 
-            const auto bitShift = delta_y * _sz.width();
+            void reset_all() noexcept
+            {
+                _runs.reset(); // reset cached runs on any non-const method
+                _bits.reset();
+            }
+
+            // True if we resized. False if it was the same size as before.
+            // Set fill if you want the new region (on growing) to be marked dirty.
+            bool resize(til::size size, bool fill = false)
+            {
+                _runs.reset(); // reset cached runs on any non-const method
+
+                // Don't resize if it's not different
+                if (_sz != size)
+                {
+                    // Make a new bitmap for the other side, empty initially.
+                    bitmap<allocator_type> newMap{ size, false, _alloc };
+
+                    // Copy any regions that overlap from this map to the new one.
+                    // Just iterate our runs...
+                    for (const auto& run : *this)
+                    {
+                        // intersect them with the new map
+                        // so we don't attempt to set bits that fit outside
+                        // the new one.
+                        const auto intersect = run & newMap._rc;
+
+                        // and if there is still anything left, set them.
+                        if (!intersect.empty())
+                        {
+                            newMap.set(intersect);
+                        }
+                    }
+
+                    // Then, if we were requested to fill the new space on growing,
+                    // find the space in the new rectangle that wasn't in the old
+                    // and fill it up.
+                    if (fill)
+                    {
+                        // A subtraction will yield anything in the new that isn't
+                        // a part of the old.
+                        const auto newAreas = newMap._rc - _rc;
+                        for (const auto& area : newAreas)
+                        {
+                            newMap.set(area);
+                        }
+                    }
+
+                    // Swap and return.
+                    std::swap(newMap, *this);
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            constexpr bool one() const noexcept
+            {
+                return _bits.count() == 1;
+            }
+
+            constexpr bool any() const noexcept
+            {
+                return !none();
+            }
+
+            constexpr bool none() const noexcept
+            {
+                return _bits.none();
+            }
+
+            constexpr bool all() const noexcept
+            {
+                return _bits.all();
+            }
+
+            constexpr til::size size() const noexcept
+            {
+                return _sz;
+            }
+
+            std::wstring to_string() const
+            {
+                std::wstringstream wss;
+                wss << std::endl
+                    << L"Bitmap of size " << _sz.to_string() << " contains the following dirty regions:" << std::endl;
+                wss << L"Runs:" << std::endl;
+
+                for (auto& item : *this)
+                {
+                    wss << L"\t- " << item.to_string() << std::endl;
+                }
+
+                return wss.str();
+            }
+
+        private:
+            void translate_y(ptrdiff_t delta_y, bool fill)
+            {
+                if (delta_y == 0)
+                {
+                    return;
+                }
+
+                const auto bitShift = delta_y * _sz.width();
 
 #pragma warning(push)
-            // we can't depend on GSL here, so we use static_cast for explicit narrowing
+                // we can't depend on GSL here, so we use static_cast for explicit narrowing
 #pragma warning(disable : 26472)
-            const auto newBits = static_cast<size_t>(std::abs(bitShift));
+                const auto newBits = static_cast<size_t>(std::abs(bitShift));
 #pragma warning(pop)
-            const bool isLeftShift = bitShift > 0;
+                const bool isLeftShift = bitShift > 0;
 
-            if (newBits >= _bits.size())
-            {
-                if (fill)
+                if (newBits >= _bits.size())
                 {
-                    set_all();
+                    if (fill)
+                    {
+                        set_all();
+                    }
+                    else
+                    {
+                        reset_all();
+                    }
+                    return;
                 }
-                else
-                {
-                    reset_all();
-                }
-                return;
-            }
 
-            if (isLeftShift)
-            {
-                // This operator doesn't modify the size of `_bits`: the
-                // new bits are set to 0.
-                _bits <<= newBits;
-            }
-            else
-            {
-                _bits >>= newBits;
-            }
-
-            if (fill)
-            {
                 if (isLeftShift)
                 {
-                    _bits.set(0, newBits, true);
+                    // This operator doesn't modify the size of `_bits`: the
+                    // new bits are set to 0.
+                    _bits <<= newBits;
                 }
                 else
                 {
-                    _bits.set(_bits.size() - newBits, newBits, true);
+                    _bits >>= newBits;
                 }
+
+                if (fill)
+                {
+                    if (isLeftShift)
+                    {
+                        _bits.set(0, newBits, true);
+                    }
+                    else
+                    {
+                        _bits.set(_bits.size() - newBits, newBits, true);
+                    }
+                }
+
+                _runs.reset(); // reset cached runs on any non-const method
             }
 
-            _runs.reset(); // reset cached runs on any non-const method
-        }
+            allocator_type _alloc;
+            til::size _sz;
+            til::rectangle _rc;
+            dynamic_bitset<unsigned long long, allocator_type> _bits;
 
-        allocator_type _alloc;
-        til::size _sz;
-        til::rectangle _rc;
-        dynamic_bitset<unsigned long long, allocator_type> _bits;
-
-        mutable std::optional<std::vector<til::rectangle, run_allocator_type>> _runs;
+            mutable std::optional<std::vector<til::rectangle, run_allocator_type>> _runs;
 
 #ifdef UNIT_TESTING
-        friend class ::BitmapTests;
+            friend class ::BitmapTests;
 #endif
-    };
+        };
 
     }
 

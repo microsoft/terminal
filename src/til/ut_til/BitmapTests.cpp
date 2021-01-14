@@ -13,14 +13,14 @@ class BitmapTests
 {
     TEST_CLASS(BitmapTests);
 
-    template <typename T>
+    template<typename T>
     void _checkBits(const til::rectangle& bitsOn,
                     const til::details::bitmap<T>& map)
     {
         _checkBits(std::vector<til::rectangle>{ bitsOn }, map);
     }
 
-    template <typename T>
+    template<typename T>
     void _checkBits(const std::vector<til::rectangle>& bitsOn,
                     const til::details::bitmap<T>& map)
     {
@@ -840,7 +840,7 @@ class BitmapTests
         // 0 1 1 0      _ F F _
         Log::Comment(L"Set up a bitmap with some runs.");
 
-        til::bitmap map{ til::size{ 4, 4 }, false};
+        til::bitmap map{ til::size{ 4, 4 }, false };
 
         // 0 0 0 0     |1 1|0 0
         // 0 0 0 0      0 0 0 0
