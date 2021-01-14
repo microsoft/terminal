@@ -608,7 +608,7 @@
     <value>Use parent process directory</value>
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If checked, the parent process directory will be used.</value>
+    <value>If checked, this profile will spawn in the directory from which Windows Terminal was launched.</value>
   </data>
   <data name="Profile_SuppressApplicationTitle.Content" xml:space="preserve">
     <value>Suppress title changes</value>
