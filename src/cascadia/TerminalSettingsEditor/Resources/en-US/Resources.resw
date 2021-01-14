@@ -269,6 +269,12 @@
   <data name="Globals_StartOnUserLogin.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
   </data>
+  <data name="Globals_AlwaysOnTop.Content" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="Globals_AlwaysOnTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Windows Terminal will always be the topmost window on the desktop.</value>
+  </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
   </data>
@@ -802,5 +808,38 @@
   </data>
   <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Are you sure you want to delete this profile?</value>
+  </data>
+  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
+    <value>Tab switcher interface style</value>
+  </data>
+  <data name="Globals_TabSwitcherMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defines the terminal behavior when switching tabs with the keyboard.</value>
+  </data>
+  <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Separate window, in most recently used order</value>
+  </data>
+  <data name="Globals_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>Separate window, in tab strip order</value>
+  </data>
+  <data name="Globals_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Traditional navigation, no separate window</value>
+  </data>
+  <data name="Globals_CopyFormat.Header" xml:space="preserve">
+    <value>Text format when copying</value>
+  </data>
+  <data name="Globals_CopyFormat.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
+  </data>
+  <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
+    <value>Plain text only</value>
+  </data>
+  <data name="Globals_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="Globals_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+  </data>
+  <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
+    <value>Both HTML and RTF</value>
   </data>
 </root>
