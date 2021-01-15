@@ -91,6 +91,54 @@ class RunLengthEncodingTests
         VERIFY_ARE_EQUAL(appliesExpected, applies);
     }
 
+    TEST_METHOD(Substr)
+    {
+        til::rle<int> rle(10, 10);
+        rle.insert(3, 0, 4);
+        rle.insert(7, 4, 2);
+        rle.insert(11, 6, 3);
+        rle.insert(4, 9, 1);
+
+        // 3 3 3 3 7 7 11 11 11 4
+
+        Log::Comment(L"1.) Nothing substring should match original.");
+        {
+            til::rle<int> expected(10, 10);
+            expected = rle;
+            // 3 3 3 3 7 7 11 11 11 4
+
+            const auto actual = rle.substr();
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"2.) Offset substring to implicit end.");
+        {
+            til::rle<int> expected(7, 10);
+            expected.insert(3, 0, 1);
+            expected.insert(7, 1, 2);
+            expected.insert(11, 3, 3);
+            expected.insert(4, 6, 1);
+
+            // 3 7 7 11 11 11 4
+
+            const auto actual = rle.substr(3);
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"3.) Substring cutting out middle bit.");
+        {
+            til::rle<int> expected(4, 4);
+            expected.insert(7, 0, 1);
+            expected.insert(11, 1, 3);
+
+            // 7 11 11 11
+
+            const auto actual = rle.substr(5, 4);
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+    }
+
     TEST_METHOD(Replace)
     {
         til::rle<int> actual(20, 10);

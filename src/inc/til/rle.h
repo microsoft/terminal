@@ -394,6 +394,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         boost::container::small_vector<std::pair<T, S>, 1> _list;
         S _size;
 
+        rle(boost::container::small_vector<std::pair<T, S>, 1> list, S size) :
+            _list(list),
+            _size(size)
+        {
+
+        }
+
     public:
         //using iterator = details::rle_iterator<typename decltype(_list)::iterator>;
         using const_iterator = details::rle_const_iterator<typename decltype(_list)::const_iterator>;
@@ -405,6 +412,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             fill(value);
         }
+
+        
 
         // Returns the total length of all runs as encoded.
         S size() const noexcept
@@ -424,6 +433,23 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             THROW_HR_IF(E_INVALIDARG, position >= _size);
             return _at(position, applies)->first;
+        }
+
+        [[nodiscard]] rle<T, S> substr(const S offset = 0, const S count = std::numeric_limits<S>::max()) const
+        {
+            // TODO: validate params
+            const S startIndex = offset;
+            const S endIndex = std::min(_size - offset, count) + offset - 1;
+
+            S startApplies, endApplies;
+            const auto firstRun{ _at(startIndex, startApplies) };
+            const auto lastRun{ _at(endIndex, endApplies) };
+
+            decltype(_list) substring{ firstRun, lastRun + 1};
+            substring.front().second = startApplies;
+            substring.back().second = substring.back().second - endApplies + 1;
+
+            return til::rle<T, S>(substring, endIndex - startIndex + 1);
         }
 
         // Replaces every value seen in the run with a new one
@@ -579,6 +605,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return rend();
         }
 
+#ifdef UNIT_TESTING
         std::wstring to_string() const
         {
             std::wstringstream wss;
@@ -594,6 +621,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             return wss.str();
         }
+#endif
 
     protected:
         // TODO: get Dustin help to not duplicate this for constness.
@@ -673,8 +701,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             applies = totalLength - position;
             FAIL_FAST_IF(!(applies > 0)); // An attribute applies for >0 characters
-            // MSFT: 17130145 - will restore this and add a better assert to catch the real issue.
-            //FAIL_FAST_IF(!(attrApplies <= _size)); // An attribute applies for a maximum of the total length available to us
 
             return runPos;
         }
