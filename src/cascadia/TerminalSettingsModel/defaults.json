@@ -26,6 +26,7 @@
     "theme": "system",
     "snapToGridOnResize": true,
     "disableAnimations": false,
+    "startupActions": "",
 
     "profiles":
     [
