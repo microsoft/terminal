@@ -788,6 +788,7 @@
   </data>
   <data name="Settings_SaveSettingsButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Save all unsaved settings.</value>
+  </data>
   <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
     <value>Tab switcher interface style</value>
   </data>
