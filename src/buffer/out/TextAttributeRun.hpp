@@ -22,29 +22,24 @@ Revision History:
 
 #include "TextAttribute.hpp"
 
-class TextAttributeRun final
+class TextAttributeRun final : public std::pair<TextAttribute, unsigned int>
 {
 public:
-    TextAttributeRun() = default;
-    TextAttributeRun(const size_t cchLength, const TextAttribute attr) noexcept :
-        _cchLength(gsl::narrow<unsigned int>(cchLength))
+    using mybase = std::pair<TextAttribute, unsigned int>;
+
+    using mybase::mybase;
+
+    TextAttributeRun(const size_t cchLength, const TextAttribute attr) :
+        mybase(attr, gsl::narrow<unsigned int>(cchLength))
     {
-        SetAttributes(attr);
     }
 
-    size_t GetLength() const noexcept { return _cchLength; }
-    void SetLength(const size_t cchLength) noexcept { _cchLength = gsl::narrow<unsigned int>(cchLength); }
-    void IncrementLength() noexcept { _cchLength++; }
-    void DecrementLength() noexcept { _cchLength--; }
+    size_t GetLength() const noexcept { return mybase::second; }
+    void SetLength(const size_t cchLength) noexcept { mybase::second = gsl::narrow<unsigned int>(cchLength); }
+    void IncrementLength() noexcept { mybase::second++; }
+    void DecrementLength() noexcept { mybase::second--; }
 
-    const TextAttribute& GetAttributes() const noexcept { return _attributes; }
-    void SetAttributes(const TextAttribute textAttribute) noexcept { _attributes = textAttribute; }
+    const TextAttribute& GetAttributes() const noexcept { return mybase::first; }
+    void SetAttributes(const TextAttribute textAttribute) noexcept { mybase::first = textAttribute; }
 
-private:
-    unsigned int _cchLength{ 0 };
-    TextAttribute _attributes{ 0 };
-
-#ifdef UNIT_TESTING
-    friend class AttrRowTests;
-#endif
 };

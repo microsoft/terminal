@@ -494,9 +494,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Inserts this value at the given position for the given run length.
         void insert(const T value, const S position, const S length = gsl::narrow_cast<S>(1))
         {
+            // TODO: validate position in bounds?
             std::pair<T, S> item{ value, length };
+            gsl::span<std::pair<T, S>> span{ &item, 1 };
+            _merge(span.begin(), span.end(), position);
+        }
 
-            _merge(gsl::span<std::pair<T, S>>{ &item, 1 }, position);
+        // Inserts all values between first and last starting at the given position.
+        template <class Iter>
+        void assign(Iter first, Iter last, const S position = gsl::narrow_cast<S>(0))
+        {
+            //TODO: validate that it doesn't overrun?
+            _merge(first, last, position);
         }
 
         constexpr bool operator==(const rle& other) const noexcept
@@ -670,7 +679,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return runPos;
         }
 
-        void _merge(const gsl::span<std::pair<T, S>> newItems,
+        template <class Iter>
+        void _merge(Iter first,
+                    Iter last,
                     const S startIndex)
         {
             // Definitions:
@@ -685,18 +696,18 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             //            (rgInsertAttrs is a 2 length array with Y1->N1 in it and cInsertAttrs = 2)
             // Final Run: R3 -> G2 -> Y1 -> N1 -> G1 -> B2
 
-            S newItemsTotalCoverage = 0;
-            for (auto& item : newItems)
-            {
-                newItemsTotalCoverage += item.second;
-            }
+            const auto newItemsTotalCoverage = std::accumulate(first, last, (S)0, [](S value, auto& item) -> S {
+                return value + gsl::narrow_cast<S>(item.second);
+            });
 
+            const auto newItemsSize = std::distance(first, last);
+            
             // If the insertion size is 1, do some pre-processing to
             // see if we can get this done quickly.
-            if (newItems.size() == 1)
+            if (newItemsSize == 1)
             {
                 // Get the new color attribute we're trying to apply
-                const T NewAttr = til::at(newItems, 0).first;
+                const T NewAttr = first->first;
 
                 // If the existing run was only 1 element...
                 // ...and the new color is the same as the old, we don't have to do anything and can exit quick.
@@ -818,7 +829,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if (startIndex == 0 && newItemsTotalCoverage == _size)
             {
                 // Just dump what we're given over what we have and call it a day.
-                _list.assign(newItems.begin(), newItems.end());
+                _list.assign(first, last);
 
                 return;
             }
@@ -830,7 +841,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // becomes R3->B2->Y2->B1->G2.
             // The original run was 3 long. The insertion run was 1 long. We need 1 more for the
             // fact that an existing piece of the run was split in half (to hold the latter half).
-            const S cNewRun = gsl::narrow_cast<S>(_list.size() + newItems.size() + 1);
+            const S cNewRun = gsl::narrow_cast<S>(_list.size() + newItemsSize + 1);
             decltype(_list) newRun;
             newRun.reserve(cNewRun);
 
@@ -841,8 +852,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             const auto existingRun = _list.begin();
             auto pExistingRunPos = existingRun;
             const auto pExistingRunEnd = _list.end();
-            auto pInsertRunPos = newItems.begin();
-            S cInsertRunRemaining = gsl::narrow_cast<S>(newItems.size());
+            auto pInsertRunPos = first;
+            S cInsertRunRemaining = gsl::narrow_cast<S>(newItemsSize);
             S iExistingRunCoverage = 0;
 
             // Copy the existing run into the new buffer up to the "start index" where the new run will be injected.

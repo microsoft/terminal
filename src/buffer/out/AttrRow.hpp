@@ -58,8 +58,4 @@ public:
     using mybase::cend;
 
     using mybase::operator==;
-
-#ifdef UNIT_TESTING
-    friend class AttrRowTests;
-#endif
 };

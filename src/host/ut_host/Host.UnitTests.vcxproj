@@ -12,7 +12,6 @@
   <ItemGroup>
     <ClCompile Include="AliasTests.cpp" />
     <ClCompile Include="ApiRoutinesTests.cpp" />
-    <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />

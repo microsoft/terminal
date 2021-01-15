@@ -117,11 +117,7 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
                                                const size_t /*cBufferWidth*/)
 try
 {
-    UINT pos = gsl::narrow<UINT>(iStart);
-    for (auto& attrPair : newAttrs)
-    {
-        mybase::insert(attrPair.GetAttributes(), pos, gsl::narrow<UINT>(attrPair.GetLength()));
-    }
+    mybase::assign(newAttrs.begin(), newAttrs.end(), gsl::narrow<UINT>(iStart));
 
     return S_OK;
 }

@@ -205,6 +205,40 @@ class RunLengthEncodingTests
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
+    TEST_METHOD(Assign)
+    {
+        til::rle<int> actual(10, 10);
+
+        // Prep initial buffer.
+        // 10 10 10 10 10 10 10 10 10 10 
+
+        // Make something that can hold a span of pairs to assign in bulk.
+        std::vector<std::pair<int, size_t>> items;
+        items.push_back({ 400, 2 });
+        items.push_back({ 20, 3 });
+
+        // 400 400 20 20 20
+
+        // If we assign this to the front, we expect
+        // 400 400 20 20 20 10 10 10 10 10
+        til::rle<int> expected(10, 10);
+        expected.insert(400, 0, 2);
+        expected.insert(20, 2, 3);
+
+        actual.assign(items.cbegin(), items.cend());
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        // Now try assigning it again part way in.
+        // Our new expectation building on the last one if we assign at
+        // index 3 would be
+        // 400 400 20 400 400 20 20 20 10 10
+        expected.insert(400, 3, 2);
+        expected.insert(20, 5, 3);
+
+        actual.assign(items.cbegin(), items.cend(), 3);
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
     TEST_METHOD(Equal)
     {
         til::rle<int> actual(10, 10);
