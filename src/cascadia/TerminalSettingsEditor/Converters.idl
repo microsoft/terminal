@@ -43,5 +43,9 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         StringIsNotDesktopConverter();
     };
+    runtimeclass DesktopWallpaperToEmptyStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        DesktopWallpaperToEmptyStringConverter();
+    };
 
 }

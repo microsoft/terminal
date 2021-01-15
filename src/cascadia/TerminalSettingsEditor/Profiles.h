@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);
+        bool BackgroundImageSettingsVisible();
 
         GETSET_PROPERTY(bool, IsBaseLayer, false);
 
