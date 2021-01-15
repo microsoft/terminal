@@ -186,6 +186,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
 
+        // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
     }
 
