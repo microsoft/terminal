@@ -117,10 +117,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, L"Profile_CursorShape", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         // manually add Custom FontWeight option. Don't add it to the Map
@@ -170,6 +170,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
         }
         DeleteButtonDisclaimer().Text(disclaimer);
+
+        // Check the use parent directory box if the starting directory is empty
+        if (_State.Profile().StartingDirectory().empty())
+        {
+            StartingDirectoryUseParentCheckbox().IsChecked(true);
+        }
     }
 
     ColorScheme Profiles::CurrentColorScheme()
@@ -196,6 +202,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
         state->DeleteProfile();
+    }
+
+    void Profiles::UseParentProcessDirectory_Check(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
+        state->Profile().StartingDirectory(L"");
+
+        // Disable the text box and browse button
+        StartingDirectory().IsEnabled(false);
+        StartingDirectoryBrowse().IsEnabled(false);
+    }
+
+    void Profiles::UseParentProcessDirectory_Uncheck(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        // Enable the text box and browse button
+        StartingDirectory().IsEnabled(true);
+        StartingDirectoryBrowse().IsEnabled(true);
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
