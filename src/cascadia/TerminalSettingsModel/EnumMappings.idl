@@ -11,6 +11,8 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.UI.Xaml.Controls.TabViewWidthMode> TabViewWidthMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LaunchMode> LaunchMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.TabSwitcherMode> TabSwitcherMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormat { get; };
 
         // Profile Settings
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.CloseOnExitMode> CloseOnExitMode { get; };
