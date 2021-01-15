@@ -28,37 +28,10 @@ static const WORD leftShiftScanCode = 0x2A;
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
 [[nodiscard]] std::wstring ConvertToW(const UINT codePage, const std::string_view source)
 {
-    // Make a buffer on behalf of the caller.
-    std::wstring out;
-
-    // Call the other form of the function.
-    ConvertToW(codePage, source, out);
-
-    // Return as a wstring
-    return out;
-}
-
-// Routine Description:
-// - Takes a multibyte string, allocates the appropriate amount of memory for the conversion, performs the conversion,
-//   and returns the Unicode UTF-16 result in the smart pointer (and the length).
-// - NOTE: This form exists so a frequent caller with a hot path can cache their string
-//   buffer between calls instead of letting it get new/deleted in a tight loop.
-// Arguments:
-// - codepage - Windows Code Page representing the multibyte source text
-// - source - View of multibyte characters of source text
-// - outBuffer - The buffer to fill with converted wide string data.
-// Return Value:
-// - The UTF-16 wide string.
-// - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
-[[nodiscard]] void ConvertToW(const UINT codePage,
-                              const std::string_view source,
-                              std::wstring& outBuffer)
-{
     // If there's nothing to convert, bail early.
     if (source.empty())
     {
-        outBuffer.clear();
-        return;
+        return {};
     }
 
     int iSource; // convert to int because Mb2Wc requires it.
@@ -79,10 +52,14 @@ static const WORD leftShiftScanCode = 0x2A;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
     // Allocate ourselves some space
-    outBuffer.resize(cchNeeded);
+    std::wstring out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
-    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, outBuffer.data(), iTarget));
+    THROW_LAST_ERROR_IF_AND_IGNORE_BAD_GLE(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
+
+    // Return as a string
+    return out;
 }
 
 // Routine Description:
@@ -96,37 +73,10 @@ static const WORD leftShiftScanCode = 0x2A;
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
 [[nodiscard]] std::string ConvertToA(const UINT codepage, const std::wstring_view source)
 {
-    // Make a buffer on behalf of the caller.
-    std::string out;
-
-    // Call the other form of the function.
-    ConvertToA(codepage, source, out);
-
-    // Return as a string
-    return out;
-}
-
-// Routine Description:
-// - Takes a wide string, allocates the appropriate amount of memory for the conversion, performs the conversion,
-//   and returns the Multibyte result
-// - NOTE: This form exists so a frequent caller with a hot path can cache their string
-//   buffer between calls instead of letting it get new/deleted in a tight loop.
-// Arguments:
-// - codepage - Windows Code Page representing the multibyte destination text
-// - source - Unicode (UTF-16) characters of source text
-// - outBuffer - The buffer to fill with converted string data.
-// Return Value:
-// - The multibyte string encoded in the given codepage
-// - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
-[[nodiscard]] void ConvertToA(const UINT codepage,
-                              const std::wstring_view source,
-                              std::string& outBuffer)
-{
     // If there's nothing to convert, bail early.
     if (source.empty())
     {
-        outBuffer.clear();
-        return;
+        return {};
     }
 
     int iSource; // convert to int because Wc2Mb requires it.
@@ -143,13 +93,17 @@ static const WORD leftShiftScanCode = 0x2A;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
     // Allocate ourselves some space
-    outBuffer.resize(cchNeeded);
+    std::string out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
     // clang-format off
 #pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     // clang-format on
-    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, outBuffer.data(), iTarget, nullptr, nullptr));
+    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, out.data(), iTarget, nullptr, nullptr));
+
+    // Return as a string
+    return out;
 }
 
 // Routine Description:
