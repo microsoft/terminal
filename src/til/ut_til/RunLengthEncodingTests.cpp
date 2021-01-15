@@ -589,14 +589,14 @@ class RunLengthEncodingTests
 
     //    VERIFY_ARE_EQUAL(rle.end(), iter);
 
-    //    auto riter = rle.crbegin();
-    //    VERIFY_ARE_EQUAL(5, *riter++);
-    //    VERIFY_ARE_EQUAL(4, *riter++);
-    //    VERIFY_ARE_EQUAL(3, *riter++);
-    //    VERIFY_ARE_EQUAL(2, *riter++);
-    //    VERIFY_ARE_EQUAL(1, *riter++);
+    //    auto reverseIter = rle.crbegin();
+    //    VERIFY_ARE_EQUAL(5, *reverseIter++);
+    //    VERIFY_ARE_EQUAL(4, *reverseIter++);
+    //    VERIFY_ARE_EQUAL(3, *reverseIter++);
+    //    VERIFY_ARE_EQUAL(2, *reverseIter++);
+    //    VERIFY_ARE_EQUAL(1, *reverseIter++);
 
-    //    VERIFY_ARE_EQUAL(rle.crend(), riter);
+    //    VERIFY_ARE_EQUAL(rle.crend(), reverseIter);
     //}
 
     TEST_METHOD(IteratorIncDecMultiple)

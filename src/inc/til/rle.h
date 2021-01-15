@@ -17,7 +17,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // If you use this as a sample for your own iterator, this looks
             // a bit daunting. But it's almost entirely boilerplate.
             // All you actually have to fill in is:
-            // A. size_type might not be necessary for you. It's just inferrable
+            // A. size_type might not be necessary for you. It can be inferred
             //    from our parent so I defined it.
             // 1. value_type, pointer, reference, and difference type. These
             //    specify the overall types. They're generally what you want to see
