@@ -41,5 +41,4 @@ public:
 
     const TextAttribute& GetAttributes() const noexcept { return mybase::first; }
     void SetAttributes(const TextAttribute textAttribute) noexcept { mybase::first = textAttribute; }
-
 };

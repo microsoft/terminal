@@ -53,9 +53,9 @@ public:
                                          const size_t cBufferWidth);
 
     using mybase::begin;
-    using mybase::end;
     using mybase::cbegin;
     using mybase::cend;
+    using mybase::end;
 
     using mybase::operator==;
 };

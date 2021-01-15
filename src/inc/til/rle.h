@@ -39,6 +39,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         private:
             using size_type = typename ParentIt::value_type::second_type;
+
         public:
             using iterator_category = std::random_access_iterator_tag;
             using value_type = typename ParentIt::value_type::first_type;
@@ -169,7 +170,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                             _usage = 1;
                         }
                     }
-                    
                 }
                 return *this;
             }
@@ -198,7 +198,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 // Hold the accumulation.
                 difference_type accumulation = 0;
 
-                // Make ourselves a copy of the right side. We'll 
+                // Make ourselves a copy of the right side. We'll
                 auto tmp = right;
 
                 // While we're pointing to a run that is RIGHT of tmp...
@@ -501,7 +501,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         // Inserts all values between first and last starting at the given position.
-        template <class Iter>
+        template<class Iter>
         void assign(Iter first, Iter last, const S position = gsl::narrow_cast<S>(0))
         {
             //TODO: validate that it doesn't overrun?
@@ -679,7 +679,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return runPos;
         }
 
-        template <class Iter>
+        template<class Iter>
         void _merge(Iter first,
                     Iter last,
                     const S startIndex)
@@ -701,7 +701,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             });
 
             const auto newItemsSize = std::distance(first, last);
-            
+
             // If the insertion size is 1, do some pre-processing to
             // see if we can get this done quickly.
             if (newItemsSize == 1)

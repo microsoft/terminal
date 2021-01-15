@@ -210,7 +210,7 @@ class RunLengthEncodingTests
         til::rle<int> actual(10, 10);
 
         // Prep initial buffer.
-        // 10 10 10 10 10 10 10 10 10 10 
+        // 10 10 10 10 10 10 10 10 10 10
 
         // Make something that can hold a span of pairs to assign in bulk.
         std::vector<std::pair<int, size_t>> items;
