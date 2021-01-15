@@ -264,7 +264,10 @@ namespace winrt::TerminalApp::implementation
             _settings.GlobalSettings().ShowTabsInTitlebar(false);
         }
 
-        if (!_hasCommandLineStartupActions && _hasSettingsStartupActions)
+        // Pay attention, that even if some command line arguments were parsed (like launch mode),
+        // we will not use the startup actions from settings.
+        // While this simplifies the logic, we might want to reconsider this behavior in the future.
+        if (!_hasCommandLineArguments && _hasSettingsStartupActions)
         {
             _root->SetStartupActions(_settingsAppArgs.GetStartupActions());
         }
@@ -738,6 +741,8 @@ namespace winrt::TerminalApp::implementation
                 if (result == 0)
                 {
                     _hasSettingsStartupActions = true;
+
+                    // Validation also injects new-tab command if implicit new-tab was provided.
                     _settingsAppArgs.ValidateStartupCommands();
                 }
                 else
@@ -1135,7 +1140,9 @@ namespace winrt::TerminalApp::implementation
         const auto result = _appArgs.ParseArgs(args);
         if (result == 0)
         {
-            _hasCommandLineStartupActions = args.size() > 1;
+            // If the size of the arguments list is 1,
+            // then it contains only the executable name and no other arguments.
+            _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
             _root->SetStartupActions(_appArgs.GetStartupActions());
         }

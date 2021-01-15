@@ -108,7 +108,7 @@ namespace winrt::TerminalApp::implementation
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
-        bool _hasCommandLineStartupActions{ false };
+        bool _hasCommandLineArguments{ false };
         bool _hasSettingsStartupActions{ false };
         std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings;
 
