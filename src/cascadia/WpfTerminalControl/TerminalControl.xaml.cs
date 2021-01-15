@@ -143,11 +143,16 @@ namespace Microsoft.Terminal.Wpf
         {
             var dpiScale = VisualTreeHelper.GetDpi(this);
 
-            // termContainer requires scaled sizes.
+            var newSizeWidth = (sizeInfo.NewSize.Width - this.scrollbar.ActualWidth) * dpiScale.DpiScaleX;
+            newSizeWidth = newSizeWidth < 0 ? 0 : newSizeWidth;
+
+            var newSizeHeight = sizeInfo.NewSize.Height * dpiScale.DpiScaleY;
+            newSizeHeight = newSizeHeight < 0 ? 0 : newSizeHeight;
+
             this.termContainer.TerminalControlSize = new Size()
             {
-                Width = (sizeInfo.NewSize.Width - this.scrollbar.ActualWidth) * dpiScale.DpiScaleX,
-                Height = sizeInfo.NewSize.Height * dpiScale.DpiScaleY,
+                Width = newSizeWidth,
+                Height = newSizeHeight,
             };
 
             if (!this.AutoResize)
