@@ -184,12 +184,6 @@
     <value>When checked, tabs are always displayed. When unchecked and 'show the title bar' is checked, tabs only appear after opening a new tab.</value>
     <comment>'show the title bar' must match the value for &lt;Globals_ShowTitlebar.Content&gt;.</comment>
   </data>
-  <data name="Globals_ConfirmCloseAllTabs.Content" xml:space="preserve">
-    <value>Show close all tabs popup</value>
-  </data>
-  <data name="Globals_ConfirmCloseAllTabs.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, closing a window with multiple tabs open will require confirmation. When unchecked, the confirmation dialog will not appear.</value>
-  </data>
   <data name="Globals_CopyFormatting.Content" xml:space="preserve">
     <value>Copy formatting</value>
   </data>
@@ -274,6 +268,12 @@
   </data>
   <data name="Globals_StartOnUserLogin.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
+  </data>
+  <data name="Globals_AlwaysOnTop.Content" xml:space="preserve">
+    <value>Always on top</value>
+  </data>
+  <data name="Globals_AlwaysOnTop.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Windows Terminal will always be the topmost window on the desktop.</value>
   </data>
   <data name="Globals_TabWidthMode.Header" xml:space="preserve">
     <value>Tab width mode</value>
@@ -497,19 +497,24 @@
     <value>Sets the shape of the cursor.</value>
   </data>
   <data name="Profile_CursorShapeBar.Content" xml:space="preserve">
-    <value>Bar</value>
+    <value>Bar ( ┃ )</value>
+    <comment>{Locked="┃"}</comment>
   </data>
   <data name="Profile_CursorShapeEmptyBox.Content" xml:space="preserve">
-    <value>Empty box</value>
+    <value>Empty box ( ▯ )</value>
+    <comment>{Locked="▯"}</comment>
   </data>
   <data name="Profile_CursorShapeFilledBox.Content" xml:space="preserve">
-    <value>Filled box</value>
+    <value>Filled box ( █ )</value>
+    <comment>{Locked="█"}</comment>
   </data>
   <data name="Profile_CursorShapeUnderscore.Content" xml:space="preserve">
-    <value>Underscore</value>
+    <value>Underscore ( ▁ )</value>
+    <comment>{Locked="▁"}</comment>
   </data>
   <data name="Profile_CursorShapeVintage.Content" xml:space="preserve">
-    <value>Vintage</value>
+    <value>Vintage ( ▃ )</value>
+    <comment>{Locked="▃"}</comment>
   </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
     <value>Font face</value>
@@ -603,6 +608,12 @@
   </data>
   <data name="Profile_StartingDirectoryBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
+  </data>
+  <data name="Profile_StartingDirectoryUseParentCheckbox.Content" xml:space="preserve">
+    <value>Use parent process directory</value>
+  </data>
+  <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>If checked, this profile will spawn in the directory from which Windows Terminal was launched.</value>
   </data>
   <data name="Profile_SuppressApplicationTitle.Content" xml:space="preserve">
     <value>Suppress title changes</value>
@@ -797,5 +808,38 @@
   </data>
   <data name="Profile_DeleteConfirmationMessage.Text" xml:space="preserve">
     <value>Are you sure you want to delete this profile?</value>
+  </data>
+  <data name="Globals_TabSwitcherMode.Header" xml:space="preserve">
+    <value>Tab switcher interface style</value>
+  </data>
+  <data name="Globals_TabSwitcherMode.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defines the terminal behavior when switching tabs with the keyboard.</value>
+  </data>
+  <data name="Globals_TabSwitcherModeMru.Content" xml:space="preserve">
+    <value>Separate window, in most recently used order</value>
+  </data>
+  <data name="Globals_TabSwitcherModeInOrder.Content" xml:space="preserve">
+    <value>Separate window, in tab strip order</value>
+  </data>
+  <data name="Globals_TabSwitcherModeDisabled.Content" xml:space="preserve">
+    <value>Traditional navigation, no separate window</value>
+  </data>
+  <data name="Globals_CopyFormat.Header" xml:space="preserve">
+    <value>Text format when copying</value>
+  </data>
+  <data name="Globals_CopyFormat.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Defines the type of formatting in which selected text is copied to your clipboard.</value>
+  </data>
+  <data name="Globals_CopyFormatNone.Content" xml:space="preserve">
+    <value>Plain text only</value>
+  </data>
+  <data name="Globals_CopyFormatHtml.Content" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="Globals_CopyFormatRtf.Content" xml:space="preserve">
+    <value>RTF</value>
+  </data>
+  <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
+    <value>Both HTML and RTF</value>
   </data>
 </root>

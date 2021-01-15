@@ -23,6 +23,7 @@
 #include <deque>
 #include <list>
 #include <memory>
+#include <memory_resource>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
@@ -73,6 +74,9 @@
 #pragma warning(disable:4100) // unreferenced parameter
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
+
+// Boost
+#include "boost/container/small_vector.hpp"
 
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
