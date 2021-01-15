@@ -90,7 +90,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (useDesktop)
         {
             // Stash the current value of BackgroundImagePath. If the user
-            // checks and unchecks the "Use desktop wallpaper" button, we want
+            // checks and un-checks the "Use desktop wallpaper" button, we want
             // the path that we display in the text box to remain unchanged.
             //
             // Only stash this value if it's not the special "desktopWallpaper"
