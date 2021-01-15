@@ -461,7 +461,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // or continue to use the optional with a PMR vector inside.
         // It's static because we only need one pool to manage memory
         // for all vectors of rectangles no matter which bitmap instance is making them.
-        static std::pmr::unsynchronized_pool_resource& _getPool()
+        static std::pmr::unsynchronized_pool_resource& _getPool() noexcept
         {
             static std::pmr::unsynchronized_pool_resource pool;
             return pool;
