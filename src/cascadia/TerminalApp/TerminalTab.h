@@ -106,7 +106,6 @@ namespace winrt::TerminalApp::implementation
         void _MakeTabViewItem();
 
         winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
-        void _SetToolTip(const winrt::hstring& tabTitle);
 
         void _CreateContextMenu() override;
 
