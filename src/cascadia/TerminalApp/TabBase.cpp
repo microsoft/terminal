@@ -191,10 +191,24 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TabBase::_UpdateToolTip()
     {
-        const auto toolTipText = _keyChord.empty() ? _Title : winrt::hstring(fmt::format(L"{}({})", _Title, _keyChord));
+        auto titleRun = WUX::Documents::Run();
+        titleRun.Text(_Title);
+
+        auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.TextAlignment(WUX::TextAlignment::Center);
+        textBlock.Inlines().Append(titleRun);
+
+        if (!_keyChord.empty())
+        {
+            auto keyChordRun = WUX::Documents::Run();
+            keyChordRun.Text(_keyChord);
+            keyChordRun.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(keyChordRun);
+        }
 
         WUX::Controls::ToolTip toolTip{};
-        toolTip.Content(winrt::box_value(toolTipText));
+        toolTip.Content(textBlock);
         WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 }
