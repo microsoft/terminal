@@ -76,18 +76,26 @@ using namespace Microsoft::Console::Render;
     {
         // We first need to apply the transform that was active at the time the cursor
         // was rendered otherwise we won't be clearing the right area of the display.
-        LOG_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &cursorInvertTransform));
-        LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
-        auto resetWorldTransform = wil::scope_exit([&]() {
-            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_hdcMemoryContext, nullptr, MWT_IDENTITY));
-            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_psInvalidData.hdc, nullptr, MWT_IDENTITY));
-        });
+        // We don't need to do this if it was an identity transform though.
+        const bool identityTransform = cursorInvertTransform == IDENTITY_XFORM;
+        if (!identityTransform)
+        {
+            LOG_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &cursorInvertTransform));
+            LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
+        }
 
         for (RECT r : cursorInvertRects)
         {
             // Clean both the in-memory and actual window context.
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+            LOG_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            LOG_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+        }
+
+        // If we've applied a transform, then we need to reset it.
+        if (!identityTransform)
+        {
+            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_hdcMemoryContext, nullptr, MWT_IDENTITY));
+            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_psInvalidData.hdc, nullptr, MWT_IDENTITY));
         }
 
         cursorInvertRects.clear();

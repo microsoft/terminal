@@ -11,16 +11,6 @@
 
 using namespace Microsoft::Console::Render;
 
-namespace
-{
-    constexpr XFORM IDENTITY_XFORM = { 1, 0, 0, 1 };
-
-    boolean operator==(const XFORM& lhs, const XFORM& rhs) noexcept
-    {
-        return ::memcmp(&lhs, &rhs, sizeof(XFORM)) == 0;
-    };
-};
-
 // Routine Description:
 // - Creates a new GDI-based rendering engine
 // - NOTE: Will throw if initialization failure. Caller must catch.
@@ -237,7 +227,7 @@ GdiEngine::~GdiEngine()
 {
     XFORM lineTransform = {};
     // The X delta is to account for the horizontal viewport offset.
-    lineTransform.eDx = -1.0f * viewportLeft * _GetFontSize().X;
+    lineTransform.eDx = viewportLeft ? -1.0f * viewportLeft * _GetFontSize().X : 0.0f;
     switch (lineRendition)
     {
     case LineRendition::SingleWidth:

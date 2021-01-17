@@ -192,4 +192,11 @@ namespace Microsoft::Console::Render
         HDC _debugContext;
 #endif
     };
+
+    constexpr XFORM IDENTITY_XFORM = { 1, 0, 0, 1 };
+
+    inline bool operator==(const XFORM& lhs, const XFORM& rhs) noexcept
+    {
+        return ::memcmp(&lhs, &rhs, sizeof(XFORM)) == 0;
+    };
 }
