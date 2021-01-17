@@ -125,7 +125,7 @@ public:
     void SetCurrentLineRendition(const LineRendition lineRendition);
     void ResetLineRenditionRange(const size_t startRow, const size_t endRow);
     LineRendition GetLineRendition(const size_t row) const;
-    boolean IsDoubleWidthLine(const size_t row) const;
+    bool IsDoubleWidthLine(const size_t row) const;
 
     SHORT GetLineWidth(const size_t row) const;
     COORD ClampPositionWithinLine(const COORD position) const;

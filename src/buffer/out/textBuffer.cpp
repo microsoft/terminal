@@ -841,7 +841,7 @@ LineRendition TextBuffer::GetLineRendition(const size_t row) const
     return GetRowByOffset(row).GetLineRendition();
 }
 
-boolean TextBuffer::IsDoubleWidthLine(const size_t row) const
+bool TextBuffer::IsDoubleWidthLine(const size_t row) const
 {
     return GetLineRendition(row) != LineRendition::SingleWidth;
 }
