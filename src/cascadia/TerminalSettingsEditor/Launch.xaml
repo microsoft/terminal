@@ -108,7 +108,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                Grid.Row="0" Grid.Column="0"
                                Grid.ColumnSpan="2"
                                Style="{StaticResource CustomSettingHeaderStyle}"/>
-                    
+
                     <!--Columns-->
                     <StackPanel Orientation="Horizontal"
                                 Grid.Row="1" Grid.Column="0"
@@ -127,6 +127,14 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </StackPanel>
                 </Grid>
              </ContentPresenter>
+
+            <!--Startup Actions-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <TextBox x:Uid="Globals_StartupActions"
+                             Text="{x:Bind State.Settings.GlobalSettings.StartupActions, Mode=TwoWay}"
+                             FontFamily="Segoe UI, Segoe MDL2 Assets"
+                             Style="{StaticResource TextBoxSettingStyle}"/>
+            </ContentPresenter>
         </StackPanel>
     </ScrollViewer>
 </Page>

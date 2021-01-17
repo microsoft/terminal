@@ -217,6 +217,9 @@
   <data name="Globals_InitialRows.Text" xml:space="preserve">
     <value>Rows:</value>
   </data>
+  <data name="Globals_StartupActions.Header" xml:space="preserve">
+    <value>Startup actions</value>
+  </data>
   <data name="Globals_InitialRows.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
   </data>

@@ -145,6 +145,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         Boolean HasStartupActions();
         void ClearStartupActions();
-        String StartupActions();
+        String StartupActions;
     }
 }
