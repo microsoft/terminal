@@ -848,6 +848,7 @@ boolean TextBuffer::IsDoubleWidthLine(const size_t row) const
 
 SHORT TextBuffer::GetLineWidth(const size_t row) const
 {
+    // Use shift right to quickly divide the width by 2 for double width lines.
     const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
     return GetSize().Width() >> scale;
 }
@@ -860,12 +861,14 @@ COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
 
 COORD TextBuffer::ScreenToBufferPosition(const COORD position) const
 {
+    // Use shift right to quickly divide the X pos by 2 for double width lines.
     const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X >> scale, position.Y };
 }
 
 COORD TextBuffer::BufferToScreenPosition(const COORD position) const
 {
+    // Use shift left to quickly multiply the X pos by 2 for double width lines.
     const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X << scale, position.Y };
 }

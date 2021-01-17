@@ -689,7 +689,7 @@ void Renderer::_PaintBufferOutput(_In_ IRenderEngine* const pEngine)
 
                 // Find where on the screen we should place this line information. This requires us to re-map
                 // the buffer-based origin of the line back onto the screen-based origin of the line.
-                // For example, the screen might say we need to paint line because it is dirty but the viewport
+                // For example, the screen might say we need to paint line 1 because it is dirty but the viewport
                 // is actually looking at line 26 relative to the buffer. This means that we need line 27 out
                 // of the backing buffer to fill in line 1 of the screen.
                 const auto screenPosition = bufferLine.Origin() - COORD{ 0, view.Top() };
