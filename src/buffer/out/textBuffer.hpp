@@ -151,7 +151,7 @@ public:
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
     bool MoveToPreviousGlyph(til::point& pos) const;
 
-    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false, bool bufferCoordinates = false) const;
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const;
 
     void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
     std::wstring GetHyperlinkUriFromId(uint16_t id) const;

@@ -59,7 +59,7 @@ std::vector<SMALL_RECT> Selection::GetSelectionRects() const
     endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
 
     const auto blockSelection = !IsLineSelection();
-    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection);
+    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection, false);
 }
 
 // Routine Description:
