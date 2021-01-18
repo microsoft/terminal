@@ -966,10 +966,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_currentMode == CommandPaletteMode::TabSwitchMode)
         {
-            for (uint32_t index = 0; index < commandsToFilter.Size(); index++)
-            {
-                actions.push_back(commandsToFilter.GetAt(index));
-            }
+            std::copy(begin(commandsToFilter), end(commandsToFilter), std::back_inserter(actions));
         }
         else if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::CommandlineMode)
         {
