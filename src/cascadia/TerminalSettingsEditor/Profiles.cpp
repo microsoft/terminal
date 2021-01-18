@@ -26,6 +26,37 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
+        _profile{ profile }
+    {
+        // Add a property changed handler to our own property changed event.
+        // When the BackgroundImagePath changes, we _also_ need to change the
+        // value of UseDesktopBGImage.
+        //
+        // We need to do this so if someone manually types "desktopWallpaper"
+        // into the path TextBox, we properly update the checkbox and stored
+        // _lastBgImagePath. Without this, then we'll permanently hide the text
+        // box, prevent it from ever being changed again.
+        PropertyChanged([this](auto&&, const Data::PropertyChangedEventArgs& args) {
+            if (args.PropertyName() == L"BackgroundImagePath")
+            {
+                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
+            }
+            else if (args.PropertyName() == L"IsBaseLayer")
+            {
+                _NotifyChanges(L"BackgroundImageSettingsVisible");
+            }
+        });
+
+        // Cache the original BG image path. If the user clicks "Use desktop
+        // wallpaper", then un-checks it, this is the string we'll restore to
+        // them.
+        if (BackgroundImagePath() != L"desktopWallpaper")
+        {
+            _lastBgImagePath = BackgroundImagePath();
+        }
+    }
+
     bool ProfileViewModel::CanDeleteProfile() const
     {
         const auto guid{ Guid() };
@@ -47,6 +78,40 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             return true;
         }
+    }
+
+    bool ProfileViewModel::UseDesktopBGImage()
+    {
+        return BackgroundImagePath() == L"desktopWallpaper";
+    }
+
+    void ProfileViewModel::UseDesktopBGImage(const bool useDesktop)
+    {
+        if (useDesktop)
+        {
+            // Stash the current value of BackgroundImagePath. If the user
+            // checks and un-checks the "Use desktop wallpaper" button, we want
+            // the path that we display in the text box to remain unchanged.
+            //
+            // Only stash this value if it's not the special "desktopWallpaper"
+            // value.
+            if (BackgroundImagePath() != L"desktopWallpaper")
+            {
+                _lastBgImagePath = BackgroundImagePath();
+            }
+            BackgroundImagePath(L"desktopWallpaper");
+        }
+        else
+        {
+            // Restore the path we had previously cached. This might be the
+            // empty string.
+            BackgroundImagePath(_lastBgImagePath);
+        }
+    }
+
+    bool ProfileViewModel::BackgroundImageSettingsVisible()
+    {
+        return IsBaseLayer() || BackgroundImagePath() != L"";
     }
 
     void ProfilePageNavigationState::DeleteProfile()

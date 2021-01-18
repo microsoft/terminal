@@ -1,0 +1,45 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass FontWeightConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        FontWeightConverter();
+    };
+
+    runtimeclass InvertedBooleanToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        InvertedBooleanToVisibilityConverter();
+    };
+
+    runtimeclass ColorToBrushConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        ColorToBrushConverter();
+    };
+
+    runtimeclass ColorToHexConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        ColorToHexConverter();
+    };
+
+    runtimeclass PercentageConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        PercentageConverter();
+    };
+
+    runtimeclass StringIsEmptyConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        StringIsEmptyConverter();
+    };
+
+    runtimeclass StringIsNotDesktopConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        StringIsNotDesktopConverter();
+    };
+    runtimeclass DesktopWallpaperToEmptyStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    {
+        DesktopWallpaperToEmptyStringConverter();
+    };
+
+}

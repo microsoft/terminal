@@ -36,19 +36,25 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="ColorToBrushConverter.h">
-      <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="ColorToHexConverter.h">
-      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="FontWeightConverter.h">
-      <DependentUpon>FontWeightConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
-      <DependentUpon>InvertedBooleanToVisibilityConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="StringIsEmptyConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="StringIsNotDesktopConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PercentageConverter.h">
-      <DependentUpon>PercentageConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
@@ -109,19 +115,25 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ColorToBrushConverter.cpp">
-      <DependentUpon>ColorToBrushConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorToHexConverter.cpp">
-      <DependentUpon>ColorToHexConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="FontWeightConverter.cpp">
-      <DependentUpon>FontWeightConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
-      <DependentUpon>InvertedBooleanToVisibilityConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsEmptyConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="StringIsNotDesktopConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PercentageConverter.cpp">
-      <DependentUpon>PercentageConverter.idl</DependentUpon>
+      <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -154,11 +166,7 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="ColorToBrushConverter.idl" />
-    <Midl Include="ColorToHexConverter.idl" />
-    <Midl Include="FontWeightConverter.idl" />
-    <Midl Include="InvertedBooleanToVisibilityConverter.idl" />
-    <Midl Include="PercentageConverter.idl" />
+    <Midl Include="Converters.idl" />
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
