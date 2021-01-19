@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _RefreshCurrentPage();
 
         ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+        ProfilePageNavigationState _profilesNavState{ nullptr };
     };
 }
 

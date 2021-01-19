@@ -50,8 +50,10 @@ the MIT License. See LICENSE in the project root for license information. -->
                    Style="{StaticResource DisclaimerStyle}"
                    Visibility="{x:Bind State.Profile.IsBaseLayer}"/>
 
-        <Pivot HorizontalAlignment="Left"
+        <Pivot x:Name="ProfilesPivot"
+               HorizontalAlignment="Left"
                Grid.Row="1"
+               SelectionChanged="Pivot_SelectionChanged"
                Margin="{StaticResource PivotIndentMargin}">
             <!-- General Tab -->
             <PivotItem x:Uid="Profile_General">

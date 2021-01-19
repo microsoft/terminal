@@ -85,7 +85,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot) :
+        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel,
+                                   const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                   const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
             _Schemes{ schemes },
             _WindowRoot{ windowRoot }
@@ -99,9 +101,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
-        GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+        GETSET_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
+
+    public:
+        // Manually define Profile(), so we can overload the setter
+        Editor::ProfileViewModel Profile() const noexcept { return _Profile; }
+
+        void Profile(const Editor::ProfileViewModel& value) noexcept
+        {
+            // If the profile has a different guid than the new one, then reset
+            // the selected pivot to the "General" tab.
+            const auto& oldGuid = _Profile.Guid();
+            const auto& newGuid = value.Guid();
+            if (oldGuid != newGuid)
+            {
+                _LastActivePivot = Editor::ProfilesPivots::General;
+            }
+            _Profile = value;
+        }
 
     private:
+        Editor::ProfileViewModel _Profile{ nullptr };
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
@@ -123,6 +143,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void UseParentProcessDirectory_Check(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void UseParentProcessDirectory_Uncheck(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
         void CursorShape_Changed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
