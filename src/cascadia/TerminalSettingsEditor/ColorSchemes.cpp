@@ -75,10 +75,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Try to look up the scheme that was navigated to. If we find it, immediately select it.
-        std::wstring lastNameFromNav{ _State.LastSelectedScheme().c_str() };
-        auto it = std::find_if(begin(_ColorSchemeList),
-                               end(_ColorSchemeList),
-                               [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
+        const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
+        const auto it = std::find_if(begin(_ColorSchemeList),
+                                     end(_ColorSchemeList),
+                                     [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
 
         if (it != end(_ColorSchemeList))
         {
@@ -134,7 +134,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             _ColorSchemeList.Append(pair.Value());
         }
-
     }
 
     // Function Description:
