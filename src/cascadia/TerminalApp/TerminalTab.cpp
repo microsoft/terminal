@@ -98,13 +98,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalTab::_SetToolTip(const winrt::hstring& tabTitle)
-    {
-        WUX::Controls::ToolTip toolTip{};
-        toolTip.Content(winrt::box_value(tabTitle));
-        WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
-    }
-
     // Method Description:
     // - Returns nullptr if no children of this tab were the last control to be
     //   focused, or the TermControl that _was_ the last control to be focused (if
@@ -299,7 +292,7 @@ namespace winrt::TerminalApp::implementation
 
             // Update the control to reflect the changed title
             _headerControl.Title(activeTitle);
-            _SetToolTip(activeTitle);
+            _UpdateToolTip();
         }
     }
 
