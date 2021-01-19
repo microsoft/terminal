@@ -50,16 +50,6 @@
           </uap3:AppExecutionAlias>
         </uap3:Extension>
 
-
-        <!-- I'm pretty confident that this does nothing: -->
-        <!-- <uap5:Extension Category="windows.activatableClass.outOfProcessServer">
-           <uap5:OutOfProcessServer ServerName="Microsoft.SDKSamples.ToastServer">
-              <uap5:Path>MonarchPeasantSample\MonarchPeasantSample.exe</uap5:Path>
-              <uap5:Instancing>multipleInstances</uap5:Instancing>
-              <uap5:ActivatableClass ActivatableClassId="MonarchPeasantSample.Monarch" />
-           </uap5:OutOfProcessServer>
-        </uap5:Extension> -->
-
       </Extensions>
 
     </Application>

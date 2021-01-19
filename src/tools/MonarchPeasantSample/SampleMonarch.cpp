@@ -27,7 +27,7 @@ namespace winrt::MonarchPeasantSample::implementation
 
     uint64_t Monarch::AddPeasant(winrt::MonarchPeasantSample::IPeasant peasant)
     {
-        // TODO: This whole algorithm is terrible. There's gotta be a better way
+        // This whole algorithm is terrible. There's gotta be a better way
         // of finding the first opening in a non-consecutive map of int->object
         auto providedID = peasant.GetID();
 
