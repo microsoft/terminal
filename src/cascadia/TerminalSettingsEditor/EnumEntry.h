@@ -21,6 +21,24 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
+    template<typename T>
+    struct EnumEntryComparator
+    {
+        bool operator()(const Editor::EnumEntry& lhs, const Editor::EnumEntry& rhs) const
+        {
+            return lhs.EnumValue().as<T>() < rhs.EnumValue().as<T>();
+        }
+    };
+
+    template<typename T>
+    struct EnumEntryReverseComparator
+    {
+        bool operator()(const Editor::EnumEntry& lhs, const Editor::EnumEntry& rhs) const
+        {
+            return lhs.EnumValue().as<T>() > rhs.EnumValue().as<T>();
+        }
+    };
+
     struct EnumEntry : EnumEntryT<EnumEntry>
     {
     public:

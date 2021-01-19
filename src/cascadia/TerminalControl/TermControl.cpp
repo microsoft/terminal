@@ -2080,6 +2080,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _connection.WriteInput(stripped);
         }
 
+        _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -2458,6 +2459,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     hstring TermControl::GetProfileName() const
     {
         return _settings.ProfileName();
+    }
+
+    hstring TermControl::WorkingDirectory() const
+    {
+        hstring hstr{ _terminal->GetWorkingDirectory() };
+        return hstr;
     }
 
     // Method Description:

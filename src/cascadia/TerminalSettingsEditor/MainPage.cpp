@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         _InitializeProfilesList();
+
+        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
     }
 
     // Method Description:
@@ -93,6 +95,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         _InitializeProfilesList();
+
+        // Update the Nav State with the new version of the settings
+        _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
 
         _RefreshCurrentPage();
     }
@@ -225,7 +230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
         }
         else if (clickedItemTag == globalAppearanceTag)
         {

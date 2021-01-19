@@ -65,6 +65,9 @@ namespace Microsoft::Terminal::Core
 
         virtual bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept = 0;
 
+        virtual bool SetWorkingDirectory(std::wstring_view uri) noexcept = 0;
+        virtual std::wstring_view GetWorkingDirectory() noexcept = 0;
+
     protected:
         ITerminalApi() = default;
     };
