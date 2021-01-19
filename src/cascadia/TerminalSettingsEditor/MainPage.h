@@ -40,7 +40,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void _Navigate(hstring clickedItemTag);
         void _Navigate(const Editor::ProfileViewModel& profile);
-        void _RefreshCurrentPage();
 
         ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
         ProfilePageNavigationState _profilesNavState{ nullptr };
