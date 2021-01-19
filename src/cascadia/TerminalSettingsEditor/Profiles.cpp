@@ -218,16 +218,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
         state->Profile().StartingDirectory(L"");
 
-        // Disable the text box and browse button
+        // Disable the text box
         StartingDirectory().IsEnabled(false);
-        StartingDirectoryBrowse().IsEnabled(false);
     }
 
     void Profiles::UseParentProcessDirectory_Uncheck(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         // Enable the text box and browse button
         StartingDirectory().IsEnabled(true);
-        StartingDirectoryBrowse().IsEnabled(true);
+        StartingDirectory().Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
     }
 
     fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
@@ -302,6 +301,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             StorageApplicationPermissions::FutureAccessList().AddOrReplace(L"PickedFolderToken", folder);
             _State.Profile().StartingDirectory(folder.Path());
+            StartingDirectoryUseParentCheckbox().IsChecked(false);
+        }
+    }
+
+    void Profiles::StartingDirectory_LostFocus(IInspectable const&, RoutedEventArgs const&)
+    {
+        if (StartingDirectory().Text().empty())
+        {
+            StartingDirectoryUseParentCheckbox().IsChecked(true);
+            StartingDirectory().IsEnabled(false);
         }
     }
 

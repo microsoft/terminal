@@ -78,7 +78,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     <TextBox x:Uid="Profile_StartingDirectory"
                                          x:Name="StartingDirectory"
                                          Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}"
-                                         Style="{StaticResource TextBoxSettingStyle}"/>
+                                         Style="{StaticResource TextBoxSettingStyle}"
+                                         LostFocus="StartingDirectory_LostFocus"/>
                                     <Button x:Uid="Profile_StartingDirectoryBrowse"
                                         x:Name="StartingDirectoryBrowse"
                                         Click="StartingDirectory_Click"
