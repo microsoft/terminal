@@ -583,6 +583,19 @@ void Pane::_FocusFirstChild()
 {
     if (_IsLeaf())
     {
+        if (_root.ActualWidth() == 0 && _root.ActualHeight() == 0)
+        {
+            // When these sizes are 0, then the pane might still be in startup,
+            // and doesn't yet have a real size. In that case, the control.Focus
+            // event won't be handled until _after_ the startup events are all
+            // processed. This will lead to the Tab not being notified that the
+            // focus moved to a different Pane.
+            //
+            // In that scenario, trigger the event manually here, to correctly
+            // inform the Tab that we're now focused.
+            _GotFocusHandlers(shared_from_this());
+        }
+
         _control.Focus(FocusState::Programmatic);
     }
     else

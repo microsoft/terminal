@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "TerminalPage.h"
 #include "Utils.h"
-#include "AppLogic.h"
 #include "../../types/inc/utils.hpp"
 
 #include <LibraryResources.h>
@@ -108,7 +107,7 @@ namespace winrt::TerminalApp::implementation
         if (auto page{ weakThis.get() })
         {
             _UpdateCommandsForPalette();
-            CommandPalette().SetKeyBindings(*_bindings);
+            CommandPalette().SetKeyMap(_settings.KeyMap());
         }
     }
 
@@ -332,7 +331,7 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _ProcessStartupActions(_startupActions, true);
+                ProcessStartupActions(_startupActions, true);
             }
         }
     }
@@ -348,8 +347,8 @@ namespace winrt::TerminalApp::implementation
     //   should fire an Initialized event.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
-                                                                const bool initial)
+    winrt::fire_and_forget TerminalPage::ProcessStartupActions(Windows::Foundation::Collections::IVector<ActionAndArgs> actions,
+                                                               const bool initial)
     {
         // If there are no actions left, do nothing.
         if (actions.Size() == 0)
@@ -750,6 +749,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
+        newTabImpl->SetKeyMap(_settings.KeyMap());
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         _UpdateTabIndices();
@@ -945,9 +945,7 @@ namespace winrt::TerminalApp::implementation
         auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
 
         winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
-        auto setting = AppLogic::CurrentAppSettings();
-        auto keymap = setting.GlobalSettings().KeyMap();
-        const auto actionAndArgs = keymap.TryLookup(kc);
+        const auto actionAndArgs = _settings.KeyMap().TryLookup(kc);
         if (actionAndArgs)
         {
             if (CommandPalette().Visibility() == Visibility::Visible && actionAndArgs.Action() != ShortcutAction::ToggleCommandPalette)
@@ -1118,6 +1116,13 @@ namespace winrt::TerminalApp::implementation
                 if (profileGuid.has_value())
                 {
                     const auto settings{ winrt::make<TerminalSettings>(_settings, profileGuid.value(), *_bindings) };
+                    const auto workingDirectory = terminalTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        settings.StartingDirectory(workingDirectory);
+                    }
+
                     _CreateNewTabFromSettings(profileGuid.value(), settings);
                 }
             }
@@ -1318,14 +1323,6 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
-        if (CommandPalette().Visibility() == Visibility::Visible)
-        {
-            // If the tab switcher is currently open, don't change its mode.
-            // Just select the new tab.
-            CommandPalette().SelectNextItem(bMoveRight);
-            return;
-        }
-
         const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
         const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
 
@@ -1649,6 +1646,12 @@ namespace winrt::TerminalApp::implementation
                 {
                     profileFound = true;
                     controlSettings = { winrt::make<TerminalSettings>(_settings, current_guid.value(), *_bindings) };
+                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.StartingDirectory(workingDirectory);
+                    }
                     realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
@@ -1946,8 +1949,9 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
-            const bool hasNewLine = std::find(text.cbegin(), text.cend(), L'\n') != text.cend();
-            const bool warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
+            const auto isNewLineLambda = [](auto c) { return c == L'\n' || c == L'\r'; };
+            const auto hasNewLine = std::find_if(text.cbegin(), text.cend(), isNewLineLambda) != text.cend();
+            const auto warnMultiLine = hasNewLine && _settings.GlobalSettings().WarnAboutMultiLinePaste();
 
             constexpr const std::size_t minimumSizeForWarning = 1024 * 5; // 5 KiB
             const bool warnLargeText = text.size() > minimumSizeForWarning &&
@@ -1956,6 +1960,13 @@ namespace winrt::TerminalApp::implementation
             if (warnMultiLine || warnLargeText)
             {
                 co_await winrt::resume_foreground(Dispatcher());
+
+                // We have to initialize the dialog here to be able to change the text of the text block within it
+                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                ClipboardText().Text(text);
+
+                // The vertical offset on the scrollbar does not reset automatically, so reset it manually
+                ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
 
                 ContentDialogResult warningResult;
                 if (warnMultiLine)
@@ -1966,6 +1977,9 @@ namespace winrt::TerminalApp::implementation
                 {
                     warningResult = co_await _ShowLargePasteWarningDialog();
                 }
+
+                // Clear the clipboard text so it doesn't lie around in memory
+                ClipboardText().Text(L"");
 
                 if (warningResult != ContentDialogResult::Primary)
                 {
@@ -2207,7 +2221,7 @@ namespace winrt::TerminalApp::implementation
                 // here, then the user won't be able to navigate the ATS any
                 // longer.
                 //
-                // When the tab swither is eventually dismissed, the focus will
+                // When the tab switcher is eventually dismissed, the focus will
                 // get tossed back to the focused terminal control, so we don't
                 // need to worry about focus getting lost.
                 if (CommandPalette().Visibility() != Visibility::Visible)
@@ -2328,6 +2342,9 @@ namespace winrt::TerminalApp::implementation
             {
                 settingsTab.UpdateSettings(_settings);
             }
+
+            auto tabImpl{ winrt::get_self<TabBase>(tab) };
+            tabImpl->SetKeyMap(_settings.KeyMap());
         }
 
         auto weakThis{ get_weak() };
@@ -2814,6 +2831,7 @@ namespace winrt::TerminalApp::implementation
             _mruTabs.Append(*newTabImpl);
 
             newTabImpl->SetDispatch(*_actionDispatch);
+            newTabImpl->SetKeyMap(_settings.KeyMap());
 
             // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
             _UpdateTabIndices();

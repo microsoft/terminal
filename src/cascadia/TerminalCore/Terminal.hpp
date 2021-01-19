@@ -117,6 +117,8 @@ public:
     bool EndHyperlink() noexcept override;
 
     bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
+    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
+    std::wstring_view GetWorkingDirectory() noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -253,6 +255,7 @@ private:
 
     size_t _hyperlinkPatternId;
 
+    std::wstring _workingDirectory;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction

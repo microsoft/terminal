@@ -18,7 +18,7 @@ FOR %%A IN (TestHostApp.exe,te.exe,te.processhost.exe,conhost.exe,OpenConsole.ex
 
 echo %TIME%
 
-:: kill dhandler, which is a tool designed to handle unexpected windows appearing. But since our tests are 
+:: kill dhandler, which is a tool designed to handle unexpected windows appearing. But since our tests are
 :: expected to show UI we don't want it running.
 taskkill -f -im dhandler.exe
 
@@ -28,7 +28,7 @@ echo %TIME%
 powershell -ExecutionPolicy Bypass .\InstallTestAppDependencies.ps1
 echo %TIME%
 
-set testBinaryCandidates=TerminalApp.LocalTests.dll Conhost.UIA.Tests.dll
+set testBinaryCandidates=TerminalApp.LocalTests.dll SettingsModel.LocalTests.dll Conhost.UIA.Tests.dll
 set testBinaries=
 for %%B in (%testBinaryCandidates%) do (
     if exist %%B (
