@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabs{ winrt::single_threaded_vector<TerminalApp::TabBase>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{}
     {
@@ -1323,49 +1323,27 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
+        const auto index{ _GetFocusedTabIndex().value_or(0) };
         const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-        const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
-
-        // First, determine what the index of the newly selected tab should be.
-        // This changes if we're doing an in-order traversal vs a MRU traversal.
-        auto newTabIndex = 0;
-        if (useInOrderTabIndex)
+        if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
-            // Determine what the next in-order tab index is
-            if (auto index{ _GetFocusedTabIndex() })
-            {
-                uint32_t tabCount = _tabs.Size();
-                // Wraparound math. By adding tabCount and then calculating
-                // modulo tabCount, we clamp the values to the range [0,
-                // tabCount) while still supporting moving leftward from 0 to
-                // tabCount - 1.
-                newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            }
+            uint32_t tabCount = _tabs.Size();
+            // Wraparound math. By adding tabCount and then calculating
+            // modulo tabCount, we clamp the values to the range [0,
+            // tabCount) while still supporting moving leftward from 0 to
+            // tabCount - 1.
+            const auto newTabIndex = ((tabCount + index + (bMoveRight ? 1 : -1)) % tabCount);
+            _SelectTab(newTabIndex);
         }
         else
         {
-            // Determine what the next "most recently used" index is.
-            // In this case, our focused tab index (in the MRU ordering) is
-            // always 0. So, going next should go to index 1, and going prev
-            // should wrap to the end.
-            uint32_t tabCount = _mruTabs.Size();
-            newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
-        }
-
-        const bool useTabSwitcher = tabSwitchMode != TabSwitcherMode::Disabled;
-
-        if (useTabSwitcher)
-        {
-            CommandPalette().SetTabs(useInOrderTabIndex ? _tabs : _mruTabs, true);
+            CommandPalette().SetTabs(_tabs, _mruTabs);
 
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
-            CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+            CommandPalette().EnableTabSwitcherMode(index, tabSwitchMode);
             CommandPalette().Visibility(Visibility::Visible);
-        }
-        else if (auto index{ _GetFocusedTabIndex() })
-        {
-            _SelectTab(newTabIndex);
+            CommandPalette().SelectNextItem(bMoveRight);
         }
     }
 
