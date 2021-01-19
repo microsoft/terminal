@@ -86,6 +86,7 @@ namespace winrt::TerminalApp::implementation
         std::atomic<bool> _settingsReloadQueued{ false };
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
+        ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
@@ -106,6 +107,10 @@ namespace winrt::TerminalApp::implementation
         void _ReloadSettings();
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
+
+        bool _hasCommandLineArguments{ false };
+        bool _hasSettingsStartupActions{ false };
+        std::vector<Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> _warnings;
 
         // These are events that are handled by the TerminalPage, but are
         // exposed through the AppLogic. This macro is used to forward the event
