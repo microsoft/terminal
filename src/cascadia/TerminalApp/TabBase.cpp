@@ -138,10 +138,77 @@ namespace winrt::TerminalApp::implementation
         TabViewIndex(idx);
         TabViewNumTabs(numTabs);
         _EnableCloseMenuItems();
+        _UpdateSwitchToTabKeyChord();
     }
 
     void TabBase::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
+    }
+
+    void TabBase::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    {
+        _keymap = keymap;
+        _UpdateSwitchToTabKeyChord();
+    }
+
+    // Method Description:
+    // - Sets the key chord resulting in switch to the current tab.
+    // Updates tool tip if required
+    // Arguments:
+    // - keyChord - string representation of the key chord that switches to the current tab
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TabBase::_UpdateSwitchToTabKeyChord()
+    {
+        SwitchToTabArgs args{ _TabViewIndex };
+        ActionAndArgs switchToTab{ ShortcutAction::SwitchToTab, args };
+        const auto keyChord = _keymap ? _keymap.GetKeyBindingForActionWithArgs(switchToTab) : nullptr;
+        const auto keyChordText = keyChord ? KeyChordSerialization::ToString(keyChord) : L"";
+
+        if (_keyChord == keyChordText)
+        {
+            return;
+        }
+
+        _keyChord = keyChordText;
+
+        auto weakThis{ get_weak() };
+
+        co_await winrt::resume_foreground(TabViewItem().Dispatcher());
+
+        if (auto tab{ weakThis.get() })
+        {
+            _UpdateToolTip();
+        }
+    }
+
+    // Method Description:
+    // - Sets tab tool tip to a concatenation of title and key chord
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TabBase::_UpdateToolTip()
+    {
+        auto titleRun = WUX::Documents::Run();
+        titleRun.Text(_Title);
+
+        auto textBlock = WUX::Controls::TextBlock{};
+        textBlock.TextAlignment(WUX::TextAlignment::Center);
+        textBlock.Inlines().Append(titleRun);
+
+        if (!_keyChord.empty())
+        {
+            auto keyChordRun = WUX::Documents::Run();
+            keyChordRun.Text(_keyChord);
+            keyChordRun.FontStyle(winrt::Windows::UI::Text::FontStyle::Italic);
+            textBlock.Inlines().Append(WUX::Documents::LineBreak{});
+            textBlock.Inlines().Append(keyChordRun);
+        }
+
+        WUX::Controls::ToolTip toolTip{};
+        toolTip.Content(textBlock);
+        WUX::Controls::ToolTipService::SetToolTip(TabViewItem(), toolTip);
     }
 }

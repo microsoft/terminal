@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         _InitializeProfilesList();
+
+        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
     }
 
     // Method Description:
@@ -107,6 +109,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Repopulate profile-related menu items
         _InitializeProfilesList();
+        // Update the Nav State with the new version of the settings
+        _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
 
         // now that the menuItems are repopulated,
         // refresh the current page using the SelectedItem data we collected before the refresh
@@ -255,7 +259,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
         }
         else if (clickedItemTag == globalAppearanceTag)
         {

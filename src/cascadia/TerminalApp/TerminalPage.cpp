@@ -749,6 +749,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
+        newTabImpl->SetKeyMap(_settings.KeyMap());
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         _UpdateTabIndices();
@@ -1960,6 +1961,13 @@ namespace winrt::TerminalApp::implementation
             {
                 co_await winrt::resume_foreground(Dispatcher());
 
+                // We have to initialize the dialog here to be able to change the text of the text block within it
+                FindName(L"MultiLinePasteDialog").try_as<WUX::Controls::ContentDialog>();
+                ClipboardText().Text(text);
+
+                // The vertical offset on the scrollbar does not reset automatically, so reset it manually
+                ClipboardContentScrollViewer().ScrollToVerticalOffset(0);
+
                 ContentDialogResult warningResult;
                 if (warnMultiLine)
                 {
@@ -1969,6 +1977,9 @@ namespace winrt::TerminalApp::implementation
                 {
                     warningResult = co_await _ShowLargePasteWarningDialog();
                 }
+
+                // Clear the clipboard text so it doesn't lie around in memory
+                ClipboardText().Text(L"");
 
                 if (warningResult != ContentDialogResult::Primary)
                 {
@@ -2331,6 +2342,9 @@ namespace winrt::TerminalApp::implementation
             {
                 settingsTab.UpdateSettings(_settings);
             }
+
+            auto tabImpl{ winrt::get_self<TabBase>(tab) };
+            tabImpl->SetKeyMap(_settings.KeyMap());
         }
 
         auto weakThis{ get_weak() };
@@ -2817,6 +2831,7 @@ namespace winrt::TerminalApp::implementation
             _mruTabs.Append(*newTabImpl);
 
             newTabImpl->SetDispatch(*_actionDispatch);
+            newTabImpl->SetKeyMap(_settings.KeyMap());
 
             // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
             _UpdateTabIndices();
