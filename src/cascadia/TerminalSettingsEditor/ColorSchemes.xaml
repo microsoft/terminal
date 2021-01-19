@@ -44,6 +44,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
             <local:ColorToHexConverter x:Key="ColorToHexConverter"/>
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
+            <local:ColorLightenConverter x:Key="ColorLightenConverter"/>
+
         </ResourceDictionary>
     </Page.Resources>
 
@@ -139,6 +141,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock Text="{x:Bind Name, Mode=OneWay}"
                                        Style="{StaticResource ColorHeaderStyle}"/>
                             <Button Background="{x:Bind Color, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+
+
+                                <Button.Resources>
+                                    <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                                    <ResourceDictionary>
+                                        <ResourceDictionary.ThemeDictionaries>
+                                            <ResourceDictionary x:Key="Light">
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                            </ResourceDictionary>
+                                            <ResourceDictionary x:Key="Dark">
+                                                <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{x:Bind Color, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                            </ResourceDictionary>
+                                            <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                        </ResourceDictionary.ThemeDictionaries>
+                                    </ResourceDictionary>
+                                </Button.Resources>
+
                                 <Button.Flyout>
                                     <Flyout>
                                         <ColorPicker Tag="{x:Bind Index, Mode=OneWay}"
@@ -159,6 +178,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBlock x:Uid="ColorScheme_Foreground"
                                Style="{StaticResource ColorHeaderStyle}"/>
                     <Button Background="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+
+
+                        <Button.Resources>
+                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Dark">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=ForegroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </Button.Resources>
+
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="ForegroundPicker" Color="{x:Bind CurrentColorScheme.Foreground, Mode=TwoWay}"/>
@@ -170,6 +206,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBlock x:Uid="ColorScheme_Background"
                                Style="{StaticResource ColorHeaderStyle}"/>
                     <Button Background="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+
+
+                        <Button.Resources>
+                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Dark">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=BackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </Button.Resources>
+
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="BackgroundPicker"
@@ -182,6 +235,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBlock x:Uid="ColorScheme_CursorColor"
                                Style="{StaticResource ColorHeaderStyle}"/>
                     <Button Background="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+
+
+                        <Button.Resources>
+                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Dark">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=CursorColorPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </Button.Resources>
+
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="CursorColorPicker"
@@ -194,6 +264,23 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <TextBlock x:Uid="ColorScheme_SelectionBackground"
                                Style="{StaticResource ColorHeaderStyle}"/>
                     <Button Background="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorToBrushConverter}, Mode=OneWay}">
+
+
+                        <Button.Resources>
+                            <!-- Resources to colorize hover/pressed states based on the color of the button -->
+                            <ResourceDictionary>
+                                <ResourceDictionary.ThemeDictionaries>
+                                    <ResourceDictionary x:Key="Light">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <ResourceDictionary x:Key="Dark">
+                                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="{Binding Color, ElementName=SelectionBackgroundPicker, Converter={StaticResource ColorLightenConverter}, Mode=OneWay}"/>
+                                    </ResourceDictionary>
+                                    <!-- No High contrast dictionary, let's just leave that unchanged. -->
+                                </ResourceDictionary.ThemeDictionaries>
+                            </ResourceDictionary>
+                        </Button.Resources>
+
                         <Button.Flyout>
                             <Flyout>
                                 <ColorPicker x:Name="SelectionBackgroundPicker"
