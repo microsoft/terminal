@@ -88,7 +88,6 @@
     <!--Slider-Related Styling-->
     <Style x:Key="SliderValueLabelStyle" TargetType="TextBlock">
         <Setter Property="Width" Value="35"/>
-        <Setter Property="Margin" Value="10,0,0,20"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
