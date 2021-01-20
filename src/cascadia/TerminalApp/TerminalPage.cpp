@@ -2208,6 +2208,8 @@ namespace winrt::TerminalApp::implementation
                     _UpdateMRUTab(index);
                 }
 
+                tab.TabViewItem().StartBringIntoView();
+
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab.Title());
             }
