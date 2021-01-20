@@ -13,7 +13,7 @@ namespace winrt::TerminalApp::implementation
         Toaster(Windows::UI::Xaml::Controls::Panel root);
         void MakeToast(const hstring& title,
                        const hstring& subtitle,
-                       const Windows::UI::Xaml::Controls::Panel& target);
+                       const Windows::UI::Xaml::FrameworkElement& target);
 
     private:
         Windows::Foundation::Collections::IVector<TerminalApp::Toast> _toasts;

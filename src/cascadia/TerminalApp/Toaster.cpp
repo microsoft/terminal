@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
 
     void Toaster::MakeToast(const hstring& title,
                             const hstring& subtitle,
-                            const WUX::Controls::Panel& target)
+                            const WUX::FrameworkElement& target)
     {
         auto t = winrt::make_self<Toast>();
         t->Closed({ this, &Toaster::_onToastClosed });
@@ -38,25 +38,19 @@ namespace winrt::TerminalApp::implementation
             tt.Subtitle(subtitle);
             if (target)
             {
-                target.Children().Append(tt);
+                tt.PreferredPlacement(MUX::Controls::TeachingTipPlacementMode::Bottom);
+                tt.Target(target);
+                tt.PlacementMargin(WUX::ThicknessHelper::FromUniformLength(-80));
+                // tt.PlacementMargin(WUX::ThicknessHelper::FromLength(-80));
             }
-            else
+            if (_root)
             {
-                _root.Children().Append(tt);
+                auto c = _root.Children();
+                if (c)
+                {
+                    c.Append(tt);
+                }
             }
-            // if (target)
-            // {
-            //     tt.Target(target);
-            // }
-            // tt.PreferredPlacement(MUX::Controls::TeachingTipPlacementMode::Center);
-            // if (_root)
-            // {
-            //     auto c = _root.Children();
-            //     if (c)
-            //     {
-            //         c.Append(tt);
-            //     }
-            // }
             // _root.Children().Append(tt);
             t->Show();
         }
