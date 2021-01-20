@@ -16,22 +16,10 @@
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="ColorToBrushConverter.idl">
-      <Filter>Converters</Filter>
-    </Midl>
-    <Midl Include="ColorToHexConverter.idl">
-      <Filter>Converters</Filter>
-    </Midl>
-    <Midl Include="FontWeightConverter.idl">
-      <Filter>Converters</Filter>
-    </Midl>
-    <Midl Include="InvertedBooleanToVisibilityConverter.idl">
-      <Filter>Converters</Filter>
-    </Midl>
-    <Midl Include="PercentageConverter.idl">
-      <Filter>Converters</Filter>
-    </Midl>
     <Midl Include="EnumEntry.idl" />
+    <Midl Include="Converters.idl">
+      <Filter>Converters</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalSettingsEditor.def" />

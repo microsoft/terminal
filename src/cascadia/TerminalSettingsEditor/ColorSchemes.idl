@@ -3,9 +3,11 @@
 
 namespace Microsoft.Terminal.Settings.Editor
 {
+
     runtimeclass ColorSchemesPageNavigationState
     {
         Microsoft.Terminal.Settings.Model.GlobalAppSettings Globals;
+        String LastSelectedScheme;
     };
 
     [default_interface] runtimeclass ColorSchemes : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged

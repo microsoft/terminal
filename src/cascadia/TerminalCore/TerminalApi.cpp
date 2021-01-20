@@ -618,3 +618,14 @@ bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noe
     }
     return true;
 }
+
+bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
+{
+    _workingDirectory = uri;
+    return true;
+}
+
+std::wstring_view Terminal::GetWorkingDirectory() noexcept
+{
+    return _workingDirectory;
+}

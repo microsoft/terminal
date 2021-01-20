@@ -24,7 +24,6 @@ Revision History:
 #include "CharRowCellReference.hpp"
 #include "CharRowCell.hpp"
 #include "UnicodeStorage.hpp"
-#include "boost/container/small_vector.hpp"
 
 class ROW;
 
@@ -82,9 +81,11 @@ public:
     // iterators
     iterator begin() noexcept;
     const_iterator cbegin() const noexcept;
+    const_iterator begin() const noexcept { return cbegin(); }
 
     iterator end() noexcept;
     const_iterator cend() const noexcept;
+    const_iterator end() const noexcept { return cend(); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;

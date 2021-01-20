@@ -31,10 +31,8 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::FilteredCommand> FilteredActions();
 
         void SetCommands(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::Command> const& actions);
-        void SetTabs(Windows::Foundation::Collections::IVector<winrt::TerminalApp::TabBase> const& tabs, const bool clearList);
-        void SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings);
-
-        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
+        void SetTabs(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& tabs, Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& mruTabs);
+        void SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap);
 
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
@@ -45,9 +43,9 @@ namespace winrt::TerminalApp::implementation
         void ScrollToTop();
         void ScrollToBottom();
 
-        // Tab Switcher
-        void EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx);
-        void SetTabSwitchOrder(const Microsoft::Terminal::Settings::Model::TabSwitcherMode order);
+        void EnableCommandPaletteMode(Microsoft::Terminal::Settings::Model::CommandPaletteLaunchMode const launchMode);
+        void EnableTabSwitcherMode(const uint32_t startIdx, Microsoft::Terminal::Settings::Model::TabSwitcherMode tabSwitcherMode);
+        void EnableTabSearchMode();
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         OBSERVABLE_GETSET_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
@@ -109,11 +107,15 @@ namespace winrt::TerminalApp::implementation
         std::wstring _getTrimmedInput();
         void _evaluatePrefix();
 
-        Microsoft::Terminal::TerminalControl::IKeyBindings _bindings;
+        Microsoft::Terminal::Settings::Model::KeyMapping _keymap{ nullptr };
 
         // Tab Switcher
         Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _tabActions{ nullptr };
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _mruTabActions{ nullptr };
+        Microsoft::Terminal::Settings::Model::TabSwitcherMode _tabSwitcherMode;
         uint32_t _switcherStartIdx;
+
+        void _bindTabs(Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& source, Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& target);
         void _anchorKeyUpHandler();
 
         winrt::Windows::UI::Xaml::Controls::ListView::SizeChanged_revoker _sizeChangedRevoker;
