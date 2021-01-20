@@ -307,7 +307,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Style="{StaticResource PivotStackStyle}">
                 <Button x:Name="DeleteButton"
                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
-                        Style="{StaticResource BaseButtonStyle}">
+                        Style="{StaticResource BaseButtonStyle}"
+                        Margin="0,0,0,10">
                     <Button.Resources>
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
