@@ -236,7 +236,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::Settings::Model::ExpandCommandType)
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(4) = {
         pair_type{ "none", AllClear },
         pair_type{ "html", ValueType::HTML },
         pair_type{ "rtf", ValueType::RTF },
