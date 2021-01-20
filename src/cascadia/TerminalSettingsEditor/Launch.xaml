@@ -18,8 +18,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
-                             Style="{StaticResource RadioButtonSettingStyle}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
             <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
             <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
@@ -71,8 +70,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <!--Start on User Login-->
                 <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                     <ToggleSwitch x:Uid="Globals_StartOnUserLogin"
-                                  IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"
-                                  Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                  IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
                 </ContentPresenter>
 
                 <!--Launch Mode-->
@@ -80,8 +78,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <muxc:RadioButtons x:Uid="Globals_LaunchMode"
                                    SelectedItem="{x:Bind CurrentLaunchMode}"
                                    ItemsSource="{x:Bind LaunchModeList}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                 </ContentPresenter>
             </StackPanel>
 

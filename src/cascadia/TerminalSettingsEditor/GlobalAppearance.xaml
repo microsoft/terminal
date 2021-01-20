@@ -17,8 +17,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
-                             Style="{StaticResource RadioButtonSettingStyle}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -30,36 +29,31 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <muxc:RadioButtons x:Uid="Globals_Theme"
                                    SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </ContentPresenter>
 
             <!--Always show tabs-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_AlwaysShowTabs"
-                              IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"/>
             </ContentPresenter>
 
             <!--Show Titlebar-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_ShowTitlebar"
-                              IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"/>
             </ContentPresenter>
 
             <!--Show Title in Titlebar-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_ShowTitleInTitlebar"
-                              IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"/>
             </ContentPresenter>
 
             <!--Always on Top-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_AlwaysOnTop"
-                              IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"/>
             </ContentPresenter>
 
             <!--Tab Width Mode-->
@@ -67,15 +61,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <muxc:RadioButtons x:Uid="Globals_TabWidthMode"
                                    SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}"
                                    ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </ContentPresenter>
 
             <!--Disable Animations-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_DisableAnimations"
-                              IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>

@@ -24,15 +24,13 @@ the MIT License. See LICENSE in the project root for license information. -->
             <!--Force Full Repaint-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_ForceFullRepaint"
-                              IsOn="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.ForceFullRepaintRendering, Mode=TwoWay}"/>
             </ContentPresenter>
 
             <!--Software Rendering-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                 <ToggleSwitch x:Uid="Globals_SoftwareRendering"
-                              IsOn="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"
-                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                              IsOn="{x:Bind State.Globals.SoftwareRendering, Mode=TwoWay}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>

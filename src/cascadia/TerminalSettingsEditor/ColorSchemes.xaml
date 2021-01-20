@@ -27,7 +27,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="Margin" Value="0,0,0,4"/>
             </Style>
 
-            <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+            <Style TargetType="Button">
                 <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
                 <Setter Property="Height" Value="30"/>
                 <Setter Property="Width" Value="100"/>
@@ -309,8 +309,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Grid.ColumnSpan="2"
                         Style="{StaticResource PivotStackStyle}">
                 <Button x:Name="DeleteButton"
-                        Style="{StaticResource BaseButtonStyle}"
-                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
+                        IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
+                        Style="{StaticResource BaseButtonStyle}">
                     <Button.Resources>
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
@@ -353,8 +353,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <StackPanel>
                                 <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
                                            Style="{StaticResource CustomFlyoutTextStyle}"/>
-                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
-                                        Style="{StaticResource BaseButtonStyle}"
+                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"   
                                         Click="DeleteConfirmation_Click"/>
                             </StackPanel>
                         </Flyout>

@@ -5,18 +5,19 @@
 
     <x:Double x:Key="StandardIconSize">14.0</x:Double>
     <Thickness x:Key="StandardIndentMargin">13,0,0,0</Thickness>
+    <Thickness x:Key="StandardControlMargin">0,24,0,0</Thickness>
     <x:Double x:Key="StandardBoxMinWidth">250</x:Double>
 
     <!-- This is for easier transition to the SettingsContainer control.
          The SettingsContainer will wrap a setting with inheritance UI.-->
     <Style x:Key="SettingContainerStyle" TargetType="ContentPresenter">
-        <Setter Property="Margin" Value="0,24,0,0"/>
+        <Setter Property="Margin" Value="{StaticResource StandardControlMargin}"/>
     </Style>
 
     <!-- This is for styling the entire items control used on the
          color schemes page-->
     <Style x:Key="ItemsControlStyle" TargetType="ItemsControl">
-        <Setter Property="Margin" Value="0,24,0,0"/>
+        <Setter Property="Margin" Value="{StaticResource StandardControlMargin}"/>
     </Style>
 
     <!--Used to stack a group of settings-->
@@ -31,34 +32,13 @@
         <Setter Property="Margin" Value="0,0,0,48"/>
     </Style>
 
-    <!--Radio Button-->
-    <Style x:Key="RadioButtonsSettingStyle" TargetType="muxc:RadioButtons">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-    </Style>
-
-    <Style x:Key="RadioButtonSettingStyle" TargetType="RadioButton" BasedOn="{StaticResource DefaultRadioButtonStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-    </Style>
-
-    <!--Check Box-->
-    <Style x:Key="CheckBoxSettingStyle" TargetType="CheckBox" BasedOn="{StaticResource DefaultCheckBoxStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-    </Style>
-
-    <!--Toggle Switch-->
-    <Style x:Key="ToggleSwitchSettingStyle" TargetType="ToggleSwitch" BasedOn="{StaticResource DefaultToggleSwitchStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-    </Style>
-
     <!--Combo Box-->
     <Style x:Key="ComboBoxSettingStyle" TargetType="ComboBox" BasedOn="{StaticResource DefaultComboBoxStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="MinWidth" Value="{StaticResource StandardBoxMinWidth}"/>
     </Style>
 
     <!--Text Box-->
     <Style x:Key="TextBoxSettingStyle" TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="Width" Value="{StaticResource StandardBoxMinWidth}"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -83,23 +63,20 @@
 
     <!--Number Box-->
     <Style x:Key="NumberBoxSettingStyle" TargetType="muxc:NumberBox">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="SpinButtonPlacementMode" Value="Compact"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
 
     <!--Button-Related Styling-->
     <Style x:Key="BaseButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
     </Style>
 
     <Style x:Key="BrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
         <Setter Property="Margin" Value="10,0,0,0"/>
-        <Setter Property="VerticalAlignment" Value="Bottom"/>
     </Style>
 
     <Style x:Key="AccentBrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
         <Setter Property="Margin" Value="10,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
     </Style>
@@ -109,21 +86,15 @@
     </Style>
 
     <!--Slider-Related Styling-->
-    <Style x:Key="SliderSettingStyle" TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}">
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
-    </Style>
-
     <Style x:Key="SliderValueLabelStyle" TargetType="TextBlock">
         <Setter Property="Width" Value="35"/>
         <Setter Property="Margin" Value="10,0,0,20"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
     <Style x:Key="SliderHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource CustomSettingHeaderStyle}">
         <Setter Property="HorizontalAlignment" Value="Left"/>
-        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
     <Style x:Key="CustomSliderControlGridStyle" TargetType="Grid">

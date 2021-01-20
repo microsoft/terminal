@@ -18,8 +18,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
-                             Style="{StaticResource RadioButtonSettingStyle}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumComboBoxItemTemplate">
@@ -87,7 +86,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </StackPanel>
                                 <CheckBox x:Uid="Profile_StartingDirectoryUseParentCheckbox"
                                       x:Name="StartingDirectoryUseParentCheckbox"
-                                      Style="{StaticResource CheckBoxSettingStyle}"
                                       Checked="UseParentProcessDirectory_Check"
                                       Unchecked="UseParentProcessDirectory_Uncheck"/>
                             </StackPanel>
@@ -118,15 +116,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}"
                                           Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                             <ToggleSwitch x:Uid="Profile_Hidden"
-                                          IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}"
-                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                          IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}"/>
                         </ContentPresenter>
 
                         <!--Delete Button-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <StackPanel Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
-                                <Button Style="{StaticResource BaseButtonStyle}"
-                                    IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
+                                <Button IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
                                     Margin="0,0,0,10">
                                     <Button.Resources>
                                         <ResourceDictionary>
@@ -172,7 +168,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                 <TextBlock x:Uid="Profile_DeleteConfirmationMessage"
                                                        Style="{StaticResource CustomFlyoutTextStyle}"/>
                                                 <Button x:Uid="Profile_DeleteConfirmationButton"
-                                                    Style="{StaticResource BaseButtonStyle}"
                                                     Click="DeleteConfirmation_Click"/>
                                             </StackPanel>
                                         </Flyout>
@@ -264,8 +259,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <!--Retro Terminal Effect-->
                             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                                 <ToggleSwitch x:Uid="Profile_RetroTerminalEffect"
-                                              IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
-                                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                              IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"/>
                             </ContentPresenter>
                         </StackPanel>
 
@@ -279,8 +273,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                                   SelectionChanged="CursorShape_Changed"
-                                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                                   SelectionChanged="CursorShape_Changed"/>
                             </ContentPresenter>
 
                             <!--Cursor Height-->
@@ -314,8 +307,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                     </StackPanel>
                                     <CheckBox x:Uid="Profile_UseDesktopImage"
                                           x:Name="UseDesktopImageCheckBox"
-                                          IsChecked="{x:Bind State.Profile.UseDesktopBGImage, Mode=TwoWay}"
-                                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                                          IsChecked="{x:Bind State.Profile.UseDesktopBGImage, Mode=TwoWay}"/>
                                 </StackPanel>
                             </ContentPresenter>
 
@@ -325,8 +317,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 <muxc:RadioButtons x:Uid="Profile_BackgroundImageStretchMode"
                                                ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                             </ContentPresenter>
 
                             <!--Background Image Alignment-->
@@ -516,8 +507,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <ContentPresenter>
                                 <ToggleSwitch x:Uid="Profile_UseAcrylic"
                                               x:Name="UseAcrylicToggleSwitch"
-                                              IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"
-                                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                              IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
                             </ContentPresenter>
 
                             <!--Acrylic Opacity-->
@@ -558,8 +548,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 <muxc:RadioButtons x:Uid="Profile_ScrollbarVisibility"
                                                ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                             </ContentPresenter>
                         </StackPanel>
                     </StackPanel>
@@ -573,8 +562,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Suppress Application Title-->
                         <ContentPresenter>
                             <ToggleSwitch x:Uid="Profile_SuppressApplicationTitle"
-                                          IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"
-                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                          IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
                         </ContentPresenter>
 
                         <!--Antialiasing Mode-->
@@ -582,22 +570,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:RadioButtons x:Uid="Profile_AntialiasingMode"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                         </ContentPresenter>
 
                         <!--AltGr Aliasing-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <ToggleSwitch x:Uid="Profile_AltGrAliasing"
-                                          IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"
-                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                          IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"/>
                         </ContentPresenter>
 
                         <!--Snap On Input-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <ToggleSwitch x:Uid="Profile_SnapOnInput"
-                                          IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"
-                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
+                                          IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"/>
                         </ContentPresenter>
 
                         <!--History Size-->
@@ -614,8 +599,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:RadioButtons x:Uid="Profile_CloseOnExit"
                                                ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                         </ContentPresenter>
 
                         <!--Bell Style-->
@@ -623,8 +607,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <muxc:RadioButtons x:Uid="Profile_BellStyle"
                                                ItemsSource="{x:Bind BellStyleList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentBellStyle, Mode=TwoWay}"
-                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                               Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
                         </ContentPresenter>
                     </StackPanel>
                 </ScrollViewer>
