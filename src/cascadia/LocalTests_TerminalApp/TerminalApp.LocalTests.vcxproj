@@ -20,19 +20,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
-    <!-- We'll manage our own OutDir/IntDir -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-  </PropertyGroup>
-
-  <PropertyGroup>
-  <!-- Manually change our outdir to be in a subdirectory. We don't really want
-    to put our output in the bin root, because if we do, we'll copy
-    TerminalApp.winmd to the bin root, and then every subsequent mdmerge step
-    (in _any_ cppwinrt project) will automatically try to pick up
-    TerminalApp.winmd as a dependency (which is just wrong). This MUST be done
-    before importing common.build.pre.props -->
-    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <OpenConsoleCppWinRTProject>true</OpenConsoleCppWinRTProject>
   </PropertyGroup>
 
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -49,7 +37,6 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="JsonTestClass.h" />
     <ClInclude Include="CppWinrtTailored.h" />
   </ItemGroup>
 
@@ -57,18 +44,10 @@
   <ItemGroup>
     <ClCompile Include="CommandlineTest.cpp" />
     <ClCompile Include="SettingsTests.cpp" />
-    <ClCompile Include="ProfileTests.cpp" />
-    <ClCompile Include="ColorSchemeTests.cpp" />
-    <ClCompile Include="KeyBindingsTests.cpp" />
-    <ClCompile Include="CommandTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
+	<ClCompile Include="FilteredCommandTests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
-    you want to use jsoncpp -->
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
 
@@ -79,9 +58,11 @@
 
     <!-- If you don't reference these projects here, the
     _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
@@ -110,15 +91,14 @@
   <Import Project="$(OpenConsoleDir)src\common.build.tests.props" />
 
   <PropertyGroup>
-    <_CppWinrtBinRoot>&quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\&quot;</_CppWinrtBinRoot>
     <!-- From Microsoft.UI.Xaml.targets -->
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
   </PropertyGroup>
 
 <!-- We actually can just straight up reference MUX here, it's fine -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.200609001\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
 
 </Project>

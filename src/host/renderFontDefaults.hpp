@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\renderer\inc\IFontDefaultList.hpp"
+#include "../renderer/inc/IFontDefaultList.hpp"
 
 class RenderFontDefaults sealed : public Microsoft::Console::Render::IFontDefaultList
 {

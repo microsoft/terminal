@@ -10,17 +10,14 @@
     <SubSystem>Console</SubSystem>
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
-    <!--
-      DON'T REDIRECT OUR OUTPUT.
-      Setting this will tell cppwinrt.build.post.props to copy our output from
-      the default OutDir up one level, so the wapproj will be able to find it.
-     -->
-    <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="OpenTerminalHere.h" />
@@ -46,7 +43,6 @@
     <None Include="packages.config" />
     <None Include="WindowsTerminalShellExt.def" />
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -62,7 +58,5 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>

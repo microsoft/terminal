@@ -12,6 +12,7 @@ LKG
 mfcribbon
 microsoft
 microsoftonline
+muxc
 netcore
 osgvsowi
 pgc
@@ -32,6 +33,7 @@ tasklist
 tdbuildteamid
 vcruntime
 visualstudio
+VSTHRD
 wlk
 wslpath
 wtl

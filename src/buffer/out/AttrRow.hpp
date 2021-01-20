@@ -28,7 +28,16 @@ class ATTR_ROW final
 public:
     using const_iterator = typename AttrRowIterator;
 
-    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
+    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
+    noexcept;
+
+    ~ATTR_ROW() = default;
+
+    ATTR_ROW(const ATTR_ROW&) = default;
+    ATTR_ROW& operator=(const ATTR_ROW&) = default;
+    ATTR_ROW(ATTR_ROW&&)
+    noexcept = default;
+    ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
     void Reset(const TextAttribute attr);
 
@@ -41,7 +50,7 @@ public:
     size_t FindAttrIndex(const size_t index,
                          size_t* const pApplies) const;
 
-    std::unordered_set<uint16_t> GetHyperlinks();
+    std::vector<uint16_t> GetHyperlinks();
 
     bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
     void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
@@ -65,7 +74,7 @@ public:
     friend class AttrRowIterator;
 
 private:
-    std::vector<TextAttributeRun> _list;
+    boost::container::small_vector<TextAttributeRun, 1> _list;
     size_t _cchRowWidth;
 
 #ifdef UNIT_TESTING

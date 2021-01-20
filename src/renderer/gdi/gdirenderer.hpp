@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\RenderEngineBase.hpp"
+#include "../inc/RenderEngineBase.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -87,6 +87,7 @@ namespace Microsoft::Console::Render
         bool _isTrueTypeFont;
         UINT _fontCodepage;
         HFONT _hfont;
+        HFONT _hfontItalic;
         TEXTMETRICW _tmFontMetrics;
 
         static const size_t s_cPolyTextCache = 80;
@@ -122,6 +123,14 @@ namespace Microsoft::Console::Render
 
         COLORREF _lastFg;
         COLORREF _lastBg;
+        bool _lastFontItalic;
+
+        // Memory pooling to save alloc/free work to the OS for things
+        // frequently created and dropped.
+        // It's important the pool is first so it can be given to the others on construction.
+        std::pmr::unsynchronized_pool_resource _pool;
+        std::pmr::vector<std::pmr::wstring> _polyStrings;
+        std::pmr::vector<std::pmr::basic_string<int>> _polyWidths;
 
         [[nodiscard]] HRESULT _InvalidCombine(const RECT* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const POINT* const ppt) noexcept;
@@ -152,7 +161,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& FontDesired,
                                                _Out_ FontInfo& Font,
                                                const int iDpi,
-                                               _Inout_ wil::unique_hfont& hFont) noexcept;
+                                               _Inout_ wil::unique_hfont& hFont,
+                                               _Inout_ wil::unique_hfont& hFontItalic) noexcept;
 
         COORD _GetFontSize() const;
         bool _IsMinimized() const;

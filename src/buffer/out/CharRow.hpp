@@ -49,11 +49,12 @@ class CharRow final
 public:
     using glyph_type = typename wchar_t;
     using value_type = typename CharRowCell;
-    using iterator = typename std::vector<value_type>::iterator;
-    using const_iterator = typename std::vector<value_type>::const_iterator;
+    using iterator = typename boost::container::small_vector_base<value_type>::iterator;
+    using const_iterator = typename boost::container::small_vector_base<value_type>::const_iterator;
+    using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
     using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth, ROW* const pParent);
+    CharRow(size_t rowWidth, ROW* const pParent) noexcept;
 
     void SetWrapForced(const bool wrap) noexcept;
     bool WasWrapForced() const noexcept;
@@ -62,8 +63,8 @@ public:
     size_t size() const noexcept;
     void Reset() noexcept;
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
-    size_t MeasureLeft() const;
-    size_t MeasureRight() const noexcept;
+    size_t MeasureLeft() const noexcept;
+    size_t MeasureRight() const;
     void ClearCell(const size_t column);
     bool ContainsText() const noexcept;
     const DbcsAttribute& DbcsAttrAt(const size_t column) const;
@@ -80,9 +81,11 @@ public:
     // iterators
     iterator begin() noexcept;
     const_iterator cbegin() const noexcept;
+    const_iterator begin() const noexcept { return cbegin(); }
 
     iterator end() noexcept;
     const_iterator cend() const noexcept;
+    const_iterator end() const noexcept { return cend(); }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
@@ -101,7 +104,7 @@ protected:
     bool _doubleBytePadded;
 
     // storage for glyph data and dbcs attributes
-    std::vector<value_type> _data;
+    boost::container::small_vector<value_type, 120> _data;
 
     // ROW that this CharRow belongs to
     ROW* _pParent;

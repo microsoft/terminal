@@ -27,7 +27,7 @@
     <ClCompile Include="..\WinNTControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\DeviceComm.cpp">
+    <ClCompile Include="..\ConDrvDeviceComm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\ObjectHeader.cpp">

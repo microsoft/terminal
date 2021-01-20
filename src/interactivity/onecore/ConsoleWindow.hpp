@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IConsoleWindow.hpp"
+#include "../inc/IConsoleWindow.hpp"
 
 #pragma hdrstop
 

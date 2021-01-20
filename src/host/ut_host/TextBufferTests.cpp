@@ -2471,56 +2471,107 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 });
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection);
 
         std::wstring result = L"";
-        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
+
+        const auto formatWrappedRows = blockSelection;
+        const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects, nullptr, formatWrappedRows).text;
         for (auto& text : textData)
         {
             result += text;
         }
 
         std::wstring expectedText = L"";
-        if (includeCRLF)
+        if (formatWrappedRows)
         {
-            if (trimTrailingWhitespace)
+            if (includeCRLF)
             {
-                Log::Comment(L"Standard Copy to Clipboard");
-                expectedText += L"12345";
-                expectedText += L"67\r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123  \r\n";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123\r\n";
+                    expectedText += L"\r\n";
+                }
+                else
+                {
+                    Log::Comment(L"Copy block selection to Clipboard");
+                    expectedText += L"12345\r\n";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
             }
             else
             {
-                Log::Comment(L"UI Automation");
-                expectedText += L"12345";
-                expectedText += L"67   \r\n";
-                expectedText += L"  345\r\n";
-                expectedText += L"123  ";
-                expectedText += L"     \r\n";
-                expectedText += L"     ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123";
+                }
+                else
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
             }
         }
         else
         {
-            if (trimTrailingWhitespace)
+            if (includeCRLF)
             {
-                Log::Comment(L"UNDEFINED");
-                expectedText += L"12345";
-                expectedText += L"67";
-                expectedText += L"  345";
-                expectedText += L"123  ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"Standard Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67\r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  \r\n";
+                }
+                else
+                {
+                    Log::Comment(L"UI Automation");
+                    expectedText += L"12345";
+                    expectedText += L"67   \r\n";
+                    expectedText += L"  345\r\n";
+                    expectedText += L"123  ";
+                    expectedText += L"     \r\n";
+                    expectedText += L"     ";
+                }
             }
             else
             {
-                Log::Comment(L"Shift+Copy to Clipboard");
-                expectedText += L"12345";
-                expectedText += L"67   ";
-                expectedText += L"  345";
-                expectedText += L"123  ";
-                expectedText += L"     ";
-                expectedText += L"     ";
+                if (trimTrailingWhitespace)
+                {
+                    Log::Comment(L"UNDEFINED");
+                    expectedText += L"12345";
+                    expectedText += L"67";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                }
+                else
+                {
+                    Log::Comment(L"Shift+Copy to Clipboard");
+                    expectedText += L"12345";
+                    expectedText += L"67   ";
+                    expectedText += L"  345";
+                    expectedText += L"123  ";
+                    expectedText += L"     ";
+                    expectedText += L"     ";
+                }
             }
         }
 
@@ -2546,7 +2597,7 @@ void TextBufferTests::HyperlinkTrim()
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
-    const auto id = _buffer->GetHyperlinkId(customId);
+    const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
     _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
@@ -2554,7 +2605,7 @@ void TextBufferTests::HyperlinkTrim()
 
     // Set a different hyperlink id somewhere else in the buffer
     const COORD otherPos{ 70, 5 };
-    const auto otherId = _buffer->GetHyperlinkId(otherCustomId);
+    const auto otherId = _buffer->GetHyperlinkId(otherUrl, otherCustomId);
     newAttr.SetHyperlinkId(otherId);
     _buffer->GetRowByOffset(otherPos.Y).GetAttrRow().SetAttrToEnd(otherPos.X, newAttr);
     _buffer->AddHyperlinkToMap(otherUrl, otherId);
@@ -2562,14 +2613,17 @@ void TextBufferTests::HyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, std::hash<std::wstring_view>{}(otherUrl));
+
     // The hyperlink reference that was only in the first row should be deleted from the map
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
     // Since there was a custom id, that should be deleted as well
-    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(customId), _buffer->_hyperlinkCustomIdMap.end());
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap.find(finalCustomId), _buffer->_hyperlinkCustomIdMap.end());
 
     // The other hyperlink reference should not be deleted
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap[otherId], otherUrl);
-    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[otherCustomId], otherId);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalOtherCustomId], otherId);
 }
 
 // This tests that when we increment the circular buffer, non-obsolete hyperlink references
@@ -2587,7 +2641,7 @@ void TextBufferTests::NoHyperlinkTrim()
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
-    const auto id = _buffer->GetHyperlinkId(customId);
+    const auto id = _buffer->GetHyperlinkId(url, customId);
     TextAttribute newAttr{ 0x7f };
     newAttr.SetHyperlinkId(id);
     _buffer->GetRowByOffset(pos.Y).GetAttrRow().SetAttrToEnd(pos.X, newAttr);
@@ -2600,7 +2654,9 @@ void TextBufferTests::NoHyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);
-    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[customId], id);
+    VERIFY_ARE_EQUAL(_buffer->_hyperlinkCustomIdMap[finalCustomId], id);
 }

@@ -54,8 +54,11 @@ namespace Microsoft.Terminal.TerminalControl
 
         TextAntialiasingMode AntialiasingMode;
 
+        // Experimental Settings
         Boolean RetroTerminalEffect;
         Boolean ForceFullRepaintRendering;
         Boolean SoftwareRendering;
+        String PixelShaderPath;
+
     };
 }

@@ -123,6 +123,38 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
         }
 
+        constexpr bool operator<=(const point& other) const noexcept
+        {
+            if (_y < other._y)
+            {
+                return true;
+            }
+            else if (_y > other._y)
+            {
+                return false;
+            }
+            else
+            {
+                return _x <= other._x;
+            }
+        }
+
+        constexpr bool operator>=(const point& other) const noexcept
+        {
+            if (_y > other._y)
+            {
+                return true;
+            }
+            else if (_y < other._y)
+            {
+                return false;
+            }
+            else
+            {
+                return _x >= other._x;
+            }
+        }
+
         point operator+(const point& other) const
         {
             ptrdiff_t x;

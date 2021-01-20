@@ -20,20 +20,6 @@ namespace Microsoft.Terminal.Wpf
     /// </remarks>
     public class TerminalContainer : HwndHost
     {
-        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
-        {
-            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
-            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
-            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
-            vkey = (ushort)wParam;
-        }
-
-        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
-        {
-            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
-            character = (char)vKey;
-        }
-
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
@@ -77,12 +63,29 @@ namespace Microsoft.Terminal.Wpf
         internal event EventHandler<int> UserScrolled;
 
         /// <summary>
-        /// Gets the character rows available to the terminal.
+        /// Gets or sets a value indicating whether if the renderer should automatically resize to fill the control
+        /// on user action.
+        /// </summary>
+        internal bool AutoResize { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the size of the parent user control that hosts the terminal hwnd.
+        /// </summary>
+        /// <remarks>Control size is in device independent units, but for simplicity all sizes should be scaled.</remarks>
+        internal Size TerminalControlSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets the size of the terminal renderer.
+        /// </summary>
+        internal Size TerminalRendererSize { get; set; }
+
+        /// <summary>
+        /// Gets the current character rows available to the terminal.
         /// </summary>
         internal int Rows { get; private set; }
 
         /// <summary>
-        /// Gets the character columns available to the terminal.
+        /// Gets the current character columns available to the terminal.
         /// </summary>
         internal int Columns { get; private set; }
 
@@ -135,7 +138,10 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, (int)dpiScale.PixelsPerInchX);
 
-            this.TriggerResize(this.RenderSize);
+            if (!this.RenderSize.IsEmpty)
+            {
+                this.Resize(this.TerminalControlSize);
+            }
         }
 
         /// <summary>
@@ -153,43 +159,89 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Triggers a refresh of the terminal with the given size.
+        /// Triggers a resize of the terminal with the given size, redrawing the rendered text.
         /// </summary>
         /// <param name="renderSize">Size of the rendering window.</param>
-        /// <returns>Tuple with rows and columns.</returns>
-        internal (int rows, int columns) TriggerResize(Size renderSize)
+        internal void Resize(Size renderSize)
         {
-            var dpiScale = VisualTreeHelper.GetDpi(this);
+            if (renderSize.Width == 0 || renderSize.Height == 0)
+            {
+                throw new ArgumentException(nameof(renderSize), "Terminal column or row count cannot be 0.");
+            }
 
-            NativeMethods.COORD dimensions;
-            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width * dpiScale.DpiScaleX, renderSize.Height * dpiScale.DpiScaleY, out dimensions);
+            NativeMethods.TerminalTriggerResize(
+                this.terminal,
+                Convert.ToInt16(renderSize.Width),
+                Convert.ToInt16(renderSize.Height),
+                out NativeMethods.COORD dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
+            this.TerminalRendererSize = renderSize;
 
-            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
-            return (dimensions.Y, dimensions.X);
+            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
         }
 
         /// <summary>
-        /// Resizes the terminal.
+        /// Resizes the terminal using row and column count as the new size.
         /// </summary>
         /// <param name="rows">Number of rows to show.</param>
         /// <param name="columns">Number of columns to show.</param>
         internal void Resize(uint rows, uint columns)
         {
+            if (rows == 0)
+            {
+                throw new ArgumentException(nameof(rows), "Terminal row count cannot be 0.");
+            }
+            else if (columns == 0)
+            {
+                throw new ArgumentException(nameof(columns), "Terminal column count cannot be 0.");
+            }
+
+            NativeMethods.SIZE dimensionsInPixels;
             NativeMethods.COORD dimensions = new NativeMethods.COORD
             {
                 X = (short)columns,
                 Y = (short)rows,
             };
 
-            NativeMethods.TerminalResize(this.terminal, dimensions);
+            NativeMethods.TerminalTriggerResizeWithDimension(this.terminal, dimensions, out dimensionsInPixels);
 
-            this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
+            this.Rows = dimensions.Y;
 
-            this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+            this.TerminalRendererSize = new Size()
+            {
+                Width = dimensionsInPixels.cx,
+                Height = dimensionsInPixels.cy,
+            };
+
+            this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+        }
+
+        /// <summary>
+        /// Calculates the rows and columns that would fit in the given size.
+        /// </summary>
+        /// <param name="size">DPI scaled size.</param>
+        /// <returns>Amount of rows and columns that would fit the given size.</returns>
+        internal (uint columns, uint rows) CalculateRowsAndColumns(Size size)
+        {
+            NativeMethods.TerminalCalculateResize(this.terminal, (short)size.Width, (short)size.Height, out NativeMethods.COORD dimensions);
+
+            return ((uint)dimensions.X, (uint)dimensions.Y);
+        }
+
+        /// <summary>
+        /// Triggers the terminal resize event if more space is available in the terminal control.
+        /// </summary>
+        internal void RaiseResizedIfDrawSpaceIncreased()
+        {
+            (var columns, var rows) = this.CalculateRowsAndColumns(this.TerminalControlSize);
+
+            if (this.Columns < columns || this.Rows < rows)
+            {
+                this.connection?.Resize(rows, columns);
+            }
         }
 
         /// <inheritdoc/>
@@ -236,6 +288,20 @@ namespace Microsoft.Terminal.Wpf
         {
             NativeMethods.DestroyTerminal(this.terminal);
             this.terminal = IntPtr.Zero;
+        }
+
+        private static void UnpackKeyMessage(IntPtr wParam, IntPtr lParam, out ushort vkey, out ushort scanCode, out ushort flags)
+        {
+            ulong scanCodeAndFlags = (((ulong)lParam) & 0xFFFF0000) >> 16;
+            scanCode = (ushort)(scanCodeAndFlags & 0x00FFu);
+            flags = (ushort)(scanCodeAndFlags & 0xFF00u);
+            vkey = (ushort)wParam;
+        }
+
+        private static void UnpackCharMessage(IntPtr wParam, IntPtr lParam, out char character, out ushort scanCode, out ushort flags)
+        {
+            UnpackKeyMessage(wParam, lParam, out ushort vKey, out scanCode, out flags);
+            character = (char)vKey;
         }
 
         private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
@@ -294,18 +360,36 @@ namespace Microsoft.Terminal.Wpf
 
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
-                        if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE))
+                        if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE)
+                            || (windowpos.cx == 0 && windowpos.cy == 0))
                         {
                             break;
                         }
 
-                        NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out var dimensions);
+                        NativeMethods.COORD dimensions;
 
-                        this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
-                        this.Columns = dimensions.X;
-                        this.Rows = dimensions.Y;
+                        if (this.AutoResize)
+                        {
+                            NativeMethods.TerminalTriggerResize(this.terminal, (short)windowpos.cx, (short)windowpos.cy, out dimensions);
 
+                            this.Columns = dimensions.X;
+                            this.Rows = dimensions.Y;
+
+                            this.TerminalRendererSize = new Size()
+                            {
+                                Width = windowpos.cx,
+                                Height = windowpos.cy,
+                            };
+                        }
+                        else
+                        {
+                            // Calculate the new columns and rows that fit the total control size and alert the control to redraw the margins.
+                            NativeMethods.TerminalCalculateResize(this.terminal, (short)this.TerminalControlSize.Width, (short)this.TerminalControlSize.Height, out dimensions);
+                        }
+
+                        this.Connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         break;
+
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
                         var delta = (short)(((long)wParam) >> 16);
                         this.UserScrolled?.Invoke(this, delta);
@@ -360,7 +444,7 @@ namespace Microsoft.Terminal.Wpf
 
         private void OnWrite(string data)
         {
-            this.connection?.WriteInput(data);
+            this.Connection?.WriteInput(data);
         }
     }
 }

@@ -3,10 +3,6 @@
 
 #include "pch.h"
 
-// We have to define GSL here, not PCH
-// because TelnetConnection has a conflicting GSL implementation.
-#include <gsl/gsl>
-
 #include "ConptyConnection.h"
 
 #include <windows.h>
@@ -88,7 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring cmdline{ wil::ExpandEnvironmentStringsW<std::wstring>(_commandline.c_str()) }; // mutable copy -- required for CreateProcessW
 
         Utils::EnvironmentVariableMapW environment;
-        auto zeroEnvMap = wil::scope_exit([&] {
+        auto zeroEnvMap = wil::scope_exit([&]() noexcept {
             // Can't zero the keys, but at least we can zero the values.
             for (auto& [name, value] : environment)
             {

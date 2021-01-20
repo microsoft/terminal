@@ -263,9 +263,9 @@ void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIEleme
 // - the height of the border above the title bar or 0 if it's disabled
 int NonClientIslandWindow::_GetTopBorderHeight() const noexcept
 {
-    // No border when maximized, or when the titlebar is invisible (by being in
-    // fullscreen or focus mode).
-    if (_isMaximized || (!_IsTitlebarVisible()))
+    // No border when maximized or fullscreen.
+    // Yet we still need it in the focus mode to allow dragging (GH#7012)
+    if (_isMaximized || _fullscreen)
     {
         return 0;
     }
@@ -370,7 +370,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
                                    newIslandPos.Y,
                                    windowWidth,
                                    windowHeight - topBorderHeight,
-                                   SWP_SHOWWINDOW));
+                                   SWP_SHOWWINDOW | SWP_NOACTIVATE));
 
     // This happens when we go from maximized to restored or the opposite
     // because topBorderHeight changes.
@@ -849,7 +849,7 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
                  windowPos.top<int>(),
                  windowPos.width<int>(),
                  windowPos.height<int>(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED);
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 // Method Description:

@@ -7,7 +7,7 @@
 #include <ShObjIdl.h>
 #include <Propkey.h>
 
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 //  This property key isn't already defined in propkey.h, but is used by UWP Jumplist to determine the icon of the jumplist item.
 //  IShellLink's SetIconLocation isn't going to read "ms-appx://" icon paths, so we'll need to use this to set the icon.
@@ -43,12 +43,13 @@ static constexpr bool _isProbableFilePath(std::wstring_view path)
 //   paths to have the "correct" slash direction.
 static std::wstring _normalizeIconPath(std::wstring_view path)
 {
-    if (_isProbableFilePath(path))
+    const auto fullPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+    if (_isProbableFilePath(fullPath))
     {
-        std::filesystem::path asPath{ path };
+        std::filesystem::path asPath{ fullPath };
         return asPath.make_preferred().wstring();
     }
-    return std::wstring{ path };
+    return std::wstring{ fullPath };
 }
 
 // Function Description:
@@ -117,8 +118,13 @@ static std::wstring_view _getExePath()
 // - settings - The settings object to update the jumplist with.
 // Return Value:
 // - <none>
-HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
+winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 {
+    // make sure to capture the settings _before_ the co_await
+    const auto strongSettings = settings;
+
+    co_await winrt::resume_background();
+
     try
     {
         auto jumplistInstance = winrt::create_instance<ICustomDestinationList>(CLSID_DestinationList, CLSCTX_ALL);
@@ -130,10 +136,10 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 
         // It's easier to clear the list and re-add everything. The settings aren't
         // updated often, and there likely isn't a huge amount of items to add.
-        RETURN_IF_FAILED(jumplistItems->Clear());
+        THROW_IF_FAILED(jumplistItems->Clear());
 
         // Update the list of profiles.
-        RETURN_IF_FAILED(_updateProfiles(jumplistItems.get(), settings.Profiles().GetView()));
+        THROW_IF_FAILED(_updateProfiles(jumplistItems.get(), strongSettings.ActiveProfiles().GetView()));
 
         // TODO GH#1571: Add items from the future customizable new tab dropdown as well.
         // This could either replace the default profiles, or be added alongside them.
@@ -141,13 +147,11 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
         // Add the items to the jumplist Task section.
         // The Tasks section is immutable by the user, unlike the destinations
         // section that can have its items pinned and removed.
-        RETURN_IF_FAILED(jumplistInstance->AddUserTasks(jumplistItems.get()));
+        THROW_IF_FAILED(jumplistInstance->AddUserTasks(jumplistItems.get()));
 
-        RETURN_IF_FAILED(jumplistInstance->CommitList());
-
-        return S_OK;
+        THROW_IF_FAILED(jumplistInstance->CommitList());
     }
-    CATCH_RETURN();
+    CATCH_LOG();
 }
 
 // Method Description:
@@ -157,7 +161,7 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 // - profiles - The profiles to add to the jumplist
 // Return Value:
 // - S_OK or HRESULT failure code.
-[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<winrt::TerminalApp::Profile> profiles) noexcept
+[[nodiscard]] HRESULT Jumplist::_updateProfiles(IObjectCollection* jumplistItems, winrt::Windows::Foundation::Collections::IVectorView<Profile> profiles) noexcept
 {
     try
     {
@@ -168,7 +172,7 @@ HRESULT Jumplist::UpdateJumplist(const CascadiaSettings& settings) noexcept
 
             // Create the shell link object for the profile
             winrt::com_ptr<IShellLinkW> shLink;
-            const auto normalizedIconPath{ _normalizeIconPath(profile.ExpandedIconPath()) };
+            const auto normalizedIconPath{ _normalizeIconPath(profile.Icon()) };
             RETURN_IF_FAILED(_createShellLink(profile.Name(), normalizedIconPath, args, shLink.put()));
 
             RETURN_IF_FAILED(jumplistItems->AddObject(shLink.get()));

@@ -1,6 +1,6 @@
 # Dictionaries are lists of words to accept unconditionally
 
-While check spelling will complain about a whitelisted word
+While check spelling will complain about an expected word
 which is no longer present, you can include things here even if
 they are not otherwise present in the repository.
 
@@ -18,3 +18,4 @@ it'll be accepted).
 | [Microsoft](microsoft.txt) | Microsoft brand items |
 | [Fonts](fonts.txt) | Font names |
 | [Names](names.txt) | Names of people |
+| [Colors](colors.txt) | Names of color |

@@ -22,9 +22,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <StaticResource x:Key="CaptionButtonStrokeColor" ResourceKey="SystemBaseHighColor"/>
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
+                    <Color x:Key="CaptionButtonBackgroundColor">Transparent</Color>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
@@ -35,9 +37,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <StaticResource x:Key="CaptionButtonStrokeColor" ResourceKey="SystemBaseHighColor"/>
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
+                    <Color x:Key="CaptionButtonBackgroundColor">Transparent</Color>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="#e81123"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
@@ -46,9 +50,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ResourceDictionary x:Key="HighContrast">
                     <x:Double x:Key="CaptionButtonStrokeWidth">3.0</x:Double>
                     <SolidColorBrush x:Key="CaptionButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
+                    <StaticResource x:Key="CaptionButtonBackgroundColor" ResourceKey="SystemColorButtonFaceColor"/>
                     <SolidColorBrush x:Key="CaptionButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
                     <SolidColorBrush x:Key="CaptionButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
                     <SolidColorBrush x:Key="CaptionButtonStroke" Color="{ThemeResource SystemColorButtonTextColor}"/>
+                    <StaticResource x:Key="CaptionButtonStrokeColor" ResourceKey="SystemColorButtonTextColor"/>
                     <SolidColorBrush x:Key="CaptionButtonStrokePointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
                     <SolidColorBrush x:Key="CaptionButtonStrokePressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
@@ -95,8 +101,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                                         <VisualStateGroup.Transitions>
                                             <VisualTransition From="PointerOver" To="Normal">
                                                 <Storyboard>
-                                                    <ColorAnimation Storyboard.TargetName="ButtonBaseElement" Storyboard.TargetProperty="(UIElement.Background).(SolidColorBrush.Color)" To="{Binding Color, Source={ThemeResource CaptionButtonBackground}}" Duration="0:0:0.2"/>
-                                                    <ColorAnimation Storyboard.TargetName="Path" Storyboard.TargetProperty="(UIElement.Stroke).(SolidColorBrush.Color)" To="{Binding Color, Source={ThemeResource CaptionButtonStroke}}" Duration="0:0:0.1"/>
+                                                    <ColorAnimation Storyboard.TargetName="ButtonBaseElement" Storyboard.TargetProperty="(UIElement.Background).(SolidColorBrush.Color)" To="{ThemeResource CaptionButtonBackgroundColor}" Duration="0:0:0.2"/>
+                                                    <ColorAnimation Storyboard.TargetName="Path" Storyboard.TargetProperty="(UIElement.Stroke).(SolidColorBrush.Color)" To="{ThemeResource CaptionButtonStrokeColor}" Duration="0:0:0.1"/>
                                                 </Storyboard>
                                             </VisualTransition>
                                         </VisualStateGroup.Transitions>

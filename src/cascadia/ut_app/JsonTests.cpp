@@ -3,17 +3,17 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/ColorScheme.h"
-#include "../TerminalApp/Profile.h"
-#include "../TerminalApp/CascadiaSettings.h"
-#include "../LocalTests_TerminalApp/JsonTestClass.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/Profile.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../LocalTests_SettingsModel/JsonTestClass.h"
+#include "../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace winrt::TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 namespace TerminalAppUnitTests
@@ -120,7 +120,7 @@ namespace TerminalAppUnitTests
     {
         // Parse some profiles without guids. We should NOT generate new guids
         // for them. If a profile doesn't have a GUID, we'll leave its _guid
-        // set to nullopt. CascadiaSettings::_ValidateProfilesHaveGuid will
+        // set to nullopt. The Profile::Guid() getter will
         // ensure all profiles have a GUID that's actually set.
         // The null guid _is_ a valid guid, so we won't re-generate that
         // guid. null is _not_ a valid guid, so we'll leave that nullopt

@@ -6,15 +6,15 @@
 #include "clipboard.hpp"
 #include "resource.h"
 
-#include "..\..\host\dbcs.h"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\output.h"
+#include "../../host/dbcs.h"
+#include "../../host/scrolling.hpp"
+#include "../../host/output.h"
 
-#include "..\..\types\inc\convert.hpp"
-#include "..\..\types\inc\viewport.hpp"
+#include "../../types/inc/convert.hpp"
+#include "../../types/inc/viewport.hpp"
 
-#include "..\inc\conint.h"
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/conint.h"
+#include "../inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

@@ -3,286 +3,20 @@
 
 #include "precomp.h"
 #include "inc/utils.hpp"
+#include "inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
 
-static constexpr std::array<til::color, 16> campbellColorTable{
-    til::color{ 0x0C, 0x0C, 0x0C },
-    til::color{ 0xC5, 0x0F, 0x1F },
-    til::color{ 0x13, 0xA1, 0x0E },
-    til::color{ 0xC1, 0x9C, 0x00 },
-    til::color{ 0x00, 0x37, 0xDA },
-    til::color{ 0x88, 0x17, 0x98 },
-    til::color{ 0x3A, 0x96, 0xDD },
-    til::color{ 0xCC, 0xCC, 0xCC },
-    til::color{ 0x76, 0x76, 0x76 },
-    til::color{ 0xE7, 0x48, 0x56 },
-    til::color{ 0x16, 0xC6, 0x0C },
-    til::color{ 0xF9, 0xF1, 0xA5 },
-    til::color{ 0x3B, 0x78, 0xFF },
-    til::color{ 0xB4, 0x00, 0x9E },
-    til::color{ 0x61, 0xD6, 0xD6 },
-    til::color{ 0xF2, 0xF2, 0xF2 },
-};
-
-static constexpr std::array<til::color, 256> standardXterm256ColorTable{
-    til::color{ 0x00, 0x00, 0x00 },
-    til::color{ 0x80, 0x00, 0x00 },
-    til::color{ 0x00, 0x80, 0x00 },
-    til::color{ 0x80, 0x80, 0x00 },
-    til::color{ 0x00, 0x00, 0x80 },
-    til::color{ 0x80, 0x00, 0x80 },
-    til::color{ 0x00, 0x80, 0x80 },
-    til::color{ 0xC0, 0xC0, 0xC0 },
-    til::color{ 0x80, 0x80, 0x80 },
-    til::color{ 0xFF, 0x00, 0x00 },
-    til::color{ 0x00, 0xFF, 0x00 },
-    til::color{ 0xFF, 0xFF, 0x00 },
-    til::color{ 0x00, 0x00, 0xFF },
-    til::color{ 0xFF, 0x00, 0xFF },
-    til::color{ 0x00, 0xFF, 0xFF },
-    til::color{ 0xFF, 0xFF, 0xFF },
-    til::color{ 0x00, 0x00, 0x00 },
-    til::color{ 0x00, 0x00, 0x5F },
-    til::color{ 0x00, 0x00, 0x87 },
-    til::color{ 0x00, 0x00, 0xAF },
-    til::color{ 0x00, 0x00, 0xD7 },
-    til::color{ 0x00, 0x00, 0xFF },
-    til::color{ 0x00, 0x5F, 0x00 },
-    til::color{ 0x00, 0x5F, 0x5F },
-    til::color{ 0x00, 0x5F, 0x87 },
-    til::color{ 0x00, 0x5F, 0xAF },
-    til::color{ 0x00, 0x5F, 0xD7 },
-    til::color{ 0x00, 0x5F, 0xFF },
-    til::color{ 0x00, 0x87, 0x00 },
-    til::color{ 0x00, 0x87, 0x5F },
-    til::color{ 0x00, 0x87, 0x87 },
-    til::color{ 0x00, 0x87, 0xAF },
-    til::color{ 0x00, 0x87, 0xD7 },
-    til::color{ 0x00, 0x87, 0xFF },
-    til::color{ 0x00, 0xAF, 0x00 },
-    til::color{ 0x00, 0xAF, 0x5F },
-    til::color{ 0x00, 0xAF, 0x87 },
-    til::color{ 0x00, 0xAF, 0xAF },
-    til::color{ 0x00, 0xAF, 0xD7 },
-    til::color{ 0x00, 0xAF, 0xFF },
-    til::color{ 0x00, 0xD7, 0x00 },
-    til::color{ 0x00, 0xD7, 0x5F },
-    til::color{ 0x00, 0xD7, 0x87 },
-    til::color{ 0x00, 0xD7, 0xAF },
-    til::color{ 0x00, 0xD7, 0xD7 },
-    til::color{ 0x00, 0xD7, 0xFF },
-    til::color{ 0x00, 0xFF, 0x00 },
-    til::color{ 0x00, 0xFF, 0x5F },
-    til::color{ 0x00, 0xFF, 0x87 },
-    til::color{ 0x00, 0xFF, 0xAF },
-    til::color{ 0x00, 0xFF, 0xD7 },
-    til::color{ 0x00, 0xFF, 0xFF },
-    til::color{ 0x5F, 0x00, 0x00 },
-    til::color{ 0x5F, 0x00, 0x5F },
-    til::color{ 0x5F, 0x00, 0x87 },
-    til::color{ 0x5F, 0x00, 0xAF },
-    til::color{ 0x5F, 0x00, 0xD7 },
-    til::color{ 0x5F, 0x00, 0xFF },
-    til::color{ 0x5F, 0x5F, 0x00 },
-    til::color{ 0x5F, 0x5F, 0x5F },
-    til::color{ 0x5F, 0x5F, 0x87 },
-    til::color{ 0x5F, 0x5F, 0xAF },
-    til::color{ 0x5F, 0x5F, 0xD7 },
-    til::color{ 0x5F, 0x5F, 0xFF },
-    til::color{ 0x5F, 0x87, 0x00 },
-    til::color{ 0x5F, 0x87, 0x5F },
-    til::color{ 0x5F, 0x87, 0x87 },
-    til::color{ 0x5F, 0x87, 0xAF },
-    til::color{ 0x5F, 0x87, 0xD7 },
-    til::color{ 0x5F, 0x87, 0xFF },
-    til::color{ 0x5F, 0xAF, 0x00 },
-    til::color{ 0x5F, 0xAF, 0x5F },
-    til::color{ 0x5F, 0xAF, 0x87 },
-    til::color{ 0x5F, 0xAF, 0xAF },
-    til::color{ 0x5F, 0xAF, 0xD7 },
-    til::color{ 0x5F, 0xAF, 0xFF },
-    til::color{ 0x5F, 0xD7, 0x00 },
-    til::color{ 0x5F, 0xD7, 0x5F },
-    til::color{ 0x5F, 0xD7, 0x87 },
-    til::color{ 0x5F, 0xD7, 0xAF },
-    til::color{ 0x5F, 0xD7, 0xD7 },
-    til::color{ 0x5F, 0xD7, 0xFF },
-    til::color{ 0x5F, 0xFF, 0x00 },
-    til::color{ 0x5F, 0xFF, 0x5F },
-    til::color{ 0x5F, 0xFF, 0x87 },
-    til::color{ 0x5F, 0xFF, 0xAF },
-    til::color{ 0x5F, 0xFF, 0xD7 },
-    til::color{ 0x5F, 0xFF, 0xFF },
-    til::color{ 0x87, 0x00, 0x00 },
-    til::color{ 0x87, 0x00, 0x5F },
-    til::color{ 0x87, 0x00, 0x87 },
-    til::color{ 0x87, 0x00, 0xAF },
-    til::color{ 0x87, 0x00, 0xD7 },
-    til::color{ 0x87, 0x00, 0xFF },
-    til::color{ 0x87, 0x5F, 0x00 },
-    til::color{ 0x87, 0x5F, 0x5F },
-    til::color{ 0x87, 0x5F, 0x87 },
-    til::color{ 0x87, 0x5F, 0xAF },
-    til::color{ 0x87, 0x5F, 0xD7 },
-    til::color{ 0x87, 0x5F, 0xFF },
-    til::color{ 0x87, 0x87, 0x00 },
-    til::color{ 0x87, 0x87, 0x5F },
-    til::color{ 0x87, 0x87, 0x87 },
-    til::color{ 0x87, 0x87, 0xAF },
-    til::color{ 0x87, 0x87, 0xD7 },
-    til::color{ 0x87, 0x87, 0xFF },
-    til::color{ 0x87, 0xAF, 0x00 },
-    til::color{ 0x87, 0xAF, 0x5F },
-    til::color{ 0x87, 0xAF, 0x87 },
-    til::color{ 0x87, 0xAF, 0xAF },
-    til::color{ 0x87, 0xAF, 0xD7 },
-    til::color{ 0x87, 0xAF, 0xFF },
-    til::color{ 0x87, 0xD7, 0x00 },
-    til::color{ 0x87, 0xD7, 0x5F },
-    til::color{ 0x87, 0xD7, 0x87 },
-    til::color{ 0x87, 0xD7, 0xAF },
-    til::color{ 0x87, 0xD7, 0xD7 },
-    til::color{ 0x87, 0xD7, 0xFF },
-    til::color{ 0x87, 0xFF, 0x00 },
-    til::color{ 0x87, 0xFF, 0x5F },
-    til::color{ 0x87, 0xFF, 0x87 },
-    til::color{ 0x87, 0xFF, 0xAF },
-    til::color{ 0x87, 0xFF, 0xD7 },
-    til::color{ 0x87, 0xFF, 0xFF },
-    til::color{ 0xAF, 0x00, 0x00 },
-    til::color{ 0xAF, 0x00, 0x5F },
-    til::color{ 0xAF, 0x00, 0x87 },
-    til::color{ 0xAF, 0x00, 0xAF },
-    til::color{ 0xAF, 0x00, 0xD7 },
-    til::color{ 0xAF, 0x00, 0xFF },
-    til::color{ 0xAF, 0x5F, 0x00 },
-    til::color{ 0xAF, 0x5F, 0x5F },
-    til::color{ 0xAF, 0x5F, 0x87 },
-    til::color{ 0xAF, 0x5F, 0xAF },
-    til::color{ 0xAF, 0x5F, 0xD7 },
-    til::color{ 0xAF, 0x5F, 0xFF },
-    til::color{ 0xAF, 0x87, 0x00 },
-    til::color{ 0xAF, 0x87, 0x5F },
-    til::color{ 0xAF, 0x87, 0x87 },
-    til::color{ 0xAF, 0x87, 0xAF },
-    til::color{ 0xAF, 0x87, 0xD7 },
-    til::color{ 0xAF, 0x87, 0xFF },
-    til::color{ 0xAF, 0xAF, 0x00 },
-    til::color{ 0xAF, 0xAF, 0x5F },
-    til::color{ 0xAF, 0xAF, 0x87 },
-    til::color{ 0xAF, 0xAF, 0xAF },
-    til::color{ 0xAF, 0xAF, 0xD7 },
-    til::color{ 0xAF, 0xAF, 0xFF },
-    til::color{ 0xAF, 0xD7, 0x00 },
-    til::color{ 0xAF, 0xD7, 0x5F },
-    til::color{ 0xAF, 0xD7, 0x87 },
-    til::color{ 0xAF, 0xD7, 0xAF },
-    til::color{ 0xAF, 0xD7, 0xD7 },
-    til::color{ 0xAF, 0xD7, 0xFF },
-    til::color{ 0xAF, 0xFF, 0x00 },
-    til::color{ 0xAF, 0xFF, 0x5F },
-    til::color{ 0xAF, 0xFF, 0x87 },
-    til::color{ 0xAF, 0xFF, 0xAF },
-    til::color{ 0xAF, 0xFF, 0xD7 },
-    til::color{ 0xAF, 0xFF, 0xFF },
-    til::color{ 0xD7, 0x00, 0x00 },
-    til::color{ 0xD7, 0x00, 0x5F },
-    til::color{ 0xD7, 0x00, 0x87 },
-    til::color{ 0xD7, 0x00, 0xAF },
-    til::color{ 0xD7, 0x00, 0xD7 },
-    til::color{ 0xD7, 0x00, 0xFF },
-    til::color{ 0xD7, 0x5F, 0x00 },
-    til::color{ 0xD7, 0x5F, 0x5F },
-    til::color{ 0xD7, 0x5F, 0x87 },
-    til::color{ 0xD7, 0x5F, 0xAF },
-    til::color{ 0xD7, 0x5F, 0xD7 },
-    til::color{ 0xD7, 0x5F, 0xFF },
-    til::color{ 0xD7, 0x87, 0x00 },
-    til::color{ 0xD7, 0x87, 0x5F },
-    til::color{ 0xD7, 0x87, 0x87 },
-    til::color{ 0xD7, 0x87, 0xAF },
-    til::color{ 0xD7, 0x87, 0xD7 },
-    til::color{ 0xD7, 0x87, 0xFF },
-    til::color{ 0xD7, 0xAF, 0x00 },
-    til::color{ 0xD7, 0xAF, 0x5F },
-    til::color{ 0xD7, 0xAF, 0x87 },
-    til::color{ 0xD7, 0xAF, 0xAF },
-    til::color{ 0xD7, 0xAF, 0xD7 },
-    til::color{ 0xD7, 0xAF, 0xFF },
-    til::color{ 0xD7, 0xD7, 0x00 },
-    til::color{ 0xD7, 0xD7, 0x5F },
-    til::color{ 0xD7, 0xD7, 0x87 },
-    til::color{ 0xD7, 0xD7, 0xAF },
-    til::color{ 0xD7, 0xD7, 0xD7 },
-    til::color{ 0xD7, 0xD7, 0xFF },
-    til::color{ 0xD7, 0xFF, 0x00 },
-    til::color{ 0xD7, 0xFF, 0x5F },
-    til::color{ 0xD7, 0xFF, 0x87 },
-    til::color{ 0xD7, 0xFF, 0xAF },
-    til::color{ 0xD7, 0xFF, 0xD7 },
-    til::color{ 0xD7, 0xFF, 0xFF },
-    til::color{ 0xFF, 0x00, 0x00 },
-    til::color{ 0xFF, 0x00, 0x5F },
-    til::color{ 0xFF, 0x00, 0x87 },
-    til::color{ 0xFF, 0x00, 0xAF },
-    til::color{ 0xFF, 0x00, 0xD7 },
-    til::color{ 0xFF, 0x00, 0xFF },
-    til::color{ 0xFF, 0x5F, 0x00 },
-    til::color{ 0xFF, 0x5F, 0x5F },
-    til::color{ 0xFF, 0x5F, 0x87 },
-    til::color{ 0xFF, 0x5F, 0xAF },
-    til::color{ 0xFF, 0x5F, 0xD7 },
-    til::color{ 0xFF, 0x5F, 0xFF },
-    til::color{ 0xFF, 0x87, 0x00 },
-    til::color{ 0xFF, 0x87, 0x5F },
-    til::color{ 0xFF, 0x87, 0x87 },
-    til::color{ 0xFF, 0x87, 0xAF },
-    til::color{ 0xFF, 0x87, 0xD7 },
-    til::color{ 0xFF, 0x87, 0xFF },
-    til::color{ 0xFF, 0xAF, 0x00 },
-    til::color{ 0xFF, 0xAF, 0x5F },
-    til::color{ 0xFF, 0xAF, 0x87 },
-    til::color{ 0xFF, 0xAF, 0xAF },
-    til::color{ 0xFF, 0xAF, 0xD7 },
-    til::color{ 0xFF, 0xAF, 0xFF },
-    til::color{ 0xFF, 0xD7, 0x00 },
-    til::color{ 0xFF, 0xD7, 0x5F },
-    til::color{ 0xFF, 0xD7, 0x87 },
-    til::color{ 0xFF, 0xD7, 0xAF },
-    til::color{ 0xFF, 0xD7, 0xD7 },
-    til::color{ 0xFF, 0xD7, 0xFF },
-    til::color{ 0xFF, 0xFF, 0x00 },
-    til::color{ 0xFF, 0xFF, 0x5F },
-    til::color{ 0xFF, 0xFF, 0x87 },
-    til::color{ 0xFF, 0xFF, 0xAF },
-    til::color{ 0xFF, 0xFF, 0xD7 },
-    til::color{ 0xFF, 0xFF, 0xFF },
-    til::color{ 0x08, 0x08, 0x08 },
-    til::color{ 0x12, 0x12, 0x12 },
-    til::color{ 0x1C, 0x1C, 0x1C },
-    til::color{ 0x26, 0x26, 0x26 },
-    til::color{ 0x30, 0x30, 0x30 },
-    til::color{ 0x3A, 0x3A, 0x3A },
-    til::color{ 0x44, 0x44, 0x44 },
-    til::color{ 0x4E, 0x4E, 0x4E },
-    til::color{ 0x58, 0x58, 0x58 },
-    til::color{ 0x62, 0x62, 0x62 },
-    til::color{ 0x6C, 0x6C, 0x6C },
-    til::color{ 0x76, 0x76, 0x76 },
-    til::color{ 0x80, 0x80, 0x80 },
-    til::color{ 0x8A, 0x8A, 0x8A },
-    til::color{ 0x94, 0x94, 0x94 },
-    til::color{ 0x9E, 0x9E, 0x9E },
-    til::color{ 0xA8, 0xA8, 0xA8 },
-    til::color{ 0xB2, 0xB2, 0xB2 },
-    til::color{ 0xBC, 0xBC, 0xBC },
-    til::color{ 0xC6, 0xC6, 0xC6 },
-    til::color{ 0xD0, 0xD0, 0xD0 },
-    til::color{ 0xDA, 0xDA, 0xDA },
-    til::color{ 0xE4, 0xE4, 0xE4 },
-    til::color{ 0xEE, 0xEE, 0xEE },
-};
+// Routine Description:
+// - Determines if a character is a valid number character, 0-9.
+// Arguments:
+// - wch - Character to check.
+// Return Value:
+// - True if it is. False if it isn't.
+static constexpr bool _isNumber(const wchar_t wch) noexcept
+{
+    return wch >= L'0' && wch <= L'9'; // 0x30 - 0x39
+}
 
 // Function Description:
 // - Creates a String representation of a guid, in the format
@@ -378,6 +112,323 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 }
 
 // Routine Description:
+// - Given a color string, attempts to parse the color.
+//   The color are specified by name or RGB specification as per XParseColor.
+// Arguments:
+// - string - The string containing the color spec string to parse.
+// Return Value:
+// - An optional color which contains value if a color was successfully parsed
+std::optional<til::color> Utils::ColorFromXTermColor(const std::wstring_view string) noexcept
+{
+    auto color = ColorFromXParseColorSpec(string);
+    if (!color.has_value())
+    {
+        // Try again, but use the app color name parser
+        color = ColorFromXOrgAppColorName(string);
+    }
+
+    return color;
+}
+
+// Routine Description:
+// - Given a color spec string, attempts to parse the color that's encoded.
+//
+//   Based on the XParseColor documentation, the supported specs currently are the following:
+//      spec1: a color in the following format:
+//          "rgb:<red>/<green>/<blue>"
+//      spec2: a color in the following format:
+//          "#<red><green><blue>"
+//
+//   In both specs, <color> is a value contains up to 4 hex digits, upper or lower case.
+// Arguments:
+// - string - The string containing the color spec string to parse.
+// Return Value:
+// - An optional color which contains value if a color was successfully parsed
+std::optional<til::color> Utils::ColorFromXParseColorSpec(const std::wstring_view string) noexcept
+try
+{
+    bool foundXParseColorSpec = false;
+    bool foundValidColorSpec = false;
+
+    bool isSharpSignFormat = false;
+    size_t rgbHexDigitCount = 0;
+    std::array<unsigned int, 3> colorValues = { 0 };
+    std::array<unsigned int, 3> parameterValues = { 0 };
+    const auto stringSize = string.size();
+
+    // First we look for "rgb:"
+    // Other colorspaces are theoretically possible, but we don't support them.
+    auto curr = string.cbegin();
+    if (stringSize > 4)
+    {
+        auto prefix = std::wstring(string.substr(0, 4));
+
+        // The "rgb:" indicator should be case insensitive. To prevent possible issues under
+        // different locales, transform only ASCII range latin characters.
+        std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](const auto x) {
+            return x >= L'A' && x <= L'Z' ? static_cast<wchar_t>(std::towlower(x)) : x;
+        });
+
+        if (prefix.compare(L"rgb:") == 0)
+        {
+            // If all the components have the same digit count, we can have one of the following formats:
+            // 9 "rgb:h/h/h"
+            // 12 "rgb:hh/hh/hh"
+            // 15 "rgb:hhh/hhh/hhh"
+            // 18 "rgb:hhhh/hhhh/hhhh"
+            // Note that the component sizes aren't required to be the same.
+            // Anything in between is also valid, e.g. "rgb:h/hh/h" and "rgb:h/hh/hhh".
+            // Any fewer cannot be valid, and any more will be too many. Return early in this case.
+            if (stringSize < 9 || stringSize > 18)
+            {
+                return std::nullopt;
+            }
+
+            foundXParseColorSpec = true;
+
+            std::advance(curr, 4);
+        }
+    }
+
+    // Try the sharp sign format.
+    if (!foundXParseColorSpec && stringSize > 1)
+    {
+        if (til::at(string, 0) == L'#')
+        {
+            // We can have one of the following formats:
+            // 4 "#hhh"
+            // 7 "#hhhhhh"
+            // 10 "#hhhhhhhhh"
+            // 13 "#hhhhhhhhhhhh"
+            // Any other cases will be invalid. Return early in this case.
+            if (!(stringSize == 4 || stringSize == 7 || stringSize == 10 || stringSize == 13))
+            {
+                return std::nullopt;
+            }
+
+            isSharpSignFormat = true;
+            foundXParseColorSpec = true;
+            rgbHexDigitCount = (stringSize - 1) / 3;
+
+            std::advance(curr, 1);
+        }
+    }
+
+    // No valid spec is found. Return early.
+    if (!foundXParseColorSpec)
+    {
+        return std::nullopt;
+    }
+
+    // Try to parse the actual color value of each component.
+    for (size_t component = 0; component < 3; component++)
+    {
+        bool foundColor = false;
+        auto& parameterValue = til::at(parameterValues, component);
+        // For "sharp sign" format, the rgbHexDigitCount is known.
+        // For "rgb:" format, colorspecs are up to hhhh/hhhh/hhhh, for 1-4 h's
+        const auto iteration = isSharpSignFormat ? rgbHexDigitCount : 4;
+        for (size_t i = 0; i < iteration && curr < string.cend(); i++)
+        {
+            const wchar_t wch = *curr++;
+
+            parameterValue *= 16;
+            unsigned int intVal = 0;
+            const auto ret = HexToUint(wch, intVal);
+            if (!ret)
+            {
+                // Encountered something weird oh no
+                return std::nullopt;
+            }
+
+            parameterValue += intVal;
+
+            if (isSharpSignFormat)
+            {
+                // If we get this far, any number can be seen as a valid part
+                // of this component.
+                foundColor = true;
+
+                if (i >= rgbHexDigitCount)
+                {
+                    // Successfully parsed this component. Start the next one.
+                    break;
+                }
+            }
+            else
+            {
+                // Record the hex digit count of the current component.
+                rgbHexDigitCount = i + 1;
+
+                // If this is the first 2 component...
+                if (component < 2 && curr < string.cend() && *curr == L'/')
+                {
+                    // ...and we have successfully parsed this component, we need
+                    // to skip the delimiter before starting the next one.
+                    curr++;
+                    foundColor = true;
+                    break;
+                }
+                // Or we have reached the end of the string...
+                else if (curr >= string.cend())
+                {
+                    // ...meaning that this is the last component. We're not going to
+                    // see any delimiter. We can just break out.
+                    foundColor = true;
+                    break;
+                }
+            }
+        }
+
+        if (!foundColor)
+        {
+            // Indicates there was some error parsing color.
+            return std::nullopt;
+        }
+
+        // Calculate the actual color value based on the hex digit count.
+        auto& colorValue = til::at(colorValues, component);
+        const auto scaleMultiplier = isSharpSignFormat ? 0x10 : 0x11;
+        const auto scaleDivisor = scaleMultiplier << 8 >> 4 * (4 - rgbHexDigitCount);
+        colorValue = parameterValue * scaleMultiplier / scaleDivisor;
+    }
+
+    if (curr >= string.cend())
+    {
+        // We're at the end of the string and we have successfully parsed the color.
+        foundValidColorSpec = true;
+    }
+
+    // Only if we find a valid colorspec can we pass it out successfully.
+    if (foundValidColorSpec)
+    {
+        return til::color(LOBYTE(til::at(colorValues, 0)),
+                          LOBYTE(til::at(colorValues, 1)),
+                          LOBYTE(til::at(colorValues, 2)));
+    }
+
+    return std::nullopt;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return std::nullopt;
+}
+
+// Routine Description:
+// - Converts a hex character to its equivalent integer value.
+// Arguments:
+// - wch - Character to convert.
+// - value - receives the int value of the char
+// Return Value:
+// - true iff the character is a hex character.
+bool Utils::HexToUint(const wchar_t wch,
+                      unsigned int& value) noexcept
+{
+    value = 0;
+    bool success = false;
+    if (wch >= L'0' && wch <= L'9')
+    {
+        value = wch - L'0';
+        success = true;
+    }
+    else if (wch >= L'A' && wch <= L'F')
+    {
+        value = (wch - L'A') + 10;
+        success = true;
+    }
+    else if (wch >= L'a' && wch <= L'f')
+    {
+        value = (wch - L'a') + 10;
+        success = true;
+    }
+    return success;
+}
+
+// Routine Description:
+// - Converts a number string to its equivalent unsigned integer value.
+// Arguments:
+// - wstr - String to convert.
+// - value - receives the int value of the string
+// Return Value:
+// - true iff the string is a unsigned integer string.
+bool Utils::StringToUint(const std::wstring_view wstr,
+                         unsigned int& value)
+{
+    if (wstr.size() < 1)
+    {
+        return false;
+    }
+
+    unsigned int result = 0;
+    size_t current = 0;
+    while (current < wstr.size())
+    {
+        const wchar_t wch = wstr.at(current);
+        if (_isNumber(wch))
+        {
+            result *= 10;
+            result += wch - L'0';
+
+            ++current;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    value = result;
+
+    return true;
+}
+
+// Routine Description:
+// - Split a string into different parts using the delimiter provided.
+// Arguments:
+// - wstr - String to split.
+// - delimiter - delimiter to use.
+// Return Value:
+// - a vector containing the result string parts.
+std::vector<std::wstring_view> Utils::SplitString(const std::wstring_view wstr,
+                                                  const wchar_t delimiter) noexcept
+try
+{
+    std::vector<std::wstring_view> result;
+    size_t current = 0;
+    while (current < wstr.size())
+    {
+        const auto nextDelimiter = wstr.find(delimiter, current);
+        if (nextDelimiter == std::wstring::npos)
+        {
+            result.push_back(wstr.substr(current));
+            break;
+        }
+        else
+        {
+            const auto length = nextDelimiter - current;
+            result.push_back(wstr.substr(current, length));
+            // Skip this part and the delimiter. Start the next one
+            current += length + 1;
+            // The next index is larger than string size, which means the string
+            // is in the format of "part1;part2;" (assuming use ';' as delimiter).
+            // Add the last part which is an empty string.
+            if (current >= wstr.size())
+            {
+                result.push_back(L"");
+            }
+        }
+    }
+
+    return result;
+}
+catch (...)
+{
+    LOG_CAUGHT_EXCEPTION();
+    return {};
+}
+
+// Routine Description:
 // - Shorthand check if a handle value is null or invalid.
 // Arguments:
 // - Handle
@@ -386,63 +437,6 @@ til::color Utils::ColorFromHexString(const std::string_view str)
 bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
     return handle != nullptr && handle != INVALID_HANDLE_VALUE;
-}
-
-// Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the ANSI/VT RGB order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-
-    std::copy(campbellColorTable.begin(), campbellColorTable.end(), table.begin());
-}
-
-// Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the Windows BGR order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    InitializeCampbellColorTable(table);
-    SwapANSIColorOrderForConhost(table);
-}
-
-// Function Description:
-// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    std::swap(til::at(table, 1), til::at(table, 4));
-    std::swap(til::at(table, 3), til::at(table, 6));
-    std::swap(til::at(table, 9), til::at(table, 12));
-    std::swap(til::at(table, 11), til::at(table, 14));
-}
-
-// Function Description:
-// - Fill the first 255 entries of a given color table with the default values
-//      of a full 256-color table
-// Arguments:
-// - table: a color table with at least 256 entries
-// Return Value:
-// - <none>, throws if the table has less that 256 entries
-void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 256);
-
-    std::copy(standardXterm256ColorTable.begin(), standardXterm256ColorTable.end(), table.begin());
 }
 
 // Function Description:

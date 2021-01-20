@@ -249,7 +249,7 @@ try
         startPos.X = viewport.Left();
         nlength = viewport.RightExclusive() - startPos.X;
         break;
-    case DispatchTypes::EraseType::Scrollback:
+    default:
         return false;
     }
 
@@ -582,7 +582,7 @@ CATCH_LOG_RETURN_FALSE()
 bool Terminal::AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept
 {
     auto attr = _buffer->GetCurrentAttributes();
-    const auto id = _buffer->GetHyperlinkId(params);
+    const auto id = _buffer->GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     _buffer->SetCurrentAttributes(attr);
     _buffer->AddHyperlinkToMap(uri, id);
@@ -599,4 +599,33 @@ bool Terminal::EndHyperlink() noexcept
     attr.SetHyperlinkId(0);
     _buffer->SetCurrentAttributes(attr);
     return true;
+}
+
+// Method Description:
+// - Updates the taskbar progress indicator
+// Arguments:
+// - state: indicates the progress state
+// - progress: indicates the progress value
+// Return Value:
+// - true
+bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+{
+    _taskbarState = state;
+    _taskbarProgress = progress;
+    if (_pfnTaskbarProgressChanged)
+    {
+        _pfnTaskbarProgressChanged();
+    }
+    return true;
+}
+
+bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
+{
+    _workingDirectory = uri;
+    return true;
+}
+
+std::wstring_view Terminal::GetWorkingDirectory() noexcept
+{
+    return _workingDirectory;
 }

@@ -5,7 +5,7 @@
 
 #include "uiaTextRange.hpp"
 #include "screenInfoUiaProvider.hpp"
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
@@ -75,12 +75,6 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     Tracing::s_TraceUia(this, ApiCall::Clone, &apiMsg);*/
 
     return S_OK;
-}
-
-void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
-{
-    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
-    provider->ChangeViewport(NewWindow);
 }
 
 void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const

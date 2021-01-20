@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\ISystemConfigurationProvider.hpp"
+#include "../inc/ISystemConfigurationProvider.hpp"
 
 #pragma hdrstop
 

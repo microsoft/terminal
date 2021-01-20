@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.TerminalControl
     // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
     [uuid("0ddf4edc-3fda-4dee-97ca-a417ee3dd510")] interface IDirectKeyListener {
         Boolean OnDirectKeyEvent(UInt32 vkey, UInt8 scanCode, Boolean down);
-    }
+    };
 
     [flags]
     enum CopyFormat
@@ -45,6 +45,20 @@ namespace Microsoft.Terminal.TerminalControl
         String Uri { get; };
     }
 
+    enum NoticeLevel
+    {
+        Debug = 10,
+        Info = 20,
+        Warning = 30,
+        Error = 40,
+    };
+
+    runtimeclass NoticeEventArgs
+    {
+        NoticeLevel Level { get; };
+        String Message { get; };
+    }
+
     [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
     {
         TermControl(Microsoft.Terminal.TerminalControl.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -60,6 +74,8 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
@@ -87,8 +103,14 @@ namespace Microsoft.Terminal.TerminalControl
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
+        void ToggleShaderEffects();
         void SendInput(String input);
-        void ToggleRetroEffect();
+
+        void TaskbarProgressChanged();
+        UInt64 TaskbarState { get; };
+        UInt64 TaskbarProgress { get; };
+
+        String WorkingDirectory { get; };
 
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
         event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;

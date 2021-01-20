@@ -115,6 +115,10 @@ public:
 
     bool AddHyperlink(std::wstring_view uri, std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
+
+    bool SetTaskbarProgress(const size_t state, const size_t progress) noexcept override;
+    bool SetWorkingDirectory(std::wstring_view uri) noexcept override;
+    std::wstring_view GetWorkingDirectory() noexcept override;
 #pragma endregion
 
 #pragma region ITerminalInput
@@ -132,6 +136,7 @@ public:
 
     std::wstring GetHyperlinkAtPosition(const COORD position);
     uint16_t GetHyperlinkIdAtPosition(const COORD position);
+    std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> GetHyperlinkIntervalFromPosition(const COORD position);
 #pragma endregion
 
 #pragma region IBaseData(base to IRenderData and IUiaData)
@@ -161,6 +166,7 @@ public:
     const bool IsGridLineDrawingAllowed() noexcept override;
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
+    const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
 #pragma endregion
 
 #pragma region IUiaData
@@ -183,13 +189,20 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
     void SetCursorPositionChangedCallback(std::function<void()> pfn) noexcept;
     void SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept;
+    void TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept;
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
 
+    void UpdatePatterns() noexcept;
+    void ClearPatternTree() noexcept;
+
     const std::optional<til::color> GetTabColor() const noexcept;
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
+
+    const size_t GetTaskbarState() const noexcept;
+    const size_t GetTaskbarProgress() const noexcept;
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
@@ -216,6 +229,7 @@ private:
     std::function<void(const COLORREF)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
     std::function<void(const std::optional<til::color>)> _pfnTabColorChanged;
+    std::function<void()> _pfnTaskbarProgressChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;
@@ -223,6 +237,7 @@ private:
     std::optional<std::wstring> _title;
     std::wstring _startingTitle;
     std::optional<til::color> _tabColor;
+    std::optional<til::color> _startingTabColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
     COLORREF _defaultFg;
@@ -235,6 +250,12 @@ private:
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
 
+    size_t _taskbarState;
+    size_t _taskbarProgress;
+
+    size_t _hyperlinkPatternId;
+
+    std::wstring _workingDirectory;
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction
@@ -275,6 +296,10 @@ private:
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we should make this behavior controlled by a setting.
+
+    interval_tree::IntervalTree<til::point, size_t> _patternIntervalTree;
+    void _InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree);
+    void _InvalidateFromCoords(const COORD start, const COORD end);
 
     // Since virtual keys are non-zero, you assume that this field is empty/invalid if it is.
     struct KeyEventCodes

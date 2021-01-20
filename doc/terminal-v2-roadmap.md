@@ -25,9 +25,9 @@ Below is the schedule for when milestones will be included in release builds of 
 | 2020-07-31 | [1.2] in Windows Terminal Preview<br>[1.1] in Windows Terminal | [Windows Terminal Preview 1.2 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-2-release/) |
 | 2020-08-31 | [1.3] in Windows Terminal Preview<br>[1.2] in Windows Terminal | [Windows Terminal Preview 1.3 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-3-release/) |
 | 2020-09-30 | [1.4] in Windows Terminal Preview<br>[1.3] in Windows Terminal | [Windows Terminal Preview 1.4 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-4-release/) |
-| 2020-11-30 | [1.5] in Windows Terminal Preview<br>[1.4] in Windows Terminal | |
-| 2020-12-31 | 1.6 in Windows Terminal Preview<br>[1.5] in Windows Terminal | |
-| 2021-01-31 | 1.7 in Windows Terminal Preview<br>1.6 in Windows Terminal | |
+| 2020-11-30 | [1.5] in Windows Terminal Preview<br>[1.4] in Windows Terminal | [Windows Terminal Preview 1.5 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-5-release/) |
+| 2020-12-31 | [1.6] in Windows Terminal Preview<br>[1.5] in Windows Terminal | |
+| 2021-01-31 | 1.7 in Windows Terminal Preview<br>[1.6] in Windows Terminal | |
 | 2021-02-28 | 1.8 in Windows Terminal Preview<br>1.8 in Windows Terminal | |
 | 2021-03-31 | 1.9 in Windows Terminal Preview<br>1.9 in Windows Terminal | |
 | 2021-04-30 | 2.0 RC in Windows Terminal Preview<br>2.0 RC in Windows Terminal | |
@@ -49,14 +49,15 @@ The following are a list of the key scenarios we're aiming to deliver for Termin
 
 | Priority\* | Scenario | Description/Notes |
 | ---------- | -------- | ----------------- |
-| 0 | Settings UI | A user interface that connects to settings.json. This provides a way for people to edit their settings without having to edit a JSON file.<br><br>Issue: [#1564]<br>Specs: [#6720], [#6904]<br>Implementation: [#7283], [#7370] |
+| 0 | Settings UI | A user interface that connects to settings.json. This provides a way for people to edit their settings without having to edit a JSON file.<br><br>Issue: [#1564]<br>Specs: [#6720], [#6904]<br>Implementation: [#7283], [#7370], [#8048] |
 | 0 | Command palette | A popup menu to list possible actions and commands.<br><br>Issues: [#5400], [#2046]<br>Spec: [#2193]<br>Implementation: [#6635] |
-| 1 | Tab tear-off | The ability to tear a tab out of the current window and spawn a new window or attach it to a separate window.<br><br>Issue: [#1256]<br>Spec: [#2080] |
+| 1 | Tab tear-off | The ability to tear a tab out of the current window and spawn a new window or attach it to a separate window.<br><br>Issue: [#1256], [#5000]<br>Spec: [#2080], [#7240] |
 | 1 | Clickable links | Hyperlinking any links that appear in the text buffer. When clicking on the link, the link will open in your default browser.<br><br>Issue: [#574]<br>Implementation: [#7251] |
 | 1 | Default terminal | If a command-line application is spawned, it should open in Windows Terminal (if installed) or your preferred terminal<br><br>Issue: [#492]<br>Spec: [#2080], [#7414] |
 | 1 | Overall theme support | Tab coloring, title bar coloring, pane border coloring, pane border width, definition of what makes a theme<br><br>Issue: [#3327]<br>Spec: [#5772] |
-| 1 | Open tab as admin/other user | Open tab in existing Windows Terminal instance as admin (if Terminal was run unelevated) or as another user.<br><br>Issue: [#5000] |
-| 1 | Traditional opacity | Have a transparent background without the acrylic blur.<br><br>Issue: [#603] |
+| 1 | Open profile elevated | Configure profiles to always open elevated (if Terminal was run unelevated)<br><br>Issue: [#5000], [#632]<br>Spec: [#8455] |
+| 1 | Open tab in existing window | Open new tabs in existing Terminal windows<br><br>Issue: [#5000], [#4472]<br>Spec: [#8135] |
+| 1 | Traditional opacity | Have a transparent background without the acrylic blur.<br><br>Issue: [#603] <br>**Current State**: Blocked on WinUI 3.0 |
 | 2 | SnapOnOutput, scroll lock | Pause output or scrolling on click.<br><br>Issue: [#980]<br>Spec: [#2529]<br>Implementation: [#6062] |
 | 2 | Infinite scrollback | Have an infinite history for the text buffer.<br><br>Issue: [#1410] |
 | 2 | Pane management | All issues listed out in the original issue. Some features include pane resizing with mouse, pane zooming, and opening a pane by prompting which profile to use.<br><br>Issue: [#1000] |
@@ -82,6 +83,7 @@ Feature Notes:
 [1.3]: https://github.com/microsoft/terminal/milestone/26
 [1.4]: https://github.com/microsoft/terminal/milestone/28
 [1.5]: https://github.com/microsoft/terminal/milestone/30
+[1.6]: https://github.com/microsoft/terminal/milestone/31
 [2.0]: https://github.com/microsoft/terminal/milestone/22
 [#1564]: https://github.com/microsoft/terminal/issues/1564
 [#6720]: https://github.com/microsoft/terminal/pull/6720
@@ -118,3 +120,9 @@ Feature Notes:
 [#766]: https://github.com/microsoft/terminal/issues/766
 [#653]: https://github.com/microsoft/terminal/issues/653
 [#1553]: https://github.com/microsoft/terminal/issues/1553
+[#7240]: https://github.com/microsoft/terminal/pull/7240
+[#8135]: https://github.com/microsoft/terminal/pull/8135
+[#8455]: https://github.com/microsoft/terminal/pull/8455
+[#632]: https://github.com/microsoft/terminal/issues/632
+[#4472]: https://github.com/microsoft/terminal/issues/4472
+[#8048]: https://github.com/microsoft/terminal/pull/8048
