@@ -1006,6 +1006,13 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    std::vector<std::shared_ptr<Pane>> TerminalTab::GetLeafPanes()
+    {
+        std::vector<std::shared_ptr<Pane>> leaves;
+        _rootPane->CollectLeaves(leaves);
+        return leaves;
+    }
+
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);

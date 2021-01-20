@@ -74,6 +74,8 @@ namespace winrt::TerminalApp::implementation
 
         int GetLeafPaneCount() const noexcept;
 
+        std::vector<std::shared_ptr<Pane>> GetLeafPanes();
+
         DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
         DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);

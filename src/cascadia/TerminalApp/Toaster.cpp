@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
 
     void Toaster::MakeToast(const hstring& title,
                             const hstring& subtitle,
-                            const WUX::Controls::Control& target)
+                            const WUX::FrameworkElement& target)
     {
         auto t = winrt::make_self<Toast>();
         t->Closed({ this, &Toaster::_onToastClosed });
@@ -40,6 +40,7 @@ namespace winrt::TerminalApp::implementation
             {
                 tt.Target(target);
             }
+            tt.PreferredPlacement(MUX::Controls::TeachingTipPlacementMode::Center);
             if (_root)
             {
                 auto c = _root.Children();

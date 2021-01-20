@@ -256,6 +256,11 @@ namespace winrt::TerminalApp::implementation
             _BreakIntoDebuggerHandlers(*this, eventArgs);
             break;
         }
+        case ShortcutAction::ShowPaneIds:
+        {
+            _ShowPaneIdsHandlers(*this, eventArgs);
+            break;
+        }
         default:
             return false;
         }

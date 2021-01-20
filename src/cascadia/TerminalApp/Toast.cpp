@@ -24,7 +24,7 @@ namespace winrt::TerminalApp::implementation
         // Disable the "X" on the toast - the user can dismiss it by clicking anywhere
         _root.IsLightDismissEnabled(true);
         _root.IsTabStop(false);
-
+        _root.TailVisibility(Microsoft::UI::Xaml::Controls::TeachingTipTailVisibility::Collapsed);
         static constexpr auto DismissInterval = std::chrono::microseconds(static_cast<int>((3.0) * 1000000));
         _dismissTimer.Interval(DismissInterval);
         _dismissTimer.Tick({ get_weak(), &Toast::_onDismiss });

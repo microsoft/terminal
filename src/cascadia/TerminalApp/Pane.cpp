@@ -2069,5 +2069,18 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
     FAIL_FAST();
 }
 
+void Pane::CollectLeaves(std::vector<std::shared_ptr<Pane>>& leaves)
+{
+    if (_IsLeaf())
+    {
+        leaves.push_back(shared_from_this());
+    }
+    else
+    {
+        _firstChild->CollectLeaves(leaves);
+        _secondChild->CollectLeaves(leaves);
+    }
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseVisualBell, _PaneRaiseVisualBellHandlers, winrt::delegate<std::shared_ptr<Pane>>);

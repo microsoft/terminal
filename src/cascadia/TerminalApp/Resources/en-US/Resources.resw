@@ -544,4 +544,8 @@
   <data name="ClipboardTextHeader.Text" xml:space="preserve">
     <value>Clipboard contents (preview):</value>
   </data>
+  <data name="PaneIdToastTitle" xml:space="preserve">
+    <value>Pane {0}</value>
+    <comment>{0} will be replaced with a number</comment>
+  </data>
 </root>

@@ -6,7 +6,7 @@ namespace TerminalApp
     [default_interface] runtimeclass Toaster
     {
         Toaster(Windows.UI.Xaml.Controls.Grid root);
-        void MakeToast(String title, String subtitle, Windows.UI.Xaml.Controls.Control target);
+        void MakeToast(String title, String subtitle, Windows.UI.Xaml.FrameworkElement target);
         // Windows.UI.Xaml.Controls.ContentControl Root();
         // Microsoft.UI.Xaml.Controls.TeachingTip Root();
 

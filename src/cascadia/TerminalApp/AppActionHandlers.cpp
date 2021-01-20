@@ -6,6 +6,7 @@
 
 #include "TerminalPage.h"
 #include "Utils.h"
+#include <LibraryResources.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -557,4 +558,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleShowPaneIds(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& actionArgs)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            auto panes{ activeTab->GetLeafPanes() };
+            for (const auto& p : panes)
+            {
+                const auto root = p->GetRootElement();
+                const auto id = p->Id();
+                const hstring paneTitle = p->GetTerminalControl() ? p->GetTerminalControl().Title() : hstring{ L"" };
+
+                hstring title{
+                    fmt::format(RS_(L"PaneIdToastTitle").c_str(), id)
+                };
+                _toaster.MakeToast(title, paneTitle, root);
+            }
+        }
+        actionArgs.Handled(true);
+    }
 }
