@@ -24,9 +24,9 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
         pair_type{ "bar", ValueType::Bar },
         pair_type{ "vintage", ValueType::Vintage },
         pair_type{ "underscore", ValueType::Underscore },
+        pair_type{ "doubleUnderscore", ValueType::DoubleUnderscore },
         pair_type{ "filledBox", ValueType::FilledBox },
-        pair_type{ "emptyBox", ValueType::EmptyBox },
-        pair_type{ "doubleUnderscore", ValueType::DoubleUnderscore }
+        pair_type{ "emptyBox", ValueType::EmptyBox }
     };
 };
 
