@@ -58,7 +58,7 @@
     <!--Used for flyout messages-->
     <Style x:Key="CustomFlyoutTextStyle" TargetType="TextBlock" BasedOn="{StaticResource BaseTextBlockStyle}">
         <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Margin" Value="0,0,0,12"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
 
     <!--Number Box-->
@@ -74,11 +74,24 @@
 
     <Style x:Key="BrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
         <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="Height" Value="33"/>
+    </Style>
+
+    <Style x:Key="SmallButtonStyle" TargetType="Button" BasedOn="{StaticResource BrowseButtonStyle}">
+        <Setter Property="Height" Value="33"/>
+        <Setter Property="Width" Value="33"/>
     </Style>
 
     <Style x:Key="AccentBrowseButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
         <Setter Property="Margin" Value="10,0,0,0"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+
+    <Style x:Key="AccentSmallButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+        <Setter Property="Margin" Value="10,0,0,0"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+        <Setter Property="Height" Value="33"/>
+        <Setter Property="Width" Value="33"/>
     </Style>
 
     <Style x:Key="IconButtonTextBlockStyle" TargetType="TextBlock">

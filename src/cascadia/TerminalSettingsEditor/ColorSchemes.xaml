@@ -24,7 +24,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Style>
 
             <Style x:Key="ColorHeaderStyle" TargetType="TextBlock">
-                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="Margin" Value="0,0,0,5"/>
             </Style>
 
             <Style TargetType="Button">
@@ -85,13 +85,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <!--Rename Button-->
                     <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
                     <Button x:Uid="Rename"
-                            Style="{StaticResource BrowseButtonStyle}"
+                            Style="{StaticResource SmallButtonStyle}"
                             Click="Rename_Click"
                             IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon Glyph="&#xE8AC;"
                                       FontSize="{StaticResource StandardIconSize}"/>
-                            <TextBlock/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -102,21 +101,19 @@ the MIT License. See LICENSE in the project root for license information. -->
                              Style="{StaticResource TextBoxSettingStyle}"
                              PreviewKeyDown="NameBox_PreviewKeyDown"/>
                     <Button x:Uid="RenameAccept"
-                            Style="{StaticResource AccentBrowseButtonStyle}"
+                            Style="{StaticResource AccentSmallButtonStyle}"
                             Click="RenameAccept_Click">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon Glyph="&#xE8FB;"
                                       FontSize="{StaticResource StandardIconSize}"/>
-                            <TextBlock/>
                         </StackPanel>
                     </Button>
                     <Button x:Uid="RenameCancel"
-                            Style="{StaticResource BrowseButtonStyle}"
+                            Style="{StaticResource SmallButtonStyle}"
                             Click="RenameCancel_Click">
                         <StackPanel Orientation="Horizontal">
                             <FontIcon Glyph="&#xE711;"
                                       FontSize="{StaticResource StandardIconSize}"/>
-                            <TextBlock/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
