@@ -18,57 +18,11 @@
 #pragma warning(push)
 #pragma warning(disable : 26447) // small_vector's constructor says it can throw but it should not given how we use it.  This suppresses this error for the AuditMode build.
 CharRow::CharRow(size_t rowWidth, ROW* const pParent) noexcept :
-    _wrapForced{ false },
-    _doubleBytePadded{ false },
     _data(rowWidth, value_type()),
     _pParent{ FAIL_FAST_IF_NULL(pParent) }
 {
 }
 #pragma warning(pop)
-
-// Routine Description:
-// - Sets the wrap status for the current row
-// Arguments:
-// - wrapForced - True if the row ran out of space and we forced to wrap to the next row. False otherwise.
-// Return Value:
-// - <none>
-void CharRow::SetWrapForced(const bool wrapForced) noexcept
-{
-    _wrapForced = wrapForced;
-}
-
-// Routine Description:
-// - Gets the wrap status for the current row
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the row ran out of space and we were forced to wrap to the next row. False otherwise.
-bool CharRow::WasWrapForced() const noexcept
-{
-    return _wrapForced;
-}
-
-// Routine Description:
-// - Sets the double byte padding for the current row
-// Arguments:
-// - fWrapWasForced - True if the row ran out of space for a double byte character and we padded out the row. False otherwise.
-// Return Value:
-// - <none>
-void CharRow::SetDoubleBytePadded(const bool doubleBytePadded) noexcept
-{
-    _doubleBytePadded = doubleBytePadded;
-}
-
-// Routine Description:
-// - Gets the double byte padding status for the current row.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the row didn't have space for a double byte character and we were padded out the row. False otherwise.
-bool CharRow::WasDoubleBytePadded() const noexcept
-{
-    return _doubleBytePadded;
-}
 
 // Routine Description:
 // - gets the size of the row, in glyph cells
@@ -93,9 +47,6 @@ void CharRow::Reset() noexcept
     {
         cell.Reset();
     }
-
-    _wrapForced = false;
-    _doubleBytePadded = false;
 }
 
 // Routine Description:

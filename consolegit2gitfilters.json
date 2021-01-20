@@ -21,7 +21,8 @@
     "/res/terminal/",
     "/doc/specs/",
     "/doc/cascadia/",
-    "/doc/user-docs/"
+    "/doc/user-docs/",
+    "/src/tools/MonarchPeasantSample/",
   ],
   "SuffixFilters": [
     ".dbb",
@@ -38,5 +39,5 @@
     ".rec",
     ".err",
     ".xlsx"
-  ]    
+  ]
 }

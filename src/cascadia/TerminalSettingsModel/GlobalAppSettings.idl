@@ -142,5 +142,9 @@ namespace Microsoft.Terminal.Settings.Model
         KeyMapping KeyMap();
 
         Windows.Foundation.Collections.IMapView<String, Command> Commands();
+
+        Boolean HasStartupActions();
+        void ClearStartupActions();
+        String StartupActions();
     }
 }
