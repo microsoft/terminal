@@ -126,7 +126,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
                             <StackPanel Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
                                 <Button IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
-                                    Margin="0,0,0,10">
+                                    Style="{StaticResource DeleteButtonStyle}">
                                     <Button.Resources>
                                         <ResourceDictionary>
                                             <ResourceDictionary.ThemeDictionaries>

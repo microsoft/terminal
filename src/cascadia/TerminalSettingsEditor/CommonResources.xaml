@@ -77,6 +77,10 @@
         <Setter Property="Height" Value="33"/>
     </Style>
 
+    <Style x:Key="DeleteButtonStyle" TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
+        <Setter Property="Margin" Value="0,0,0,10"/>
+    </Style>
+
     <Style x:Key="SmallButtonStyle" TargetType="Button" BasedOn="{StaticResource BrowseButtonStyle}">
         <Setter Property="Height" Value="33"/>
         <Setter Property="Width" Value="33"/>
