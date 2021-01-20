@@ -103,6 +103,7 @@
         <Setter Property="Width" Value="35"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="5,0,0,0"/>
     </Style>
 
     <Style x:Key="SliderHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource CustomSettingHeaderStyle}">
@@ -110,7 +111,7 @@
     </Style>
 
     <Style x:Key="CustomSliderControlGridStyle" TargetType="Grid">
-        <Setter Property="Width" Value="300"/>
+        <Setter Property="Width" Value="{StaticResource StandardBoxMinWidth}"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
 </ResourceDictionary>
