@@ -202,7 +202,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     // We avoid navigation to the first result to prevent auto-scrolling.
                     if (control->_searchState.has_value())
                     {
-                        const SearchState searchState{ control->_searchState.value().Text, control->_searchState.value().CaseSensitive };
+                        const SearchState searchState{ control->_searchState->Text, control->_searchState->Sensitivity };
                         control->_searchState.emplace(searchState);
                         control->_SearchAsync(std::nullopt, SearchAfterOutputDelay);
                     }
@@ -283,11 +283,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const auto originalSearchId = _searchState.value().SearchId;
+        const auto originalSearchId = _searchState->SearchId;
         auto weakThis{ this->get_weak() };
 
         // If no matches were computed it means we need to perform the search
-        if (!_searchState.value().Matches.has_value())
+        if (!_searchState->Matches.has_value())
         {
             // Before we search, let's wait a bit:
             // probably the search criteria or the data are still modified.
@@ -298,7 +298,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (auto control{ weakThis.get() })
             {
                 // If search box was collapsed or the new one search was triggered - let's cancel this one
-                if (!_searchState.has_value() || _searchState.value().SearchId != originalSearchId)
+                if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
                 {
                     co_return;
                 }
@@ -311,19 +311,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 }
 
                 std::vector<std::pair<COORD, COORD>> matches;
-                if (!_searchState.value().Text.empty())
+                if (!_searchState->Text.empty())
                 {
-                    const Search::Sensitivity sensitivity = _searchState.value().CaseSensitive ?
-                                                                Search::Sensitivity::CaseSensitive :
-                                                                Search::Sensitivity::CaseInsensitive;
-
                     // We perform explicit search forward, so the first result will also be the earliest buffer location
                     // We will use goForward later to decide if we need to select 1 of n or n of n.
-                    Search search(*GetUiaData(), _searchState.value().Text.c_str(), Search::Direction::Forward, sensitivity);
+                    Search search(*GetUiaData(), _searchState->Text.c_str(), Search::Direction::Forward, _searchState->Sensitivity);
                     while (co_await _SearchOne(search))
                     {
                         // if search box was collapsed or the new one search was triggered - let's cancel this one
-                        if (!_searchState.has_value() || _searchState.value().SearchId != originalSearchId)
+                        if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
                         {
                             co_return;
                         }
@@ -332,12 +328,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
 
                     // if search box was collapsed or the new one search was triggered - let's cancel this one
-                    if (!_searchState.has_value() || _searchState.value().SearchId != originalSearchId)
+                    if (!_searchState.has_value() || _searchState->SearchId != originalSearchId)
                     {
                         co_return;
                     }
                 }
-                _searchState.value().Matches.emplace(matches);
+                _searchState->Matches.emplace(std::move(matches));
             }
         }
 
@@ -357,7 +353,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SelectSearchResult(std::optional<bool> goForward)
     {
-        if (_searchState.has_value() && _searchState.value().Matches.has_value())
+        if (_searchState.has_value() && _searchState->Matches.has_value())
         {
             auto& state = _searchState.value();
             auto& matches = state.Matches.value();
@@ -371,7 +367,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     auto lock = _terminal->LockForWriting();
                     _terminal->SetBlockSelection(false);
-                    _terminal->SelectNewRegion(currentMatch.value().first, currentMatch.value().second);
+                    _terminal->SelectNewRegion(currentMatch->first, currentMatch->second);
                     _renderer->TriggerSelection();
                 }
             }
@@ -379,7 +375,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (_searchBox)
             {
                 _searchBox->SetStatus(gsl::narrow<int32_t>(matches.size()), state.CurrentMatchIndex);
-                _searchBox->SetNavigationEnabled(!_searchState.value().Matches.value().empty());
+                _searchBox->SetNavigationEnabled(!_searchState->Matches->empty());
             }
         }
     }
@@ -424,7 +420,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
 
-            const SearchState searchState{ text, caseSensitive };
+            const auto sensitivity = caseSensitive ? Search::Sensitivity::CaseSensitive : Search::Sensitivity::CaseInsensitive;
+            const SearchState searchState{ text, sensitivity };
             _searchState.emplace(searchState);
             _SearchAsync(goForward, SearchAfterChangeDelay);
         }
@@ -3453,7 +3450,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (Matches.has_value())
         {
-            const int numMatches = ::base::saturated_cast<int>(Matches.value().size());
+            const int numMatches = ::base::saturated_cast<int>(Matches->size());
             if (numMatches > 0)
             {
                 if (CurrentMatchIndex == -1)
@@ -3477,7 +3474,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // (e.g., when the index is -1 or there are no matches)
     std::optional<std::pair<COORD, COORD>> SearchState::GetCurrentMatch()
     {
-        if (Matches.has_value() && CurrentMatchIndex > -1 && CurrentMatchIndex < Matches.value().size())
+        if (Matches.has_value() && CurrentMatchIndex > -1 && CurrentMatchIndex < Matches->size())
         {
             return til::at(Matches.value(), CurrentMatchIndex);
         }

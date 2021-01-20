@@ -308,7 +308,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - the size in pixels
     double SearchBoxControl::_TextWidth(winrt::hstring text, double fontSize)
     {
-        auto t = winrt::Windows::UI::Xaml::Controls::TextBlock();
+        winrt::Windows::UI::Xaml::Controls::TextBlock t;
         t.FontSize(fontSize);
         t.Text(text);
         t.Measure({ FLT_MAX, FLT_MAX });
