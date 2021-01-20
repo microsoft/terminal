@@ -363,8 +363,8 @@ bool WddmConEngine::IsInitialized()
 
     _dirtyArea = r;
 
-    _area = { &_dirtyArea,
-              1 };
+    area = { &_dirtyArea,
+             1 };
 
     return S_OK;
 }
