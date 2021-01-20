@@ -45,6 +45,11 @@
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>
     </Style>
 
+    <!--Toggle Switch-->
+    <Style x:Key="ToggleSwitchSettingStyle" TargetType="ToggleSwitch" BasedOn="{StaticResource DefaultToggleSwitchStyle}">
+        <Setter Property="ToolTipService.Placement" Value="Mouse"/>
+    </Style>
+
     <!--Combo Box-->
     <Style x:Key="ComboBoxSettingStyle" TargetType="ComboBox" BasedOn="{StaticResource DefaultComboBoxStyle}">
         <Setter Property="ToolTipService.Placement" Value="Mouse"/>

@@ -117,9 +117,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <!--Hidden-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}"
                                           Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
-                            <CheckBox x:Uid="Profile_Hidden"
-                                      IsChecked="{x:Bind State.Profile.Hidden, Mode=TwoWay}"
-                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                            <ToggleSwitch x:Uid="Profile_Hidden"
+                                          IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}"
+                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
                         </ContentPresenter>
 
                         <!--Delete Button-->
@@ -263,9 +263,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                             <!--Retro Terminal Effect-->
                             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                                <CheckBox x:Uid="Profile_RetroTerminalEffect"
-                                      IsChecked="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
-                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                                <ToggleSwitch x:Uid="Profile_RetroTerminalEffect"
+                                              IsOn="{x:Bind State.Profile.RetroTerminalEffect, Mode=TwoWay}"
+                                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
                             </ContentPresenter>
                         </StackPanel>
 
@@ -514,15 +514,15 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                             <!--Use Acrylic-->
                             <ContentPresenter>
-                                <CheckBox x:Uid="Profile_UseAcrylic"
-                                      x:Name="UseAcrylicCheckBox"
-                                      IsChecked="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"
-                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                                <ToggleSwitch x:Uid="Profile_UseAcrylic"
+                                              x:Name="UseAcrylicToggleSwitch"
+                                              IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"
+                                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
                             </ContentPresenter>
 
                             <!--Acrylic Opacity-->
                             <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                                          Visibility="{Binding ElementName=UseAcrylicCheckBox, Path=IsChecked, Mode=OneWay}">
+                                          Visibility="{Binding ElementName=UseAcrylicToggleSwitch, Path=IsOn, Mode=OneWay}">
                                 <StackPanel x:Name="AcrylicOpacityControl">
                                     <TextBlock x:Uid="Profile_AcrylicOpacity"
                                            Style="{StaticResource SliderHeaderStyle}"/>
@@ -572,9 +572,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--Suppress Application Title-->
                         <ContentPresenter>
-                            <CheckBox x:Uid="Profile_SuppressApplicationTitle"
-                                      IsChecked="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"
-                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                            <ToggleSwitch x:Uid="Profile_SuppressApplicationTitle"
+                                          IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"
+                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
                         </ContentPresenter>
 
                         <!--Antialiasing Mode-->
@@ -588,16 +588,16 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--AltGr Aliasing-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <CheckBox x:Uid="Profile_AltGrAliasing"
-                                      IsChecked="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"
-                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                            <ToggleSwitch x:Uid="Profile_AltGrAliasing"
+                                          IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}"
+                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
                         </ContentPresenter>
 
                         <!--Snap On Input-->
                         <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                            <CheckBox x:Uid="Profile_SnapOnInput"
-                                      IsChecked="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"
-                                      Style="{StaticResource CheckBoxSettingStyle}"/>
+                            <ToggleSwitch x:Uid="Profile_SnapOnInput"
+                                          IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}"
+                                          Style="{StaticResource ToggleSwitchSettingStyle}"/>
                         </ContentPresenter>
 
                         <!--History Size-->

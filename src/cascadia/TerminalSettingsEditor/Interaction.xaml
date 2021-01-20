@@ -27,9 +27,9 @@ the MIT License. See LICENSE in the project root for license information. -->
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
             <ContentPresenter>
-                <CheckBox x:Uid="Globals_CopyOnSelect"
-                          IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_CopyOnSelect"
+                              IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
              </ContentPresenter>
 
             <!--Copy Format-->
@@ -50,9 +50,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!--Snap On Resize-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_SnapToGridOnResize"
-                          IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_SnapToGridOnResize"
+                              IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
             </ContentPresenter>
             
             <!--Tab Switcher Mode-->

@@ -36,30 +36,30 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!--Always show tabs-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_AlwaysShowTabs"
-                          IsChecked="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_AlwaysShowTabs"
+                              IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
             </ContentPresenter>
 
             <!--Show Titlebar-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ShowTitlebar"
-                          IsChecked="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_ShowTitlebar"
+                              IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
             </ContentPresenter>
 
             <!--Show Title in Titlebar-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_ShowTitleInTitlebar"
-                          IsChecked="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_ShowTitleInTitlebar"
+                              IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
             </ContentPresenter>
 
             <!--Always on Top-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_AlwaysOnTop"
-                          IsChecked="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_AlwaysOnTop"
+                              IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
             </ContentPresenter>
 
             <!--Tab Width Mode-->
@@ -73,9 +73,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!--Disable Animations-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_DisableAnimations"
-                          IsChecked="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_DisableAnimations"
+                              IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay}"
+                              Style="{StaticResource ToggleSwitchSettingStyle}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>

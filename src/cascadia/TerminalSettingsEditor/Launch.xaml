@@ -70,9 +70,9 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <!--Start on User Login-->
                 <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                    <CheckBox x:Uid="Globals_StartOnUserLogin"
-                          IsChecked="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                    <ToggleSwitch x:Uid="Globals_StartOnUserLogin"
+                                  IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"
+                                  Style="{StaticResource ToggleSwitchSettingStyle}"/>
                 </ContentPresenter>
 
                 <!--Launch Mode-->
