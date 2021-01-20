@@ -143,6 +143,7 @@ namespace winrt::TerminalApp::implementation
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
 
@@ -174,7 +175,7 @@ namespace winrt::TerminalApp::implementation
 
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
-        void _RemoveTabViewItemByIndex(uint32_t tabIndex);
+        winrt::Windows::Foundation::IAsyncOperation<IInspectable> _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, TerminalTab& hostingTab);
 
@@ -190,7 +191,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
-        void _CloseAllTabs();
+        winrt::fire_and_forget _CloseAllTabs();
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
@@ -305,6 +306,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleOpenTabSearch(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleMoveTab(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
         void _HandleBreakIntoDebugger(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+        void _HandleTogglePaneReadOnly(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
+
         // Make sure to hook new actions up in _RegisterActionCallbacks!
 #pragma endregion
 

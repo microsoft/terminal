@@ -164,11 +164,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const size_t TaskbarState() const noexcept;
         const size_t TaskbarProgress() const noexcept;
 
+        bool ReadOnly() const noexcept;
+        void ToggleReadOnly();
+
         // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(FontSizeChanged,          _fontSizeChangedHandlers,           TerminalControl::FontSizeChangedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+        DECLARE_EVENT(ReadOnlyChanged,          _readOnlyChangedHandlers,           TerminalControl::ReadOnlyChangedEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
@@ -261,6 +265,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        bool _isReadOnly{ false };
+
         void _ApplyUISettings();
         void _UpdateSystemParameterSettings() noexcept;
         void _InitializeBackgroundBrush();
@@ -335,6 +341,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
 
         winrt::fire_and_forget _AsyncCloseConnection();
+
+        winrt::fire_and_forget _RaiseReadOnlyWarning();
     };
 }
 

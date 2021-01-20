@@ -27,7 +27,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-    
+
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <mux:ProgressRing x:Name="HeaderProgressRing"
@@ -47,6 +47,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                   FontFamily="Segoe MDL2 Assets"
                   Visibility="{x:Bind IsPaneZoomed, Mode=OneWay}"
                   Glyph="&#xE8A3;"
+                  FontSize="12"
+                  Margin="0,0,8,0"/>
+        <FontIcon x:Name="HeaderLockIcon"
+                  FontFamily="Segoe MDL2 Assets"
+                  Visibility="{x:Bind IsReadOnlyActive, Mode=OneWay}"
+                  Glyph="&#xE72E;"
                   FontSize="12"
                   Margin="0,0,8,0"/>
         <TextBlock x:Name="HeaderTextBlock"

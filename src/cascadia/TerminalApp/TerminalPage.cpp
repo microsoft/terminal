@@ -439,6 +439,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal tab marked as read-only
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCloseReadOnlyDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"CloseReadOnlyDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    // Method Description:
     // - Displays a dialog to warn the user about the fact that the text that
     //   they are trying to paste contains the "new line" character which can
     //   have the effect of starting commands without the user's knowledge if
@@ -1022,6 +1033,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
+        _actionDispatch->TogglePaneReadOnly({ this, &TerminalPage::_HandleTogglePaneReadOnly });
     }
 
     // Method Description:
@@ -1149,7 +1161,7 @@ namespace winrt::TerminalApp::implementation
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
     // - tabIndex: the index of the tab to be removed
-    void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
+    winrt::Windows::Foundation::IAsyncOperation<IInspectable> TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
         // We use _removing flag to suppress _OnTabSelectionChanged events
         // that might get triggered while removing
@@ -1161,6 +1173,19 @@ namespace winrt::TerminalApp::implementation
         // Removing the tab from the collection should destroy its control and disconnect its connection,
         // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
         auto tab{ _tabs.GetAt(tabIndex) };
+
+        if (!tab.TabViewItem().IsClosable())
+        {
+            _displayingCloseDialog = true;
+            ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+            _displayingCloseDialog = false;
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return winrt::box_value(false);
+            }
+        }
+
         tab.Shutdown();
 
         uint32_t mruIndex;
@@ -1233,6 +1258,8 @@ namespace winrt::TerminalApp::implementation
             _rearrangeFrom = std::nullopt;
             _rearrangeTo = std::nullopt;
         }
+
+        co_return winrt::box_value(true);
     }
 
     // Method Description:
@@ -1545,11 +1572,16 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Remove all the tabs opened and the terminal will terminate
     //   on its own when the last tab is closed.
-    void TerminalPage::_CloseAllTabs()
+    winrt::fire_and_forget TerminalPage::_CloseAllTabs()
     {
-        while (_tabs.Size() != 0)
+        auto index = 0u;
+        while (index < _tabs.Size())
         {
-            _RemoveTabViewItemByIndex(0);
+            const auto tabClosed = co_await _RemoveTabViewItemByIndex(index);
+            if (!winrt::unbox_value<bool>(tabClosed))
+            {
+                index++;
+            }
         }
     }
 

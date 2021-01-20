@@ -889,7 +889,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         const auto modifiers{ _GetPressedModifierKeys() };
         auto handled = false;
-        if (vkey == VK_MENU && !down)
+        if (vkey == VK_MENU && !down && !_isReadOnly)
         {
             // Manually generate an Alt KeyUp event into the key bindings or terminal.
             //   This is required as part of GH#6421.
@@ -965,6 +965,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto modifiers = _GetPressedModifierKeys();
         const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+
+        if (_isReadOnly)
+        {
+            e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
+            return;
+        }
+
         if (e.KeyStatus().IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
@@ -2013,12 +2020,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_SendInputToConnection(const winrt::hstring& wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     void TermControl::_SendInputToConnection(std::wstring_view wstr)
     {
-        _connection.WriteInput(wstr);
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+        }
+        else
+        {
+            _connection.WriteInput(wstr);
+        }
     }
 
     // Method Description:
@@ -2028,6 +2049,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Also converts \n line-endings to \r line-endings
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
+        if (_isReadOnly)
+        {
+            _RaiseReadOnlyWarning();
+            return;
+        }
+
         // Some notes on this implementation:
         //
         // - std::regex can do this in a single line, but is somewhat
@@ -3267,12 +3294,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal->GetTaskbarProgress();
     }
 
+    // Method Description:
+    // - Checks whether the control is in a read-only mode (in this mode node input is sent to connection).
+    // Return Value:
+    // - True if the mode is read-only
+    bool TermControl::ReadOnly() const noexcept
+    {
+        return _isReadOnly;
+    }
+
+    // Method Description:
+    // - Toggles the read-only flag, raises event describing the value change
+    void TermControl::ToggleReadOnly()
+    {
+        _isReadOnly = !_isReadOnly;
+        _readOnlyChangedHandlers(_isReadOnly);
+    }
+
+    winrt::fire_and_forget TermControl::_RaiseReadOnlyWarning()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"TermControlReadOnly"));
+            control->_raiseNoticeHandlers(*control, std::move(noticeArgs));
+        }
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControl, FontSizeChanged, _fontSizeChangedHandlers, TerminalControl::FontSizeChangedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
+    DEFINE_EVENT(TermControl, ReadOnlyChanged, _readOnlyChangedHandlers, TerminalControl::ReadOnlyChangedEventArgs);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);

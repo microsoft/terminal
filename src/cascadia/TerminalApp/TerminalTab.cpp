@@ -529,6 +529,16 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        control.ReadOnlyChanged([weakThis](auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                // The control's tabColor changed, but it is not necessarily the
+                // active control in this tab. We'll just recalculate the
+                // current color anyways.
+                tab->_RecalculateAndApplyReadOnly();
+            }
+        });
     }
 
     // Method Description:
@@ -561,6 +571,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
         _mruPanes.insert(_mruPanes.begin(), paneId);
+
+        _RecalculateAndApplyReadOnly();
+
         // Raise our own ActivePaneChanged event.
         _ActivePaneChangedHandlers();
     }
@@ -1004,6 +1017,26 @@ namespace winrt::TerminalApp::implementation
     bool TerminalTab::IsZoomed()
     {
         return _zoomedPane != nullptr;
+    }
+
+    void TerminalTab::TogglePaneReadOnly()
+    {
+        auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            control.ToggleReadOnly();
+        }
+    }
+
+    void TerminalTab::_RecalculateAndApplyReadOnly()
+    {
+        auto control = GetActiveTerminalControl();
+        if (control)
+        {
+            _headerControl.IsReadOnlyActive(control.ReadOnly());
+        }
+
+        TabViewItem().IsClosable(!_rootPane->ContainsReadOnly());
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
