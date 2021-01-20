@@ -16,6 +16,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "Toaster.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -115,6 +116,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Hookup the key bindings
         _HookupKeyBindings(_settings.KeyMap());
+        auto tr = winrt::make_self<Toaster>(this->TabContent());
+        _toaster = *tr;
 
         _tabContent = this->TabContent();
         _tabRow = this->TabRow();
@@ -391,15 +394,16 @@ namespace winrt::TerminalApp::implementation
     {
         _startupState = StartupState::Initialized;
 
-        Toast t;
-        if (auto tt = t.Root().try_as<MUX::Controls::TeachingTip>())
-        {
-            tt.Title({ L"Title" });
-            tt.Subtitle({ L"Subtitle" });
-            Root().Children().Append(tt);
-            t.Show();
-        }
-        _appLevelToast = t;
+        _toaster.MakeToast({ L"Title" }, { L"Subtitle" }, nullptr);
+        // Toast t;
+        // if (auto tt = t.Root().try_as<MUX::Controls::TeachingTip>())
+        // {
+        //     tt.Title({ L"Title" });
+        //     tt.Subtitle({ L"Subtitle" });
+        //     Root().Children().Append(tt);
+        //     t.Show();
+        // }
+        // _appLevelToast = t;
 
         _InitializedHandlers(*this, nullptr);
     }

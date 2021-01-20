@@ -141,7 +141,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
 
-        TerminalApp::Toast _appLevelToast{ nullptr };
+        TerminalApp::Toaster _toaster{ nullptr };
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();

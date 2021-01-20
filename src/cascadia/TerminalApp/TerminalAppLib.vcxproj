@@ -84,6 +84,9 @@
     <ClInclude Include="Toast.h">
       <DependentUpon>Toast.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Toaster.h">
+      <DependentUpon>Toaster.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PaletteItem.h" />
     <ClInclude Include="TabBase.h">
       <DependentUpon>TabBase.idl</DependentUpon>
@@ -158,6 +161,9 @@
     </ClCompile>
     <ClCompile Include="Toast.cpp">
       <DependentUpon>Toast.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="Toaster.cpp">
+      <DependentUpon>Toaster.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="PaletteItem.cpp" />
     <ClCompile Include="TabBase.cpp">
@@ -277,6 +283,7 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="Toast.idl" />
+    <Midl Include="Toaster.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
     <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
     <Midl Include="TerminalSettings.idl" />

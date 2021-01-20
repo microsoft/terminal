@@ -1,0 +1,16 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass Toaster
+    {
+        Toaster(Windows.UI.Xaml.Controls.Grid root);
+        void MakeToast(String title, String subtitle, Windows.UI.Xaml.Controls.Control target);
+        // Windows.UI.Xaml.Controls.ContentControl Root();
+        // Microsoft.UI.Xaml.Controls.TeachingTip Root();
+
+        // event Windows.Foundation.TypedEventHandler<Toast, Windows.UI.Xaml.RoutedEventArgs> Closed;
+
+    }
+}

@@ -18,6 +18,8 @@ namespace winrt::TerminalApp::implementation
         // WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         // OBSERVABLE_GETSET_PROPERTY(Microsoft::UI::Xaml::Controls::TeachingTip, Root, _PropertyChangedHandlers, nullptr);
 
+        TYPED_EVENT(Closed, IInspectable, IInspectable);
+
     private:
         Windows::UI::Xaml::DispatcherTimer _dismissTimer{ nullptr };
         Microsoft::UI::Xaml::Controls::TeachingTip _root{ nullptr };

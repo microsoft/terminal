@@ -50,5 +50,8 @@ namespace winrt::TerminalApp::implementation
         // Root().Visibility(Visibility::Collapsed);
         _root.IsOpen(false);
         // }
+
+        // TODO: this isn't working.
+        // _ClosedHandlers(*this, nullptr);
     }
 }

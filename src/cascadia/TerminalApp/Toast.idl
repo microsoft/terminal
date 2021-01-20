@@ -10,5 +10,7 @@ namespace TerminalApp
         Windows.UI.Xaml.Controls.ContentControl Root();
         // Microsoft.UI.Xaml.Controls.TeachingTip Root();
 
+        event Windows.Foundation.TypedEventHandler<Object, Object> Closed;
+
     }
 }
