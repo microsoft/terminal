@@ -27,7 +27,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <Setter Property="Margin" Value="0,0,0,5"/>
             </Style>
 
-            <Style TargetType="Button">
+            <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
                 <Setter Property="BorderBrush" Value="{StaticResource SystemBaseLowColor}"/>
                 <Setter Property="Height" Value="30"/>
                 <Setter Property="Width" Value="100"/>
