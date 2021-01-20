@@ -24,7 +24,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </Style>
 
             <Style x:Key="ColorHeaderStyle" TargetType="TextBlock">
-                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="Margin" Value="0,0,0,5"/>
             </Style>
 
             <Style TargetType="Button" BasedOn="{StaticResource BaseButtonStyle}">
@@ -65,8 +65,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Orientation="Horizontal"
                         Grid.Row="0"
                         Grid.Column="0"
-                        Grid.ColumnSpan="2"
-                        Margin="{StaticResource StandardControlSpacing}">
+                        Grid.ColumnSpan="2">
 
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind IsRenaming, Converter={StaticResource InvertedBooleanToVisibilityConverter}, Mode=OneWay}">
@@ -86,10 +85,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <!--Rename Button-->
                     <!--Bind IsEnabled to prevent a the color scheme from returning from the dead-->
                     <Button x:Uid="Rename"
-                            Style="{StaticResource BrowseButtonStyle}"
+                            Style="{StaticResource SmallButtonStyle}"
                             Click="Rename_Click"
                             IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}">
-                        <FontIcon Glyph="&#xE8AC;"/>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE8AC;"
+                                      FontSize="{StaticResource StandardIconSize}"/>
+                        </StackPanel>
                     </Button>
                 </StackPanel>
 
@@ -99,14 +101,20 @@ the MIT License. See LICENSE in the project root for license information. -->
                              Style="{StaticResource TextBoxSettingStyle}"
                              PreviewKeyDown="NameBox_PreviewKeyDown"/>
                     <Button x:Uid="RenameAccept"
-                            Style="{StaticResource AccentBrowseButtonStyle}"
+                            Style="{StaticResource AccentSmallButtonStyle}"
                             Click="RenameAccept_Click">
-                        <FontIcon Glyph="&#xE8FB;"/>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE8FB;"
+                                      FontSize="{StaticResource StandardIconSize}"/>
+                        </StackPanel>
                     </Button>
                     <Button x:Uid="RenameCancel"
-                            Style="{StaticResource BrowseButtonStyle}"
+                            Style="{StaticResource SmallButtonStyle}"
                             Click="RenameCancel_Click">
-                        <FontIcon Glyph="&#xE711;"/>
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE711;"
+                                      FontSize="{StaticResource StandardIconSize}"/>
+                        </StackPanel>
                     </Button>
                 </StackPanel>
 
@@ -115,10 +123,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                         Style="{StaticResource BrowseButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE710;"
-                                  FontSize="15"/>
+                                  FontSize="{StaticResource StandardIconSize}"/>
                         <TextBlock x:Uid="ColorScheme_AddNewButton"
-                                   Margin="10,0,0,0"
-                                   FontSize="15"/>
+                                   Style="{StaticResource IconButtonTextBlockStyle}"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -127,7 +134,8 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ItemsControl x:Name="ColorTableControl"
                           ItemsSource="{x:Bind CurrentColorTable, Mode=OneWay}"
                           Grid.Row="1"
-                          Grid.Column="0">
+                          Grid.Column="0"
+                          Style="{StaticResource ItemsControlStyle}">
 
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -173,7 +181,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!-- Additional Colors (Right Column) -->
             <ItemsControl Grid.Row="1"
-                          Grid.Column="1">
+                          Grid.Column="1"
+                          Style="{StaticResource ItemsControlStyle}">
                 <StackPanel Style="{StaticResource ColorStackPanelStyle}">
                     <TextBlock x:Uid="ColorScheme_Foreground"
                                Style="{StaticResource ColorHeaderStyle}"/>
@@ -295,11 +304,10 @@ the MIT License. See LICENSE in the project root for license information. -->
             <StackPanel Grid.Row="2"
                         Grid.Column="0"
                         Grid.ColumnSpan="2"
-                        Margin="{StaticResource StandardControlSpacing}">
+                        Style="{StaticResource PivotStackStyle}">
                 <Button x:Name="DeleteButton"
-                        Style="{StaticResource BaseButtonStyle}"
                         IsEnabled="{x:Bind CanDeleteCurrentScheme, Mode=OneWay}"
-                        Margin="0,0,0,10">
+                        Style="{StaticResource DeleteButtonStyle}">
                     <Button.Resources>
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>
@@ -332,11 +340,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </Button.Resources>
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE74D;"
-                                      FontSize="{StaticResource StandardFontSize}"/>
+                            <FontIcon Glyph="&#xE74D;"/>
                             <TextBlock x:Uid="ColorScheme_DeleteButton"
-                                       FontSize="{StaticResource StandardFontSize}"
-                                       Margin="10,0,0,0"/>
+                                       Style="{StaticResource IconButtonTextBlockStyle}"/>
                         </StackPanel>
                     </Button.Content>
                     <Button.Flyout>
@@ -344,8 +350,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <StackPanel>
                                 <TextBlock x:Uid="ColorScheme_DeleteConfirmationMessage"
                                            Style="{StaticResource CustomFlyoutTextStyle}"/>
-                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"
-                                        Style="{StaticResource BaseButtonStyle}"
+                                <Button x:Uid="ColorScheme_DeleteConfirmationButton"   
                                         Click="DeleteConfirmation_Click"/>
                             </StackPanel>
                         </Flyout>

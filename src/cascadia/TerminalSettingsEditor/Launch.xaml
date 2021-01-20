@@ -18,34 +18,40 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
-                             Style="{StaticResource RadioButtonSettingStyle}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
             <SettingsModel:IconPathConverter x:Key="IconSourceConverter"/>
+            <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
+                <Setter Property="SmallChange" Value="1"/>
+                <Setter Property="LargeChange" Value="10"/>
+                <Setter Property="Minimum" Value="1"/>
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Style="{StaticResource SettingsStackStyle}">
-            <!--Default Profile-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <ComboBox x:Uid="Globals_DefaultProfile"
+        <StackPanel>
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <!--Default Profile-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                  Margin="0">
+                    <ComboBox x:Uid="Globals_DefaultProfile"
                           x:Name="DefaultProfile"
                           ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
                           SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
                           Style="{StaticResource ComboBoxSettingStyle}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="SettingsModel:Profile">
-                            <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="SettingsModel:Profile">
+                                <Grid HorizontalAlignment="Stretch" ColumnSpacing="8">
 
-                                <Grid.ColumnDefinitions>
-                                    <!-- icon -->
-                                    <ColumnDefinition Width="16"/>
-                                    <!-- profile name -->
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- icon -->
+                                        <ColumnDefinition Width="16"/>
+                                        <!-- profile name -->
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <IconSourceElement
+                                    <IconSourceElement
                                     Grid.Column="0"
                                     Width="16"
                                     Height="16"
@@ -53,80 +59,50 @@ the MIT License. See LICENSE in the project root for license information. -->
                                                         Mode=OneWay,
                                                         Converter={StaticResource IconSourceConverter}}"/>
 
-                                <TextBlock Grid.Column="1"
-                                           Text="{x:Bind Name}"
-                                           FontSize="{StaticResource StandardFontSize}"/>
+                                    <TextBlock Grid.Column="1"
+                                           Text="{x:Bind Name}"/>
 
-                            </Grid>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-            </ContentPresenter>
+                                </Grid>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ContentPresenter>
 
-            <!--Start on User Login-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_StartOnUserLogin"
-                          IsChecked="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
-            </ContentPresenter>
+                <!--Start on User Login-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                    <ToggleSwitch x:Uid="Globals_StartOnUserLogin"
+                                  IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}"/>
+                </ContentPresenter>
 
-            <!--Launch Mode-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <muxc:RadioButtons x:Uid="Globals_LaunchMode"
+                <!--Launch Mode-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                    <muxc:RadioButtons x:Uid="Globals_LaunchMode"
                                    SelectedItem="{x:Bind CurrentLaunchMode}"
                                    ItemsSource="{x:Bind LaunchModeList}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
-            </ContentPresenter>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+                </ContentPresenter>
+            </StackPanel>
 
             <!--Launch Size-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <Grid>
-                    <Grid.Resources>
-                        <Style x:Key="LaunchSizeSubHeaderStyle" TargetType="TextBlock">
-                            <Setter Property="FontSize" Value="{StaticResource StandardFontSize}"/>
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="Margin" Value="0,0,5,0"/>
-                        </Style>
-                        <Style x:Key="LaunchSizeNumberBoxStyle" TargetType="muxc:NumberBox" BasedOn="{StaticResource NumberBoxSettingStyle}">
-                            <Setter Property="SmallChange" Value="1"/>
-                            <Setter Property="LargeChange" Value="10"/>
-                            <Setter Property="Minimum" Value="1"/>
-                        </Style>
-                    </Grid.Resources>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="auto"/>
-                        <RowDefinition Height="auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="auto"/>
-                        <ColumnDefinition Width="auto"/>
-                    </Grid.ColumnDefinitions>
+            <StackPanel Style="{StaticResource SettingsStackStyle}">
+                <!--Header-->
+                <TextBlock x:Uid="Globals_LaunchSize"
+                            Style="{StaticResource SubtitleTextBlockStyle}"/>
 
-                    <!--Header-->
-                    <TextBlock x:Uid="Globals_LaunchSize"
-                               Grid.Row="0" Grid.Column="0"
-                               Grid.ColumnSpan="2"
-                               Style="{StaticResource CustomSettingHeaderStyle}"/>
-                    
-                    <!--Columns-->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Row="1" Grid.Column="0"
-                                Margin="0,0,10,0">
-                        <TextBlock x:Uid="Globals_InitialCols" Style="{StaticResource LaunchSizeSubHeaderStyle}"/>
-                        <muxc:NumberBox Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}"
-                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
-                    </StackPanel>
-
-                    <!--Rows-->
-                    <StackPanel Orientation="Horizontal"
-                                Grid.Row="1" Grid.Column="1">
-                        <TextBlock x:Uid="Globals_InitialRows" Style="{StaticResource LaunchSizeSubHeaderStyle}"/>
-                        <muxc:NumberBox Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}"
-                                        Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
-                    </StackPanel>
-                </Grid>
-             </ContentPresenter>
+                <!--Columns-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                  Margin="0">
+                    <muxc:NumberBox x:Uid="Globals_InitialCols"
+                                Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}"
+                                Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
+                </ContentPresenter>
+                <!--Rows-->
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                    <muxc:NumberBox x:Uid="Globals_InitialRows"
+                                Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}"
+                                Style="{StaticResource LaunchSizeNumberBoxStyle}"/>
+                </ContentPresenter>
+            </StackPanel>
         </StackPanel>
     </ScrollViewer>
 </Page>
