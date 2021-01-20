@@ -53,7 +53,7 @@
                     <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#404040"/>
                     <SolidColorBrush x:Key="TextControlButtonForegroundPressed" Color="#FFFFFF"/>
                     <SolidColorBrush x:Key="TextControlButtonBackgroundPressed" Color="#FF4343"/>
-                    
+
                     <!-- ToggleButton colors !-->
                     <SolidColorBrush x:Key="ToggleButtonForeground" Color="#B5B5B5"/>
 
@@ -164,10 +164,8 @@
                   VerticalAlignment="Center"
                   TextChanged="TextBoxTextChanged">
         </TextBox>
-        <!-- TODO: ensure that the width is sufficient for no results in the relevant language -->
         <TextBlock  x:Name="StatusBox"
                     x:Uid="SearchBox_StatusBox"
-                    Width="80"
                     FontSize="15"
                     Margin="5"
                     HorizontalAlignment="Left"

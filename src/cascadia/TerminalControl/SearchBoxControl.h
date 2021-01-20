@@ -17,13 +17,17 @@ Author(s):
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Controls.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
-
 #include "SearchBoxControl.g.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct SearchBoxControl : SearchBoxControlT<SearchBoxControl>
     {
+        static constexpr int32_t MaximumTotalResultsToShowInStatus = 999;
+        static constexpr std::wstring_view TotalResultsTooHighStatus = L"999+";
+        static constexpr std::wstring_view CurrentIndexTooHighStatus = L"?";
+        static constexpr std::wstring_view StatusDelimiter = L"/";
+
         SearchBoxControl();
 
         void TextBoxKeyDown(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
@@ -31,7 +35,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SetFocusOnTextbox();
         void PopulateTextbox(winrt::hstring const& text);
         bool ContainsFocus();
-        void SetStatus(winrt::hstring const& text);
+        void SetStatus(int32_t totalMatches, int32_t currentMatch);
         void SetNavigationEnabled(bool enabled);
 
         void GoBackwardClicked(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& /*e*/);
@@ -46,6 +50,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     private:
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
+
+        static winrt::hstring _FormatStatus(int32_t totalMatches, int32_t currentMatch);
+        static double _TextWidth(winrt::hstring text, double fontSize);
+        double _GetStatusMaxWidth();
 
         bool _GoForward();
         bool _CaseSensitive();

@@ -118,7 +118,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void UpdateIndex(bool goForward);
         std::optional<std::pair<COORD, COORD>> GetCurrentMatch();
-        winrt::hstring Status() const;
     };
 
     struct TermControl : TermControlT<TermControl>

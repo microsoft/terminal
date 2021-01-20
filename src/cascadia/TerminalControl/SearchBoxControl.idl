@@ -11,7 +11,7 @@ namespace Microsoft.Terminal.TerminalControl
         void SetFocusOnTextbox();
         void PopulateTextbox(String text);
         Boolean ContainsFocus();
-        void SetStatus(String status);
+        void SetStatus(Int32 totalMatches, Int32 currentMatch);
         void SetNavigationEnabled(Boolean enabled);
 
         event SearchHandler Search;

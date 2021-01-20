@@ -198,7 +198,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() })
                 {
-                    // If in the middle of the live search, recompute the matches.
+                    // If in the middle of the search, recompute the matches.
                     // We avoid navigation to the first result to prevent auto-scrolling.
                     if (control->_searchState.has_value())
                     {
@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     fire_and_forget TermControl::_SearchAsync(std::optional<bool> goForward, Windows::Foundation::TimeSpan const& delay)
     {
-        // Run only if the live search state was initialized
+        // Run only if the search state was initialized
         if (_closing || !_searchState.has_value())
         {
             return;
@@ -306,7 +306,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // Let's mark the start of searching
                 if (_searchBox)
                 {
-                    _searchBox->SetStatus(_searchState.value().Status());
+                    _searchBox->SetStatus(-1, -1);
                     _searchBox->SetNavigationEnabled(false);
                 }
 
@@ -317,6 +317,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                 Search::Sensitivity::CaseSensitive :
                                                                 Search::Sensitivity::CaseInsensitive;
 
+                    // We perform explicit search forward, so the first result will also be the earliest buffer location
+                    // We will use goForward later to decide if we need to select 1 of n or n of n.
                     Search search(*GetUiaData(), _searchState.value().Text.c_str(), Search::Direction::Forward, sensitivity);
                     while (co_await _SearchOne(search))
                     {
@@ -357,11 +359,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_searchState.has_value() && _searchState.value().Matches.has_value())
         {
+            auto& state = _searchState.value();
+            auto& matches = state.Matches.value();
+
             if (goForward.has_value())
             {
-                _searchState.value().UpdateIndex(goForward.value());
+                state.UpdateIndex(goForward.value());
 
-                const auto currentMatch = _searchState.value().GetCurrentMatch();
+                const auto currentMatch = state.GetCurrentMatch();
                 if (currentMatch.has_value())
                 {
                     auto lock = _terminal->LockForWriting();
@@ -373,7 +378,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_searchBox)
             {
-                _searchBox->SetStatus(_searchState.value().Status());
+                _searchBox->SetStatus(gsl::narrow<int32_t>(matches.size()), state.CurrentMatchIndex);
                 _searchBox->SetNavigationEnabled(!_searchState.value().Matches.value().empty());
             }
         }
@@ -404,9 +409,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - If live search is enabled in settings, searches the buffer forward
+    // - The handler for the "search criteria changed" event. Clears selection and initiates a new search.
     // Arguments:
     // - text: the text to search
+    // - goForward: indicates whether the search should be performed forward (if set to true) or backward
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
@@ -3479,37 +3485,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return std::nullopt;
         }
-    }
-
-    // Method Description:
-    // - Builds a status message representing the search state:
-    // * "No results" - if matches are empty
-    // * "?/n" - if there are n matches and we didn't start the iteration over matches
-    // (usually we will get this after buffer update)
-    // * "m/n" - if we are currently at match m out of n.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - status message
-    winrt::hstring SearchState::Status() const
-    {
-        if (!Matches.has_value())
-        {
-            return RS_(L"TermControl_Searching");
-        }
-
-        const auto& searchResults = Matches.value();
-        if (searchResults.empty())
-        {
-            return RS_(L"TermControl_NoMatch");
-        }
-
-        if (CurrentMatchIndex < 0)
-        {
-            return fmt::format(L"?/{}", searchResults.size()).data();
-        }
-
-        return fmt::format(L"{}/{}", CurrentMatchIndex + 1, searchResults.size()).data();
     }
 
     // -------------------------------- WinRT Events ---------------------------------
