@@ -19,8 +19,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_RenderingDisclaimer"
-                       Style="{StaticResource DisclaimerStyle}"
-                       Margin="{StaticResource StandardControlSpacing}"/>
+                       Style="{StaticResource DisclaimerStyle}"/>
 
             <!--Force Full Repaint-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">

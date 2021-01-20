@@ -26,7 +26,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Theme-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+            <ContentPresenter>
                 <muxc:RadioButtons x:Uid="Globals_Theme"
                                    SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"

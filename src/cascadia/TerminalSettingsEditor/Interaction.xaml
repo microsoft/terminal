@@ -26,7 +26,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+            <ContentPresenter>
                 <CheckBox x:Uid="Globals_CopyOnSelect"
                           IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
                           Style="{StaticResource CheckBoxSettingStyle}"/>
