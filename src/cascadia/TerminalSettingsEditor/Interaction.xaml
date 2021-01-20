@@ -25,7 +25,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
-            <ContentPresenter>
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                              Margin="0">
                 <ToggleSwitch x:Uid="Globals_CopyOnSelect"
                               IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
              </ContentPresenter>

@@ -33,7 +33,8 @@ the MIT License. See LICENSE in the project root for license information. -->
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--Default Profile-->
-                <ContentPresenter>
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                  Margin="0">
                     <ComboBox x:Uid="Globals_DefaultProfile"
                           x:Name="DefaultProfile"
                           ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
@@ -89,7 +90,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                 <!--Columns-->
-                <ContentPresenter>
+                <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                  Margin="0">
                     <muxc:NumberBox x:Uid="Globals_InitialCols"
                                 Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}"
                                 Style="{StaticResource LaunchSizeNumberBoxStyle}"/>

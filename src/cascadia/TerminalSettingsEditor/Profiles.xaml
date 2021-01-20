@@ -59,7 +59,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ScrollViewer>
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--Commandline-->
-                        <ContentPresenter Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                        <ContentPresenter Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
+                                          Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0,0,0,24">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_Commandline"
                                          x:Name="Commandline"
@@ -72,7 +74,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Starting Directory-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox x:Uid="Profile_StartingDirectory"
@@ -191,7 +194,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_TextHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Color Scheme-->
-                            <ContentPresenter>
+                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                              Margin="0">
                                 <ComboBox x:Uid="Profile_ColorScheme"
                                       ItemsSource="{x:Bind ColorSchemeList, Mode=OneWay}"
                                       SelectedItem="{x:Bind CurrentColorScheme, Mode=TwoWay}"
@@ -268,7 +272,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_CursorHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Cursor Shape-->
-                            <ContentPresenter>
+                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                              Margin="0">
                                 <muxc:RadioButtons x:Uid="Profile_CursorShape"
                                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}"
@@ -292,7 +297,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_BackgroundHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Background Image-->
-                            <ContentPresenter>
+                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                              Margin="0">
                                 <StackPanel Orientation="Vertical">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBox x:Uid="Profile_BackgroundImage"
@@ -504,7 +510,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_AcrylicHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Use Acrylic-->
-                            <ContentPresenter>
+                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                              Margin="0">
                                 <ToggleSwitch x:Uid="Profile_UseAcrylic"
                                               x:Name="UseAcrylicToggleSwitch"
                                               IsOn="{x:Bind State.Profile.UseAcrylic, Mode=TwoWay}"/>
@@ -537,7 +544,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Padding-->
-                            <ContentPresenter>
+                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                              Margin="0">
                                 <TextBox x:Uid="Profile_Padding"
                                      Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
                                      Style="{StaticResource TextBoxSettingStyle}"/>
@@ -560,7 +568,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ScrollViewer>
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--Suppress Application Title-->
-                        <ContentPresenter>
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0">
                             <ToggleSwitch x:Uid="Profile_SuppressApplicationTitle"
                                           IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}"/>
                         </ContentPresenter>
