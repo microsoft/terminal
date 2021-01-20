@@ -14,6 +14,7 @@ DLLDEF                  =
 
 SOURCES = \
     $(SOURCES) \
+    AttrRowTests.cpp \
     ReflowTests.cpp \
     TextColorTests.cpp \
     TextAttributeTests.cpp \
@@ -21,6 +22,7 @@ SOURCES = \
 
 TARGETLIBS = \
     $(CONSOLE_OBJ_PATH)\buffer\out\lib\$(O)\ConBufferOut.lib \
+    $(CONSOLE_OBJ_PATH)\types\lib\$(O)\ConTypes.lib \
     $(TARGETLIBS) \
 
 # -------------------------------------
