@@ -18,7 +18,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    Toaster::Toaster(WUX::Controls::Grid root) :
+    Toaster::Toaster(WUX::Controls::Panel root) :
         _root{ root }
     {
         _toasts = winrt::single_threaded_observable_vector<winrt::TerminalApp::Toast>();
@@ -26,7 +26,7 @@ namespace winrt::TerminalApp::implementation
 
     void Toaster::MakeToast(const hstring& title,
                             const hstring& subtitle,
-                            const WUX::FrameworkElement& target)
+                            const WUX::Controls::Panel& target)
     {
         auto t = winrt::make_self<Toast>();
         t->Closed({ this, &Toaster::_onToastClosed });
@@ -38,17 +38,25 @@ namespace winrt::TerminalApp::implementation
             tt.Subtitle(subtitle);
             if (target)
             {
-                tt.Target(target);
+                target.Children().Append(tt);
             }
-            tt.PreferredPlacement(MUX::Controls::TeachingTipPlacementMode::Center);
-            if (_root)
+            else
             {
-                auto c = _root.Children();
-                if (c)
-                {
-                    c.Append(tt);
-                }
+                _root.Children().Append(tt);
             }
+            // if (target)
+            // {
+            //     tt.Target(target);
+            // }
+            // tt.PreferredPlacement(MUX::Controls::TeachingTipPlacementMode::Center);
+            // if (_root)
+            // {
+            //     auto c = _root.Children();
+            //     if (c)
+            //     {
+            //         c.Append(tt);
+            //     }
+            // }
             // _root.Children().Append(tt);
             t->Show();
         }
