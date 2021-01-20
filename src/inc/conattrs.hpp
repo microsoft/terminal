@@ -42,7 +42,8 @@ enum class CursorType : unsigned int
     VerticalBar = 0x1, // A single vertical line, '|'
     Underscore = 0x2, // a single horizontal underscore, smaller that the min height legacy cursor.
     EmptyBox = 0x3, // Just the outline of a full box
-    FullBox = 0x4 // a full box, similar to legacy with height=100%
+    FullBox = 0x4, // a full box, similar to legacy with height=100%
+    DoubleUnderscore = 0x5 // a double horizontal underscore
 };
 
 // Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color,

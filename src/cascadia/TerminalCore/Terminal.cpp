@@ -130,6 +130,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     case CursorStyle::Vintage:
         cursorShape = CursorType::Legacy;
         break;
+    case CursorStyle::DoubleUnderscore:
+        cursorShape = CursorType::DoubleUnderscore;
+        break;
     default:
     case CursorStyle::Bar:
         cursorShape = CursorType::VerticalBar;

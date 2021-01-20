@@ -505,6 +505,10 @@
     <value>Vintage ( ▃ )</value>
     <comment>{Locked="▃"}</comment>
   </data>
+  <data name="Profile_CursorShapeDoubleUnderscore.Content" xml:space="preserve">
+    <value>Double Underscore ( ‗ )</value>
+    <comment>{Locked="‗"}</comment>
+  </data>
   <data name="Profile_FontFace.Header" xml:space="preserve">
     <value>Font face</value>
   </data>
