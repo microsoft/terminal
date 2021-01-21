@@ -6,6 +6,7 @@
 #include "Launch.g.h"
 #include "LaunchPageNavigationState.g.h"
 #include "Utils.h"
+#include "../CommandlineArgs/AppCommandlineArgs.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -31,6 +32,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
+
+    private:
+        CommandlineArgs::AppCommandlineArgs argParser;
     };
 }
 

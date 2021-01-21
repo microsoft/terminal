@@ -33,6 +33,16 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
+      on being compiled with RTTI (/GR). We need this in this project, because
+      we're including the CLI11 header via the CommandlineArgs project. -->
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="ColorToBrushConverter.h">
@@ -241,6 +251,15 @@
 
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\CommandlineArgs\CommandlineArgs.vcxproj" >
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <!-- Make sure to set ReferenceOutputAssembly=false, or we'll try and
+      MDMERGE with MUX from the CommandlineArgs output, and get duplicate type
+      errors everywhere. -->
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
 
