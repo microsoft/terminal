@@ -253,6 +253,13 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+
+        // Setup mouse vanish attributes
+        SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
+
+        // Store cursor, so we can restore it, e.g., after mouse vanishing
+        // (we'll need to adapt this logic once we make cursor context aware)
+        _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
     }
 
     // Method Description:
@@ -1259,6 +1266,9 @@ namespace winrt::TerminalApp::implementation
 
         // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
         term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
+
+        term.HidePointerCursor({ this, &TerminalPage::_HidePointerCursorHandler });
+        term.RestorePointerCursor({ this, &TerminalPage::_RestorePointerCursorHandler });
 
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
@@ -3012,6 +3022,32 @@ namespace winrt::TerminalApp::implementation
         const winrt::hstring serviceName{ _getTabletServiceName() };
         const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
         return text;
+    }
+
+    // Method Description:
+    // - Hides cursor if required
+    // Return Value:
+    // - <none>
+    void TerminalPage::_HidePointerCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    {
+        if (_shouldMouseVanish && !_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
+            _isMouseHidden = true;
+        }
+    }
+
+    // Method Description:
+    // - Restores cursor if required
+    // Return Value:
+    // - <none>
+    void TerminalPage::_RestorePointerCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    {
+        if (_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultPointerCursor);
+            _isMouseHidden = false;
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

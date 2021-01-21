@@ -261,6 +261,12 @@ namespace winrt::TerminalApp::implementation
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
 
+        bool _shouldMouseVanish{ false };
+        bool _isMouseHidden{ false };
+        Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
+        void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleOpenNewTabDropdown(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
