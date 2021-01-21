@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-11-20
-last updated: 2020-12-08
+last updated: 2020-12-15
 issue id: #1032
 ---
 
@@ -329,6 +329,56 @@ functionality, from a security perspective.
 We're relying on the inherent security of the `runas` verb of `ShellExecute` to
 prevent any sort of unexpected escalation-of-privilege.
 
+<hr>
+
+⚠ **TODO**: For discussion:
+
+One security concern is the fact that the `settings.json` file is currently a
+totally unsecured file. It's completely writable by any medium-IL process. That
+means it's totally possible for a malicious program to change the file. The
+malicious program could find a user's "Elevated PowerShell" profile, and change
+the commandline to `malicious.exe`. The user might then think that their
+"Elevated PowerShell" will run `powershell.exe` elevated, but will actually
+auto-elevate this attacker.
+
+If all we expose to the user is the name of the profile in the UAC dialog, then
+there's no way for the user to be sure that the program that's about to be
+launched is actually what they expect.
+
+I propose that we _always_ pass the evaluated `commandline` as a part of the
+call to `ShellExecute`. the arguments that are passed to `ShellExecute` are
+visible to the user, though they need to click the "More Details" dropdown to
+reveal them.
+
+A second option: internal to the Terminal, we display a dialog before creating
+the new elevated terminal window. In that dialog, we'll display the commandline
+that will be executed, so the user can very easily confirm the commandline.
+We'll still need to pass the full commandline to `ShellExecute`, even after
+displaying this dialog. This is because it's possible that an attacker migh
+inject itself into the profile between the user confirming the dialog and the
+new Terminal window launching. By explicitly providing the commandline, we can
+avoid this injection.
+
+The third variant is to display the warning dialog in the _elevated_ Terminal,
+before we spawn the new connection. This is instead of placing the dialog in the
+unelevated window. This style might allow us to prompt before all elevated
+commandline launches in an elevated window.
+
+The dialog options will certainly be annoying to userse who don't want to be
+taken out of their flow to confirm the commandline that they wish to launch.
+This is seen as an acceptable UX degradation in the name of application trust.
+We don't want to provide an avenue that's too easy to abuse.
+
+<hr>
+
+Related to the above discussion: because the `settings.json` file is writable by
+any medium IL process, does that mean that a `malicious.exe` could _always_ just
+inject itself into the file for use by already-elevated windows? I suppose
+there's nothing today preventing an attacker from editing the file while the
+user already has an elevated Terminal window open, and hijacking a profile.
+Should we be doing something to secure access to that file while an elevated
+window is open?
+
 </td>
 </tr>
 <tr>
@@ -432,6 +482,15 @@ does become available on those SKUs, we can use these proposals as mitigations.
   became clear that having separate "elevated" appearances defined for
   `profile`s was overly complicated. This is left as a consideration for a
   possible future extension that could handle this scenario in a cleaner way.
+* (Refer to the "Security" discussion in [Potential Issues](#potential-issues)).
+  In [#7972], we designed a `state.json` file to hold "application state".
+  Perhaps we could add an `elevatedState.json`, that's only read/write-able by
+  an elevated process. This might allow us to cache commandlines that the user
+  approves. This might help mitigate the need to prompt the user on every
+  commandline launch. This would probably only work with dialog option 3, where
+  the elevated window is responsible for prompting the user before starting the
+  elevated connection.
+
 
 ### De-elevating a Terminal
 
@@ -477,6 +536,8 @@ We could always re-introduce this setting, to superceed `elevate`.
 [#1032]: https://github.com/microsoft/terminal/issues/1032
 [#632]: https://github.com/microsoft/terminal/issues/632
 [#8514]: https://github.com/microsoft/terminal/issues/8514
+[#7972]: https://github.com/microsoft/terminal/pulls/7972
+
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
 [Configuration object for profiles]: https://github.com/microsoft/terminal/blob/main/doc/specs/Configuration%20object%20for%20profiles.md
 [Session Management Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234472%20-%20Windows%20Terminal%20Session%20Management.md
