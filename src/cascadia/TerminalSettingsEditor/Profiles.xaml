@@ -60,8 +60,9 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         
                         <!--Name-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
-                                          Margin="0">
+                        <ContentPresenter Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
+                                          Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0,0,0,24">
                             <TextBox x:Uid="Profile_Name"
                                      Text="{x:Bind State.Profile.Name, Mode=TwoWay}"
                                      Style="{StaticResource TextBoxSettingStyle}"/>
@@ -69,7 +70,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                         <!--Commandline-->
                         <ContentPresenter Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
-                                          Style="{StaticResource SettingContainerStyle}">
+                                          Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0,0,0,24">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_Commandline"
                                          x:Name="Commandline"
@@ -82,7 +84,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                         </ContentPresenter>
 
                         <!--Starting Directory-->
-                        <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                        <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox x:Uid="Profile_StartingDirectory"
