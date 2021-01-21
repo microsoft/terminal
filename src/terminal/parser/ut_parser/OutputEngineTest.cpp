@@ -1323,7 +1323,7 @@ public:
 
     bool EnableBracketedPasteMode(const bool enable) noexcept
     {
-        _bracketedPasteMode = false;
+        _bracketedPasteMode = enable;
         return true;
     }
 
