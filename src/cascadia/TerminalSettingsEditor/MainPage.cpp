@@ -376,18 +376,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Update the menu item when the icon/name changes
         auto weakMenuItem{ make_weak(profileNavItem) };
         profile.PropertyChanged([weakMenuItem](const auto&, const WUX::Data::PropertyChangedEventArgs& args) {
-            auto menuItem{ weakMenuItem.get() };
-            const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
-            if (args.PropertyName() == L"Icon")
+            if (auto menuItem{ weakMenuItem.get() })
             {
-                const auto iconSource{ IconPathConverter::IconSourceWUX(tag.Icon()) };
-                WUX::Controls::IconSourceElement icon;
-                icon.IconSource(iconSource);
-                menuItem.Icon(icon);
-            }
-            else if (args.PropertyName() == L"Name")
-            {
-                menuItem.Content(box_value(tag.Name()));
+                const auto& tag{ menuItem.Tag().as<Editor::ProfileViewModel>() };
+                if (args.PropertyName() == L"Icon")
+                {
+                    const auto iconSource{ IconPathConverter::IconSourceWUX(tag.Icon()) };
+                    WUX::Controls::IconSourceElement icon;
+                    icon.IconSource(iconSource);
+                    menuItem.Icon(icon);
+                }
+                else if (args.PropertyName() == L"Name")
+                {
+                    menuItem.Content(box_value(tag.Name()));
+                }
             }
         });
         return profileNavItem;
