@@ -1046,7 +1046,7 @@ public:
         _tabClearTypes{},
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
-        _bracketedPasteMode { false },
+        _bracketedPasteMode{ false },
         _win32InputMode{ false },
         _setDefaultForeground(false),
         _defaultForegroundColor{ RGB(0, 0, 0) },
