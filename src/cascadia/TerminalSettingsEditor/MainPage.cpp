@@ -51,18 +51,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
-
-        // // We have to provide _some_ profile in the profile nav state, so just
-        // // hook it up with the base for now. It'll get updated when we actually
-        // // navigate to a profile.
-        // auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
-        // profileVM.IsBaseLayer(true);
-        // _profilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
-        //                                                             _settingsClone.GlobalSettings().ColorSchemes(),
-        //                                                             *this);
-
-        // // Add an event handler for when the user wants to delete a profile.
-        // _profilesNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
     }
 
     // Method Description:
@@ -269,15 +257,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
             profileVM.IsBaseLayer(true);
-            auto newNavState = winrt::make<ProfilePageNavigationState>(profileVM,
-                                                                       _settingsClone.GlobalSettings().ColorSchemes(),
-                                                                       _lastProfilesNavState,
-                                                                       *this);
-            // if (_lastProfilesNavState)
-            // {
-            //     newNavState.LastActivePivot(_lastProfilesNavState.LastActivePivot());
-            // }
-            // _lastProfilesNavState = newNavState;
+            _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
+                                                                            _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                            _lastProfilesNavState,
+                                                                            *this);
 
             contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
         }
@@ -300,13 +283,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // Add an event handler for when the user wants to delete a profile.
         _lastProfilesNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
-
-        // // Copy the active pivot from the last profile we visited, if
-        // if (_lastProfilesNavState)
-        // {
-        //     newNavState.LastActivePivot(_lastProfilesNavState.LastActivePivot());
-        // }
-        // _lastProfilesNavState = newNavState;
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
     }
