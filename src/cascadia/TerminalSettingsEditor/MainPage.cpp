@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                             {
                                 // found the one that was selected before the refresh
                                 SettingsNav().SelectedItem(item);
-                                _Navigate(*selectedItemProfileTag);
+                                _Navigate(*profileTag);
                                 co_return;
                             }
                         }
