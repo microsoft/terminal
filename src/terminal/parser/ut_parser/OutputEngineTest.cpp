@@ -1046,7 +1046,7 @@ public:
         _tabClearTypes{},
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
-        _bracketPasteMode { false },
+        _bracketedPasteMode { false },
         _win32InputMode{ false },
         _setDefaultForeground(false),
         _defaultForegroundColor{ RGB(0, 0, 0) },
@@ -1321,9 +1321,9 @@ public:
         return true;
     }
 
-    bool EnableBracketPasteMode(const bool enable) noexcept
+    bool EnableBracketedPasteMode(const bool enable) noexcept
     {
-        _bracketPasteMode = false;
+        _bracketedPasteMode = false;
         return true;
     }
 
@@ -1521,7 +1521,7 @@ public:
     std::vector<DispatchTypes::TabClearType> _tabClearTypes;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
-    bool _bracketPasteMode;
+    bool _bracketedPasteMode;
     bool _win32InputMode;
     bool _setDefaultForeground;
     DWORD _defaultForegroundColor;
