@@ -271,14 +271,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             profileVM.IsBaseLayer(true);
             auto newNavState = winrt::make<ProfilePageNavigationState>(profileVM,
                                                                        _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                       _lastProfilesNavState,
                                                                        *this);
-            // // Update the profiles navigation state
-            // _profilesNavState.Profile(profileVM);
-            if (_lastProfilesNavState)
-            {
-                newNavState.LastActivePivot(_lastProfilesNavState.LastActivePivot());
-            }
-            _lastProfilesNavState = newNavState;
+            // if (_lastProfilesNavState)
+            // {
+            //     newNavState.LastActivePivot(_lastProfilesNavState.LastActivePivot());
+            // }
+            // _lastProfilesNavState = newNavState;
 
             contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
         }
@@ -294,18 +293,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
-        auto newNavState{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
+        _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profile,
+                                                                        _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                        _lastProfilesNavState,
+                                                                        *this);
 
         // Add an event handler for when the user wants to delete a profile.
-        newNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
-        if (_lastProfilesNavState)
-        {
-            newNavState.LastActivePivot(_lastProfilesNavState.LastActivePivot());
-        }
-        _lastProfilesNavState = newNavState;
+        _lastProfilesNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
 
-        // // Update the profiles navigation state
-        // _profilesNavState.Profile(profile);
+        // // Copy the active pivot from the last profile we visited, if
+        // if (_lastProfilesNavState)
+        // {
+        //     newNavState.LastActivePivot(_lastProfilesNavState.LastActivePivot());
+        // }
+        // _lastProfilesNavState = newNavState;
 
         contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
     }

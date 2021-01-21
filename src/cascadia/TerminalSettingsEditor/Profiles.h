@@ -87,11 +87,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel,
                                    const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                   const Editor::ProfilePageNavigationState& lastState,
                                    const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
             _Schemes{ schemes },
             _WindowRoot{ windowRoot }
         {
+            // If there was a previous nav state, and it was for the same
+            // profile, then copy the selected pivot from it.
+            if (lastState)
+            {
+                const auto& oldGuid = lastState.Profile().Guid();
+                const auto& newGuid = _Profile.Guid();
+                if (oldGuid == newGuid)
+                {
+                    _LastActivePivot = lastState.LastActivePivot();
+                }
+            }
         }
 
         void DeleteProfile();
@@ -109,14 +121,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void Profile(const Editor::ProfileViewModel& value) noexcept
         {
-            // If the profile has a different guid than the new one, then reset
-            // the selected pivot to the "General" tab.
-            const auto& oldGuid = _Profile.Guid();
-            const auto& newGuid = value.Guid();
-            if (oldGuid != newGuid)
-            {
-                _LastActivePivot = Editor::ProfilesPivots::General;
-            }
+            // // If the profile has a different guid than the new one, then reset
+            // // the selected pivot to the "General" tab.
+            // const auto& oldGuid = _Profile.Guid();
+            // const auto& newGuid = value.Guid();
+            // if (oldGuid != newGuid)
+            // {
+            //     _LastActivePivot = Editor::ProfilesPivots::General;
+            // }
             _Profile = value;
         }
 
