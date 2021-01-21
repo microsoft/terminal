@@ -18,7 +18,6 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 
-
 static const int PaneBorderSize = 2;
 static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 

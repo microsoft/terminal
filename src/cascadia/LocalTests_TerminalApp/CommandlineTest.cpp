@@ -6,7 +6,7 @@
 
 #include "../types/inc/utils.hpp"
 #include "../TerminalApp/TerminalPage.h"
-#include "../TerminalApp/AppCommandlineArgs.h"
+#include "../CommandlineArgs/AppCommandlineArgs.h"
 
 using namespace WEX::Logging;
 using namespace WEX::Common;
@@ -14,7 +14,7 @@ using namespace WEX::TestExecution;
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
-using namespace ::TerminalApp;
+using namespace ::CommandlineArgs;
 
 namespace TerminalAppLocalTests
 {
