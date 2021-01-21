@@ -61,14 +61,9 @@ namespace winrt::TerminalApp::implementation
     // - sender, e: not used
     void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
     {
-        auto weakThis{ get_weak() };
-
-        if (auto tab{ weakThis.get() })
-        {
-            tab->ShowBellIndicator(false);
-            tab->_bellIndicatorTimer.value().Stop();
-            tab->_bellIndicatorTimer = std::nullopt;
-        }
+        ShowBellIndicator(false);
+        _bellIndicatorTimer->Stop();
+        _bellIndicatorTimer = std::nullopt;
     }
 
     // Method Description:
@@ -285,11 +280,14 @@ namespace winrt::TerminalApp::implementation
 
         if (auto tab{ weakThis.get() })
         {
-            DispatcherTimer bellIndicatorTimer;
-            bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
-            bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
-            bellIndicatorTimer.Start();
-            tab->_bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
+            if (!tab->_bellIndicatorTimer.has_value())
+            {
+                DispatcherTimer bellIndicatorTimer;
+                bellIndicatorTimer.Interval(std::chrono::milliseconds(2000));
+                bellIndicatorTimer.Tick({ get_weak(), &TerminalTab::_BellIndicatorTimerTick });
+                bellIndicatorTimer.Start();
+                tab->_bellIndicatorTimer.emplace(std::move(bellIndicatorTimer));
+            }
         }
     }
 
