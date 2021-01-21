@@ -6,39 +6,25 @@
 #include "ColorTableEntry.g.h"
 #include "ColorSchemes.g.h"
 #include "ColorSchemesPageNavigationState.g.h"
-#include "ModifyColorSchemeNameEventArgs.g.h"
 #include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    struct ModifyColorSchemeNameEventArgs :
-        public ModifyColorSchemeNameEventArgsT<ModifyColorSchemeNameEventArgs>
-    {
-    public:
-        ModifyColorSchemeNameEventArgs(hstring oldName, hstring newName) :
-            _OldName{ oldName },
-            _NewName{ newName } {}
-
-        hstring OldName() const noexcept { return _OldName; }
-        hstring NewName() const noexcept { return _NewName; }
-
-    private:
-        hstring _OldName;
-        hstring _NewName;
-    };
-
     struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
     {
     public:
-        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings) :
-            _Globals{ settings } {}
+        ColorSchemesPageNavigationState(const Model::CascadiaSettings& settings) :
+            _Globals{ settings.GlobalSettings() },
+            _Settings{ settings } {}
 
         void RenameColorScheme(hstring oldName, hstring newName);
         void DeleteColorScheme(hstring name);
 
-        TYPED_EVENT(ModifyColorSchemeName, Editor::ColorSchemesPageNavigationState, Editor::ModifyColorSchemeNameEventArgs);
         GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
         GETSET_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
+
+    private:
+        Model::CascadiaSettings _Settings;
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>

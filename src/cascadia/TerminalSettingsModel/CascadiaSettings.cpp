@@ -865,6 +865,34 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
     return _globals->ColorSchemes().TryLookup(schemeName);
 }
 
+// Method Description:
+// - renames a color scheme, and updates all references to that color scheme with the new name
+// Arguments:
+// - oldName: the original name for the color scheme
+// - newName: the new name for the color scheme
+// Return Value:
+// - <none>
+
+void CascadiaSettings::RenameColorScheme(const hstring oldName, const hstring newName)
+{
+    if (auto scheme{ _globals->ColorSchemes().TryLookup(oldName) })
+    {
+        // rename the ColorScheme object (update Globals)
+        _globals->RemoveColorScheme(oldName);
+        scheme.Name(newName);
+        _globals->AddColorScheme(scheme);
+
+        // update all profiles referencing this color scheme
+        for (auto profile : _allProfiles)
+        {
+            if (profile.ColorSchemeName() == oldName)
+            {
+                profile.ColorSchemeName(newName);
+            }
+        }
+    }
+}
+
 winrt::hstring CascadiaSettings::ApplicationDisplayName()
 {
     try
