@@ -111,7 +111,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
-        // _profilesNavState.Schemes(_settingsClone.GlobalSettings().ColorSchemes());
         // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
