@@ -51,18 +51,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
 
         _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
-
-        // We have to provide _some_ profile in the profile nav state, so just
-        // hook it up with the base for now. It'll get updated when we actually
-        // navigate to a profile.
-        auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
-        profileVM.IsBaseLayer(true);
-        _profilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
-                                                                    _settingsClone.GlobalSettings().ColorSchemes(),
-                                                                    *this);
-
-        // Add an event handler for when the user wants to delete a profile.
-        _profilesNavState.DeleteProfile({ this, &MainPage::_DeleteProfile });
     }
 
     // Method Description:
@@ -123,8 +111,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
         _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
-        _profilesNavState.Schemes(_settingsClone.GlobalSettings().ColorSchemes());
-        // We'll update the profile in the _profilesNavState whenever we actually navigate to one
 
         // now that the menuItems are repopulated,
         // refresh the current page using the SelectedItem data we collected before the refresh
@@ -269,11 +255,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
             profileVM.IsBaseLayer(true);
-
-            // Update the profiles navigation state
-            _profilesNavState.Profile(profileVM);
-
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _profilesNavState);
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), winrt::make<ProfilePageNavigationState>(profileVM, _settingsClone.GlobalSettings().ColorSchemes(), *this));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -287,10 +269,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
-        // Update the profiles navigation state
-        _profilesNavState.Profile(profile);
+        auto state{ winrt::make<ProfilePageNavigationState>(profile, _settingsClone.GlobalSettings().ColorSchemes(), *this) };
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _profilesNavState);
+        // Add an event handler for when the user wants to delete a profile.
+        state.DeleteProfile({ this, &MainPage::_DeleteProfile });
+
+        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
