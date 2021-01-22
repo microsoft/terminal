@@ -50,7 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _InitializeProfilesList();
 
-        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
+        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone);
     }
 
     // Method Description:
@@ -110,7 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Repopulate profile-related menu items
         _InitializeProfilesList();
         // Update the Nav State with the new version of the settings
-        _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
+        _colorSchemesNavState.Settings(_settingsClone);
 
         // now that the menuItems are repopulated,
         // refresh the current page using the SelectedItem data we collected before the refresh

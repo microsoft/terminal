@@ -6,6 +6,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Microsoft.Terminal.Settings.Editor"
     xmlns:model="using:Microsoft.Terminal.Settings.Model"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -97,9 +98,17 @@ the MIT License. See LICENSE in the project root for license information. -->
 
                 <StackPanel Orientation="Horizontal"
                             Visibility="{x:Bind IsRenaming, Mode=OneWay}">
+
+                    <!--Shown when color scheme name is already in use-->
+                    <muxc:TeachingTip x:Name="RenameErrorTip"
+                                      x:Uid="ColorScheme_RenameErrorTip"/>
+
+                    <!--Name text box-->
                     <TextBox x:Name="NameBox"
                              Style="{StaticResource TextBoxSettingStyle}"
                              PreviewKeyDown="NameBox_PreviewKeyDown"/>
+
+                    <!--Accept rename button-->
                     <Button x:Uid="RenameAccept"
                             Style="{StaticResource AccentSmallButtonStyle}"
                             Click="RenameAccept_Click">
@@ -108,6 +117,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                                       FontSize="{StaticResource StandardIconSize}"/>
                         </StackPanel>
                     </Button>
+                    <!--Cancel rename button-->
                     <Button x:Uid="RenameCancel"
                             Style="{StaticResource SmallButtonStyle}"
                             Click="RenameCancel_Click">
