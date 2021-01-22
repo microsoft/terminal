@@ -875,7 +875,7 @@ winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetCo
 void CascadiaSettings::UpdateColorSchemeReferences(const hstring oldName, const hstring newName)
 {
     // update all profiles referencing this color scheme
-    for (auto profile : _allProfiles)
+    for (const auto& profile : _allProfiles)
     {
         if (profile.ColorSchemeName() == oldName)
         {
