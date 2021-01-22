@@ -263,6 +263,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
+        // check if different name is already in use
+        if (newName != CurrentColorScheme().Name() && _State.Globals().ColorSchemes().HasKey(newName))
+        {
+            // open the error tip
+            RenameErrorTip().Target(NameBox());
+            RenameErrorTip().IsOpen(true);
+
+            // focus the name box
+            NameBox().Focus(FocusState::Programmatic);
+            NameBox().SelectAll();
+            return;
+        }
+        RenameErrorTip().IsOpen(false);
+
         winrt::get_self<ColorSchemesPageNavigationState>(_State)->RenameColorScheme(CurrentColorScheme().Name(), newName);
         CurrentColorScheme().Name(newName);
         IsRenaming(false);
