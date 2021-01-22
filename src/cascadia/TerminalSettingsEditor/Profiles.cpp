@@ -344,7 +344,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             StorageApplicationPermissions::FutureAccessList().AddOrReplace(L"PickedFolderToken", folder);
             _State.Profile().StartingDirectory(folder.Path());
-            StartingDirectoryUseParentCheckbox().IsChecked(false);
         }
     }
 

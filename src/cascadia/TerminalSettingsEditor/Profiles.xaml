@@ -89,7 +89,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                                 </StackPanel>
                                 <CheckBox x:Uid="Profile_StartingDirectoryUseParentCheckbox"
                                       x:Name="StartingDirectoryUseParentCheckbox"
-                                      Style="{StaticResource CheckBoxSettingStyle}"
                                       IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}"/>
                             </StackPanel>
                         </ContentPresenter>
