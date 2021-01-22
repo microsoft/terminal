@@ -587,6 +587,19 @@ using namespace Microsoft::Console::Render;
         cursorInvertRects.push_back(rcInvert);
         break;
 
+    case CursorType::DoubleUnderscore:
+    {
+        RECT top, bottom;
+        top = bottom = rcBoundaries;
+        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
+        RETURN_IF_FAILED(LongAdd(top.bottom, -3, &top.top));
+        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+
+        cursorInvertRects.push_back(top);
+        cursorInvertRects.push_back(bottom);
+    }
+    break;
+
     case CursorType::EmptyBox:
     {
         RECT top, left, right, bottom;

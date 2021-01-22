@@ -56,21 +56,14 @@ public:
 
     CharRow(size_t rowWidth, ROW* const pParent) noexcept;
 
-    void SetWrapForced(const bool wrap) noexcept;
-    bool WasWrapForced() const noexcept;
-    void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
-    bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept;
-    void Reset() noexcept;
     [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const noexcept;
     size_t MeasureRight() const;
-    void ClearCell(const size_t column);
     bool ContainsText() const noexcept;
     const DbcsAttribute& DbcsAttrAt(const size_t column) const;
     DbcsAttribute& DbcsAttrAt(const size_t column);
     void ClearGlyph(const size_t column);
-    std::wstring GetText() const;
 
     const DelimiterClass DelimiterClassAt(const size_t column, const std::wstring_view wordDelimiters) const;
 
@@ -94,28 +87,20 @@ public:
     void UpdateParent(ROW* const pParent);
 
     friend CharRowCellReference;
-    friend constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept;
+    friend class ROW;
+
+private:
+    void Reset() noexcept;
+    void ClearCell(const size_t column);
+    std::wstring GetText() const;
 
 protected:
-    // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
-    bool _wrapForced;
-
-    // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
-    bool _doubleBytePadded;
-
     // storage for glyph data and dbcs attributes
     boost::container::small_vector<value_type, 120> _data;
 
     // ROW that this CharRow belongs to
     ROW* _pParent;
 };
-
-constexpr bool operator==(const CharRow& a, const CharRow& b) noexcept
-{
-    return (a._wrapForced == b._wrapForced &&
-            a._doubleBytePadded == b._doubleBytePadded &&
-            a._data == b._data);
-}
 
 template<typename InputIt1, typename InputIt2>
 void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttrs, CharRow::iterator outIt)

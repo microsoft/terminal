@@ -21,6 +21,8 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
     _rowWidth{ rowWidth },
     _charRow{ rowWidth, this },
     _attrRow{ rowWidth, fillAttribute },
+    _wrapForced{ false },
+    _doubleBytePadded{ false },
     _pParent{ pParent }
 {
 }
@@ -33,6 +35,8 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
 // - <none>
 bool ROW::Reset(const TextAttribute Attr)
 {
+    _wrapForced = false;
+    _doubleBytePadded = false;
     _charRow.Reset();
     try
     {
@@ -159,7 +163,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 else if (fillingLastColumn && it->DbcsAttr().IsLeading())
                 {
                     _charRow.ClearCell(currentIndex);
-                    _charRow.SetDoubleBytePadded(true);
+                    SetDoubleBytePadded(true);
                 }
                 // Otherwise, copy the data given and increment the iterator.
                 else
@@ -177,7 +181,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 if (wrap.has_value() && fillingLastColumn)
                 {
                     // set wrap status on the row to parameter's value.
-                    _charRow.SetWrapForced(wrap.value());
+                    SetWrapForced(*wrap);
                 }
             }
             else

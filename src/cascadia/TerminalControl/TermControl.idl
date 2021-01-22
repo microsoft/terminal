@@ -77,6 +77,8 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, Object> SetTaskbarProgress;
         event Windows.Foundation.TypedEventHandler<TermControl, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.

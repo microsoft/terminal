@@ -39,8 +39,6 @@ public:
     noexcept = default;
     ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
-    void Reset(const TextAttribute attr);
-
     TextAttribute GetAttrByColumn(const size_t column) const;
     TextAttribute GetAttrByColumn(const size_t column,
                                   size_t* const pApplies) const;
@@ -72,12 +70,16 @@ public:
 
     friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
     friend class AttrRowIterator;
+    friend class ROW;
 
 private:
+    void Reset(const TextAttribute attr);
+
     boost::container::small_vector<TextAttributeRun, 1> _list;
     size_t _cchRowWidth;
 
 #ifdef UNIT_TESTING
     friend class AttrRowTests;
+    friend class CommonState;
 #endif
 };

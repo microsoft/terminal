@@ -38,6 +38,9 @@
     <ClInclude Include="ColorToBrushConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ColorLightenConverter.h">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorToHexConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -115,6 +118,9 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ColorToBrushConverter.cpp">
+      <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ColorLightenConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="ColorToHexConverter.cpp">

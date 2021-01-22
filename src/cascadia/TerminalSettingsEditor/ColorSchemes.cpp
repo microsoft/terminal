@@ -73,6 +73,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto entry = winrt::make<ColorTableEntry>(i, Windows::UI::Color{ 0, 0, 0, 0 });
             _CurrentColorTable.Append(entry);
         }
+
+        // Try to look up the scheme that was navigated to. If we find it, immediately select it.
+        const std::wstring lastNameFromNav{ _State.LastSelectedScheme() };
+        const auto it = std::find_if(begin(_ColorSchemeList),
+                                     end(_ColorSchemeList),
+                                     [&lastNameFromNav](const auto& scheme) { return scheme.Name() == lastNameFromNav; });
+
+        if (it != end(_ColorSchemeList))
+        {
+            auto scheme = *it;
+            ColorSchemeComboBox().SelectedItem(scheme);
+        }
     }
 
     // Function Description:
@@ -89,6 +101,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto colorScheme{ args.AddedItems().GetAt(0).try_as<Model::ColorScheme>() };
         CurrentColorScheme(colorScheme);
         _UpdateColorTable(colorScheme);
+
+        _State.LastSelectedScheme(colorScheme.Name());
 
         // Set the text disclaimer for the text box
         hstring disclaimer{};
