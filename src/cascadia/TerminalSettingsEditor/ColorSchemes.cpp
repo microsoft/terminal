@@ -51,23 +51,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         L"Tango Light"
     };
 
-    void ColorSchemesPageNavigationState::RenameColorScheme(hstring oldName, hstring newName)
-    {
-        auto scheme{ _Globals.ColorSchemes().Lookup(oldName) };
-        scheme.Name(newName);
-        _Globals.RemoveColorScheme(oldName);
-        _Globals.AddColorScheme(scheme);
-
-        _Settings.UpdateColorSchemeReferences(oldName, newName);
-    }
-
-    void ColorSchemesPageNavigationState::DeleteColorScheme(hstring name)
-    {
-        // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
-        _Globals.RemoveColorScheme(name);
-        _Settings.UpdateColorSchemeReferences(name, L"Campbell");
-    }
-
     ColorSchemes::ColorSchemes() :
         _ColorSchemeList{ single_threaded_observable_vector<Model::ColorScheme>() },
         _CurrentColorTable{ single_threaded_observable_vector<Editor::ColorTableEntry>() }
@@ -146,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         // Surprisingly, though this is called every time we navigate to the page,
         // the list does not keep growing on each navigation.
-        const auto& colorSchemeMap{ _State.Globals().ColorSchemes() };
+        const auto& colorSchemeMap{ _State.Settings().GlobalSettings().ColorSchemes() };
         for (const auto& pair : colorSchemeMap)
         {
             _ColorSchemeList.Append(pair.Value());
@@ -191,8 +174,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         const auto schemeName{ CurrentColorScheme().Name() };
-        _State.Globals().RemoveColorScheme(schemeName);
-        winrt::get_self<ColorSchemesPageNavigationState>(_State)->DeleteColorScheme(schemeName);
+        _State.Settings().GlobalSettings().RemoveColorScheme(schemeName);
+
+        // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
+        _State.Settings().UpdateColorSchemeReferences(schemeName, L"Campbell");
 
         const auto removedSchemeIndex{ ColorSchemeComboBox().SelectedIndex() };
         if (static_cast<uint32_t>(removedSchemeIndex) < _ColorSchemeList.Size() - 1)
@@ -212,11 +197,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::AddNew_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         // Give the new scheme a distinct name
-        const hstring schemeName{ fmt::format(L"Color Scheme {}", _State.Globals().ColorSchemes().Size() + 1) };
+        const hstring schemeName{ fmt::format(L"Color Scheme {}", _State.Settings().GlobalSettings().ColorSchemes().Size() + 1) };
         Model::ColorScheme scheme{ schemeName };
 
         // Add the new color scheme
-        _State.Globals().AddColorScheme(scheme);
+        _State.Settings().GlobalSettings().AddColorScheme(scheme);
 
         // Update current page
         _ColorSchemeList.Append(scheme);
@@ -245,6 +230,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::RenameCancel_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
         IsRenaming(false);
+        RenameErrorTip().IsOpen(false);
     }
 
     void ColorSchemes::NameBox_PreviewKeyDown(IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
@@ -257,6 +243,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         else if (e.OriginalKey() == winrt::Windows::System::VirtualKey::Escape)
         {
             IsRenaming(false);
+            RenameErrorTip().IsOpen(false);
             e.Handled(true);
         }
     }
@@ -264,7 +251,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
         // check if different name is already in use
-        if (newName != CurrentColorScheme().Name() && _State.Globals().ColorSchemes().HasKey(newName))
+        auto oldName{ CurrentColorScheme().Name() };
+        if (newName != oldName && _State.Settings().GlobalSettings().ColorSchemes().HasKey(newName))
         {
             // open the error tip
             RenameErrorTip().Target(NameBox());
@@ -275,9 +263,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             NameBox().SelectAll();
             return;
         }
-        RenameErrorTip().IsOpen(false);
 
-        winrt::get_self<ColorSchemesPageNavigationState>(_State)->RenameColorScheme(CurrentColorScheme().Name(), newName);
+        // update the settings model
+        auto scheme{ _State.Settings().GlobalSettings().ColorSchemes().Lookup(oldName) };
+        scheme.Name(newName);
+        _State.Settings().GlobalSettings().RemoveColorScheme(oldName);
+        _State.Settings().GlobalSettings().AddColorScheme(scheme);
+        _State.Settings().UpdateColorSchemeReferences(oldName, newName);
+
+        // update the UI
+        RenameErrorTip().IsOpen(false);
         CurrentColorScheme().Name(newName);
         IsRenaming(false);
 

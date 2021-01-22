@@ -14,17 +14,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         ColorSchemesPageNavigationState(const Model::CascadiaSettings& settings) :
-            _Globals{ settings.GlobalSettings() },
             _Settings{ settings } {}
 
-        void RenameColorScheme(hstring oldName, hstring newName);
-        void DeleteColorScheme(hstring name);
-
-        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
+        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
         GETSET_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
-
-    private:
-        Model::CascadiaSettings _Settings;
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
