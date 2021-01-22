@@ -62,8 +62,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_BellIndicatorTimerTick(Windows::Foundation::IInspectable const& /*sender*/, Windows::Foundation::IInspectable const& /*e*/)
     {
         ShowBellIndicator(false);
-        _bellIndicatorTimer->Stop();
-        _bellIndicatorTimer = std::nullopt;
+        // Just do a sanity check that the timer still exists before we stop it
+        if (_bellIndicatorTimer.has_value())
+        {
+            _bellIndicatorTimer->Stop();
+            _bellIndicatorTimer = std::nullopt;
+        }
     }
 
     // Method Description:
