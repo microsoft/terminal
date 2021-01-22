@@ -378,9 +378,9 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
 // - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool TerminalDispatch::EnableBracketedPasteMode(const bool enabled) noexcept
+bool TerminalDispatch::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {
-    _terminalApi.EnableBracketedPasteMode(enabled);
+    _terminalApi.EnableXtermBracketedPasteMode(enabled);
     return true;
 }
 
@@ -525,7 +525,7 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
         success = EnableCursorBlinking(enable);
         break;
     case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-        success = EnableBracketedPasteMode(enable);
+        success = EnableXtermBracketedPasteMode(enable);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);

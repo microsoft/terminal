@@ -1286,7 +1286,7 @@ public:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
         case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
-            fSuccess = EnableBracketedPasteMode(fEnable);
+            fSuccess = EnableXtermBracketedPasteMode(fEnable);
             break;
         case DispatchTypes::ModeParams::W32IM_Win32InputMode:
             fSuccess = EnableWin32InputMode(fEnable);
@@ -1321,7 +1321,7 @@ public:
         return true;
     }
 
-    bool EnableBracketedPasteMode(const bool enable) noexcept
+    bool EnableXtermBracketedPasteMode(const bool enable) noexcept
     {
         _bracketedPasteMode = enable;
         return true;

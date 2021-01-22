@@ -2171,7 +2171,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 // - enabled - true to enable, false to disable.
 // Return value:
 // True if handled successfully. False otherwise.
-bool AdaptDispatch::EnableBracketedPasteMode(const bool /*enabled*/) noexcept
+bool AdaptDispatch::EnableXtermBracketedPasteMode(const bool /*enabled*/) noexcept
 {
     return NoOp();
 }

@@ -537,13 +537,13 @@ bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
     return true;
 }
 
-bool Terminal::EnableBracketedPasteMode(const bool enabled) noexcept
+bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {
     _bracketedPasteMode = enabled;
     return true;
 }
 
-bool Terminal::IsBracketedPasteModeEnabled() const noexcept
+bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
 {
     return _bracketedPasteMode;
 }
