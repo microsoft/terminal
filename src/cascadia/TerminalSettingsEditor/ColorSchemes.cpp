@@ -251,7 +251,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void ColorSchemes::_RenameCurrentScheme(hstring newName)
     {
         // check if different name is already in use
-        auto oldName{ CurrentColorScheme().Name() };
+        const auto oldName{ CurrentColorScheme().Name() };
         if (newName != oldName && _State.Settings().GlobalSettings().ColorSchemes().HasKey(newName))
         {
             // open the error tip
@@ -265,10 +265,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // update the settings model
-        auto scheme{ _State.Settings().GlobalSettings().ColorSchemes().Lookup(oldName) };
-        scheme.Name(newName);
+        CurrentColorScheme().Name(newName);
         _State.Settings().GlobalSettings().RemoveColorScheme(oldName);
-        _State.Settings().GlobalSettings().AddColorScheme(scheme);
+        _State.Settings().GlobalSettings().AddColorScheme(CurrentColorScheme());
         _State.Settings().UpdateColorSchemeReferences(oldName, newName);
 
         // update the UI
