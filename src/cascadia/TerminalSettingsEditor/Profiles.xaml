@@ -56,6 +56,16 @@ the MIT License. See LICENSE in the project root for license information. -->
             <PivotItem x:Uid="Profile_General">
                 <ScrollViewer>
                     <StackPanel Style="{StaticResource PivotStackStyle}">
+                        
+                        <!--Name-->
+                        <ContentPresenter Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
+                                          Style="{StaticResource SettingContainerStyle}"
+                                          Margin="0,0,0,24">
+                            <TextBox x:Uid="Profile_Name"
+                                     Text="{x:Bind State.Profile.Name, Mode=TwoWay}"
+                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                        </ContentPresenter>
+
                         <!--Commandline-->
                         <ContentPresenter Visibility="{x:Bind State.Profile.IsBaseLayer, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}"
                                           Style="{StaticResource SettingContainerStyle}"
