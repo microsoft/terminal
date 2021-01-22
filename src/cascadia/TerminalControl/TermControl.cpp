@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Given new settings for this profile, applies the settings to the current terminal.
     // Arguments:
-    // - newSettings: New settings values for the profile in this terminal.
+    // - <none>
     // Return Value:
     // - <none>
     winrt::fire_and_forget TermControl::UpdateSettings()
@@ -909,6 +909,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _HidePointerCursorHandlers(*this, nullptr);
+
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         auto modifiers = _GetPressedModifierKeys();
@@ -1253,6 +1255,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -1381,6 +1385,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
@@ -1588,6 +1594,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
@@ -2027,6 +2035,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         _focused = false;
 
@@ -2627,6 +2637,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
+            _RestorePointerCursorHandlers(*this, nullptr);
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();

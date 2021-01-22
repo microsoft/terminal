@@ -12,6 +12,8 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
+        Boolean UseDesktopBGImage;
+        Boolean BackgroundImageSettingsVisible { get; };
 
         OBSERVABLE_PROJECTED_SETTING(String, Name);
         OBSERVABLE_PROJECTED_SETTING(Guid, Guid);

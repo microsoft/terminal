@@ -112,7 +112,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
-        Windows::Foundation::Collections::IVector<TerminalApp::TabBase> _mruTabs;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
         static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
 
         void _UpdateTabIndices();
@@ -260,6 +260,12 @@ namespace winrt::TerminalApp::implementation
         void _UpdateMRUTab(const uint32_t index);
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
+
+        bool _shouldMouseVanish{ false };
+        bool _isMouseHidden{ false };
+        Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
+        void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

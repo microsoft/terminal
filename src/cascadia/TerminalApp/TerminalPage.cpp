@@ -43,7 +43,7 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _mruTabs{ winrt::single_threaded_vector<TerminalApp::TabBase>() },
+        _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{}
     {
@@ -253,6 +253,13 @@ namespace winrt::TerminalApp::implementation
         _layoutUpdatedRevoker = _tabContent.LayoutUpdated(winrt::auto_revoke, { this, &TerminalPage::_OnFirstLayout });
 
         _isAlwaysOnTop = _settings.GlobalSettings().AlwaysOnTop();
+
+        // Setup mouse vanish attributes
+        SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
+
+        // Store cursor, so we can restore it, e.g., after mouse vanishing
+        // (we'll need to adapt this logic once we make cursor context aware)
+        _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
     }
 
     // Method Description:
@@ -762,6 +769,7 @@ namespace winrt::TerminalApp::implementation
         _mruTabs.Append(*newTabImpl);
 
         newTabImpl->SetDispatch(*_actionDispatch);
+        newTabImpl->SetKeyMap(_settings.KeyMap());
 
         // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
         _UpdateTabIndices();
@@ -1271,6 +1279,9 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal wants to set a progress indicator on the taskbar
         term.SetTaskbarProgress({ this, &TerminalPage::_SetTaskbarProgressHandler });
 
+        term.HidePointerCursor({ this, &TerminalPage::_HidePointerCursorHandler });
+        term.RestorePointerCursor({ this, &TerminalPage::_RestorePointerCursorHandler });
+
         // Bind Tab events to the TermControl and the Tab's Pane
         hostingTab.Initialize(term);
 
@@ -1334,49 +1345,27 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
+        const auto index{ _GetFocusedTabIndex().value_or(0) };
         const auto tabSwitchMode = _settings.GlobalSettings().TabSwitcherMode();
-        const bool useInOrderTabIndex = tabSwitchMode != TabSwitcherMode::MostRecentlyUsed;
-
-        // First, determine what the index of the newly selected tab should be.
-        // This changes if we're doing an in-order traversal vs a MRU traversal.
-        auto newTabIndex = 0;
-        if (useInOrderTabIndex)
+        if (tabSwitchMode == TabSwitcherMode::Disabled)
         {
-            // Determine what the next in-order tab index is
-            if (auto index{ _GetFocusedTabIndex() })
-            {
-                uint32_t tabCount = _tabs.Size();
-                // Wraparound math. By adding tabCount and then calculating
-                // modulo tabCount, we clamp the values to the range [0,
-                // tabCount) while still supporting moving leftward from 0 to
-                // tabCount - 1.
-                newTabIndex = ((tabCount + *index + (bMoveRight ? 1 : -1)) % tabCount);
-            }
+            uint32_t tabCount = _tabs.Size();
+            // Wraparound math. By adding tabCount and then calculating
+            // modulo tabCount, we clamp the values to the range [0,
+            // tabCount) while still supporting moving leftward from 0 to
+            // tabCount - 1.
+            const auto newTabIndex = ((tabCount + index + (bMoveRight ? 1 : -1)) % tabCount);
+            _SelectTab(newTabIndex);
         }
         else
         {
-            // Determine what the next "most recently used" index is.
-            // In this case, our focused tab index (in the MRU ordering) is
-            // always 0. So, going next should go to index 1, and going prev
-            // should wrap to the end.
-            uint32_t tabCount = _mruTabs.Size();
-            newTabIndex = ((tabCount + (bMoveRight ? 1 : -1)) % tabCount);
-        }
-
-        const bool useTabSwitcher = tabSwitchMode != TabSwitcherMode::Disabled;
-
-        if (useTabSwitcher)
-        {
-            CommandPalette().SetTabs(useInOrderTabIndex ? _tabs : _mruTabs, true);
+            CommandPalette().SetTabs(_tabs, _mruTabs);
 
             // Otherwise, set up the tab switcher in the selected mode, with
             // the given ordering, and make it visible.
-            CommandPalette().EnableTabSwitcherMode(false, newTabIndex);
+            CommandPalette().EnableTabSwitcherMode(index, tabSwitchMode);
             CommandPalette().Visibility(Visibility::Visible);
-        }
-        else if (auto index{ _GetFocusedTabIndex() })
-        {
-            _SelectTab(newTabIndex);
+            CommandPalette().SelectNextItem(bMoveRight);
         }
     }
 
@@ -2254,6 +2243,8 @@ namespace winrt::TerminalApp::implementation
                     _UpdateMRUTab(index);
                 }
 
+                tab.TabViewItem().StartBringIntoView();
+
                 // Raise an event that our title changed
                 _titleChangeHandlers(*this, tab.Title());
             }
@@ -2366,6 +2357,9 @@ namespace winrt::TerminalApp::implementation
             {
                 settingsTab.UpdateSettings(_settings);
             }
+
+            auto tabImpl{ winrt::get_self<TabBase>(tab) };
+            tabImpl->SetKeyMap(_settings.KeyMap());
         }
 
         auto weakThis{ get_weak() };
@@ -2852,6 +2846,7 @@ namespace winrt::TerminalApp::implementation
             _mruTabs.Append(*newTabImpl);
 
             newTabImpl->SetDispatch(*_actionDispatch);
+            newTabImpl->SetKeyMap(_settings.KeyMap());
 
             // Give the tab its index in the _tabs vector so it can manage its own SwitchToTab command.
             _UpdateTabIndices();
@@ -3052,6 +3047,32 @@ namespace winrt::TerminalApp::implementation
         const winrt::hstring serviceName{ _getTabletServiceName() };
         const winrt::hstring text{ fmt::format(std::wstring_view(RS_(L"KeyboardServiceWarningText")), serviceName) };
         return text;
+    }
+
+    // Method Description:
+    // - Hides cursor if required
+    // Return Value:
+    // - <none>
+    void TerminalPage::_HidePointerCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    {
+        if (_shouldMouseVanish && !_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(nullptr);
+            _isMouseHidden = true;
+        }
+    }
+
+    // Method Description:
+    // - Restores cursor if required
+    // Return Value:
+    // - <none>
+    void TerminalPage::_RestorePointerCursorHandler(const IInspectable& /*sender*/, const IInspectable& /*eventArgs*/)
+    {
+        if (_isMouseHidden)
+        {
+            CoreWindow::GetForCurrentThread().PointerCursor(_defaultPointerCursor);
+            _isMouseHidden = false;
+        }
     }
 
     // -------------------------------- WinRT Events ---------------------------------

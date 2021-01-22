@@ -17,8 +17,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.MergedDictionaries>
             
             <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
-                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"
-                             Style="{StaticResource RadioButtonSettingStyle}"/>
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
             </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
@@ -26,10 +25,10 @@ the MIT License. See LICENSE in the project root for license information. -->
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_CopyOnSelect"
-                          IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                              Margin="0">
+                <ToggleSwitch x:Uid="Globals_CopyOnSelect"
+                              IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
              </ContentPresenter>
 
             <!--Copy Format-->
@@ -37,8 +36,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <muxc:RadioButtons x:Uid="Globals_CopyFormat"
                                    ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </ContentPresenter>
 
             <!--Word Delimiters-->
@@ -50,9 +48,8 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!--Snap On Resize-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_SnapToGridOnResize"
-                          IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_SnapToGridOnResize"
+                              IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
             </ContentPresenter>
             
             <!--Tab Switcher Mode-->
@@ -60,8 +57,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <muxc:RadioButtons x:Uid="Globals_TabSwitcherMode"
                                    SelectedItem="{x:Bind CurrentTabSwitcherMode}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
-                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   Style="{StaticResource RadioButtonsSettingStyle}"/>
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>

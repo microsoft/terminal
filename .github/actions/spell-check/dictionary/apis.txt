@@ -41,6 +41,7 @@ ITab
 ITaskbar
 LCID
 llabs
+llu
 localtime
 lround
 LSHIFT
@@ -62,6 +63,7 @@ PAGESCROLL
 REGCLS
 pmr
 RETURNCMD
+REGCLS
 rfind
 roundf
 RSHIFT

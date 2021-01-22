@@ -20,10 +20,11 @@ Abstract:
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
 {
-    static constexpr std::array<pair_type, 5> mappings = {
+    static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "bar", ValueType::Bar },
         pair_type{ "vintage", ValueType::Vintage },
         pair_type{ "underscore", ValueType::Underscore },
+        pair_type{ "doubleUnderscore", ValueType::DoubleUnderscore },
         pair_type{ "filledBox", ValueType::FilledBox },
         pair_type{ "emptyBox", ValueType::EmptyBox }
     };

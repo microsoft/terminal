@@ -229,13 +229,15 @@ namespace winrt::TerminalApp::implementation
         _CursorColor = til::color{ scheme.CursorColor() };
 
         const auto table = scheme.Table();
-        std::transform(table.cbegin(), table.cend(), _colorTable.begin(), [](auto&& color) {
+        std::array<uint32_t, COLOR_TABLE_SIZE> colorTable{};
+        std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
             return static_cast<uint32_t>(til::color{ color });
         });
+        ColorTable(colorTable);
     }
 
     uint32_t TerminalSettings::GetColorTableEntry(int32_t index) const noexcept
     {
-        return _colorTable.at(index);
+        return ColorTable().at(index);
     }
 }
