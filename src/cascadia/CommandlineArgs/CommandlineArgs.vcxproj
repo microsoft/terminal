@@ -41,7 +41,6 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
-    <!-- <PRIResource Include="Resources\en-US\Resources.resw" /> -->
     <OCResourceDirectory Include="Resources" />
     <None Include="packages.config" />
   </ItemGroup>
