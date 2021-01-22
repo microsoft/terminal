@@ -13,12 +13,12 @@ namespace TerminalAppLocalTests
 };
 #endif
 
-namespace CommandlineArgs
+namespace Microsoft::Terminal::CommandlineArgs
 {
     class AppCommandlineArgs;
 };
 
-class CommandlineArgs::AppCommandlineArgs final
+class Microsoft::Terminal::CommandlineArgs::AppCommandlineArgs final
 {
 public:
     static constexpr std::string_view NixHelpFlag{ "-?" };

@@ -217,6 +217,10 @@
     <PRIResource Include="Resources\en-US\Resources.resw">
       <SubType>Designer</SubType>
     </PRIResource>
+    <!-- Make sure to include the CommandlineArgs resources here, so they shouw up in our scope -->
+    <PRIResource Include="$(OpenConsoleDir)src\cascadia\CommandlineArgs\Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
     <OCResourceDirectory Include="Resources" />
     <None Include="TerminalSettingsEditor.def" />
     <None Include="packages.config" />

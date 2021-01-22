@@ -41,6 +41,8 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
+    <!-- <PRIResource Include="Resources\en-US\Resources.resw" /> -->
+    <OCResourceDirectory Include="Resources" />
     <None Include="packages.config" />
   </ItemGroup>
   <!-- ========================= Project References ======================== -->
@@ -115,5 +117,4 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
-  <!-- <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" /> -->
 </Project>

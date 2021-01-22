@@ -85,8 +85,8 @@ namespace winrt::TerminalApp::implementation
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
-        ::CommandlineArgs::AppCommandlineArgs _appArgs;
-        ::CommandlineArgs::AppCommandlineArgs _settingsAppArgs;
+        ::Microsoft::Terminal::CommandlineArgs::AppCommandlineArgs _appArgs;
+        ::Microsoft::Terminal::CommandlineArgs::AppCommandlineArgs _settingsAppArgs;
         int _ParseArgs(winrt::array_view<const hstring>& args);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);

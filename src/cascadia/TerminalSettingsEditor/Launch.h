@@ -34,7 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
 
     private:
-        CommandlineArgs::AppCommandlineArgs argParser;
+        ::Microsoft::Terminal::CommandlineArgs::AppCommandlineArgs argParser;
     };
 }
 

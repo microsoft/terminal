@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "Commandline.h"
 
-using namespace CommandlineArgs;
+using namespace Microsoft::Terminal::CommandlineArgs;
 
 size_t Commandline::Argc() const
 {

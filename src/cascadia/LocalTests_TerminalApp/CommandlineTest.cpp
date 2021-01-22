@@ -14,7 +14,7 @@ using namespace WEX::TestExecution;
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::TerminalApp;
-using namespace ::CommandlineArgs;
+using namespace ::Microsoft::Terminal::CommandlineArgs;
 
 namespace TerminalAppLocalTests
 {

@@ -12,7 +12,7 @@
 #include "../CppWinrtTailored.h"
 
 using namespace Microsoft::Console;
-using namespace CommandlineArgs;
+using namespace Microsoft::Terminal::CommandlineArgs;
 using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
