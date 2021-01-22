@@ -557,7 +557,7 @@
   <data name="Profile_IconBrowse.Content" xml:space="preserve">
     <value>Browse...</value>
   </data>
-  <data name="Profile_Padding.Header" xml:space="preserve">
+  <data name="Profile_Padding.Text" xml:space="preserve">
     <value>Padding</value>
   </data>
   <data name="Profile_Padding.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
