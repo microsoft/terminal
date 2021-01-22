@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile CreateNewProfile();
         Model::Profile FindProfile(guid profileGuid) const noexcept;
         Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
-        void RenameColorScheme(const hstring oldName, const hstring newName);
+        void UpdateColorSchemeReferences(const hstring oldName, const hstring newName);
 
         Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
         void ClearWarnings();

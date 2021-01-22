@@ -53,13 +53,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void ColorSchemesPageNavigationState::RenameColorScheme(hstring oldName, hstring newName)
     {
-        _Settings.RenameColorScheme(oldName, newName);
+        auto scheme{ _Globals.ColorSchemes().Lookup(oldName) };
+        scheme.Name(newName);
+        _Globals.RemoveColorScheme(oldName);
+        _Globals.AddColorScheme(scheme);
+
+        _Settings.UpdateColorSchemeReferences(oldName, newName);
     }
 
     void ColorSchemesPageNavigationState::DeleteColorScheme(hstring name)
     {
         // This ensures that the JSON is updated with "Campbell", because the color scheme was deleted
-        _Settings.RenameColorScheme(name, L"Campbell");
+        _Globals.RemoveColorScheme(name);
+        _Settings.UpdateColorSchemeReferences(name, L"Campbell");
     }
 
     ColorSchemes::ColorSchemes() :
