@@ -1046,6 +1046,7 @@ public:
         _tabClearTypes{},
         _isDECCOLMAllowed{ false },
         _windowWidth{ 80 },
+        _bracketedPasteMode{ false },
         _win32InputMode{ false },
         _setDefaultForeground(false),
         _defaultForegroundColor{ RGB(0, 0, 0) },
@@ -1284,6 +1285,9 @@ public:
         case DispatchTypes::ModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
+        case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+            fSuccess = EnableXtermBracketedPasteMode(fEnable);
+            break;
         case DispatchTypes::ModeParams::W32IM_Win32InputMode:
             fSuccess = EnableWin32InputMode(fEnable);
             break;
@@ -1314,6 +1318,12 @@ public:
     bool SetVirtualTerminalInputMode(const bool fApplicationMode) noexcept
     {
         _cursorKeysMode = fApplicationMode;
+        return true;
+    }
+
+    bool EnableXtermBracketedPasteMode(const bool enable) noexcept
+    {
+        _bracketedPasteMode = enable;
         return true;
     }
 
@@ -1511,6 +1521,7 @@ public:
     std::vector<DispatchTypes::TabClearType> _tabClearTypes;
     bool _isDECCOLMAllowed;
     size_t _windowWidth;
+    bool _bracketedPasteMode;
     bool _win32InputMode;
     bool _setDefaultForeground;
     DWORD _defaultForegroundColor;
