@@ -31,6 +31,7 @@ namespace winrt::TerminalApp::implementation
         _currentNestedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _commandLineHistory = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
@@ -51,6 +52,12 @@ namespace winrt::TerminalApp::implementation
         RegisterPropertyChangedCallback(UIElement::VisibilityProperty(), [this](auto&&, auto&&) {
             if (Visibility() == Visibility::Visible)
             {
+                if (_filteredActionsView().Items().Size() == 0 && _filteredActions.Size() > 0)
+                {
+                    // Force immediate binding update so we can select an item
+                    Bindings->Update();
+                }
+
                 if (_currentMode == CommandPaletteMode::TabSwitchMode)
                 {
                     _searchBox().Visibility(Visibility::Collapsed);
@@ -66,7 +73,6 @@ namespace winrt::TerminalApp::implementation
                 {
                     _filteredActionsView().SelectedIndex(0);
                     _searchBox().Focus(FocusState::Programmatic);
-                    _updateFilteredActions();
                 }
 
                 TraceLoggingWrite(
@@ -112,7 +118,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::SelectNextItem(const bool moveDown)
     {
-        const auto selected = _filteredActionsView().SelectedIndex();
+        auto selected = _filteredActionsView().SelectedIndex();
         const int numItems = ::base::saturated_cast<int>(_filteredActionsView().Items().Size());
 
         // Do not try to select an item if
@@ -245,18 +251,26 @@ namespace winrt::TerminalApp::implementation
         // Only give anchored tab switcher the ability to cycle through tabs with the tab button.
         // For unanchored mode, accessibility becomes an issue when we try to hijack tab since it's
         // a really widely used keyboard navigation key.
-        if (_currentMode == CommandPaletteMode::TabSwitchMode && key == VirtualKey::Tab)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode && _keymap)
         {
-            auto const state = CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift);
-            if (WI_IsFlagSet(state, CoreVirtualKeyStates::Down))
+            auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
+            auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
+            auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+            winrt::Microsoft::Terminal::TerminalControl::KeyChord kc{ ctrlDown, altDown, shiftDown, static_cast<int32_t>(key) };
+            const auto action = _keymap.TryLookup(kc);
+            if (action)
             {
-                SelectNextItem(false);
-                e.Handled(true);
-            }
-            else
-            {
-                SelectNextItem(true);
-                e.Handled(true);
+                if (action.Action() == ShortcutAction::PrevTab)
+                {
+                    SelectNextItem(false);
+                    e.Handled(true);
+                }
+                else if (action.Action() == ShortcutAction::NextTab)
+                {
+                    SelectNextItem(true);
+                    e.Handled(true);
+                }
             }
         }
         else if (key == VirtualKey::Home)
@@ -349,30 +363,6 @@ namespace winrt::TerminalApp::implementation
             }
 
             e.Handled(true);
-        }
-        else
-        {
-            const auto vkey = ::gsl::narrow_cast<WORD>(e.OriginalKey());
-
-            // In the interest of not telling all modes to check for keybindings, limit to TabSwitch mode for now.
-            if (_currentMode == CommandPaletteMode::TabSwitchMode)
-            {
-                auto const ctrlDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-                auto const altDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-                auto const shiftDown = WI_IsFlagSet(CoreWindow::GetForCurrentThread().GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
-
-                auto success = _bindings.TryKeyChord({
-                    ctrlDown,
-                    altDown,
-                    shiftDown,
-                    vkey,
-                });
-
-                if (success)
-                {
-                    e.Handled(true);
-                }
-            }
         }
     }
 
@@ -577,7 +567,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSearchMode:
             return _tabActions;
         case CommandPaletteMode::TabSwitchMode:
-            return _tabActions;
+            return _tabSwitcherMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabActions : _tabActions;
         case CommandPaletteMode::CommandlineMode:
             return _commandLineHistory;
         default:
@@ -855,9 +845,9 @@ namespace winrt::TerminalApp::implementation
         return _filteredActions;
     }
 
-    void CommandPalette::SetKeyBindings(Microsoft::Terminal::TerminalControl::IKeyBindings bindings)
+    void CommandPalette::SetKeyMap(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
     {
-        _bindings = bindings;
+        _keymap = keymap;
     }
 
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
@@ -870,31 +860,40 @@ namespace winrt::TerminalApp::implementation
             _allCommands.Append(filteredCommand);
         }
 
-        _updateFilteredActions();
+        if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
+        {
+            _updateFilteredActions();
+        }
     }
 
-    void CommandPalette::SetTabs(Collections::IVector<TabBase> const& tabs, const bool clearList)
+    // Method Description:
+    // - Replaces a list of filtered commands in the target collection with new
+    //   commands based on the tabs in the source collection.
+    // Although the source observable we still don't register on it,
+    // so the palette user will need to reset the binding manually every time
+    // the source collection changes
+    // Arguments:
+    // - source: the tabs to use for creation filtered commands
+    // - target: the collection to store newly created filtered commands
+    // Return Value:
+    // - <none>
+    void CommandPalette::_bindTabs(
+        Windows::Foundation::Collections::IObservableVector<winrt::TerminalApp::TabBase> const& source,
+        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> const& target)
     {
-        _tabActions.Clear();
-        for (const auto& tab : tabs)
+        target.Clear();
+        for (const auto& tab : source)
         {
             auto tabPaletteItem{ winrt::make<winrt::TerminalApp::implementation::TabPaletteItem>(tab) };
             auto filteredCommand{ winrt::make<FilteredCommand>(tabPaletteItem) };
-            _tabActions.Append(filteredCommand);
+            target.Append(filteredCommand);
         }
+    }
 
-        // The smooth remove/add animations that happen during
-        // UpdateFilteredActions don't work very well with changing the tab
-        // order, because of the sheer amount of remove/adds. So, let's just
-        // clear & rebuild the list when we change the set of tabs.
-        //
-        // Some callers might actually want smooth updating, like when the list
-        // of tabs changes.
-        if (clearList && _currentMode == CommandPaletteMode::TabSwitchMode)
-        {
-            _filteredActions.Clear();
-        }
-        _updateFilteredActions();
+    void CommandPalette::SetTabs(Collections::IObservableVector<TabBase> const& tabs, Collections::IObservableVector<TabBase> const& mruTabs)
+    {
+        _bindTabs(tabs, _tabActions);
+        _bindTabs(mruTabs, _mruTabActions);
     }
 
     void CommandPalette::EnableCommandPaletteMode(CommandPaletteLaunchMode const launchMode)
@@ -904,26 +903,11 @@ namespace winrt::TerminalApp::implementation
                               CommandPaletteMode::ActionMode;
 
         _switchToMode(mode);
-        _updateFilteredActions();
     }
 
     void CommandPalette::_switchToMode(CommandPaletteMode mode)
     {
-        // The smooth remove/add animations that happen during
-        // UpdateFilteredActions don't work very well when switching between
-        // modes because of the sheer amount of remove/adds. So, let's just
-        // clear + append when switching between modes.
-        if (mode != _currentMode)
-        {
-            _currentMode = mode;
-            _filteredActions.Clear();
-            auto commandsToFilter = _commandsToFilter();
-
-            for (auto action : commandsToFilter)
-            {
-                _filteredActions.Append(action);
-            }
-        }
+        _currentMode = mode;
 
         ParsedCommandLineText(L"");
         _searchBox().Text(L"");
@@ -956,6 +940,13 @@ namespace winrt::TerminalApp::implementation
             PrefixCharacter(L">");
             break;
         }
+
+        // The smooth remove/add animations that happen during
+        // UpdateFilteredActions don't work very well when switching between
+        // modes because of the sheer amount of remove/adds. So, let's just
+        // clear + append when switching between modes.
+        _filteredActions.Clear();
+        _updateFilteredActions();
     }
 
     // Method Description:
@@ -972,27 +963,34 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring searchText{ _getTrimmedInput() };
 
         auto commandsToFilter = _commandsToFilter();
-        for (const auto& action : commandsToFilter)
-        {
-            // Update filter for all commands
-            // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
-            // Pay attention that it already updates the highlighting in the UI
-            action.UpdateFilter(searchText);
 
-            // if there is active search we skip commands with 0 weight
-            if (searchText.empty() || action.Weight() > 0)
+        if (_currentMode == CommandPaletteMode::TabSwitchMode)
+        {
+            std::copy(begin(commandsToFilter), end(commandsToFilter), std::back_inserter(actions));
+        }
+        else if (_currentMode == CommandPaletteMode::TabSearchMode || _currentMode == CommandPaletteMode::ActionMode || _currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            for (const auto& action : commandsToFilter)
             {
-                actions.push_back(action);
+                // Update filter for all commands
+                // This will modify the highlighting but will also lead to re-computation of weight (and consequently sorting).
+                // Pay attention that it already updates the highlighting in the UI
+                action.UpdateFilter(searchText);
+
+                // if there is active search we skip commands with 0 weight
+                if (searchText.empty() || action.Weight() > 0)
+                {
+                    actions.push_back(action);
+                }
             }
         }
 
-        // We want to present the commands sorted,
-        // unless we are in the TabSwitcherMode and TabSearchMode,
-        // in which we want to preserve the original order (to be aligned with the tab view)
-        if (_currentMode != CommandPaletteMode::TabSearchMode && _currentMode != CommandPaletteMode::TabSwitchMode && _currentMode != CommandPaletteMode::CommandlineMode)
+        // We want to present the commands sorted
+        if (_currentMode == CommandPaletteMode::ActionMode)
         {
             std::sort(actions.begin(), actions.end(), FilteredCommand::Compare);
         }
+
         return actions;
     }
 
@@ -1067,20 +1065,18 @@ namespace winrt::TerminalApp::implementation
         _currentNestedCommands.Clear();
     }
 
-    void CommandPalette::EnableTabSwitcherMode(const bool searchMode, const uint32_t startIdx)
+    void CommandPalette::EnableTabSwitcherMode(const uint32_t startIdx, TabSwitcherMode tabSwitcherMode)
     {
-        _switcherStartIdx = startIdx;
-
-        if (searchMode)
-        {
-            _switchToMode(CommandPaletteMode::TabSearchMode);
-        }
-        else
-        {
-            _switchToMode(CommandPaletteMode::TabSwitchMode);
-        }
-
-        _updateFilteredActions();
+        // The _switcherStartIdx field allows us to select the current tab
+        // We need to take it into account only in the in-order mode,
+        // as an MRU mode the current tab is on top by definition.
+        _switcherStartIdx = tabSwitcherMode == TabSwitcherMode::InOrder ? startIdx : 0;
+        _tabSwitcherMode = tabSwitcherMode;
+        _switchToMode(CommandPaletteMode::TabSwitchMode);
     }
 
+    void CommandPalette::EnableTabSearchMode()
+    {
+        _switchToMode(CommandPaletteMode::TabSearchMode);
+    }
 }

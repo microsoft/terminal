@@ -133,6 +133,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     case CursorStyle::Vintage:
         cursorShape = CursorType::Legacy;
         break;
+    case CursorStyle::DoubleUnderscore:
+        cursorShape = CursorType::DoubleUnderscore;
+        break;
     default:
     case CursorStyle::Bar:
         cursorShape = CursorType::VerticalBar;
@@ -333,7 +336,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
                 try
                 {
                     auto& row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
-                    if (row.GetCharRow().WasWrapForced())
+                    if (row.WasWrapForced())
                     {
                         proposedTop--;
                     }

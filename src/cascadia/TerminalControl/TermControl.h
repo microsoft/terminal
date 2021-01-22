@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         hstring GetProfileName() const;
+        hstring WorkingDirectory() const;
 
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
@@ -179,6 +180,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TYPED_EVENT(ConnectionStateChanged, TerminalControl::TermControl, IInspectable);
         TYPED_EVENT(Initialized, TerminalControl::TermControl, Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(TabColorChanged, IInspectable, IInspectable);
+        TYPED_EVENT(HidePointerCursor, IInspectable, IInspectable);
+        TYPED_EVENT(RestorePointerCursor, IInspectable, IInspectable);
         // clang-format on
 
     private:

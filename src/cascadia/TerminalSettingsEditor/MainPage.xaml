@@ -37,14 +37,6 @@ the MIT License. See LICENSE in the project root for license information. -->
                          ItemInvoked="SettingsNav_ItemInvoked"
                          IsBackButtonVisible="Collapsed">
 
-        <muxc:NavigationView.HeaderTemplate>
-            <DataTemplate x:DataType="x:String">
-                <TextBlock Text="{x:Bind}"
-                           Margin="8,10,0,0"
-                           Style="{StaticResource TitleTextBlockStyle}"/>
-            </DataTemplate>
-        </muxc:NavigationView.HeaderTemplate>
-    
         <muxc:NavigationView.MenuItems>
     
             <muxc:NavigationViewItem x:Uid="Nav_Launch"
@@ -120,18 +112,15 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <TextBlock x:Uid="Settings_UnsavedSettingsWarning"
                            Visibility="Collapsed"
                            Foreground="Goldenrod"
-                           FontSize="15"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Left"
                            TextAlignment="Left"
                            Margin="30,0,0,0"/>
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,30,0">
                     <Button x:Uid="Settings_ResetSettingsButton"
-                            FontSize="15"
                             ToolTipService.Placement="Mouse"
                             Click="ResetButton_Click"/>
                     <Button x:Uid="Settings_SaveSettingsButton"
-                            FontSize="15"
                             Style="{StaticResource AccentButtonStyle}"
                             Margin="10,0,0,0"
                             Click="SaveButton_Click"/>

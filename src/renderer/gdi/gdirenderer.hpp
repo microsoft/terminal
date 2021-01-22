@@ -125,6 +125,13 @@ namespace Microsoft::Console::Render
         COLORREF _lastBg;
         bool _lastFontItalic;
 
+        // Memory pooling to save alloc/free work to the OS for things
+        // frequently created and dropped.
+        // It's important the pool is first so it can be given to the others on construction.
+        std::pmr::unsynchronized_pool_resource _pool;
+        std::pmr::vector<std::pmr::wstring> _polyStrings;
+        std::pmr::vector<std::pmr::basic_string<int>> _polyWidths;
+
         [[nodiscard]] HRESULT _InvalidCombine(const RECT* const prc) noexcept;
         [[nodiscard]] HRESULT _InvalidOffset(const POINT* const ppt) noexcept;
         [[nodiscard]] HRESULT _InvalidRestrict() noexcept;

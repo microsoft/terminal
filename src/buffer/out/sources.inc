@@ -37,7 +37,6 @@ SOURCES= \
     ..\OutputCellRect.cpp \
     ..\OutputCellView.cpp \
     ..\Row.cpp \
-    ..\RowCellIterator.cpp \
     ..\TextColor.cpp \
     ..\TextAttribute.cpp \
     ..\textBuffer.cpp \

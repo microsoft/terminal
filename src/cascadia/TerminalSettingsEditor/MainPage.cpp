@@ -49,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InitializeComponent();
 
         _InitializeProfilesList();
+
+        _colorSchemesNavState = winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings());
     }
 
     // Method Description:
@@ -64,69 +66,94 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         co_await winrt::resume_foreground(Dispatcher());
 
-        // "remove" all profile-related NavViewItems
-        // LOAD-BEARING: use Visibility here, instead of menuItems.Remove().
-        //               Remove() works fine on NavViewItems with an hstring tag,
-        //               but causes an out-of-bounds error with Profile tagged items.
-        //               The cause of this error is unknown.
+        // Deduce information about the currently selected item
+        IInspectable selectedItemTag;
         auto menuItems{ SettingsNav().MenuItems() };
-        for (auto i = menuItems.Size() - 1; i > 0; --i)
+        if (const auto& selectedItem{ SettingsNav().SelectedItem() })
         {
-            if (const auto navViewItem{ menuItems.GetAt(i).try_as<MUX::Controls::NavigationViewItem>() })
+            if (const auto& navViewItem{ selectedItem.try_as<MUX::Controls::NavigationViewItem>() })
             {
-                if (const auto tag{ navViewItem.Tag() })
+                selectedItemTag = navViewItem.Tag();
+            }
+        }
+
+        // remove all profile-related NavViewItems by populating a std::vector
+        // with the ones we want to keep.
+        // NOTE: menuItems.Remove() causes an out-of-bounds crash. Using ReplaceAll()
+        //       gets around this crash.
+        std::vector<IInspectable> menuItemsSTL;
+        for (const auto& item : menuItems)
+        {
+            if (const auto& navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+            {
+                if (const auto& tag{ navViewItem.Tag() })
                 {
                     if (tag.try_as<Editor::ProfileViewModel>())
                     {
-                        // hide NavViewItem pointing to a Profile
-                        navViewItem.Visibility(Visibility::Collapsed);
+                        // don't add NavViewItem pointing to a Profile
+                        continue;
                     }
-                    else if (const auto stringTag{ tag.try_as<hstring>() })
+                    else if (const auto& stringTag{ tag.try_as<hstring>() })
                     {
                         if (stringTag == addProfileTag)
                         {
-                            // hide NavViewItem pointing to "Add Profile"
-                            navViewItem.Visibility(Visibility::Collapsed);
+                            // don't add the "Add Profile" item
+                            continue;
+                        }
+                    }
+                }
+            }
+            menuItemsSTL.emplace_back(item);
+        }
+        menuItems.ReplaceAll(menuItemsSTL);
+
+        // Repopulate profile-related menu items
+        _InitializeProfilesList();
+        // Update the Nav State with the new version of the settings
+        _colorSchemesNavState.Globals(_settingsClone.GlobalSettings());
+
+        // now that the menuItems are repopulated,
+        // refresh the current page using the SelectedItem data we collected before the refresh
+        if (selectedItemTag)
+        {
+            const auto& selectedItemStringTag{ selectedItemTag.try_as<hstring>() };
+            const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() };
+            for (const auto& item : menuItems)
+            {
+                if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
+                {
+                    if (const auto& tag{ menuItem.Tag() })
+                    {
+                        if (const auto& stringTag{ tag.try_as<hstring>() })
+                        {
+                            if (stringTag == selectedItemStringTag)
+                            {
+                                // found the one that was selected before the refresh
+                                SettingsNav().SelectedItem(item);
+                                _Navigate(*stringTag);
+                                co_return;
+                            }
+                        }
+                        else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
+                        {
+                            if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                            {
+                                // found the one that was selected before the refresh
+                                SettingsNav().SelectedItem(item);
+                                _Navigate(*profileTag);
+                                co_return;
+                            }
                         }
                     }
                 }
             }
         }
-        _InitializeProfilesList();
 
-        _RefreshCurrentPage();
-    }
-
-    void MainPage::_RefreshCurrentPage()
-    {
-        auto navigationMenu{ SettingsNav() };
-        if (const auto selectedItem{ navigationMenu.SelectedItem() })
-        {
-            if (const auto tag{ selectedItem.as<MUX::Controls::NavigationViewItem>().Tag() })
-            {
-                if (const auto oldProfile{ tag.try_as<Editor::ProfileViewModel>() })
-                {
-                    // check if the profile still exists
-                    if (const auto profile{ _settingsClone.FindProfile(oldProfile.Guid()) })
-                    {
-                        // Navigate to the page with the given profile
-                        _Navigate(_viewModelForProfile(profile));
-                        return;
-                    }
-                }
-                else if (const auto stringTag{ tag.try_as<hstring>() })
-                {
-                    // navigate to the page with this tag
-                    _Navigate(*stringTag);
-                    return;
-                }
-            }
-        }
-
-        // could not find the page we were on, fallback to first menu item
-        const auto firstItem{ navigationMenu.MenuItems().GetAt(0) };
-        navigationMenu.SelectedItem(firstItem);
-        if (const auto tag{ navigationMenu.SelectedItem().as<MUX::Controls::NavigationViewItem>().Tag() })
+        // couldn't find the selected item,
+        // fallback to first menu item
+        const auto& firstItem{ menuItems.GetAt(0) };
+        SettingsNav().SelectedItem(firstItem);
+        if (const auto& tag{ SettingsNav().SelectedItem().try_as<MUX::Controls::NavigationViewItem>().Tag() })
         {
             _Navigate(unbox_value<hstring>(tag));
         }
@@ -180,6 +207,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (const auto clickedItemContainer = args.InvokedItemContainer())
         {
+            if (clickedItemContainer.IsSelected())
+            {
+                // Clicked on the selected item.
+                // Don't navigate to the same page again.
+                return;
+            }
+
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
                 if (navString == addProfileTag)
@@ -225,7 +259,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == colorSchemesTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), winrt::make<ColorSchemesPageNavigationState>(_settingsClone.GlobalSettings()));
+            contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
@@ -271,8 +305,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::ResetButton_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _settingsClone = _settingsSource.Copy();
-        _RefreshCurrentPage();
+        UpdateSettings(_settingsSource);
     }
 
     void MainPage::_InitializeProfilesList()

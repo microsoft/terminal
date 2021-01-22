@@ -82,14 +82,9 @@
                 <desktop5:ItemType Type="Directory">
                     <desktop5:Verb Id="Command1" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
                 </desktop5:ItemType>
-                <!-- Due to a bug in the OS, this doesn't actually work right -
-                we'll get a nullptr in our implementation. So this is disabled
-                temporarily. See MSFT:24623699 for more details.
-
                 <desktop5:ItemType Type="Directory\Background">
-                    <desktop5:Verb Id="Command2" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
-                </desktop5:ItemType>
-                -->
+                  <desktop5:Verb Id="Command2" Clsid="9f156763-7844-4dc4-b2b1-901f640f5155" />
+                </desktop5:ItemType>                
             </desktop4:FileExplorerContextMenus>
         </desktop4:Extension>
 

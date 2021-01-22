@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "EnumEntry.idl";
+
 namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass InteractionPageNavigationState
@@ -12,5 +14,11 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Interaction();
         InteractionPageNavigationState State { get; };
+
+        IInspectable CurrentTabSwitcherMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabSwitcherModeList { get; };
+
+        IInspectable CurrentCopyFormat;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CopyFormatList { get; };
     }
 }
