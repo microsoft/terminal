@@ -408,10 +408,13 @@
     <value>Cancel</value>
   </data>
   <data name="CloseReadOnlyDialog.PrimaryButtonText" xml:space="preserve">
-    <value>Close read-only tabs</value>
+    <value>Close anyway</value>
   </data>
   <data name="CloseReadOnlyDialog.Title" xml:space="preserve">
-    <value>Do you want to close read-only tab or tabs?</value>
+    <value>Warning</value>
+  </data>
+  <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
+    <value>You are about to close tab that contains read-only pane. Do you wish to continue?</value>
   </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
