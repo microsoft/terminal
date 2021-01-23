@@ -2085,6 +2085,8 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
     FAIL_FAST();
 }
 
+// Method Description:
+// - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly()
 {
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
