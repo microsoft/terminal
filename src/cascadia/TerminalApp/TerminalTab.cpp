@@ -592,9 +592,6 @@ namespace winrt::TerminalApp::implementation
         control.ReadOnlyChanged([weakThis](auto&&) {
             if (auto tab{ weakThis.get() })
             {
-                // The control's tabColor changed, but it is not necessarily the
-                // active control in this tab. We'll just recalculate the
-                // current color anyways.
                 tab->_RecalculateAndApplyReadOnly();
             }
         });
@@ -1111,6 +1108,8 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    // Method Description:
+    // - Toggle read-only mode on the active pane
     void TerminalTab::TogglePaneReadOnly()
     {
         auto control = GetActiveTerminalControl();
@@ -1120,6 +1119,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Calculates if the tab is read-only.
+    // The tab is considered read-only if one of the panes is read-only.
+    // If after the calculation the tab is read-only we hide the close button on the tab view item
+    // Currently this is the only indicator that the tab is read-only.
     void TerminalTab::_RecalculateAndApplyReadOnly()
     {
         auto control = GetActiveTerminalControl();
@@ -1128,7 +1132,8 @@ namespace winrt::TerminalApp::implementation
             _headerControl.IsReadOnlyActive(control.ReadOnly());
         }
 
-        TabViewItem().IsClosable(!_rootPane->ContainsReadOnly());
+        ReadOnly(_rootPane->ContainsReadOnly());
+        TabViewItem().IsClosable(!ReadOnly());
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

@@ -27,7 +27,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
-
+    
     <StackPanel x:Name="HeaderStackPanel"
                 Orientation="Horizontal">
         <mux:ProgressRing x:Name="HeaderProgressRing"
