@@ -1403,7 +1403,7 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     textBuffer.GetCursor().SetIsOn(true);
 
     // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.Y).GetCharRow().SetWrapForced(false);
+    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
 
     cursorPosition.Y += 1;
     if (withReturn)

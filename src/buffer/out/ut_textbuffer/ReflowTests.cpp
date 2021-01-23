@@ -743,7 +743,7 @@ class ReflowTests
             auto& row{ buffer->GetRowByOffset(i) };
 
             auto& charRow{ row.GetCharRow() };
-            charRow.SetWrapForced(testRow.wrap);
+            row.SetWrapForced(testRow.wrap);
 
             size_t j{};
             for (auto it{ charRow.begin() }; it != charRow.end(); ++it)
@@ -792,7 +792,7 @@ class ReflowTests
             const auto& charRow{ row.GetCharRow() };
 
             indexString.Format(L"[Row %d]", i);
-            VERIFY_ARE_EQUAL(testRow.wrap, charRow.WasWrapForced(), indexString);
+            VERIFY_ARE_EQUAL(testRow.wrap, row.WasWrapForced(), indexString);
 
             size_t j{};
             for (auto it{ charRow.begin() }; it != charRow.end(); ++it)

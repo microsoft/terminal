@@ -85,7 +85,7 @@ try
 
     // since we explicitly just moved down a row, clear the wrap status on the
     // row we just came from
-    _buffer->GetRowByOffset(cursorPos.Y).GetCharRow().SetWrapForced(false);
+    _buffer->GetRowByOffset(cursorPos.Y).SetWrapForced(false);
 
     cursorPos.Y++;
     if (withReturn)
@@ -535,6 +535,17 @@ bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
 {
     _terminalInput->EnableAlternateScroll(enabled);
     return true;
+}
+
+bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
+    return true;
+}
+
+bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
+{
+    return _bracketedPasteMode;
 }
 
 bool Terminal::IsVtInputEnabled() const noexcept

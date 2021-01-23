@@ -43,6 +43,12 @@ the MIT License. See LICENSE in the project root for license information. -->
         <!--We want the progress ring to 'replace' the tab icon, but we don't have control
         over the tab icon here (the tab view item does) - so we hide the tab icon there
         and use a negative margin for the progress ring here to put it where the icon would be-->
+        <FontIcon x:Name="HeaderBellIndicator"
+                  FontFamily="Segoe MDL2 Assets"
+                  Visibility="{x:Bind BellIndicator, Mode=OneWay}"
+                  Glyph="&#xEA8F;"
+                  FontSize="12"
+                  Margin="0,0,8,0"/>
         <FontIcon x:Name="HeaderZoomIcon"
                   FontFamily="Segoe MDL2 Assets"
                   Visibility="{x:Bind IsPaneZoomed, Mode=OneWay}"
