@@ -729,7 +729,7 @@ namespace winrt::TerminalApp::implementation
     {
         co_await winrt::resume_foreground(page->_tabView.Dispatcher());
 
-        page->_RemoveTabViewItem(tabViewItem);
+        co_await page->_RemoveTabViewItem(tabViewItem);
     }
 
     // Method Description:
@@ -1154,44 +1154,51 @@ namespace winrt::TerminalApp::implementation
     //   and call _RemoveTabViewItemByIndex
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
-    void TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
+    winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_RemoveTabViewItem(const MUX::Controls::TabViewItem& tabViewItem)
     {
         uint32_t tabIndexFromControl = 0;
         if (_tabView.TabItems().IndexOf(tabViewItem, tabIndexFromControl))
         {
             // If IndexOf returns true, we've actually got an index
-            _RemoveTabViewItemByIndex(tabIndexFromControl);
+            co_return co_await _RemoveTabViewItemByIndex(tabIndexFromControl);
         }
+
+        co_return true;
     }
 
     // Method Description:
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
     // - tabIndex: the index of the tab to be removed
-    winrt::Windows::Foundation::IAsyncOperation<IInspectable> TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
+    winrt::Windows::Foundation::IAsyncOperation<bool> TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
+        // Removing the tab from the collection should destroy its control and disconnect its connection,
+        // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
+        auto tab{ _tabs.GetAt(tabIndex) };
+
+        if (tab.ReadOnly())
+        {
+            ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return false;
+            }
+
+            // Recompute tab index as it could change while we were waiting for the dialog
+            if (!_tabs.IndexOf(tab, tabIndex))
+            {
+                // The tab is already removed
+                co_return true;
+            }
+        }
+
         // We use _removing flag to suppress _OnTabSelectionChanged events
         // that might get triggered while removing
         _removing = true;
         auto unsetRemoving = wil::scope_exit([&]() noexcept { _removing = false; });
 
         const auto focusedTabIndex{ _GetFocusedTabIndex() };
-
-        // Removing the tab from the collection should destroy its control and disconnect its connection,
-        // but it doesn't always do so. The UI tree may still be holding the control and preventing its destruction.
-        auto tab{ _tabs.GetAt(tabIndex) };
-
-        if (!tab.TabViewItem().IsClosable())
-        {
-            _displayingCloseDialog = true;
-            ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
-            _displayingCloseDialog = false;
-
-            if (warningResult != ContentDialogResult::Primary)
-            {
-                co_return winrt::box_value(false);
-            }
-        }
 
         tab.Shutdown();
 
@@ -1266,7 +1273,7 @@ namespace winrt::TerminalApp::implementation
             _rearrangeTo = std::nullopt;
         }
 
-        co_return winrt::box_value(true);
+        co_return true;
     }
 
     // Method Description:
@@ -1576,23 +1583,34 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _CloseAllTabs();
+        _CloseTabsInRange(0, _tabs.Size() - 1);
     }
 
     // Method Description:
-    // - Remove all the tabs opened and the terminal will terminate
-    //   on its own when the last tab is closed.
-    winrt::fire_and_forget TerminalPage::_CloseAllTabs()
+    // - Remove all the tabs in the specified range of _tabs
+    // Arguments:
+    // - rangeStart - the index of the first tab in the range
+    // - rangeEnd - the index of the last tab in the range
+    // Return Value:
+    // - the number of tabs that were not closed
+    winrt::Windows::Foundation::IAsyncOperation<uint32_t> TerminalPage::_CloseTabsInRange(const uint32_t rangeStart, const uint32_t rangeEnd)
     {
-        auto index = 0u;
-        while (index < _tabs.Size())
+        if (rangeStart > rangeEnd || rangeEnd >= _tabs.Size())
         {
-            const auto tabClosed = co_await _RemoveTabViewItemByIndex(index);
-            if (!winrt::unbox_value<bool>(tabClosed))
+            co_return 0;
+        }
+
+        uint32_t numNotClosedTabs{};
+        for (uint32_t i = 0; i < rangeEnd - rangeStart + 1; i++)
+        {
+            const auto tabClosed = co_await _RemoveTabViewItemByIndex(rangeStart + numNotClosedTabs);
+            if (!tabClosed)
             {
-                index++;
+                numNotClosedTabs++;
             }
         }
+
+        return numNotClosedTabs;
     }
 
     // Method Description:

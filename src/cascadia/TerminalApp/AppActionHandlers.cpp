@@ -455,8 +455,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
-                                             const ActionEventArgs& actionArgs)
+    winrt::fire_and_forget TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
+                                                               const ActionEventArgs& actionArgs)
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<CloseOtherTabsArgs>())
         {
@@ -476,24 +476,23 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
-            {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
-            }
-
-            // Remove all of them leading up to the selected tab
-            while (_tabs.Size() > 1)
-            {
-                _RemoveTabViewItemByIndex(0);
-            }
-
             actionArgs.Handled(true);
+
+            uint32_t numNotClosedTabs{};
+            if (index > 0)
+            {
+                numNotClosedTabs = co_await _CloseTabsInRange(0, index - 1);
+            }
+
+            if (_tabs.Size() > numNotClosedTabs + 1)
+            {
+                co_await _CloseTabsInRange(numNotClosedTabs + 1, _tabs.Size() - 1);
+            }
         }
     }
 
-    void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
-                                             const ActionEventArgs& actionArgs)
+    winrt::fire_and_forget TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
+                                                               const ActionEventArgs& actionArgs)
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<CloseTabsAfterArgs>())
         {
@@ -513,19 +512,15 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            // Remove tabs after the current one
-            while (_tabs.Size() > index + 1)
-            {
-                _RemoveTabViewItemByIndex(_tabs.Size() - 1);
-            }
+            actionArgs.Handled(true);
+
+            co_await _CloseTabsInRange(index + 1, _tabs.Size() - 1);
 
             // TODO:GH#7182 For whatever reason, if you run this action
             // when the tab that's currently focused is _before_ the `index`
             // param, then the tabs will expand to fill the entire width of the
             // tab row, until you mouse over them. Probably has something to do
             // with tabs not resizing down until there's a mouse exit event.
-
-            actionArgs.Handled(true);
         }
     }
 
