@@ -455,8 +455,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
-                                                               const ActionEventArgs& actionArgs)
+    void TerminalPage::_HandleCloseOtherTabs(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& actionArgs)
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<CloseOtherTabsArgs>())
         {
@@ -476,23 +476,26 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            actionArgs.Handled(true);
-
-            uint32_t numNotClosedTabs{};
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
             if (index > 0)
             {
-                numNotClosedTabs = co_await _CloseTabsInRange(0, index - 1);
+                std::copy(begin(_tabs), begin(_tabs) + index, std::back_inserter(tabsToRemove));
             }
 
-            if (_tabs.Size() > numNotClosedTabs + 1)
+            if (index + 1 < _tabs.Size())
             {
-                co_await _CloseTabsInRange(numNotClosedTabs + 1, _tabs.Size() - 1);
+                std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
             }
+
+            _RemoveTabs(tabsToRemove);
+
+            actionArgs.Handled(true);
         }
     }
 
-    winrt::fire_and_forget TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
-                                                               const ActionEventArgs& actionArgs)
+    void TerminalPage::_HandleCloseTabsAfter(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& actionArgs)
     {
         if (const auto& realArgs = actionArgs.ActionArgs().try_as<CloseTabsAfterArgs>())
         {
@@ -512,15 +515,18 @@ namespace winrt::TerminalApp::implementation
                 return;
             }
 
-            actionArgs.Handled(true);
-
-            co_await _CloseTabsInRange(index + 1, _tabs.Size() - 1);
+            // Since _RemoveTab is asynchronous, create a snapshot of the  tabs we want to remove
+            std::vector<winrt::TerminalApp::TabBase> tabsToRemove;
+            std::copy(begin(_tabs) + index + 1, end(_tabs), std::back_inserter(tabsToRemove));
+            _RemoveTabs(tabsToRemove);
 
             // TODO:GH#7182 For whatever reason, if you run this action
             // when the tab that's currently focused is _before_ the `index`
             // param, then the tabs will expand to fill the entire width of the
             // tab row, until you mouse over them. Probably has something to do
             // with tabs not resizing down until there's a mouse exit event.
+
+            actionArgs.Handled(true);
         }
     }
 
