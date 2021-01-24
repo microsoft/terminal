@@ -414,7 +414,7 @@
     <value>Warning</value>
   </data>
   <data name="CloseReadOnlyDialog.Content" xml:space="preserve">
-    <value>You are about to close tab that contains read-only pane. Do you wish to continue?</value>
+    <value>You are about to close a read-only pane. Do you wish to continue?</value>
   </data>
   <data name="LargePasteDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>

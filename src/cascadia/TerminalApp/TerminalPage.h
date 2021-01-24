@@ -191,7 +191,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _SetFocusedTabIndex(const uint32_t tabIndex);
         void _CloseFocusedTab();
-        void _CloseFocusedPane();
+        winrt::fire_and_forget _CloseFocusedPane();
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 

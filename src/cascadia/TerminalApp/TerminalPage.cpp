@@ -1555,11 +1555,27 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
-    void TerminalPage::_CloseFocusedPane()
+    winrt::fire_and_forget TerminalPage::_CloseFocusedPane()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
+
+            if (const auto control{ terminalTab->GetActiveTerminalControl() })
+            {
+                if (control.ReadOnly())
+                {
+                    ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                    if (warningResult != ContentDialogResult::Primary)
+                    {
+                        co_return;
+                    }
+                }
+            }
+
+            // There is a theoretical race here: if somehow the active pane changes when
+            // the dialog box is open we might close it instead of the original one
             terminalTab->ClosePane();
         }
     }
