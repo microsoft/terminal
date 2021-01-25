@@ -7,13 +7,18 @@
 #include "ParentPane.g.cpp"
 
 using namespace winrt;
-using namespace winrt::Microsoft::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
     ParentPane::ParentPane()
     {
         InitializeComponent();
+    }
+
+    Controls::Grid ParentPane::GetRootElement()
+    {
+        return _root;
     }
 
     void ParentPane::FocusPane(uint32_t /*id*/)

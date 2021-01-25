@@ -7,6 +7,8 @@ namespace TerminalApp
 {
     [default_interface] runtimeclass LeafPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
-        LeafPane();
+        LeafPane(Guid profile, Microsoft.Terminal.TerminalControl.TermControl con, Boolean active);
+        Microsoft.Terminal.TerminalControl.TermControl GetTerminalControl();
+        Guid GetProfile();
     }
 }

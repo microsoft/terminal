@@ -6,5 +6,6 @@ namespace TerminalApp
     interface IPane
     {
         void FocusPane(UInt32 idNum);
+        Windows.UI.Xaml.Controls.Grid GetRootElement();
     }
 }

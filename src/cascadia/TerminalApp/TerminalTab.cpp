@@ -28,7 +28,7 @@ namespace winrt::TerminalApp::implementation
     TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
-        _rootPane2 = LeafPane();
+        _rootPane2 = LeafPane(profile, control, true);
 
         _rootPane->Id(_nextPaneId);
         _mruPanes.insert(_mruPanes.begin(), _nextPaneId);

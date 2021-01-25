@@ -12,8 +12,13 @@ namespace winrt::TerminalApp::implementation
 {
     struct ParentPane : ParentPaneT<ParentPane>
     {
+    public:
         ParentPane();
+        winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
         void FocusPane(uint32_t id);
+
+    private:
+        winrt::Windows::UI::Xaml::Controls::Grid _root{};
     };
 }
 

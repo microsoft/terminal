@@ -12,20 +12,9 @@ the MIT License. See LICENSE in the project root for license information. -->
     mc:Ignorable="d"
     MinHeight="16">
 
-    <UserControl.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Light">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="Dark">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-                <ResourceDictionary x:Key="HighContrast">
-                    <Thickness x:Key="TextControlBorderThemeThicknessFocused">0,0,0,1</Thickness>
-                </ResourceDictionary>
-            </ResourceDictionary.ThemeDictionaries>
-        </ResourceDictionary>
-    </UserControl.Resources>
-    
+    <Grid x:Name="Root">
+        <Border x:Name="GridBorder">
+        </Border>
+    </Grid>
+
 </UserControl>
