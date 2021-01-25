@@ -21,6 +21,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);
+        bool UseParentProcessDirectory();
+        void UseParentProcessDirectory(const bool useParent);
+        bool UseCustomStartingDirectory();
         bool BackgroundImageSettingsVisible();
 
         GETSET_PROPERTY(bool, IsBaseLayer, false);
@@ -67,6 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     private:
         Model::Profile _profile;
         winrt::hstring _lastBgImagePath;
+        winrt::hstring _lastStartingDirectoryPath;
     };
 
     struct DeleteProfileEventArgs :

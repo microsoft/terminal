@@ -832,4 +832,10 @@
   <data name="Globals_CopyFormatAll.Content" xml:space="preserve">
     <value>Both HTML and RTF</value>
   </data>
+  <data name="ColorScheme_RenameErrorTip.Subtitle" xml:space="preserve">
+    <value>Please choose a different name.</value>
+  </data>
+  <data name="ColorScheme_RenameErrorTip.Title" xml:space="preserve">
+    <value>This color scheme name is already in use.</value>
+  </data>
 </root>
