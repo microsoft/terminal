@@ -137,6 +137,9 @@
     <Midl Include="TerminalTab.idl">
       <Filter>tab</Filter>
     </Midl>
+    <Midl Include="IPane.idl">
+      <Filter>pane</Filter>
+    </Midl>
     <Midl Include="LeafPane.idl">
       <Filter>pane</Filter>
     </Midl>
