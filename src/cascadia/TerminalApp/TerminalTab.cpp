@@ -1098,6 +1098,27 @@ namespace winrt::TerminalApp::implementation
         return _zoomedPane != nullptr;
     }
 
+    // Method Description:
+    // - Creates a text for the title run in the tool tip by returning tab title
+    // or <profile name>: <tab title> in the case the profile name differs from the title
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The value to populate in the title run of the tool tip
+    winrt::hstring TerminalTab::_CreateToolTipTitle()
+    {
+        if (const auto& control{ GetActiveTerminalControl() })
+        {
+            const auto profileName{ control.Settings().ProfileName() };
+            if (profileName != Title())
+            {
+                return fmt::format(L"{}: {}", profileName, Title()).data();
+            }
+        }
+
+        return Title();
+    }
+
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
