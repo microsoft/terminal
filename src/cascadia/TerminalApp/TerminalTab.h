@@ -114,6 +114,7 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _UpdateHeaderControlMaxWidth();
 
         void _CreateContextMenu() override;
+        virtual winrt::hstring _CreateToolTipTitle() override;
 
         void _RefreshVisualState();
 

@@ -184,6 +184,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Creates a text for the title run in the tool tip by returning tab title
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The value to populate in the title run of the tool tip
+    winrt::hstring TabBase::_CreateToolTipTitle()
+    {
+        return _Title;
+    }
+
+    // Method Description:
     // - Sets tab tool tip to a concatenation of title and key chord
     // Arguments:
     // - <none>
@@ -192,7 +203,7 @@ namespace winrt::TerminalApp::implementation
     void TabBase::_UpdateToolTip()
     {
         auto titleRun = WUX::Documents::Run();
-        titleRun.Text(_Title);
+        titleRun.Text(_CreateToolTipTitle());
 
         auto textBlock = WUX::Controls::TextBlock{};
         textBlock.TextAlignment(WUX::TextAlignment::Center);
