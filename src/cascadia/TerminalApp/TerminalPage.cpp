@@ -2806,6 +2806,7 @@ namespace winrt::TerminalApp::implementation
             {
                 sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
             }
+            sui.PreviewKeyDown({ this, &TerminalPage::_KeyDownHandler });
 
             sui.OpenJson([weakThis{ get_weak() }](auto&& /*s*/, winrt::Microsoft::Terminal::Settings::Model::SettingsTarget e) {
                 if (auto page{ weakThis.get() })
