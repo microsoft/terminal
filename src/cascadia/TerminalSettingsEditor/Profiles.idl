@@ -62,12 +62,19 @@ namespace Microsoft.Terminal.Settings.Editor
         Guid ProfileGuid { get; };
     }
 
+    enum ProfilesPivots {
+        General = 0,
+        Appearance = 1,
+        Advanced = 2
+    };
+
     runtimeclass ProfilePageNavigationState
     {
         Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
-        ProfileViewModel Profile { get; };
+        ProfileViewModel Profile;
+        ProfilesPivots LastActivePivot;
 
         event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
     };

@@ -89,11 +89,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ProfilePageNavigationState : ProfilePageNavigationStateT<ProfilePageNavigationState>
     {
     public:
-        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel, const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes, const IHostedInWindow& windowRoot) :
+        ProfilePageNavigationState(const Editor::ProfileViewModel& viewModel,
+                                   const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                   const Editor::ProfilePageNavigationState& lastState,
+                                   const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
             _Schemes{ schemes },
             _WindowRoot{ windowRoot }
         {
+            // If there was a previous nav state, and it was for the same
+            // profile, then copy the selected pivot from it.
+            if (lastState)
+            {
+                const auto& oldGuid = lastState.Profile().Guid();
+                const auto& newGuid = _Profile.Guid();
+                if (oldGuid == newGuid)
+                {
+                    _LastActivePivot = lastState.LastActivePivot();
+                }
+            }
         }
 
         void DeleteProfile();
@@ -103,6 +117,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         GETSET_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
+        GETSET_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
         GETSET_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
@@ -125,6 +140,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void BIAlignment_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void UseParentProcessDirectory_Check(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void UseParentProcessDirectory_Uncheck(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         // CursorShape visibility logic
         void CursorShape_Changed(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);

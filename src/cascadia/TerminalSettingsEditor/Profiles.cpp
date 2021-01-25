@@ -244,6 +244,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
+
+        // Navigate to the pivot in the provided navigation state
+        ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
     }
 
     ColorScheme Profiles::CurrentColorScheme()
@@ -406,6 +409,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     bool Profiles::IsVintageCursor() const
     {
         return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
+    }
+
+    void Profiles::Pivot_SelectionChanged(Windows::Foundation::IInspectable const& /*sender*/,
+                                          Windows::UI::Xaml::RoutedEventArgs const& /*e*/)
+    {
+        _State.LastActivePivot(static_cast<Editor::ProfilesPivots>(ProfilesPivot().SelectedIndex()));
     }
 
 }
