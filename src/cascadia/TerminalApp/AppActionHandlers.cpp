@@ -117,9 +117,11 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SendInputArgs>())
         {
-            const auto termControl = _GetActiveControl();
-            termControl.SendInput(realArgs.Input());
-            args.Handled(true);
+            if (const auto termControl{ _GetActiveControl() })
+            {
+                termControl.SendInput(realArgs.Input());
+                args.Handled(true);
+            }
         }
     }
 
@@ -308,9 +310,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AdjustFontSizeArgs>())
         {
-            const auto termControl = _GetActiveControl();
-            termControl.AdjustFontSize(realArgs.Delta());
-            args.Handled(true);
+            if (const auto& termControl{ _GetActiveControl() })
+            {
+                termControl.AdjustFontSize(realArgs.Delta());
+                args.Handled(true);
+            }
         }
     }
 
@@ -324,17 +328,21 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        const auto termControl = _GetActiveControl();
-        termControl.ResetFontSize();
-        args.Handled(true);
+        if (const auto& termControl{ _GetActiveControl() })
+        {
+            termControl.ResetFontSize();
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
                                                   const ActionEventArgs& args)
     {
-        const auto termControl = _GetActiveControl();
-        termControl.ToggleShaderEffects();
-        args.Handled(true);
+        if (const auto& termControl{ _GetActiveControl() })
+        {
+            termControl.ToggleShaderEffects();
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
