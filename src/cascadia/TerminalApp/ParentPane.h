@@ -13,6 +13,7 @@ namespace winrt::TerminalApp::implementation
     struct ParentPane : ParentPaneT<ParentPane>
     {
         ParentPane();
+        void FocusPane(uint32_t id);
     };
 }
 

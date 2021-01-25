@@ -81,6 +81,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
+        IPane _rootPane2;
         std::shared_ptr<Pane> _activePane{ nullptr };
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
         winrt::hstring _lastIconPath{};

@@ -15,4 +15,8 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
     }
+
+    void ParentPane::FocusPane(uint32_t /*id*/)
+    {
+    }
 }

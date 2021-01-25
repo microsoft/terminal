@@ -15,4 +15,8 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
     }
+
+    void LeafPane::FocusPane(uint32_t /*id*/)
+    {
+    }
 }

@@ -13,6 +13,7 @@ namespace winrt::TerminalApp::implementation
     struct LeafPane : LeafPaneT<LeafPane>
     {
         LeafPane();
+        void FocusPane(uint32_t id);
     };
 }
 

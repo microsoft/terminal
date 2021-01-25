@@ -1,9 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "IPane.idl";
+
 namespace TerminalApp
 {
-    [default_interface] runtimeclass ParentPane : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass ParentPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
         ParentPane();
     }
