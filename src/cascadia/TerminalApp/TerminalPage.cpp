@@ -2342,6 +2342,7 @@ namespace winrt::TerminalApp::implementation
             {
                 sui.SetHostingWindow(reinterpret_cast<uint64_t>(*_hostingHwnd));
             }
+            sui.PreviewKeyDown({ this, &TerminalPage::_KeyDownHandler });
 
             sui.PreviewKeyDown({ this, &TerminalPage::_SUIPreviewKeyDownHandler });
 
