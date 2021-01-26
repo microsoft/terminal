@@ -4,8 +4,10 @@ the MIT License. See LICENSE in the project root for license information. -->
     x:Class="Microsoft.Terminal.Settings.Editor.Interaction"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Microsoft.Terminal.Settings.Editor"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -13,17 +15,29 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            
+            <DataTemplate x:DataType="local:EnumEntry" x:Key="EnumRadioButtonTemplate">
+                <RadioButton Content="{x:Bind EnumName, Mode=OneWay}"/>
+            </DataTemplate>
         </ResourceDictionary>
     </Page.Resources>
     
     <ScrollViewer>
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--Copy On Select-->
-            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_CopyOnSelect"
-                          IsChecked="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                              Margin="0">
+                <ToggleSwitch x:Uid="Globals_CopyOnSelect"
+                              IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}"/>
              </ContentPresenter>
+
+            <!--Copy Format-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <muxc:RadioButtons x:Uid="Globals_CopyFormat"
+                                   ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
+            </ContentPresenter>
 
             <!--Word Delimiters-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
@@ -34,9 +48,16 @@ the MIT License. See LICENSE in the project root for license information. -->
 
             <!--Snap On Resize-->
             <ContentPresenter Style="{StaticResource SettingContainerStyle}">
-                <CheckBox x:Uid="Globals_SnapToGridOnResize"
-                          IsChecked="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"
-                          Style="{StaticResource CheckBoxSettingStyle}"/>
+                <ToggleSwitch x:Uid="Globals_SnapToGridOnResize"
+                              IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}"/>
+            </ContentPresenter>
+            
+            <!--Tab Switcher Mode-->
+            <ContentPresenter Style="{StaticResource SettingContainerStyle}">
+                <muxc:RadioButtons x:Uid="Globals_TabSwitcherMode"
+                                   SelectedItem="{x:Bind CurrentTabSwitcherMode}"
+                                   ItemsSource="{x:Bind TabSwitcherModeList}"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"/>
             </ContentPresenter>
         </StackPanel>
     </ScrollViewer>

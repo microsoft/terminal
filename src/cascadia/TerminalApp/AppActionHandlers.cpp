@@ -439,7 +439,7 @@ namespace winrt::TerminalApp::implementation
             if (_startupActions.Size() != 0)
             {
                 actionArgs.Handled(true);
-                _ProcessStartupActions(actions, false);
+                ProcessStartupActions(actions, false);
             }
         }
     }
@@ -521,13 +521,8 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleOpenTabSearch(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        // Tab search is always in-order.
-        CommandPalette().SetTabs(_tabs, true);
-
-        auto opt = _GetFocusedTabIndex();
-        uint32_t startIdx = opt.value_or(0);
-
-        CommandPalette().EnableTabSwitcherMode(true, startIdx);
+        CommandPalette().SetTabs(_tabs, _mruTabs);
+        CommandPalette().EnableTabSearchMode();
         CommandPalette().Visibility(Visibility::Visible);
 
         args.Handled(true);

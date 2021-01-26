@@ -19,7 +19,6 @@ SOURCES = \
     SearchTests.cpp \
     HistoryTests.cpp \
     UtilsTests.cpp \
-    AttrRowTests.cpp \
     ConsoleArgumentsTests.cpp \
     CodepointWidthDetectorTests.cpp \
     DbcsTests.cpp \

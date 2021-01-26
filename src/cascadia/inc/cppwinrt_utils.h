@@ -185,3 +185,27 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
 
     return result;
 }
+
+#define DECLARE_CONVERTER(nameSpace, className)                                                                   \
+    namespace nameSpace::implementation                                                                           \
+    {                                                                                                             \
+        struct className : className##T<className>                                                                \
+        {                                                                                                         \
+            className() = default;                                                                                \
+                                                                                                                  \
+            Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value,             \
+                                                      Windows::UI::Xaml::Interop::TypeName const& targetType,     \
+                                                      Windows::Foundation::IInspectable const& parameter,         \
+                                                      hstring const& language);                                   \
+                                                                                                                  \
+            Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value,         \
+                                                          Windows::UI::Xaml::Interop::TypeName const& targetType, \
+                                                          Windows::Foundation::IInspectable const& parameter,     \
+                                                          hstring const& language);                               \
+        };                                                                                                        \
+    }                                                                                                             \
+                                                                                                                  \
+    namespace nameSpace::factory_implementation                                                                   \
+    {                                                                                                             \
+        BASIC_FACTORY(className);                                                                                 \
+    }\

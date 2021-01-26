@@ -81,6 +81,8 @@ namespace winrt::TerminalApp::implementation
         void ShowKeyboardServiceWarning();
         winrt::hstring KeyboardServiceDisabledText();
 
+        winrt::fire_and_forget ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
@@ -110,7 +112,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _tabs;
-        Windows::Foundation::Collections::IVector<TerminalApp::TabBase> _mruTabs;
+        Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
         static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
 
         void _UpdateTabIndices();
@@ -138,7 +140,6 @@ namespace winrt::TerminalApp::implementation
         StartupState _startupState{ StartupState::NotInitialized };
 
         Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> _startupActions;
-        winrt::fire_and_forget _ProcessStartupActions(Windows::Foundation::Collections::IVector<Microsoft::Terminal::Settings::Model::ActionAndArgs> actions, const bool initial);
 
         void _ShowAboutDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
@@ -158,6 +159,7 @@ namespace winrt::TerminalApp::implementation
         void _ThirdPartyNoticesOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void _SUIPreviewKeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _HookupKeyBindings(const Microsoft::Terminal::Settings::Model::KeyMapping& keymap) noexcept;
         void _RegisterActionCallbacks();
 
@@ -259,6 +261,12 @@ namespace winrt::TerminalApp::implementation
         void _UpdateMRUTab(const uint32_t index);
 
         void _TryMoveTab(const uint32_t currentTabIndex, const int32_t suggestedNewTabIndex);
+
+        bool _shouldMouseVanish{ false };
+        bool _isMouseHidden{ false };
+        Windows::UI::Core::CoreCursor _defaultPointerCursor{ nullptr };
+        void _HidePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
+        void _RestorePointerCursorHandler(const IInspectable& sender, const IInspectable& eventArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

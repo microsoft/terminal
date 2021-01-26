@@ -58,6 +58,26 @@ the MIT License. See LICENSE in the project root for license information. -->
             x:Name="MultiLinePasteDialog"
             x:Uid="MultiLinePasteDialog"
             DefaultButton="Primary">
+            <StackPanel>
+                <TextBlock
+                    x:Uid="MultiLineWarningText"
+                    TextWrapping="Wrap">
+                </TextBlock>
+                <TextBlock
+                    x:Uid="ClipboardTextHeader"
+                    Margin="0,16,0,0">
+                </TextBlock>
+                <ScrollViewer
+                    Margin="0,8,0,0"
+                    x:Name="ClipboardContentScrollViewer"
+                    MaxHeight="100">
+                    <TextBlock
+                        x:Name="ClipboardText"
+                        TextWrapping="Wrap"
+                        FontFamily="Cascadia Mono">
+                    </TextBlock>
+                </ScrollViewer>
+            </StackPanel>
         </ContentDialog>
 
         <ContentDialog

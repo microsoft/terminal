@@ -869,6 +869,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _HidePointerCursorHandlers(*this, nullptr);
+
         const auto ch = e.Character();
         const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
         auto modifiers = _GetPressedModifierKeys();
@@ -1213,6 +1215,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _CapturePointer(sender, args);
 
         const auto ptr = args.Pointer();
@@ -1342,10 +1346,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);
+        const auto cursorPosition = point.Position();
+        const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-        if (!_focused)
+        if (!_focused && (_terminal->GetHyperlinkAtPosition(terminalPosition).empty()))
         {
             args.Handled(true);
             return;
@@ -1363,8 +1371,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed())
             {
                 auto lock = _terminal->LockForWriting();
-
-                const auto cursorPosition = point.Position();
 
                 if (_singleClickTouchdownPos)
                 {
@@ -1407,10 +1413,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _TryStopAutoScroll(ptr.PointerId());
                 }
             }
-            const auto terminalPos = _GetTerminalPosition(point.Position());
-            if (terminalPos != _lastHoveredCell)
+
+            if (terminalPosition != _lastHoveredCell)
             {
-                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPos);
+                const auto uri = _terminal->GetHyperlinkAtPosition(terminalPosition);
                 if (!uri.empty())
                 {
                     // Update the tooltip with the URI
@@ -1425,7 +1431,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
                     // Compute the location of the top left corner of the cell in DIPS
                     const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ terminalPos.X, terminalPos.Y };
+                    const til::point startPos{ terminalPosition.X, terminalPosition.Y };
                     const til::size fontSize{ _actualFont.GetSize() };
                     const til::point posInPixels{ startPos * fontSize };
                     const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
@@ -1435,10 +1441,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
                     OverlayCanvas().SetTop(HyperlinkTooltipBorder(), (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
                 }
-                _lastHoveredCell = terminalPos;
+                _lastHoveredCell = terminalPosition;
 
-                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPos);
-                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPos);
+                const auto newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition);
+                const auto newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition);
                 // If the hyperlink ID changed or the interval changed, trigger a redraw all
                 // (so this will happen both when we move onto a link and when we move off a link)
                 if (newId != _lastHoveredId || (newInterval != _lastHoveredInterval))
@@ -1548,6 +1554,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
+
+        _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
         const auto props = point.Properties();
@@ -1980,6 +1988,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
+        _RestorePointerCursorHandlers(*this, nullptr);
+
         _focused = false;
 
         if (_uiaEngine.get())
@@ -2025,6 +2035,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Pre-process text pasted (presumably from the clipboard)
     //   before sending it over the terminal's connection, converting
     //   Windows-space \r\n line-endings to \r line-endings
+    // - Also converts \n line-endings to \r line-endings
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
         // Some notes on this implementation:
@@ -2034,20 +2045,52 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //   performance guarantees aren't exactly stellar)
         // - The STL doesn't have a simple string search/replace method.
         //   This fact is lamentable.
-        // - This line-ending conversion is intentionally fairly
-        //   conservative, to avoid stripping out lone \n characters
-        //   where they could conceivably be intentional.
+        // - We search for \n, and when we find it we copy the string up to
+        //   the \n (but not including it). Then, we check the if the
+        //   previous character is \r, if its not, then we had a lone \n
+        //   and so we append our own \r
 
-        std::wstring stripped{ wstr };
+        std::wstring stripped;
+        stripped.reserve(wstr.length());
 
         std::wstring::size_type pos = 0;
+        std::wstring::size_type begin = 0;
 
-        while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
+        while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
         {
-            stripped.replace(pos, 2, L"\r");
+            // copy up to but not including the \n
+            stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
+            {
+                // there was no \r before the \n we did not copy,
+                // so append our own \r (this effectively replaces the \n
+                // with a \r)
+                stripped.push_back(L'\r');
+            }
+            ++pos;
+            begin = pos;
         }
 
-        _connection.WriteInput(stripped);
+        // If we entered the while loop even once, begin would be non-zero
+        // (because we set begin = pos right after incrementing pos)
+        // So, if begin is still zero at this point it means we never found a newline
+        // and we can just write the original string
+        if (begin == 0)
+        {
+            _connection.WriteInput(wstr);
+        }
+        else
+        {
+            // copy over the part after the last \n
+            stripped.append(wstr.cbegin() + begin, wstr.cend());
+
+            // we may have removed some characters, so we may not need as much space
+            // as we reserved earlier
+            stripped.shrink_to_fit();
+            _connection.WriteInput(stripped);
+        }
+
+        _terminal->ClearSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -2428,6 +2471,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _settings.ProfileName();
     }
 
+    hstring TermControl::WorkingDirectory() const
+    {
+        hstring hstr{ _terminal->GetWorkingDirectory() };
+        return hstr;
+    }
+
     // Method Description:
     // - Given a copy-able selection, get the selected text from the buffer and send it to the
     //     Windows Clipboard (CascadiaWin32:main.cpp).
@@ -2533,6 +2582,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
+            _RestorePointerCursorHandlers(*this, nullptr);
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();

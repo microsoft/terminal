@@ -226,6 +226,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->HorizontalTabSet();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::HTS);
         break;
+    case EscActionCodes::DECID_IdentifyDevice:
+        success = _dispatch->DeviceAttributes();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DA);
+        break;
     case EscActionCodes::RIS_ResetToInitialState:
         success = _dispatch->HardReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::RIS);
