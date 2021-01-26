@@ -1123,7 +1123,6 @@ namespace winrt::TerminalApp::implementation
     // - Calculates if the tab is read-only.
     // The tab is considered read-only if one of the panes is read-only.
     // If after the calculation the tab is read-only we hide the close button on the tab view item
-    // Currently this is the only indicator that the tab is read-only.
     void TerminalTab::_RecalculateAndApplyReadOnly()
     {
         auto control = GetActiveTerminalControl();

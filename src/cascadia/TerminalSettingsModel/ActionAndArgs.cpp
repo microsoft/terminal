@@ -51,7 +51,7 @@ static constexpr std::string_view LegacyToggleRetroEffectKey{ "toggleRetroEffect
 static constexpr std::string_view ToggleShaderEffectsKey{ "toggleShaderEffects" };
 static constexpr std::string_view MoveTabKey{ "moveTab" };
 static constexpr std::string_view BreakIntoDebuggerKey{ "breakIntoDebugger" };
-static constexpr std::string_view TogglePaneReadOnlyKey{ "togglePaneReadOnly" };
+static constexpr std::string_view TogglePaneReadOnlyKey{ "toggleReadOnlyMode" };
 
 static constexpr std::string_view ActionKey{ "action" };
 
