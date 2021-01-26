@@ -69,12 +69,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _initialArgs;
     }
 
-    void Peasant::ActivateWindow(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args)
+    void Peasant::ActivateWindow(const Remoting::WindowActivatedArgs& args)
     {
         // TODO: projects/5 - somehow, pass an identifier for the current
         // desktop into this method. The Peasant shouldn't need to be able to
         // figure it out, but it will need to report it to the monarch.
 
+        // Store these new args as our last activated state. If a new monarch
+        // comes looking, we can use this info to tell them when we were last
+        // activated.
         _lastActivatedArgs = args;
 
         bool successfullyNotified = false;
@@ -91,7 +94,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         catch (...)
         {
-            // TODO:MG Tracelogging
             LOG_CAUGHT_EXCEPTION();
         }
 
@@ -100,12 +102,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingUInt64(GetID(), "peasantID", "Our ID"),
                           TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-        // TODO:MG Open three windows, close the first (the monarch). The focus
-        // should automatically move to the third, from the windows shell. In
-        // that window, `wt -w 0` does not work right.
     }
 
-    winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs Peasant::GetLastActivatedArgs()
+    // Method Description:
+    // - Retrieve the WindowActivatedArgs describing the last activation of this
+    //   peasant. New monarchs can use this state to determine when we were last
+    //   activated.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a WindowActivatedArgs with info about when and where we were last activated.
+    Remoting::WindowActivatedArgs Peasant::GetLastActivatedArgs()
     {
         return _lastActivatedArgs;
     }

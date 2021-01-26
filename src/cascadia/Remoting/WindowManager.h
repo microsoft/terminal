@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         bool _areWeTheKing();
         winrt::Microsoft::Terminal::Remoting::IPeasant _createOurPeasant(std::optional<uint64_t> givenID);
 
-        bool _electionNight2020();
+        bool _performElection();
         void _createPeasantThread();
         void _waitOnMonarchThread();
         void _raiseFindTargetWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

@@ -543,6 +543,60 @@ namespace RemotingUnitTests
     void RemotingTests::ProposeCommandlineDeadWindow()
     {
         Log::Comment(L"Test proposing a commandline for a peasant that previously died");
-        VERIFY_ARE_EQUAL(true, false, L"TODO: Finish this test");
+
+        const auto monarch0PID = 12345u;
+        com_ptr<Remoting::implementation::Monarch> m0;
+        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        VERIFY_IS_NOT_NULL(m0);
+        m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
+
+        Log::Comment(L"Add a peasant");
+        const auto peasant1PID = 23456u;
+        com_ptr<Remoting::implementation::Peasant> p1;
+        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
+        VERIFY_IS_NOT_NULL(p1);
+        m0->AddPeasant(*p1);
+        p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& /*cmdlineArgs*/) {
+            Log::Comment(L"Commandline dispatched to p1");
+            VERIFY_IS_TRUE(false, L"This should not happen, this peasant should be dead.");
+        });
+
+        Log::Comment(L"Add a second peasant");
+        const auto peasant2PID = 34567u;
+        com_ptr<Remoting::implementation::Peasant> p2;
+        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
+        VERIFY_IS_NOT_NULL(p2);
+        m0->AddPeasant(*p2);
+        p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
+            Log::Comment(L"Commandline dispatched to p2");
+            VERIFY_IS_GREATER_THAN(cmdlineArgs.Args().size(), 1u);
+            VERIFY_ARE_EQUAL(L"this is for p2", cmdlineArgs.Args().at(1));
+        });
+
+        std::vector<winrt::hstring> p1Args{ L"1", L"arg[1]" };
+        std::vector<winrt::hstring> p2Args{ L"2", L"this is for p2" };
+
+        Log::Comment(L"Kill peasant 1");
+
+        _killPeasant(m0, 1);
+
+        {
+            Log::Comment(L"Send a commandline to p2, who is still alive. We won't create a new window.");
+
+            Remoting::CommandlineArgs eventArgs{ { p2Args }, { L"" } };
+
+            auto result = m0->ProposeCommandline(eventArgs);
+            VERIFY_ARE_EQUAL(false, result.ShouldCreateWindow());
+            VERIFY_ARE_EQUAL(false, (bool)result.Id());
+        }
+        {
+            Log::Comment(L"Send a commandline to p1, who is dead. We will create a new window.");
+            Remoting::CommandlineArgs eventArgs{ { p1Args }, { L"" } };
+
+            auto result = m0->ProposeCommandline(eventArgs);
+            VERIFY_ARE_EQUAL(true, result.ShouldCreateWindow());
+            VERIFY_ARE_EQUAL(true, (bool)result.Id());
+            VERIFY_ARE_EQUAL(1u, result.Id().Value());
+        }
     }
 }

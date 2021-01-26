@@ -199,7 +199,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _peasant;
     }
 
-    bool WindowManager::_electionNight2020()
+    // Method Description:
+    // - Attempt to connect to the monarch process. This might be us!
+    // - For the new monarch, add us to their list of peasants.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff we're the new monarch process.
+    bool WindowManager::_performElection()
     {
         _createMonarchAndCallbacks();
 
@@ -208,10 +215,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (_areWeTheKing())
         {
-            // This is only called when a _new_ monarch is elected. So don't do
-            // anything here that needs to be done for all monarch windows. This
-            // should only be for work that's done when a window _becomes_ a
-            // monarch, after the death of the previous monarch.
+            // This method is only called when a _new_ monarch is elected. So
+            // don't do anything here that needs to be done for all monarch
+            // windows. This should only be for work that's done when a window
+            // _becomes_ a monarch, after the death of the previous monarch.
             return true;
         }
         return false;
@@ -233,63 +240,126 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         HANDLE waits[2];
         waits[1] = _monarchWaitInterrupt.get();
+        const auto peasantID = _peasant.GetID();
 
-        bool exitRequested = false;
-        while (!exitRequested)
+        bool exitThreadRequested = false;
+        while (!exitThreadRequested)
         {
-            wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS,
-                                                     FALSE,
-                                                     static_cast<DWORD>(_monarch.GetPID())) };
-            // TODO:MG If we fail to open the monarch, then they don't exist
-            //  anymore! Go straight to an election.
-            //
-            // TODO:MG At any point in all this, the current monarch might die.
-            // We go straight to a new election, right? Worst case, eventually,
-            // we'll become the new monarch.
-            //
-            // if (hMonarch.get() == nullptr)
-            // {
-            //     const auto gle = GetLastError();
-            //     return false;
-            // }
-            waits[0] = hMonarch.get();
-            auto waitResult = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
-
-            switch (waitResult)
+            // At any point in all this, the current monarch might die. If it
+            // does, we'll go straight to a new election, in the "jail"
+            // try/catch below. Worst case, eventually, we'll become the new
+            // monarch.
+            try
             {
-            case WAIT_OBJECT_0 + 0: // waits[0] was signaled
+                // This might fail to even ask the monarch for it's PID.
+                wil::unique_handle hMonarch{ OpenProcess(PROCESS_ALL_ACCESS,
+                                                         FALSE,
+                                                         static_cast<DWORD>(_monarch.GetPID())) };
 
-                TraceLoggingWrite(g_hRemotingProvider,
-                                  "WindowManager_MonarchDied",
-                                  TraceLoggingUInt64(_peasant.GetID(), "peasantID", "Our peasant ID"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-                // Connect to the new monarch, which might be us!
-                // If we become the monarch, then we'll return true and exit this thread.
-                exitRequested = _electionNight2020();
-                break;
-            case WAIT_OBJECT_0 + 1: // waits[1] was signaled
+                // If we fail to open the monarch, then they don't exist
+                //  anymore! Go straight to an election.
+                if (hMonarch.get() == nullptr)
+                {
+                    const auto gle = GetLastError();
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_FailedToOpenMonarch",
+                                      TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                      TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
-                TraceLoggingWrite(g_hRemotingProvider,
-                                  "WindowManager_MonarchWaitInterrupted",
-                                  TraceLoggingUInt64(_peasant.GetID(), "peasantID", "Our peasant ID"),
-                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    exitThreadRequested = _performElection();
+                    continue;
+                }
 
-                exitRequested = true;
-                break;
+                waits[0] = hMonarch.get();
+                auto waitResult = WaitForMultipleObjects(2, waits, FALSE, INFINITE);
 
-            case WAIT_TIMEOUT:
-                printf("Wait timed out. This should be impossible.\n");
-                exitRequested = true;
-                break;
+                switch (waitResult)
+                {
+                case WAIT_OBJECT_0 + 0: // waits[0] was signaled, the handle to the monarch process
 
-            // Return value is invalid.
-            default:
-            {
-                auto gle = GetLastError();
-                printf("WaitForMultipleObjects returned: %d\n", waitResult);
-                printf("Wait error: %d\n", gle);
-                ExitProcess(0);
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_MonarchDied",
+                                      TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    // Connect to the new monarch, which might be us!
+                    // If we become the monarch, then we'll return true and exit this thread.
+                    exitThreadRequested = _performElection();
+                    break;
+
+                case WAIT_OBJECT_0 + 1: // waits[1] was signaled, our manual interrupt
+
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_MonarchWaitInterrupted",
+                                      TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    exitThreadRequested = true;
+                    break;
+
+                case WAIT_TIMEOUT:
+                    // This should be impossible.
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_MonarchWaitTimeout",
+                                      TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    exitThreadRequested = true;
+                    break;
+
+                default:
+                {
+                    // Returning any other value is invalid. Just die.
+                    const auto gle = GetLastError();
+                    TraceLoggingWrite(g_hRemotingProvider,
+                                      "WindowManager_WaitFailed",
+                                      TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                      TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
+                                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    ExitProcess(0);
+                }
+                }
             }
+            catch (...)
+            {
+                // Theoretically, if window[1] dies when we're trying to get
+                // it's PID we'll get here. If we just try to do the election
+                // once here, it's possible we might elect window[2], but have
+                // it die before we add ourselves as a peasant. That
+                // _performElection call will throw, and we wouldn't catch it
+                // here, and we'd die.
+
+                // Instead, we're going to have a resilent election process.
+                // We're going to keep trying an election, until one _doesn't_
+                // throw an exception. That might mean burning through all the
+                // other dying monarchs until we find us as the monarch. But if
+                // this process is alive, then there's _someone_ in the line of
+                // succession.
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ExceptionInWaitThread",
+                                  TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                bool foundNewMonarch = false;
+                while (!foundNewMonarch)
+                {
+                    try
+                    {
+                        exitThreadRequested = _performElection();
+                        // It doesn't matter if we're the monarch, or someone
+                        // else is, but if we complete the election, then we've
+                        // registered with a new one. We can escape this jail
+                        // and re-enter society.
+                        foundNewMonarch = true;
+                    }
+                    catch (...)
+                    {
+                        // If we fail to acknowledge the results of the election,
+                        // stay in this jail until we do.
+                        TraceLoggingWrite(g_hRemotingProvider,
+                                          "WindowManager_ExceptionInNestedWaitThread",
+                                          TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                    }
+                }
             }
         }
     }
