@@ -17,6 +17,13 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
         void FocusPane(uint32_t id);
 
+        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
+                            const GUID& profile);
+        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
+        void Relayout();
+        bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+
     private:
         winrt::Windows::UI::Xaml::Controls::Grid _root{};
     };

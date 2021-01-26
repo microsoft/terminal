@@ -1,11 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "TerminalSettings.idl";
+
 namespace TerminalApp
 {
     interface IPane
     {
         void FocusPane(UInt32 idNum);
         Windows.UI.Xaml.Controls.Grid GetRootElement();
+        void UpdateSettings(TerminalSettings settings, Guid profile);
+        void ResizeContent(Windows.Foundation.Size newSize);
     }
 }

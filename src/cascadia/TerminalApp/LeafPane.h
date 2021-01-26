@@ -3,7 +3,6 @@
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-#include "winrt/Microsoft.UI.Xaml.Controls.h"
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -31,12 +30,30 @@ namespace winrt::TerminalApp::implementation
         void ClearActive();
         void SetActive(const bool active);
 
+        void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
+                            const GUID& profile);
+        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
 
     private:
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
         GUID _profile;
         bool _lastActive{ false };
-        winrt::Windows::UI::Xaml::Controls::Grid _root{};
+
+        static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
+        static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
+
+        winrt::event_token _connectionStateChangedToken{ 0 };
+        winrt::event_token _warningBellToken{ 0 };
+
+        winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
+
+        void _ControlConnectionStateChangedHandler(const winrt::Microsoft::Terminal::TerminalControl::TermControl& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+        void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                        winrt::Windows::Foundation::IInspectable const& e);
+        void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                     winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+        static void _SetupResources();
     };
 }
 
