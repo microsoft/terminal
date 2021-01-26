@@ -4,7 +4,7 @@
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
   <PropertyGroup Label="Configuration">
     <!-- This is necessary so the build system doesn't think we're a .NET project... -->
-    <TargetRuntime>Native</TargetRuntime>
+    <!-- <TargetRuntime>Native</TargetRuntime> -->
     <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <!--
