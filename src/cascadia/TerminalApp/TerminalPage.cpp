@@ -1201,7 +1201,7 @@ namespace winrt::TerminalApp::implementation
         {
             ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-            if (warningResult != ContentDialogResult::Primary)
+            if (warningResult == ContentDialogResult::Primary)
             {
                 co_return;
             }
@@ -1591,7 +1591,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
 
-                    if (warningResult != ContentDialogResult::Primary)
+                    if (warningResult == ContentDialogResult::Primary)
                     {
                         co_return;
                     }
@@ -1604,9 +1604,10 @@ namespace winrt::TerminalApp::implementation
         }
         else if (auto index{ _GetFocusedTabIndex() })
         {
-            if (_tabs.GetAt(*index).try_as<TerminalApp::SettingsTab>())
+            const auto tab{ _tabs.GetAt(*index) };
+            if (tab.try_as<TerminalApp::SettingsTab>())
             {
-                _RemoveTabViewItemByIndex(*index);
+                _RemoveTab(tab);
             }
         }
     }
