@@ -81,7 +81,7 @@ public:
     void Id(uint16_t id) noexcept;
     void FocusPane(const uint16_t id);
 
-    bool ContainsReadOnly();
+    bool ContainsReadOnly() const;
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
