@@ -2049,6 +2049,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //   the \n (but not including it). Then, we check the if the
         //   previous character is \r, if its not, then we had a lone \n
         //   and so we append our own \r
+        // - For security reasons, most control characters should be removed.
+
+        auto pred = [](wchar_t c) {
+            if (c >= L'\x20' && c <= L'\x7f')
+            {
+                // Printable ASCII characters + DEL.
+                return false;
+            }
+
+            if (c > L'\x7f')
+            {
+                // Not a control character.
+                return false;
+            }
+
+            // All ASCII control characters will be removed except HT(0x09), LF(0x0a),
+            // CR(0x0d) and DEL(0x7F).
+            return c >= L'\x00' && c <= L'\x08' ||
+                   c >= L'\x0b' && c <= L'\x0c' ||
+                   c >= L'\x0e' && c <= L'\x1f';
+        };
+
+        auto sanitize = [](const std::wstring& origin, auto pred) {
+            std::wstring sanitized{ origin };
+            sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), pred), sanitized.end());
+            return sanitized;
+        };
 
         std::wstring stripped;
         stripped.reserve(wstr.length());
@@ -2059,7 +2086,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
         {
             // copy up to but not including the \n
-            stripped.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            stripped.append(sanitize({ wstr.cbegin() + begin, wstr.cbegin() + pos }, pred));
             if (!(pos > 0 && (wstr.at(pos - 1) == L'\r')))
             {
                 // there was no \r before the \n we did not copy,
@@ -2077,12 +2104,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // and we can just write the original string
         if (begin == 0)
         {
-            _connection.WriteInput(wstr);
+            _connection.WriteInput(sanitize(wstr, pred));
         }
         else
         {
             // copy over the part after the last \n
-            stripped.append(wstr.cbegin() + begin, wstr.cend());
+            stripped.append(sanitize({ wstr.cbegin() + begin, wstr.cend() }, pred));
 
             // we may have removed some characters, so we may not need as much space
             // as we reserved earlier
