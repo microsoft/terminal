@@ -543,15 +543,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Padding-->
-                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                            <ContentPresenter x:Name="Padding_Presenter"
+                                              Style="{StaticResource SettingContainerStyle}"
                                               Margin="0">
                                 <StackPanel x:Name="PaddingControl">
                                     <TextBlock x:Name="Profile_Padding"
-                                           Style="{StaticResource SliderHeaderStyle}">
-                                        <ToolTipService.ToolTip>
-                                            <ToolTip x:Name="Padding_Tooltip"/>
-                                        </ToolTipService.ToolTip>
-                                    </TextBlock>
+                                           Style="{StaticResource SliderHeaderStyle}"/>
                                     <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
