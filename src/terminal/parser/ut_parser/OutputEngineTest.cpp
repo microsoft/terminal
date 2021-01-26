@@ -2811,11 +2811,32 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(5u, pDispatch->_column - 1); // so are 1 more than the expected values.
 
         pDispatch->ClearState();
+    }
 
-        Log::Comment(L"Identify Device");
+    TEST_METHOD(TestIdentifyDeviceReport)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"Identify Device in VT52 mode.");
+        mach.SetAnsiMode(false);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
+        VERIFY_IS_FALSE(pDispatch->_deviceAttributes);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"Identify Device in ANSI mode.");
+        mach.SetAnsiMode(true);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        mach.ProcessCharacter(L'Z');
+        VERIFY_IS_TRUE(pDispatch->_deviceAttributes);
+        VERIFY_IS_FALSE(pDispatch->_vt52DeviceAttributes);
+
+        pDispatch->ClearState();
     }
 
     TEST_METHOD(TestOscSetDefaultForeground)
