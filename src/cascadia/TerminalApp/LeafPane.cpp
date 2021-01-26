@@ -14,6 +14,7 @@ using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -113,6 +114,47 @@ namespace winrt::TerminalApp::implementation
     {
     }
 
+    std::pair<IPane, IPane> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState /*splitType*/,
+                                  const float /*splitSize*/,
+                                  const GUID& /*profile*/,
+                                  const winrt::Microsoft::Terminal::TerminalControl::TermControl& /*control*/)
+    {
+        return { LeafPane(), LeafPane() };
+    }
+
+    float LeafPane::CalcSnappedDimension(const bool /*widthOrHeight*/, const float /*dimension*/) const
+    {
+        return {};
+    }
+
+    void LeafPane::Shutdown()
+    {
+    }
+
+    void LeafPane::Close()
+    {
+    }
+
+    int LeafPane::GetLeafPaneCount() const noexcept
+    {
+        return {};
+    }
+
+    uint16_t LeafPane::Id() noexcept
+    {
+        return _id;
+    }
+
+    void LeafPane::Id(uint16_t id) noexcept
+    {
+        _id = id;
+    }
+
+    Size LeafPane::GetMinSize() const
+    {
+        return {};
+    }
+
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
@@ -163,4 +205,11 @@ namespace winrt::TerminalApp::implementation
             s_unfocusedBorderBrush = SolidColorBrush{ Colors::Black() };
         }
     }
+
+    SplitState LeafPane::_convertAutomaticSplitState(const SplitState& /*splitType*/) const
+    {
+        return {};
+    }
+
+    DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
 }

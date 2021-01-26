@@ -11,5 +11,8 @@ namespace TerminalApp
         Windows.UI.Xaml.Controls.Grid GetRootElement();
         void UpdateSettings(TerminalSettings settings, Guid profile);
         void ResizeContent(Windows.Foundation.Size newSize);
+        Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
+        Int32 GetLeafPaneCount();
+        Windows.Foundation.Size GetMinSize();
     }
 }

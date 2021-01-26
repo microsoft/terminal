@@ -10,6 +10,16 @@
 
 namespace winrt::TerminalApp::implementation
 {
+    enum class Borders : int
+    {
+        None = 0x0,
+        Top = 0x1,
+        Bottom = 0x2,
+        Left = 0x4,
+        Right = 0x8
+    };
+    DEFINE_ENUM_FLAG_OPERATORS(Borders);
+
     struct LeafPane : LeafPaneT<LeafPane>
     {
     public:
@@ -34,10 +44,30 @@ namespace winrt::TerminalApp::implementation
                             const GUID& profile);
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
 
+        std::pair<IPane, IPane> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                      const float splitSize,
+                                      const GUID& profile,
+                                      const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+        float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+        void Shutdown();
+        void Close();
+        int GetLeafPaneCount() const noexcept;
+
+        uint16_t Id() noexcept;
+        void Id(uint16_t) noexcept;
+
+        winrt::Windows::Foundation::Size GetMinSize() const;
+
+        WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
+        DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
+
     private:
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
         GUID _profile;
         bool _lastActive{ false };
+        uint16_t _id;
+        Borders _borders{ Borders::None };
 
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
         static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
@@ -54,6 +84,8 @@ namespace winrt::TerminalApp::implementation
                                      winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         static void _SetupResources();
+
+        winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
     };
 }
 
