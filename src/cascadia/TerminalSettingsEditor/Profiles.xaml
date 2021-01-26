@@ -546,8 +546,12 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <ContentPresenter Style="{StaticResource SettingContainerStyle}"
                                               Margin="0">
                                 <StackPanel x:Name="PaddingControl">
-                                    <TextBlock x:Uid="Profile_Padding"
-                                           Style="{StaticResource SliderHeaderStyle}"/>
+                                    <TextBlock x:Name="Profile_Padding"
+                                           Style="{StaticResource SliderHeaderStyle}">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip x:Name="Padding_Tooltip"/>
+                                        </ToolTipService.ToolTip>
+                                    </TextBlock>
                                     <Grid Style="{StaticResource CustomSliderControlGridStyle}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
