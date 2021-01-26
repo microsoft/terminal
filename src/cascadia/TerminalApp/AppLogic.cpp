@@ -1162,7 +1162,7 @@ namespace winrt::TerminalApp::implementation
     //   CWD.
     // Arguments:
     // - args: an array of strings to process as a commandline. These args can contain spaces
-    // - cwd: The directory to use as the CWD while performing thse actions.
+    // - cwd: The directory to use as the CWD while performing these actions.
     // Return Value:
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see AppLogic::_ParseArgs)
@@ -1217,13 +1217,13 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Any unsuccessful parse will be a new window. That new window will try
-        // to handle the commandline iteslf, and find that the commandline
+        // to handle the commandline itself, and find that the commandline
         // failed to parse. When that happens, the new window will display the
         // message box.
         //
         // This will also work for the case where the user specifies an invalid
         // commandline in conjunction with `-w 0`. This function will determine
-        // that the commandline hasa  parse error, and indicate that we should
+        // that the commandline has a  parse error, and indicate that we should
         // create a new window. Then, in that new window, we'll try to  set the
         // StartupActions, which will again fail, returning the correct error
         // message.

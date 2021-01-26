@@ -375,7 +375,7 @@ namespace winrt::TerminalApp::implementation
         std::wstring originalCwd{ wil::GetCurrentDirectoryW<std::wstring>() };
         auto restoreCwd = wil::scope_exit([&originalCwd]() {
             // ignore errors, we'll just power on through. We'd rather do
-            // something rather than fail silently if the direcotry doesn't
+            // something rather than fail silently if the directory doesn't
             // actually exist.
             LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(originalCwd.c_str()));
         });
@@ -386,7 +386,7 @@ namespace winrt::TerminalApp::implementation
         else
         {
             // ignore errors, we'll just power on through. We'd rather do
-            // something rather than fail silently if the direcotry doesn't
+            // something rather than fail silently if the directory doesn't
             // actually exist.
             LOG_IF_WIN32_BOOL_FALSE(SetCurrentDirectory(cwd.c_str()));
         }

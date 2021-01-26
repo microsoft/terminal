@@ -538,7 +538,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
 //   manager will ask us how to figure out what the target window is for a set
 //   of commandline arguments. We'll take those arguments, and ask AppLogic to
 //   parse them for us. We'll then set ResultTargetWindow in the given args, so
-//   the sender can use that reuslt.
+//   the sender can use that result.
 // Arguments:
 // - args: the bundle of a commandline and working directory to find the correct target window for.
 // Return Value:

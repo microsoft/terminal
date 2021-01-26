@@ -127,7 +127,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     if (!host.HasWindow())
     {
         // If we were told to not have a window, exit early. Make sure to use
-        // ExitProcess to commit sepuku here. If you try just `return 0`, then
+        // ExitProcess to die here. If you try just `return 0`, then
         // the XAML app host will crash during teardown. ExitProcess avoids
         // that.
         ExitProcess(0);

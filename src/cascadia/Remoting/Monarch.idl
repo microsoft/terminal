@@ -13,7 +13,7 @@ namespace Microsoft.Terminal.Remoting
 
     [default_interface] runtimeclass ProposeCommandlineResult {
         Windows.Foundation.IReference<UInt64> Id { get; };
-        // TOOD:projects/5 - also return the name here, if the name was set on the commandline
+        // TODO:projects/5 - also return the name here, if the name was set on the commandline
         Boolean ShouldCreateWindow { get; }; // If you name this `CreateWindow`, the compiler will explode
     }
 

@@ -167,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         // Here, we're the king!
         //
-        // This is where you should do any aditional setup that might need to be
+        // This is where you should do any additional setup that might need to be
         // done when we become the king. THis will be called both for the first
         // window, and when the current monarch dies.
 
@@ -327,7 +327,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // _performElection call will throw, and we wouldn't catch it
                 // here, and we'd die.
 
-                // Instead, we're going to have a resilent election process.
+                // Instead, we're going to have a resilient election process.
                 // We're going to keep trying an election, until one _doesn't_
                 // throw an exception. That might mean burning through all the
                 // other dying monarchs until we find us as the monarch. But if

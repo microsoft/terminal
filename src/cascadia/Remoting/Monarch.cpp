@@ -129,7 +129,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         const auto newLastActiveTime = args.ActivatedTime().time_since_epoch().count();
 
         // For now, we'll just pay attention to whoever the most recent peasant
-        // was. We're not too wooried about the mru peasant dying. Worst case -
+        // was. We're not too worried about the mru peasant dying. Worst case -
         // when the user executes a `wt -w 0`, we won't be able to find that
         // peasant, and it'll open in a new window instead of the current one.
         if (args.ActivatedTime() > _lastActivatedTime)
