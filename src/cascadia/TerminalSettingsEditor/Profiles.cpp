@@ -206,6 +206,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _BIAlignmentButtons.at(6) = BIAlign_BottomLeft();
         _BIAlignmentButtons.at(7) = BIAlign_Bottom();
         _BIAlignmentButtons.at(8) = BIAlign_BottomRight();
+
+        Profile_Padding().Text(RS_(L"Profile_Padding/Header"));
+        ToolTipService::SetToolTip(Padding_Presenter(), box_value(RS_(L"Profile_Padding/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip")));
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)

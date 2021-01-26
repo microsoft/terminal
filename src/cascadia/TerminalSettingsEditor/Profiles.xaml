@@ -30,6 +30,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <local:FontWeightConverter x:Key="FontWeightConverter"/>
             <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter"/>
             <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter"/>
+            <local:PaddingConverter x:Key="PaddingConverter"/>
             <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter"/>
             <local:DesktopWallpaperToEmptyStringConverter x:Key="DesktopWallpaperToEmptyStringConverter"/>
 
@@ -555,11 +556,25 @@ the MIT License. See LICENSE in the project root for license information. -->
                             <TextBlock x:Uid="Profile_WindowHeader" Style="{StaticResource SubtitleTextBlockStyle}"/>
 
                             <!--Padding-->
-                            <ContentPresenter Style="{StaticResource SettingContainerStyle}"
+                            <ContentPresenter x:Name="Padding_Presenter"
+                                              Style="{StaticResource SettingContainerStyle}"
                                               Margin="0">
-                                <TextBox x:Uid="Profile_Padding"
-                                     Text="{x:Bind State.Profile.Padding, Mode=TwoWay}"
-                                     Style="{StaticResource TextBoxSettingStyle}"/>
+                                <StackPanel x:Name="PaddingControl">
+                                    <TextBlock x:Name="Profile_Padding"
+                                           Style="{StaticResource SliderHeaderStyle}"/>
+                                    <Grid Style="{StaticResource CustomSliderControlGridStyle}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Slider x:Name="PaddingSlider"
+                                            Grid.Column="0"
+                                            Value="{x:Bind State.Profile.Padding, Converter={StaticResource PaddingConverter}, Mode=TwoWay}"/>
+                                        <TextBlock Grid.Column="1"
+                                               Text="{Binding ElementName=PaddingSlider, Path=Value, Mode=OneWay}"
+                                               Style="{StaticResource SliderValueLabelStyle}"/>
+                                    </Grid>
+                                </StackPanel>
                             </ContentPresenter>
 
                             <!--Scrollbar Visibility-->
