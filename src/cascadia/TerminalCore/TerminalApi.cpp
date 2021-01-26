@@ -85,7 +85,7 @@ try
 
     // since we explicitly just moved down a row, clear the wrap status on the
     // row we just came from
-    _buffer->GetRowByOffset(cursorPos.Y).GetCharRow().SetWrapForced(false);
+    _buffer->GetRowByOffset(cursorPos.Y).SetWrapForced(false);
 
     cursorPos.Y++;
     if (withReturn)
@@ -537,6 +537,17 @@ bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
     return true;
 }
 
+bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+{
+    _bracketedPasteMode = enabled;
+    return true;
+}
+
+bool Terminal::IsXtermBracketedPasteModeEnabled() const noexcept
+{
+    return _bracketedPasteMode;
+}
+
 bool Terminal::IsVtInputEnabled() const noexcept
 {
     // We should never be getting this call in Terminal.
@@ -617,4 +628,15 @@ bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noe
         _pfnTaskbarProgressChanged();
     }
     return true;
+}
+
+bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
+{
+    _workingDirectory = uri;
+    return true;
+}
+
+std::wstring_view Terminal::GetWorkingDirectory() noexcept
+{
+    return _workingDirectory;
 }

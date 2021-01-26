@@ -106,6 +106,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool EnableButtonEventMouseMode(const bool enabled) override; // ?1002
         bool EnableAnyEventMouseMode(const bool enabled) override; // ?1003
         bool EnableAlternateScroll(const bool enabled) override; // ?1007
+        bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
         bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
         bool SetCursorColor(const COLORREF cursorColor) override;
 

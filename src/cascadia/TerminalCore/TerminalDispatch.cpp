@@ -371,6 +371,19 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
+//Routine Description:
+// Enable Bracketed Paste Mode -  this changes the behavior of pasting.
+//      See: https://www.xfree86.org/current/ctlseqs.html#Bracketed%20Paste%20Mode
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableXtermBracketedPasteMode(const bool enabled) noexcept
+{
+    _terminalApi.EnableXtermBracketedPasteMode(enabled);
+    return true;
+}
+
 bool TerminalDispatch::SetMode(const DispatchTypes::ModeParams param) noexcept
 {
     return _ModeParamsHelper(param, true);
@@ -417,43 +430,55 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
     const auto parts = Utils::SplitString(string, L';');
     unsigned int subParam = 0;
 
-    // For now, the only ConEmu action we support is setting the taskbar state/progress,
-    // which has a sub param value of 4
-    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam) || subParam != 4)
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
     {
         return false;
     }
 
-    if (parts.size() >= 2)
+    // 4 is SetProgressBar, which sets the taskbar state/progress.
+    if (subParam == 4)
     {
-        // A state parameter is defined, parse it out
-        const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-        if (!stateSuccess)
+        if (parts.size() >= 2)
         {
-            return false;
-        }
-        if (parts.size() >= 3)
-        {
-            // A progress parameter is also defined, parse it out
-            const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-            if (!progressSuccess)
+            // A state parameter is defined, parse it out
+            const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+            if (!stateSuccess)
             {
                 return false;
             }
+            if (parts.size() >= 3)
+            {
+                // A progress parameter is also defined, parse it out
+                const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+                if (!progressSuccess)
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (state > TaskbarMaxState)
+        {
+            // state is out of bounds, return false
+            return false;
+        }
+        if (progress > TaskbarMaxProgress)
+        {
+            // progress is greater than the maximum allowed value, clamp it to the max
+            progress = TaskbarMaxProgress;
+        }
+        return _terminalApi.SetTaskbarProgress(state, progress);
+    }
+    // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
+    else if (subParam == 9)
+    {
+        if (parts.size() >= 2)
+        {
+            return _terminalApi.SetWorkingDirectory(til::at(parts, 1));
         }
     }
 
-    if (state > TaskbarMaxState)
-    {
-        // state is out of bounds, return false
-        return false;
-    }
-    if (progress > TaskbarMaxProgress)
-    {
-        // progress is greater than the maximum allowed value, clamp it to the max
-        progress = TaskbarMaxProgress;
-    }
-    return _terminalApi.SetTaskbarProgress(state, progress);
+    return false;
 }
 
 // Routine Description:
@@ -498,6 +523,9 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
         break;
     case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
+        break;
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        success = EnableXtermBracketedPasteMode(enable);
         break;
     case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);

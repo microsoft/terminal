@@ -13,10 +13,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct ColorSchemesPageNavigationState : ColorSchemesPageNavigationStateT<ColorSchemesPageNavigationState>
     {
     public:
-        ColorSchemesPageNavigationState(const Model::GlobalAppSettings& settings) :
-            _Globals{ settings } {}
+        ColorSchemesPageNavigationState(const Model::CascadiaSettings& settings) :
+            _Settings{ settings } {}
 
-        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr);
+        GETSET_PROPERTY(Model::CascadiaSettings, Settings, nullptr);
+        GETSET_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
     };
 
     struct ColorSchemes : ColorSchemesT<ColorSchemes>
