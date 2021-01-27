@@ -5,6 +5,8 @@
 #include "LeafPane.h"
 #include "AppLogic.h"
 
+#include <Mmsystem.h>
+
 #include "LeafPane.g.cpp"
 
 using namespace winrt::Windows::Foundation;
@@ -129,7 +131,6 @@ namespace winrt::TerminalApp::implementation
                                             const GUID& profile,
                                             const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
     {
-        //return { LeafPane(), LeafPane() };
         splitType = _convertAutomaticSplitState(splitType);
         auto newNeighbour = LeafPane(profile, control, false);
 
@@ -223,27 +224,43 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        //const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-        //auto paneProfile = settings.FindProfile(_profile);
-        //if (paneProfile)
-        //{
-        //    auto mode = paneProfile.CloseOnExit();
-        //    if ((mode == CloseOnExitMode::Always) ||
-        //        (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
-        //    {
-        //        Close();
-        //    }
-        //}
+        const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+        auto paneProfile = settings.FindProfile(_profile);
+        if (paneProfile)
+        {
+            auto mode = paneProfile.CloseOnExit();
+            if ((mode == CloseOnExitMode::Always) ||
+                (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+            {
+                Close();
+            }
+        }
     }
 
     void LeafPane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                               const winrt::Windows::Foundation::IInspectable& /*eventArgs*/)
     {
+        const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+        auto paneProfile = settings.FindProfile(_profile);
+        if (paneProfile)
+        {
+            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            {
+                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+            }
+            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Visual))
+            {
+                // Bubble this event up to app host, starting with bubbling to the hosting tab
+                //_PaneRaiseVisualBellHandlers(nullptr);
+            }
+        }
     }
 
     void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                            RoutedEventArgs const& /* args */)
     {
+        _GotFocusHandlers(*this);
     }
 
     void LeafPane::_UpdateBorders()
