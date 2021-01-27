@@ -28,6 +28,9 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
         winrt::Windows::Foundation::Size GetMinSize() const;
 
+        void PropagateToLeaves(std::function<void(LeafPane&)> action);
+        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane&)> action);
+
     private:
         struct SnapSizeResult;
         struct SnapChildrenSizeResult;
@@ -41,7 +44,6 @@ namespace winrt::TerminalApp::implementation
         winrt::event_token _secondClosedToken{ 0 };
 
         void _CreateRowColDefinitions();
-        void _UpdateBorders();
         bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         void _CloseChild(const bool closeFirst);

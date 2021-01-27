@@ -216,6 +216,16 @@ namespace winrt::TerminalApp::implementation
         return { newWidth, newHeight };
     }
 
+    void LeafPane::PropagateToLeaves(std::function<void(LeafPane&)> action)
+    {
+        action(*this);
+    }
+
+    void LeafPane::PropagateToLeavesOnEdge(const ResizeDirection& /* edge */, std::function<void(LeafPane&)> action)
+    {
+        action(*this);
+    }
+
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
     {

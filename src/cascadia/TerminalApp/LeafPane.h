@@ -59,6 +59,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Size GetMinSize() const;
 
+        void PropagateToLeaves(std::function<void(LeafPane&)> action);
+        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane&)> action);
+
         void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
