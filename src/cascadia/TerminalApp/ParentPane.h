@@ -21,6 +21,7 @@ namespace winrt::TerminalApp::implementation
                             const GUID& profile);
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void Relayout();
+        //LeafPane* GetActivePane();
         bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;

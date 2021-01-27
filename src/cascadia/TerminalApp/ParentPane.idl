@@ -8,5 +8,6 @@ namespace TerminalApp
     [default_interface] runtimeclass ParentPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
         ParentPane();
+        Boolean ResizePane(Microsoft.Terminal.Settings.Model.ResizeDirection direction);
     }
 }

@@ -38,11 +38,11 @@ namespace winrt::TerminalApp::implementation
         bool WasLastFocused() const noexcept;
         void UpdateVisuals();
         void ClearActive();
-        void SetActive(const bool active);
+        void SetActive();
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
                             const GUID& profile);
-        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
+        void ResizeContent(const winrt::Windows::Foundation::Size& /*newSize*/) {};
 
         std::pair<IPane, IPane> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                       const float splitSize,
@@ -82,6 +82,8 @@ namespace winrt::TerminalApp::implementation
                                         winrt::Windows::Foundation::IInspectable const& e);
         void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                      winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+        void _UpdateBorders();
 
         static void _SetupResources();
 

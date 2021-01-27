@@ -10,6 +10,7 @@ namespace TerminalApp
         LeafPane(Guid profile, Microsoft.Terminal.TerminalControl.TermControl con, Boolean active);
         Microsoft.Terminal.TerminalControl.TermControl GetTerminalControl();
         Guid GetProfile();
+        Boolean WasLastFocused();
         UInt16 Id;
     }
 }

@@ -22,6 +22,8 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_focusedBorderBrush = { nullptr };
     winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_unfocusedBorderBrush = { nullptr };
 
+    static constexpr float Half = 0.50f;
+
     LeafPane::LeafPane()
     {
         InitializeComponent();
@@ -90,36 +92,75 @@ namespace winrt::TerminalApp::implementation
 
     void LeafPane::UpdateVisuals()
     {
+        GridBorder().BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
     }
 
     void LeafPane::ClearActive()
     {
         _lastActive = false;
+        UpdateVisuals();
     }
 
-    void LeafPane::SetActive(const bool active)
+    void LeafPane::SetActive()
     {
-        _lastActive = active;
+        _lastActive = true;
+        UpdateVisuals();
     }
 
-    void LeafPane::UpdateSettings(const TerminalSettings& /*settings*/, const GUID& /*profile*/)
+    void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     {
-    }
-
-    void LeafPane::ResizeContent(const Size& /*newSize*/)
-    {
+        if (profile == _profile)
+        {
+            _control.UpdateSettings(settings);
+        }
     }
 
     void LeafPane::FocusPane(uint32_t /*id*/)
     {
     }
 
-    std::pair<IPane, IPane> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState /*splitType*/,
-                                  const float /*splitSize*/,
-                                  const GUID& /*profile*/,
-                                  const winrt::Microsoft::Terminal::TerminalControl::TermControl& /*control*/)
+    std::pair<IPane, IPane> LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                            const float /*splitSize*/,
+                                            const GUID& profile,
+                                            const winrt::Microsoft::Terminal::TerminalControl::TermControl& control)
     {
-        return { LeafPane(), LeafPane() };
+        //return { LeafPane(), LeafPane() };
+        splitType = _convertAutomaticSplitState(splitType);
+        auto newNeighbour = LeafPane(profile, control, false);
+
+        // Update the border of this pane and set appropriate border for the new leaf pane.
+        if (splitType == SplitState::Vertical)
+        {
+            //newNeighbour->_borders = _borders | Borders::Left;
+            _borders = _borders | Borders::Right;
+        }
+        else
+        {
+            //newNeighbour->_borders = _borders | Borders::Top;
+            _borders = _borders | Borders::Bottom;
+        }
+
+        _UpdateBorders();
+        newNeighbour._UpdateBorders();
+
+        if (WasLastFocused())
+        {
+            ClearActive();
+            newNeighbour.ClearActive();
+        }
+
+        // Parent pane has to know it's size when creating, which will just be the size of ours.
+        Size actualSize{ gsl::narrow_cast<float>(Root().ActualWidth()),
+                         gsl::narrow_cast<float>(Root().ActualHeight()) };
+        //const auto newParent = std::make_shared<ParentPane>(this, newNeighbour, splitType, Half, actualSize);
+
+        //_SplittedHandlers(newParent);
+
+        // Call InitializeChildren after invoking Splitted handlers, because that is were the we are detached and
+        // the new parent is attached to xaml view. Only when we are detached can the new parent actually attach us.
+        //newParent->InitializeChildren();
+
+        return { *this, newNeighbour };
     }
 
     float LeafPane::CalcSnappedDimension(const bool /*widthOrHeight*/, const float /*dimension*/) const
@@ -167,6 +208,10 @@ namespace winrt::TerminalApp::implementation
 
     void LeafPane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
                                            RoutedEventArgs const& /* args */)
+    {
+    }
+
+    void LeafPane::_UpdateBorders()
     {
     }
 

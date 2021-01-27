@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "TerminalSettings.idl";
+import "LeafPane.idl";
 
 namespace TerminalApp
 {
@@ -13,6 +14,7 @@ namespace TerminalApp
         void ResizeContent(Windows.Foundation.Size newSize);
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         Int32 GetLeafPaneCount();
+        //TerminalApp.LeafPane GetActivePane();
         Windows.Foundation.Size GetMinSize();
     }
 }
