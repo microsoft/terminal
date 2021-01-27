@@ -59,10 +59,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Size GetMinSize() const;
 
+        void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
+                                 winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);
         WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
         DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
 
     private:
+        struct SnapSizeResult;
         winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
         GUID _profile;
         bool _lastActive{ false };
@@ -87,7 +90,15 @@ namespace winrt::TerminalApp::implementation
 
         static void _SetupResources();
 
-        winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
+        SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
+
+        winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType);
+
+        struct SnapSizeResult
+        {
+            float lower;
+            float higher;
+        };
     };
 }
 

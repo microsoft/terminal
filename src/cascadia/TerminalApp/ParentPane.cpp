@@ -45,8 +45,10 @@ namespace winrt::TerminalApp::implementation
         ResizeContent(Root().ActualSize());
     }
 
-    void ParentPane::FocusPane(uint32_t /*id*/)
+    void ParentPane::FocusPane(uint32_t id)
     {
+        _firstChild.FocusPane(id);
+        _secondChild.FocusPane(id);
     }
 
     void ParentPane::ResizeContent(const Size& newSize)

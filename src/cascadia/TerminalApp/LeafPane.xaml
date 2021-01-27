@@ -13,7 +13,8 @@ the MIT License. See LICENSE in the project root for license information. -->
     MinHeight="16">
 
     <Grid x:Name="Root">
-        <Border x:Name="GridBorder">
+        <Border x:Name="GridBorder"
+                Tapped="BorderTappedHandler">
         </Border>
     </Grid>
 

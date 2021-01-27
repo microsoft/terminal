@@ -61,15 +61,13 @@ namespace winrt::TerminalApp::implementation
 
         // Register an event with the control to have it inform us when it gains focus.
         _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &LeafPane::_ControlGotFocusHandler });
+    }
 
-        //// When our border is tapped, make sure to transfer focus to our control.
-        //// LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
-        //// Colors::Transparent! The border won't get Tapped events, and they'll fall
-        //// through to something else.
-        //_border.Tapped([this](auto&, auto& e) {
-        //    _FocusFirstChild();
-        //    e.Handled(true);
-        //});
+    void LeafPane::BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                                       winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e)
+    {
+        SetActive();
+        e.Handled(true);
     }
 
     LeafPane* LeafPane::GetActivePane()
@@ -122,8 +120,12 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void LeafPane::FocusPane(uint32_t /*id*/)
+    void LeafPane::FocusPane(uint32_t id)
     {
+        if (_id == id)
+        {
+            _control.Focus(FocusState::Programmatic);
+        }
     }
 
     std::pair<IPane, IPane> LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -169,9 +171,10 @@ namespace winrt::TerminalApp::implementation
         return { *this, newNeighbour };
     }
 
-    float LeafPane::CalcSnappedDimension(const bool /*widthOrHeight*/, const float /*dimension*/) const
+    float LeafPane::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        return {};
+        const auto [lower, higher] = _CalcSnappedDimension(widthOrHeight, dimension);
+        return dimension - lower < higher - dimension ? lower : higher;
     }
 
     void LeafPane::Shutdown()
@@ -265,6 +268,34 @@ namespace winrt::TerminalApp::implementation
 
     void LeafPane::_UpdateBorders()
     {
+        double top = 0, bottom = 0, left = 0, right = 0;
+
+        Thickness newBorders{ 0 };
+        //if (_zoomed)
+        //{
+        //    // When the pane is zoomed, manually show all the borders around the window.
+        //    top = bottom = right = left = PaneBorderSize;
+        //}
+        //else
+        //{
+            if (WI_IsFlagSet(_borders, Borders::Top))
+            {
+                top = PaneBorderSize;
+            }
+            if (WI_IsFlagSet(_borders, Borders::Bottom))
+            {
+                bottom = PaneBorderSize;
+            }
+            if (WI_IsFlagSet(_borders, Borders::Left))
+            {
+                left = PaneBorderSize;
+            }
+            if (WI_IsFlagSet(_borders, Borders::Right))
+            {
+                right = PaneBorderSize;
+            }
+        //}
+        GridBorder().BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
     }
 
     void LeafPane::_SetupResources()
@@ -303,9 +334,56 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    SplitState LeafPane::_convertAutomaticSplitState(const SplitState& /*splitType*/) const
+    LeafPane::SnapSizeResult LeafPane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
-        return {};
+        const auto minSize = GetMinSize();
+        const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;
+
+        if (dimension <= minDimension)
+        {
+            return { minDimension, minDimension };
+        }
+
+        float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
+        if (widthOrHeight)
+        {
+            lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+        }
+        else
+        {
+            lower += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+            lower += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+        }
+
+        if (lower == dimension)
+        {
+            // If we happen to be already snapped, then just return this size
+            // as both lower and higher values.
+            return { lower, lower };
+        }
+        else
+        {
+            const auto cellSize = _control.CharacterDimensions();
+            const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
+            return { lower, higher };
+        }
+    }
+
+    SplitState LeafPane::_convertAutomaticSplitState(const SplitState& splitType)
+    {
+        // Careful here! If the pane doesn't yet have a size, these dimensions will
+        // be 0, and we'll always return Vertical.
+
+        if (splitType == SplitState::Automatic)
+        {
+            // If the requested split type was "auto", determine which direction to
+            // split based on our current dimensions
+            const Size actualSize{ gsl::narrow_cast<float>(Root().ActualWidth()),
+                                   gsl::narrow_cast<float>(Root().ActualHeight()) };
+            return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
+        }
+        return splitType;
     }
 
     DEFINE_EVENT(LeafPane, GotFocus, _GotFocusHandlers, winrt::delegate<LeafPane>);
