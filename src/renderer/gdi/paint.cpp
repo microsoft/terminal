@@ -308,13 +308,11 @@ using namespace Microsoft::Console::Render;
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
-        auto pwsPoly = std::make_unique<wchar_t[]>(cchLine);
-        RETURN_IF_NULL_ALLOC(pwsPoly);
+        auto& polyString = _polyStrings.emplace_back(cchLine, UNICODE_NULL);
 
         COORD const coordFontSize = _GetFontSize();
 
-        auto rgdxPoly = std::make_unique<int[]>(cchLine);
-        RETURN_IF_NULL_ALLOC(rgdxPoly);
+        auto& polyWidth = _polyWidths.emplace_back(cchLine, 0);
 
         // Sum up the total widths the entire line/run is expected to take while
         // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
@@ -327,9 +325,9 @@ using namespace Microsoft::Console::Render;
 
             // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
-            pwsPoly[i] = cluster.GetTextAsSingle();
-            rgdxPoly[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
-            cchCharWidths += rgdxPoly[i];
+            polyString[i] = cluster.GetTextAsSingle();
+            polyWidth[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
+            cchCharWidths += polyWidth[i];
         }
 
         // Detect and convert for raster font...
@@ -338,7 +336,7 @@ using namespace Microsoft::Console::Render;
             // dispatch conversion into our codepage
 
             // Find out the bytes required
-            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, nullptr, 0, nullptr, nullptr);
+            int const cbRequired = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, nullptr, 0, nullptr, nullptr);
 
             if (cbRequired != 0)
             {
@@ -346,7 +344,7 @@ using namespace Microsoft::Console::Render;
                 auto psConverted = std::make_unique<char[]>(cbRequired);
 
                 // Attempt conversion to current codepage
-                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, pwsPoly.get(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
+                int const cbConverted = WideCharToMultiByte(_fontCodepage, 0, polyString.data(), (int)cchLine, psConverted.get(), cbRequired, nullptr, nullptr);
 
                 // If successful...
                 if (cbConverted != 0)
@@ -356,22 +354,22 @@ using namespace Microsoft::Console::Render;
 
                     if (cchRequired != 0)
                     {
-                        auto pwsConvert = std::make_unique<wchar_t[]>(cchRequired);
+                        std::pmr::wstring polyConvert(cchRequired, UNICODE_NULL, &_pool);
 
                         // Then do the actual conversion.
-                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, pwsConvert.get(), cchRequired);
+                        int const cchConverted = MultiByteToWideChar(CP_ACP, 0, psConverted.get(), cbRequired, polyConvert.data(), cchRequired);
 
                         if (cchConverted != 0)
                         {
                             // If all successful, use this instead.
-                            pwsPoly.swap(pwsConvert);
+                            polyString.swap(polyConvert);
                         }
                     }
                 }
             }
         }
 
-        pPolyTextLine->lpstr = pwsPoly.release();
+        pPolyTextLine->lpstr = polyString.data();
         pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
@@ -380,7 +378,7 @@ using namespace Microsoft::Console::Render;
         pPolyTextLine->rcl.top = pPolyTextLine->y;
         pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
         pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
-        pPolyTextLine->pdx = rgdxPoly.release();
+        pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
         {
@@ -417,20 +415,10 @@ using namespace Microsoft::Console::Render;
             hr = E_FAIL;
         }
 
-        for (size_t iPoly = 0; iPoly < _cPolyText; iPoly++)
-        {
-            if (nullptr != _pPolyText[iPoly].lpstr)
-            {
-                delete[] _pPolyText[iPoly].lpstr;
-                _pPolyText[iPoly].lpstr = nullptr;
-            }
+        _polyStrings.clear();
+        _polyWidths.clear();
 
-            if (nullptr != _pPolyText[iPoly].pdx)
-            {
-                delete[] _pPolyText[iPoly].pdx;
-                _pPolyText[iPoly].pdx = nullptr;
-            }
-        }
+        ZeroMemory(_pPolyText, sizeof(_pPolyText));
 
         _cPolyText = 0;
     }
@@ -598,6 +586,19 @@ using namespace Microsoft::Console::Render;
         RETURN_IF_FAILED(LongAdd(rcInvert.bottom, -1, &rcInvert.top));
         cursorInvertRects.push_back(rcInvert);
         break;
+
+    case CursorType::DoubleUnderscore:
+    {
+        RECT top, bottom;
+        top = bottom = rcBoundaries;
+        RETURN_IF_FAILED(LongAdd(bottom.bottom, -1, &bottom.top));
+        RETURN_IF_FAILED(LongAdd(top.bottom, -3, &top.top));
+        RETURN_IF_FAILED(LongAdd(top.top, 1, &top.bottom));
+
+        cursorInvertRects.push_back(top);
+        cursorInvertRects.push_back(bottom);
+    }
+    break;
 
     case CursorType::EmptyBox:
     {

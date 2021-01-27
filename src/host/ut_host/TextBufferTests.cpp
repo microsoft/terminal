@@ -199,15 +199,15 @@ void TextBufferTests::TestWrapFlag()
     ROW& Row = textBuffer._GetFirstRow();
 
     // no wrap by default
-    VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+    VERIFY_IS_FALSE(Row.WasWrapForced());
 
     // try set wrap and check
-    Row.GetCharRow().SetWrapForced(true);
-    VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+    Row.SetWrapForced(true);
+    VERIFY_IS_TRUE(Row.WasWrapForced());
 
     // try unset wrap and check
-    Row.GetCharRow().SetWrapForced(false);
-    VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+    Row.SetWrapForced(false);
+    VERIFY_IS_FALSE(Row.WasWrapForced());
 }
 
 void TextBufferTests::TestWrapThroughWriteLine()
@@ -219,11 +219,11 @@ void TextBufferTests::TestWrapThroughWriteLine()
 
         if (expected)
         {
-            VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+            VERIFY_IS_TRUE(Row.WasWrapForced());
         }
         else
         {
-            VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+            VERIFY_IS_FALSE(Row.WasWrapForced());
         }
     };
 
@@ -289,15 +289,15 @@ void TextBufferTests::TestDoubleBytePadFlag()
     ROW& Row = textBuffer._GetFirstRow();
 
     // no padding by default
-    VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
+    VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 
     // try set and check
-    Row.GetCharRow().SetDoubleBytePadded(true);
-    VERIFY_IS_TRUE(Row.GetCharRow().WasDoubleBytePadded());
+    Row.SetDoubleBytePadded(true);
+    VERIFY_IS_TRUE(Row.WasDoubleBytePadded());
 
     // try unset and check
-    Row.GetCharRow().SetDoubleBytePadded(false);
-    VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
+    Row.SetDoubleBytePadded(false);
+    VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 }
 
 void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
@@ -568,24 +568,24 @@ void TextBufferTests::TestSetWrapOnCurrentRow()
     Log::Comment(L"Testing off to on");
 
     // turn wrap status off first
-    Row.GetCharRow().SetWrapForced(false);
+    Row.SetWrapForced(false);
 
     // trigger wrap
     textBuffer._SetWrapOnCurrentRow();
 
     // ensure this row was flipped
-    VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+    VERIFY_IS_TRUE(Row.WasWrapForced());
 
     Log::Comment(L"Testing on stays on");
 
     // make sure wrap status is on
-    Row.GetCharRow().SetWrapForced(true);
+    Row.SetWrapForced(true);
 
     // trigger wrap
     textBuffer._SetWrapOnCurrentRow();
 
     // ensure row is still on
-    VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+    VERIFY_IS_TRUE(Row.WasWrapForced());
 }
 
 void TextBufferTests::TestIncrementCircularBuffer()

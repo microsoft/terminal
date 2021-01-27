@@ -147,6 +147,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass OpenSettingsArgs : IActionArgs
     {
+        OpenSettingsArgs(SettingsTarget target);
         SettingsTarget Target { get; };
     };
 

@@ -656,6 +656,10 @@
           "description": "Sets the default profile. Opens by clicking the \"+\" icon or typing the key binding assigned to \"newTab\".",
           "type": "string"
         },
+        "startupActions": {
+          "description": "Sets the list of actions to apply if no command line is provided. Uses the same format as command line arguments",
+          "type": "string"
+        },
         "disabledProfileSources": {
           "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
           "items": {
@@ -929,9 +933,10 @@
         },
         "cursorShape": {
           "default": "bar",
-          "description": "Sets the shape of the cursor. Possible values:\n -\"bar\" ( ┃, default )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
+          "description": "Sets the shape of the cursor. Possible values:\n -\"bar\" ( ┃, default )\n -\"doubleUnderscore\" ( ‗ )\n -\"emptyBox\" ( ▯ )\n -\"filledBox\" ( █ )\n -\"underscore\" ( ▁ )\n -\"vintage\" ( ▃ )",
           "enum": [
             "bar",
+            "doubleUnderscore",
             "emptyBox",
             "filledBox",
             "underscore",

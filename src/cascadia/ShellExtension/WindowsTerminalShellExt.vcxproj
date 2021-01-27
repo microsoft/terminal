@@ -11,10 +11,13 @@
     <!-- sets a bunch of Windows Universal properties -->
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>User32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="OpenTerminalHere.h" />
@@ -40,7 +43,6 @@
     <None Include="packages.config" />
     <None Include="WindowsTerminalShellExt.def" />
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -56,7 +58,5 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 </Project>
