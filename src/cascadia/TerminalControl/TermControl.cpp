@@ -203,7 +203,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
-
+                // TODO: just do this in XAML
+                _searchBox->PreviewKeyDown({ this, &TermControl::_searchKeyHandler });
                 // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
                 if (_terminal->IsSelectionActive())
@@ -249,11 +250,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   search button or press enter.
     // Arguments:
     // - text: the text to search
-    // - goForward: boolean that represents if the current search direction is forward
     // - caseSensitive: boolean that represents if the current search is case sensitive
     // Return Value:
     // - <none>
-    void TermControl::_Search(const winrt::hstring& text, const bool goForward, const bool caseSensitive)
+    void TermControl::_Search(const winrt::hstring& text,
+                              const bool goForward,
+                              const bool caseSensitive)
     {
         if (text.size() == 0 || _closing)
         {
@@ -286,12 +288,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - RoutedEventArgs: not used
     // Return Value:
     // - <none>
-    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/, RoutedEventArgs const& /*args*/)
+    void TermControl::_CloseSearchBoxControl(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                             RoutedEventArgs const& /*args*/)
     {
         _searchBox->Visibility(Visibility::Collapsed);
 
         // Set focus back to terminal control
         this->Focus(FocusState::Programmatic);
+    }
+
+    // Method Description:
+    // - This event handler works to give the search box an attempt to process
+    //   keybindings. Most notably, we need this for the findPrevious and
+    //   findNext actions to be actionable from within the search box.
+    void TermControl::_searchKeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                        Input::KeyRoutedEventArgs const& e)
+    {
+        auto modifiers = _GetPressedModifierKeys();
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+
+        if (!modifiers.IsAltGrPressed() &&
+            _TryHandleKeyBinding(vkey, scanCode, modifiers))
+        {
+            e.Handled(true);
+        }
     }
 
     // Method Description:
