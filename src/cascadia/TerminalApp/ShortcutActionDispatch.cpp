@@ -256,14 +256,14 @@ namespace winrt::TerminalApp::implementation
             _BreakIntoDebuggerHandlers(*this, eventArgs);
             break;
         }
-        case ShortcutAction::NextSearchMatch:
+        case ShortcutAction::FindNext:
         {
-            _NextSearchMatchHandlers(*this, eventArgs);
+            _FindNextHandlers(*this, eventArgs);
             break;
         }
-        case ShortcutAction::PrevSearchMatch:
+        case ShortcutAction::FindPrev:
         {
-            _PrevSearchMatchHandlers(*this, eventArgs);
+            _FindPrevHandlers(*this, eventArgs);
             break;
         }
         default:

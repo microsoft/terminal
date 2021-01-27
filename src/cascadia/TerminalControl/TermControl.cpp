@@ -203,8 +203,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // get at its private implementation
                 _searchBox.copy_from(winrt::get_self<implementation::SearchBoxControl>(searchBox));
                 _searchBox->Visibility(Visibility::Visible);
-                // TODO: just do this in XAML
-                _searchBox->PreviewKeyDown({ this, &TermControl::_searchKeyHandler });
+
                 // If a text is selected inside terminal, use it to populate the search box.
                 // If the search box already contains a value, it will be overridden.
                 if (_terminal->IsSelectionActive())
@@ -231,7 +230,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-        keyBindingSearch = true;
         _Search(_searchBox->TextBox().Text(), true, false);
     }
 
@@ -241,7 +239,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             return;
         }
-        keyBindingSearch = true;
         _Search(_searchBox->TextBox().Text(), false, false);
     }
 
@@ -301,7 +298,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - This event handler works to give the search box an attempt to process
     //   keybindings. Most notably, we need this for the findPrevious and
     //   findNext actions to be actionable from within the search box.
-    void TermControl::_searchKeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_SearchKeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                         Input::KeyRoutedEventArgs const& e)
     {
         auto modifiers = _GetPressedModifierKeys();
@@ -981,23 +978,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
     {
-        // if (e.OriginalKey() == VirtualKey::Enter)
-        // {
-        //     return;
-        // }
-
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
-        if (_searchBox && _searchBox->ContainsFocus() /* && _searchBox->TextBox().Text().empty()*/)
+        if (_searchBox && _searchBox->ContainsFocus())
         {
             return;
         }
-
-        // if (keyBindingSearch)
-        // {
-        //     keyBindingSearch = false;
-        //     return;
-        // }
 
         // Mark the event as handled and do nothing if we're closing, or the key
         // was the Windows key.
@@ -1139,6 +1125,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
+        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
+        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // a selection created by an action bound to a keydown.
         if (_terminal->IsSelectionActive() &&
             !KeyEvent::IsModifierKey(vkey) &&
             vkey != VK_SNAPSHOT &&

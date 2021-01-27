@@ -1053,8 +1053,8 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch->TabSearch({ this, &TerminalPage::_HandleOpenTabSearch });
         _actionDispatch->MoveTab({ this, &TerminalPage::_HandleMoveTab });
         _actionDispatch->BreakIntoDebugger({ this, &TerminalPage::_HandleBreakIntoDebugger });
-        _actionDispatch->NextSearchMatch({ this, &TerminalPage::_HandleNextSearchMatch });
-        _actionDispatch->PrevSearchMatch({ this, &TerminalPage::_HandlePrevSearchMatch });
+        _actionDispatch->FindNext({ this, &TerminalPage::_HandleFindNext });
+        _actionDispatch->FindPrev({ this, &TerminalPage::_HandleFindPrev });
     }
 
     // Method Description:
@@ -2552,18 +2552,6 @@ namespace winrt::TerminalApp::implementation
     {
         const auto termControl = _GetActiveControl();
         termControl.CreateSearchBoxControl();
-    }
-
-    void TerminalPage::_GoForward()
-    {
-        const auto termControl = _GetActiveControl();
-        termControl.SearchNextMatch();
-    }
-
-    void TerminalPage::_GoBackward()
-    {
-        const auto termControl = _GetActiveControl();
-        termControl.SearchPrevMatch();
     }
 
     // Method Description:

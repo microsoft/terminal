@@ -193,7 +193,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _initializedTerminal;
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
-        bool keyBindingSearch = true;
 
         event_token _connectionOutputEventToken;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
@@ -339,7 +338,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _CompositionCompleted(winrt::hstring text);
         void _CurrentCursorPositionHandler(const IInspectable& sender, const CursorPositionEventArgs& eventArgs);
         void _FontInfoHandler(const IInspectable& sender, const FontInfoEventArgs& eventArgs);
-        void _searchKeyHandler(Windows::Foundation::IInspectable const& sender,
+        void _SearchKeyHandler(Windows::Foundation::IInspectable const& sender,
                                Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         winrt::fire_and_forget _AsyncCloseConnection();
     };

@@ -53,8 +53,8 @@ namespace Microsoft.Terminal.Settings.Model
         TabSearch,
         MoveTab,
         BreakIntoDebugger,
-        NextSearchMatch,
-        PrevSearchMatch
+        FindNext,
+        FindPrev
     };
 
     [default_interface] runtimeclass ActionAndArgs {
