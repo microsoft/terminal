@@ -28,8 +28,12 @@ namespace winrt::TerminalApp::implementation
         int GetLeafPaneCount() const noexcept;
         winrt::Windows::Foundation::Size GetMinSize() const;
 
+        LeafPane* FindFirstLeaf();
+
         void PropagateToLeaves(std::function<void(LeafPane&)> action);
         void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane&)> action);
+
+        DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);
 
     private:
         struct SnapSizeResult;

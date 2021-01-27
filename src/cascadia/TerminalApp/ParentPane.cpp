@@ -193,6 +193,35 @@ namespace winrt::TerminalApp::implementation
         return { minWidth, minHeight };
     }
 
+    LeafPane* FindFirstLeaf()
+    {
+        //return _firstChild.FindFirstLeaf();
+        return {};
+    }
+
+    void ParentPane::PropagateToLeaves(std::function<void(LeafPane&)> action)
+    {
+        //_firstChild.PropagateToLeaves(action);
+        //_secondChild.PropagateToLeaves(action);
+    }
+
+    void ParentPane::PropagateToLeavesOnEdge(const ResizeDirection& edge, std::function<void(LeafPane&)> action)
+    {
+        if (DirectionMatchesSplit(edge, _splitState))
+        {
+            const auto adjacentChild = (_splitState == SplitState::Vertical && edge == ResizeDirection::Left ||
+                                        _splitState == SplitState::Horizontal && edge == ResizeDirection::Up) ?
+                                           _firstChild :
+                                           _secondChild;
+            //adjacentChild.PropagateToLeavesOnEdge(edge, action);
+        }
+        else
+        {
+            //_firstChild.PropagateToLeavesOnEdge(edge, action);
+            //_secondChild.PropagateToLeavesOnEdge(edge, action);
+        }
+    }
+
     void ParentPane::_CreateRowColDefinitions()
     {
         const auto first = _desiredSplitPosition * 100.0f;
@@ -270,7 +299,6 @@ namespace winrt::TerminalApp::implementation
 
         const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
         return false;
-        // TODO: Implement propagate to leaves
         // TODO: Implement find first leaf
         // If the child we want to move focus to is _already_ focused, return false,
         // to try and let our parent figure it out.
@@ -285,8 +313,36 @@ namespace winrt::TerminalApp::implementation
         //return true;
     }
 
-    void ParentPane::_CloseChild(const bool /*closeFirst*/)
+    void ParentPane::_CloseChild(const bool closeFirst)
     {
+        // The closed child must always be a leaf.
+        const auto closedChild = (closeFirst ? _firstChild.try_as<LeafPane>() : _secondChild.try_as<LeafPane>());
+        THROW_HR_IF_NULL(E_FAIL, closedChild);
+
+        const auto remainingChild = closeFirst ? _secondChild.try_as<LeafPane>() : _firstChild.try_as<LeafPane>();
+
+        // Detach all the controls form our grid, so they can be attached later.
+        Root().Children().Clear();
+
+        const auto closedChildDir = (_splitState == SplitState::Vertical) ?
+                                        (closeFirst ? ResizeDirection::Left : ResizeDirection::Right) :
+                                        (closeFirst ? ResizeDirection::Up : ResizeDirection::Down);
+
+        // On all the leaf descendants that were adjacent to the closed child, update its
+        // border, so that it matches the border of the closed child.
+        //remainingChild.PropagateToLeavesOnEdge(closedChildDir, [=](LeafPane& paneOnEdge) {
+        //    paneOnEdge.UpdateBorderWithClosedNeighbour(closedChild, closedChildDir);
+        //});
+
+        _ChildClosedHandlers(remainingChild);
+
+        // If any children of closed pane was previously active, we move the focus to the remaining
+        // child. We do that after we invoke the ChildClosed event, because it attaches that child's
+        // control to xaml tree and only then can it properly gain focus.
+        //if (closedChild.FindActivePane())
+        //{
+        //    remainingChild._FindFirstLeaf()->SetActive(true);
+        //}
     }
 
     std::pair<float, float> ParentPane::_CalcChildrenSizes(const float fullSize) const
@@ -457,8 +513,19 @@ namespace winrt::TerminalApp::implementation
     //    return node;
     //}
 
-    float ParentPane::_ClampSplitPosition(const bool /*widthOrHeight*/, const float /*requestedValue*/, const float /*totalSize*/) const
+    float ParentPane::_ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const
     {
-        return {};
+        const auto firstMinSize = _firstChild.GetMinSize();
+        const auto secondMinSize = _secondChild.GetMinSize();
+
+        const auto firstMinDimension = widthOrHeight ? firstMinSize.Width : firstMinSize.Height;
+        const auto secondMinDimension = widthOrHeight ? secondMinSize.Width : secondMinSize.Height;
+
+        const auto minSplitPosition = firstMinDimension / totalSize;
+        const auto maxSplitPosition = 1.0f - (secondMinDimension / totalSize);
+
+        return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
     }
+
+    DEFINE_EVENT(ParentPane, ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);
 }

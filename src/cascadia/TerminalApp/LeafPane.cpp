@@ -216,6 +216,11 @@ namespace winrt::TerminalApp::implementation
         return { newWidth, newHeight };
     }
 
+    LeafPane* LeafPane::FindFirstLeaf()
+    {
+        return this;
+    }
+
     void LeafPane::PropagateToLeaves(std::function<void(LeafPane&)> action)
     {
         action(*this);
