@@ -138,7 +138,17 @@ namespace winrt::TerminalApp::implementation
 
     Size ParentPane::GetMinSize() const
     {
-        return {};
+        const auto firstSize = _firstChild.GetMinSize();
+        const auto secondSize = _secondChild.GetMinSize();
+
+        const auto minWidth = _splitState == SplitState::Vertical ?
+                                  firstSize.Width + secondSize.Width :
+                                  std::max(firstSize.Width, secondSize.Width);
+        const auto minHeight = _splitState == SplitState::Horizontal ?
+                                   firstSize.Height + secondSize.Height :
+                                   std::max(firstSize.Height, secondSize.Height);
+
+        return { minWidth, minHeight };
     }
 
     void ParentPane::_CreateRowColDefinitions()

@@ -3,18 +3,21 @@
 
 #include "pch.h"
 #include "LeafPane.h"
+#include "AppLogic.h"
 
 #include "LeafPane.g.cpp"
 
-using namespace winrt;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::UI::Xaml::Media;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace TerminalApp;
-using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -23,6 +26,8 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::UI::Xaml::Media::SolidColorBrush LeafPane::s_unfocusedBorderBrush = { nullptr };
 
     static constexpr float Half = 0.50f;
+    static const int PaneBorderSize = 2;
+    static const int CombinedPaneBorderSize = 2 * PaneBorderSize;
 
     LeafPane::LeafPane()
     {
@@ -107,7 +112,7 @@ namespace winrt::TerminalApp::implementation
         UpdateVisuals();
     }
 
-    void LeafPane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
+    void LeafPane::UpdateSettings(const TerminalApp::TerminalSettings& settings, const GUID& profile)
     {
         if (profile == _profile)
         {
@@ -170,15 +175,17 @@ namespace winrt::TerminalApp::implementation
 
     void LeafPane::Shutdown()
     {
+        _control.Close();
     }
 
     void LeafPane::Close()
     {
+        _ClosedHandlers(nullptr, nullptr);
     }
 
     int LeafPane::GetLeafPaneCount() const noexcept
     {
-        return {};
+        return 1;
     }
 
     uint16_t LeafPane::Id() noexcept
@@ -193,12 +200,40 @@ namespace winrt::TerminalApp::implementation
 
     Size LeafPane::GetMinSize() const
     {
-        return {};
+        auto controlSize = _control.MinimumSize();
+        auto newWidth = controlSize.Width;
+        auto newHeight = controlSize.Height;
+
+        newWidth += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
+        newWidth += WI_IsFlagSet(_borders, Borders::Right) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Top) ? PaneBorderSize : 0;
+        newHeight += WI_IsFlagSet(_borders, Borders::Bottom) ? PaneBorderSize : 0;
+
+        return { newWidth, newHeight };
     }
 
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,
                                                          const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
+        const auto newConnectionState = _control.ConnectionState();
+
+        if (newConnectionState < ConnectionState::Closed)
+        {
+            // Pane doesn't care if the connection isn't entering a terminal state.
+            return;
+        }
+
+        //const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
+        //auto paneProfile = settings.FindProfile(_profile);
+        //if (paneProfile)
+        //{
+        //    auto mode = paneProfile.CloseOnExit();
+        //    if ((mode == CloseOnExitMode::Always) ||
+        //        (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
+        //    {
+        //        Close();
+        //    }
+        //}
     }
 
     void LeafPane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
