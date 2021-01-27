@@ -960,23 +960,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_KeyHandler(Input::KeyRoutedEventArgs const& e, const bool keyDown)
     {
-        if (e.OriginalKey() == VirtualKey::Enter)
-        {
-            return;
-        }
+        // if (e.OriginalKey() == VirtualKey::Enter)
+        // {
+        //     return;
+        // }
 
         // If the current focused element is a child element of searchbox,
         // we do not send this event up to terminal
-        if (_searchBox && _searchBox->ContainsFocus() && _searchBox->TextBox().Text().empty())
+        if (_searchBox && _searchBox->ContainsFocus() /* && _searchBox->TextBox().Text().empty()*/)
         {
             return;
         }
 
-        if (keyBindingSearch)
-        {
-            keyBindingSearch = false;
-            return;
-        }
+        // if (keyBindingSearch)
+        // {
+        //     keyBindingSearch = false;
+        //     return;
+        // }
 
         // Mark the event as handled and do nothing if we're closing, or the key
         // was the Windows key.
@@ -1118,7 +1118,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        if (_terminal->IsSelectionActive() && !KeyEvent::IsModifierKey(vkey) && vkey != VK_SNAPSHOT)
+        if (_terminal->IsSelectionActive() &&
+            !KeyEvent::IsModifierKey(vkey) &&
+            vkey != VK_SNAPSHOT &&
+            keyDown)
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
