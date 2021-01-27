@@ -2056,6 +2056,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::wstring::size_type pos = 0;
         std::wstring::size_type begin = 0;
 
+         auto bracket = [](const std::wstring& origin, const bool enabled) {
+            std::wstring bracketed{ origin };
+            if (enabled)
+            {
+                bracketed.insert(0, L"\x1b[200~");
+                bracketed.append(L"\x1b[201~");
+            }
+
+            return bracketed;
+        };
+
         while ((pos = wstr.find(L"\n", pos)) != std::wstring::npos)
         {
             // copy up to but not including the \n
@@ -2071,13 +2082,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             begin = pos;
         }
 
+        const bool enableBracket = _terminal->IsXtermBracketedPasteModeEnabled();
+
         // If we entered the while loop even once, begin would be non-zero
         // (because we set begin = pos right after incrementing pos)
         // So, if begin is still zero at this point it means we never found a newline
         // and we can just write the original string
         if (begin == 0)
         {
-            _connection.WriteInput(wstr);
+            _connection.WriteInput(bracket(wstr, enableBracket));
         }
         else
         {
@@ -2087,7 +2100,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // we may have removed some characters, so we may not need as much space
             // as we reserved earlier
             stripped.shrink_to_fit();
-            _connection.WriteInput(stripped);
+            _connection.WriteInput(bracket(stripped, enableBracket));
         }
 
         _terminal->ClearSelection();
