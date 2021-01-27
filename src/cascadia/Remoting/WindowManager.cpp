@@ -23,7 +23,24 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Register with COM as a server for the Monarch class
         _registerAsMonarch();
         // Instantiate an instance of the Monarch. This may or may not be in-proc!
-        _createMonarchAndCallbacks();
+        bool foundMonarch = false;
+        while (!foundMonarch)
+        {
+            try
+            {
+                _createMonarchAndCallbacks();
+                // _createMonarchAndCallbacks will initialize _isKing
+                foundMonarch = true;
+            }
+            catch (...)
+            {
+                // If we fail to find the monarch,
+                // stay in this jail until we do.
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "WindowManager_ExceptionInCtor",
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            }
+        }
     }
 
     WindowManager::~WindowManager()
@@ -36,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _registrationHostClass = 0;
         _monarchWaitInterrupt.SetEvent();
 
+        // A thread is joinable once it's been started. Basically this just
+        // makes sure that the thread isn't just default-constructed.
         if (_electionThread.joinable())
         {
             _electionThread.join();
@@ -44,15 +63,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::ProposeCommandline(const Remoting::CommandlineArgs& args)
     {
-        const bool isKing = _areWeTheKing();
         // If we're the king, we _definitely_ want to process the arguments, we were
         // launched with them!
         //
         // Otherwise, the King will tell us if we should make a new window
-        _shouldCreateWindow = isKing;
+        _shouldCreateWindow = _isKing;
         std::optional<uint64_t> givenID;
-
-        if (!isKing)
+        if (!_isKing)
         {
             // The monarch may respond back "you should be a new
             // window, with ID,name of (id, name)". Really the responses are:
@@ -106,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _createOurPeasant({ givenID });
 
             // Spawn a thread to wait on the monarch, and handle the election
-            if (!isKing)
+            if (!_isKing)
             {
                 _createPeasantThread();
             }
@@ -144,15 +161,25 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                       CLSCTX_LOCAL_SERVER);
     }
 
+    // NOTE: This can throw! Callers include:
+    // - the constructor, who performs this in a loop until it successfully
+    //   finda a monarch
+    // - the performElection method, which is called in the waitOnMonarch
+    //   thread. All the calls in that thread are wrapped in try/catch's
+    //   already.
+    // - _createOurPeasant, who might do this in a loop to establish us with the
+    //   monarch.
     void WindowManager::_createMonarchAndCallbacks()
     {
         _createMonarch();
-        const auto isKing = _areWeTheKing();
+        // Save the result of checking if we're the king. We want to avoid
+        // unnecessary calls back and forth if we can.
+        _isKing = _areWeTheKing();
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_ConnectedToMonarch",
                           TraceLoggingUInt64(_monarch.GetPID(), "monarchPID", "The PID of the new Monarch"),
-                          TraceLoggingBoolean(isKing, "isKing", "true if we are the new monarch"),
+                          TraceLoggingBoolean(_isKing, "isKing", "true if we are the new monarch"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
         if (_peasant)
@@ -161,7 +188,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _monarch.HandleActivatePeasant(_peasant.GetLastActivatedArgs());
         }
 
-        if (!isKing)
+        if (!_isKing)
         {
             return;
         }
@@ -176,8 +203,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     bool WindowManager::_areWeTheKing()
     {
-        const auto kingPID{ _monarch.GetPID() };
         const auto ourPID{ GetCurrentProcessId() };
+        const auto kingPID{ _monarch.GetPID() };
         return (ourPID == kingPID);
     }
 
@@ -189,7 +216,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             p->AssignID(givenID.value());
         }
         _peasant = *p;
-        _monarch.AddPeasant(_peasant);
+
+        // Try to add us to the monarch. If that fails, try to find a monarch
+        // again, until we find one (we will eventually find us)
+        while (true)
+        {
+            try
+            {
+                _monarch.AddPeasant(_peasant);
+                break;
+            }
+            catch (...)
+            {
+                try
+                {
+                    // Wrap this in it's own try/catch, beause this can throw.
+                    _createMonarchAndCallbacks();
+                }
+                catch (...)
+                {
+                }
+            }
+        }
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_CreateOurPeasant",
@@ -206,6 +254,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - true iff we're the new monarch process.
+    // NOTE: This can throw!
     bool WindowManager::_performElection()
     {
         _createMonarchAndCallbacks();
@@ -213,7 +262,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Tell the new monarch who we are. We might be that monarch!
         _monarch.AddPeasant(_peasant);
 
-        if (_areWeTheKing())
+        if (_isKing)
         {
             // This method is only called when a _new_ monarch is elected. So
             // don't do anything here that needs to be done for all monarch

@@ -24,12 +24,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     private:
         bool _shouldCreateWindow{ false };
+        bool _isKing{ false };
         DWORD _registrationHostClass{ 0 };
         winrt::Microsoft::Terminal::Remoting::Monarch _monarch{ nullptr };
         winrt::Microsoft::Terminal::Remoting::Peasant _peasant{ nullptr };
 
         wil::unique_event _monarchWaitInterrupt;
-
         std::thread _electionThread;
 
         void _registerAsMonarch();
