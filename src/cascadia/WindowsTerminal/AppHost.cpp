@@ -168,7 +168,7 @@ void AppHost::_HandleCommandlineArgs()
     {
         if (auto args{ peasant.InitialArgs() })
         {
-            const auto result = _logic.SetStartupCommandline(args.Args());
+            const auto result = _logic.SetStartupCommandline(args.Commandline());
             const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -530,7 +530,7 @@ bool AppHost::HasWindow()
 void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*sender*/,
                                    Remoting::CommandlineArgs args)
 {
-    _logic.ExecuteCommandline(args.Args(), args.CurrentDirectory());
+    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
 }
 
 // Method Description:
@@ -546,7 +546,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable /*se
 void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                 const Remoting::FindTargetWindowArgs& args)
 {
-    const auto targetWindow = _logic.FindTargetWindow(args.Args().Args());
+    const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
     args.ResultTargetWindow(targetWindow);
 }
 

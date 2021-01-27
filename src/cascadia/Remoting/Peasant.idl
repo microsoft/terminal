@@ -9,7 +9,7 @@ namespace Microsoft.Terminal.Remoting
         CommandlineArgs();
         CommandlineArgs(String[] args, String cwd);
 
-        String[] Args { get; set; };
+        String[] Commandline { get; set; };
         String CurrentDirectory();
     };
 

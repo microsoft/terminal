@@ -46,35 +46,48 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - the ID assigned to the peasant.
     uint64_t Monarch::AddPeasant(Remoting::IPeasant peasant)
     {
-        // TODO:projects/5 This is terrible. There's gotta be a better way
-        // of finding the first opening in a non-consecutive map of int->object
-        const auto providedID = peasant.GetID();
-
-        if (providedID == 0)
+        try
         {
-            // Peasant doesn't currently have an ID. Assign it a new one.
-            peasant.AssignID(_nextPeasantID++);
+            // TODO:projects/5 This is terrible. There's gotta be a better way
+            // of finding the first opening in a non-consecutive map of int->object
+            const auto providedID = peasant.GetID();
+
+            if (providedID == 0)
+            {
+                // Peasant doesn't currently have an ID. Assign it a new one.
+                peasant.AssignID(_nextPeasantID++);
+            }
+            else
+            {
+                // Peasant already had an ID (from an older monarch). Leave that one
+                // be. Make sure that the next peasant's ID is higher than it.
+                _nextPeasantID = providedID >= _nextPeasantID ? providedID + 1 : _nextPeasantID;
+            }
+
+            auto newPeasantsId = peasant.GetID();
+            // Add an event listener to the peasant's WindowActivated event.
+            peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
+
+            _peasants[newPeasantsId] = peasant;
+
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_AddPeasant",
+                              TraceLoggingUInt64(providedID, "providedID", "the provided ID for the peasant"),
+                              TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+            return newPeasantsId;
         }
-        else
+        catch (...)
         {
-            // Peasant already had an ID (from an older monarch). Leave that one
-            // be. Make sure that the next peasant's ID is higher than it.
-            _nextPeasantID = providedID >= _nextPeasantID ? providedID + 1 : _nextPeasantID;
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_AddPeasant_Failed",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+
+            // We can only get into this try/catch if the peasant died on us. So
+            // the return value doesn't _really_ matter. They're not about to
+            // get it.
+            return -1;
         }
-
-        auto newPeasantsId = peasant.GetID();
-        _peasants[newPeasantsId] = peasant;
-
-        // Add an event listener to the peasant's WindowActivated event.
-        peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
-
-        TraceLoggingWrite(g_hRemotingProvider,
-                          "Monarch_AddPeasant",
-                          TraceLoggingUInt64(providedID, "providedID", "the provided ID for the peasant"),
-                          TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-
-        return newPeasantsId;
     }
 
     // Method Description:
@@ -104,6 +117,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             auto peasantSearch = _peasants.find(peasantID);
             auto maybeThePeasant = peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
+            // Ask the peasant for their PID. This will validate that they're
+            // actually still alive.
             if (maybeThePeasant)
             {
                 maybeThePeasant.GetPID();
@@ -148,23 +163,31 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     uint64_t Monarch::_getMostRecentPeasantID()
     {
-        if (_mostRecentPeasant == 0)
-        {
-            // We haven't yet been told the MRU peasant. Just use the first one.
-            // This is just gonna be a random one, but really shouldn't happen
-            // in practice. The WindowManager should set the MRU peasant
-            // immediately as soon as it creates the monarch/peasant for the
-            // first window.
-            if (_peasants.size() > 0)
-            {
-                return _peasants.begin()->second.GetID();
-            }
-            return 0;
-        }
-        else
+        if (_mostRecentPeasant != 0)
         {
             return _mostRecentPeasant;
         }
+
+        // We haven't yet been told the MRU peasant. Just use the first one.
+        // This is just gonna be a random one, but really shouldn't happen
+        // in practice. The WindowManager should set the MRU peasant
+        // immediately as soon as it creates the monarch/peasant for the
+        // first window.
+        if (_peasants.size() > 0)
+        {
+            try
+            {
+                return _peasants.begin()->second.GetID();
+            }
+            catch (...)
+            {
+                // This shouldn't really happen. If we're the monarch, then the
+                // first peasant should also _be us_. So we should be able to
+                // get our own ID.
+                return 0;
+            }
+        }
+        return 0;
     }
 
     // Method Description:
@@ -187,6 +210,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto findWindowArgs = winrt::make_self<Remoting::implementation::FindTargetWindowArgs>();
         findWindowArgs->Args(args);
 
+        // This is handled by some handler in-proc
         _FindTargetWindowRequestedHandlers(*this, *findWindowArgs);
 
         // After the event was handled, ResultTargetWindow() will be filled with
@@ -205,20 +229,31 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             if (auto targetPeasant{ _getPeasant(windowID) })
             {
-                // This will raise the peasant's ExecuteCommandlineRequested
-                // event, which will then ask the AppHost to handle the
-                // commandline, which will then pass it to AppLogic for
-                // handling.
-                targetPeasant.ExecuteCommandline(args);
+                auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>();
+
+                result->ShouldCreateWindow(false);
+                try
+                {
+                    // This will raise the peasant's ExecuteCommandlineRequested
+                    // event, which will then ask the AppHost to handle the
+                    // commandline, which will then pass it to AppLogic for
+                    // handling.
+                    targetPeasant.ExecuteCommandline(args);
+                }
+                catch (...)
+                {
+                    // If we fail to propose the commandline to the peasant (it
+                    // died?) then just tell this process to become a new window
+                    // instead.
+                    result->ShouldCreateWindow(false);
+                }
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_ProposeCommandline_Existing",
-                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the matching peasant"),
+                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the peasant the commandline waws intended for"),
                                   TraceLoggingBoolean(true, "foundMatch", "true if we found a peasant with that ID"),
+                                  TraceLoggingBoolean(!result->ShouldCreateWindow(), "succeeded", "true if we successfully dispatched the commandline to the peasant"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-
-                auto result = winrt::make_self<Remoting::implementation::ProposeCommandlineResult>();
-                result->ShouldCreateWindow(false);
                 return *result;
             }
             else if (windowID > 0)
@@ -229,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                 TraceLoggingWrite(g_hRemotingProvider,
                                   "Monarch_ProposeCommandline_Existing",
-                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the matching peasant"),
+                                  TraceLoggingUInt64(windowID, "peasantID", "the ID of the peasant the commandline waws intended for"),
                                   TraceLoggingBoolean(false, "foundMatch", "true if we found a peasant with that ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 
