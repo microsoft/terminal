@@ -18,6 +18,22 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
     }
 
+    ParentPane::ParentPane(LeafPane firstChild, LeafPane secondChild, SplitState splitState, float splitPosition, Size /*currentSize*/) :
+        _firstChild(firstChild),
+        _secondChild(secondChild),
+        _splitState(splitState),
+        _desiredSplitPosition(splitPosition)
+
+    {
+        InitializeComponent();
+        _CreateRowColDefinitions();
+
+        FirstChild_Root().Content(firstChild);
+        SecondChild_Root().Content(secondChild);
+        //_GetGridSetColOrRowFunc()(firstChild->GetRootElement(), 0);
+        //_GetGridSetColOrRowFunc()(secondChild->GetRootElement(), 1);
+    }
+
     Controls::Grid ParentPane::GetRootElement()
     {
         return Root();

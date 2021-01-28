@@ -70,9 +70,9 @@ namespace winrt::TerminalApp::implementation
         e.Handled(true);
     }
 
-    LeafPane* LeafPane::GetActivePane()
+    IPane LeafPane::GetActivePane()
     {
-        return _lastActive ? this : nullptr;
+        return _lastActive ? IPane{ *this } : nullptr;
     }
 
     TermControl LeafPane::GetTerminalControl()

@@ -30,7 +30,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
-        LeafPane* GetActivePane();
+        IPane GetActivePane();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
         GUID GetProfile();
         void FocusPane(uint32_t id);

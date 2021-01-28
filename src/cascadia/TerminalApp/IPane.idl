@@ -14,7 +14,7 @@ namespace TerminalApp
         void ResizeContent(Windows.Foundation.Size newSize);
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         Int32 GetLeafPaneCount();
-        //TerminalApp.LeafPane GetActivePane();
+        //IPane GetActivePane();
         Windows.Foundation.Size GetMinSize();
     }
 }
