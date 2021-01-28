@@ -861,29 +861,15 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
     if (hotkey)
     {
         auto modifiers = hotkey.Modifiers();
-        // WPARAM wParam = hotkey.Vkey() |
-        //               (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? HOTKEYF_ALT << 8 : 0) |
-        //               (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? HOTKEYF_CONTROL << 8 : 0) |
-        //               (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? HOTKEYF_SHIFT << 8 : 0);
-        // auto result = SendMessage(_window.get(), WM_SETHOTKEY, wParam, 0);
-        // result;
-        // auto a = result + 1;
-        // a;
 
         auto MODs = MOD_NOREPEAT |
+                    (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
                     (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
                     (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
                     (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
+
         auto res = RegisterHotKey(_window.get(), 1, MODs, hotkey.Vkey());
         LOG_LAST_ERROR_IF(!res);
-        // if (!res)
-        // {
-        //     // auto gle = GetLastError();
-
-        // }
-        // res;
-        // auto b = !res;
-        // b;
     }
 }
 
