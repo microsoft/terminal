@@ -390,6 +390,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             _WindowActivatedHandlers();
         }
+        break;
     }
 
     case WM_NCLBUTTONDOWN:
