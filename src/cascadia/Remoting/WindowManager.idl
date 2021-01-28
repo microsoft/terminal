@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.Remoting
         Boolean ShouldCreateWindow { get; };
         IPeasant CurrentWindow();
         Boolean IsMonarch { get; };
+        void SummonWindow();
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;

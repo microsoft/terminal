@@ -24,6 +24,7 @@ namespace Microsoft.Terminal.Remoting
         UInt64 AddPeasant(IPeasant peasant);
         ProposeCommandlineResult ProposeCommandline(CommandlineArgs args);
         void HandleActivatePeasant(WindowActivatedArgs args);
+        void SummonWindow();
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
     };

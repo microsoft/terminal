@@ -71,6 +71,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
@@ -200,6 +201,7 @@ void AppHost::_HandleCommandlineArgs()
         // commandline (in the future), it'll trigger this callback, that we'll
         // use to send the actions to the app.
         peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+        peasant.SummonRequested({ this, &AppHost::_HandleSummon });
     }
 }
 
@@ -572,9 +574,22 @@ winrt::fire_and_forget AppHost::_WindowActivated()
     }
 }
 
-void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+winrt::fire_and_forget AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                               const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
+    // co_await winrt::resume_foreground(_window->Dispatcher());
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(), winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
     auto hotkey{ _logic.GlobalHotkey() };
     _window->SetGlobalHotkey(hotkey);
+}
+
+void AppHost::_GlobalHotkeyPressed()
+{
+    _windowManager.SummonWindow();
+}
+
+void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _window->SummonWindow();
 }

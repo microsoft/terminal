@@ -117,4 +117,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _lastActivatedArgs;
     }
 
+    void Peasant::Summon()
+    {
+        _SummonRequestedHandlers(*this, nullptr);
+    }
 }

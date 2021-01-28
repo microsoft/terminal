@@ -354,14 +354,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
     case WM_HOTKEY:
     {
-        auto a = 0;
-        a++;
-        a;
-        // ShowWindow(_window.get(), SW_RESTORE);
-        // SetFocus(_window.get());
-        HWND myHwnd = _window.get();
-        SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)myHwnd);
-        // break;
+        _HotkeyPressedHandlers();
         return 0;
     }
     case WM_GETMINMAXINFO:
@@ -872,6 +865,18 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
         auto res = RegisterHotKey(_window.get(), 1, MODs, hotkey.Vkey());
         LOG_LAST_ERROR_IF(!res);
     }
+}
+
+void IslandWindow::SummonWindow()
+{
+    // A SC_HOTKEY WM_SYSCOMMAND that's _not_ processed my a wndproc will summon
+    // the window exactly the way we want. So send that yo ourselves.
+    SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
+}
+
+winrt::Windows::UI::Core::CoreDispatcher IslandWindow::Dispatcher()
+{
+    return _rootGrid.Dispatcher();
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

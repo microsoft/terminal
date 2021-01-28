@@ -40,12 +40,16 @@ public:
 
     void SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& hotkey);
 
+    void SummonWindow();
+    winrt::Windows::UI::Core::CoreDispatcher Dispatcher();
+
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
+    WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void()>);
 
 protected:
     void ForceResize()

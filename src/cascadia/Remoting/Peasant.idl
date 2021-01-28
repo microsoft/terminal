@@ -31,9 +31,11 @@ namespace Microsoft.Terminal.Remoting
         Boolean ExecuteCommandline(CommandlineArgs args);
         void ActivateWindow(WindowActivatedArgs args);
         WindowActivatedArgs GetLastActivatedArgs();
+        void Summon();
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant

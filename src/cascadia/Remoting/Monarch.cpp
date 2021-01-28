@@ -286,4 +286,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return *result;
     }
 
+    void Monarch::SummonWindow()
+    {
+        try
+        {
+            auto windowID = _getMostRecentPeasantID();
+            if (auto targetPeasant{ _getPeasant(windowID) })
+            {
+                targetPeasant.Summon();
+            }
+        }
+        catch (...)
+        {
+        }
+    }
+
 }
