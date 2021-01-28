@@ -6,19 +6,20 @@
 
 #include "ParentPane.g.cpp"
 
-using namespace winrt;
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::Graphics::Display;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
-    ParentPane::ParentPane()
-    {
-        InitializeComponent();
-    }
-
-    ParentPane::ParentPane(LeafPane firstChild, LeafPane secondChild, SplitState splitState, float splitPosition, Size /*currentSize*/) :
+    ParentPane::ParentPane(TerminalApp::LeafPane firstChild, TerminalApp::LeafPane secondChild, SplitState splitState, float splitPosition, Size /*currentSize*/) :
         _firstChild(firstChild),
         _secondChild(secondChild),
         _splitState(splitState),
@@ -45,16 +46,16 @@ namespace winrt::TerminalApp::implementation
         _secondChild.UpdateSettings(settings, profile);
     }
 
-    //LeafPane* ParentPane::GetActivePane()
-    //{
-    //    auto first = _firstChild.GetActivePane();
-    //    if (first != nullptr)
-    //    {
-    //        return &first;
-    //    }
-    //    auto second = _secondChild.GetActivePane();
-    //    return &second;
-    //}
+    IPane ParentPane::GetActivePane()
+    {
+        auto first = _firstChild.GetActivePane();
+        if (first != nullptr)
+        {
+            return first;
+        }
+        auto second = _secondChild.GetActivePane();
+        return second;
+    }
 
     void ParentPane::Relayout()
     {
@@ -65,6 +66,17 @@ namespace winrt::TerminalApp::implementation
     {
         _firstChild.FocusPane(id);
         _secondChild.FocusPane(id);
+    }
+
+    bool ParentPane::HasFocusedChild()
+    {
+        return _firstChild.HasFocusedChild() || _secondChild.HasFocusedChild();
+    }
+
+    void ParentPane::Shutdown()
+    {
+        _firstChild.Shutdown();
+        _secondChild.Shutdown();
     }
 
     void ParentPane::ResizeContent(const Size& newSize)
@@ -121,19 +133,19 @@ namespace winrt::TerminalApp::implementation
         const auto firstIsParent = _firstChild.try_as<ParentPane>();
         if (firstIsParent)
         {
-            //if (firstIsParent->GetActivePane())
-            //{
+            if (firstIsParent->GetActivePane())
+            {
                 return firstIsParent->ResizePane(direction) || _Resize(direction);
-            //}
+            }
         }
 
         const auto secondIsParent = _secondChild.try_as<ParentPane>();
         if (secondIsParent)
         {
-            //if (secondIsParent->GetActivePane())
-            //{
+            if (secondIsParent->GetActivePane())
+            {
                 return secondIsParent->ResizePane(direction) || _Resize(direction);
-            //}
+            }
         }
 
         return false;
@@ -165,19 +177,19 @@ namespace winrt::TerminalApp::implementation
         const auto firstIsParent = _firstChild.try_as<ParentPane>();
         if (firstIsParent)
         {
-            //if (firstIsParent->GetActivePane())
-            //{
+            if (firstIsParent->GetActivePane())
+            {
                 return firstIsParent->NavigateFocus(direction) || _NavigateFocus(direction);
-            //}
+            }
         }
 
         const auto secondIsParent = _secondChild.try_as<ParentPane>();
         if (secondIsParent)
         {
-            //if (secondIsParent->GetActivePane())
-            //{
+            if (secondIsParent->GetActivePane())
+            {
                 return secondIsParent->NavigateFocus(direction) || _NavigateFocus(direction);
-            //}
+            }
         }
 
         return false;
@@ -209,19 +221,56 @@ namespace winrt::TerminalApp::implementation
         return { minWidth, minHeight };
     }
 
-    LeafPane* FindFirstLeaf()
+    std::optional<SplitState> ParentPane::PreCalculateAutoSplit(const LeafPane /*target*/,
+                                                               const winrt::Windows::Foundation::Size /*availableSpace*/) const
     {
-        //return _firstChild.FindFirstLeaf();
-        return {};
+        //const bool isVerticalSplit = _splitState == SplitState::Vertical;
+        //const float firstWidth = isVerticalSplit ? (availableSpace.Width * _desiredSplitPosition) : availableSpace.Width;
+        //const float secondWidth = isVerticalSplit ? (availableSpace.Width - firstWidth) : availableSpace.Width;
+        //const float firstHeight = !isVerticalSplit ? (availableSpace.Height * _desiredSplitPosition) : availableSpace.Height;
+        //const float secondHeight = !isVerticalSplit ? (availableSpace.Height - firstHeight) : availableSpace.Height;
+
+        //const auto firstResult = _firstChild->PreCalculateAutoSplit(target, { firstWidth, firstHeight });
+        //return firstResult.has_value() ? firstResult : _secondChild->PreCalculateAutoSplit(target, { secondWidth, secondHeight });
+        return std::nullopt;
     }
 
-    void ParentPane::PropagateToLeaves(std::function<void(LeafPane&)> action)
+    std::optional<bool> ParentPane::PreCalculateCanSplit(const LeafPane /*target*/,
+                                                         SplitState /*splitType*/,
+                                                         const float /*splitSize*/,
+                                                         const winrt::Windows::Foundation::Size /*availableSpace*/) const
+    {
+        //const bool isVerticalSplit = _splitState == SplitState::Vertical;
+        //const float firstWidth = isVerticalSplit ?
+        //                             (availableSpace.Width * _desiredSplitPosition) - PaneBorderSize :
+        //                             availableSpace.Width;
+        //const float secondWidth = isVerticalSplit ?
+        //                              (availableSpace.Width - firstWidth) - PaneBorderSize :
+        //                              availableSpace.Width;
+        //const float firstHeight = !isVerticalSplit ?
+        //                              (availableSpace.Height * _desiredSplitPosition) - PaneBorderSize :
+        //                              availableSpace.Height;
+        //const float secondHeight = !isVerticalSplit ?
+        //                               (availableSpace.Height - firstHeight) - PaneBorderSize :
+        //                               availableSpace.Height;
+
+        //const auto firstResult = _firstChild->PreCalculateCanSplit(target, splitType, splitSize, { firstWidth, firstHeight });
+        //return firstResult.has_value() ? firstResult : _secondChild->PreCalculateCanSplit(target, splitType, splitSize, { secondWidth, secondHeight });
+        return std::nullopt;
+    }
+
+    IPane ParentPane::FindFirstLeaf()
+    {
+        return _firstChild.FindFirstLeaf();
+    }
+
+    void ParentPane::PropagateToLeaves(std::function<void(LeafPane)> action)
     {
         //_firstChild.PropagateToLeaves(action);
         //_secondChild.PropagateToLeaves(action);
     }
 
-    void ParentPane::PropagateToLeavesOnEdge(const ResizeDirection& edge, std::function<void(LeafPane&)> action)
+    void ParentPane::PropagateToLeavesOnEdge(const ResizeDirection& edge, std::function<void(LeafPane)> action)
     {
         if (DirectionMatchesSplit(edge, _splitState))
         {

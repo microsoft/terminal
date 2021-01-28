@@ -31,9 +31,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
         IPane GetActivePane();
+        IPane FindFirstLeaf();
         winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
         GUID GetProfile();
         void FocusPane(uint32_t id);
+        bool HasFocusedChild();
 
         bool WasLastFocused() const noexcept;
         void UpdateVisuals();
@@ -59,10 +61,15 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Size GetMinSize() const;
 
-        LeafPane* FindFirstLeaf();
+        void PropagateToLeaves(std::function<void(LeafPane)> action);
+        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane)> action);
 
-        void PropagateToLeaves(std::function<void(LeafPane&)> action);
-        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane&)> action);
+        std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const LeafPane target,
+                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
+        std::optional<bool> PreCalculateCanSplit(const LeafPane target,
+                                                 winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                 const float splitSize,
+                                                 const winrt::Windows::Foundation::Size availableSpace) const;
 
         void BorderTappedHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::Input::TappedRoutedEventArgs const& e);

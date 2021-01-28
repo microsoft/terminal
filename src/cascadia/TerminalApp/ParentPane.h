@@ -13,26 +13,35 @@ namespace winrt::TerminalApp::implementation
     struct ParentPane : ParentPaneT<ParentPane>
     {
     public:
-        ParentPane();
-        ParentPane(LeafPane firstChild, LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
+        ParentPane(winrt::TerminalApp::LeafPane firstChild, winrt::TerminalApp::LeafPane secondChild, winrt::Microsoft::Terminal::Settings::Model::SplitState splitState, float splitPosition, winrt::Windows::Foundation::Size currentSize);
         winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
         void FocusPane(uint32_t id);
+        bool HasFocusedChild();
+
+        void Shutdown();
 
         void UpdateSettings(const winrt::TerminalApp::TerminalSettings& settings,
                             const GUID& profile);
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void Relayout();
-        //LeafPane* GetActivePane();
+        IPane GetActivePane();
         bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
         int GetLeafPaneCount() const noexcept;
         winrt::Windows::Foundation::Size GetMinSize() const;
 
-        LeafPane* FindFirstLeaf();
+        std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const LeafPane target,
+                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
+        std::optional<bool> PreCalculateCanSplit(const LeafPane target,
+                                                 winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                                 const float splitSize,
+                                                 const winrt::Windows::Foundation::Size availableSpace) const;
 
-        void PropagateToLeaves(std::function<void(LeafPane&)> action);
-        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane&)> action);
+        IPane FindFirstLeaf();
+
+        void PropagateToLeaves(std::function<void(LeafPane)> action);
+        void PropagateToLeavesOnEdge(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& edge, std::function<void(LeafPane)> action);
 
         DECLARE_EVENT(ChildClosed, _ChildClosedHandlers, winrt::delegate<LeafPane>);
 

@@ -75,6 +75,11 @@ namespace winrt::TerminalApp::implementation
         return _lastActive ? IPane{ *this } : nullptr;
     }
 
+    IPane LeafPane::FindFirstLeaf()
+    {
+        return IPane{ *this };
+    }
+
     TermControl LeafPane::GetTerminalControl()
     {
         return _control;
@@ -126,6 +131,11 @@ namespace winrt::TerminalApp::implementation
         {
             _control.Focus(FocusState::Programmatic);
         }
+    }
+
+    bool LeafPane::HasFocusedChild()
+    {
+        return _control && _lastActive;
     }
 
     std::pair<IPane, IPane> LeafPane::Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -216,19 +226,77 @@ namespace winrt::TerminalApp::implementation
         return { newWidth, newHeight };
     }
 
-    LeafPane* LeafPane::FindFirstLeaf()
+    void LeafPane::PropagateToLeaves(std::function<void(LeafPane)> action)
     {
-        return this;
+        //action(*this);
     }
 
-    void LeafPane::PropagateToLeaves(std::function<void(LeafPane&)> action)
+    void LeafPane::PropagateToLeavesOnEdge(const ResizeDirection& /* edge */, std::function<void(LeafPane)> action)
     {
-        action(*this);
+        //action(*this);
     }
 
-    void LeafPane::PropagateToLeavesOnEdge(const ResizeDirection& /* edge */, std::function<void(LeafPane&)> action)
+    std::optional<SplitState> LeafPane::PreCalculateAutoSplit(const LeafPane /*target*/,
+                                                              const winrt::Windows::Foundation::Size /*availableSpace*/) const
     {
-        action(*this);
+        //if (target == *this)
+        //{
+        //    //If this pane is a leaf, and it's the pane we're looking for, use
+        //    //the available space to calculate which direction to split in.
+        //    return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
+        //}
+        //else
+        //{
+        //    // If this pane is _any other leaf_, then just return nullopt, to
+        //    // indicate that the `target` Pane is not down this branch.
+        //    return std::nullopt;
+        //}
+        return std::nullopt;
+    }
+
+    std::optional<bool> LeafPane::PreCalculateCanSplit(const LeafPane /*target*/,
+                                                       SplitState /*splitType*/,
+                                                       const float /*splitSize*/,
+                                                       const winrt::Windows::Foundation::Size /*availableSpace*/) const
+    {
+        //if (target == *this)
+        //{
+        //    const auto firstPrecent = 1.0f - splitSize;
+        //    const auto secondPercent = splitSize;
+        //    // If this pane is a leaf, and it's the pane we're looking for, use
+        //    // the available space to calculate which direction to split in.
+        //    const Size minSize = GetMinSize();
+
+        //    if (splitType == SplitState::None)
+        //    {
+        //        return { false };
+        //    }
+
+        //    else if (splitType == SplitState::Vertical)
+        //    {
+        //        const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
+        //        const auto newFirstWidth = widthMinusSeparator * firstPrecent;
+        //        const auto newSecondWidth = widthMinusSeparator * secondPercent;
+
+        //        return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
+        //    }
+
+        //    else if (splitType == SplitState::Horizontal)
+        //    {
+        //        const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
+        //        const auto newFirstHeight = heightMinusSeparator * firstPrecent;
+        //        const auto newSecondHeight = heightMinusSeparator * secondPercent;
+
+        //        return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
+        //    }
+        //}
+        //else
+        //{
+        //    // If this pane is _any other leaf_, then just return nullopt, to
+        //    // indicate that the `target` Pane is not down this branch.
+        //    return std::nullopt;
+        //}
+        return std::nullopt;
     }
 
     void LeafPane::_ControlConnectionStateChangedHandler(const TermControl& /*sender*/,

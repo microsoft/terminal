@@ -9,12 +9,18 @@ namespace TerminalApp
     interface IPane
     {
         void FocusPane(UInt32 idNum);
+        Int32 GetLeafPaneCount();
+        IPane GetActivePane();
+        IPane FindFirstLeaf();
+        Boolean HasFocusedChild();
+
         Windows.UI.Xaml.Controls.Grid GetRootElement();
+
+        void Shutdown();
         void UpdateSettings(TerminalSettings settings, Guid profile);
+
         void ResizeContent(Windows.Foundation.Size newSize);
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
-        Int32 GetLeafPaneCount();
-        //IPane GetActivePane();
         Windows.Foundation.Size GetMinSize();
     }
 }

@@ -2,12 +2,12 @@
 // Licensed under the MIT license.
 
 import "IPane.idl";
+import "LeafPane.idl";
 
 namespace TerminalApp
 {
     [default_interface] runtimeclass ParentPane : Windows.UI.Xaml.Controls.UserControl, IPane
     {
-        ParentPane();
-        Boolean ResizePane(Microsoft.Terminal.Settings.Model.ResizeDirection direction);
+        ParentPane(LeafPane firstChild, LeafPane secondChild, Microsoft.Terminal.Settings.Model.SplitState splitState, Single splitPosition, Windows.Foundation.Size currentSize);
     }
 }
