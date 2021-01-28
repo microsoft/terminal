@@ -870,27 +870,22 @@ void IslandWindow::SetGlobalHotkey(const winrt::Microsoft::Terminal::TerminalCon
 
 winrt::fire_and_forget IslandWindow::SummonWindow()
 {
-    // A SC_HOTKEY WM_SYSCOMMAND that's _not_ processed my a wndproc will summon
-    // the window exactly the way we want. So send that yo ourselves.
+    // On the foreground thread:
+    // * Restore the window from minimized
+    // * Activate the window
+    // * focus the window
+    // * IMPORTANT: MAKE THE WINDOW THE FOREGROUND WINDOW
+    //   - If you forget this last one, you'll start blinking the cursor for the
+    //     Terminal, but it WON'T ACTUALLY BE THE FOREGROUND WINDOW. It won't
+    //     recieve keyboard input. Crazy.
 
-    // Does the mysterious "cursor starts blinking but doesn't accept keyboard focus"
-    // SendMessage(_window.get(), WM_SYSCOMMAND, SC_HOTKEY, (LPARAM)(_window.get()));
+    // TODO: This isn't right either. This just causes the window to blink. Hmm.
+    // I wonder if this is because we're doing it from an RPC thread (likely).
 
-    // Does the mysterious "cursor starts blinking but doesn't accept keyboard focus"
-    // ShowWindow(_window.get(), SW_RESTORE);
-    // SetActiveWindow(_window.get());
-    // SetFocus(_window.get());
+    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
+    ShowWindow(_window.get(), SW_RESTORE); // TODO: Frick this will restore down too. We don't want that.
+    // This doesn't _really_ help, but it might help put the window on top of the Z order.
 
-    // Does nothing at all
-    // ShowWindow(_window.get(), SW_SHOWNORMAL);
-
-    // The co_await didn't help here
-    // co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    // ShowWindow(_window.get(), SW_RESTORE);
-    // SetActiveWindow(_window.get());
-    // SetFocus(_window.get());
-
-    // This (even with a co_await didn't work, and it doesn't restore a minimized window)
     // SetWindowPos(_window.get(),
     //              HWND_TOP,
     //              0,
@@ -898,12 +893,12 @@ winrt::fire_and_forget IslandWindow::SummonWindow()
     //              0,
     //              0,
     //              SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-
-    co_await winrt::resume_foreground(_rootGrid.Dispatcher());
-    ShowWindow(_window.get(), SW_RESTORE);
     SetActiveWindow(_window.get());
     SetFocus(_window.get());
     SetForegroundWindow(_window.get());
+
+    // TODO: Why doesn't this work if the window is _not_ minimized? If the
+    // window is minimized, this works like a charm. W E I R D
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
