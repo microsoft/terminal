@@ -395,6 +395,18 @@ bool TerminalDispatch::ResetMode(const DispatchTypes::ModeParams param) noexcept
 }
 
 // Method Description:
+// - Updates the current working directory.
+// Arguments:
+// - hostname: The hostname
+// - path: The path. Note that the path may not be valid on Windows.
+// Return Value:
+// - true
+bool TerminalDispatch::SetWorkingDirectory(const std::wstring_view /*hostname*/, const std::wstring_view /*path*/) noexcept
+{
+    return true;
+}
+
+// Method Description:
 // - Start a hyperlink
 // Arguments:
 // - uri - the hyperlink URI

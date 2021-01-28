@@ -121,6 +121,8 @@ namespace Microsoft::Console::VirtualTerminal
                                 const VTParameter parameter1,
                                 const VTParameter parameter2) override; // DTTERM_WindowManipulation
 
+        bool SetWorkingDirectory(const std::wstring_view hostname, const std::wstring_view path) noexcept override;
+
         bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) override;
         bool EndHyperlink() override;
 

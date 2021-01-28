@@ -115,6 +115,8 @@ public:
                             const VTParameter /*parameter1*/,
                             const VTParameter /*parameter2*/) noexcept override { return false; }
 
+    bool SetWorkingDirectory(const std::wstring_view /*hostname*/, const std::wstring_view /*path*/) noexcept override { return false; }
+
     bool AddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) noexcept override { return false; }
     bool EndHyperlink() noexcept override { return false; }
 

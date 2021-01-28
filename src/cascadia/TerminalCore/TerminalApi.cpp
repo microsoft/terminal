@@ -630,6 +630,12 @@ bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noe
     return true;
 }
 
+// Method Description:
+// - Updates the current working directory.
+// Arguments:
+// - uri: The new working directory. Note that the uri is expected to be valid on Windows.
+// Return Value:
+// - true
 bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
 {
     _workingDirectory = uri;

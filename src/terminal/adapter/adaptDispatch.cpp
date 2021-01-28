@@ -2375,6 +2375,16 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
 }
 
 // Method Description:
+// - Ascribes to the ITermDispatch interface
+// - Not actually used in conhost
+// Return Value:
+// - false (so that the command gets flushed to terminal)
+bool AdaptDispatch::SetWorkingDirectory(const std::wstring_view /*hostname*/, const std::wstring_view /*path*/) noexcept
+{
+    return false;
+}
+
+// Method Description:
 // - Starts a hyperlink
 // Arguments:
 // - The hyperlink URI, optional additional parameters

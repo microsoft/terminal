@@ -68,6 +68,8 @@ public:
     bool SetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECSET
     bool ResetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECRST
 
+    bool SetWorkingDirectory(const std::wstring_view hostname, const std::wstring_view path) noexcept override;
+
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
 

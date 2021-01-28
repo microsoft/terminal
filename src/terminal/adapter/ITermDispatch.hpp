@@ -121,6 +121,8 @@ public:
                                     const VTParameter parameter1,
                                     const VTParameter parameter2) = 0;
 
+    virtual bool SetWorkingDirectory(const std::wstring_view hostname, const std::wstring_view path) = 0;
+
     virtual bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) = 0;
     virtual bool EndHyperlink() = 0;
 

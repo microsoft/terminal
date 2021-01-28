@@ -160,6 +160,7 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowTitle = 2,
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
+            SetWorkingDirectory = 7, // No functionality is implemented
             Hyperlink = 8,
             ConEmuAction = 9,
             SetForegroundColor = 10,
@@ -184,6 +185,10 @@ namespace Microsoft::Console::VirtualTerminal
         bool _GetOscSetClipboard(const std::wstring_view string,
                                  std::wstring& content,
                                  bool& queryClipboard) const noexcept;
+
+        bool _ParseFileUri(const std::wstring_view string,
+                           std::wstring& hostname,
+                           std::wstring& path) const;
 
         static constexpr std::wstring_view hyperlinkIDParameter{ L"id=" };
         bool _ParseHyperlink(const std::wstring_view string,
